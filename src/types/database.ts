@@ -212,3 +212,44 @@ export interface UserTextFilter {
   created_at: string;
   to_name_lower: string;
 }
+
+export interface SystemSettings {
+  id: string; // uuid
+  global_maintenance_enabled: boolean;
+  title?: string | null;
+  message?: string | null;
+  start_at?: string | null;
+  end_at?: string | null;
+  updated_at?: string | null;
+  updated_by?: string | null;
+}
+
+export interface SystemProduct {
+  id: string; // uuid
+  product_key: string;
+  product_name: string;
+  status: 'operational' | 'degraded' | 'outage' | 'maintenance' | string;
+  maintenance_enabled: boolean;
+  maintenance_type?: 'scheduled' | 'emergency' | string;
+  maintenance_title?: string | null;
+  maintenance_message?: string | null;
+  maintenance_start_at?: string | null;
+  maintenance_end_at?: string | null;
+  block_frontend?: boolean;
+  block_api?: boolean;
+  allow_admin_bypass?: boolean;
+  internal_note?: string | null;
+  updated_at?: string | null;
+  updated_by?: string | null;
+}
+
+export interface SystemMaintenanceLog {
+  id: string; // uuid
+  product_key?: string | null;
+  action: string;
+  previous_state?: any;
+  new_state?: any;
+  changed_by?: string | null;
+  reason?: string | null;
+  created_at: string;
+}
