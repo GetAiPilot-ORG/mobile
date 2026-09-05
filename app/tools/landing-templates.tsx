@@ -1,57 +1,183 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
+  TextInput,
   Pressable,
   Alert,
+  Share,
 } from 'react-native';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
 import { colors } from '../../src/theme/colors';
 
-const LANDING_TEMPLATES = [
-  { id: '1', name: 'SaaS Waitlist & Beta Launch', category: 'Software', conversionRate: '18.4%', color: '#003C33' },
-  { id: '2', name: 'Direct Sales Lead Capture', category: 'Services', conversionRate: '24.1%', color: '#16B882' },
-  { id: '3', name: 'Webinar & Live Event', category: 'Education', conversionRate: '31.0%', color: '#8B5CF6' },
-  { id: '4', name: 'Product Early Access', category: 'E-commerce', conversionRate: '15.8%', color: '#F59E0B' },
+interface LandingTemplate {
+  id: string;
+  name: string;
+  category: 'Business' | 'Crypto' | 'Real Estate' | 'Fitness' | 'E-Commerce' | 'Travel';
+  conversionRate: string;
+  color: string;
+  desc: string;
+  tags: string[];
+}
+
+const CATEGORIES = ['All', 'Business', 'Crypto', 'Real Estate', 'Fitness', 'E-Commerce', 'Travel'] as const;
+
+const LANDING_TEMPLATES_CATALOG: LandingTemplate[] = [
+  {
+    id: 'axnix-saas',
+    name: 'Axnix SaaS & AI Suite',
+    category: 'Business',
+    conversionRate: '26.4%',
+    color: '#003C33',
+    desc: 'High-converting dark modern SaaS hero with live metric counters & pricing toggle.',
+    tags: ['AI Engine', 'Waitlist', 'SaaS'],
+  },
+  {
+    id: 'threadly-fashion',
+    name: 'Threadly Apparel & Brand',
+    category: 'E-Commerce',
+    conversionRate: '22.8%',
+    color: '#EC4899',
+    desc: 'Minimalist boutique clothing showcase with lookbook carousel and instant WhatsApp checkout.',
+    tags: ['E-Commerce', 'Lookbook', 'Store'],
+  },
+  {
+    id: 'bull-run-crypto',
+    name: 'Bull Run Crypto & Options',
+    category: 'Crypto',
+    conversionRate: '31.2%',
+    color: '#0284C7',
+    desc: 'Telegram VIP channel lead capture funnel for crypto trading signals and market alpha.',
+    tags: ['Trading', 'Telegram', 'VIP Signals'],
+  },
+  {
+    id: 'dark-luxury-estates',
+    name: 'Aura Luxury Real Estate',
+    category: 'Real Estate',
+    conversionRate: '19.5%',
+    color: '#D97706',
+    desc: 'Premium gold & onyx architectural portfolio with property walkthrough request forms.',
+    tags: ['Villas', 'Brochures', 'Luxury'],
+  },
+  {
+    id: 'pulse-forge-gym',
+    name: 'Pulse Forge Fitness & Gym',
+    category: 'Fitness',
+    conversionRate: '28.0%',
+    color: '#DC2626',
+    desc: 'High-energy transformation showcase with membership tier selection and free trial booking.',
+    tags: ['Gym', 'Free Pass', 'Coaching'],
+  },
+  {
+    id: 'omni-resort-travel',
+    name: 'Omni Luxury Resort & Escape',
+    category: 'Travel',
+    conversionRate: '24.7%',
+    color: '#10B981',
+    desc: 'Scenic getaway booking lander with seasonal discounts, photo galleries and reviews.',
+    tags: ['Resort', 'Booking', 'Vacation'],
+  },
 ];
 
 export default function LandingTemplatesScreen() {
-  const handleSelect = (name: string) => {
-    Alert.alert('Landing Template Loaded', `Initialized canvas with ${name}. Ready for customization.`);
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [search, setSearch] = useState('');
+
+  const filtered = LANDING_TEMPLATES_CATALOG.filter((item) => {
+    const matchesCat = selectedCategory === 'All' || item.category === selectedCategory;
+    const matchesSearch =
+      item.name.toLowerCase().includes(search.toLowerCase()) ||
+      item.desc.toLowerCase().includes(search.toLowerCase()) ||
+      item.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()));
+    return matchesCat && matchesSearch;
+  });
+
+  const handleDeploy = (item: LandingTemplate) => {
+    Alert.alert(
+      'Deploy Landing Page',
+      `Deploying ${item.name}. Would you like to launch the visual editor or copy the share link?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Share Link 🔗',
+          onPress: () => {
+            Share.share({
+              message: `Check out our landing page template: https://getaipilot.in/lp/${item.id}`,
+            });
+          },
+        },
+        {
+          text: 'Open in Canvas 🚀',
+          onPress: () => {
+            Alert.alert('Canvas Ready', `Template "${item.name}" loaded into your visual editing workspace.`);
+          },
+        },
+      ]
+    );
   };
 
   return (
     <AppScreen safeArea={false} backgroundColor={colors.background}>
-      <AppTopBar title="Landing Page Templates" subtitle="Pre-built High-Converting Layouts" showBack={true} />
+      <AppTopBar title="Landing Templates" subtitle="100+ Category Layouts" showBack={true} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Ready-to-Deploy Landers</Text>
-          <Text style={styles.cardSubtitle}>
-            Full-width mobile-responsive sales pages and lead capture funnels optimized for ad campaigns.
-          </Text>
-        </View>
+        {/* Search */}
+        <TextInput
+          style={styles.searchInput}
+          placeholder="🔍 Search templates (SaaS, Crypto, Gym, Real Estate)..."
+          placeholderTextColor={colors.mutedForeground}
+          value={search}
+          onChangeText={setSearch}
+        />
+
+        {/* Category horizontal scroll */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScroll}>
+          {CATEGORIES.map((cat) => (
+            <Pressable
+              key={cat}
+              style={[styles.catChip, selectedCategory === cat && styles.catChipActive]}
+              onPress={() => setSelectedCategory(cat)}
+            >
+              <Text style={[styles.catText, selectedCategory === cat && styles.catTextActive]}>
+                {cat}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+
+        <Text style={styles.resultsCount}>
+          Showing {filtered.length} high-converting template{filtered.length !== 1 ? 's' : ''}
+        </Text>
 
         <View style={styles.list}>
-          {LANDING_TEMPLATES.map((item) => (
+          {filtered.map((item) => (
             <View key={item.id} style={styles.itemCard}>
               <View style={[styles.badgeStrip, { backgroundColor: item.color }]} />
               <View style={styles.itemBody}>
-                <View style={styles.itemTop}>
+                <View style={styles.itemHeaderRow}>
                   <Text style={styles.itemCategory}>{item.category.toUpperCase()}</Text>
-                  <Text style={styles.itemName}>{item.name}</Text>
+                  <View style={styles.convPill}>
+                    <Text style={styles.convText}>Avg CVR: {item.conversionRate}</Text>
+                  </View>
                 </View>
 
-                <View style={styles.itemStats}>
-                  <Text style={styles.statText}>Avg Conversion: <Text style={{ color: '#16B882', fontWeight: '800' }}>{item.conversionRate}</Text></Text>
+                <Text style={styles.itemName}>{item.name}</Text>
+                <Text style={styles.itemDesc}>{item.desc}</Text>
+
+                <View style={styles.tagRow}>
+                  {item.tags.map((t) => (
+                    <View key={t} style={styles.tag}>
+                      <Text style={styles.tagText}>#{t}</Text>
+                    </View>
+                  ))}
                 </View>
 
                 <Pressable
                   style={[styles.useBtn, { backgroundColor: item.color }]}
-                  onPress={() => handleSelect(item.name)}
+                  onPress={() => handleDeploy(item)}
                 >
                   <Text style={styles.useBtnText}>Deploy Template →</Text>
                 </Pressable>
@@ -69,24 +195,46 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 40,
   },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 16,
+  searchInput: {
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-  },
-  cardTitle: {
-    fontSize: 17,
-    fontWeight: '800',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 13.5,
     color: colors.foreground,
-    marginBottom: 4,
+    marginBottom: 12,
   },
-  cardSubtitle: {
-    fontSize: 13,
+  catScroll: {
+    marginBottom: 12,
+  },
+  catChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginRight: 8,
+  },
+  catChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  catText: {
+    fontSize: 12,
+    fontWeight: '700',
     color: colors.mutedForeground,
-    lineHeight: 18,
+  },
+  catTextActive: {
+    color: '#FFFFFF',
+  },
+  resultsCount: {
+    fontSize: 12,
+    color: colors.mutedForeground,
+    marginBottom: 12,
+    fontWeight: '600',
   },
   list: {
     gap: 14,
@@ -99,42 +247,71 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   badgeStrip: {
-    height: 6,
+    height: 5,
     width: '100%',
   },
   itemBody: {
     padding: 16,
   },
-  itemTop: {
-    marginBottom: 8,
+  itemHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
   },
   itemCategory: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '800',
     color: colors.mutedForeground,
     letterSpacing: 0.5,
+  },
+  convPill: {
+    backgroundColor: 'rgba(22, 184, 130, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  convText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#16B882',
   },
   itemName: {
     fontSize: 16,
     fontWeight: '800',
     color: colors.foreground,
-    marginTop: 2,
   },
-  itemStats: {
-    marginBottom: 14,
-  },
-  statText: {
-    fontSize: 12,
+  itemDesc: {
+    fontSize: 12.5,
     color: colors.mutedForeground,
+    marginTop: 4,
+    lineHeight: 17,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginVertical: 12,
+  },
+  tag: {
+    backgroundColor: colors.muted,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  tagText: {
+    fontSize: 11,
+    color: colors.mutedForeground,
+    fontWeight: '600',
   },
   useBtn: {
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: 11,
+    borderRadius: 10,
     alignItems: 'center',
   },
   useBtnText: {
     color: '#FFFFFF',
     fontWeight: '800',
-    fontSize: 13,
+    fontSize: 13.5,
   },
 });

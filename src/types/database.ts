@@ -121,6 +121,11 @@ export interface Profile {
   facebook_url: string | null;
   twitter_url: string | null;
   is_admin: boolean;
+  // Profile contact & subscription fields
+  phone?: string | null;
+  mobile_number?: string | null;
+  subscription?: string | null;
+  account_status?: 'active' | 'suspended' | 'banned' | null;
   // Onboarding fields
   account_type: 'personal' | 'business' | null;
   first_name: string | null;

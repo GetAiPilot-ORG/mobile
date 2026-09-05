@@ -21,16 +21,36 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { SystemProduct, SystemSettings, SystemMaintenanceLog } from '../../src/types/database';
 
+interface UserProfile {
+  id: string;
+  full_name?: string;
+  email?: string;
+  mobile_number?: string;
+  account_status?: 'active' | 'suspended' | 'banned';
+  subscription?: string;
+  is_admin?: boolean;
+  created_at?: string;
+}
+
 export default function AdminScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { isAdmin } = usePlatformSubscription();
   const queryClient = useQueryClient();
 
-  // Admin Tab selection
-  const [adminTab, setAdminTab] = useState<'maintenance' | 'products' | 'logs'>('maintenance');
+  // Admin Tab selection: maintenance | users | logs
+  const [adminTab, setAdminTab] = useState<'maintenance' | 'users' | 'logs'>('maintenance');
 
-  // Modal state for editing product maintenance
+  // User management state
+  const [userSearch, setUserSearch] = useState('');
+  const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'active' | 'suspended' | 'banned'>('all');
+  const [selectedUserForPlan, setSelectedUserForPlan] = useState<UserProfile | null>(null);
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [selectedPlanType, setSelectedPlanType] = useState('pro_monthly');
+  const [customDays, setCustomDays] = useState('30');
+  const [isUpdatingUser, setIsUpdatingUser] = useState<string | null>(null);
+
+  // Maintenance Modal state
   const [selectedProduct, setSelectedProduct] = useState<SystemProduct | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [maintenanceTitle, setMaintenanceTitle] = useState('');
@@ -83,41 +103,11 @@ export default function AdminScreen() {
       if (error) {
         console.warn('system_products notice:', error.message);
         return [
-          {
-            id: '1',
-            product_key: 'whatsapp',
-            product_name: 'GAP WhatsApp Hub',
-            status: 'operational',
-            maintenance_enabled: false,
-          },
-          {
-            id: '2',
-            product_key: 'telegram',
-            product_name: 'GAP Telegram Auto-Forwarder',
-            status: 'operational',
-            maintenance_enabled: false,
-          },
-          {
-            id: '3',
-            product_key: 'voice_ai',
-            product_name: 'GAP AI Voice Agent',
-            status: 'operational',
-            maintenance_enabled: false,
-          },
-          {
-            id: '4',
-            product_key: 'social',
-            product_name: 'GAP Social Hub',
-            status: 'operational',
-            maintenance_enabled: false,
-          },
-          {
-            id: '5',
-            product_key: 'crm',
-            product_name: 'GAP Smart CRM',
-            status: 'operational',
-            maintenance_enabled: false,
-          },
+          { id: '1', product_key: 'whatsapp', product_name: 'GAP WhatsApp Hub', status: 'operational', maintenance_enabled: false },
+          { id: '2', product_key: 'telegram', product_name: 'GAP Telegram Auto-Forwarder', status: 'operational', maintenance_enabled: false },
+          { id: '3', product_key: 'voice_ai', product_name: 'GAP AI Voice Agent', status: 'operational', maintenance_enabled: false },
+          { id: '4', product_key: 'social', product_name: 'GAP Social Hub', status: 'operational', maintenance_enabled: false },
+          { id: '5', product_key: 'crm', product_name: 'GAP Smart CRM', status: 'operational', maintenance_enabled: false },
         ] as SystemProduct[];
       }
       return data as SystemProduct[];
@@ -125,7 +115,31 @@ export default function AdminScreen() {
     enabled: !!isAdmin,
   });
 
-  // 3. Fetch Maintenance Audit Logs
+  // 3. Fetch Registered Users for Moderation
+  const {
+    data: userProfiles,
+    isLoading: loadingUsers,
+    refetch: refetchUsers,
+    isRefetching: refetchingUsers,
+  } = useQuery<UserProfile[]>({
+    queryKey: ['admin-users-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, mobile_number, account_status, subscription, is_admin, created_at')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        console.warn('profiles query error:', error.message);
+        return [];
+      }
+      return (data || []) as UserProfile[];
+    },
+    enabled: !!isAdmin,
+  });
+
+  // 4. Fetch Maintenance Audit Logs
   const {
     data: logs,
     isLoading: loadingLogs,
@@ -165,7 +179,6 @@ export default function AdminScreen() {
         if (error) throw error;
       }
 
-      // Log it
       await supabase.from('system_maintenance_logs').insert({
         action: enabled ? 'Global Maintenance Enabled' : 'Global Maintenance Disabled',
         changed_by: user?.id,
@@ -231,6 +244,111 @@ export default function AdminScreen() {
     },
   });
 
+  // Moderation: Update Account Status
+  const handleUpdateStatus = async (userId: string, status: 'active' | 'suspended' | 'banned') => {
+    setIsUpdatingUser(userId);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ account_status: status })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      Alert.alert('Status Updated', `User status changed to ${status.toUpperCase()}.`);
+      refetchUsers();
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Failed to update user status.');
+    } finally {
+      setIsUpdatingUser(null);
+    }
+  };
+
+  // Moderation: Assign Subscription Plan
+  const handleAssignPlan = async () => {
+    if (!selectedUserForPlan) return;
+    setIsUpdatingUser(selectedUserForPlan.id);
+
+    try {
+      let durationDays = 30;
+      let planLabel = 'Premium Plan';
+
+      if (selectedPlanType === 'free_trial') {
+        durationDays = 7;
+        planLabel = 'Free Trial';
+      } else if (selectedPlanType === 'pro_monthly') {
+        durationDays = 30;
+        planLabel = 'Premium Monthly';
+      } else if (selectedPlanType === 'pro_semi') {
+        durationDays = 180;
+        planLabel = 'Platinum 6-Month';
+      } else if (selectedPlanType === 'yearly') {
+        durationDays = 365;
+        planLabel = 'Ultimate Yearly';
+      } else if (selectedPlanType === 'custom') {
+        durationDays = parseInt(customDays, 10) || 30;
+        planLabel = `Custom Access (${durationDays} Days)`;
+      }
+
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + durationDays);
+
+      // Insert/update app_user_subscriptions
+      await supabase.from('app_user_subscriptions').upsert({
+        user_id: selectedUserForPlan.id,
+        plan_id: selectedPlanType,
+        plan_label: planLabel,
+        is_active: true,
+        starts_at: new Date().toISOString(),
+        expires_at: expiresAt.toISOString(),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+
+      // Keep profiles subscription in sync
+      await supabase.from('profiles').update({
+        subscription: `${planLabel} (${durationDays} Days)`,
+        updated_at: new Date().toISOString(),
+      }).eq('id', selectedUserForPlan.id);
+
+      setIsPlanModalOpen(false);
+      setSelectedUserForPlan(null);
+      Alert.alert('Success', `Assigned ${planLabel} to user.`);
+      refetchUsers();
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Failed to assign plan.');
+    } finally {
+      setIsUpdatingUser(null);
+    }
+  };
+
+  // Moderation: Revoke Subscription
+  const handleRevokePlan = async (userId: string) => {
+    Alert.alert(
+      'Revoke Plan?',
+      'This will cancel active subscription access and return the user to the Free tier.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Revoke Access',
+          style: 'destructive',
+          onPress: async () => {
+            setIsUpdatingUser(userId);
+            try {
+              await supabase.from('app_user_subscriptions').delete().eq('user_id', userId);
+              await supabase.from('profiles').update({ subscription: 'Free' }).eq('id', userId);
+              Alert.alert('Revoked', 'User subscription has been set to Free.');
+              refetchUsers();
+            } catch (e: any) {
+              Alert.alert('Error', e.message || 'Failed to revoke plan.');
+            } finally {
+              setIsUpdatingUser(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleToggleGlobal = (nextVal: boolean) => {
     Alert.alert(
       nextVal ? 'Enable Global Maintenance?' : 'Disable Global Maintenance?',
@@ -289,6 +407,7 @@ export default function AdminScreen() {
   const onRefresh = () => {
     refetchGlobal();
     refetchProducts();
+    refetchUsers();
     refetchLogs();
   };
 
@@ -310,13 +429,27 @@ export default function AdminScreen() {
   const inMaintenanceCount = products?.filter((p) => p.maintenance_enabled).length || 0;
   const operationalCount = totalProductsCount - inMaintenanceCount;
 
+  // Filter users
+  const filteredUsers = (userProfiles || []).filter((u) => {
+    const matchesSearch =
+      !userSearch ||
+      (u.full_name && u.full_name.toLowerCase().includes(userSearch.toLowerCase())) ||
+      (u.email && u.email.toLowerCase().includes(userSearch.toLowerCase())) ||
+      (u.mobile_number && u.mobile_number.includes(userSearch));
+
+    const matchesStatus =
+      userStatusFilter === 'all' || (u.account_status || 'active') === userStatusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <AppScreen safeArea={false} backgroundColor={colors.background}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl
-            refreshing={refetchingGlobal || refetchingProducts || refetchingLogs}
+            refreshing={refetchingGlobal || refetchingProducts || refetchingUsers || refetchingLogs}
             onRefresh={onRefresh}
             tintColor={colors.primary}
           />
@@ -330,7 +463,7 @@ export default function AdminScreen() {
           </View>
           <Text style={styles.title}>System Control Hub</Text>
           <Text style={styles.subtitle}>
-            Manage global maintenance modes, service health, and audit logs.
+            Manage global maintenance modes, user accounts, and platform operations.
           </Text>
         </View>
 
@@ -348,9 +481,9 @@ export default function AdminScreen() {
             </Text>
           </View>
           <View style={styles.metricCard}>
-            <Text style={styles.metricLabel}>Operational Services</Text>
+            <Text style={styles.metricLabel}>Registered Users</Text>
             <Text style={[styles.metricValue, { color: colors.foreground }]}>
-              {operationalCount}/{totalProductsCount}
+              {userProfiles?.length || 0} Accounts
             </Text>
           </View>
         </View>
@@ -389,7 +522,7 @@ export default function AdminScreen() {
             <Text style={styles.killSwitchDesc}>
               {isGlobalActive
                 ? 'All web/app services are currently showing maintenance splash to public visitors.'
-                : 'Turn ON to route all traffic to the maintenance page for urgent platform maintenance.'}
+                : 'Turn ON to route all traffic to the maintenance page for urgent platform upgrades.'}
             </Text>
           </View>
           <Switch
@@ -401,7 +534,7 @@ export default function AdminScreen() {
           />
         </View>
 
-        {/* Tab Buttons */}
+        {/* Tab Buttons: Products | Users | Logs */}
         <View style={styles.tabsContainer}>
           <Pressable
             style={[styles.tabButton, adminTab === 'maintenance' && styles.tabButtonActive]}
@@ -409,6 +542,14 @@ export default function AdminScreen() {
           >
             <Text style={[styles.tabText, adminTab === 'maintenance' && styles.tabTextActive]}>
               Products ({products?.length || 0})
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.tabButton, adminTab === 'users' && styles.tabButtonActive]}
+            onPress={() => setAdminTab('users')}
+          >
+            <Text style={[styles.tabText, adminTab === 'users' && styles.tabTextActive]}>
+              Users ({userProfiles?.length || 0})
             </Text>
           </Pressable>
           <Pressable
@@ -485,7 +626,134 @@ export default function AdminScreen() {
           </View>
         )}
 
-        {/* SECTION 2: AUDIT LOGS */}
+        {/* SECTION 2: USERS MODERATION */}
+        {adminTab === 'users' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>User Accounts & Access Moderation</Text>
+
+            {/* Search and filter */}
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search user by name, email, or phone..."
+              placeholderTextColor={colors.mutedForeground}
+              value={userSearch}
+              onChangeText={setUserSearch}
+            />
+
+            <View style={styles.filterPillsRow}>
+              {(['all', 'active', 'suspended', 'banned'] as const).map((st) => (
+                <Pressable
+                  key={st}
+                  style={[styles.filterPill, userStatusFilter === st && styles.filterPillActive]}
+                  onPress={() => setUserStatusFilter(st)}
+                >
+                  <Text style={[styles.filterPillText, userStatusFilter === st && styles.filterPillTextActive]}>
+                    {st.toUpperCase()}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            {loadingUsers ? (
+              <ActivityIndicator color={colors.primary} style={{ marginTop: 20 }} />
+            ) : filteredUsers.length > 0 ? (
+              filteredUsers.map((u) => {
+                const status = u.account_status || 'active';
+                const statusColor =
+                  status === 'active' ? '#16b882' : status === 'suspended' ? '#f59e0b' : '#ef4444';
+
+                return (
+                  <View key={u.id} style={styles.userCard}>
+                    <View style={styles.userCardHeader}>
+                      <View style={styles.userAvatar}>
+                        <Text style={styles.userAvatarText}>
+                          {(u.full_name || u.email || 'U').charAt(0).toUpperCase()}
+                        </Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <Text style={styles.userName}>{u.full_name || 'Unnamed User'}</Text>
+                          {u.is_admin && <Text style={styles.adminTag}>ADMIN</Text>}
+                        </View>
+                        <Text style={styles.userSub}>{u.email || u.mobile_number || u.id.slice(0, 12)}</Text>
+                      </View>
+                      <View style={[styles.statusBadge, { backgroundColor: `${statusColor}22` }]}>
+                        <Text style={[styles.statusBadgeText, { color: statusColor }]}>
+                          {status.toUpperCase()}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.userPlanRow}>
+                      <Text style={styles.userPlanLabel}>Active Plan:</Text>
+                      <Text style={styles.userPlanValue}>{u.subscription || 'Free Tier'}</Text>
+                    </View>
+
+                    <View style={styles.productDivider} />
+
+                    {/* Moderation Actions */}
+                    <View style={styles.userActionButtons}>
+                      {status !== 'active' && (
+                        <Pressable
+                          style={[styles.actionBtn, { backgroundColor: 'rgba(22, 184, 130, 0.15)' }]}
+                          onPress={() => handleUpdateStatus(u.id, 'active')}
+                          disabled={isUpdatingUser === u.id}
+                        >
+                          <Text style={[styles.actionBtnText, { color: '#16b882' }]}>Activate</Text>
+                        </Pressable>
+                      )}
+
+                      {status !== 'suspended' && (
+                        <Pressable
+                          style={[styles.actionBtn, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}
+                          onPress={() => handleUpdateStatus(u.id, 'suspended')}
+                          disabled={isUpdatingUser === u.id}
+                        >
+                          <Text style={[styles.actionBtnText, { color: '#f59e0b' }]}>Suspend</Text>
+                        </Pressable>
+                      )}
+
+                      {status !== 'banned' && (
+                        <Pressable
+                          style={[styles.actionBtn, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}
+                          onPress={() => handleUpdateStatus(u.id, 'banned')}
+                          disabled={isUpdatingUser === u.id}
+                        >
+                          <Text style={[styles.actionBtnText, { color: '#ef4444' }]}>Ban</Text>
+                        </Pressable>
+                      )}
+
+                      <Pressable
+                        style={[styles.actionBtn, { backgroundColor: colors.primary }]}
+                        onPress={() => {
+                          setSelectedUserForPlan(u);
+                          setIsPlanModalOpen(true);
+                        }}
+                      >
+                        <Text style={[styles.actionBtnText, { color: '#fff' }]}>Assign Plan</Text>
+                      </Pressable>
+
+                      {u.subscription && u.subscription !== 'Free' && (
+                        <Pressable
+                          style={[styles.actionBtn, { backgroundColor: colors.muted }]}
+                          onPress={() => handleRevokePlan(u.id)}
+                        >
+                          <Text style={[styles.actionBtnText, { color: colors.mutedForeground }]}>Revoke</Text>
+                        </Pressable>
+                      )}
+                    </View>
+                  </View>
+                );
+              })
+            ) : (
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyText}>No users matched your search criteria.</Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* SECTION 3: AUDIT LOGS */}
         {adminTab === 'logs' && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Maintenance Activity History</Text>
@@ -594,6 +862,81 @@ export default function AdminScreen() {
                   ) : (
                     <Text style={styles.saveButtonText}>Save Notice</Text>
                   )}
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* ASSIGN PLAN MODAL */}
+        <Modal
+          visible={isPlanModalOpen}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setIsPlanModalOpen(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>
+                Assign Subscription Plan
+              </Text>
+              <Text style={styles.modalSubtitle}>
+                Select tier duration for {selectedUserForPlan?.full_name || selectedUserForPlan?.email}.
+              </Text>
+
+              <View style={styles.planOptionsGrid}>
+                {[
+                  { id: 'free_trial', label: 'Free Trial (7 Days)' },
+                  { id: 'pro_monthly', label: 'Premium (30 Days)' },
+                  { id: 'pro_semi', label: 'Platinum (180 Days)' },
+                  { id: 'yearly', label: 'Ultimate (365 Days)' },
+                  { id: 'custom', label: 'Custom Days' },
+                ].map((p) => (
+                  <Pressable
+                    key={p.id}
+                    style={[
+                      styles.planOptionCard,
+                      selectedPlanType === p.id && styles.planOptionCardActive,
+                    ]}
+                    onPress={() => setSelectedPlanType(p.id)}
+                  >
+                    <Text
+                      style={[
+                        styles.planOptionText,
+                        selectedPlanType === p.id && styles.planOptionTextActive,
+                      ]}
+                    >
+                      {p.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              {selectedPlanType === 'custom' && (
+                <View style={{ marginTop: 12 }}>
+                  <Text style={styles.inputLabel}>Custom Duration (Days)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={customDays}
+                    onChangeText={setCustomDays}
+                    keyboardType="numeric"
+                    placeholder="30"
+                  />
+                </View>
+              )}
+
+              <View style={[styles.modalButtonRow, { marginTop: 20 }]}>
+                <Pressable
+                  style={styles.cancelButton}
+                  onPress={() => setIsPlanModalOpen(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.saveButton}
+                  onPress={handleAssignPlan}
+                >
+                  <Text style={styles.saveButtonText}>Confirm Plan</Text>
                 </Pressable>
               </View>
             </View>
@@ -725,6 +1068,116 @@ const styles = StyleSheet.create({
     color: colors.foreground,
     marginBottom: 12,
   },
+  searchInput: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 13,
+    color: colors.foreground,
+    marginBottom: 10,
+  },
+  filterPillsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 14,
+  },
+  filterPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  filterPillActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterPillText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: colors.mutedForeground,
+  },
+  filterPillTextActive: {
+    color: '#fff',
+  },
+  userCard: {
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  userCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  userAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: 'rgba(22, 184, 130, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  userAvatarText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#16b882',
+  },
+  userName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: colors.foreground,
+  },
+  adminTag: {
+    fontSize: 9,
+    fontWeight: '800',
+    backgroundColor: 'rgba(22, 184, 130, 0.2)',
+    color: '#16b882',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  userSub: {
+    fontSize: 11.5,
+    color: colors.mutedForeground,
+    marginTop: 2,
+  },
+  userPlanRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+  },
+  userPlanLabel: {
+    fontSize: 11.5,
+    color: colors.mutedForeground,
+  },
+  userPlanValue: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: colors.foreground,
+  },
+  userActionButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  actionBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  actionBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
   productCard: {
     backgroundColor: colors.card,
     borderRadius: 14,
@@ -760,7 +1213,7 @@ const styles = StyleSheet.create({
   productDivider: {
     height: 1,
     backgroundColor: colors.border,
-    marginVertical: 12,
+    marginVertical: 10,
   },
   productActions: {
     flexDirection: 'row',
@@ -875,6 +1328,29 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 16,
   },
+  planOptionsGrid: {
+    gap: 8,
+  },
+  planOptionCard: {
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  planOptionCardActive: {
+    borderColor: colors.primary,
+    backgroundColor: 'rgba(22, 184, 130, 0.12)',
+  },
+  planOptionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.foreground,
+  },
+  planOptionTextActive: {
+    color: colors.primary,
+    fontWeight: 'bold',
+  },
   inputLabel: {
     fontSize: 13,
     fontWeight: '600',
@@ -883,7 +1359,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   input: {
-    backgroundColor: colors.secondary,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 10,
