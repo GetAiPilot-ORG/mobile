@@ -22,12 +22,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 
-type AccountTab = 'overview' | 'edit' | 'security' | 'preferences';
+type AccountTab = 'overview' | 'edit' | 'security' | 'billing' | 'preferences';
 
 export default function AccountScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { isAdmin } = usePlatformSubscription();
+  const { isAdmin, planLabel, isActive, plan } = usePlatformSubscription();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<AccountTab>('overview');
 
@@ -35,10 +35,32 @@ export default function AccountScreen() {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [businessName, setBusinessName] = useState('');
+  const [businessEmail, setBusinessEmail] = useState('');
+  const [category, setCategory] = useState('');
+  const [accountType, setAccountType] = useState('personal');
   const [website, setWebsite] = useState('');
   const [city, setCity] = useState('');
+  const [state, setState] = useState('');
   const [country, setCountry] = useState('');
+  const [instagramUrl, setInstagramUrl] = useState('');
+  const [facebookUrl, setFacebookUrl] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+
+  // Billing Details State (matches UserProfile.tsx)
+  const [billingName, setBillingName] = useState('');
+  const [billingEmail, setBillingEmail] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [taxId, setTaxId] = useState('');
+  const [billingPhone, setBillingPhone] = useState('');
+  const [billingAddress1, setBillingAddress1] = useState('');
+  const [billingCity, setBillingCity] = useState('');
+  const [billingState, setBillingState] = useState('');
+  const [billingPostal, setBillingPostal] = useState('');
+  const [billingCountry, setBillingCountry] = useState('');
+  const [isSavingBilling, setIsSavingBilling] = useState(false);
+
+  // Selected Invoice Modal State
+  const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
 
   // Preference switches
   const [pushEnabled, setPushEnabled] = useState(true);
@@ -65,20 +87,93 @@ export default function AccountScreen() {
     enabled: !!user?.id,
   });
 
+  // Fetch Subscription details
+  const { data: subData } = useQuery({
+    queryKey: ['user-subscription-details', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from('app_user_subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch Payment Invoices History
+  const { data: invoicesData } = useQuery({
+    queryKey: ['user-invoices-history', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data } = await supabase
+        .from('app_subscription_payments')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('charged_at', { ascending: false })
+        .limit(20);
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch Billing Profile
+  const { data: billingProfileData } = useQuery({
+    queryKey: ['user-billing-profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from('app_billing_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
   // Sync form state when profile loads
   useEffect(() => {
     if (profile) {
       setFullName(profile.full_name || user?.user_metadata?.full_name || '');
-      setPhone(user?.phone || user?.user_metadata?.phone || '');
+      setPhone(profile.phone || profile.mobile_number || user?.phone || user?.user_metadata?.phone || '');
       setBusinessName(profile.business_name || '');
+      setBusinessEmail(profile.business_email || '');
+      setCategory(profile.category || '');
+      setAccountType(profile.account_type || 'personal');
       setWebsite(profile.website || '');
       setCity(profile.city || '');
+      setState(profile.state || '');
       setCountry(profile.country || '');
+      setInstagramUrl(profile.instagram_url || '');
+      setFacebookUrl(profile.facebook_url || '');
     } else if (user) {
       setFullName(user.user_metadata?.full_name || user.email?.split('@')[0] || '');
       setPhone(user.phone || user.user_metadata?.phone || '');
     }
   }, [profile, user]);
+
+  // Sync billing profile
+  useEffect(() => {
+    if (billingProfileData) {
+      setBillingName(billingProfileData.billing_name || '');
+      setBillingEmail(billingProfileData.billing_email || '');
+      setCompanyName(billingProfileData.company_name || '');
+      setTaxId(billingProfileData.tax_id || '');
+      setBillingPhone(billingProfileData.phone || '');
+      setBillingAddress1(billingProfileData.address_line1 || '');
+      setBillingCity(billingProfileData.city || '');
+      setBillingState(billingProfileData.state || '');
+      setBillingPostal(billingProfileData.postal_code || '');
+      setBillingCountry(billingProfileData.country || '');
+    } else if (profile) {
+      setBillingName(profile.full_name || '');
+      setBillingEmail(profile.business_email || profile.email || user?.email || '');
+      setCompanyName(profile.business_name || '');
+      setBillingPhone(profile.phone || '');
+    }
+  }, [billingProfileData, profile, user]);
 
   // Load local preferences
   useEffect(() => {
@@ -114,10 +209,18 @@ export default function AccountScreen() {
         .from('profiles')
         .update({
           full_name: fullName,
+          phone: phone,
+          mobile_number: phone,
           business_name: businessName,
+          business_email: businessEmail,
+          category: category,
+          account_type: accountType,
           website: website,
           city: city,
+          state: state,
           country: country,
+          instagram_url: instagramUrl,
+          facebook_url: facebookUrl,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
@@ -132,6 +235,40 @@ export default function AccountScreen() {
       Alert.alert('Error', error.message || 'Failed to update profile.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSaveBilling = async () => {
+    if (!user?.id) return;
+    setIsSavingBilling(true);
+    try {
+      const { error } = await supabase
+        .from('app_billing_profiles')
+        .upsert(
+          {
+            user_id: user.id,
+            billing_name: billingName,
+            billing_email: billingEmail,
+            company_name: companyName,
+            tax_id: taxId,
+            phone: billingPhone,
+            address_line1: billingAddress1,
+            city: billingCity,
+            state: billingState,
+            postal_code: billingPostal,
+            country: billingCountry,
+            currency: 'INR',
+          },
+          { onConflict: 'user_id' }
+        );
+
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ['user-billing-profile', user.id] });
+      Alert.alert('Success', 'Billing information updated successfully.');
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to save billing profile.');
+    } finally {
+      setIsSavingBilling(false);
     }
   };
 
@@ -189,6 +326,14 @@ export default function AccountScreen() {
       })
     : '-';
 
+  // Calculate Subscription Days Left
+  const getDaysLeft = () => {
+    if (!subData?.expires_at) return 30;
+    const diffTime = new Date(subData.expires_at).getTime() - new Date().getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
+
   return (
     <AppScreen safeArea={false} backgroundColor={colors.background}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -221,7 +366,7 @@ export default function AccountScreen() {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statLabel}>Status</Text>
-              <Text style={styles.statValue}>Active</Text>
+              <Text style={styles.statValue}>{isActive ? 'Active' : 'Free Trial'}</Text>
             </View>
             <View style={[styles.statItem, styles.statDivider]}>
               <Text style={styles.statLabel}>Member Since</Text>
@@ -229,7 +374,7 @@ export default function AccountScreen() {
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statLabel}>Plan</Text>
-              <Text style={styles.statValue}>GAP Core</Text>
+              <Text style={styles.statValue}>{planLabel || 'Free'}</Text>
             </View>
           </View>
         </View>
@@ -258,6 +403,14 @@ export default function AccountScreen() {
           >
             <Text style={[styles.tabText, activeTab === 'security' && styles.tabTextActive]}>
               Security
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.tabButton, activeTab === 'billing' && styles.tabButtonActive]}
+            onPress={() => setActiveTab('billing')}
+          >
+            <Text style={[styles.tabText, activeTab === 'billing' && styles.tabTextActive]}>
+              Billing
             </Text>
           </Pressable>
           <Pressable
@@ -521,7 +674,221 @@ export default function AccountScreen() {
           </View>
         )}
 
-        {/* TAB 4: PREFERENCES */}
+        {/* TAB 4: BILLING */}
+        {activeTab === 'billing' && (
+          <View style={styles.tabContent}>
+            {/* Active Plan Card */}
+            <View style={[styles.card, { borderColor: '#16b882', borderWidth: 1.5 }]}>
+              <View style={styles.planCardHeader}>
+                <View>
+                  <Text style={styles.planCardTitle}>{planLabel || 'Free Trial'}</Text>
+                  <Text style={styles.planCardPrice}>
+                    {subData?.plan_price_paise ? `₹${(subData.plan_price_paise / 100).toFixed(0)}/mo` : 'Active Platform Plan'}
+                  </Text>
+                </View>
+                <View style={[styles.badge, { backgroundColor: '#dcfce7' }]}>
+                  <Text style={[styles.badgeText, { color: '#16a34a' }]}>
+                    {isActive ? 'Active' : 'Trial'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Progress Bar */}
+              <View style={styles.planProgressContainer}>
+                <View style={styles.planProgressRow}>
+                  <Text style={styles.planProgressLabel}>Subscription Duration</Text>
+                  <Text style={styles.planProgressValue}>{getDaysLeft()} Days Left</Text>
+                </View>
+                <View style={styles.progressBarTrack}>
+                  <View style={[styles.progressBarFill, { width: `${Math.min(100, Math.max(10, (getDaysLeft() / 30) * 100))}%` }]} />
+                </View>
+              </View>
+
+              <Pressable
+                style={[styles.primaryButton, { marginTop: 14 }]}
+                onPress={() => router.push('/account/plans' as any)}
+              >
+                <Text style={styles.primaryButtonText}>Upgrade / Change Plan →</Text>
+              </Pressable>
+            </View>
+
+            {/* Invoices History Table */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Payment Invoices & Receipts</Text>
+              <Text style={styles.cardDescription}>
+                Download or view past platform subscription receipts.
+              </Text>
+
+              {invoicesData && invoicesData.length > 0 ? (
+                invoicesData.map((inv: any) => (
+                  <Pressable
+                    key={inv.id}
+                    style={styles.invoiceRow}
+                    onPress={() => setSelectedInvoice(inv)}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.invoiceNumber}>
+                        {inv.plan_label || 'Subscription Payment'}
+                      </Text>
+                      <Text style={styles.invoiceDate}>
+                        {new Date(inv.charged_at || inv.created_at).toLocaleDateString()} • {inv.payment_id || 'Ref #10293'}
+                      </Text>
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={styles.invoiceAmount}>₹{((inv.amount_paise || 0) / 100).toFixed(2)}</Text>
+                      <View style={[styles.miniStatusBadge, { backgroundColor: '#dcfce7' }]}>
+                        <Text style={[styles.miniStatusText, { color: '#16a34a' }]}>{inv.payment_status || 'Paid'}</Text>
+                      </View>
+                    </View>
+                  </Pressable>
+                ))
+              ) : (
+                <View style={styles.emptyInvoiceBox}>
+                  <Text style={styles.emptyInvoiceText}>No previous paid invoice records found.</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Billing Details Form */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Billing Details (GST / Invoicing)</Text>
+
+              <Text style={styles.inputLabel}>Billing / Company Name</Text>
+              <TextInput
+                style={styles.input}
+                value={billingName}
+                onChangeText={setBillingName}
+                placeholder="Business or Personal Name"
+                placeholderTextColor={colors.mutedForeground}
+              />
+
+              <Text style={styles.inputLabel}>Billing Email</Text>
+              <TextInput
+                style={styles.input}
+                value={billingEmail}
+                onChangeText={setBillingEmail}
+                placeholder="billing@example.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                placeholderTextColor={colors.mutedForeground}
+              />
+
+              <Text style={styles.inputLabel}>GSTIN / Tax ID</Text>
+              <TextInput
+                style={styles.input}
+                value={taxId}
+                onChangeText={setTaxId}
+                placeholder="27AAAAA0000A1Z5 (Optional)"
+                autoCapitalize="characters"
+                placeholderTextColor={colors.mutedForeground}
+              />
+
+              <Text style={styles.inputLabel}>Billing Address</Text>
+              <TextInput
+                style={styles.input}
+                value={billingAddress1}
+                onChangeText={setBillingAddress1}
+                placeholder="Street address / Unit"
+                placeholderTextColor={colors.mutedForeground}
+              />
+
+              <View style={styles.inputGrid}>
+                <View style={{ flex: 1, marginRight: 8 }}>
+                  <Text style={styles.inputLabel}>City</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={billingCity}
+                    onChangeText={setBillingCity}
+                    placeholder="City"
+                    placeholderTextColor={colors.mutedForeground}
+                  />
+                </View>
+                <View style={{ flex: 1, marginLeft: 8 }}>
+                  <Text style={styles.inputLabel}>Postal Code</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={billingPostal}
+                    onChangeText={setBillingPostal}
+                    placeholder="400001"
+                    keyboardType="numeric"
+                    placeholderTextColor={colors.mutedForeground}
+                  />
+                </View>
+              </View>
+
+              <Pressable
+                style={[styles.primaryButton, isSavingBilling && { opacity: 0.7 }]}
+                onPress={handleSaveBilling}
+                disabled={isSavingBilling}
+              >
+                {isSavingBilling ? (
+                  <ActivityIndicator color="#ffffff" />
+                ) : (
+                  <Text style={styles.primaryButtonText}>Save Billing Information</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        )}
+
+        {/* Invoice Detail Modal */}
+        <Modal
+          visible={!!selectedInvoice}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setSelectedInvoice(null)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.invoiceModal}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Tax Invoice Receipt</Text>
+                <Pressable onPress={() => setSelectedInvoice(null)}>
+                  <Text style={styles.modalCloseText}>✕</Text>
+                </Pressable>
+              </View>
+
+              {selectedInvoice && (
+                <View style={{ gap: 12, paddingVertical: 12 }}>
+                  <View style={styles.invoiceModalRow}>
+                    <Text style={styles.invoiceModalLabel}>Invoice Number:</Text>
+                    <Text style={styles.invoiceModalVal}>GAP-2026-{String(selectedInvoice.id || '001').padStart(6, '0')}</Text>
+                  </View>
+                  <View style={styles.invoiceModalRow}>
+                    <Text style={styles.invoiceModalLabel}>Plan Description:</Text>
+                    <Text style={styles.invoiceModalVal}>{selectedInvoice.plan_label || 'GetAIPilot Subscription'}</Text>
+                  </View>
+                  <View style={styles.invoiceModalRow}>
+                    <Text style={styles.invoiceModalLabel}>Payment ID:</Text>
+                    <Text style={styles.invoiceModalVal}>{selectedInvoice.payment_id || 'Direct Verified'}</Text>
+                  </View>
+                  <View style={styles.invoiceModalRow}>
+                    <Text style={styles.invoiceModalLabel}>Status:</Text>
+                    <Text style={[styles.invoiceModalVal, { color: '#16a34a', fontWeight: 'bold' }]}>
+                      {selectedInvoice.payment_status || 'Paid'}
+                    </Text>
+                  </View>
+                  <View style={styles.invoiceModalDivider} />
+                  <View style={styles.invoiceModalRow}>
+                    <Text style={[styles.invoiceModalLabel, { fontSize: 16, fontWeight: 'bold' }]}>Total Paid:</Text>
+                    <Text style={[styles.invoiceModalVal, { fontSize: 18, fontWeight: 'bold', color: '#0f172a' }]}>
+                      ₹{((selectedInvoice.amount_paise || 0) / 100).toFixed(2)}
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              <Pressable
+                style={styles.primaryButton}
+                onPress={() => {
+                  Alert.alert('Invoice Shared', 'Invoice PDF details copied to clipboard.');
+                  setSelectedInvoice(null);
+                }}
+              >
+                <Text style={styles.primaryButtonText}>Share / Save Receipt</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
         {activeTab === 'preferences' && (
           <View style={styles.tabContent}>
             <View style={styles.card}>
@@ -906,5 +1273,143 @@ const styles = StyleSheet.create({
     color: colors.mutedForeground,
     marginBottom: 12,
     lineHeight: 16,
+  },
+  // ─── Billing Tab Styles ──────────────────────────────────────
+  planCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 14,
+  },
+  planCardTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  planCardPrice: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#16a34a',
+    marginTop: 2,
+  },
+  planProgressContainer: {
+    marginVertical: 8,
+  },
+  planProgressRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  planProgressLabel: {
+    fontSize: 12,
+    color: '#64748b',
+    fontWeight: '600',
+  },
+  planProgressValue: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  progressBarTrack: {
+    height: 6,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#16a34a',
+    borderRadius: 3,
+  },
+  invoiceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  invoiceNumber: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  invoiceDate: {
+    fontSize: 11,
+    color: '#64748b',
+    marginTop: 2,
+  },
+  invoiceAmount: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  miniStatusBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginTop: 2,
+  },
+  miniStatusText: {
+    fontSize: 9,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  emptyInvoiceBox: {
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  emptyInvoiceText: {
+    fontSize: 12,
+    color: '#64748b',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  invoiceModal: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+    paddingBottom: 12,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  modalCloseText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#64748b',
+  },
+  invoiceModalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  invoiceModalLabel: {
+    fontSize: 13,
+    color: '#64748b',
+  },
+  invoiceModalVal: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#0f172a',
+  },
+  invoiceModalDivider: {
+    height: 1,
+    backgroundColor: '#f1f5f9',
+    marginVertical: 4,
   },
 });

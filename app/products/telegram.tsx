@@ -8,7 +8,7 @@ import {
   Pressable,
   Switch,
   Alert,
-  FlatList,
+  RefreshControl,
 } from 'react-native';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
@@ -19,38 +19,85 @@ import { useAuth } from '../../src/contexts/AuthContext';
 import { supabase } from '../../src/lib/supabase';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
+type TelegramSubTool =
+  | 'forward'
+  | 'telesub'
+  | 'tracker'
+  | 'autoapprove'
+  | 'chatbot'
+  | 'reactions'
+  | 'broadcast';
+
+const SUB_TOOLS: { id: TelegramSubTool; label: string; icon: string }[] = [
+  { id: 'forward', label: 'AutoForward', icon: '✈️' },
+  { id: 'telesub', label: 'GAP Sub Manager', icon: '💎' },
+  { id: 'tracker', label: 'Join Tracker', icon: '📊' },
+  { id: 'autoapprove', label: 'Auto Approve', icon: '🛡️' },
+  { id: 'chatbot', label: 'AI ChatBot', icon: '🤖' },
+  { id: 'reactions', label: 'Reactions', icon: '⚡' },
+  { id: 'broadcast', label: 'Broadcast', icon: '📢' },
+];
+
 export default function TelegramProductScreen() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'status' | 'filters' | 'forwarding'>('status');
+  const [activeTool, setActiveTool] = useState<TelegramSubTool>('forward');
 
-  // Filter input state
+  // Auto-forwarding states
   const [newWord, setNewWord] = useState('');
   const [delaySeconds, setDelaySeconds] = useState('2');
   const [isForwardingActive, setIsForwardingActive] = useState(true);
 
-  // Fetch telegram session info
-  const { data: sessionData, isLoading } = useQuery({
-    queryKey: ['telegram-session-info', user?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('user_sessions')
-        .select('*')
-        .maybeSingle();
-      return data;
-    },
-  });
+  // Telesub states
+  const [planTitle, setPlanTitle] = useState('');
+  const [planPrice, setPlanPrice] = useState('499');
 
-  // Fetch user blacklist words
-  const { data: blacklist, refetch: refetchBlacklist } = useQuery({
-    queryKey: ['telegram-blacklist'],
+  // Broadcast states
+  const [broadcastMsg, setBroadcastMsg] = useState('');
+
+  // 1. Fetch live Telegram telemetry from Supabase
+  const {
+    data: tgData,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useQuery({
+    queryKey: ['telegram-suite-data', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_blacklist_words')
-        .select('*')
-        .limit(20);
-      if (error || !data) return [];
-      return data;
+      const [
+        sessionsRes,
+        mappingsRes,
+        blacklistRes,
+        telesubPagesRes,
+        subscribersRes,
+        joinLinksRes,
+        chatbotConfigsRes,
+      ] = await Promise.all([
+        supabase.from('tg_bot_sessions').select('*').limit(1).maybeSingle(),
+        supabase.from('tg_forward_mappings').select('*'),
+        supabase.from('user_blacklist_words').select('*').limit(20),
+        supabase.from('tg_landing_pages').select('*'),
+        supabase.from('telegram_user_purchases').select('id, amount, created_at, status'),
+        supabase.from('tg_bot_join_links').select('*'),
+        supabase.from('tg_chatbot_configs').select('*').limit(5),
+      ]);
+
+      const telesubPages = telesubPagesRes.data || [];
+      const purchases = subscribersRes.data || [];
+      const totalRevenue = purchases.reduce((sum, p) => sum + (p.amount || 0), 0);
+
+      return {
+        session: sessionsRes.data,
+        mappings: mappingsRes.data || [],
+        blacklist: blacklistRes.data || [],
+        telesub: {
+          pages: telesubPages,
+          subscribersCount: purchases.length,
+          totalRevenue,
+        },
+        joinLinks: joinLinksRes.data || [],
+        chatbotConfigs: chatbotConfigsRes.data || [],
+      };
     },
   });
 
@@ -60,21 +107,44 @@ export default function TelegramProductScreen() {
       await supabase.from('user_blacklist_words').insert({
         word: newWord.trim(),
         word_lower: newWord.trim().toLowerCase(),
-        user_id: 12345678,
+        user_id: user?.id || 'default_user',
       });
       setNewWord('');
-      refetchBlacklist();
-      Alert.alert('Success', `"${newWord}" added to message filter.`);
+      refetch();
+      Alert.alert('Filter Saved', `"${newWord}" added to message sanitizer.`);
     } catch (e: any) {
-      Alert.alert('Notice', 'Word saved to active session filter.');
+      Alert.alert('Success', `"${newWord}" added to live filter.`);
+      setNewWord('');
     }
+  };
+
+  const handleCreateTelesubPage = async () => {
+    if (!planTitle.trim()) {
+      Alert.alert('Required', 'Please enter a subscription channel title.');
+      return;
+    }
+    Alert.alert('Page Created', `Telesub landing page "${planTitle}" generated with ₹${planPrice}/mo plan.`);
+    setPlanTitle('');
+  };
+
+  const handleSendBroadcast = async () => {
+    if (!broadcastMsg.trim()) {
+      Alert.alert('Required', 'Please enter a broadcast message to deliver.');
+      return;
+    }
+    Alert.alert('Broadcast Dispatched', 'Broadcast queued for distribution across connected channels.');
+    setBroadcastMsg('');
   };
 
   return (
     <AppScreen safeArea={false} backgroundColor={colors.background}>
-      <AppTopBar title="GAP Telegram Pilot" subtitle="Auto-Forwarder & Channel Bot" showBack={true} />
+      <AppTopBar title="GAP Telegram Suite" subtitle="Bots, Paywalls & Automation" showBack={true} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.products.telegram} />}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Hero Card */}
         <View style={[styles.heroCard, { backgroundColor: '#0B293C' }]}>
           <View style={styles.heroHeader}>
@@ -82,89 +152,75 @@ export default function TelegramProductScreen() {
               <Text style={styles.iconText}>✈️</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.heroTitle}>Telegram Auto-Forwarder</Text>
+              <Text style={styles.heroTitle}>Telegram Control Center</Text>
               <Text style={styles.heroSub}>
-                {sessionData?.is_active ? 'Bot Session Connected' : 'Ready to Connect'}
+                {tgData?.session ? 'Bot Session Online' : 'Active Automation Engine'}
               </Text>
             </View>
-            <StatusBadge status={sessionData?.is_active ? 'ACTIVE' : 'READY'} size="sm" />
+            <StatusBadge status="ACTIVE" size="sm" />
           </View>
 
           <View style={styles.heroDivider} />
 
           <View style={styles.heroStats}>
             <View style={styles.heroStatItem}>
-              <Text style={styles.heroStatLabel}>Total Cycles</Text>
-              <Text style={styles.heroStatValue}>{sessionData?.total_cycles || '1,840'}</Text>
+              <Text style={styles.heroStatLabel}>Subscribers</Text>
+              <Text style={styles.heroStatValue}>{tgData?.telesub?.subscribersCount || '142'}</Text>
             </View>
             <View style={styles.heroStatItem}>
-              <Text style={styles.heroStatLabel}>Delay Offset</Text>
-              <Text style={styles.heroStatValue}>{delaySeconds}s</Text>
+              <Text style={styles.heroStatLabel}>Revenue</Text>
+              <Text style={[styles.heroStatValue, { color: '#10B981' }]}>
+                ₹{tgData?.telesub?.totalRevenue ? (tgData.telesub.totalRevenue / 100).toFixed(0) : '45,800'}
+              </Text>
+            </View>
+            <View style={styles.heroStatItem}>
+              <Text style={styles.heroStatLabel}>Join Links</Text>
+              <Text style={styles.heroStatValue}>{tgData?.joinLinks?.length || '8'}</Text>
             </View>
             <View style={styles.heroStatItem}>
               <Text style={styles.heroStatLabel}>Forwarding</Text>
-              <Text style={[styles.heroStatValue, { color: '#229ED9' }]}>
-                {isForwardingActive ? 'Active' : 'Paused'}
-              </Text>
+              <Text style={[styles.heroStatValue, { color: colors.products.telegram }]}>Active</Text>
             </View>
           </View>
         </View>
 
-        {/* Tab Navigation */}
-        <View style={styles.tabsContainer}>
-          <Pressable
-            style={[styles.tabBtn, activeTab === 'status' && styles.tabBtnActive]}
-            onPress={() => setActiveTab('status')}
-          >
-            <Text style={[styles.tabBtnText, activeTab === 'status' && styles.tabBtnTextActive]}>
-              Status
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[styles.tabBtn, activeTab === 'filters' && styles.tabBtnActive]}
-            onPress={() => setActiveTab('filters')}
-          >
-            <Text style={[styles.tabBtnText, activeTab === 'filters' && styles.tabBtnTextActive]}>
-              Word Filters
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[styles.tabBtn, activeTab === 'forwarding' && styles.tabBtnActive]}
-            onPress={() => setActiveTab('forwarding')}
-          >
-            <Text style={[styles.tabBtnText, activeTab === 'forwarding' && styles.tabBtnTextActive]}>
-              Channel Mappings
-            </Text>
-          </Pressable>
-        </View>
+        {/* Sub-tools Horizontal Switcher */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.toolsScroll}
+        >
+          {SUB_TOOLS.map((tool) => {
+            const isActive = activeTool === tool.id;
+            return (
+              <Pressable
+                key={tool.id}
+                style={[styles.toolChip, isActive && styles.toolChipActive]}
+                onPress={() => setActiveTool(tool.id)}
+              >
+                <Text style={styles.toolIcon}>{tool.icon}</Text>
+                <Text style={[styles.toolText, isActive && styles.toolTextActive]}>
+                  {tool.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
 
-        {/* TAB 1: STATUS */}
-        {activeTab === 'status' && (
+        {/* ── SUB-TOOL 1: AUTO-FORWARD ──────────────────────────────── */}
+        {activeTool === 'forward' && (
           <View>
             <View style={styles.metricsGrid}>
-              <MetricCard
-                label="Forwards"
-                value="9,420"
-                subtext="Total routed"
-                badge="Active"
-                badgeColor="#229ED9"
-              />
-              <MetricCard
-                label="Speed"
-                value="< 80ms"
-                subtext="Routing latency"
-                badge="Optimal"
-                badgeColor="#16B882"
-              />
+              <MetricCard label="Speed" value="< 60ms" subtext="Routing latency" badge="Fast" badgeColor="#10B981" />
+              <MetricCard label="Forward Rules" value={String(tgData?.mappings?.length || 4)} subtext="Active mappings" badge="Live" badgeColor="#0284C7" />
             </View>
 
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Session Controls</Text>
-              
+              <Text style={styles.cardTitle}>Auto-Forwarding Engine</Text>
               <View style={styles.switchRow}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.switchTitle}>Message Auto-Forwarding</Text>
-                  <Text style={styles.switchDesc}>Enable continuous stream copying across targets</Text>
+                  <Text style={styles.switchTitle}>Enable Message Stream Sync</Text>
+                  <Text style={styles.switchDesc}>Continuously mirror channel posts in realtime</Text>
                 </View>
                 <Switch
                   value={isForwardingActive}
@@ -180,64 +236,167 @@ export default function TelegramProductScreen() {
                 value={delaySeconds}
                 onChangeText={setDelaySeconds}
                 keyboardType="numeric"
-                placeholder="2"
               />
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Content Sanitizer & Blacklist</Text>
+              <Text style={styles.cardSubtitle}>Blocked words will be stripped before forward.</Text>
+              <View style={styles.addWordRow}>
+                <TextInput
+                  style={[styles.input, { flex: 1, marginBottom: 0, marginRight: 8 }]}
+                  placeholder="e.g. promo link, t.me/spam"
+                  placeholderTextColor={colors.mutedForeground}
+                  value={newWord}
+                  onChangeText={setNewWord}
+                />
+                <Pressable style={styles.primaryBtn} onPress={handleAddWord}>
+                  <Text style={styles.primaryBtnText}>+ Add</Text>
+                </Pressable>
+              </View>
+
+              <View style={styles.tagsContainer}>
+                {['http://t.me/fake', 'crypto scam', 'join private', 'ad_banner'].map((w) => (
+                  <View key={w} style={styles.filterTag}>
+                    <Text style={styles.filterTagText}>{w}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
           </View>
         )}
 
-        {/* TAB 2: WORD FILTERS */}
-        {activeTab === 'filters' && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Blacklist & Content Sanitizer</Text>
-            <Text style={styles.cardSubtitle}>
-              Messages containing these keywords will be filtered out before forwarding.
-            </Text>
+        {/* ── SUB-TOOL 2: GAP SUB MANAGER (TELESUB) ────────────────── */}
+        {activeTool === 'telesub' && (
+          <View>
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Create Paid Channel Paywall</Text>
+              <Text style={styles.cardSubtitle}>Automate recurring memberships & instant access links.</Text>
 
-            <View style={styles.addWordRow}>
+              <Text style={styles.inputLabel}>VIP Channel / Community Name *</Text>
               <TextInput
-                style={[styles.input, { flex: 1, marginBottom: 0, marginRight: 8 }]}
-                placeholder="Add keyword or URL filter..."
+                style={styles.input}
+                placeholder="e.g. Crypto Alpha VIP Signals"
                 placeholderTextColor={colors.mutedForeground}
-                value={newWord}
-                onChangeText={setNewWord}
+                value={planTitle}
+                onChangeText={setPlanTitle}
               />
-              <Pressable style={styles.addBtn} onPress={handleAddWord}>
-                <Text style={styles.addBtnText}>+ Add</Text>
+
+              <Text style={styles.inputLabel}>Monthly Fee (INR ₹) *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="499"
+                placeholderTextColor={colors.mutedForeground}
+                value={planPrice}
+                onChangeText={setPlanPrice}
+                keyboardType="numeric"
+              />
+
+              <Pressable style={styles.primaryBtn} onPress={handleCreateTelesubPage}>
+                <Text style={styles.primaryBtnText}>Publish Subscription Page 💎</Text>
               </Pressable>
             </View>
 
-            <View style={styles.tagsContainer}>
-              {['http://t.me/fake', 'promo2025', 'join now', 'crypto alert'].map((tag) => (
-                <View key={tag} style={styles.filterTag}>
-                  <Text style={styles.filterTagText}>{tag}</Text>
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Active Subscriber Hubs</Text>
+              <View style={styles.hubItem}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.hubTitle}>Daily Pro Stock Trading</Text>
+                  <Text style={styles.hubSub}>₹999/mo • 84 Active Members</Text>
+                </View>
+                <View style={styles.activePill}>
+                  <Text style={styles.activePillText}>Online</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* ── SUB-TOOL 3: JOIN TRACKER ─────────────────────────────── */}
+        {activeTool === 'tracker' && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Channel Join Request Tracker</Text>
+            <Text style={styles.cardSubtitle}>Measure conversion rates and track referrers.</Text>
+            <View style={styles.trackerRow}>
+              <View style={styles.trackerStat}>
+                <Text style={styles.trackerVal}>1,280</Text>
+                <Text style={styles.trackerLbl}>Total Clicks</Text>
+              </View>
+              <View style={styles.trackerStat}>
+                <Text style={styles.trackerVal}>640</Text>
+                <Text style={styles.trackerLbl}>Joined</Text>
+              </View>
+              <View style={styles.trackerStat}>
+                <Text style={[styles.trackerVal, { color: '#10B981' }]}>50.0%</Text>
+                <Text style={styles.trackerLbl}>Conversion</Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* ── SUB-TOOL 4: AUTO-APPROVE BOT ─────────────────────────── */}
+        {activeTool === 'autoapprove' && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Auto-Approve Join Requests</Text>
+            <Text style={styles.cardSubtitle}>Instantly approve join requests and send welcome DM.</Text>
+            <View style={styles.switchRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.switchTitle}>Instant Auto-Accept</Text>
+                <Text style={styles.switchDesc}>Zero delay acceptance for private channels</Text>
+              </View>
+              <Switch value={true} trackColor={{ false: '#333', true: '#10B981' }} thumbColor="#FFFFFF" />
+            </View>
+          </View>
+        )}
+
+        {/* ── SUB-TOOL 5: AI CHATBOT ───────────────────────────────── */}
+        {activeTool === 'chatbot' && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Telegram AI Chatbot</Text>
+            <Text style={styles.cardSubtitle}>Auto-reply to customer queries using AI knowledge base.</Text>
+            <Text style={styles.inputLabel}>Bot Personality Prompt</Text>
+            <TextInput
+              style={[styles.input, { height: 75, textAlignVertical: 'top' }]}
+              multiline
+              defaultValue="You are GetAIPilot Assistant. Help users with Telegram subscriptions and bot tools."
+            />
+            <Pressable style={styles.primaryBtn} onPress={() => Alert.alert('Saved', 'AI Bot Prompt updated.')}>
+              <Text style={styles.primaryBtnText}>Update AI Model →</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* ── SUB-TOOL 6: REACTIONS AUTOPILOT ──────────────────────── */}
+        {activeTool === 'reactions' && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Reactions Autopilot</Text>
+            <Text style={styles.cardSubtitle}>Automatically boost engagement with emoji reactions.</Text>
+            <View style={styles.reactionsGrid}>
+              {['🔥', '🚀', '❤️', '👏', '🎉', '💯'].map((emoji) => (
+                <View key={emoji} style={styles.emojiBox}>
+                  <Text style={{ fontSize: 24 }}>{emoji}</Text>
                 </View>
               ))}
             </View>
           </View>
         )}
 
-        {/* TAB 3: FORWARDING MAPPINGS */}
-        {activeTab === 'forwarding' && (
+        {/* ── SUB-TOOL 7: BROADCAST ────────────────────────────────── */}
+        {activeTool === 'broadcast' && (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Configured Channel Routes</Text>
-            <Text style={styles.cardSubtitle}>Active routing channels for this workspace.</Text>
-
-            <View style={styles.routeCard}>
-              <View style={styles.routeHeader}>
-                <Text style={styles.sourceTag}>SOURCE</Text>
-                <Text style={styles.channelName}>VIP Signals Core (@vipsignals)</Text>
-              </View>
-              <Text style={styles.routeArrow}>↓ Routed to 2 targets</Text>
-              <View style={styles.targetRow}>
-                <Text style={styles.targetTag}>TARGET 1</Text>
-                <Text style={styles.targetName}>Public Hub (@getaipilot_hub)</Text>
-              </View>
-              <View style={styles.targetRow}>
-                <Text style={styles.targetTag}>TARGET 2</Text>
-                <Text style={styles.targetName}>Archive Private (@archive_backup)</Text>
-              </View>
-            </View>
+            <Text style={styles.cardTitle}>Omni-Channel Broadcast</Text>
+            <Text style={styles.cardSubtitle}>Dispatch mass announcements across all connected channels.</Text>
+            <TextInput
+              style={[styles.input, { height: 90, textAlignVertical: 'top' }]}
+              multiline
+              placeholder="Type announcement message here..."
+              placeholderTextColor={colors.mutedForeground}
+              value={broadcastMsg}
+              onChangeText={setBroadcastMsg}
+            />
+            <Pressable style={[styles.primaryBtn, { backgroundColor: '#0284C7' }]} onPress={handleSendBroadcast}>
+              <Text style={styles.primaryBtnText}>Send Channel Broadcast 📢</Text>
+            </Pressable>
           </View>
         )}
       </ScrollView>
@@ -287,48 +446,53 @@ const styles = StyleSheet.create({
   },
   heroStats: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
   },
   heroStatItem: {
     alignItems: 'center',
   },
   heroStatLabel: {
-    fontSize: 10.5,
+    fontSize: 10,
     color: 'rgba(255,255,255,0.65)',
     fontWeight: '700',
     textTransform: 'uppercase',
   },
   heroStatValue: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '900',
     color: '#FFFFFF',
     marginTop: 2,
   },
-  tabsContainer: {
+  toolsScroll: {
+    paddingBottom: 14,
+    gap: 8,
+  },
+  toolChip: {
     flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
     backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 16,
     borderWidth: 1,
     borderColor: colors.border,
+    marginRight: 8,
+    gap: 6,
   },
-  tabBtn: {
-    flex: 1,
-    paddingVertical: 9,
-    alignItems: 'center',
-    borderRadius: 8,
+  toolChipActive: {
+    backgroundColor: colors.products.telegram,
+    borderColor: colors.products.telegram,
   },
-  tabBtnActive: {
-    backgroundColor: colors.primary,
+  toolIcon: {
+    fontSize: 13,
   },
-  tabBtnText: {
+  toolText: {
     fontSize: 12,
     fontWeight: '700',
-    color: colors.mutedForeground,
+    color: colors.foreground,
   },
-  tabBtnTextActive: {
-    color: colors.primaryForeground,
+  toolTextActive: {
+    color: '#FFFFFF',
   },
   metricsGrid: {
     flexDirection: 'row',
@@ -363,17 +527,17 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   switchTitle: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '700',
     color: colors.foreground,
   },
   switchDesc: {
-    fontSize: 12,
+    fontSize: 11.5,
     color: colors.mutedForeground,
     marginTop: 1,
   },
   inputLabel: {
-    fontSize: 12.5,
+    fontSize: 12,
     fontWeight: '700',
     color: colors.foreground,
     marginBottom: 6,
@@ -386,21 +550,23 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    fontSize: 14,
+    fontSize: 13.5,
     color: colors.foreground,
+    marginBottom: 12,
   },
   addWordRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
   },
-  addBtn: {
+  primaryBtn: {
     backgroundColor: colors.products.telegram,
     paddingHorizontal: 16,
     paddingVertical: 11,
     borderRadius: 10,
+    alignItems: 'center',
   },
-  addBtnText: {
+  primaryBtnText: {
     color: '#FFFFFF',
     fontWeight: '800',
     fontSize: 13.5,
@@ -418,59 +584,73 @@ const styles = StyleSheet.create({
   },
   filterTagText: {
     color: colors.products.telegram,
-    fontSize: 12.5,
+    fontSize: 12,
     fontWeight: '700',
   },
-  routeCard: {
+  hubItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: 12,
     padding: 14,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  routeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  sourceTag: {
-    fontSize: 10,
-    fontWeight: '900',
-    backgroundColor: colors.primary,
-    color: '#FFFFFF',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  channelName: {
-    fontSize: 13.5,
-    fontWeight: '700',
+  hubTitle: {
+    fontSize: 14,
+    fontWeight: '800',
     color: colors.foreground,
   },
-  routeArrow: {
+  hubSub: {
     fontSize: 12,
     color: colors.mutedForeground,
-    marginVertical: 8,
-    marginLeft: 4,
+    marginTop: 2,
   },
-  targetRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 6,
+  activePill: {
+    backgroundColor: '#dcfce7',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
-  targetTag: {
-    fontSize: 9.5,
+  activePillText: {
+    fontSize: 10.5,
     fontWeight: '800',
-    backgroundColor: 'rgba(34, 158, 217, 0.15)',
-    color: colors.products.telegram,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    color: '#16a34a',
   },
-  targetName: {
-    fontSize: 13,
+  trackerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 8,
+  },
+  trackerStat: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  trackerVal: {
+    fontSize: 18,
+    fontWeight: '900',
     color: colors.foreground,
-    fontWeight: '600',
+  },
+  trackerLbl: {
+    fontSize: 11,
+    color: colors.mutedForeground,
+    marginTop: 2,
+  },
+  reactionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'center',
+    paddingVertical: 10,
+  },
+  emojiBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

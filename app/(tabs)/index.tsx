@@ -23,8 +23,7 @@ interface DashboardCardProps {
   num: string;
   title: string;
   description: string;
-  badge?: string;
-  badgeColor?: string;
+  statusBadge?: React.ReactNode;
   onAction: () => void;
   visualNode: React.ReactNode;
 }
@@ -33,8 +32,7 @@ function DashboardCard({
   num,
   title,
   description,
-  badge,
-  badgeColor = '#16B882',
+  statusBadge,
   onAction,
   visualNode,
 }: DashboardCardProps) {
@@ -47,11 +45,7 @@ function DashboardCard({
       <View style={styles.contentContainer}>
         <View style={styles.cardHeaderRow}>
           <Text style={styles.cardNum}>{num}</Text>
-          {badge && (
-            <View style={[styles.cardBadge, { backgroundColor: `${badgeColor}18`, borderColor: `${badgeColor}40` }]}>
-              <Text style={[styles.cardBadgeText, { color: badgeColor }]}>{badge}</Text>
-            </View>
-          )}
+          {statusBadge}
         </View>
 
         <View style={styles.cardTextGroup}>
@@ -71,8 +65,29 @@ function DashboardCard({
   );
 }
 
+function StatusChip({ active }: { active?: boolean }) {
+  if (active === false) {
+    return (
+      <View style={styles.statusChipUpgrade}>
+        <Text style={styles.statusChipUpgradeText}>Upgrade</Text>
+      </View>
+    );
+  }
+  return null;
+}
+
+function GridSectionHeader({ label }: { label: string }) {
+  return (
+    <View style={styles.gridSectionHeader}>
+      <Text style={styles.gridSectionLabel}>{label}</Text>
+      <View style={styles.gridSectionDivider} />
+    </View>
+  );
+}
+
 // ─── Direct Port of Web Card Visual Mockups ─────────────────────────────────────
 
+/** Telegram Channel & Auto-Forward Feed Mockup */
 function MockupTelegram() {
   return (
     <View style={[styles.mockupBox, { borderColor: '#e0f2fe' }]}>
@@ -93,6 +108,7 @@ function MockupTelegram() {
   );
 }
 
+/** WhatsApp Broadcast & AI Assistant Mockup */
 function MockupWhatsApp() {
   return (
     <View style={[styles.mockupBox, { borderColor: '#dcfce7' }]}>
@@ -113,6 +129,7 @@ function MockupWhatsApp() {
   );
 }
 
+/** Voice AI Agent Console Mockup */
 function MockupVoice() {
   return (
     <View style={[styles.mockupBox, { borderColor: '#ede9fe', backgroundColor: '#1e1b4b' }]}>
@@ -132,6 +149,7 @@ function MockupVoice() {
   );
 }
 
+/** CRM Kanban Pipeline Mockup */
 function MockupCRM() {
   return (
     <View style={[styles.mockupBox, { borderColor: '#e0e7ff' }]}>
@@ -153,6 +171,7 @@ function MockupCRM() {
   );
 }
 
+/** Social Media Scheduler Mockup */
 function MockupSocial() {
   return (
     <View style={[styles.mockupBox, { borderColor: '#ffe4e6' }]}>
@@ -172,29 +191,296 @@ function MockupSocial() {
   );
 }
 
+/** Connected Platforms & Multi-Inbox Mockup */
+function MockupConnectedChats() {
+  return (
+    <View style={[styles.mockupBox, { borderColor: '#a7f3d0' }]}>
+      <View style={styles.mockupHeader}>
+        <Text style={styles.mockupTitle}>Connected Hub</Text>
+        <View style={[styles.activePill, { backgroundColor: '#d1fae5' }]}>
+          <Text style={[styles.activePillText, { color: '#065f46' }]}>5 Live</Text>
+        </View>
+      </View>
+      <View style={{ gap: 4 }}>
+        <View style={styles.connectedRow}>
+          <View style={[styles.miniDot, { backgroundColor: '#0284c7' }]}>
+            <Text style={styles.miniDotText}>TG</Text>
+          </View>
+          <View style={styles.miniLine} />
+          <Text style={styles.miniStatus}>Active</Text>
+        </View>
+        <View style={styles.connectedRow}>
+          <View style={[styles.miniDot, { backgroundColor: '#16a34a' }]}>
+            <Text style={styles.miniDotText}>WA</Text>
+          </View>
+          <View style={styles.miniLine} />
+          <Text style={styles.miniStatus}>Active</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/** My Designs Palette Mockup */
+function MockupMyDesigns() {
+  const swatches = ['#818cf8', '#38bdf8', '#34d399', '#f472b6', '#fb923c', '#a78bfa'];
+  return (
+    <View style={[styles.mockupBox, { borderColor: '#ede9fe' }]}>
+      <View style={styles.mockupHeader}>
+        <Text style={styles.mockupTitle}>Visual Assets</Text>
+        <View style={[styles.activePill, { backgroundColor: '#f3e8ff' }]}>
+          <Text style={[styles.activePillText, { color: '#7e22ce' }]}>9 Files</Text>
+        </View>
+      </View>
+      <View style={styles.swatchGrid}>
+        {swatches.map((c, i) => (
+          <View key={i} style={[styles.swatchItem, { backgroundColor: c }]} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+/** Mobile Phone Bio Page Mockup */
+function MockupBio() {
+  return (
+    <View style={styles.bioPhone}>
+      <View style={styles.bioNotch} />
+      <View style={styles.bioAvatar} />
+      <View style={styles.bioContent}>
+        <View style={styles.bioBar} />
+        <View style={styles.bioBar} />
+        <View style={styles.bioBtn}>
+          <Text style={styles.bioBtnText}>Link in Bio</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/** Landing Builder Window Mockup */
+function MockupLandingPages() {
+  return (
+    <View style={[styles.mockupBox, { borderColor: '#ddd6fe', padding: 0, overflow: 'hidden' }]}>
+      <View style={styles.browserHeader}>
+        <View style={[styles.windowDot, { backgroundColor: '#f87171' }]} />
+        <View style={[styles.windowDot, { backgroundColor: '#fbbf24' }]} />
+        <View style={[styles.windowDot, { backgroundColor: '#34d399' }]} />
+      </View>
+      <View style={{ padding: 8, gap: 4 }}>
+        <View style={styles.landingHeroBar} />
+        <View style={styles.landingSubBar} />
+        <View style={styles.landingCta}>
+          <Text style={styles.landingCtaText}>High Converting Page</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/** Landing Templates Fan Mockup */
+function MockupLandingTemplates() {
+  return (
+    <View style={[styles.mockupBox, { borderColor: '#bae6fd' }]}>
+      <View style={styles.mockupHeader}>
+        <Text style={styles.mockupTitle}>Webinar Template</Text>
+        <View style={[styles.activePill, { backgroundColor: '#e0f2fe' }]}>
+          <Text style={[styles.activePillText, { color: '#0369a1' }]}>V1</Text>
+        </View>
+      </View>
+      <View style={{ gap: 4, marginTop: 4 }}>
+        <View style={{ height: 6, width: '80%', backgroundColor: '#0f172a', borderRadius: 2 }} />
+        <View style={{ height: 12, width: '100%', backgroundColor: '#0284c7', borderRadius: 4 }} />
+      </View>
+    </View>
+  );
+}
+
+/** QuickForms Builder Mockup */
+function MockupQuickForms() {
+  return (
+    <View style={[styles.mockupBox, { borderColor: '#ccfbf1' }]}>
+      <View style={styles.mockupHeader}>
+        <Text style={styles.mockupTitle}>QuickForm</Text>
+        <View style={[styles.activePill, { backgroundColor: '#ccfbf1' }]}>
+          <Text style={[styles.activePillText, { color: '#0f766e' }]}>No Code</Text>
+        </View>
+      </View>
+      <View style={{ gap: 4 }}>
+        <View style={styles.formInputMock}>
+          <Text style={styles.formInputText}>Your Email</Text>
+        </View>
+        <View style={styles.formBtnMock}>
+          <Text style={styles.formBtnText}>Submit Response</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/** Link Shortener Analytics Mockup */
+function MockupShortLinks() {
+  return (
+    <View style={[styles.mockupBox, { borderColor: '#dbeafe' }]}>
+      <View style={styles.mockupHeader}>
+        <Text style={[styles.mockupTitle, { color: '#2563eb', fontSize: 9 }]}>gap.in/s/promo</Text>
+        <Text style={{ fontSize: 8, color: '#16a34a', fontWeight: 'bold' }}>↑ 1,420</Text>
+      </View>
+      <View style={styles.barChartRow}>
+        {[30, 45, 28, 60, 42, 72, 55, 90].map((v, i) => (
+          <View key={i} style={[styles.chartBar, { height: (v / 90) * 20 }]} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+/** File Linker Storage Mockup */
+function MockupFileLinker() {
+  return (
+    <View style={[styles.mockupBox, { borderColor: '#fef3c7' }]}>
+      <View style={styles.mockupHeader}>
+        <Text style={styles.mockupTitle}>File Storage</Text>
+        <View style={[styles.activePill, { backgroundColor: '#fef3c7' }]}>
+          <Text style={[styles.activePillText, { color: '#b45309' }]}>50MB</Text>
+        </View>
+      </View>
+      <View style={{ flexDirection: 'row', gap: 3, marginBottom: 4 }}>
+        {['.pdf', '.mp4', '.zip'].map((ext) => (
+          <View key={ext} style={styles.fileExtBadge}>
+            <Text style={styles.fileExtText}>{ext}</Text>
+          </View>
+        ))}
+      </View>
+      <View style={styles.fileBtnMock}>
+        <Text style={styles.fileBtnText}>Download Link</Text>
+      </View>
+    </View>
+  );
+}
+
+/** Event Links Calendar Mockup */
+function MockupEventLinks() {
+  return (
+    <View style={[styles.mockupBox, { borderColor: '#ffe4e6' }]}>
+      <View style={styles.mockupHeader}>
+        <Text style={[styles.mockupTitle, { color: '#e11d48' }]}>Event Page</Text>
+        <Text style={{ fontSize: 8, color: '#94a3b8' }}>July 2026</Text>
+      </View>
+      <View style={{ flexDirection: 'row', gap: 4 }}>
+        <View style={styles.eventSlotBadge}>
+          <Text style={styles.eventSlotText}>10:00 AM</Text>
+        </View>
+        <View style={styles.eventBookBtn}>
+          <Text style={styles.eventBookText}>Book Now</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/** Speech Transcription Mockup */
+function MockupSpeech() {
+  return (
+    <View style={[styles.mockupBox, { borderColor: '#ede9fe' }]}>
+      <View style={styles.mockupHeader}>
+        <Text style={[styles.mockupTitle, { color: '#7c3aed' }]}>AI Speech-to-Text</Text>
+        <View style={[styles.activePill, { backgroundColor: '#ede9fe' }]}>
+          <Text style={[styles.activePillText, { color: '#6d28d9' }]}>EN→ES</Text>
+        </View>
+      </View>
+      <View style={{ gap: 3, marginTop: 2 }}>
+        <View style={{ height: 4, width: '100%', backgroundColor: '#c4b5fd', borderRadius: 2 }} />
+        <View style={{ height: 4, width: '80%', backgroundColor: '#ddd6fe', borderRadius: 2 }} />
+        <View style={{ height: 4, width: '65%', backgroundColor: '#ede9fe', borderRadius: 2 }} />
+      </View>
+    </View>
+  );
+}
+
+/** Branded QR Code Mockup */
+function MockupQRCode() {
+  return (
+    <View style={[styles.mockupBox, { borderColor: '#e0e7ff', alignItems: 'center', justifyContent: 'center' }]}>
+      <View style={styles.qrGrid}>
+        {[1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1].map(
+          (bit, idx) => (
+            <View
+              key={idx}
+              style={[
+                styles.qrPixel,
+                { backgroundColor: bit ? '#4f46e5' : '#f1f5f9' },
+              ]}
+            />
+          ),
+        )}
+      </View>
+    </View>
+  );
+}
+
+/** Website Audit Scorecard Mockup */
+function MockupWebsiteAudit() {
+  return (
+    <View style={[styles.mockupBox, { borderColor: '#cffafe' }]}>
+      <View style={styles.mockupHeader}>
+        <Text style={styles.mockupTitle}>Health Audit</Text>
+        <View style={[styles.activePill, { backgroundColor: '#dcfce7' }]}>
+          <Text style={[styles.activePillText, { color: '#16a34a' }]}>89/100</Text>
+        </View>
+      </View>
+      <View style={{ gap: 3 }}>
+        <View style={styles.auditBarRow}>
+          <Text style={styles.auditLabel}>SEO</Text>
+          <Text style={styles.auditVal}>91%</Text>
+        </View>
+        <View style={[styles.auditBarTrack, { width: '91%', backgroundColor: '#10b981' }]} />
+        <View style={styles.auditBarRow}>
+          <Text style={styles.auditLabel}>Performance</Text>
+          <Text style={styles.auditVal}>84%</Text>
+        </View>
+        <View style={[styles.auditBarTrack, { width: '84%', backgroundColor: '#06b6d4' }]} />
+      </View>
+    </View>
+  );
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { planLabel, isTrial, trialDaysLeft, refresh: refreshSub } = usePlatformSubscription();
+  const { planLabel, hasTelegram, hasWhatsApp, hasVoice, hasCRM, hasSocial, refresh: refreshSub } = usePlatformSubscription();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Real Workspace Telemetry from Supabase
+  // Real Workspace Telemetry from Supabase matching UserDashboardOverview.tsx
   const { data: telemetry, refetch: refetchTelemetry } = useQuery({
-    queryKey: ['workspace-telemetry', user?.id],
+    queryKey: ['workspace-telemetry-full', user?.id],
     queryFn: async () => {
-      if (!user?.id) return { botsCount: 1, formsCount: 0, linksCount: 0, leadsCount: 0 };
+      if (!user?.id) return { landingPagesCount: 0, quickFormsCount: 0, shortLinksCount: 0, botsCount: 0 };
 
-      // Query real tables
-      const { count: botsCount } = await supabase
-        .from('system_products')
-        .select('*', { count: 'exact', head: true });
+      const [j, tr, ch, fw, pg, fm, lk] = await Promise.all([
+        supabase.from('tg_bot_join_links').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('tg_tracker').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('tg_chatbot_configs').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('tg_forward_mappings').select('id', { count: 'exact', head: true }),
+        supabase.from('tg_landing_pages').select('id,title,created_at').eq('user_id', user.id).limit(3),
+        supabase.from('quick_forms').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('short_links').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+      ]);
+
+      const jc = j.count ?? 0;
+      const tc = tr.count ?? 0;
+      const cc = ch.count ?? 0;
 
       return {
-        botsCount: botsCount || 5,
-        formsCount: 4,
-        linksCount: 12,
-        leadsCount: 38,
+        joinLinksCount: jc,
+        trackerBotsCount: tc,
+        chatbotConfigsCount: cc,
+        totalBotsCount: jc + tc + cc,
+        forwardRulesCount: fw.count ?? 0,
+        landingPagesCount: pg.data?.length ?? 0,
+        quickFormsCount: fm.count ?? 0,
+        shortLinksCount: lk.count ?? 0,
       };
     },
   });
@@ -235,127 +521,185 @@ export default function HomeScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Workspace Hero Header */}
-        <View style={styles.workspaceHeader}>
-          <View style={styles.planPill}>
-            <Text style={styles.planPillText}>
-              {isTrial ? `Trial (${trialDaysLeft || 7}d left)` : planLabel || 'GAP Core Plan'}
+        {/* ── PageIntro Header (Direct Web Port) ──────────────── */}
+        <View style={styles.pageIntroHeader}>
+          <Text style={styles.pageIntroEyebrow}>SERVICES</Text>
+          <Text style={styles.pageIntroTitle}>Your AI Workspace</Text>
+          <Text style={styles.pageIntroSubtitle}>powered by Get AI Pilot.</Text>
+          
+          <View style={styles.pageIntroMetaRow}>
+            <Text style={styles.pageIntroDesc}>
+              Launch, automate, and grow — every Get AI Pilot service from one unified workspace.
             </Text>
-          </View>
-          <Text style={styles.workspaceTitle}>Your AI Workspace</Text>
-          <Text style={styles.workspaceSubtitle}>
-            Launch autonomous bots, manage live omnichannel pipelines, and build high-converting landing pages.
-          </Text>
-        </View>
-
-        {/* Telemetry Metric Badges */}
-        <View style={styles.telemetryRow}>
-          <View style={styles.telemetryItem}>
-            <Text style={styles.telemetryNum}>{telemetry?.botsCount || 5}</Text>
-            <Text style={styles.telemetryLabel}>Active Engines</Text>
-          </View>
-          <View style={styles.telemetryDivider} />
-          <View style={styles.telemetryItem}>
-            <Text style={styles.telemetryNum}>10</Text>
-            <Text style={styles.telemetryLabel}>Free Tools</Text>
-          </View>
-          <View style={styles.telemetryDivider} />
-          <View style={styles.telemetryItem}>
-            <Text style={[styles.telemetryNum, { color: '#16B882' }]}>100%</Text>
-            <Text style={styles.telemetryLabel}>Uptime</Text>
+            <View style={styles.planBadgePill}>
+              <Text style={styles.planBadgeText}>Plan: {planLabel || 'Free'}</Text>
+            </View>
           </View>
         </View>
 
-        {/* SECTION 1: AUTOMATION PRODUCTS */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>AUTOMATION PRODUCTS</Text>
-          <Pressable onPress={() => router.push('/(tabs)/products' as any)}>
-            <Text style={styles.viewAllText}>View All →</Text>
-          </Pressable>
-        </View>
+        {/* ── AUTOMATION SECTION ─────────────────────────────── */}
+        <GridSectionHeader label="Automation" />
 
-        {/* 01 Telegram */}
+        {/* 01 Telegram Pilot */}
         <DashboardCard
           num="01"
-          title={"Telegram Pilot\nAuto-Forwarder"}
-          description="Mirror, sanitize, and auto-forward messages across channels with custom keyword blacklist filters."
-          badge="Active"
-          badgeColor="#0284c7"
+          title={'Telegram\nPilot'}
+          description="Auto-forward feeds, sub bots, and channel growth tools."
+          statusBadge={<StatusChip active={hasTelegram} />}
           onAction={() => router.push('/products/telegram' as any)}
           visualNode={<MockupTelegram />}
         />
 
-        {/* 02 WhatsApp */}
+        {/* 02 WhatsApp Suite */}
         <DashboardCard
           num="02"
-          title={"WhatsApp Suite\nAI Assistant"}
-          description="Live broadcast campaigns, Meta Cloud API webhook triggers, and automated 24/7 client response flows."
-          badge="Live"
-          badgeColor="#16a34a"
+          title={'WhatsApp\nSuite'}
+          description="Broadcast campaigns and 24/7 AI auto-responders via Meta Cloud API."
+          statusBadge={<StatusChip active={hasWhatsApp} />}
           onAction={() => router.push('/products/whatsapp' as any)}
           visualNode={<MockupWhatsApp />}
         />
 
-        {/* 03 Voice */}
+        {/* 03 Voice Pilot */}
         <DashboardCard
           num="03"
-          title={"Voice Pilot\nAI Telecalling"}
-          description="Deploy intelligent conversational voice bots for outbound sales calls and automated support queues."
-          badge="Pro"
-          badgeColor="#9333ea"
+          title={'Voice\nPilot'}
+          description="AI voice agents — speech-to-text, LLM logic, and TTS streaming."
+          statusBadge={<StatusChip active={hasVoice} />}
           onAction={() => router.push('/products/voice' as any)}
           visualNode={<MockupVoice />}
         />
 
-        {/* 04 CRM */}
+        {/* 04 Business CRM */}
         <DashboardCard
           num="04"
-          title={"Business CRM\nSales Pipelines"}
-          description="Track inbound lead stages, auto-assign opportunities, and trigger 1-click WhatsApp outreach."
-          badge="Enterprise"
-          badgeColor="#4f46e5"
+          title={'Business\nCRM'}
+          description="Sales pipeline, deals, and multi-tenant CRM workspace."
+          statusBadge={<StatusChip active={hasCRM} />}
           onAction={() => router.push('/products/crm' as any)}
           visualNode={<MockupCRM />}
         />
 
-        {/* 05 Social */}
+        {/* 05 Social Pilot */}
         <DashboardCard
           num="05"
-          title={"Social Pilot\nOmni-Publisher"}
-          description="Auto-schedule and publish content across Instagram, YouTube, X, LinkedIn, Facebook, and Bluesky."
-          badge="Multi-Channel"
-          badgeColor="#ec4899"
+          title={'Social\nPilot'}
+          description="Automated content scheduling across Instagram, LinkedIn, Facebook & X."
+          statusBadge={<StatusChip active={hasSocial} />}
           onAction={() => router.push('/products/social' as any)}
           visualNode={<MockupSocial />}
         />
 
-        {/* SECTION 2: FREE TOOLS SHORTCUTS */}
-        <View style={[styles.sectionHeader, { marginTop: spacing.xl }]}>
-          <Text style={styles.sectionTitle}>FREE TOOLS HUB</Text>
-          <Pressable onPress={() => router.push('/(tabs)/tools' as any)}>
-            <Text style={styles.viewAllText}>All 10 Tools →</Text>
-          </Pressable>
-        </View>
+        {/* 06 Connected Platforms & Users */}
+        <DashboardCard
+          num="06"
+          title={'Connected Platforms\n& Users'}
+          description="Manage your connected Telegram bots, WhatsApp instances, and subscriber directory."
+          onAction={() => router.push('/(tabs)/activity' as any)}
+          visualNode={<MockupConnectedChats />}
+        />
 
-        <View style={styles.toolsQuickGrid}>
-          {[
-            { id: 'bio-templates', icon: '👤', name: 'Bio Templates', route: '/tools/bio-templates' },
-            { id: 'landing-templates', icon: '🚀', name: 'Landing Templates', route: '/tools/landing-templates' },
-            { id: 'quick-forms', icon: '📋', name: 'QuickForms', route: '/tools/quick-forms' },
-            { id: 'whatsapp-link', icon: '💬', name: 'WhatsApp Link', route: '/tools/whatsapp-link' },
-            { id: 'link-shortener', icon: '🔗', name: 'Short Links', route: '/tools/link-shortener' },
-            { id: 'qr-code', icon: '📱', name: 'QR Generator', route: '/tools/qr-code' },
-          ].map((t) => (
-            <Pressable
-              key={t.id}
-              style={styles.toolPill}
-              onPress={() => router.push(t.route as any)}
-            >
-              <Text style={styles.toolPillIcon}>{t.icon}</Text>
-              <Text style={styles.toolPillText}>{t.name}</Text>
-            </Pressable>
-          ))}
-        </View>
+        {/* ── FREE TOOLS SECTION ─────────────────────────────── */}
+        <GridSectionHeader label="Free Tools" />
+
+        {/* 06 My Designs */}
+        <DashboardCard
+          num="06"
+          title={'My\nDesigns'}
+          description="Browse, manage, and edit your saved visual assets and templates."
+          onAction={() => router.push('/tools/my-designs' as any)}
+          visualNode={<MockupMyDesigns />}
+        />
+
+        {/* 07 Bio Templates */}
+        <DashboardCard
+          num="07"
+          title={'Bio\nTemplates'}
+          description="Create beautiful link-in-bio pages with ready-to-use mobile-first templates."
+          onAction={() => router.push('/tools/bio-templates' as any)}
+          visualNode={<MockupBio />}
+        />
+
+        {/* 08 Landing Pages */}
+        <DashboardCard
+          num="08"
+          title={'Landing\nPages'}
+          description={`${telemetry?.landingPagesCount || 0}/10 pages used — drag-and-drop builder.`}
+          onAction={() => router.push('/tools/landing-templates' as any)}
+          visualNode={<MockupLandingPages />}
+        />
+
+        {/* 09 Landing Templates */}
+        <DashboardCard
+          num="09"
+          title={'Landing\nTemplates'}
+          description="High-converting page templates for webinars, lead gen, and products."
+          onAction={() => router.push('/tools/landing-templates' as any)}
+          visualNode={<MockupLandingTemplates />}
+        />
+
+        {/* 10 Quick Forms */}
+        <DashboardCard
+          num="10"
+          title={'Quick\nForms'}
+          description={`${telemetry?.quickFormsCount || 0} active forms — conversational, embeddable, zero-code.`}
+          onAction={() => router.push('/tools/quick-forms' as any)}
+          visualNode={<MockupQuickForms />}
+        />
+
+        {/* 11 Short Links */}
+        <DashboardCard
+          num="11"
+          title={'Short\nLinks'}
+          description={`${telemetry?.shortLinksCount || 0} links created — URL shortener with click analytics.`}
+          onAction={() => router.push('/tools/link-shortener' as any)}
+          visualNode={<MockupShortLinks />}
+        />
+
+        {/* 12 File Linker */}
+        <DashboardCard
+          num="12"
+          title={'File\nLinker'}
+          description="Upload documents or media up to 50 MB and share as a shortened link."
+          onAction={() => router.push('/tools/file-linker' as any)}
+          visualNode={<MockupFileLinker />}
+        />
+
+        {/* 13 Event Links */}
+        <DashboardCard
+          num="13"
+          title={'Event\nLinks'}
+          description="Smart event pages with booking slots and timezone-aware calendar invites."
+          onAction={() => router.push('/tools/event-links' as any)}
+          visualNode={<MockupEventLinks />}
+        />
+
+        {/* 14 AI Speech to Text */}
+        <DashboardCard
+          num="14"
+          title={'AI Speech\nto Text'}
+          description="Transcribe audio and video with multi-language support and subtitle export."
+          onAction={() => router.push('/tools/speech-to-text' as any)}
+          visualNode={<MockupSpeech />}
+        />
+
+        {/* 15 QR Code Generator */}
+        <DashboardCard
+          num="15"
+          title={'QR Code\nGenerator'}
+          description="Customizable, brand-themed QR codes for URLs, WiFi, vCards, and email."
+          onAction={() => router.push('/tools/qr-code' as any)}
+          visualNode={<MockupQRCode />}
+        />
+
+        {/* 16 AI Website Audit */}
+        <DashboardCard
+          num="16"
+          title={'AI Website\nAudit'}
+          description="Instantly audit SEO, performance, UX, and conversion with an AI health score."
+          onAction={() => router.push('/tools/website-audit' as any)}
+          visualNode={<MockupWebsiteAudit />}
+        />
       </ScrollView>
     </AppScreen>
   );
@@ -365,6 +709,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.lg,
     paddingBottom: 40,
+    backgroundColor: '#F5F4F0',
   },
   avatarBtn: {
     width: 38,
@@ -381,88 +726,87 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#ffffff',
   },
-  workspaceHeader: {
-    marginBottom: spacing.lg,
+  // ─── PageIntro Editorial Styling ─────────────────────────────
+  pageIntroHeader: {
+    paddingTop: 12,
+    paddingBottom: 20,
   },
-  planPill: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(22, 184, 130, 0.15)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: radius.full,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(22, 184, 130, 0.3)',
-  },
-  planPillText: {
+  pageIntroEyebrow: {
     fontSize: 11,
-    fontWeight: 'bold',
-    color: '#16B882',
-    letterSpacing: 0.5,
+    fontWeight: '700',
+    letterSpacing: 2,
+    color: '#94a3b8',
+    marginBottom: 6,
+    textTransform: 'uppercase',
   },
-  workspaceTitle: {
-    fontSize: 28,
+  pageIntroTitle: {
+    fontSize: 34,
     fontWeight: '800',
-    color: colors.foreground,
-    letterSpacing: -0.5,
+    color: '#111111',
+    letterSpacing: -0.8,
+    lineHeight: 38,
   },
-  workspaceSubtitle: {
-    fontSize: 13,
-    color: colors.mutedForeground,
+  pageIntroSubtitle: {
+    fontSize: 15,
+    fontStyle: 'italic',
+    color: '#94a3b8',
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  pageIntroMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
     marginTop: 6,
+  },
+  pageIntroDesc: {
+    flex: 1,
+    fontSize: 12.5,
+    color: '#64748b',
     lineHeight: 18,
   },
-  telemetryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: spacing.xl,
+  planBadgePill: {
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#e2dfd7',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
   },
-  telemetryItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  telemetryDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: colors.border,
-  },
-  telemetryNum: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.foreground,
-  },
-  telemetryLabel: {
+  planBadgeText: {
     fontSize: 11,
-    color: colors.mutedForeground,
-    marginTop: 2,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: colors.mutedForeground,
-    letterSpacing: 1,
-  },
-  viewAllText: {
-    fontSize: 12,
     fontWeight: '700',
-    color: colors.primary,
+    color: '#0f172a',
+  },
+  // ─── GridSection Header ──────────────────────────────────────
+  gridSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 20,
+    marginBottom: 14,
+  },
+  gridSectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: '#94a3b8',
+  },
+  gridSectionDivider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e2dfd7',
   },
   // ─── Exact Web CardShell Styling ─────────────────────────────
   cardShell: {
     position: 'relative',
-    height: 230,
+    height: 236,
     backgroundColor: '#ECEAE4',
     borderRadius: 22,
     borderWidth: 1,
@@ -470,10 +814,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   visualContainer: {
     position: 'absolute',
@@ -497,41 +841,43 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   cardNum: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '800',
     color: '#94a3b8',
     letterSpacing: 1.5,
   },
-  cardBadge: {
-    paddingHorizontal: 6,
+  statusChipUpgrade: {
+    backgroundColor: '#fef3c7',
+    paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 1,
+    borderRadius: 12,
   },
-  cardBadgeText: {
+  statusChipUpgradeText: {
     fontSize: 9,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    color: '#b45309',
+    textTransform: 'uppercase',
   },
   cardTextGroup: {
     marginVertical: 4,
   },
   cardTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '800',
     color: '#111111',
     lineHeight: 22,
     letterSpacing: -0.3,
   },
   cardDescription: {
-    fontSize: 11,
+    fontSize: 11.5,
     color: '#64748b',
-    lineHeight: 15,
+    lineHeight: 16,
     marginTop: 4,
   },
   actionCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: '#111111',
     justifyContent: 'center',
     alignItems: 'center',
@@ -655,30 +1001,242 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 3,
   },
-  // ─── Tools Quick Grid ─────────────────────────────────────────
-  toolsQuickGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  toolPill: {
-    width: '48%',
+  connectedRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: colors.card,
-    borderRadius: radius.md,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    gap: 4,
+    backgroundColor: '#f8fafc',
+    padding: 4,
+    borderRadius: 6,
+  },
+  miniDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  miniDotText: {
+    fontSize: 6,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  miniLine: {
+    flex: 1,
+    height: 3,
+    backgroundColor: '#cbd5e1',
+    borderRadius: 2,
+  },
+  miniStatus: {
+    fontSize: 7,
+    fontWeight: 'bold',
+    color: '#10b981',
+  },
+  swatchGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  swatchItem: {
+    width: 34,
+    height: 18,
+    borderRadius: 4,
+  },
+  bioPhone: {
+    width: 76,
+    height: 120,
+    borderRadius: 16,
+    backgroundColor: '#0f172a',
+    borderWidth: 2,
+    borderColor: '#34d399',
+    padding: 6,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  bioNotch: {
+    width: 24,
+    height: 3,
+    backgroundColor: '#334155',
+    borderRadius: 2,
+  },
+  bioAvatar: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#10b981',
+  },
+  bioContent: {
+    width: '100%',
+    gap: 3,
+  },
+  bioBar: {
+    height: 8,
+    width: '100%',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 4,
+  },
+  bioBtn: {
+    height: 10,
+    backgroundColor: '#10b981',
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bioBtnText: {
+    fontSize: 6,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  browserHeader: {
+    height: 14,
+    backgroundColor: '#ede9fe',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 6,
+  },
+  windowDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+  },
+  landingHeroBar: {
+    height: 6,
+    width: '75%',
+    backgroundColor: '#7c3aed',
+    borderRadius: 2,
+  },
+  landingSubBar: {
+    height: 4,
+    width: '50%',
+    backgroundColor: '#cbd5e1',
+    borderRadius: 2,
+  },
+  landingCta: {
+    height: 12,
+    backgroundColor: '#8b5cf6',
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  landingCtaText: {
+    fontSize: 6,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  formInputMock: {
+    height: 14,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#cbd5e1',
+    backgroundColor: '#f8fafc',
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    justifyContent: 'center',
   },
-  toolPillIcon: {
-    fontSize: 16,
+  formInputText: {
+    fontSize: 6,
+    color: '#64748b',
   },
-  toolPillText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.foreground,
+  formBtnMock: {
+    height: 14,
+    backgroundColor: '#0d9488',
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  formBtnText: {
+    fontSize: 6,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  barChartRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 2,
+    height: 22,
+    paddingTop: 2,
+  },
+  chartBar: {
+    flex: 1,
+    backgroundColor: '#3b82f6',
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
+  },
+  fileExtBadge: {
+    backgroundColor: '#fef3c7',
+    paddingHorizontal: 3,
+    paddingVertical: 1,
+    borderRadius: 2,
+  },
+  fileExtText: {
+    fontSize: 6,
+    fontWeight: 'bold',
+    color: '#b45309',
+    fontFamily: 'monospace',
+  },
+  fileBtnMock: {
+    height: 12,
+    backgroundColor: '#f59e0b',
+    borderRadius: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fileBtnText: {
+    fontSize: 6,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  eventSlotBadge: {
+    flex: 1,
+    backgroundColor: '#fff1f2',
+    borderRadius: 4,
+    padding: 3,
+    alignItems: 'center',
+  },
+  eventSlotText: {
+    fontSize: 6,
+    fontWeight: 'bold',
+    color: '#e11d48',
+  },
+  eventBookBtn: {
+    flex: 1,
+    backgroundColor: '#f43f5e',
+    borderRadius: 4,
+    padding: 3,
+    alignItems: 'center',
+  },
+  eventBookText: {
+    fontSize: 6,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  qrGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    width: 60,
+    gap: 1,
+  },
+  qrPixel: {
+    width: 7,
+    height: 7,
+    borderRadius: 1,
+  },
+  auditBarRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  auditLabel: {
+    fontSize: 6,
+    color: '#475569',
+  },
+  auditVal: {
+    fontSize: 6,
+    fontWeight: 'bold',
+    color: '#10b981',
+  },
+  auditBarTrack: {
+    height: 3,
+    borderRadius: 2,
   },
 });
+

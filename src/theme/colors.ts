@@ -11,16 +11,19 @@ export const colors = {
   accentSoft: 'rgba(22, 184, 130, 0.12)',
 
   // Surfaces & Layout
-  background: '#F9F5F0', // Warm cream canvas
+  background: '#F5F4F0', // Exact web canvas
   backgroundDark: '#0D1B18', // Sleek dark mode canvas
+  canvas: '#F5F4F0',
   surface: '#FFFFFF',
   foreground: '#111816', // Deep charcoal
   
   // Cards & Modals
   card: '#FFFFFF',
+  cardShell: '#ECEAE4', // Exact web card shell cream fill
+  cardShellBorder: '#E2DFD7', // Exact web card shell border
   cardForeground: '#111816',
-  cardBorder: '#E2DED4',
-  border: '#E2DED4',
+  cardBorder: '#E2DFD7',
+  border: '#E2DFD7',
   
   // Functional Colors
   destructive: '#DC2626',
