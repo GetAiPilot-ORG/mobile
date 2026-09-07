@@ -1,9 +1,9 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
-import { AuthProvider, useAuth } from '../src/contexts/AuthContext';
-import { GlobalErrorBoundary } from '../src/components/GlobalErrorBoundary';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { GlobalErrorBoundary } from '../src/components/GlobalErrorBoundary';
+import { AuthProvider, useAuth } from '../src/contexts/AuthContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
