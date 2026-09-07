@@ -1,7 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { colors } from '../theme/colors';
+import { View, Text, StyleSheet, Pressable, Platform, useColorScheme } from 'react-native';
+import { Image } from 'expo-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+
+const brandLogo = require('../../assets/images/logo.jpg');
 
 interface AppTopBarProps {
   title?: string;
@@ -19,8 +23,14 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
   onBackPress,
 }) => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const handleBack = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     if (onBackPress) {
       onBackPress();
     } else if (router.canGoBack()) {
@@ -28,29 +38,37 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
     }
   };
 
+  const topPadding = Math.max(insets.top, 12);
+
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        { paddingTop: topPadding, height: 54 + topPadding },
+        isDark && styles.containerDark,
+      ]}
+    >
       <View style={styles.leftSection}>
         {showBack && (
-          <Pressable style={styles.backButton} onPress={handleBack} hitSlop={8}>
-            <Text style={styles.backText}>‹</Text>
+          <Pressable style={[styles.backButton, isDark && styles.backButtonDark]} onPress={handleBack} hitSlop={10}>
+            <Text style={[styles.backText, isDark && styles.backTextDark]}>‹</Text>
           </Pressable>
         )}
         <View style={styles.titleWrapper}>
           {title ? (
-            <Text style={styles.title} numberOfLines={1}>
+            <Text style={[styles.title, isDark && styles.titleDark]} numberOfLines={1}>
               {title}
             </Text>
           ) : (
             <View style={styles.brandRow}>
-              <View style={styles.brandLogo}>
-                <Text style={styles.brandLogoText}>G</Text>
+              <View style={styles.logoWrapper}>
+                <Image source={brandLogo} style={styles.logoImage} contentFit="cover" />
               </View>
-              <Text style={styles.brandText}>GetAIPilot</Text>
+              <Text style={[styles.brandText, isDark && styles.brandTextDark]}>GetAiPilot</Text>
             </View>
           )}
           {subtitle && (
-            <Text style={styles.subtitle} numberOfLines={1}>
+            <Text style={[styles.subtitle, isDark && styles.subtitleDark]} numberOfLines={1}>
               {subtitle}
             </Text>
           )}
@@ -64,14 +82,18 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    height: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingBottom: 8,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E5E7EB',
+  },
+  containerDark: {
+    backgroundColor: '#000000',
+    borderBottomColor: '#2C2C2E',
   },
   leftSection: {
     flexDirection: 'row',
@@ -79,57 +101,70 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: colors.muted,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#F2F4F7',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
   },
+  backButtonDark: {
+    backgroundColor: '#1C1C1E',
+  },
   backText: {
     fontSize: 26,
-    fontWeight: 'bold',
-    color: colors.foreground,
+    fontWeight: '600',
+    color: '#0084FF',
     lineHeight: 28,
+    marginTop: -2,
+  },
+  backTextDark: {
+    color: '#3B82F6',
   },
   titleWrapper: {
     flex: 1,
   },
   title: {
     fontSize: 18,
-    fontWeight: '800',
-    color: colors.foreground,
-    letterSpacing: -0.3,
+    fontWeight: '700',
+    color: '#000000',
+    letterSpacing: -0.4,
+  },
+  titleDark: {
+    color: '#FFFFFF',
   },
   subtitle: {
     fontSize: 12,
-    color: colors.mutedForeground,
+    color: '#6B7280',
     marginTop: 1,
+  },
+  subtitleDark: {
+    color: '#9CA3AF',
   },
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
-  brandLogo: {
+  logoWrapper: {
     width: 28,
     height: 28,
-    borderRadius: 7,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
+    borderRadius: 14,
+    overflow: 'hidden',
   },
-  brandLogoText: {
-    color: '#16B882',
-    fontWeight: '900',
-    fontSize: 16,
+  logoImage: {
+    width: '100%',
+    height: '100%',
   },
   brandText: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: colors.primary,
+    fontSize: 19,
+    fontWeight: '800',
+    color: '#000000',
     letterSpacing: -0.5,
+  },
+  brandTextDark: {
+    color: '#FFFFFF',
   },
   rightSection: {
     flexDirection: 'row',

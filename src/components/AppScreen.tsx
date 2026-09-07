@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, StyleProp, ViewStyle, SafeAreaView } from 'react-native';
-import { useSafeAreaInsets, SafeAreaView as SafeAreaContextView } from 'react-native-safe-area-context';
+import { View, StyleProp, ViewStyle, useColorScheme } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 
 interface AppScreenProps {
@@ -10,8 +10,17 @@ interface AppScreenProps {
   backgroundColor?: string;
 }
 
-export function AppScreen({ children, style, safeArea = true, backgroundColor = colors.background }: AppScreenProps) {
+export function AppScreen({
+  children,
+  style,
+  safeArea = false,
+  backgroundColor,
+}: AppScreenProps) {
   const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  const defaultBg = backgroundColor || (isDark ? colors.backgroundDark : colors.background);
 
   let paddingTop = 0;
   let paddingBottom = 0;
@@ -19,16 +28,24 @@ export function AppScreen({ children, style, safeArea = true, backgroundColor = 
   if (safeArea === true || safeArea === 'top') {
     paddingTop = insets.top;
   }
-  
+
   if (safeArea === true || safeArea === 'bottom') {
     paddingBottom = insets.bottom;
   }
 
   return (
-    <View style={[{ flex: 1, backgroundColor, paddingTop, paddingBottom }, style]}>
+    <View
+      style={[
+        {
+          flex: 1,
+          backgroundColor: defaultBg,
+          paddingTop,
+          paddingBottom,
+        },
+        style,
+      ]}
+    >
       {children}
     </View>
   );
 }
-
-const styles = StyleSheet.create({});

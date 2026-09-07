@@ -1,137 +1,100 @@
-# GetAIPilot Mobile Design System Specification (`DESIGN.md`)
+# GetAiPilot iOS Design System Specification (`DESIGN.md`)
 
-This document is the **Single Source of Truth** for the official GetAIPilot React Native + Expo mobile design system, derived directly from the production website (`getaipilot.in`).
-
----
-
-## 1. Brand & Visual Identity
-
-### Brand Essence
-GetAIPilot combines clean, high-efficiency enterprise capability with a luxurious, warm modern aesthetic. The visual tone is defined by deep forest emerald tones, warm cream canvas backgrounds, crisp rounded cards, and vibrant accent indicators.
-
-### Logo Specifications
-- **Logomark:** Forest emerald badge with geometric stylized 'G' and animated glowing aura.
-- **Logotype:** Ubuntu / IBM Plex Sans font. "Get AI" in gradient forest-to-emerald, "Pilot" in brand gradient.
-- **Sub-badge:** "AUTOMATION" in uppercase tracking (`tracking-[0.15em]`) with pulsating online status dot (`#10B981`).
+This document is the **Single Source of Truth** for the official GetAiPilot iOS-first mobile experience, adhering to **Apple Human Interface Guidelines (HIG)** with modern iOS Messenger-style clean aesthetics.
 
 ---
 
-## 2. Color Tokens
+## 1. Core Visual Principles & iOS HIG Compliance
 
-### A. Core Canvas & Surfaces
-| Token | Web Value / HSL | Hex / RGBA | Mobile Role |
+1. **Clarity & Content First:** Minimalist white/black canvas with purposeful color accents. No unnecessary borders or visual clutter.
+2. **Deference & Depth:** Soft iOS grouped containers (`#F2F4F7` in Light Mode, `#1C1C1E` in Dark Mode), subtle ambient blur/shadows, and natural layered depth.
+3. **Consistency:** Unified pill buttons (`borderRadius: 28`), continuous squircle cards (`borderRadius: 16`), and system typography scale across every screen.
+4. **Direct Manipulation & Tactile Touch:** Integrated `expo-haptics` on all primary buttons, toggle switches, card selections, and error events.
+
+---
+
+## 2. Color Tokens & System Themes
+
+### A. Surface & Canvas Tokens
+| Token | Light Mode (Default) | Dark Mode | Role & Usage |
 | :--- | :--- | :--- | :--- |
-| `background` | `hsl(33 43% 96%)` | `#F9F5F0` | Default warm cream screen canvas |
-| `backgroundDark` | `hsl(222 47% 11%)` | `#0D1B18` | Dark mode base canvas |
-| `surface` | `hsl(0 0% 100%)` | `#FFFFFF` | Standard card and modal surface |
-| `surfaceRaised` | `hsl(0 0% 100%)` | `#FFFFFF` | Elevated headers and floating menus |
-| `surfaceMuted` | `hsl(210 20% 97%)` | `#F1F5F9` | Secondary card fills and input backgrounds |
-| `border` | `hsl(214 32% 91%)` | `#E2DED4` | Card, divider, and input borders |
-| `foreground` | `hsl(224 71% 4%)` | `#111816` | Primary high-contrast typography |
-| `mutedForeground` | `hsl(215 16% 47%)` | `#706D64` | Subtitles, labels, and secondary copy |
+| `background` | `#FFFFFF` | `#000000` | Full screen primary canvas |
+| `surfaceGrouped` | `#F2F4F7` / `#F2F2F7` | `#1C1C1E` | Grouped input cards, list containers, unselected pills |
+| `surfaceElevated` | `#FFFFFF` | `#2C2C2E` | Floating action sheets, modals, cards with ambient shadow |
+| `divider` | `rgba(0, 0, 0, 0.08)` (`#E5E7EB`) | `rgba(255, 255, 255, 0.12)` (`#2C2C2E`) | Hairline separators within grouped lists |
+| `textPrimary` | `#000000` | `#FFFFFF` | Page titles, primary labels, emphasized numbers |
+| `textSecondary` | `#6B7280` (`#8E8E93`) | `#9CA3AF` (`#8E8E93`) | Subtitles, input placeholders, helper captions |
+| `textTertiary` | `#9CA3AF` | `#636366` | Footnotes, timestamps, inactive badge text |
 
-### B. Brand Green Tokens
-| Token | Web Value / HSL | Hex / RGBA | Mobile Role |
-| :--- | :--- | :--- | :--- |
-| `primary` | `hsl(160 80% 18%)` | `#003C33` / `#0A5C3D` | Primary brand headers, active tabs, main CTAs |
-| `primaryHover` | `hsl(160 84% 15%)` | `#064E3B` | Pressed buttons and active tab backgrounds |
-| `primaryMuted` | — | `#073F36` | Hero card fills and banner gradients |
-| `accent` | `hsl(152 48% 45%)` | `#16B882` | Active badges, success highlights, live indicators |
-| `accentSoft` | `hsl(152 55% 94%)` | `rgba(22, 184, 130, 0.12)` | Badge backgrounds and active highlight pills |
-
-### C. Functional & Status Colors
-| Status | Text Color | Background Pill Color | Use Case |
-| :--- | :--- | :--- | :--- |
-| **Operational / Active** | `#16B882` | `rgba(22, 184, 130, 0.12)` | Live services, verified accounts, running bots |
-| **Maintenance** | `#EF4444` | `rgba(239, 68, 68, 0.12)` | Services under maintenance, global kill switch |
-| **Degraded / Trial** | `#F59E0B` | `rgba(245, 158, 11, 0.12)` | High latency alerts, trial accounts expiring |
-| **Outage / Error** | `#DC2626` | `rgba(220, 38, 38, 0.12)` | Service disconnects, failed webhook responses |
-
-### D. Product Hub Identity Colors
-| Product | Primary Accent | Dark Shade | Soft Pill Background |
-| :--- | :--- | :--- | :--- |
-| **GAP WhatsApp** | `#25D366` | `#075E54` | `rgba(37, 211, 102, 0.12)` |
-| **GAP Telegram** | `#229ED9` | `#0088CC` | `rgba(34, 158, 217, 0.12)` |
-| **GAP Voice Pilot** | `#8B5CF6` | `#6D28D9` | `rgba(139, 92, 246, 0.12)` |
-| **GAP Social Pilot** | `#E1306C` | `#C13584` | `rgba(225, 48, 108, 0.12)` |
-| **GAP Smart CRM** | `#F59E0B` | `#B45309` | `rgba(245, 158, 11, 0.12)` |
+### B. Interactive Accent & Brand Tokens
+| Token | Hex Value | Role & Usage |
+| :--- | :--- | :--- |
+| `brandPrimary` | `#0084FF` / `#007AFF` | Primary CTA pill buttons, active checkboxes, links |
+| `brandPrimaryHover` | `#0070D8` | Pressed state for primary CTA |
+| `brandGradient` | `['#FF7A00', '#FF007A', '#8B5CF6', '#0084FF']` | Brand logo glow, hero spotlights, premium badges |
+| `success` | `#16A34A` / `#34C759` | Active status badges, connected indicators, success banners |
+| `destructive` | `#DC2626` / `#FF3B30` | Delete actions, error banners, disconnected alerts |
+| `warning` | `#F59E0B` / `#FF9500` | Pending states, quota warnings |
 
 ---
 
-## 3. Typography Hierarchy
+## 3. Typography Hierarchy (SF Pro System Scale)
 
-| Style Role | Font Weight | Size (pt) | Line Height | Tracking |
-| :--- | :--- | :--- | :--- | :--- |
-| **Display Title (Hero)** | 900 (Black) | 24–28 | 32 | `-0.5px` |
-| **Section Heading** | 800 (Extrabold) | 18–20 | 24 | `-0.3px` |
-| **Card Title** | 800 (Bold) | 15–16 | 20 | `-0.2px` |
-| **Body (Regular)** | 500 (Medium) | 13–14 | 19 | `0px` |
-| **Caption / Subtext** | 500 (Regular) | 12 | 16 | `0px` |
-| **Category Overline** | 800 (Black) | 10.5 | 14 | `+0.6px` (UPPERCASE) |
-| **Badge Label** | 800 (Extrabold) | 10–11 | 13 | `+0.4px` (UPPERCASE) |
-
----
-
-## 4. Spacing System
-
-Consistent spacing rhythm matching website paddings:
-- `spacing.xs`: `4px` (Micro gap, pill padding)
-- `spacing.sm`: `8px` (Icon to text gap, chip padding)
-- `spacing.md`: `12px` (Card inner spacing, grid gap)
-- `spacing.lg`: `16px` (Standard screen horizontal padding)
-- `spacing.xl`: `20px` (Card padding, section gap)
-- `spacing.xxl`: `24px` (Screen top/bottom gutter)
-- `spacing.huge`: `32px` (Empty state padding)
+| Level | Size | Weight | Tracking (Letter Spacing) | Line Height | Usage |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Large Title / Hero** | `26px` - `28px` | `800` (Bold) | `-0.6px` | `32px` - `34px` | Auth & Onboarding screen headlines |
+| **Title 1 / Page Title**| `22px` - `24px` | `700` (Bold) | `-0.5px` | `28px` - `30px` | Main tab headers & Hub titles |
+| **Title 2 / Section** | `18px` - `20px` | `700` (Bold) | `-0.3px` | `24px` | Card headings & feature sections |
+| **Body / Inputs** | `15px` - `16px` | `400` / `500` | `-0.2px` | `22px` | Text inputs, primary descriptions |
+| **Callout / Button** | `16px` | `700` (Bold) | `-0.2px` | `20px` | Pill buttons ("Log in", "Continue", "Create") |
+| **Subhead / Caption** | `13px` - `14px` | `500` / `600` | `0px` | `18px` | Input labels, secondary status, list subtitles |
+| **Footnote / Badge** | `11px` - `12px` | `700` (Bold) | `+0.2px` | `16px` | Pill badges, terms notes, helper hints |
 
 ---
 
-## 5. Border Radius Tokens
+## 4. Component Design Patterns
 
-- `radius.sm`: `6px` (Badges, tags, small action buttons)
-- `radius.md`: `10px` (Input fields, secondary buttons)
-- `radius.lg`: `14px` (Standard product cards, metric cards)
-- `radius.xl`: `18px` (Hero banners, large cards)
-- `radius.full`: `9999px` (Pills, avatar circles)
+### A. Brand Logo Header
+- Centered circular container: `width: 92px, height: 92px, borderRadius: 46px`.
+- High-res asset [logo.jpg](file:///c:/Users/pc/Documents/GitHub/GetAiPilot/mobile/assets/images/logo.jpg).
+- Ambient iOS drop shadow: `shadowColor: '#3B82F6', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16`.
+
+### B. Grouped Input Cards (iOS TableView Style)
+- Grouped container with `borderRadius: 16`, `overflow: 'hidden'`, and background `#F2F4F7` (Light) / `#1C1C1E` (Dark).
+- Each row has `minHeight: 52px`, `paddingHorizontal: 16px`.
+- Separators use `StyleSheet.hairlineWidth` with `marginLeft: 16px`.
+- Trailing clear button (`✕`) and secure entry toggle (`Show`/`Hide`).
+
+### C. Selection Cards & Options (Onboarding / Settings)
+- Unselected: Background `#F2F4F7`, subtle border `1.5px` (`transparent` or `rgba(0,0,0,0.05)`), dark icon badge.
+- Selected: Background `#FFFFFF` (or elevated surface), active border `2px #0084FF`, with a circular blue checkmark badge (`✓`) and subtle ambient shadow.
+- Light haptic feedback on selection: `Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)`.
+
+### D. Action Buttons
+- **Primary Pill Button:** `height: 52px` (or `paddingVertical: 15px`), `borderRadius: 28px`, background `#0084FF`, bold text `#FFFFFF`.
+  - Disabled state: Background `#F2F4F7`, text `#9CA3AF`.
+- **Secondary Pill Button:** `borderRadius: 28px`, background `#F2F4F7` (Light) / `#1C1C1E` (Dark), text `#000000` (Light) / `#FFFFFF` (Dark).
+- **Tertiary Link:** Centered text in `#0084FF` with hitSlop.
+
+### E. iOS Floating Liquid Glass Tab Bar
+- **Positioning:** Floating capsule anchored above home indicator (`position: 'absolute', bottom: Math.max(insets.bottom + 4, 16), left: 18, right: 18`).
+- **Surface:** Translucent frosted glass `rgba(255, 255, 255, 0.94)` (Dark: `rgba(28, 28, 30, 0.92)`), `borderRadius: 36px`, hairline glass border `rgba(255, 255, 255, 0.8)`.
+- **Depth Shadow:** Ambient iOS shadow `shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.14, shadowRadius: 24, elevation: 12`.
+- **Active Capsule:** Smooth active pill highlight (`backgroundColor: '#EBF5FF'`, icon scale `1.08`, text color `#0084FF`) with native tactile `expo-haptics`.
+- **Content Clearance:** All scrollable tabs must use `paddingBottom: 110` so content scrolls fully above the floating bar.
+
+### F. Dynamic Inset & Safe-Area Architecture
+- **Top Inset (Dynamic Island / Notch / Punch-Hole):** `AppTopBar` automatically integrates `paddingTop: Math.max(insets.top, 12)` and `height: 54 + insets.top` to extend header backgrounds seamlessly under status bars.
+- **Bottom Inset (Home Indicator):** Handled dynamically via `FloatingTabBar` offset and `useSafeAreaInsets().bottom`.
+
+### G. Feedback & Status Toasts
+- Non-intrusive rounded banners with soft translucent fills (`#FEE2E2` for error, `#DCFCE7` for success).
+- Haptic trigger on appearance (`Heavy` on error, `Medium` on success).
 
 ---
 
-## 6. Shadows & Depth
+## 5. Navigation & Layout Conventions
 
-- **Card Shadow:** `shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2`
-- **Hero Banner Shadow:** `shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 10, elevation: 4`
-- **Button Shadow:** `shadowColor: colors.primary, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2, shadowRadius: 6, elevation: 2`
-
----
-
-## 7. Component Specifications
-
-### 1. AppTopBar
-- **Height:** `56px`
-- **Background:** `#FFFFFF` with `1px` border bottom `#E2DED4`.
-- **Left:** Back arrow `‹` (if nested screen) or GetAIPilot Brand Logomark + "GetAIPilot" title.
-- **Right:** Avatar badge (with user initial) or Action icons.
-
-### 2. ProductCard
-- **Layout:** Icon box (top-left) with product brand background, category overline, bold name, status badge (top-right), 2-line description, bottom divider with colored arrow action button.
-
-### 3. ToolCard
-- **Layout:** Soft icon box, category overline, tool title, 2-line description, optional "Popular" / "Free" badge.
-
-### 4. MetricCard
-- **Layout:** Upper label in uppercase tracking, big bold stat number (`22pt`), trend/status badge pill, subtext.
-
-### 5. StatusBadge
-- **Layout:** Rounded pill with animated live dot (`6px`) + uppercase status text.
-
----
-
-## 8. Role-Based Navigation Architecture
-
-### Normal User Tabs:
-1. **HOME** (`/(tabs)/index.tsx`) &mdash; Overview & "Your AI Workspace", plan status, 5 product indicators, quick launcher.
-2. **PRODUCTS** (`/(tabs)/products.tsx`) &mdash; GAP Telegram, GAP CRM, GAP WhatsApp, GAP Voice Pilot, GAP Social Pilot.
-3. **TOOLS** (`/(tabs)/tools.tsx`) &mdash; All 10 Free Tools (My Designs, Bio Templates, Landing Templates, QuickForms, WhatsApp Link, Link Shortener, File Linker, Event Links, AI Speech to Text, QR Generator).
-4. **ACCOUNT** (`/(tabs)/account.tsx`) &mdash; Profile, Help Center, Plans & Pricing, Customize App.
-
-### Admin User Addition:
-- **ADMIN TAB** (`/(tabs)/admin.tsx`) &mdash; Admin Dashboard, Sales Leads Manager, Central Maintenance Controls, Monetize / Earn Hub.
+- **Safe Area Insets:** Always wrap screens with `useSafeAreaInsets()` to account for Dynamic Island, Notch, and Home Indicator.
+- **Keyboard Handling:** Always wrap form views with `KeyboardAvoidingView` (`behavior="padding"` on iOS) and `TouchableWithoutFeedback` with `Keyboard.dismiss`.
+- **Scroll Continuity:** Set `keyboardShouldPersistTaps="handled"` and `showsVerticalScrollIndicator={false}`.

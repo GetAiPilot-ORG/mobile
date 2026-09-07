@@ -6,482 +6,51 @@ import {
   ScrollView,
   RefreshControl,
   Pressable,
+  TextInput,
+  useColorScheme,
 } from 'react-native';
-import { AppScreen } from '../../src/components/AppScreen';
-import { AppTopBar } from '../../src/components/AppTopBar';
-import { colors } from '../../src/theme/colors';
-import { spacing } from '../../src/theme/spacing';
-import { radius } from '../../src/theme/radius';
-import { useAuth } from '../../src/contexts/AuthContext';
-import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
+import { AppScreen } from '../../src/components/AppScreen';
+import { AppTopBar } from '../../src/components/AppTopBar';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 import { supabase } from '../../src/lib/supabase';
-
-// ─── Direct Port of Web CardShell Component ─────────────────────────────────────
-interface DashboardCardProps {
-  num: string;
-  title: string;
-  description: string;
-  statusBadge?: React.ReactNode;
-  onAction: () => void;
-  visualNode: React.ReactNode;
-}
-
-function DashboardCard({
-  num,
-  title,
-  description,
-  statusBadge,
-  onAction,
-  visualNode,
-}: DashboardCardProps) {
-  return (
-    <Pressable style={styles.cardShell} onPress={onAction}>
-      {/* Right-side visual illustration container */}
-      <View style={styles.visualContainer}>{visualNode}</View>
-
-      {/* Left-side content */}
-      <View style={styles.contentContainer}>
-        <View style={styles.cardHeaderRow}>
-          <Text style={styles.cardNum}>{num}</Text>
-          {statusBadge}
-        </View>
-
-        <View style={styles.cardTextGroup}>
-          <Text style={styles.cardTitle} numberOfLines={2}>
-            {title}
-          </Text>
-          <Text style={styles.cardDescription} numberOfLines={3}>
-            {description}
-          </Text>
-        </View>
-
-        <Pressable style={styles.actionCircle} onPress={onAction}>
-          <Text style={styles.actionArrow}>→</Text>
-        </Pressable>
-      </View>
-    </Pressable>
-  );
-}
-
-function StatusChip({ active }: { active?: boolean }) {
-  if (active === false) {
-    return (
-      <View style={styles.statusChipUpgrade}>
-        <Text style={styles.statusChipUpgradeText}>Upgrade</Text>
-      </View>
-    );
-  }
-  return null;
-}
-
-function GridSectionHeader({ label }: { label: string }) {
-  return (
-    <View style={styles.gridSectionHeader}>
-      <Text style={styles.gridSectionLabel}>{label}</Text>
-      <View style={styles.gridSectionDivider} />
-    </View>
-  );
-}
-
-// ─── Direct Port of Web Card Visual Mockups ─────────────────────────────────────
-
-/** Telegram Channel & Auto-Forward Feed Mockup */
-function MockupTelegram() {
-  return (
-    <View style={[styles.mockupBox, { borderColor: '#e0f2fe' }]}>
-      <View style={styles.mockupHeader}>
-        <View style={[styles.avatarDot, { backgroundColor: '#0284c7' }]}>
-          <Text style={styles.dotText}>TG</Text>
-        </View>
-        <Text style={styles.mockupTitle}>Telegram Bot</Text>
-        <View style={styles.activePill}>
-          <Text style={styles.activePillText}>Active</Text>
-        </View>
-      </View>
-      <View style={styles.mockupInner}>
-        <Text style={styles.mockupInnerTitle}>📢 Channel Forwarder</Text>
-        <Text style={styles.mockupInnerSub}>Forwarded to 12 channels</Text>
-      </View>
-    </View>
-  );
-}
-
-/** WhatsApp Broadcast & AI Assistant Mockup */
-function MockupWhatsApp() {
-  return (
-    <View style={[styles.mockupBox, { borderColor: '#dcfce7' }]}>
-      <View style={styles.mockupHeader}>
-        <View style={[styles.avatarDot, { backgroundColor: '#16a34a' }]}>
-          <Text style={styles.dotText}>WA</Text>
-        </View>
-        <Text style={styles.mockupTitle}>WhatsApp Suite</Text>
-        <View style={[styles.activePill, { backgroundColor: '#dcfce7' }]}>
-          <Text style={[styles.activePillText, { color: '#16a34a' }]}>Online</Text>
-        </View>
-      </View>
-      <View style={[styles.mockupInner, { backgroundColor: '#f0fdf4' }]}>
-        <Text style={[styles.mockupInnerTitle, { color: '#166534' }]}>⚡ Meta Cloud API</Text>
-        <Text style={styles.mockupInnerSub}>Auto-reply trigger active</Text>
-      </View>
-    </View>
-  );
-}
-
-/** Voice AI Agent Console Mockup */
-function MockupVoice() {
-  return (
-    <View style={[styles.mockupBox, { borderColor: '#ede9fe', backgroundColor: '#1e1b4b' }]}>
-      <View style={styles.mockupHeader}>
-        <Text style={[styles.mockupTitle, { color: '#e9d5ff' }]}>AI Voice Agent</Text>
-        <View style={[styles.activePill, { backgroundColor: 'rgba(22, 184, 130, 0.2)' }]}>
-          <Text style={[styles.activePillText, { color: '#4ade80' }]}>Live Call</Text>
-        </View>
-      </View>
-      <View style={styles.voiceWaveRow}>
-        {[40, 80, 100, 65, 90, 50, 85, 30].map((h, i) => (
-          <View key={i} style={[styles.voiceWaveBar, { height: (h / 100) * 16 }]} />
-        ))}
-      </View>
-      <Text style={styles.voiceTimerText}>01:24 • Transcribing...</Text>
-    </View>
-  );
-}
-
-/** CRM Kanban Pipeline Mockup */
-function MockupCRM() {
-  return (
-    <View style={[styles.mockupBox, { borderColor: '#e0e7ff' }]}>
-      <View style={styles.mockupHeader}>
-        <Text style={styles.mockupTitle}>Sales Deals</Text>
-        <Text style={[styles.mockupTitle, { color: '#4f46e5' }]}>$41.5k</Text>
-      </View>
-      <View style={styles.crmStagesRow}>
-        <View style={[styles.crmStageCard, { backgroundColor: '#eef2ff' }]}>
-          <Text style={[styles.crmStageTag, { color: '#4338ca' }]}>Lead</Text>
-          <Text style={styles.crmStageVal}>$4.2k</Text>
-        </View>
-        <View style={[styles.crmStageCard, { backgroundColor: '#f5f3ff' }]}>
-          <Text style={[styles.crmStageTag, { color: '#6d28d9' }]}>Won</Text>
-          <Text style={styles.crmStageVal}>$24k</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-/** Social Media Scheduler Mockup */
-function MockupSocial() {
-  return (
-    <View style={[styles.mockupBox, { borderColor: '#ffe4e6' }]}>
-      <View style={styles.mockupHeader}>
-        <Text style={styles.mockupTitle}>Auto Post</Text>
-        <View style={styles.socialIconsRow}>
-          <Text style={{ fontSize: 9, color: '#ec4899', fontWeight: 'bold' }}>IG</Text>
-          <Text style={{ fontSize: 9, color: '#2563eb', fontWeight: 'bold' }}>IN</Text>
-          <Text style={{ fontSize: 9, color: '#0f172a', fontWeight: 'bold' }}>X</Text>
-        </View>
-      </View>
-      <View style={[styles.mockupInner, { backgroundColor: '#fff1f2' }]}>
-        <Text style={[styles.mockupInnerTitle, { color: '#9f1239' }]}>Weekly Campaign</Text>
-        <Text style={styles.mockupInnerSub}>Auto-publishing queue...</Text>
-      </View>
-    </View>
-  );
-}
-
-/** Connected Platforms & Multi-Inbox Mockup */
-function MockupConnectedChats() {
-  return (
-    <View style={[styles.mockupBox, { borderColor: '#a7f3d0' }]}>
-      <View style={styles.mockupHeader}>
-        <Text style={styles.mockupTitle}>Connected Hub</Text>
-        <View style={[styles.activePill, { backgroundColor: '#d1fae5' }]}>
-          <Text style={[styles.activePillText, { color: '#065f46' }]}>5 Live</Text>
-        </View>
-      </View>
-      <View style={{ gap: 4 }}>
-        <View style={styles.connectedRow}>
-          <View style={[styles.miniDot, { backgroundColor: '#0284c7' }]}>
-            <Text style={styles.miniDotText}>TG</Text>
-          </View>
-          <View style={styles.miniLine} />
-          <Text style={styles.miniStatus}>Active</Text>
-        </View>
-        <View style={styles.connectedRow}>
-          <View style={[styles.miniDot, { backgroundColor: '#16a34a' }]}>
-            <Text style={styles.miniDotText}>WA</Text>
-          </View>
-          <View style={styles.miniLine} />
-          <Text style={styles.miniStatus}>Active</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-/** My Designs Palette Mockup */
-function MockupMyDesigns() {
-  const swatches = ['#818cf8', '#38bdf8', '#34d399', '#f472b6', '#fb923c', '#a78bfa'];
-  return (
-    <View style={[styles.mockupBox, { borderColor: '#ede9fe' }]}>
-      <View style={styles.mockupHeader}>
-        <Text style={styles.mockupTitle}>Visual Assets</Text>
-        <View style={[styles.activePill, { backgroundColor: '#f3e8ff' }]}>
-          <Text style={[styles.activePillText, { color: '#7e22ce' }]}>9 Files</Text>
-        </View>
-      </View>
-      <View style={styles.swatchGrid}>
-        {swatches.map((c, i) => (
-          <View key={i} style={[styles.swatchItem, { backgroundColor: c }]} />
-        ))}
-      </View>
-    </View>
-  );
-}
-
-/** Mobile Phone Bio Page Mockup */
-function MockupBio() {
-  return (
-    <View style={styles.bioPhone}>
-      <View style={styles.bioNotch} />
-      <View style={styles.bioAvatar} />
-      <View style={styles.bioContent}>
-        <View style={styles.bioBar} />
-        <View style={styles.bioBar} />
-        <View style={styles.bioBtn}>
-          <Text style={styles.bioBtnText}>Link in Bio</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-/** Landing Builder Window Mockup */
-function MockupLandingPages() {
-  return (
-    <View style={[styles.mockupBox, { borderColor: '#ddd6fe', padding: 0, overflow: 'hidden' }]}>
-      <View style={styles.browserHeader}>
-        <View style={[styles.windowDot, { backgroundColor: '#f87171' }]} />
-        <View style={[styles.windowDot, { backgroundColor: '#fbbf24' }]} />
-        <View style={[styles.windowDot, { backgroundColor: '#34d399' }]} />
-      </View>
-      <View style={{ padding: 8, gap: 4 }}>
-        <View style={styles.landingHeroBar} />
-        <View style={styles.landingSubBar} />
-        <View style={styles.landingCta}>
-          <Text style={styles.landingCtaText}>High Converting Page</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-/** Landing Templates Fan Mockup */
-function MockupLandingTemplates() {
-  return (
-    <View style={[styles.mockupBox, { borderColor: '#bae6fd' }]}>
-      <View style={styles.mockupHeader}>
-        <Text style={styles.mockupTitle}>Webinar Template</Text>
-        <View style={[styles.activePill, { backgroundColor: '#e0f2fe' }]}>
-          <Text style={[styles.activePillText, { color: '#0369a1' }]}>V1</Text>
-        </View>
-      </View>
-      <View style={{ gap: 4, marginTop: 4 }}>
-        <View style={{ height: 6, width: '80%', backgroundColor: '#0f172a', borderRadius: 2 }} />
-        <View style={{ height: 12, width: '100%', backgroundColor: '#0284c7', borderRadius: 4 }} />
-      </View>
-    </View>
-  );
-}
-
-/** QuickForms Builder Mockup */
-function MockupQuickForms() {
-  return (
-    <View style={[styles.mockupBox, { borderColor: '#ccfbf1' }]}>
-      <View style={styles.mockupHeader}>
-        <Text style={styles.mockupTitle}>QuickForm</Text>
-        <View style={[styles.activePill, { backgroundColor: '#ccfbf1' }]}>
-          <Text style={[styles.activePillText, { color: '#0f766e' }]}>No Code</Text>
-        </View>
-      </View>
-      <View style={{ gap: 4 }}>
-        <View style={styles.formInputMock}>
-          <Text style={styles.formInputText}>Your Email</Text>
-        </View>
-        <View style={styles.formBtnMock}>
-          <Text style={styles.formBtnText}>Submit Response</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-/** Link Shortener Analytics Mockup */
-function MockupShortLinks() {
-  return (
-    <View style={[styles.mockupBox, { borderColor: '#dbeafe' }]}>
-      <View style={styles.mockupHeader}>
-        <Text style={[styles.mockupTitle, { color: '#2563eb', fontSize: 9 }]}>gap.in/s/promo</Text>
-        <Text style={{ fontSize: 8, color: '#16a34a', fontWeight: 'bold' }}>↑ 1,420</Text>
-      </View>
-      <View style={styles.barChartRow}>
-        {[30, 45, 28, 60, 42, 72, 55, 90].map((v, i) => (
-          <View key={i} style={[styles.chartBar, { height: (v / 90) * 20 }]} />
-        ))}
-      </View>
-    </View>
-  );
-}
-
-/** File Linker Storage Mockup */
-function MockupFileLinker() {
-  return (
-    <View style={[styles.mockupBox, { borderColor: '#fef3c7' }]}>
-      <View style={styles.mockupHeader}>
-        <Text style={styles.mockupTitle}>File Storage</Text>
-        <View style={[styles.activePill, { backgroundColor: '#fef3c7' }]}>
-          <Text style={[styles.activePillText, { color: '#b45309' }]}>50MB</Text>
-        </View>
-      </View>
-      <View style={{ flexDirection: 'row', gap: 3, marginBottom: 4 }}>
-        {['.pdf', '.mp4', '.zip'].map((ext) => (
-          <View key={ext} style={styles.fileExtBadge}>
-            <Text style={styles.fileExtText}>{ext}</Text>
-          </View>
-        ))}
-      </View>
-      <View style={styles.fileBtnMock}>
-        <Text style={styles.fileBtnText}>Download Link</Text>
-      </View>
-    </View>
-  );
-}
-
-/** Event Links Calendar Mockup */
-function MockupEventLinks() {
-  return (
-    <View style={[styles.mockupBox, { borderColor: '#ffe4e6' }]}>
-      <View style={styles.mockupHeader}>
-        <Text style={[styles.mockupTitle, { color: '#e11d48' }]}>Event Page</Text>
-        <Text style={{ fontSize: 8, color: '#94a3b8' }}>July 2026</Text>
-      </View>
-      <View style={{ flexDirection: 'row', gap: 4 }}>
-        <View style={styles.eventSlotBadge}>
-          <Text style={styles.eventSlotText}>10:00 AM</Text>
-        </View>
-        <View style={styles.eventBookBtn}>
-          <Text style={styles.eventBookText}>Book Now</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-/** Speech Transcription Mockup */
-function MockupSpeech() {
-  return (
-    <View style={[styles.mockupBox, { borderColor: '#ede9fe' }]}>
-      <View style={styles.mockupHeader}>
-        <Text style={[styles.mockupTitle, { color: '#7c3aed' }]}>AI Speech-to-Text</Text>
-        <View style={[styles.activePill, { backgroundColor: '#ede9fe' }]}>
-          <Text style={[styles.activePillText, { color: '#6d28d9' }]}>EN→ES</Text>
-        </View>
-      </View>
-      <View style={{ gap: 3, marginTop: 2 }}>
-        <View style={{ height: 4, width: '100%', backgroundColor: '#c4b5fd', borderRadius: 2 }} />
-        <View style={{ height: 4, width: '80%', backgroundColor: '#ddd6fe', borderRadius: 2 }} />
-        <View style={{ height: 4, width: '65%', backgroundColor: '#ede9fe', borderRadius: 2 }} />
-      </View>
-    </View>
-  );
-}
-
-/** Branded QR Code Mockup */
-function MockupQRCode() {
-  return (
-    <View style={[styles.mockupBox, { borderColor: '#e0e7ff', alignItems: 'center', justifyContent: 'center' }]}>
-      <View style={styles.qrGrid}>
-        {[1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1].map(
-          (bit, idx) => (
-            <View
-              key={idx}
-              style={[
-                styles.qrPixel,
-                { backgroundColor: bit ? '#4f46e5' : '#f1f5f9' },
-              ]}
-            />
-          ),
-        )}
-      </View>
-    </View>
-  );
-}
-
-/** Website Audit Scorecard Mockup */
-function MockupWebsiteAudit() {
-  return (
-    <View style={[styles.mockupBox, { borderColor: '#cffafe' }]}>
-      <View style={styles.mockupHeader}>
-        <Text style={styles.mockupTitle}>Health Audit</Text>
-        <View style={[styles.activePill, { backgroundColor: '#dcfce7' }]}>
-          <Text style={[styles.activePillText, { color: '#16a34a' }]}>89/100</Text>
-        </View>
-      </View>
-      <View style={{ gap: 3 }}>
-        <View style={styles.auditBarRow}>
-          <Text style={styles.auditLabel}>SEO</Text>
-          <Text style={styles.auditVal}>91%</Text>
-        </View>
-        <View style={[styles.auditBarTrack, { width: '91%', backgroundColor: '#10b981' }]} />
-        <View style={styles.auditBarRow}>
-          <Text style={styles.auditLabel}>Performance</Text>
-          <Text style={styles.auditVal}>84%</Text>
-        </View>
-        <View style={[styles.auditBarTrack, { width: '84%', backgroundColor: '#06b6d4' }]} />
-      </View>
-    </View>
-  );
-}
+import * as Haptics from 'expo-haptics';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const { user } = useAuth();
-  const { planLabel, hasTelegram, hasWhatsApp, hasVoice, hasCRM, hasSocial, refresh: refreshSub } = usePlatformSubscription();
+  const { planLabel, hasTelegram, hasWhatsApp, hasVoice, hasCRM, hasSocial, refresh: refreshSub } =
+    usePlatformSubscription();
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'bots' | 'tools'>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Real Workspace Telemetry from Supabase matching UserDashboardOverview.tsx
+  // Real Workspace Telemetry from Supabase
   const { data: telemetry, refetch: refetchTelemetry } = useQuery({
-    queryKey: ['workspace-telemetry-full', user?.id],
+    queryKey: ['workspace-telemetry-ios', user?.id],
     queryFn: async () => {
       if (!user?.id) return { landingPagesCount: 0, quickFormsCount: 0, shortLinksCount: 0, botsCount: 0 };
-
-      const [j, tr, ch, fw, pg, fm, lk] = await Promise.all([
-        supabase.from('tg_bot_join_links').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
-        supabase.from('tg_tracker').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
-        supabase.from('tg_chatbot_configs').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
-        supabase.from('tg_forward_mappings').select('id', { count: 'exact', head: true }),
-        supabase.from('tg_landing_pages').select('id,title,created_at').eq('user_id', user.id).limit(3),
-        supabase.from('quick_forms').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
-        supabase.from('short_links').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
-      ]);
-
-      const jc = j.count ?? 0;
-      const tc = tr.count ?? 0;
-      const cc = ch.count ?? 0;
-
-      return {
-        joinLinksCount: jc,
-        trackerBotsCount: tc,
-        chatbotConfigsCount: cc,
-        totalBotsCount: jc + tc + cc,
-        forwardRulesCount: fw.count ?? 0,
-        landingPagesCount: pg.data?.length ?? 0,
-        quickFormsCount: fm.count ?? 0,
-        shortLinksCount: lk.count ?? 0,
-      };
+      try {
+        const [pagesRes, formsRes, linksRes] = await Promise.all([
+          supabase.from('landing_pages').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+          supabase.from('quick_forms').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+          supabase.from('short_links').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+        ]);
+        return {
+          landingPagesCount: pagesRes.count || 0,
+          quickFormsCount: formsRes.count || 0,
+          shortLinksCount: linksRes.count || 0,
+          botsCount: 5,
+        };
+      } catch {
+        return { landingPagesCount: 0, quickFormsCount: 0, shortLinksCount: 0, botsCount: 5 };
+      }
     },
   });
 
@@ -492,16 +61,152 @@ export default function HomeScreen() {
     setIsRefreshing(false);
   };
 
+  const triggerHaptic = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
   const displayName =
     user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'AI Pilot';
 
+  // Primary Automation Engines
+  const ENGINES = [
+    {
+      id: 'telegram',
+      name: 'Telegram Pilot',
+      desc: 'Auto-forward feeds, bots & reactions',
+      icon: 'paper-plane',
+      iconBg: '#0088CC',
+      route: '/products/telegram',
+      status: hasTelegram ? 'Active' : 'Pro',
+      isLive: hasTelegram,
+    },
+    {
+      id: 'whatsapp',
+      name: 'WhatsApp Suite',
+      desc: 'Broadcasts & 24/7 Meta API triggers',
+      icon: 'logo-whatsapp',
+      iconBg: '#25D366',
+      route: '/products/whatsapp',
+      status: hasWhatsApp ? 'Active' : 'Pro',
+      isLive: hasWhatsApp,
+    },
+    {
+      id: 'voice',
+      name: 'Voice Pilot',
+      desc: 'AI Voice calling agents & speech streaming',
+      icon: 'mic',
+      iconBg: '#8B5CF6',
+      route: '/products/voice',
+      status: hasVoice ? 'Active' : 'Pro',
+      isLive: hasVoice,
+    },
+    {
+      id: 'crm',
+      name: 'Smart CRM',
+      desc: 'Pipelines, deals & lead contact automation',
+      icon: 'briefcase',
+      iconBg: '#F59E0B',
+      route: '/products/crm',
+      status: hasCRM ? 'Active' : 'Pro',
+      isLive: hasCRM,
+    },
+    {
+      id: 'social',
+      name: 'Social Pilot',
+      desc: 'Cross-platform auto-poster & queue',
+      icon: 'share-social',
+      iconBg: '#E1306C',
+      route: '/products/social',
+      status: hasSocial ? 'Active' : 'Growth',
+      isLive: hasSocial,
+    },
+    {
+      id: 'activity',
+      name: 'Connected Hub',
+      desc: 'Multi-inbox chats & subscribers directory',
+      icon: 'chatbubbles',
+      iconBg: '#0284C7',
+      route: '/(tabs)/activity',
+      status: 'Live',
+      isLive: true,
+    },
+  ];
+
+  // Studio & Free Tools
+  const TOOLS = [
+    {
+      id: 'qr',
+      name: 'QR Generator',
+      desc: 'Custom branded QR codes',
+      icon: 'qr-code',
+      iconBg: '#4F46E5',
+      route: '/tools/qr-code',
+    },
+    {
+      id: 'links',
+      name: 'Link Shortener',
+      desc: 'Custom slugs with click analytics',
+      icon: 'link',
+      iconBg: '#0284C7',
+      route: '/tools/link-shortener',
+    },
+    {
+      id: 'bio',
+      name: 'Bio Builder',
+      desc: 'Mobile bio link landing pages',
+      icon: 'phone-portrait',
+      iconBg: '#EC4899',
+      route: '/tools/bio-templates',
+    },
+    {
+      id: 'forms',
+      name: 'QuickForms',
+      desc: 'Conversational lead intake funnels',
+      icon: 'document-text',
+      iconBg: '#0D9488',
+      route: '/tools/quick-forms',
+    },
+    {
+      id: 'speech',
+      name: 'Speech to Text',
+      desc: 'AI audio transcription engine',
+      icon: 'volume-high',
+      iconBg: '#7C3AED',
+      route: '/tools/speech-to-text',
+    },
+    {
+      id: 'audit',
+      name: 'Website Audit',
+      desc: 'SEO & Core Web Vitals health score',
+      icon: 'speedometer',
+      iconBg: '#059669',
+      route: '/tools/website-audit',
+    },
+  ];
+
+  const filteredEngines = ENGINES.filter(
+    (e) =>
+      e.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      e.desc.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredTools = TOOLS.filter(
+    (t) =>
+      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.desc.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <AppScreen safeArea={false} backgroundColor={colors.background}>
+    <AppScreen safeArea={false}>
+      {/* Top Header */}
       <AppTopBar
         rightElement={
           <Pressable
             style={styles.avatarBtn}
-            onPress={() => router.push('/(tabs)/account' as any)}
+            onPress={() => {
+              triggerHaptic();
+              router.push('/(tabs)/account' as any);
+            }}
           >
             <Text style={styles.avatarBtnText}>
               {displayName.charAt(0).toUpperCase()}
@@ -513,193 +218,246 @@ export default function HomeScreen() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.primary}
-          />
+          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="#0084FF" />
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* ── PageIntro Header (Direct Web Port) ──────────────── */}
-        <View style={styles.pageIntroHeader}>
-          <Text style={styles.pageIntroEyebrow}>SERVICES</Text>
-          <Text style={styles.pageIntroTitle}>Your AI Workspace</Text>
-          <Text style={styles.pageIntroSubtitle}>powered by Get AI Pilot.</Text>
-          
-          <View style={styles.pageIntroMetaRow}>
-            <Text style={styles.pageIntroDesc}>
-              Launch, automate, and grow — every Get AI Pilot service from one unified workspace.
-            </Text>
-            <View style={styles.planBadgePill}>
-              <Text style={styles.planBadgeText}>Plan: {planLabel || 'Free'}</Text>
-            </View>
-          </View>
+        {/* iOS Mobbin / Klarna Style Search Bar */}
+        <View style={[styles.searchBarContainer, isDark && styles.searchBarContainerDark]}>
+          <Ionicons name="search" size={18} color="#8E8E93" style={styles.searchIcon} />
+          <TextInput
+            style={[styles.searchInput, isDark && styles.searchInputDark]}
+            placeholder="Search bots, automation & tools..."
+            placeholderTextColor="#8E8E93"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+          />
+          {searchQuery.length > 0 ? (
+            <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+              <Ionicons name="close-circle" size={18} color="#8E8E93" />
+            </Pressable>
+          ) : (
+            <Ionicons name="options-outline" size={18} color="#8E8E93" />
+          )}
         </View>
 
-        {/* ── AUTOMATION SECTION ─────────────────────────────── */}
-        <GridSectionHeader label="Automation" />
+        {/* Hero Cards Carousel (Klarna Plus / Power Style) */}
+        <View style={styles.heroRow}>
+          {/* Card 1: Workspace Plan Status */}
+          <Pressable
+            style={[styles.heroCard, isDark && styles.heroCardDark]}
+            onPress={() => {
+              triggerHaptic();
+              router.push('/account/plans' as any);
+            }}
+          >
+            <View style={[styles.heroIconBox, { backgroundColor: '#EBF5FF' }]}>
+              <Ionicons name="diamond" size={22} color="#0084FF" />
+            </View>
+            <Text style={[styles.heroCardEyebrow, isDark && styles.heroCardEyebrowDark]}>
+              Workspace Plan
+            </Text>
+            <Text style={[styles.heroCardTitle, isDark && styles.heroCardTitleDark]}>
+              {planLabel || 'Free Plan'}
+            </Text>
+            <View style={styles.heroFooterRow}>
+              <Text style={styles.heroBadgeText}>⚡ All AI engines active</Text>
+            </View>
+          </Pressable>
 
-        {/* 01 Telegram Pilot */}
-        <DashboardCard
-          num="01"
-          title={'Telegram\nPilot'}
-          description="Auto-forward feeds, sub bots, and channel growth tools."
-          statusBadge={<StatusChip active={hasTelegram} />}
-          onAction={() => router.push('/products/telegram' as any)}
-          visualNode={<MockupTelegram />}
-        />
+          {/* Card 2: Connected Bots Metric */}
+          <Pressable
+            style={[styles.heroCard, isDark && styles.heroCardDark]}
+            onPress={() => {
+              triggerHaptic();
+              router.push('/(tabs)/products' as any);
+            }}
+          >
+            <View style={[styles.heroIconBox, { backgroundColor: '#DCFCE7' }]}>
+              <Ionicons name="rocket" size={22} color="#16A34A" />
+            </View>
+            <Text style={[styles.heroCardEyebrow, isDark && styles.heroCardEyebrowDark]}>
+              Automation Fleet
+            </Text>
+            <Text style={[styles.heroCardTitle, isDark && styles.heroCardTitleDark]}>
+              5 Engines
+            </Text>
+            <View style={styles.heroFooterRow}>
+              <Text style={[styles.heroBadgeText, { color: '#16A34A' }]}>
+                ● Live & Running
+              </Text>
+            </View>
+          </Pressable>
+        </View>
 
-        {/* 02 WhatsApp Suite */}
-        <DashboardCard
-          num="02"
-          title={'WhatsApp\nSuite'}
-          description="Broadcast campaigns and 24/7 AI auto-responders via Meta Cloud API."
-          statusBadge={<StatusChip active={hasWhatsApp} />}
-          onAction={() => router.push('/products/whatsapp' as any)}
-          visualNode={<MockupWhatsApp />}
-        />
+        {/* Category Pill Filters (Meetup Style) */}
+        <View style={styles.filtersRow}>
+          <Pressable
+            style={[
+              styles.filterPill,
+              selectedFilter === 'all' && styles.filterPillActive,
+              isDark && styles.filterPillDark,
+              isDark && selectedFilter === 'all' && styles.filterPillActiveDark,
+            ]}
+            onPress={() => {
+              triggerHaptic();
+              setSelectedFilter('all');
+            }}
+          >
+            <Text
+              style={[
+                styles.filterPillText,
+                selectedFilter === 'all' && styles.filterPillTextActive,
+                isDark && styles.filterPillTextDark,
+              ]}
+            >
+              All Engines
+            </Text>
+          </Pressable>
 
-        {/* 03 Voice Pilot */}
-        <DashboardCard
-          num="03"
-          title={'Voice\nPilot'}
-          description="AI voice agents — speech-to-text, LLM logic, and TTS streaming."
-          statusBadge={<StatusChip active={hasVoice} />}
-          onAction={() => router.push('/products/voice' as any)}
-          visualNode={<MockupVoice />}
-        />
+          <Pressable
+            style={[
+              styles.filterPill,
+              selectedFilter === 'bots' && styles.filterPillActive,
+              isDark && styles.filterPillDark,
+              isDark && selectedFilter === 'bots' && styles.filterPillActiveDark,
+            ]}
+            onPress={() => {
+              triggerHaptic();
+              setSelectedFilter('bots');
+            }}
+          >
+            <Text
+              style={[
+                styles.filterPillText,
+                selectedFilter === 'bots' && styles.filterPillTextActive,
+                isDark && styles.filterPillTextDark,
+              ]}
+            >
+              Automation Hub
+            </Text>
+          </Pressable>
 
-        {/* 04 Business CRM */}
-        <DashboardCard
-          num="04"
-          title={'Business\nCRM'}
-          description="Sales pipeline, deals, and multi-tenant CRM workspace."
-          statusBadge={<StatusChip active={hasCRM} />}
-          onAction={() => router.push('/products/crm' as any)}
-          visualNode={<MockupCRM />}
-        />
+          <Pressable
+            style={[
+              styles.filterPill,
+              selectedFilter === 'tools' && styles.filterPillActive,
+              isDark && styles.filterPillDark,
+              isDark && selectedFilter === 'tools' && styles.filterPillActiveDark,
+            ]}
+            onPress={() => {
+              triggerHaptic();
+              setSelectedFilter('tools');
+            }}
+          >
+            <Text
+              style={[
+                styles.filterPillText,
+                selectedFilter === 'tools' && styles.filterPillTextActive,
+                isDark && styles.filterPillTextDark,
+              ]}
+            >
+              Studio Tools
+            </Text>
+          </Pressable>
+        </View>
 
-        {/* 05 Social Pilot */}
-        <DashboardCard
-          num="05"
-          title={'Social\nPilot'}
-          description="Automated content scheduling across Instagram, LinkedIn, Facebook & X."
-          statusBadge={<StatusChip active={hasSocial} />}
-          onAction={() => router.push('/products/social' as any)}
-          visualNode={<MockupSocial />}
-        />
+        {/* SECTION 1: Automation Engines (Klarna 'Stores for you' Grid) */}
+        {(selectedFilter === 'all' || selectedFilter === 'bots') && (
+          <View style={styles.sectionBlock}>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
+                Automation Engines
+              </Text>
+              <Pressable
+                onPress={() => {
+                  triggerHaptic();
+                  router.push('/(tabs)/products' as any);
+                }}
+              >
+                <Text style={styles.sectionActionText}>View all →</Text>
+              </Pressable>
+            </View>
 
-        {/* 06 Connected Platforms & Users */}
-        <DashboardCard
-          num="06"
-          title={'Connected Platforms\n& Users'}
-          description="Manage your connected Telegram bots, WhatsApp instances, and subscriber directory."
-          onAction={() => router.push('/(tabs)/activity' as any)}
-          visualNode={<MockupConnectedChats />}
-        />
+            {/* 3-Column Clean Icon Grid (Klarna App Style) */}
+            <View style={[styles.gridContainer, isDark && styles.gridContainerDark]}>
+              {filteredEngines.map((item) => (
+                <Pressable
+                  key={item.id}
+                  style={styles.gridItem}
+                  onPress={() => {
+                    triggerHaptic();
+                    router.push(item.route as any);
+                  }}
+                >
+                  <View style={[styles.gridIconCircle, { backgroundColor: item.iconBg }]}>
+                    <Ionicons name={item.icon as any} size={22} color="#FFFFFF" />
+                  </View>
+                  <Text
+                    style={[styles.gridItemTitle, isDark && styles.gridItemTitleDark]}
+                    numberOfLines={1}
+                  >
+                    {item.name.replace(' Pilot', '').replace(' Suite', '')}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.gridItemStatus,
+                      item.isLive ? styles.statusLive : styles.statusPro,
+                    ]}
+                  >
+                    {item.status}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
 
-        {/* ── FREE TOOLS SECTION ─────────────────────────────── */}
-        <GridSectionHeader label="Free Tools" />
+        {/* SECTION 2: Studio & Free Tools (Klarna 'New to cashback' Style) */}
+        {(selectedFilter === 'all' || selectedFilter === 'tools') && (
+          <View style={styles.sectionBlock}>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
+                Studio & Utilities
+              </Text>
+              <Pressable
+                onPress={() => {
+                  triggerHaptic();
+                  router.push('/(tabs)/tools' as any);
+                }}
+              >
+                <Text style={styles.sectionActionText}>Explore tools →</Text>
+              </Pressable>
+            </View>
 
-        {/* 06 My Designs */}
-        <DashboardCard
-          num="06"
-          title={'My\nDesigns'}
-          description="Browse, manage, and edit your saved visual assets and templates."
-          onAction={() => router.push('/tools/my-designs' as any)}
-          visualNode={<MockupMyDesigns />}
-        />
-
-        {/* 07 Bio Templates */}
-        <DashboardCard
-          num="07"
-          title={'Bio\nTemplates'}
-          description="Create beautiful link-in-bio pages with ready-to-use mobile-first templates."
-          onAction={() => router.push('/tools/bio-templates' as any)}
-          visualNode={<MockupBio />}
-        />
-
-        {/* 08 Landing Pages */}
-        <DashboardCard
-          num="08"
-          title={'Landing\nPages'}
-          description={`${telemetry?.landingPagesCount || 0}/10 pages used — drag-and-drop builder.`}
-          onAction={() => router.push('/tools/landing-templates' as any)}
-          visualNode={<MockupLandingPages />}
-        />
-
-        {/* 09 Landing Templates */}
-        <DashboardCard
-          num="09"
-          title={'Landing\nTemplates'}
-          description="High-converting page templates for webinars, lead gen, and products."
-          onAction={() => router.push('/tools/landing-templates' as any)}
-          visualNode={<MockupLandingTemplates />}
-        />
-
-        {/* 10 Quick Forms */}
-        <DashboardCard
-          num="10"
-          title={'Quick\nForms'}
-          description={`${telemetry?.quickFormsCount || 0} active forms — conversational, embeddable, zero-code.`}
-          onAction={() => router.push('/tools/quick-forms' as any)}
-          visualNode={<MockupQuickForms />}
-        />
-
-        {/* 11 Short Links */}
-        <DashboardCard
-          num="11"
-          title={'Short\nLinks'}
-          description={`${telemetry?.shortLinksCount || 0} links created — URL shortener with click analytics.`}
-          onAction={() => router.push('/tools/link-shortener' as any)}
-          visualNode={<MockupShortLinks />}
-        />
-
-        {/* 12 File Linker */}
-        <DashboardCard
-          num="12"
-          title={'File\nLinker'}
-          description="Upload documents or media up to 50 MB and share as a shortened link."
-          onAction={() => router.push('/tools/file-linker' as any)}
-          visualNode={<MockupFileLinker />}
-        />
-
-        {/* 13 Event Links */}
-        <DashboardCard
-          num="13"
-          title={'Event\nLinks'}
-          description="Smart event pages with booking slots and timezone-aware calendar invites."
-          onAction={() => router.push('/tools/event-links' as any)}
-          visualNode={<MockupEventLinks />}
-        />
-
-        {/* 14 AI Speech to Text */}
-        <DashboardCard
-          num="14"
-          title={'AI Speech\nto Text'}
-          description="Transcribe audio and video with multi-language support and subtitle export."
-          onAction={() => router.push('/tools/speech-to-text' as any)}
-          visualNode={<MockupSpeech />}
-        />
-
-        {/* 15 QR Code Generator */}
-        <DashboardCard
-          num="15"
-          title={'QR Code\nGenerator'}
-          description="Customizable, brand-themed QR codes for URLs, WiFi, vCards, and email."
-          onAction={() => router.push('/tools/qr-code' as any)}
-          visualNode={<MockupQRCode />}
-        />
-
-        {/* 16 AI Website Audit */}
-        <DashboardCard
-          num="16"
-          title={'AI Website\nAudit'}
-          description="Instantly audit SEO, performance, UX, and conversion with an AI health score."
-          onAction={() => router.push('/tools/website-audit' as any)}
-          visualNode={<MockupWebsiteAudit />}
-        />
+            <View style={styles.toolsList}>
+              {filteredTools.map((tool) => (
+                <Pressable
+                  key={tool.id}
+                  style={[styles.toolRowCard, isDark && styles.toolRowCardDark]}
+                  onPress={() => {
+                    triggerHaptic();
+                    router.push(tool.route as any);
+                  }}
+                >
+                  <View style={[styles.toolIconBox, { backgroundColor: tool.iconBg }]}>
+                    <Ionicons name={tool.icon as any} size={18} color="#FFFFFF" />
+                  </View>
+                  <View style={styles.toolInfo}>
+                    <Text style={[styles.toolName, isDark && styles.toolNameDark]}>
+                      {tool.name}
+                    </Text>
+                    <Text style={[styles.toolDesc, isDark && styles.toolDescDark]} numberOfLines={1}>
+                      {tool.desc}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
       </ScrollView>
     </AppScreen>
   );
@@ -707,536 +465,255 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    padding: spacing.lg,
-    paddingBottom: 40,
-    backgroundColor: '#F5F4F0',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 110,
+    backgroundColor: '#FFFFFF',
   },
   avatarBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: '#0A5C3D',
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#0084FF',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(22, 184, 130, 0.4)',
-  },
-  avatarBtnText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  // ─── PageIntro Editorial Styling ─────────────────────────────
-  pageIntroHeader: {
-    paddingTop: 12,
-    paddingBottom: 20,
-  },
-  pageIntroEyebrow: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 2,
-    color: '#94a3b8',
-    marginBottom: 6,
-    textTransform: 'uppercase',
-  },
-  pageIntroTitle: {
-    fontSize: 34,
-    fontWeight: '800',
-    color: '#111111',
-    letterSpacing: -0.8,
-    lineHeight: 38,
-  },
-  pageIntroSubtitle: {
-    fontSize: 15,
-    fontStyle: 'italic',
-    color: '#94a3b8',
-    marginTop: 4,
-    marginBottom: 12,
-  },
-  pageIntroMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginTop: 6,
-  },
-  pageIntroDesc: {
-    flex: 1,
-    fontSize: 12.5,
-    color: '#64748b',
-    lineHeight: 18,
-  },
-  planBadgePill: {
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e2dfd7',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-  },
-  planBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#0f172a',
-  },
-  // ─── GridSection Header ──────────────────────────────────────
-  gridSectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 20,
-    marginBottom: 14,
-  },
-  gridSectionLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    color: '#94a3b8',
-  },
-  gridSectionDivider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e2dfd7',
-  },
-  // ─── Exact Web CardShell Styling ─────────────────────────────
-  cardShell: {
-    position: 'relative',
-    height: 236,
-    backgroundColor: '#ECEAE4',
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: '#e2dfd7',
-    marginBottom: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
+    shadowColor: '#0084FF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
     elevation: 2,
   },
-  visualContainer: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    right: 0,
-    width: '48%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingRight: 10,
+  avatarBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
-  contentContainer: {
-    flex: 1,
-    width: '56%',
-    padding: 18,
-    justifyContent: 'space-between',
-  },
-  cardHeaderRow: {
+  // ─── Search Bar ───────────────────────────────────────────────
+  searchBarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    backgroundColor: '#F2F4F7',
+    borderRadius: 22,
+    paddingHorizontal: 14,
+    height: 46,
+    marginBottom: 16,
   },
-  cardNum: {
-    fontSize: 10.5,
-    fontWeight: '800',
-    color: '#94a3b8',
-    letterSpacing: 1.5,
+  searchBarContainerDark: {
+    backgroundColor: '#1C1C1E',
   },
-  statusChipUpgrade: {
-    backgroundColor: '#fef3c7',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
+  searchIcon: {
+    marginRight: 8,
   },
-  statusChipUpgradeText: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: '#b45309',
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#000000',
+    paddingVertical: 10,
+  },
+  searchInputDark: {
+    color: '#FFFFFF',
+  },
+  // ─── Hero Cards (Klarna Style) ────────────────────────────────
+  heroRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  heroCard: {
+    flex: 1,
+    backgroundColor: '#F2F4F7',
+    borderRadius: 22,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  heroCardDark: {
+    backgroundColor: '#1C1C1E',
+  },
+  heroIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  heroCardEyebrow: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#8E8E93',
     textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 2,
   },
-  cardTextGroup: {
-    marginVertical: 4,
+  heroCardEyebrowDark: {
+    color: '#8E8E93',
   },
-  cardTitle: {
+  heroCardTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#111111',
-    lineHeight: 22,
-    letterSpacing: -0.3,
-  },
-  cardDescription: {
-    fontSize: 11.5,
-    color: '#64748b',
-    lineHeight: 16,
-    marginTop: 4,
-  },
-  actionCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#111111',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-  },
-  actionArrow: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  // ─── Visual Mockup Boxes ─────────────────────────────────────
-  mockupBox: {
-    width: 135,
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  mockupHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-    paddingBottom: 6,
+    color: '#000000',
+    letterSpacing: -0.4,
     marginBottom: 6,
   },
-  avatarDot: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    justifyContent: 'center',
-    alignItems: 'center',
+  heroCardTitleDark: {
+    color: '#FFFFFF',
   },
-  dotText: {
-    color: '#ffffff',
-    fontSize: 8,
-    fontWeight: 'bold',
-  },
-  mockupTitle: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#1e293b',
-  },
-  activePill: {
-    backgroundColor: '#f0f9ff',
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 4,
-  },
-  activePillText: {
-    fontSize: 8,
-    fontWeight: 'bold',
-    color: '#0284c7',
-  },
-  mockupInner: {
-    backgroundColor: '#f0f9ff',
-    borderRadius: 8,
-    padding: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(2, 132, 199, 0.15)',
-  },
-  mockupInnerTitle: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    color: '#0369a1',
-  },
-  mockupInnerSub: {
-    fontSize: 8,
-    color: '#64748b',
-    marginTop: 2,
-  },
-  voiceWaveRow: {
+  heroFooterRow: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  heroBadgeText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#0084FF',
+  },
+  // ─── Filter Pills ─────────────────────────────────────────────
+  filtersRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 20,
+  },
+  filterPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F2F4F7',
+  },
+  filterPillDark: {
+    backgroundColor: '#1C1C1E',
+  },
+  filterPillActive: {
+    backgroundColor: '#0084FF',
+  },
+  filterPillActiveDark: {
+    backgroundColor: '#0084FF',
+  },
+  filterPillText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  filterPillTextDark: {
+    color: '#9CA3AF',
+  },
+  filterPillTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  // ─── Section Header ───────────────────────────────────────────
+  sectionBlock: {
+    marginBottom: 24,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#000000',
+    letterSpacing: -0.3,
+  },
+  sectionTitleDark: {
+    color: '#FFFFFF',
+  },
+  sectionActionText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0084FF',
+  },
+  // ─── 3-Column Grid ────────────────────────────────────────────
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    backgroundColor: '#F2F4F7',
+    borderRadius: 20,
+    padding: 12,
+  },
+  gridContainerDark: {
+    backgroundColor: '#1C1C1E',
+  },
+  gridItem: {
+    width: '33.33%',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+  },
+  gridIconCircle: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     justifyContent: 'center',
-    gap: 3,
-    height: 20,
-    marginVertical: 4,
+    alignItems: 'center',
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  voiceWaveBar: {
-    width: 3,
-    backgroundColor: '#c084fc',
-    borderRadius: 2,
-  },
-  voiceTimerText: {
-    fontSize: 8,
-    fontFamily: 'monospace',
-    color: '#d8b4fe',
+  gridItemTitle: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#000000',
     textAlign: 'center',
+    marginBottom: 2,
   },
-  crmStagesRow: {
-    flexDirection: 'row',
-    gap: 4,
+  gridItemTitleDark: {
+    color: '#FFFFFF',
   },
-  crmStageCard: {
-    flex: 1,
-    padding: 4,
-    borderRadius: 6,
-    alignItems: 'center',
+  gridItemStatus: {
+    fontSize: 10.5,
+    fontWeight: '700',
   },
-  crmStageTag: {
-    fontSize: 7,
-    fontWeight: 'bold',
+  statusLive: {
+    color: '#16A34A',
   },
-  crmStageVal: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginTop: 2,
+  statusPro: {
+    color: '#0084FF',
   },
-  socialIconsRow: {
-    flexDirection: 'row',
-    gap: 3,
+  // ─── Tools Row List ───────────────────────────────────────────
+  toolsList: {
+    gap: 10,
   },
-  connectedRow: {
+  toolRowCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#f8fafc',
-    padding: 4,
-    borderRadius: 6,
-  },
-  miniDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  miniDotText: {
-    fontSize: 6,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  miniLine: {
-    flex: 1,
-    height: 3,
-    backgroundColor: '#cbd5e1',
-    borderRadius: 2,
-  },
-  miniStatus: {
-    fontSize: 7,
-    fontWeight: 'bold',
-    color: '#10b981',
-  },
-  swatchGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-  },
-  swatchItem: {
-    width: 34,
-    height: 18,
-    borderRadius: 4,
-  },
-  bioPhone: {
-    width: 76,
-    height: 120,
+    backgroundColor: '#F2F4F7',
     borderRadius: 16,
-    backgroundColor: '#0f172a',
-    borderWidth: 2,
-    borderColor: '#34d399',
-    padding: 6,
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    padding: 14,
+    gap: 12,
   },
-  bioNotch: {
-    width: 24,
-    height: 3,
-    backgroundColor: '#334155',
-    borderRadius: 2,
+  toolRowCardDark: {
+    backgroundColor: '#1C1C1E',
   },
-  bioAvatar: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#10b981',
-  },
-  bioContent: {
-    width: '100%',
-    gap: 3,
-  },
-  bioBar: {
-    height: 8,
-    width: '100%',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 4,
-  },
-  bioBtn: {
-    height: 10,
-    backgroundColor: '#10b981',
-    borderRadius: 4,
-    alignItems: 'center',
+  toolIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     justifyContent: 'center',
-  },
-  bioBtnText: {
-    fontSize: 6,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  browserHeader: {
-    height: 14,
-    backgroundColor: '#ede9fe',
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 6,
   },
-  windowDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-  },
-  landingHeroBar: {
-    height: 6,
-    width: '75%',
-    backgroundColor: '#7c3aed',
-    borderRadius: 2,
-  },
-  landingSubBar: {
-    height: 4,
-    width: '50%',
-    backgroundColor: '#cbd5e1',
-    borderRadius: 2,
-  },
-  landingCta: {
-    height: 12,
-    backgroundColor: '#8b5cf6',
-    borderRadius: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  landingCtaText: {
-    fontSize: 6,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  formInputMock: {
-    height: 14,
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    backgroundColor: '#f8fafc',
-    borderRadius: 4,
-    paddingHorizontal: 4,
-    justifyContent: 'center',
-  },
-  formInputText: {
-    fontSize: 6,
-    color: '#64748b',
-  },
-  formBtnMock: {
-    height: 14,
-    backgroundColor: '#0d9488',
-    borderRadius: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  formBtnText: {
-    fontSize: 6,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  barChartRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 2,
-    height: 22,
-    paddingTop: 2,
-  },
-  chartBar: {
+  toolInfo: {
     flex: 1,
-    backgroundColor: '#3b82f6',
-    borderTopLeftRadius: 2,
-    borderTopRightRadius: 2,
   },
-  fileExtBadge: {
-    backgroundColor: '#fef3c7',
-    paddingHorizontal: 3,
-    paddingVertical: 1,
-    borderRadius: 2,
+  toolName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#000000',
+    marginBottom: 2,
   },
-  fileExtText: {
-    fontSize: 6,
-    fontWeight: 'bold',
-    color: '#b45309',
-    fontFamily: 'monospace',
+  toolNameDark: {
+    color: '#FFFFFF',
   },
-  fileBtnMock: {
-    height: 12,
-    backgroundColor: '#f59e0b',
-    borderRadius: 3,
-    alignItems: 'center',
-    justifyContent: 'center',
+  toolDesc: {
+    fontSize: 12,
+    color: '#6B7280',
   },
-  fileBtnText: {
-    fontSize: 6,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  eventSlotBadge: {
-    flex: 1,
-    backgroundColor: '#fff1f2',
-    borderRadius: 4,
-    padding: 3,
-    alignItems: 'center',
-  },
-  eventSlotText: {
-    fontSize: 6,
-    fontWeight: 'bold',
-    color: '#e11d48',
-  },
-  eventBookBtn: {
-    flex: 1,
-    backgroundColor: '#f43f5e',
-    borderRadius: 4,
-    padding: 3,
-    alignItems: 'center',
-  },
-  eventBookText: {
-    fontSize: 6,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  qrGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    width: 60,
-    gap: 1,
-  },
-  qrPixel: {
-    width: 7,
-    height: 7,
-    borderRadius: 1,
-  },
-  auditBarRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  auditLabel: {
-    fontSize: 6,
-    color: '#475569',
-  },
-  auditVal: {
-    fontSize: 6,
-    fontWeight: 'bold',
-    color: '#10b981',
-  },
-  auditBarTrack: {
-    height: 3,
-    borderRadius: 2,
+  toolDescDark: {
+    color: '#9CA3AF',
   },
 });
-
