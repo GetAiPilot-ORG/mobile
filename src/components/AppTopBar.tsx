@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { useRouter } from 'expo-router';
 
@@ -19,6 +20,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
   onBackPress,
 }) => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const handleBack = () => {
     if (onBackPress) {
@@ -29,13 +31,13 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top, height: 56 + insets.top }]}>
       <View style={styles.leftSection}>
-        {showBack && (
+        {showBack ? (
           <Pressable style={styles.backButton} onPress={handleBack} hitSlop={8}>
             <Text style={styles.backText}>‹</Text>
           </Pressable>
-        )}
+        ) : null}
         <View style={styles.titleWrapper}>
           {title ? (
             <Text style={styles.title} numberOfLines={1}>
@@ -49,15 +51,15 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
               <Text style={styles.brandText}>GetAIPilot</Text>
             </View>
           )}
-          {subtitle && (
+          {subtitle ? (
             <Text style={styles.subtitle} numberOfLines={1}>
               {subtitle}
             </Text>
-          )}
+          ) : null}
         </View>
       </View>
 
-      {rightElement && <View style={styles.rightSection}>{rightElement}</View>}
+      {rightElement ? <View style={styles.rightSection}>{rightElement}</View> : null}
     </View>
   );
 };

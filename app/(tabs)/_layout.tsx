@@ -1,10 +1,15 @@
 import { Tabs } from 'expo-router';
 import { colors } from '../../src/theme/colors';
-import { View, Text } from 'react-native';
+import { Text, Platform } from 'react-native';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const { isAdmin } = usePlatformSubscription();
+  const insets = useSafeAreaInsets();
+
+  const bottomInset = insets.bottom > 0 ? insets.bottom : (Platform.OS === 'web' ? 8 : 10);
+  const tabHeight = 56 + bottomInset;
 
   return (
     <Tabs
@@ -15,8 +20,9 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
-          height: 60,
-          paddingBottom: 8,
+          borderTopWidth: 1,
+          height: tabHeight,
+          paddingBottom: bottomInset,
           paddingTop: 6,
         },
         tabBarLabelStyle: {
