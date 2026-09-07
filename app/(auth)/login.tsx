@@ -1,20 +1,19 @@
-import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
-  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
 } from 'react-native';
 import { supabase } from '../../src/lib/supabase';
-import { colors } from '../../src/theme/colors';
 import { isValidEmail } from '../../src/lib/validators';
-import { useRouter } from 'expo-router';
+import { colors } from '../../src/theme/colors';
 
 export default function LoginScreen() {
   const router = useRouter();
