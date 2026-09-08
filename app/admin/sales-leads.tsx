@@ -115,9 +115,9 @@ export default function SalesLeadsScreen() {
                       {lead.full_name || lead.email?.split('@')[0] || 'Prospective Client'}
                     </Text>
                     <Text style={styles.leadEmail}>{lead.email || 'No email'}</Text>
-                    {lead.business_name && (
+                    {lead.business_name ? (
                       <Text style={styles.leadBiz}>🏢 {lead.business_name}</Text>
-                    )}
+                    ) : null}
                   </View>
                   <View style={styles.leadBadge}>
                     <Text style={styles.leadBadgeText}>
@@ -130,7 +130,7 @@ export default function SalesLeadsScreen() {
 
                 <View style={styles.leadBottom}>
                   <Text style={styles.leadDate}>
-                    Joined: {new Date(lead.created_at).toLocaleDateString()}
+                    Joined: {lead.created_at ? new Date(lead.created_at).toLocaleDateString() : 'N/A'}
                   </Text>
                   <View style={styles.actionsRow}>
                     <Pressable

@@ -25,17 +25,17 @@ export const MetricCard: React.FC<MetricCardProps> = ({
         <Text style={styles.label} numberOfLines={1}>
           {label}
         </Text>
-        {icon && <Text style={styles.icon}>{icon}</Text>}
+        {icon ? <Text style={styles.icon}>{icon}</Text> : null}
       </View>
       <View style={styles.valueRow}>
         <Text style={styles.value}>{value}</Text>
-        {badge && (
+        {badge ? (
           <View style={[styles.badge, { backgroundColor: badgeColor + '20' }]}>
             <Text style={[styles.badgeText, { color: badgeColor }]}>{badge}</Text>
           </View>
-        )}
+        ) : null}
       </View>
-      {subtext && <Text style={styles.subtext}>{subtext}</Text>}
+      {subtext ? <Text style={styles.subtext}>{subtext}</Text> : null}
     </View>
   );
 };

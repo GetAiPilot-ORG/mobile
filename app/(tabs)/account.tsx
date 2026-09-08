@@ -335,7 +335,7 @@ export default function AccountScreen() {
   };
 
   return (
-    <AppScreen safeArea={false} backgroundColor={colors.background}>
+    <AppScreen safeArea="top" backgroundColor={colors.background}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Profile Hero Header */}
         <View style={styles.heroCard}>

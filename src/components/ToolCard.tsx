@@ -31,11 +31,11 @@ export const ToolCard: React.FC<ToolCardProps> = ({
             {title}
           </Text>
         </View>
-        {badge && (
+        {badge ? (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{badge}</Text>
           </View>
-        )}
+        ) : null}
       </View>
       <Text style={styles.desc} numberOfLines={2}>
         {description}
