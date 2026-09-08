@@ -216,9 +216,13 @@ export default function HomeScreen() {
       />
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          isDark ? styles.scrollContentDark : styles.scrollContentLight,
+        ]}
         refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="#0084FF" />
+          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="#0A84FF" />
         }
         showsVerticalScrollIndicator={false}
       >
@@ -252,8 +256,13 @@ export default function HomeScreen() {
               router.push('/account/plans' as any);
             }}
           >
-            <View style={[styles.heroIconBox, { backgroundColor: '#EBF5FF' }]}>
-              <Ionicons name="diamond" size={22} color="#0084FF" />
+            <View
+              style={[
+                styles.heroIconBox,
+                { backgroundColor: isDark ? 'rgba(10, 132, 255, 0.16)' : '#EBF5FF' },
+              ]}
+            >
+              <Ionicons name="diamond" size={22} color="#0A84FF" />
             </View>
             <Text style={[styles.heroCardEyebrow, isDark && styles.heroCardEyebrowDark]}>
               Workspace Plan
@@ -274,7 +283,12 @@ export default function HomeScreen() {
               router.push('/(tabs)/products' as any);
             }}
           >
-            <View style={[styles.heroIconBox, { backgroundColor: '#DCFCE7' }]}>
+            <View
+              style={[
+                styles.heroIconBox,
+                { backgroundColor: isDark ? 'rgba(22, 163, 74, 0.18)' : '#DCFCE7' },
+              ]}
+            >
               <Ionicons name="rocket" size={22} color="#16A34A" />
             </View>
             <Text style={[styles.heroCardEyebrow, isDark && styles.heroCardEyebrowDark]}>
@@ -464,20 +478,34 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewLight: {
+    backgroundColor: '#F8F9FA',
+  },
+  scrollViewDark: {
+    backgroundColor: '#000000',
+  },
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 110,
-    backgroundColor: '#FFFFFF',
+    paddingBottom: 140,
+  },
+  scrollContentLight: {
+    backgroundColor: '#F8F9FA',
+  },
+  scrollContentDark: {
+    backgroundColor: '#000000',
   },
   avatarBtn: {
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#0084FF',
+    backgroundColor: '#0A84FF',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#0084FF',
+    shadowColor: '#0A84FF',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
@@ -492,14 +520,17 @@ const styles = StyleSheet.create({
   searchBarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F2F4F7',
+    backgroundColor: '#FFFFFF',
     borderRadius: 22,
     paddingHorizontal: 14,
     height: 46,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   searchBarContainerDark: {
     backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
   },
   searchIcon: {
     marginRight: 8,
@@ -521,14 +552,15 @@ const styles = StyleSheet.create({
   },
   heroCard: {
     flex: 1,
-    backgroundColor: '#F2F4F7',
+    backgroundColor: '#FFFFFF',
     borderRadius: 22,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: '#E5E7EB',
   },
   heroCardDark: {
     backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
   },
   heroIconBox: {
     width: 40,
@@ -566,7 +598,7 @@ const styles = StyleSheet.create({
   heroBadgeText: {
     fontSize: 11.5,
     fontWeight: '700',
-    color: '#0084FF',
+    color: '#0A84FF',
   },
   // ─── Filter Pills ─────────────────────────────────────────────
   filtersRow: {
@@ -578,16 +610,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#F2F4F7',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   filterPillDark: {
     backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
   },
   filterPillActive: {
-    backgroundColor: '#0084FF',
+    backgroundColor: '#0A84FF',
+    borderColor: '#0A84FF',
   },
   filterPillActiveDark: {
-    backgroundColor: '#0084FF',
+    backgroundColor: '#0A84FF',
+    borderColor: '#0A84FF',
   },
   filterPillText: {
     fontSize: 13,
@@ -595,7 +632,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   filterPillTextDark: {
-    color: '#9CA3AF',
+    color: '#8E8E93',
   },
   filterPillTextActive: {
     color: '#FFFFFF',
@@ -623,18 +660,21 @@ const styles = StyleSheet.create({
   sectionActionText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#0084FF',
+    color: '#0A84FF',
   },
   // ─── 3-Column Grid ────────────────────────────────────────────
   gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    backgroundColor: '#F2F4F7',
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   gridContainerDark: {
     backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
   },
   gridItem: {
     width: '33.33%',
@@ -673,7 +713,7 @@ const styles = StyleSheet.create({
     color: '#16A34A',
   },
   statusPro: {
-    color: '#0084FF',
+    color: '#0A84FF',
   },
   // ─── Tools Row List ───────────────────────────────────────────
   toolsList: {
@@ -682,13 +722,16 @@ const styles = StyleSheet.create({
   toolRowCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F2F4F7',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 14,
     gap: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   toolRowCardDark: {
     backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
   },
   toolIconBox: {
     width: 36,
@@ -714,6 +757,6 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   toolDescDark: {
-    color: '#9CA3AF',
+    color: '#8E8E93',
   },
 });

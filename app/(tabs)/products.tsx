@@ -39,7 +39,7 @@ export default function ProductsScreen() {
   };
 
   return (
-    <AppScreen safeArea={false} backgroundColor={colors.background}>
+    <AppScreen safeArea={false}>
       <AppTopBar title="Product Suite" subtitle="Connected AI Automation Engines" />
 
       <ScrollView
@@ -106,6 +106,6 @@ export default function ProductsScreen() {
 const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
-    paddingBottom: 110,
+    paddingBottom: 140,
   },
 });
