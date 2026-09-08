@@ -49,7 +49,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="activity"
+        name="fleet"
         options={{
           href: null, // Hidden from bottom bar (accessible via Fleet widget)
         }}
