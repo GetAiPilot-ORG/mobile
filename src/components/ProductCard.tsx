@@ -1,14 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Image, useColorScheme } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { StatusBadge } from './StatusBadge';
 
 interface ProductCardProps {
   name: string;
-  category: string;
+  category?: string;
   description: string;
-  icon: string;
-  themeColor: string;
+  icon?: string;
+  logoImage?: any;
+  themeColor?: string;
   status?: string;
   actionText?: string;
   onPress: () => void;
@@ -17,59 +18,54 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({
   name,
-  category,
   description,
   icon,
-  themeColor,
-  status = 'operational',
-  actionText = 'Open Engine',
+  logoImage,
+  themeColor = '#0070F3',
   onPress,
-  onActionPress,
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
   };
 
-  const handleAction = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (onActionPress) {
-      onActionPress();
-    } else {
-      onPress();
-    }
-  };
-
   return (
-    <Pressable style={styles.card} onPress={handlePress}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={[styles.iconContainer, { backgroundColor: `${themeColor}22`, borderColor: `${themeColor}44` }]}>
-          <Text style={styles.iconText}>{icon}</Text>
-        </View>
+    <Pressable
+      style={({ pressed }) => [
+        styles.card,
+        isDark ? styles.cardDark : styles.cardLight,
+        pressed && { opacity: 0.8, transform: [{ scale: 0.99 }] },
+      ]}
+      onPress={handlePress}
+    >
+      <View style={styles.contentRow}>
+        {/* App Squircle Logo */}
+        {logoImage ? (
+          <Image source={logoImage} style={styles.logoImage} resizeMode="contain" />
+        ) : (
+          <View style={[styles.iconFallback, { backgroundColor: `${themeColor}22` }]}>
+            <Text style={styles.iconText}>{icon || '⚡'}</Text>
+          </View>
+        )}
+
+        {/* Title & Description */}
         <View style={styles.titleInfo}>
-          <Text style={styles.category}>{category}</Text>
-          <Text style={styles.name}>{name}</Text>
+          <Text style={[styles.name, isDark ? styles.nameDark : styles.nameLight]} numberOfLines={1}>
+            {name}
+          </Text>
+          <Text
+            style={[styles.description, isDark ? styles.descriptionDark : styles.descriptionLight]}
+            numberOfLines={2}
+          >
+            {description}
+          </Text>
         </View>
-        <StatusBadge status={status} size="sm" />
-      </View>
 
-      <Text style={styles.description} numberOfLines={2}>
-        {description}
-      </Text>
-
-      {/* Footer */}
-      <View style={styles.footer}>
-        <View style={styles.engineBadge}>
-          <View style={[styles.engineDot, { backgroundColor: themeColor }]} />
-          <Text style={styles.engineBadgeText}>AI Engine Active</Text>
-        </View>
-        <Pressable
-          style={[styles.actionBtn, { backgroundColor: `${themeColor}25`, borderColor: `${themeColor}66` }]}
-          onPress={handleAction}
-        >
-          <Text style={[styles.actionBtnText, { color: themeColor }]}>{actionText} →</Text>
-        </Pressable>
+        {/* Apple iOS Chevron */}
+        <Ionicons name="chevron-forward" size={18} color="#8E8E93" style={styles.chevron} />
       </View>
     </Pressable>
   );
@@ -77,26 +73,41 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#0D1117',
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: '#1F242F',
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: StyleSheet.hairlineWidth,
   },
-  header: {
+  cardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  cardDark: {
+    backgroundColor: '#161B22',
+    borderColor: '#262C36',
+  },
+  contentRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
   },
-  iconContainer: {
+  logoImage: {
     width: 48,
     height: 48,
-    borderRadius: 14,
+    borderRadius: 12,
+    marginRight: 12,
+  },
+  iconFallback: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
-    borderWidth: 1,
   },
   iconText: {
     fontSize: 22,
@@ -105,57 +116,29 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
-  category: {
-    fontSize: 10.5,
-    fontWeight: '800',
-    color: '#9CA3AF',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
   name: {
-    fontSize: 16,
-    fontWeight: '900',
+    fontSize: 15.5,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+    marginBottom: 3,
+  },
+  nameLight: {
+    color: '#000000',
+  },
+  nameDark: {
     color: '#FFFFFF',
-    marginTop: 2,
-    letterSpacing: -0.2,
   },
   description: {
-    fontSize: 13,
-    color: '#9CA3AF',
-    lineHeight: 18,
-    marginBottom: 14,
+    fontSize: 12,
+    lineHeight: 16,
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#161B22',
-    paddingTop: 12,
+  descriptionLight: {
+    color: '#6B7280',
   },
-  engineBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  descriptionDark: {
+    color: '#8E8E93',
   },
-  engineDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  engineBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#9CA3AF',
-  },
-  actionBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  actionBtnText: {
-    fontWeight: '800',
-    fontSize: 12.5,
+  chevron: {
+    marginLeft: 4,
   },
 });

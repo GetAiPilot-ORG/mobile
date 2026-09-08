@@ -8,6 +8,7 @@ import {
   Pressable,
   TextInput,
   useColorScheme,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -68,13 +69,13 @@ export default function HomeScreen() {
   const displayName =
     user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'AI Pilot';
 
-  // Primary Automation Engines
+  // Primary Automation Engines (Bundled Native Logos)
   const ENGINES = [
     {
       id: 'telegram',
-      name: 'Telegram Pilot',
+      name: 'Telegram',
       desc: 'Auto-forward feeds, bots & reactions',
-      icon: 'paper-plane',
+      logo: require('../../assets/images/products/telegram.png'),
       iconBg: '#0088CC',
       route: '/products/telegram',
       status: hasTelegram ? 'Active' : 'Pro',
@@ -82,9 +83,9 @@ export default function HomeScreen() {
     },
     {
       id: 'whatsapp',
-      name: 'WhatsApp Suite',
+      name: 'WhatsApp',
       desc: 'Broadcasts & 24/7 Meta API triggers',
-      icon: 'logo-whatsapp',
+      logo: require('../../assets/images/products/whatsapp.png'),
       iconBg: '#25D366',
       route: '/products/whatsapp',
       status: hasWhatsApp ? 'Active' : 'Pro',
@@ -92,9 +93,9 @@ export default function HomeScreen() {
     },
     {
       id: 'voice',
-      name: 'Voice Pilot',
+      name: 'Voice AI',
       desc: 'AI Voice calling agents & speech streaming',
-      icon: 'mic',
+      logo: require('../../assets/images/products/voice.png'),
       iconBg: '#8B5CF6',
       route: '/products/voice',
       status: hasVoice ? 'Active' : 'Pro',
@@ -104,7 +105,7 @@ export default function HomeScreen() {
       id: 'crm',
       name: 'Smart CRM',
       desc: 'Pipelines, deals & lead contact automation',
-      icon: 'briefcase',
+      logo: require('../../assets/images/products/crm.png'),
       iconBg: '#F59E0B',
       route: '/products/crm',
       status: hasCRM ? 'Active' : 'Pro',
@@ -114,7 +115,7 @@ export default function HomeScreen() {
       id: 'social',
       name: 'Social Pilot',
       desc: 'Cross-platform auto-poster & queue',
-      icon: 'share-social',
+      logo: require('../../assets/images/products/social.png'),
       iconBg: '#E1306C',
       route: '/products/social',
       status: hasSocial ? 'Active' : 'Growth',
@@ -124,7 +125,7 @@ export default function HomeScreen() {
       id: 'activity',
       name: 'Connected Hub',
       desc: 'Multi-inbox chats & subscribers directory',
-      icon: 'chatbubbles',
+      logo: require('../../assets/images/icon.png'),
       iconBg: '#0284C7',
       route: '/(tabs)/activity',
       status: 'Live',
@@ -132,12 +133,12 @@ export default function HomeScreen() {
     },
   ];
 
-  // Studio & Free Tools
+  // Studio & Free Utilities
   const TOOLS = [
     {
       id: 'qr',
       name: 'QR Generator',
-      desc: 'Custom branded QR codes',
+      desc: 'Custom branded vectors & logos',
       icon: 'qr-code',
       iconBg: '#4F46E5',
       route: '/tools/qr-code',
@@ -226,9 +227,9 @@ export default function HomeScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* iOS Mobbin / Klarna Style Search Bar */}
+        {/* iOS Native Search Field */}
         <View style={[styles.searchBarContainer, isDark && styles.searchBarContainerDark]}>
-          <Ionicons name="search" size={18} color="#8E8E93" style={styles.searchIcon} />
+          <Ionicons name="search" size={16} color="#8E8E93" style={styles.searchIcon} />
           <TextInput
             style={[styles.searchInput, isDark && styles.searchInputDark]}
             placeholder="Search bots, automation & tools..."
@@ -239,16 +240,15 @@ export default function HomeScreen() {
           />
           {searchQuery.length > 0 ? (
             <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-              <Ionicons name="close-circle" size={18} color="#8E8E93" />
+              <Ionicons name="close-circle" size={16} color="#8E8E93" />
             </Pressable>
           ) : (
-            <Ionicons name="options-outline" size={18} color="#8E8E93" />
+            <Ionicons name="options-outline" size={16} color="#8E8E93" />
           )}
         </View>
 
-        {/* Hero Cards Carousel (Klarna Plus / Power Style) */}
+        {/* Dual Telemetry Widgets (Apple Inset Dual Cards) */}
         <View style={styles.heroRow}>
-          {/* Card 1: Workspace Plan Status */}
           <Pressable
             style={[styles.heroCard, isDark && styles.heroCardDark]}
             onPress={() => {
@@ -256,26 +256,23 @@ export default function HomeScreen() {
               router.push('/account/plans' as any);
             }}
           >
-            <View
-              style={[
-                styles.heroIconBox,
-                { backgroundColor: isDark ? 'rgba(10, 132, 255, 0.16)' : '#EBF5FF' },
-              ]}
-            >
-              <Ionicons name="diamond" size={22} color="#0A84FF" />
+            <View style={styles.heroCardHeader}>
+              <View style={[styles.heroIconBox, { backgroundColor: 'rgba(10, 132, 255, 0.15)' }]}>
+                <Ionicons name="diamond" size={18} color="#0A84FF" />
+              </View>
+              <Text style={styles.heroChevron}>›</Text>
             </View>
             <Text style={[styles.heroCardEyebrow, isDark && styles.heroCardEyebrowDark]}>
-              Workspace Plan
+              WORKSPACE PLAN
             </Text>
             <Text style={[styles.heroCardTitle, isDark && styles.heroCardTitleDark]}>
-              {planLabel || 'Free Plan'}
+              {planLabel || 'GAP Pro Max'}
             </Text>
             <View style={styles.heroFooterRow}>
-              <Text style={styles.heroBadgeText}>⚡ All AI engines active</Text>
+              <Text style={styles.heroBadgeActive}>⚡ All engines active</Text>
             </View>
           </Pressable>
 
-          {/* Card 2: Connected Bots Metric */}
           <Pressable
             style={[styles.heroCard, isDark && styles.heroCardDark]}
             onPress={() => {
@@ -283,36 +280,31 @@ export default function HomeScreen() {
               router.push('/(tabs)/products' as any);
             }}
           >
-            <View
-              style={[
-                styles.heroIconBox,
-                { backgroundColor: isDark ? 'rgba(22, 163, 74, 0.18)' : '#DCFCE7' },
-              ]}
-            >
-              <Ionicons name="rocket" size={22} color="#16A34A" />
+            <View style={styles.heroCardHeader}>
+              <View style={[styles.heroIconBox, { backgroundColor: 'rgba(48, 209, 88, 0.15)' }]}>
+                <Ionicons name="rocket" size={18} color="#30D158" />
+              </View>
+              <Text style={styles.heroChevron}>›</Text>
             </View>
             <Text style={[styles.heroCardEyebrow, isDark && styles.heroCardEyebrowDark]}>
-              Automation Fleet
+              AUTOMATION FLEET
             </Text>
             <Text style={[styles.heroCardTitle, isDark && styles.heroCardTitleDark]}>
               5 Engines
             </Text>
             <View style={styles.heroFooterRow}>
-              <Text style={[styles.heroBadgeText, { color: '#16A34A' }]}>
-                ● Live & Running
-              </Text>
+              <View style={styles.greenDot} />
+              <Text style={styles.heroBadgeLive}>Live & Running</Text>
             </View>
           </Pressable>
         </View>
 
-        {/* Category Pill Filters (Meetup Style) */}
-        <View style={styles.filtersRow}>
+        {/* iOS Native Segmented Filter Bar */}
+        <View style={[styles.segmentedTrack, isDark && styles.segmentedTrackDark]}>
           <Pressable
             style={[
-              styles.filterPill,
-              selectedFilter === 'all' && styles.filterPillActive,
-              isDark && styles.filterPillDark,
-              isDark && selectedFilter === 'all' && styles.filterPillActiveDark,
+              styles.segmentedTab,
+              selectedFilter === 'all' && (isDark ? styles.segmentedTabActiveDark : styles.segmentedTabActive),
             ]}
             onPress={() => {
               triggerHaptic();
@@ -321,9 +313,8 @@ export default function HomeScreen() {
           >
             <Text
               style={[
-                styles.filterPillText,
-                selectedFilter === 'all' && styles.filterPillTextActive,
-                isDark && styles.filterPillTextDark,
+                styles.segmentedTabText,
+                selectedFilter === 'all' && (isDark ? styles.segmentedTabTextActiveDark : styles.segmentedTabTextActive),
               ]}
             >
               All Engines
@@ -332,10 +323,8 @@ export default function HomeScreen() {
 
           <Pressable
             style={[
-              styles.filterPill,
-              selectedFilter === 'bots' && styles.filterPillActive,
-              isDark && styles.filterPillDark,
-              isDark && selectedFilter === 'bots' && styles.filterPillActiveDark,
+              styles.segmentedTab,
+              selectedFilter === 'bots' && (isDark ? styles.segmentedTabActiveDark : styles.segmentedTabActive),
             ]}
             onPress={() => {
               triggerHaptic();
@@ -344,9 +333,8 @@ export default function HomeScreen() {
           >
             <Text
               style={[
-                styles.filterPillText,
-                selectedFilter === 'bots' && styles.filterPillTextActive,
-                isDark && styles.filterPillTextDark,
+                styles.segmentedTabText,
+                selectedFilter === 'bots' && (isDark ? styles.segmentedTabTextActiveDark : styles.segmentedTabTextActive),
               ]}
             >
               Automation Hub
@@ -355,10 +343,8 @@ export default function HomeScreen() {
 
           <Pressable
             style={[
-              styles.filterPill,
-              selectedFilter === 'tools' && styles.filterPillActive,
-              isDark && styles.filterPillDark,
-              isDark && selectedFilter === 'tools' && styles.filterPillActiveDark,
+              styles.segmentedTab,
+              selectedFilter === 'tools' && (isDark ? styles.segmentedTabActiveDark : styles.segmentedTabActive),
             ]}
             onPress={() => {
               triggerHaptic();
@@ -367,9 +353,8 @@ export default function HomeScreen() {
           >
             <Text
               style={[
-                styles.filterPillText,
-                selectedFilter === 'tools' && styles.filterPillTextActive,
-                isDark && styles.filterPillTextDark,
+                styles.segmentedTabText,
+                selectedFilter === 'tools' && (isDark ? styles.segmentedTabTextActiveDark : styles.segmentedTabTextActive),
               ]}
             >
               Studio Tools
@@ -377,24 +362,22 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* SECTION 1: Automation Engines (Klarna 'Stores for you' Grid) */}
+        {/* SECTION 1: Automation Engines */}
         {(selectedFilter === 'all' || selectedFilter === 'bots') && (
           <View style={styles.sectionBlock}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
-                Automation Engines
-              </Text>
+              <Text style={styles.sectionHeaderTitle}>AUTOMATION ENGINES</Text>
               <Pressable
                 onPress={() => {
                   triggerHaptic();
                   router.push('/(tabs)/products' as any);
                 }}
               >
-                <Text style={styles.sectionActionText}>View all →</Text>
+                <Text style={styles.sectionActionText}>See All ›</Text>
               </Pressable>
             </View>
 
-            {/* 3-Column Clean Icon Grid (Klarna App Style) */}
+            {/* Inset Grouped Icon Grid */}
             <View style={[styles.gridContainer, isDark && styles.gridContainerDark]}>
               {filteredEngines.map((item) => (
                 <Pressable
@@ -405,70 +388,62 @@ export default function HomeScreen() {
                     router.push(item.route as any);
                   }}
                 >
-                  <View style={[styles.gridIconCircle, { backgroundColor: item.iconBg }]}>
-                    <Ionicons name={item.icon as any} size={22} color="#FFFFFF" />
-                  </View>
-                  <Text
-                    style={[styles.gridItemTitle, isDark && styles.gridItemTitleDark]}
-                    numberOfLines={1}
-                  >
-                    {item.name.replace(' Pilot', '').replace(' Suite', '')}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.gridItemStatus,
-                      item.isLive ? styles.statusLive : styles.statusPro,
-                    ]}
-                  >
-                    {item.status}
-                  </Text>
+                  <Image
+                    source={item.logo}
+                    style={styles.gridLogoImage}
+                    resizeMode="contain"
+                  />
                 </Pressable>
               ))}
             </View>
           </View>
         )}
 
-        {/* SECTION 2: Studio & Free Tools (Klarna 'New to cashback' Style) */}
+        {/* SECTION 2: Studio & Utilities (Apple HIG Inset Grouped List) */}
         {(selectedFilter === 'all' || selectedFilter === 'tools') && (
           <View style={styles.sectionBlock}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
-                Studio & Utilities
-              </Text>
+              <Text style={styles.sectionHeaderTitle}>STUDIO & UTILITIES</Text>
               <Pressable
                 onPress={() => {
                   triggerHaptic();
                   router.push('/(tabs)/tools' as any);
                 }}
               >
-                <Text style={styles.sectionActionText}>Explore tools →</Text>
+                <Text style={styles.sectionActionText}>Explore Tools ›</Text>
               </Pressable>
             </View>
 
-            <View style={styles.toolsList}>
-              {filteredTools.map((tool) => (
-                <Pressable
-                  key={tool.id}
-                  style={[styles.toolRowCard, isDark && styles.toolRowCardDark]}
-                  onPress={() => {
-                    triggerHaptic();
-                    router.push(tool.route as any);
-                  }}
-                >
-                  <View style={[styles.toolIconBox, { backgroundColor: tool.iconBg }]}>
-                    <Ionicons name={tool.icon as any} size={18} color="#FFFFFF" />
+            {/* Apple HIG Inset Grouped Unified Card with Hairline Dividers */}
+            <View style={[styles.groupedListContainer, isDark && styles.groupedListContainerDark]}>
+              {filteredTools.map((tool, index) => {
+                const isLast = index === filteredTools.length - 1;
+                return (
+                  <View key={tool.id}>
+                    <Pressable
+                      style={styles.groupedListItem}
+                      onPress={() => {
+                        triggerHaptic();
+                        router.push(tool.route as any);
+                      }}
+                    >
+                      <View style={[styles.toolIconBox, { backgroundColor: tool.iconBg }]}>
+                        <Ionicons name={tool.icon as any} size={18} color="#FFFFFF" />
+                      </View>
+                      <View style={styles.toolInfo}>
+                        <Text style={[styles.toolName, isDark && styles.toolNameDark]}>
+                          {tool.name}
+                        </Text>
+                        <Text style={[styles.toolDesc, isDark && styles.toolDescDark]} numberOfLines={1}>
+                          {tool.desc}
+                        </Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={17} color="#8E8E93" />
+                    </Pressable>
+                    {!isLast && <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />}
                   </View>
-                  <View style={styles.toolInfo}>
-                    <Text style={[styles.toolName, isDark && styles.toolNameDark]}>
-                      {tool.name}
-                    </Text>
-                    <Text style={[styles.toolDesc, isDark && styles.toolDescDark]} numberOfLines={1}>
-                      {tool.desc}
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
-                </Pressable>
-              ))}
+                );
+              })}
             </View>
           </View>
         )}
@@ -482,69 +457,63 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollViewLight: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F2F2F7',
   },
   scrollViewDark: {
     backgroundColor: '#000000',
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 140,
+    paddingTop: 14,
+    paddingBottom: 130,
   },
   scrollContentLight: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F2F2F7',
   },
   scrollContentDark: {
     backgroundColor: '#000000',
   },
   avatarBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#0A84FF',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#0A84FF',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 2,
   },
   avatarBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '800',
     color: '#FFFFFF',
   },
-  // ─── Search Bar ───────────────────────────────────────────────
+  // ─── iOS Native Search Field ───────────────────────────────────
   searchBarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    paddingHorizontal: 14,
-    height: 46,
+    backgroundColor: '#E3E3E8',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    height: 38,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
   searchBarContainerDark: {
     backgroundColor: '#1C1C1E',
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: '#2C2C2E',
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 6,
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 14,
     color: '#000000',
-    paddingVertical: 10,
+    paddingVertical: 6,
   },
   searchInputDark: {
     color: '#FFFFFF',
   },
-  // ─── Hero Cards (Klarna Style) ────────────────────────────────
+  // ─── Dual Telemetry Widgets ────────────────────────────────────
   heroRow: {
     flexDirection: 'row',
     gap: 12,
@@ -553,39 +522,48 @@ const styles = StyleSheet.create({
   heroCard: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    padding: 16,
-    borderWidth: 1,
+    borderRadius: 18,
+    padding: 14,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: '#E5E7EB',
   },
   heroCardDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
+    backgroundColor: '#161B22',
+    borderColor: '#262C36',
+  },
+  heroCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   heroIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 9,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+  },
+  heroChevron: {
+    fontSize: 16,
+    color: '#8E8E93',
+    fontWeight: '600',
   },
   heroCardEyebrow: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '800',
     color: '#8E8E93',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
+    letterSpacing: 0.6,
     marginBottom: 2,
   },
   heroCardEyebrowDark: {
     color: '#8E8E93',
   },
   heroCardTitle: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 17,
+    fontWeight: '900',
     color: '#000000',
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
     marginBottom: 6,
   },
   heroCardTitleDark: {
@@ -594,51 +572,69 @@ const styles = StyleSheet.create({
   heroFooterRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 5,
   },
-  heroBadgeText: {
-    fontSize: 11.5,
+  heroBadgeActive: {
+    fontSize: 11,
     fontWeight: '700',
     color: '#0A84FF',
   },
-  // ─── Filter Pills ─────────────────────────────────────────────
-  filtersRow: {
+  greenDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#30D158',
+  },
+  heroBadgeLive: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#30D158',
+  },
+  // ─── iOS Native Segmented Track ────────────────────────────────
+  segmentedTrack: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 20,
+    backgroundColor: '#E3E3E8',
+    borderRadius: 10,
+    padding: 3,
+    marginBottom: 22,
   },
-  filterPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+  segmentedTrackDark: {
+    backgroundColor: '#161B22',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#262C36',
+  },
+  segmentedTab: {
+    flex: 1,
+    paddingVertical: 7,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  segmentedTabActive: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  filterPillDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
+  segmentedTabActiveDark: {
+    backgroundColor: '#262C36',
   },
-  filterPillActive: {
-    backgroundColor: '#0A84FF',
-    borderColor: '#0A84FF',
-  },
-  filterPillActiveDark: {
-    backgroundColor: '#0A84FF',
-    borderColor: '#0A84FF',
-  },
-  filterPillText: {
-    fontSize: 13,
+  segmentedTabText: {
+    fontSize: 12,
     fontWeight: '600',
-    color: '#6B7280',
-  },
-  filterPillTextDark: {
     color: '#8E8E93',
   },
-  filterPillTextActive: {
+  segmentedTabTextActive: {
+    color: '#000000',
+    fontWeight: '700',
+  },
+  segmentedTabTextActiveDark: {
     color: '#FFFFFF',
     fontWeight: '700',
   },
-  // ─── Section Header ───────────────────────────────────────────
+  // ─── Section Header (Apple HIG Style) ──────────────────────────
   sectionBlock: {
     marginBottom: 24,
   },
@@ -646,97 +642,71 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    paddingHorizontal: 4,
+    marginBottom: 8,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#000000',
-    letterSpacing: -0.3,
-  },
-  sectionTitleDark: {
-    color: '#FFFFFF',
+  sectionHeaderTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#8E8E93',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   sectionActionText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#0A84FF',
   },
-  // ─── 3-Column Grid ────────────────────────────────────────────
+  // ─── Inset Grouped Grid ────────────────────────────────────────
   gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 12,
-    borderWidth: 1,
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 6,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: '#E5E7EB',
   },
   gridContainerDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
+    backgroundColor: '#161B22',
+    borderColor: '#262C36',
   },
   gridItem: {
     width: '33.33%',
     alignItems: 'center',
-    paddingVertical: 12,
+    justifyContent: 'center',
+    paddingVertical: 10,
     paddingHorizontal: 4,
   },
-  gridIconCircle: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 2,
+  gridLogoImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 14,
   },
-  gridItemTitle: {
-    fontSize: 12.5,
-    fontWeight: '700',
-    color: '#000000',
-    textAlign: 'center',
-    marginBottom: 2,
+  // ─── Inset Grouped List (Apple HIG Settings Style) ─────────────
+  groupedListContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E5E7EB',
+    overflow: 'hidden',
   },
-  gridItemTitleDark: {
-    color: '#FFFFFF',
+  groupedListContainerDark: {
+    backgroundColor: '#161B22',
+    borderColor: '#262C36',
   },
-  gridItemStatus: {
-    fontSize: 10.5,
-    fontWeight: '700',
-  },
-  statusLive: {
-    color: '#16A34A',
-  },
-  statusPro: {
-    color: '#0A84FF',
-  },
-  // ─── Tools Row List ───────────────────────────────────────────
-  toolsList: {
-    gap: 10,
-  },
-  toolRowCard: {
+  groupedListItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     gap: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  toolRowCardDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
   },
   toolIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -744,19 +714,28 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   toolName: {
-    fontSize: 15,
+    fontSize: 14.5,
     fontWeight: '700',
     color: '#000000',
-    marginBottom: 2,
+    letterSpacing: -0.2,
+    marginBottom: 1,
   },
   toolNameDark: {
     color: '#FFFFFF',
   },
   toolDesc: {
-    fontSize: 12,
+    fontSize: 11.5,
     color: '#6B7280',
   },
   toolDescDark: {
     color: '#8E8E93',
+  },
+  hairlineDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#E5E7EB',
+    marginLeft: 58,
+  },
+  hairlineDividerDark: {
+    backgroundColor: '#262C36',
   },
 });
