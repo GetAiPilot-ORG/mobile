@@ -76,8 +76,8 @@ class ApiClient {
     }
 
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
       Accept: 'application/json',
+      ...(restOptions.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
       ...(customHeaders as Record<string, string>),
     };
 
