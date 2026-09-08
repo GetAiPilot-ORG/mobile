@@ -89,7 +89,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
     logout: async () => {
       try {
-        await apiClient.post('/mobile/v1/auth/logout').catch(() => {});
+        await apiClient.post('/mobile/v1/auth/logout', {}).catch(() => {});
       } finally {
         await authStorage.clear();
         set({

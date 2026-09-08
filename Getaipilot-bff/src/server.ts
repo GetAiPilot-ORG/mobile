@@ -94,8 +94,8 @@ async function main() {
   await app.register(inboxRoutes, { prefix: '/mobile/v1' });
   await app.register(whatsappRoutes, { prefix: '/mobile/v1' });
   await app.register(crmRoutes, { prefix: '/mobile/v1' });
-  await app.register(voiceRoutes, { prefix: '/mobile/v1/voice' });
-  await app.register(socialRoutes, { prefix: '/mobile/v1/social' });
+  await app.register(voiceRoutes, { prefix: '/mobile/v1' });
+  await app.register(socialRoutes, { prefix: '/mobile/v1' });
   await app.register(telegramRoutes, { prefix: '/mobile/v1' });
   await app.register(billingRoutes, { prefix: '/mobile/v1' });
   await app.register(webviewRoutes, { prefix: '/mobile/v1' });
