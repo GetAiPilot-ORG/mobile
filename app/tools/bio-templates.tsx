@@ -140,19 +140,6 @@ export default function BioTemplatesScreen() {
             </View>
           ))}
         </View>
-        <Pressable onPress={() => Alert.prompt("View More Templates pressed")}>
-          <Text
-            style={{
-              color: colors.primary,
-              fontSize: 14,
-              fontWeight: "700",
-              textAlign: "center",
-              marginTop: 20,
-            }}
-          >
-            View More Templates
-          </Text>
-        </Pressable>
       </ScrollView>
     </AppScreen>
   );
