@@ -20,7 +20,7 @@ interface ToolItem {
   category: string;
   description: string;
   icon: string;
-  badge?: string;
+  badge: string;
   route: string;
 }
 
