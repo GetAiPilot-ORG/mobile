@@ -1,0 +1,12 @@
+name: Publish Preview Update
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  publish_preview_update:
+    name: Publish Preview OTA Update
+    type: update
+    params:
+      branch: ${{ github.head_ref || 'preview' }}

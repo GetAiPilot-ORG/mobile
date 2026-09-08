@@ -123,16 +123,6 @@ export default function HomeScreen() {
       status: hasSocial ? 'Active' : 'Growth',
       isLive: hasSocial,
     },
-    {
-      id: 'activity',
-      name: 'Connected Hub',
-      desc: 'Multi-inbox chats & subscribers directory',
-      logo: require('../../assets/images/icon.png'),
-      iconBg: '#0284C7',
-      route: '/(tabs)/activity',
-      status: 'Live',
-      isLive: true,
-    },
   ];
 
   // Studio & Free Utilities
@@ -258,46 +248,39 @@ export default function HomeScreen() {
               router.push('/account/plans' as any);
             }}
           >
-            <View style={styles.heroCardHeader}>
-              <View style={[styles.heroIconBox, { backgroundColor: 'rgba(10, 132, 255, 0.15)' }]}>
-                <Ionicons name="diamond" size={18} color="#0A84FF" />
-              </View>
-              <Text style={styles.heroChevron}>›</Text>
+            <View style={[styles.heroIconBox, { backgroundColor: 'rgba(10, 132, 255, 0.15)' }]}>
+              <Ionicons name="diamond" size={17} color="#0A84FF" />
             </View>
-            <Text style={[styles.heroCardEyebrow, isDark && styles.heroCardEyebrowDark]}>
-              WORKSPACE PLAN
-            </Text>
-            <Text style={[styles.heroCardTitle, isDark && styles.heroCardTitleDark]}>
-              {planLabel || 'GAP Pro Max'}
-            </Text>
-            <View style={styles.heroFooterRow}>
-              <Text style={styles.heroBadgeActive}>⚡ All engines active</Text>
+            <View style={styles.heroCardTextCol}>
+              <Text style={[styles.heroCardEyebrow, isDark && styles.heroCardEyebrowDark]} numberOfLines={1}>
+                Workspace Plan
+              </Text>
+              <Text style={[styles.heroCardTitle, isDark && styles.heroCardTitleDark]} numberOfLines={1}>
+                {planLabel || 'GAP Pro Max'}
+              </Text>
             </View>
+            <Ionicons name="chevron-forward" size={13} color="#8E8E93" />
           </Pressable>
 
           <Pressable
             style={[styles.heroCard, isDark && styles.heroCardDark]}
             onPress={() => {
               triggerHaptic();
-              router.push('/(tabs)/products' as any);
+              router.push('/(tabs)/activity' as any);
             }}
           >
-            <View style={styles.heroCardHeader}>
-              <View style={[styles.heroIconBox, { backgroundColor: 'rgba(48, 209, 88, 0.15)' }]}>
-                <Ionicons name="rocket" size={18} color="#30D158" />
-              </View>
-              <Text style={styles.heroChevron}>›</Text>
+            <View style={[styles.heroIconBox, { backgroundColor: 'rgba(48, 209, 88, 0.15)' }]}>
+              <Ionicons name="rocket" size={17} color="#30D158" />
             </View>
-            <Text style={[styles.heroCardEyebrow, isDark && styles.heroCardEyebrowDark]}>
-              AUTOMATION FLEET
-            </Text>
-            <Text style={[styles.heroCardTitle, isDark && styles.heroCardTitleDark]}>
-              5 Engines
-            </Text>
-            <View style={styles.heroFooterRow}>
-              <View style={styles.greenDot} />
-              <Text style={styles.heroBadgeLive}>Live & Running</Text>
+            <View style={styles.heroCardTextCol}>
+              <Text style={[styles.heroCardEyebrow, isDark && styles.heroCardEyebrowDark]} numberOfLines={1}>
+                Automation Fleet
+              </Text>
+              <Text style={[styles.heroCardTitle, isDark && styles.heroCardTitleDark]} numberOfLines={1}>
+                5 Engines
+              </Text>
             </View>
+            <Ionicons name="chevron-forward" size={13} color="#8E8E93" />
           </Pressable>
         </View>
 
@@ -368,7 +351,9 @@ export default function HomeScreen() {
         {(selectedFilter === 'all' || selectedFilter === 'bots') && (
           <View style={styles.sectionBlock}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionHeaderTitle}>AUTOMATION ENGINES</Text>
+              <Text style={[styles.sectionHeaderTitle, isDark && styles.sectionHeaderTitleDark]}>
+                Automation Engines
+              </Text>
               <Pressable
                 onPress={() => {
                   triggerHaptic();
@@ -405,7 +390,9 @@ export default function HomeScreen() {
         {(selectedFilter === 'all' || selectedFilter === 'tools') && (
           <View style={styles.sectionBlock}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionHeaderTitle}>STUDIO & UTILITIES</Text>
+              <Text style={[styles.sectionHeaderTitle, isDark && styles.sectionHeaderTitleDark]}>
+                Studio & Utilities
+              </Text>
               <Pressable
                 onPress={() => {
                   triggerHaptic();
@@ -523,21 +510,19 @@ const styles = StyleSheet.create({
   },
   heroCard: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 14,
+    borderRadius: 16,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: '#E5E7EB',
+    gap: 9,
   },
   heroCardDark: {
     backgroundColor: '#161B22',
     borderColor: '#262C36',
-  },
-  heroCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
   },
   heroIconBox: {
     width: 32,
@@ -546,51 +531,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  heroChevron: {
-    fontSize: 16,
-    color: '#8E8E93',
-    fontWeight: '600',
+  heroCardTextCol: {
+    flex: 1,
+    justifyContent: 'center',
   },
   heroCardEyebrow: {
     fontSize: 10,
-    fontWeight: '800',
-    color: '#8E8E93',
-    letterSpacing: 0.6,
+    fontWeight: '500',
+    color: '#6B7280',
     marginBottom: 2,
   },
   heroCardEyebrowDark: {
     color: '#8E8E93',
   },
   heroCardTitle: {
-    fontSize: 17,
-    fontWeight: '900',
+    fontSize: 13.5,
+    fontWeight: '700',
     color: '#000000',
-    letterSpacing: -0.3,
-    marginBottom: 6,
+    letterSpacing: -0.2,
   },
   heroCardTitleDark: {
     color: '#FFFFFF',
-  },
-  heroFooterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  heroBadgeActive: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#0A84FF',
-  },
-  greenDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#30D158',
-  },
-  heroBadgeLive: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#30D158',
   },
   // ─── iOS Native Segmented Track ────────────────────────────────
   segmentedTrack: {
@@ -598,7 +559,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E3E3E8',
     borderRadius: 10,
     padding: 3,
-    marginBottom: 22,
+    marginBottom: 20,
   },
   segmentedTrackDark: {
     backgroundColor: '#161B22',
@@ -625,16 +586,16 @@ const styles = StyleSheet.create({
   },
   segmentedTabText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#8E8E93',
+    fontWeight: '500',
+    color: '#6B7280',
   },
   segmentedTabTextActive: {
     color: '#000000',
-    fontWeight: '700',
+    fontWeight: '600',
   },
   segmentedTabTextActiveDark: {
     color: '#FFFFFF',
-    fontWeight: '700',
+    fontWeight: '600',
   },
   // ─── Section Header (Apple HIG Style) ──────────────────────────
   sectionBlock: {
@@ -648,25 +609,28 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   sectionHeaderTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#8E8E93',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#374151',
+    letterSpacing: -0.2,
+  },
+  sectionHeaderTitleDark: {
+    color: '#9CA3AF',
   },
   sectionActionText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#0A84FF',
   },
-  // ─── Inset Grouped Grid ────────────────────────────────────────
+  // ─── Inset Grouped Grid (5 Engines Row) ────────────────────────
   gridContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 18,
     paddingVertical: 14,
-    paddingHorizontal: 6,
+    paddingHorizontal: 14,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: '#E5E7EB',
   },
@@ -675,16 +639,13 @@ const styles = StyleSheet.create({
     borderColor: '#262C36',
   },
   gridItem: {
-    width: '33.33%',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 4,
   },
   gridLogoImage: {
-    width: 56,
-    height: 56,
-    borderRadius: 14,
+    width: 50,
+    height: 50,
+    borderRadius: 13,
   },
   // ─── Inset Grouped List (Apple HIG Settings Style) ─────────────
   groupedListContainer: {
