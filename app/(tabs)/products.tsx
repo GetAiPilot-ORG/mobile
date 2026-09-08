@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl, useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
@@ -11,6 +11,8 @@ import { supabase } from '../../src/lib/supabase';
 
 export default function ProductsScreen() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const { hasWhatsApp, hasTelegram, hasVoice, hasSocial, hasCRM, refresh } =
     usePlatformSubscription();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
@@ -39,13 +41,18 @@ export default function ProductsScreen() {
   };
 
   return (
-    <AppScreen safeArea={false} backgroundColor={colors.background}>
+    <AppScreen safeArea={false}>
       <AppTopBar title="Product Suite" subtitle="Connected AI Automation Engines" />
 
       <ScrollView
+        style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor={isDark ? '#FFFFFF' : colors.primary}
+          />
         }
         showsVerticalScrollIndicator={false}
       >
@@ -53,7 +60,7 @@ export default function ProductsScreen() {
           name="GAP WhatsApp Hub"
           category="Messaging Automation"
           description="Send broadcasts, automate customer triggers, and manage campaign webhooks with Meta Cloud API."
-          icon="💬"
+          logoImage={require('../../assets/images/products/whatsapp.png')}
           themeColor={colors.products.whatsapp}
           status={getStatus('whatsapp')}
           onPress={() => router.push('/products/whatsapp' as any)}
@@ -63,7 +70,7 @@ export default function ProductsScreen() {
           name="GAP Telegram Auto-Forwarder"
           category="Channel Routing"
           description="Auto-forward messages across channels with real-time word filters, text replacements, and join bot."
-          icon="✈️"
+          logoImage={require('../../assets/images/products/telegram.png')}
           themeColor={colors.products.telegram}
           status={getStatus('telegram')}
           onPress={() => router.push('/products/telegram' as any)}
@@ -73,7 +80,7 @@ export default function ProductsScreen() {
           name="GAP AI Voice Pilot"
           category="Telecalling Automation"
           description="Ultra-low latency conversational AI telecallers for lead qualification, inbound support, and bookings."
-          icon="🎙️"
+          logoImage={require('../../assets/images/products/voice.png')}
           themeColor={colors.products.voice}
           status={getStatus('voice_ai')}
           onPress={() => router.push('/products/voice' as any)}
@@ -83,7 +90,7 @@ export default function ProductsScreen() {
           name="GAP Social Pilot"
           category="Multi-Channel Sync"
           description="Schedule and cross-publish content across Instagram, YouTube, X, LinkedIn, Facebook, and Bluesky."
-          icon="📱"
+          logoImage={require('../../assets/images/products/social.png')}
           themeColor={colors.products.social}
           status={getStatus('social')}
           onPress={() => router.push('/products/social' as any)}
@@ -93,7 +100,7 @@ export default function ProductsScreen() {
           name="GAP Smart CRM"
           category="Pipeline & Leads"
           description="Track prospects, deal values, conversion stages, and automated client follow-ups across channels."
-          icon="📊"
+          logoImage={require('../../assets/images/products/crm.png')}
           themeColor={colors.products.crm}
           status={getStatus('crm')}
           onPress={() => router.push('/products/crm' as any)}
@@ -104,8 +111,17 @@ export default function ProductsScreen() {
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewLight: {
+    backgroundColor: '#F2F2F7',
+  },
+  scrollViewDark: {
+    backgroundColor: '#000000',
+  },
   scrollContent: {
     padding: 16,
-    paddingBottom: 110,
+    paddingBottom: 140,
   },
 });

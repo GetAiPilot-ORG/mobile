@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,26 +10,64 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  useColorScheme,
+  Animated,
+  LayoutChangeEvent,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { AppScreen } from '../../src/components/AppScreen';
 import { colors } from '../../src/theme/colors';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { supabase } from '../../src/lib/supabase';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Profile } from '../../src/types/database';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import { useRouter } from 'expo-router';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
+import { BiometricService, BiometricSettings } from '../../src/lib/biometrics';
 
 type AccountTab = 'overview' | 'edit' | 'security' | 'billing' | 'preferences';
 
+const TABS: { id: AccountTab; label: string }[] = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'edit', label: 'Edit Profile' },
+  { id: 'security', label: 'Security' },
+  { id: 'billing', label: 'Billing' },
+  { id: 'preferences', label: 'Settings' },
+];
+
 export default function AccountScreen() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const { user } = useAuth();
-  const { isAdmin, planLabel, isActive, plan } = usePlatformSubscription();
+  const { isAdmin, planLabel, isActive } = usePlatformSubscription();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<AccountTab>('overview');
+
+  // Animated Segmented Control state
+  const activeTabIndex = TABS.findIndex((t) => t.id === activeTab);
+  const [tabsTrackWidth, setTabsTrackWidth] = useState(0);
+  const tabPadding = 4;
+  const tabPillWidth = tabsTrackWidth > 0 ? (tabsTrackWidth - tabPadding * 2) / TABS.length : 0;
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (tabPillWidth > 0) {
+      Animated.spring(slideAnim, {
+        toValue: activeTabIndex * tabPillWidth,
+        tension: 68,
+        friction: 9,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [activeTabIndex, tabPillWidth]);
+
+  const handleTabChange = (tabId: AccountTab) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setActiveTab(tabId);
+  };
 
   // Form State for Edit Profile
   const [fullName, setFullName] = useState('');
@@ -46,7 +84,7 @@ export default function AccountScreen() {
   const [facebookUrl, setFacebookUrl] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Billing Details State (matches UserProfile.tsx)
+  // Billing Details State
   const [billingName, setBillingName] = useState('');
   const [billingEmail, setBillingEmail] = useState('');
   const [companyName, setCompanyName] = useState('');
@@ -62,26 +100,39 @@ export default function AccountScreen() {
   // Selected Invoice Modal State
   const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
 
-  // Preference switches
+  // Preference switches & Biometrics state
   const [pushEnabled, setPushEnabled] = useState(true);
   const [emailAlerts, setEmailAlerts] = useState(true);
-  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricSettings, setBiometricSettings] = useState<BiometricSettings>({
+    enabled: false,
+    timeoutMinutes: 0,
+    biometricType: 'NONE',
+    biometricLabel: 'Device Passcode',
+    hardwareDescription: 'Device Security',
+    hasHardware: false,
+    isEnrolled: false,
+  });
+  const [isUpdatingBiometrics, setIsUpdatingBiometrics] = useState(false);
+
+  // Load Biometric settings
+  useEffect(() => {
+    async function loadBiometrics() {
+      const settings = await BiometricService.getSettings();
+      setBiometricSettings(settings);
+    }
+    loadBiometrics();
+  }, [activeTab]);
 
   // Fetch Profile
-  const { data: profile, isLoading, refetch } = useQuery<Profile | null>({
+  const { data: profile, refetch } = useQuery<Profile | null>({
     queryKey: ['user-profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching profile:', error);
-        return null;
-      }
       return data as Profile;
     },
     enabled: !!user?.id,
@@ -181,10 +232,8 @@ export default function AccountScreen() {
       try {
         const savedPush = await AsyncStorage.getItem('@pref_push');
         const savedEmail = await AsyncStorage.getItem('@pref_email');
-        const savedBio = await AsyncStorage.getItem('@pref_bio');
         if (savedPush !== null) setPushEnabled(savedPush === 'true');
         if (savedEmail !== null) setEmailAlerts(savedEmail === 'true');
-        if (savedBio !== null) setBiometricEnabled(savedBio === 'true');
       } catch (e) {
         console.error('Error loading preferences:', e);
       }
@@ -201,104 +250,156 @@ export default function AccountScreen() {
     }
   };
 
+  // Save Profile Handler
   const handleSaveProfile = async () => {
     if (!user?.id) return;
     setIsSaving(true);
     try {
+      const updates = {
+        full_name: fullName,
+        phone,
+        mobile_number: phone,
+        business_name: businessName,
+        business_email: businessEmail,
+        category,
+        account_type: accountType,
+        website,
+        city,
+        state,
+        country,
+        instagram_url: instagramUrl,
+        facebook_url: facebookUrl,
+        updated_at: new Date().toISOString(),
+      };
+
       const { error } = await supabase
         .from('profiles')
-        .update({
-          full_name: fullName,
-          phone: phone,
-          mobile_number: phone,
-          business_name: businessName,
-          business_email: businessEmail,
-          category: category,
-          account_type: accountType,
-          website: website,
-          city: city,
-          state: state,
-          country: country,
-          instagram_url: instagramUrl,
-          facebook_url: facebookUrl,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updates)
         .eq('id', user.id);
 
       if (error) throw error;
 
-      await queryClient.invalidateQueries({ queryKey: ['user-profile', user.id] });
+      await refetch();
       await queryClient.invalidateQueries({ queryKey: ['platform-subscription'] });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert('Success', 'Profile updated successfully.');
       setActiveTab('overview');
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to update profile.');
+    } catch (err: any) {
+      console.error('Save profile error:', err);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Error', err.message || 'Failed to update profile.');
     } finally {
       setIsSaving(false);
     }
   };
 
+  // Save Billing Profile Handler
   const handleSaveBilling = async () => {
     if (!user?.id) return;
     setIsSavingBilling(true);
     try {
+      const payload = {
+        user_id: user.id,
+        billing_name: billingName,
+        billing_email: billingEmail,
+        company_name: companyName,
+        tax_id: taxId,
+        phone: billingPhone,
+        address_line1: billingAddress1,
+        city: billingCity,
+        state: billingState,
+        postal_code: billingPostal,
+        country: billingCountry,
+        currency: 'INR',
+        updated_at: new Date().toISOString(),
+      };
+
       const { error } = await supabase
         .from('app_billing_profiles')
-        .upsert(
-          {
-            user_id: user.id,
-            billing_name: billingName,
-            billing_email: billingEmail,
-            company_name: companyName,
-            tax_id: taxId,
-            phone: billingPhone,
-            address_line1: billingAddress1,
-            city: billingCity,
-            state: billingState,
-            postal_code: billingPostal,
-            country: billingCountry,
-            currency: 'INR',
-          },
-          { onConflict: 'user_id' }
-        );
+        .upsert(payload, { onConflict: 'user_id' });
 
       if (error) throw error;
-      await queryClient.invalidateQueries({ queryKey: ['user-billing-profile', user.id] });
-      Alert.alert('Success', 'Billing information updated successfully.');
+
+      queryClient.invalidateQueries({ queryKey: ['user-billing-profile', user.id] });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert('Success', 'Billing information saved.');
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to save billing profile.');
+      console.error('Save billing error:', err);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Error', err.message || 'Failed to update billing details.');
     } finally {
       setIsSavingBilling(false);
     }
   };
 
+  // Password Reset Email Trigger
   const handlePasswordReset = async () => {
-    if (!user?.email) return;
-    Alert.alert(
-      'Reset Password',
-      `Send password reset link to ${user.email}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Send Link',
-          onPress: async () => {
-            try {
-              const { error } = await supabase.auth.resetPasswordForEmail(user.email!);
-              if (error) throw error;
-              Alert.alert('Email Sent', 'Check your inbox for password reset instructions.');
-            } catch (err: any) {
-              Alert.alert('Error', err.message || 'Failed to send reset link.');
-            }
-          },
-        },
-      ]
-    );
+    if (!user?.email) {
+      Alert.alert('Error', 'No email address associated with this account.');
+      return;
+    }
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+        redirectTo: 'getaipilot://reset-password',
+      });
+      if (error) throw error;
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert('Password Reset Sent', `Check ${user.email} for password reset instructions.`);
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Could not send reset instructions.');
+    }
   };
 
+  // Biometric Toggle Handler with instant UI response and verification
+  const handleToggleBiometric = async (value: boolean) => {
+    if (isUpdatingBiometrics) return;
+    setIsUpdatingBiometrics(true);
+
+    // Optimistic UI state update
+    setBiometricSettings((prev) => ({ ...prev, enabled: value }));
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    try {
+      await BiometricService.setEnabled(value);
+      const updated = await BiometricService.getSettings();
+      setBiometricSettings(updated);
+
+      if (value) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        // Prompt biometric permission/verification asynchronously
+        BiometricService.authenticate(`Verify ${updated.biometricLabel} Lock`).catch((e) =>
+          console.warn('Biometric verification error:', e)
+        );
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } catch (err: any) {
+      console.error('Biometric toggle error:', err);
+      // Revert if storage fails
+      setBiometricSettings((prev) => ({ ...prev, enabled: !value }));
+      Alert.alert('Security Error', err.message || 'Could not update biometric settings.');
+    } finally {
+      setIsUpdatingBiometrics(false);
+    }
+  };
+
+  // Change Auto-Lock Timeout
+  const handleChangeTimeout = async (minutes: number) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await BiometricService.setTimeoutMinutes(minutes);
+      const updated = await BiometricService.getSettings();
+      setBiometricSettings(updated);
+    } catch (err: any) {
+      console.error('Error updating timeout:', err);
+    }
+  };
+
+  // Sign Out Handler
   const handleSignOut = () => {
     Alert.alert(
       'Sign Out',
-      'Are you sure you want to sign out from GetAIPilot?',
+      'Are you sure you want to sign out from GetAiPilot?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -306,6 +407,7 @@ export default function AccountScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               await supabase.auth.signOut();
             } catch (err: any) {
               console.error('Sign out error:', err);
@@ -331,231 +433,274 @@ export default function AccountScreen() {
     if (!subData?.expires_at) return 30;
     const diffTime = new Date(subData.expires_at).getTime() - new Date().getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : 0;
+    return Math.max(0, diffDays);
   };
 
   return (
-    <AppScreen safeArea="top" backgroundColor={colors.background}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Profile Hero Header */}
-        <View style={styles.heroCard}>
+    <AppScreen safeArea="top">
+      <ScrollView
+        style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Apple ID / iCloud Profile Hero Card */}
+        <View style={[styles.heroCard, isDark ? styles.heroCardDark : styles.heroCardLight]}>
           <View style={styles.heroTop}>
-            <View style={styles.avatar}>
+            <View style={[styles.avatar, isDark ? styles.avatarDark : styles.avatarLight]}>
               <Text style={styles.avatarText}>{initials}</Text>
             </View>
             <View style={styles.heroInfo}>
-              <Text style={styles.heroName} numberOfLines={1}>
+              <Text style={[styles.heroName, isDark && styles.heroNameDark]} numberOfLines={1}>
                 {displayName}
               </Text>
-              <Text style={styles.heroEmail} numberOfLines={1}>
+              <Text style={[styles.heroEmail, isDark && styles.heroEmailDark]} numberOfLines={1}>
                 {user?.email || phone || 'User'}
               </Text>
               <View style={styles.badgeRow}>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>Verified Account</Text>
+                <View style={[styles.badge, isDark ? styles.badgeDark : styles.badgeLight]}>
+                  <Ionicons name="checkmark-circle" size={13} color="#0A84FF" style={{ marginRight: 4 }} />
+                  <Text style={[styles.badgeText, { color: '#0A84FF' }]}>Verified Account</Text>
                 </View>
                 {profile?.is_admin && (
-                  <View style={[styles.badge, { backgroundColor: '#16b882' }]}>
-                    <Text style={[styles.badgeText, { color: '#003c33' }]}>Admin</Text>
+                  <View style={[styles.badge, isDark ? styles.adminBadgeDark : styles.adminBadgeLight]}>
+                    <Ionicons name="shield-checkmark" size={13} color="#10B981" style={{ marginRight: 4 }} />
+                    <Text style={[styles.badgeText, { color: '#10B981' }]}>Admin</Text>
                   </View>
                 )}
               </View>
             </View>
           </View>
 
-          <View style={styles.statsRow}>
+          <View style={[styles.statsRow, isDark ? styles.statsRowDark : styles.statsRowLight]}>
             <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Status</Text>
-              <Text style={styles.statValue}>{isActive ? 'Active' : 'Free Trial'}</Text>
+              <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>Status</Text>
+              <Text style={[styles.statValue, { color: '#10B981' }]}>{isActive ? '● Active' : 'Free Trial'}</Text>
             </View>
-            <View style={[styles.statItem, styles.statDivider]}>
-              <Text style={styles.statLabel}>Member Since</Text>
-              <Text style={styles.statValue}>{joinDate}</Text>
+            <View style={[styles.statItem, styles.statDivider, isDark ? styles.statDividerDark : styles.statDividerLight]}>
+              <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>Member Since</Text>
+              <Text style={[styles.statValue, isDark && styles.statValueDark]}>{joinDate}</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Plan</Text>
-              <Text style={styles.statValue}>{planLabel || 'Free'}</Text>
+              <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>Plan</Text>
+              <Text style={[styles.statValue, { color: '#0A84FF', fontWeight: '800' }]}>{planLabel || 'Free'}</Text>
             </View>
           </View>
         </View>
 
-        {/* Tab Navigation Segment */}
-        <View style={styles.tabsContainer}>
-          <Pressable
-            style={[styles.tabButton, activeTab === 'overview' && styles.tabButtonActive]}
-            onPress={() => setActiveTab('overview')}
-          >
-            <Text style={[styles.tabText, activeTab === 'overview' && styles.tabTextActive]}>
-              Overview
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[styles.tabButton, activeTab === 'edit' && styles.tabButtonActive]}
-            onPress={() => setActiveTab('edit')}
-          >
-            <Text style={[styles.tabText, activeTab === 'edit' && styles.tabTextActive]}>
-              Edit Profile
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[styles.tabButton, activeTab === 'security' && styles.tabButtonActive]}
-            onPress={() => setActiveTab('security')}
-          >
-            <Text style={[styles.tabText, activeTab === 'security' && styles.tabTextActive]}>
-              Security
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[styles.tabButton, activeTab === 'billing' && styles.tabButtonActive]}
-            onPress={() => setActiveTab('billing')}
-          >
-            <Text style={[styles.tabText, activeTab === 'billing' && styles.tabTextActive]}>
-              Billing
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[styles.tabButton, activeTab === 'preferences' && styles.tabButtonActive]}
-            onPress={() => setActiveTab('preferences')}
-          >
-            <Text style={[styles.tabText, activeTab === 'preferences' && styles.tabTextActive]}>
-              Settings
-            </Text>
-          </Pressable>
+        {/* Apple iOS 18 Segmented Control with Animated Sliding Pill */}
+        <View
+          onLayout={(e: LayoutChangeEvent) => setTabsTrackWidth(e.nativeEvent.layout.width)}
+          style={[styles.tabsTrack, isDark ? styles.tabsTrackDark : styles.tabsTrackLight]}
+        >
+          {tabPillWidth > 0 && (
+            <Animated.View
+              style={[
+                styles.slidingTabPill,
+                {
+                  width: tabPillWidth,
+                  left: tabPadding,
+                  transform: [{ translateX: slideAnim }],
+                },
+                isDark ? styles.slidingTabPillDark : styles.slidingTabPillLight,
+              ]}
+              pointerEvents="none"
+            />
+          )}
+
+          {TABS.map((tab) => {
+            const isTabActive = activeTab === tab.id;
+            return (
+              <Pressable
+                key={tab.id}
+                style={styles.tabButton}
+                onPress={() => handleTabChange(tab.id)}
+              >
+                <Text
+                  style={[
+                    styles.tabText,
+                    isDark ? styles.tabTextDark : styles.tabTextLight,
+                    isTabActive && (isDark ? styles.tabTextActiveDark : styles.tabTextActiveLight),
+                  ]}
+                  numberOfLines={1}
+                >
+                  {tab.label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
 
         {/* TAB 1: OVERVIEW */}
         {activeTab === 'overview' && (
           <View style={styles.tabContent}>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Account Details</Text>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Email</Text>
-                <Text style={styles.infoValue}>{user?.email || '-'}</Text>
+            {/* Account Information Card */}
+            <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
+              ACCOUNT INFORMATION
+            </Text>
+            <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+              <View style={[styles.infoRow, isDark ? styles.infoRowDark : styles.infoRowLight]}>
+                <Text style={[styles.infoLabel, isDark && styles.infoLabelDark]}>Email</Text>
+                <Text style={[styles.infoValue, isDark && styles.infoValueDark]}>{user?.email || '-'}</Text>
               </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Phone</Text>
-                <Text style={styles.infoValue}>{phone || 'Not provided'}</Text>
+              <View style={[styles.infoRow, isDark ? styles.infoRowDark : styles.infoRowLight]}>
+                <Text style={[styles.infoLabel, isDark && styles.infoLabelDark]}>Phone</Text>
+                <Text style={[styles.infoValue, isDark && styles.infoValueDark]}>{phone || 'Not provided'}</Text>
               </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Business Name</Text>
-                <Text style={styles.infoValue}>{profile?.business_name || 'Individual'}</Text>
+              <View style={[styles.infoRow, isDark ? styles.infoRowDark : styles.infoRowLight]}>
+                <Text style={[styles.infoLabel, isDark && styles.infoLabelDark]}>Business Name</Text>
+                <Text style={[styles.infoValue, isDark && styles.infoValueDark]}>{profile?.business_name || 'Individual'}</Text>
               </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Website</Text>
-                <Text style={styles.infoValue}>{profile?.website || 'Not provided'}</Text>
+              <View style={[styles.infoRow, isDark ? styles.infoRowDark : styles.infoRowLight]}>
+                <Text style={[styles.infoLabel, isDark && styles.infoLabelDark]}>Website</Text>
+                <Text style={[styles.infoValue, isDark && styles.infoValueDark]}>{profile?.website || 'Not provided'}</Text>
               </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Location</Text>
-                <Text style={styles.infoValue}>
+              <View style={[styles.infoRow, isDark ? styles.infoRowDark : styles.infoRowLight]}>
+                <Text style={[styles.infoLabel, isDark && styles.infoLabelDark]}>Location</Text>
+                <Text style={[styles.infoValue, isDark && styles.infoValueDark]}>
                   {profile?.city ? `${profile.city}, ${profile.country || ''}` : profile?.country || 'Not set'}
                 </Text>
               </View>
               <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
-                <Text style={styles.infoLabel}>Account ID</Text>
-                <Text style={[styles.infoValue, { fontSize: 12 }]}>{user?.id?.slice(0, 12)}...</Text>
+                <Text style={[styles.infoLabel, isDark && styles.infoLabelDark]}>Account ID</Text>
+                <Text style={[styles.infoValue, isDark && styles.infoValueDark, { fontSize: 12.5 }]}>
+                  {user?.id ? `${user.id.slice(0, 10)}...` : '-'}
+                </Text>
               </View>
             </View>
 
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Connected Platform ID</Text>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Telegram ID</Text>
-                <Text style={styles.infoValue}>
+            {/* Connected Platform Card */}
+            <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
+              CONNECTED PLATFORMS
+            </Text>
+            <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+              <View style={[styles.infoRow, isDark ? styles.infoRowDark : styles.infoRowLight]}>
+                <Text style={[styles.infoLabel, isDark && styles.infoLabelDark]}>Telegram ID</Text>
+                <Text style={[styles.infoValue, isDark && styles.infoValueDark]}>
                   {profile?.telegram_user_id ? String(profile.telegram_user_id) : 'Not linked'}
                 </Text>
               </View>
               <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
-                <Text style={styles.infoLabel}>Account Type</Text>
-                <Text style={styles.infoValue}>{profile?.account_type || 'Personal'}</Text>
+                <Text style={[styles.infoLabel, isDark && styles.infoLabelDark]}>Account Type</Text>
+                <Text style={[styles.infoValue, isDark && styles.infoValueDark]}>{profile?.account_type || 'Personal'}</Text>
               </View>
             </View>
 
-            {/* Quick Links / Resources */}
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Support & App Settings</Text>
-
+            {/* Resources & Quick Actions Card */}
+            <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
+              RESOURCES & SETTINGS
+            </Text>
+            <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
               <Pressable
-                style={styles.navRow}
+                style={[styles.navRow, isDark ? styles.navRowDark : styles.navRowLight]}
                 onPress={() => router.push('/account/help' as any)}
               >
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.navRowTitle}>📖 Help Center & Docs</Text>
-                  <Text style={styles.navRowSubtitle}>Tutorials, FAQs, and ticket submission</Text>
+                <View style={[styles.navIconBox, { backgroundColor: '#0A84FF' }]}>
+                  <Ionicons name="book" size={16} color="#FFFFFF" />
                 </View>
-                <Text style={styles.navRowArrow}>→</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.navRowTitle, isDark && styles.navRowTitleDark]}>Help Center & Docs</Text>
+                  <Text style={[styles.navRowSubtitle, isDark && styles.navRowSubtitleDark]}>
+                    Tutorials, FAQs, and ticket submission
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
               </Pressable>
 
               <Pressable
-                style={styles.navRow}
+                style={[styles.navRow, isDark ? styles.navRowDark : styles.navRowLight]}
                 onPress={() => router.push('/account/plans' as any)}
               >
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.navRowTitle}>💎 Plans & Subscriptions</Text>
-                  <Text style={styles.navRowSubtitle}>Upgrade quota, view GAP Max features</Text>
+                <View style={[styles.navIconBox, { backgroundColor: '#8B5CF6' }]}>
+                  <Ionicons name="diamond" size={16} color="#FFFFFF" />
                 </View>
-                <Text style={styles.navRowArrow}>→</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.navRowTitle, isDark && styles.navRowTitleDark]}>Plans & Subscriptions</Text>
+                  <Text style={[styles.navRowSubtitle, isDark && styles.navRowSubtitleDark]}>
+                    Upgrade quota, view GAP Max features
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
               </Pressable>
 
               <Pressable
                 style={[styles.navRow, { borderBottomWidth: 0 }]}
                 onPress={() => router.push('/account/customize' as any)}
               >
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.navRowTitle}>⚙️ Customize App</Text>
-                  <Text style={styles.navRowSubtitle}>Toggle shortcuts, tool visibility & density</Text>
+                <View style={[styles.navIconBox, { backgroundColor: '#64748B' }]}>
+                  <Ionicons name="options" size={16} color="#FFFFFF" />
                 </View>
-                <Text style={styles.navRowArrow}>→</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.navRowTitle, isDark && styles.navRowTitleDark]}>Customize App</Text>
+                  <Text style={[styles.navRowSubtitle, isDark && styles.navRowSubtitleDark]}>
+                    Toggle shortcuts, tool visibility & density
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
               </Pressable>
             </View>
 
             {/* Admin Center (Protected) */}
             {(profile?.is_admin || isAdmin) && (
-              <View style={[styles.card, { borderColor: '#16b882' }]}>
-                <View style={styles.adminTitleRow}>
-                  <Text style={[styles.cardTitle, { color: '#16b882', marginBottom: 0 }]}>
-                    🛡️ Admin Console
-                  </Text>
-                  <View style={styles.adminTag}>
-                    <Text style={styles.adminTagText}>STAFF ONLY</Text>
-                  </View>
-                </View>
-                <Text style={styles.adminSubtitle}>
-                  Authorized access to platform management, outreach, and store revenue.
+              <>
+                <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
+                  ADMINISTRATION
                 </Text>
-
-                <Pressable
-                  style={styles.navRow}
-                  onPress={() => router.push('/(tabs)/admin' as any)}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.navRowTitle}>⚡ System Maintenance Hub</Text>
-                    <Text style={styles.navRowSubtitle}>Platform kill-switch & product health status</Text>
+                <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight, { borderColor: '#10B981' }]}>
+                  <View style={styles.adminTitleRow}>
+                    <Text style={[styles.cardTitle, { color: '#10B981', marginBottom: 0 }]}>
+                      🛡️ Admin Console
+                    </Text>
+                    <View style={styles.adminTag}>
+                      <Text style={styles.adminTagText}>STAFF ONLY</Text>
+                    </View>
                   </View>
-                  <Text style={styles.navRowArrow}>→</Text>
-                </Pressable>
+                  <Text style={[styles.adminSubtitle, isDark && styles.adminSubtitleDark]}>
+                    Authorized access to platform management, outreach, and store revenue.
+                  </Text>
 
-                <Pressable
-                  style={styles.navRow}
-                  onPress={() => router.push('/admin/sales-leads' as any)}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.navRowTitle}>👥 Sales Leads & Outreach</Text>
-                    <Text style={styles.navRowSubtitle}>Prospects, follow-ups & conversion pipeline</Text>
-                  </View>
-                  <Text style={styles.navRowArrow}>→</Text>
-                </Pressable>
+                  <Pressable
+                    style={[styles.navRow, isDark ? styles.navRowDark : styles.navRowLight]}
+                    onPress={() => router.push('/(tabs)/admin' as any)}
+                  >
+                    <View style={[styles.navIconBox, { backgroundColor: '#EF4444' }]}>
+                      <Ionicons name="pulse" size={16} color="#FFFFFF" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.navRowTitle, isDark && styles.navRowTitleDark]}>System Maintenance Hub</Text>
+                      <Text style={[styles.navRowSubtitle, isDark && styles.navRowSubtitleDark]}>Platform kill-switch & product health</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+                  </Pressable>
 
-                <Pressable
-                  style={[styles.navRow, { borderBottomWidth: 0 }]}
-                  onPress={() => router.push('/admin/monetize' as any)}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.navRowTitle}>💰 Monetize & Revenue Engine</Text>
-                    <Text style={styles.navRowSubtitle}>Store catalog, payout stats & payment status</Text>
-                  </View>
-                  <Text style={styles.navRowArrow}>→</Text>
-                </Pressable>
-              </View>
+                  <Pressable
+                    style={[styles.navRow, isDark ? styles.navRowDark : styles.navRowLight]}
+                    onPress={() => router.push('/admin/sales-leads' as any)}
+                  >
+                    <View style={[styles.navIconBox, { backgroundColor: '#10B981' }]}>
+                      <Ionicons name="people" size={16} color="#FFFFFF" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.navRowTitle, isDark && styles.navRowTitleDark]}>Sales Leads & Outreach</Text>
+                      <Text style={[styles.navRowSubtitle, isDark && styles.navRowSubtitleDark]}>Prospects, follow-ups & pipeline</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+                  </Pressable>
+
+                  <Pressable
+                    style={[styles.navRow, { borderBottomWidth: 0 }]}
+                    onPress={() => router.push('/admin/monetize' as any)}
+                  >
+                    <View style={[styles.navIconBox, { backgroundColor: '#F59E0B' }]}>
+                      <Ionicons name="cash" size={16} color="#FFFFFF" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.navRowTitle, isDark && styles.navRowTitleDark]}>Monetize & Revenue Engine</Text>
+                      <Text style={[styles.navRowSubtitle, isDark && styles.navRowSubtitleDark]}>Store catalog, payout stats & revenue</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+                  </Pressable>
+                </View>
+              </>
             )}
           </View>
         )}
@@ -563,66 +708,78 @@ export default function AccountScreen() {
         {/* TAB 2: EDIT PROFILE */}
         {activeTab === 'edit' && (
           <View style={styles.tabContent}>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Update Information</Text>
-
-              <Text style={styles.inputLabel}>Full Name</Text>
+            <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
+              PERSONAL & BUSINESS PROFILE
+            </Text>
+            <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+              <Text style={[styles.inputLabel, isDark && styles.inputLabelDark]}>Full Name</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                 value={fullName}
                 onChangeText={setFullName}
                 placeholder="Your full name"
-                placeholderTextColor={colors.mutedForeground}
+                placeholderTextColor="#8E8E93"
               />
 
-              <Text style={styles.inputLabel}>Phone Number</Text>
+              <Text style={[styles.inputLabel, isDark && styles.inputLabelDark]}>Phone Number</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                 value={phone}
                 onChangeText={setPhone}
                 placeholder="+1234567890"
                 keyboardType="phone-pad"
-                placeholderTextColor={colors.mutedForeground}
+                placeholderTextColor="#8E8E93"
               />
 
-              <Text style={styles.inputLabel}>Business / Company Name</Text>
+              <Text style={[styles.inputLabel, isDark && styles.inputLabelDark]}>Business / Company Name</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                 value={businessName}
                 onChangeText={setBusinessName}
                 placeholder="Acme Corp"
-                placeholderTextColor={colors.mutedForeground}
+                placeholderTextColor="#8E8E93"
               />
 
-              <Text style={styles.inputLabel}>Website</Text>
+              <Text style={[styles.inputLabel, isDark && styles.inputLabelDark]}>Business Email</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+                value={businessEmail}
+                onChangeText={setBusinessEmail}
+                placeholder="contact@company.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                placeholderTextColor="#8E8E93"
+              />
+
+              <Text style={[styles.inputLabel, isDark && styles.inputLabelDark]}>Website</Text>
+              <TextInput
+                style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                 value={website}
                 onChangeText={setWebsite}
                 placeholder="https://example.com"
                 autoCapitalize="none"
-                placeholderTextColor={colors.mutedForeground}
+                placeholderTextColor="#8E8E93"
               />
 
               <View style={styles.inputGrid}>
                 <View style={{ flex: 1, marginRight: 8 }}>
-                  <Text style={styles.inputLabel}>City</Text>
+                  <Text style={[styles.inputLabel, isDark && styles.inputLabelDark]}>City</Text>
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                     value={city}
                     onChangeText={setCity}
                     placeholder="New York"
-                    placeholderTextColor={colors.mutedForeground}
+                    placeholderTextColor="#8E8E93"
                   />
                 </View>
                 <View style={{ flex: 1, marginLeft: 8 }}>
-                  <Text style={styles.inputLabel}>Country</Text>
+                  <Text style={[styles.inputLabel, isDark && styles.inputLabelDark]}>Country</Text>
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                     value={country}
                     onChangeText={setCountry}
                     placeholder="United States"
-                    placeholderTextColor={colors.mutedForeground}
+                    placeholderTextColor="#8E8E93"
                   />
                 </View>
               </View>
@@ -645,26 +802,131 @@ export default function AccountScreen() {
         {/* TAB 3: SECURITY */}
         {activeTab === 'security' && (
           <View style={styles.tabContent}>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Authentication & Security</Text>
-              <Text style={styles.cardDescription}>
-                Manage your credentials and secure login methods for GetAIPilot Hub.
+            {/* SECTION 1: APP LOCK & BIOMETRICS */}
+            <View style={styles.sectionHeaderRow}>
+              <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
+                APP LOCK & DEVICE SECURITY
               </Text>
+              <View style={[styles.microBadge, biometricSettings.hasHardware ? styles.microBadgeGreen : styles.microBadgeGray]}>
+                <Ionicons
+                  name={biometricSettings.hasHardware ? 'shield-checkmark' : 'information-circle'}
+                  size={11}
+                  color={biometricSettings.hasHardware ? '#10B981' : '#8E8E93'}
+                />
+                <Text style={[styles.microBadgeText, { color: biometricSettings.hasHardware ? '#10B981' : '#8E8E93' }]}>
+                  {biometricSettings.hasHardware ? `${biometricSettings.biometricLabel} Ready` : 'Passcode Mode'}
+                </Text>
+              </View>
+            </View>
 
-              <View style={styles.actionRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.actionTitle}>Password</Text>
-                  <Text style={styles.actionSubtitle}>Send a secure password reset link to your email</Text>
+            <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+              {/* Biometric Toggle Switch */}
+              <View style={[styles.actionRow, isDark ? styles.actionRowDark : styles.actionRowLight, !biometricSettings.enabled && { borderBottomWidth: 0 }]}>
+                <View style={[styles.rowIconCircle, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+                  <Ionicons
+                    name={
+                      biometricSettings.biometricType === 'FACE_ID'
+                        ? 'scan-outline'
+                        : biometricSettings.biometricType === 'TOUCH_ID' || biometricSettings.biometricType === 'FINGERPRINT'
+                        ? 'finger-print-outline'
+                        : 'lock-closed-outline'
+                    }
+                    size={18}
+                    color="#10B981"
+                  />
                 </View>
-                <Pressable style={styles.secondaryButton} onPress={handlePasswordReset}>
-                  <Text style={styles.secondaryButtonText}>Reset</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.actionTitle, isDark && styles.actionTitleDark]}>
+                    {biometricSettings.biometricLabel} Lock
+                  </Text>
+                  <Text style={[styles.actionSubtitle, isDark && styles.actionSubtitleDark]}>
+                    Require biometric scan or passcode to access app
+                  </Text>
+                </View>
+                <Switch
+                  value={biometricSettings.enabled}
+                  onValueChange={handleToggleBiometric}
+                  disabled={isUpdatingBiometrics}
+                  trackColor={{ false: isDark ? '#3A3A3C' : '#E5E7EB', true: '#10B981' }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+
+              {/* Auto-Lock Timeout Config */}
+              {biometricSettings.enabled && (
+                <View style={{ paddingHorizontal: 16, paddingVertical: 14 }}>
+                  <View style={{ marginBottom: 10 }}>
+                    <Text style={[styles.actionTitle, isDark && styles.actionTitleDark, { fontSize: 13.5 }]}>
+                      Require {biometricSettings.biometricLabel}
+                    </Text>
+                    <Text style={[styles.actionSubtitle, isDark && styles.actionSubtitleDark]}>
+                      Time elapsed before app locks when minimized
+                    </Text>
+                  </View>
+
+                  {/* Segmented Timeout Selector */}
+                  <View style={[styles.timeoutSegmentTrack, isDark ? styles.timeoutSegmentTrackDark : styles.timeoutSegmentTrackLight]}>
+                    {[
+                      { label: 'Immediately', val: 0 },
+                      { label: '1 min', val: 1 },
+                      { label: '5 min', val: 5 },
+                      { label: '15 min', val: 15 },
+                    ].map((opt) => {
+                      const isSelected = biometricSettings.timeoutMinutes === opt.val;
+                      return (
+                        <Pressable
+                          key={opt.val}
+                          style={[
+                            styles.timeoutPill,
+                            isSelected && (isDark ? styles.timeoutPillSelectedDark : styles.timeoutPillSelectedLight),
+                          ]}
+                          onPress={() => handleChangeTimeout(opt.val)}
+                        >
+                          <Text
+                            style={[
+                              styles.timeoutPillText,
+                              isDark ? styles.timeoutPillTextDark : styles.timeoutPillTextLight,
+                              isSelected && styles.timeoutPillTextActive,
+                            ]}
+                          >
+                            {opt.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
+            </View>
+
+            {/* SECTION 2: AUTHENTICATION & CREDENTIALS */}
+            <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark, { marginTop: 14 }]}>
+              AUTHENTICATION & CREDENTIALS
+            </Text>
+            <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+              <View style={[styles.actionRow, isDark ? styles.actionRowDark : styles.actionRowLight]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.actionTitle, isDark && styles.actionTitleDark]}>Password</Text>
+                  <Text style={[styles.actionSubtitle, isDark && styles.actionSubtitleDark]}>
+                    Send a secure password reset link to your email
+                  </Text>
+                </View>
+                <Pressable
+                  style={[styles.secondaryButton, isDark ? styles.secondaryButtonDark : styles.secondaryButtonLight]}
+                  onPress={handlePasswordReset}
+                >
+                  <Text style={[styles.secondaryButtonText, isDark ? styles.secondaryButtonTextDark : styles.secondaryButtonTextLight]}>
+                    Reset
+                  </Text>
                 </Pressable>
               </View>
 
               <View style={[styles.actionRow, { borderBottomWidth: 0 }]}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.actionTitle}>Two-Factor Authentication</Text>
-                  <Text style={styles.actionSubtitle}>Enforce OTP / Magic link verification on sign-in</Text>
+                  <Text style={[styles.actionTitle, isDark && styles.actionTitleDark]}>Two-Factor Authentication</Text>
+                  <Text style={[styles.actionSubtitle, isDark && styles.actionSubtitleDark]}>
+                    Enforce OTP / Magic link verification on sign-in
+                  </Text>
                 </View>
                 <View style={styles.activeTag}>
                   <Text style={styles.activeTagText}>Active</Text>
@@ -678,16 +940,21 @@ export default function AccountScreen() {
         {activeTab === 'billing' && (
           <View style={styles.tabContent}>
             {/* Active Plan Card */}
-            <View style={[styles.card, { borderColor: '#16b882', borderWidth: 1.5 }]}>
+            <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
+              ACTIVE SUBSCRIPTION
+            </Text>
+            <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight, { borderColor: '#0A84FF', borderWidth: 1.5 }]}>
               <View style={styles.planCardHeader}>
                 <View>
-                  <Text style={styles.planCardTitle}>{planLabel || 'Free Trial'}</Text>
+                  <Text style={[styles.planCardTitle, isDark && styles.planCardTitleDark]}>
+                    {planLabel || 'Free Trial'}
+                  </Text>
                   <Text style={styles.planCardPrice}>
                     {subData?.plan_price_paise ? `₹${(subData.plan_price_paise / 100).toFixed(0)}/mo` : 'Active Platform Plan'}
                   </Text>
                 </View>
-                <View style={[styles.badge, { backgroundColor: '#dcfce7' }]}>
-                  <Text style={[styles.badgeText, { color: '#16a34a' }]}>
+                <View style={[styles.badge, isDark ? styles.badgeDark : styles.badgeLight]}>
+                  <Text style={[styles.badgeText, { color: '#0A84FF', fontWeight: '800' }]}>
                     {isActive ? 'Active' : 'Trial'}
                   </Text>
                 </View>
@@ -696,10 +963,14 @@ export default function AccountScreen() {
               {/* Progress Bar */}
               <View style={styles.planProgressContainer}>
                 <View style={styles.planProgressRow}>
-                  <Text style={styles.planProgressLabel}>Subscription Duration</Text>
-                  <Text style={styles.planProgressValue}>{getDaysLeft()} Days Left</Text>
+                  <Text style={[styles.planProgressLabel, isDark && styles.planProgressLabelDark]}>
+                    Subscription Duration
+                  </Text>
+                  <Text style={[styles.planProgressValue, isDark && styles.planProgressValueDark]}>
+                    {getDaysLeft()} Days Left
+                  </Text>
                 </View>
-                <View style={styles.progressBarTrack}>
+                <View style={[styles.progressBarTrack, isDark ? styles.progressBarTrackDark : styles.progressBarTrackLight]}>
                   <View style={[styles.progressBarFill, { width: `${Math.min(100, Math.max(10, (getDaysLeft() / 30) * 100))}%` }]} />
                 </View>
               </View>
@@ -713,105 +984,112 @@ export default function AccountScreen() {
             </View>
 
             {/* Invoices History Table */}
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Payment Invoices & Receipts</Text>
-              <Text style={styles.cardDescription}>
-                Download or view past platform subscription receipts.
-              </Text>
-
+            <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
+              PAYMENT INVOICES & RECEIPTS
+            </Text>
+            <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
               {invoicesData && invoicesData.length > 0 ? (
-                invoicesData.map((inv: any) => (
+                invoicesData.map((inv: any, i: number) => (
                   <Pressable
                     key={inv.id}
-                    style={styles.invoiceRow}
+                    style={[
+                      styles.invoiceRow,
+                      isDark ? styles.invoiceRowDark : styles.invoiceRowLight,
+                      i === invoicesData.length - 1 && { borderBottomWidth: 0 },
+                    ]}
                     onPress={() => setSelectedInvoice(inv)}
                   >
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.invoiceNumber}>
+                      <Text style={[styles.invoiceNumber, isDark && styles.invoiceNumberDark]}>
                         {inv.plan_label || 'Subscription Payment'}
                       </Text>
-                      <Text style={styles.invoiceDate}>
+                      <Text style={[styles.invoiceDate, isDark && styles.invoiceDateDark]}>
                         {new Date(inv.charged_at || inv.created_at).toLocaleDateString()} • {inv.payment_id || 'Ref #10293'}
                       </Text>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={styles.invoiceAmount}>₹{((inv.amount_paise || 0) / 100).toFixed(2)}</Text>
-                      <View style={[styles.miniStatusBadge, { backgroundColor: '#dcfce7' }]}>
-                        <Text style={[styles.miniStatusText, { color: '#16a34a' }]}>{inv.payment_status || 'Paid'}</Text>
+                      <Text style={[styles.invoiceAmount, isDark && styles.invoiceAmountDark]}>
+                        ₹{((inv.amount_paise || 0) / 100).toFixed(2)}
+                      </Text>
+                      <View style={[styles.miniStatusBadge, isDark ? styles.miniStatusBadgeDark : styles.miniStatusBadgeLight]}>
+                        <Text style={[styles.miniStatusText, { color: '#10B981' }]}>{inv.payment_status || 'Paid'}</Text>
                       </View>
                     </View>
                   </Pressable>
                 ))
               ) : (
                 <View style={styles.emptyInvoiceBox}>
-                  <Text style={styles.emptyInvoiceText}>No previous paid invoice records found.</Text>
+                  <Text style={[styles.emptyInvoiceText, isDark && styles.emptyInvoiceTextDark]}>
+                    No previous paid invoice records found.
+                  </Text>
                 </View>
               )}
             </View>
 
             {/* Billing Details Form */}
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Billing Details (GST / Invoicing)</Text>
-
-              <Text style={styles.inputLabel}>Billing / Company Name</Text>
+            <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
+              GST & INVOICE DETAILS
+            </Text>
+            <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+              <Text style={[styles.inputLabel, isDark && styles.inputLabelDark]}>Billing / Company Name</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                 value={billingName}
                 onChangeText={setBillingName}
                 placeholder="Business or Personal Name"
-                placeholderTextColor={colors.mutedForeground}
+                placeholderTextColor="#8E8E93"
               />
 
-              <Text style={styles.inputLabel}>Billing Email</Text>
+              <Text style={[styles.inputLabel, isDark && styles.inputLabelDark]}>Billing Email</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                 value={billingEmail}
                 onChangeText={setBillingEmail}
                 placeholder="billing@example.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
-                placeholderTextColor={colors.mutedForeground}
+                placeholderTextColor="#8E8E93"
               />
 
-              <Text style={styles.inputLabel}>GSTIN / Tax ID</Text>
+              <Text style={[styles.inputLabel, isDark && styles.inputLabelDark]}>GSTIN / Tax ID</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                 value={taxId}
                 onChangeText={setTaxId}
                 placeholder="27AAAAA0000A1Z5 (Optional)"
                 autoCapitalize="characters"
-                placeholderTextColor={colors.mutedForeground}
+                placeholderTextColor="#8E8E93"
               />
 
-              <Text style={styles.inputLabel}>Billing Address</Text>
+              <Text style={[styles.inputLabel, isDark && styles.inputLabelDark]}>Billing Address</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                 value={billingAddress1}
                 onChangeText={setBillingAddress1}
                 placeholder="Street address / Unit"
-                placeholderTextColor={colors.mutedForeground}
+                placeholderTextColor="#8E8E93"
               />
 
               <View style={styles.inputGrid}>
                 <View style={{ flex: 1, marginRight: 8 }}>
-                  <Text style={styles.inputLabel}>City</Text>
+                  <Text style={[styles.inputLabel, isDark && styles.inputLabelDark]}>City</Text>
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                     value={billingCity}
                     onChangeText={setBillingCity}
                     placeholder="City"
-                    placeholderTextColor={colors.mutedForeground}
+                    placeholderTextColor="#8E8E93"
                   />
                 </View>
                 <View style={{ flex: 1, marginLeft: 8 }}>
-                  <Text style={styles.inputLabel}>Postal Code</Text>
+                  <Text style={[styles.inputLabel, isDark && styles.inputLabelDark]}>Postal Code</Text>
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                     value={billingPostal}
                     onChangeText={setBillingPostal}
                     placeholder="400001"
                     keyboardType="numeric"
-                    placeholderTextColor={colors.mutedForeground}
+                    placeholderTextColor="#8E8E93"
                   />
                 </View>
               </View>
@@ -839,38 +1117,46 @@ export default function AccountScreen() {
           onRequestClose={() => setSelectedInvoice(null)}
         >
           <View style={styles.modalOverlay}>
-            <View style={styles.invoiceModal}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Tax Invoice Receipt</Text>
-                <Pressable onPress={() => setSelectedInvoice(null)}>
-                  <Text style={styles.modalCloseText}>✕</Text>
+            <View style={[styles.invoiceModal, isDark ? styles.invoiceModalDark : styles.invoiceModalLight]}>
+              <View style={[styles.modalHeader, isDark ? styles.modalHeaderDark : styles.modalHeaderLight]}>
+                <Text style={[styles.modalTitle, isDark && styles.modalTitleDark]}>Tax Invoice Receipt</Text>
+                <Pressable onPress={() => setSelectedInvoice(null)} hitSlop={8}>
+                  <Ionicons name="close-circle" size={24} color="#8E8E93" />
                 </Pressable>
               </View>
 
               {selectedInvoice && (
-                <View style={{ gap: 12, paddingVertical: 12 }}>
+                <View style={{ gap: 12, paddingVertical: 14 }}>
                   <View style={styles.invoiceModalRow}>
-                    <Text style={styles.invoiceModalLabel}>Invoice Number:</Text>
-                    <Text style={styles.invoiceModalVal}>GAP-2026-{String(selectedInvoice.id || '001').padStart(6, '0')}</Text>
+                    <Text style={[styles.invoiceModalLabel, isDark && styles.invoiceModalLabelDark]}>Invoice Number:</Text>
+                    <Text style={[styles.invoiceModalVal, isDark && styles.invoiceModalValDark]}>
+                      GAP-2026-{String(selectedInvoice.id || '001').padStart(6, '0')}
+                    </Text>
                   </View>
                   <View style={styles.invoiceModalRow}>
-                    <Text style={styles.invoiceModalLabel}>Plan Description:</Text>
-                    <Text style={styles.invoiceModalVal}>{selectedInvoice.plan_label || 'GetAIPilot Subscription'}</Text>
+                    <Text style={[styles.invoiceModalLabel, isDark && styles.invoiceModalLabelDark]}>Plan Description:</Text>
+                    <Text style={[styles.invoiceModalVal, isDark && styles.invoiceModalValDark]}>
+                      {selectedInvoice.plan_label || 'GetAIPilot Subscription'}
+                    </Text>
                   </View>
                   <View style={styles.invoiceModalRow}>
-                    <Text style={styles.invoiceModalLabel}>Payment ID:</Text>
-                    <Text style={styles.invoiceModalVal}>{selectedInvoice.payment_id || 'Direct Verified'}</Text>
+                    <Text style={[styles.invoiceModalLabel, isDark && styles.invoiceModalLabelDark]}>Payment ID:</Text>
+                    <Text style={[styles.invoiceModalVal, isDark && styles.invoiceModalValDark]}>
+                      {selectedInvoice.payment_id || 'Direct Verified'}
+                    </Text>
                   </View>
                   <View style={styles.invoiceModalRow}>
-                    <Text style={styles.invoiceModalLabel}>Status:</Text>
-                    <Text style={[styles.invoiceModalVal, { color: '#16a34a', fontWeight: 'bold' }]}>
+                    <Text style={[styles.invoiceModalLabel, isDark && styles.invoiceModalLabelDark]}>Status:</Text>
+                    <Text style={[styles.invoiceModalVal, { color: '#10B981', fontWeight: 'bold' }]}>
                       {selectedInvoice.payment_status || 'Paid'}
                     </Text>
                   </View>
-                  <View style={styles.invoiceModalDivider} />
+                  <View style={[styles.invoiceModalDivider, isDark ? styles.invoiceModalDividerDark : styles.invoiceModalDividerLight]} />
                   <View style={styles.invoiceModalRow}>
-                    <Text style={[styles.invoiceModalLabel, { fontSize: 16, fontWeight: 'bold' }]}>Total Paid:</Text>
-                    <Text style={[styles.invoiceModalVal, { fontSize: 18, fontWeight: 'bold', color: '#0f172a' }]}>
+                    <Text style={[styles.invoiceModalLabel, { fontSize: 16, fontWeight: 'bold' }, isDark && styles.invoiceModalLabelDark]}>
+                      Total Paid:
+                    </Text>
+                    <Text style={[styles.invoiceModalVal, { fontSize: 18, fontWeight: '800', color: '#0A84FF' }]}>
                       ₹{((selectedInvoice.amount_paise || 0) / 100).toFixed(2)}
                     </Text>
                   </View>
@@ -889,47 +1175,59 @@ export default function AccountScreen() {
             </View>
           </View>
         </Modal>
+
+        {/* TAB 5: PREFERENCES */}
         {activeTab === 'preferences' && (
           <View style={styles.tabContent}>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>App Preferences</Text>
-
-              <View style={styles.switchRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.switchTitle}>Push Notifications</Text>
-                  <Text style={styles.switchSubtitle}>Receive instant alerts on bot and campaign events</Text>
+            <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
+              APPLICATION PREFERENCES
+            </Text>
+            <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+              <View style={[styles.switchRow, isDark ? styles.switchRowDark : styles.switchRowLight]}>
+                <View style={{ flex: 1, paddingRight: 10 }}>
+                  <Text style={[styles.switchTitle, isDark && styles.switchTitleDark]}>Push Notifications</Text>
+                  <Text style={[styles.switchSubtitle, isDark && styles.switchSubtitleDark]}>
+                    Receive instant alerts on bot and campaign events
+                  </Text>
                 </View>
                 <Switch
                   value={pushEnabled}
                   onValueChange={(val) => handleTogglePref('@pref_push', val, setPushEnabled)}
-                  trackColor={{ false: '#333', true: colors.primary }}
-                  thumbColor="#fff"
+                  trackColor={{ false: isDark ? '#3A3A3C' : '#E5E7EB', true: '#0A84FF' }}
+                  thumbColor="#FFFFFF"
                 />
               </View>
 
-              <View style={styles.switchRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.switchTitle}>Email Digests</Text>
-                  <Text style={styles.switchSubtitle}>Weekly reports on automation stats & usage</Text>
+              <View style={[styles.switchRow, isDark ? styles.switchRowDark : styles.switchRowLight]}>
+                <View style={{ flex: 1, paddingRight: 10 }}>
+                  <Text style={[styles.switchTitle, isDark && styles.switchTitleDark]}>Email Digests</Text>
+                  <Text style={[styles.switchSubtitle, isDark && styles.switchSubtitleDark]}>
+                    Weekly reports on automation stats & usage
+                  </Text>
                 </View>
                 <Switch
                   value={emailAlerts}
                   onValueChange={(val) => handleTogglePref('@pref_email', val, setEmailAlerts)}
-                  trackColor={{ false: '#333', true: colors.primary }}
-                  thumbColor="#fff"
+                  trackColor={{ false: isDark ? '#3A3A3C' : '#E5E7EB', true: '#0A84FF' }}
+                  thumbColor="#FFFFFF"
                 />
               </View>
 
               <View style={[styles.switchRow, { borderBottomWidth: 0 }]}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.switchTitle}>Biometric Unlock</Text>
-                  <Text style={styles.switchSubtitle}>Prompt for Face ID / Fingerprint on launch</Text>
+                <View style={{ flex: 1, paddingRight: 10 }}>
+                  <Text style={[styles.switchTitle, isDark && styles.switchTitleDark]}>
+                    {biometricSettings.biometricLabel} Lock
+                  </Text>
+                  <Text style={[styles.switchSubtitle, isDark && styles.switchSubtitleDark]}>
+                    Require {biometricSettings.biometricLabel} or Passcode when opening the app
+                  </Text>
                 </View>
                 <Switch
-                  value={biometricEnabled}
-                  onValueChange={(val) => handleTogglePref('@pref_bio', val, setBiometricEnabled)}
-                  trackColor={{ false: '#333', true: colors.primary }}
-                  thumbColor="#fff"
+                  value={biometricSettings.enabled}
+                  onValueChange={handleToggleBiometric}
+                  disabled={isUpdatingBiometrics}
+                  trackColor={{ false: isDark ? '#3A3A3C' : '#E5E7EB', true: '#10B981' }}
+                  thumbColor="#FFFFFF"
                 />
               </View>
             </View>
@@ -937,65 +1235,106 @@ export default function AccountScreen() {
         )}
 
         {/* Sign Out Button */}
-        <Pressable style={styles.signOutButton} onPress={handleSignOut}>
+        <Pressable
+          style={[styles.signOutButton, isDark ? styles.signOutButtonDark : styles.signOutButtonLight]}
+          onPress={handleSignOut}
+        >
           <Text style={styles.signOutButtonText}>Sign Out</Text>
         </Pressable>
 
-        <Text style={styles.versionText}>GetAIPilot Hub Mobile v1.0.0</Text>
+        <Text style={[styles.versionText, isDark && styles.versionTextDark]}>
+          GetAiPilot Hub Mobile v1.0.0 (Build 2026)
+        </Text>
       </ScrollView>
     </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewLight: {
+    backgroundColor: '#F8F9FA',
+  },
+  scrollViewDark: {
+    backgroundColor: '#000000',
+  },
   scrollContent: {
     padding: 16,
-    paddingBottom: 110,
+    paddingBottom: 150,
   },
+  // ─── Apple ID Profile Hero ────────────────────────────────────
   heroCard: {
-    backgroundColor: '#073f36',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
+    borderRadius: 22,
+    padding: 18,
+    marginBottom: 18,
+    borderWidth: 1,
+  },
+  heroCardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 5,
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  heroCardDark: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 4,
   },
   heroTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 18,
   },
   avatar: {
     width: 64,
     height: 64,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
+    borderWidth: 2,
+  },
+  avatarLight: {
+    backgroundColor: '#0A84FF',
+    borderColor: '#EBF5FF',
+  },
+  avatarDark: {
+    backgroundColor: '#0A84FF',
+    borderColor: 'rgba(10, 132, 255, 0.45)',
   },
   avatarText: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#ffffff',
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
   heroInfo: {
     flex: 1,
   },
   heroName: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#000000',
+    letterSpacing: -0.4,
+  },
+  heroNameDark: {
+    color: '#FFFFFF',
   },
   heroEmail: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.75)',
+    fontSize: 13.5,
+    color: '#6B7280',
     marginTop: 2,
+  },
+  heroEmailDark: {
+    color: '#8E8E93',
   },
   badgeRow: {
     flexDirection: 'row',
@@ -1003,21 +1342,44 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   badge: {
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 12,
+  },
+  badgeLight: {
+    backgroundColor: '#EBF5FF',
+  },
+  badgeDark: {
+    backgroundColor: 'rgba(10, 132, 255, 0.16)',
   },
   badgeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#ffffff',
+  },
+  badgeTextLight: {
+    color: '#0A84FF',
+  },
+  badgeTextDark: {
+    color: '#0A84FF',
+  },
+  adminBadgeLight: {
+    backgroundColor: '#DCFCE7',
+  },
+  adminBadgeDark: {
+    backgroundColor: 'rgba(16, 185, 129, 0.16)',
   },
   statsRow: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.15)',
-    paddingTop: 16,
+    paddingTop: 14,
+  },
+  statsRowLight: {
+    borderTopColor: '#F2F4F7',
+  },
+  statsRowDark: {
+    borderTopColor: '#2C2C2E',
   },
   statItem: {
     flex: 1,
@@ -1026,118 +1388,281 @@ const styles = StyleSheet.create({
   statDivider: {
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  statDividerLight: {
+    borderColor: '#F2F4F7',
+  },
+  statDividerDark: {
+    borderColor: '#2C2C2E',
   },
   statLabel: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.65)',
+    fontSize: 10.5,
+    color: '#8E8E93',
     marginBottom: 4,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
+    fontWeight: '700',
+  },
+  statLabelDark: {
+    color: '#8E8E93',
   },
   statValue: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#ffffff',
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: '#000000',
   },
-  tabsContainer: {
+  statValueDark: {
+    color: '#FFFFFF',
+  },
+  // ─── Segmented Control Track ──────────────────────────────────
+  tabsTrack: {
     flexDirection: 'row',
-    backgroundColor: colors.card,
-    borderRadius: 12,
+    alignItems: 'center',
+    borderRadius: 14,
     padding: 4,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: colors.border,
+    position: 'relative',
+    height: 44,
+  },
+  tabsTrackLight: {
+    backgroundColor: '#F2F4F7',
+    borderColor: '#E5E7EB',
+  },
+  tabsTrackDark: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
+  },
+  slidingTabPill: {
+    position: 'absolute',
+    top: 4,
+    bottom: 4,
+    borderRadius: 10,
+    zIndex: 1,
+  },
+  slidingTabPillLight: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  slidingTabPillDark: {
+    backgroundColor: '#0A84FF',
+    shadowColor: '#0A84FF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 3,
   },
   tabButton: {
     flex: 1,
-    paddingVertical: 10,
     alignItems: 'center',
-    borderRadius: 8,
-  },
-  tabButtonActive: {
-    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    height: '100%',
+    zIndex: 2,
   },
   tabText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.mutedForeground,
+    fontSize: 11.5,
+    fontWeight: '600',
   },
-  tabTextActive: {
-    color: colors.primaryForeground,
+  tabTextLight: {
+    color: '#6B7280',
+  },
+  tabTextDark: {
+    color: '#8E8E93',
+  },
+  tabTextActiveLight: {
+    color: '#000000',
+    fontWeight: '800',
+  },
+  tabTextActiveDark: {
+    color: '#FFFFFF',
+    fontWeight: '800',
   },
   tabContent: {
-    marginBottom: 16,
+    marginBottom: 8,
+  },
+  // ─── Section Captions & Cards ─────────────────────────────────
+  sectionCaption: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  sectionCaptionDark: {
+    color: '#8E8E93',
   },
   card: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 16,
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    marginBottom: 20,
     borderWidth: 1,
-    borderColor: colors.border,
+  },
+  cardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+  },
+  cardDark: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
   },
   cardTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.foreground,
+    fontWeight: '800',
+    color: '#000000',
     marginBottom: 12,
-  },
-  cardDescription: {
-    fontSize: 13,
-    color: colors.mutedForeground,
-    marginBottom: 16,
-    lineHeight: 18,
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    alignItems: 'center',
+    paddingVertical: 13,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+  },
+  infoRowLight: {
+    borderBottomColor: '#F2F4F7',
+  },
+  infoRowDark: {
+    borderBottomColor: '#2C2C2E',
   },
   infoLabel: {
     fontSize: 14,
-    color: colors.mutedForeground,
+    color: '#6B7280',
+  },
+  infoLabelDark: {
+    color: '#8E8E93',
   },
   infoValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.foreground,
+    color: '#000000',
     textAlign: 'right',
     flex: 1,
     marginLeft: 16,
   },
+  infoValueDark: {
+    color: '#FFFFFF',
+  },
+  // ─── Navigation Rows with Squircle Icons ──────────────────────
+  navRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    gap: 12,
+  },
+  navRowLight: {
+    borderBottomColor: '#F2F4F7',
+  },
+  navRowDark: {
+    borderBottomColor: '#2C2C2E',
+  },
+  navIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  navRowTitle: {
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: '#000000',
+  },
+  navRowTitleDark: {
+    color: '#FFFFFF',
+  },
+  navRowSubtitle: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 1,
+  },
+  navRowSubtitleDark: {
+    color: '#8E8E93',
+  },
+  adminTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 12,
+    marginBottom: 4,
+  },
+  adminTag: {
+    backgroundColor: 'rgba(16, 185, 129, 0.16)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+  },
+  adminTagText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#10B981',
+    letterSpacing: 0.5,
+  },
+  adminSubtitle: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 10,
+    lineHeight: 16,
+  },
+  adminSubtitleDark: {
+    color: '#8E8E93',
+  },
+  // ─── Form Inputs ──────────────────────────────────────────────
   inputLabel: {
     fontSize: 13,
-    fontWeight: '600',
-    color: colors.foreground,
+    fontWeight: '700',
+    color: '#000000',
     marginBottom: 6,
-    marginTop: 10,
+    marginTop: 12,
+  },
+  inputLabelDark: {
+    color: '#FFFFFF',
   },
   input: {
-    backgroundColor: colors.secondary,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 11,
     fontSize: 14,
-    color: colors.foreground,
+  },
+  inputLight: {
+    backgroundColor: '#F8F9FA',
+    borderColor: '#E5E7EB',
+    color: '#000000',
+  },
+  inputDark: {
+    backgroundColor: '#2C2C2E',
+    borderColor: '#3A3A3C',
+    color: '#FFFFFF',
   },
   inputGrid: {
     flexDirection: 'row',
   },
   primaryButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#0A84FF',
     paddingVertical: 14,
-    borderRadius: 10,
+    borderRadius: 24,
     alignItems: 'center',
     marginTop: 20,
+    marginBottom: 12,
+    shadowColor: '#0A84FF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
   },
   primaryButtonText: {
-    color: colors.primaryForeground,
-    fontWeight: 'bold',
+    color: '#FFFFFF',
+    fontWeight: '800',
     fontSize: 15,
   },
   actionRow: {
@@ -1146,42 +1671,72 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+  },
+  actionRowLight: {
+    borderBottomColor: '#F2F4F7',
+  },
+  actionRowDark: {
+    borderBottomColor: '#2C2C2E',
+  },
+  rowIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
   actionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.foreground,
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: '#000000',
+  },
+  actionTitleDark: {
+    color: '#FFFFFF',
   },
   actionSubtitle: {
     fontSize: 12,
-    color: colors.mutedForeground,
+    color: '#6B7280',
     marginTop: 2,
   },
+  actionSubtitleDark: {
+    color: '#8E8E93',
+  },
   secondaryButton: {
-    backgroundColor: colors.secondary,
     borderWidth: 1,
-    borderColor: colors.border,
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingVertical: 7,
+    borderRadius: 16,
+    marginLeft: 12,
+  },
+  secondaryButtonLight: {
+    backgroundColor: '#F2F4F7',
+    borderColor: '#E5E7EB',
+  },
+  secondaryButtonDark: {
+    backgroundColor: '#2C2C2E',
+    borderColor: '#3A3A3C',
+  },
+  secondaryButtonText: {
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  secondaryButtonTextLight: {
+    color: '#000000',
+  },
+  secondaryButtonTextDark: {
+    color: '#FFFFFF',
+  },
+  activeTag: {
+    backgroundColor: 'rgba(16, 185, 129, 0.16)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 8,
     marginLeft: 12,
   },
-  secondaryButtonText: {
-    color: colors.foreground,
-    fontWeight: '600',
-    fontSize: 13,
-  },
-  activeTag: {
-    backgroundColor: 'rgba(22, 184, 130, 0.15)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginLeft: 12,
-  },
   activeTagText: {
-    color: '#16b882',
-    fontWeight: 'bold',
+    color: '#10B981',
+    fontWeight: '800',
     fontSize: 12,
   },
   switchRow: {
@@ -1190,106 +1745,79 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+  },
+  switchRowLight: {
+    borderBottomColor: '#F2F4F7',
+  },
+  switchRowDark: {
+    borderBottomColor: '#2C2C2E',
   },
   switchTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.foreground,
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: '#000000',
+  },
+  switchTitleDark: {
+    color: '#FFFFFF',
   },
   switchSubtitle: {
     fontSize: 12,
-    color: colors.mutedForeground,
+    color: '#6B7280',
     marginTop: 2,
-    paddingRight: 10,
+  },
+  switchSubtitleDark: {
+    color: '#8E8E93',
   },
   signOutButton: {
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: 24,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 4,
     marginBottom: 16,
+    borderWidth: 1,
+  },
+  signOutButtonLight: {
+    backgroundColor: '#FEE2E2',
+    borderColor: '#FCA5A5',
+  },
+  signOutButtonDark: {
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    borderColor: 'rgba(239, 68, 68, 0.28)',
   },
   signOutButtonText: {
-    color: colors.destructive,
-    fontWeight: 'bold',
+    color: '#EF4444',
+    fontWeight: '800',
     fontSize: 15,
   },
   versionText: {
     textAlign: 'center',
     fontSize: 12,
-    color: colors.mutedForeground,
-    marginTop: 8,
+    color: '#6B7280',
+    marginTop: 4,
   },
-  navRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+  versionTextDark: {
+    color: '#8E8E93',
   },
-  navRowTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.foreground,
-  },
-  navRowSubtitle: {
-    fontSize: 12,
-    color: colors.mutedForeground,
-    marginTop: 2,
-  },
-  navRowArrow: {
-    fontSize: 16,
-    color: colors.mutedForeground,
-    fontWeight: '600',
-    paddingLeft: 8,
-  },
-  adminTitleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  adminTag: {
-    backgroundColor: 'rgba(22, 184, 130, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(22, 184, 130, 0.3)',
-  },
-  adminTagText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#16b882',
-    letterSpacing: 0.5,
-  },
-  adminSubtitle: {
-    fontSize: 12,
-    color: colors.mutedForeground,
-    marginBottom: 12,
-    lineHeight: 16,
-  },
-  // ─── Billing Tab Styles ──────────────────────────────────────
+  // ─── Billing Tab Specifics ────────────────────────────────────
   planCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 14,
+    paddingTop: 10,
+    marginBottom: 12,
   },
   planCardTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#0f172a',
+    color: '#000000',
+  },
+  planCardTitleDark: {
+    color: '#FFFFFF',
   },
   planCardPrice: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#16a34a',
+    fontWeight: '700',
+    color: '#0A84FF',
     marginTop: 2,
   },
   planProgressContainer: {
@@ -1302,23 +1830,34 @@ const styles = StyleSheet.create({
   },
   planProgressLabel: {
     fontSize: 12,
-    color: '#64748b',
+    color: '#6B7280',
     fontWeight: '600',
+  },
+  planProgressLabelDark: {
+    color: '#8E8E93',
   },
   planProgressValue: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#000000',
+  },
+  planProgressValueDark: {
+    color: '#FFFFFF',
   },
   progressBarTrack: {
     height: 6,
-    backgroundColor: '#f1f5f9',
     borderRadius: 3,
     overflow: 'hidden',
   },
+  progressBarTrackLight: {
+    backgroundColor: '#E5E7EB',
+  },
+  progressBarTrackDark: {
+    backgroundColor: '#2C2C2E',
+  },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#16a34a',
+    backgroundColor: '#0A84FF',
     borderRadius: 3,
   },
   invoiceRow: {
@@ -1327,71 +1866,105 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+  },
+  invoiceRowLight: {
+    borderBottomColor: '#F2F4F7',
+  },
+  invoiceRowDark: {
+    borderBottomColor: '#2C2C2E',
   },
   invoiceNumber: {
-    fontSize: 13,
+    fontSize: 13.5,
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#000000',
+  },
+  invoiceNumberDark: {
+    color: '#FFFFFF',
   },
   invoiceDate: {
-    fontSize: 11,
-    color: '#64748b',
+    fontSize: 11.5,
+    color: '#6B7280',
     marginTop: 2,
+  },
+  invoiceDateDark: {
+    color: '#8E8E93',
   },
   invoiceAmount: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0f172a',
+    fontSize: 14.5,
+    fontWeight: '800',
+    color: '#000000',
+  },
+  invoiceAmountDark: {
+    color: '#FFFFFF',
   },
   miniStatusBadge: {
-    paddingHorizontal: 6,
+    paddingHorizontal: 7,
     paddingVertical: 2,
-    borderRadius: 4,
-    marginTop: 2,
+    borderRadius: 6,
+    marginTop: 3,
+  },
+  miniStatusBadgeLight: {
+    backgroundColor: '#DCFCE7',
+  },
+  miniStatusBadgeDark: {
+    backgroundColor: 'rgba(16, 185, 129, 0.16)',
   },
   miniStatusText: {
-    fontSize: 9,
+    fontSize: 9.5,
     fontWeight: '800',
     textTransform: 'uppercase',
   },
   emptyInvoiceBox: {
-    paddingVertical: 16,
+    paddingVertical: 18,
     alignItems: 'center',
   },
   emptyInvoiceText: {
-    fontSize: 12,
-    color: '#64748b',
+    fontSize: 13,
+    color: '#6B7280',
+  },
+  emptyInvoiceTextDark: {
+    color: '#8E8E93',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
   },
   invoiceModal: {
-    backgroundColor: '#ffffff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     padding: 24,
     paddingBottom: 40,
+    borderTopWidth: 1,
+  },
+  invoiceModalLight: {
+    backgroundColor: '#FFFFFF',
+    borderTopColor: '#E5E7EB',
+  },
+  invoiceModalDark: {
+    backgroundColor: '#1C1C1E',
+    borderTopColor: '#2C2C2E',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-    paddingBottom: 12,
+    paddingBottom: 14,
+  },
+  modalHeaderLight: {
+    borderBottomColor: '#F2F4F7',
+  },
+  modalHeaderDark: {
+    borderBottomColor: '#2C2C2E',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#0f172a',
+    color: '#000000',
   },
-  modalCloseText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#64748b',
+  modalTitleDark: {
+    color: '#FFFFFF',
   },
   invoiceModalRow: {
     flexDirection: 'row',
@@ -1399,17 +1972,103 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   invoiceModalLabel: {
-    fontSize: 13,
-    color: '#64748b',
+    fontSize: 13.5,
+    color: '#6B7280',
+  },
+  invoiceModalLabelDark: {
+    color: '#8E8E93',
   },
   invoiceModalVal: {
-    fontSize: 13,
+    fontSize: 13.5,
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#000000',
+  },
+  invoiceModalValDark: {
+    color: '#FFFFFF',
   },
   invoiceModalDivider: {
     height: 1,
-    backgroundColor: '#f1f5f9',
     marginVertical: 4,
+  },
+  invoiceModalDividerLight: {
+    backgroundColor: '#F2F4F7',
+  },
+  invoiceModalDividerDark: {
+    backgroundColor: '#2C2C2E',
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+    paddingHorizontal: 4,
+  },
+  microBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  microBadgeGreen: {
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+  },
+  microBadgeGray: {
+    backgroundColor: 'rgba(142, 142, 147, 0.12)',
+  },
+  microBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  timeoutSegmentTrack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 3,
+    borderRadius: 12,
+  },
+  timeoutSegmentTrackLight: {
+    backgroundColor: '#F2F4F7',
+  },
+  timeoutSegmentTrackDark: {
+    backgroundColor: '#2C2C2E',
+  },
+  timeoutPill: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 9,
+  },
+  timeoutPillSelectedLight: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  timeoutPillSelectedDark: {
+    backgroundColor: '#3A3A3C',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  timeoutPillText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  timeoutPillTextLight: {
+    color: '#6B7280',
+  },
+  timeoutPillTextDark: {
+    color: '#8E8E93',
+  },
+  timeoutPillTextActive: {
+    color: '#10B981',
+    fontWeight: '800',
   },
 });

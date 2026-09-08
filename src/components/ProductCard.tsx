@@ -1,14 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { colors } from '../theme/colors';
-import { StatusBadge } from './StatusBadge';
+import { View, Text, StyleSheet, Pressable, Image, useColorScheme } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 
 interface ProductCardProps {
   name: string;
-  category: string;
+  category?: string;
   description: string;
-  icon: string;
-  themeColor: string;
+  icon?: string;
+  logoImage?: any;
+  themeColor?: string;
   status?: string;
   actionText?: string;
   onPress: () => void;
@@ -17,39 +18,54 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({
   name,
-  category,
   description,
   icon,
-  themeColor,
-  status = 'operational',
-  actionText = 'Open Dashboard',
+  logoImage,
+  themeColor = '#0070F3',
   onPress,
-  onActionPress,
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  };
+
   return (
-    <Pressable style={styles.card} onPress={onPress}>
-      <View style={styles.header}>
-        <View style={[styles.iconContainer, { backgroundColor: themeColor + '18' }]}>
-          <Text style={[styles.iconText, { color: themeColor }]}>{icon}</Text>
-        </View>
+    <Pressable
+      style={({ pressed }) => [
+        styles.card,
+        isDark ? styles.cardDark : styles.cardLight,
+        pressed && { opacity: 0.8, transform: [{ scale: 0.99 }] },
+      ]}
+      onPress={handlePress}
+    >
+      <View style={styles.contentRow}>
+        {/* App Squircle Logo */}
+        {logoImage ? (
+          <Image source={logoImage} style={styles.logoImage} resizeMode="contain" />
+        ) : (
+          <View style={[styles.iconFallback, { backgroundColor: `${themeColor}22` }]}>
+            <Text style={styles.iconText}>{icon || '⚡'}</Text>
+          </View>
+        )}
+
+        {/* Title & Description */}
         <View style={styles.titleInfo}>
-          <Text style={styles.category}>{category}</Text>
-          <Text style={styles.name}>{name}</Text>
+          <Text style={[styles.name, isDark ? styles.nameDark : styles.nameLight]} numberOfLines={1}>
+            {name}
+          </Text>
+          <Text
+            style={[styles.description, isDark ? styles.descriptionDark : styles.descriptionLight]}
+            numberOfLines={2}
+          >
+            {description}
+          </Text>
         </View>
-        <StatusBadge status={status} size="sm" />
-      </View>
 
-      <Text style={styles.description} numberOfLines={2}>
-        {description}
-      </Text>
-
-      <View style={styles.footer}>
-        <Pressable
-          style={[styles.actionBtn, { backgroundColor: themeColor }]}
-          onPress={onActionPress || onPress}
-        >
-          <Text style={styles.actionBtnText}>{actionText} →</Text>
-        </Pressable>
+        {/* Apple iOS Chevron */}
+        <Ionicons name="chevron-forward" size={18} color="#8E8E93" style={styles.chevron} />
       </View>
     </Pressable>
   );
@@ -57,73 +73,72 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: StyleSheet.hairlineWidth,
   },
-  header: {
+  cardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  cardDark: {
+    backgroundColor: '#161B22',
+    borderColor: '#262C36',
+  },
+  contentRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
   },
-  iconContainer: {
-    width: 44,
-    height: 44,
+  logoImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    marginRight: 12,
+  },
+  iconFallback: {
+    width: 48,
+    height: 48,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   iconText: {
-    fontSize: 20,
-    fontWeight: '900',
+    fontSize: 22,
   },
   titleInfo: {
     flex: 1,
     marginRight: 8,
   },
-  category: {
-    fontSize: 10.5,
-    fontWeight: '800',
-    color: colors.mutedForeground,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
   name: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.foreground,
-    marginTop: 1,
+    fontSize: 15.5,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+    marginBottom: 3,
+  },
+  nameLight: {
+    color: '#000000',
+  },
+  nameDark: {
+    color: '#FFFFFF',
   },
   description: {
-    fontSize: 13,
-    color: colors.mutedForeground,
-    lineHeight: 18,
-    marginBottom: 14,
+    fontSize: 12,
+    lineHeight: 16,
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    borderTopWidth: 1,
-    borderTopColor: colors.muted,
-    paddingTop: 10,
+  descriptionLight: {
+    color: '#6B7280',
   },
-  actionBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
+  descriptionDark: {
+    color: '#8E8E93',
   },
-  actionBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '800',
-    fontSize: 12.5,
+  chevron: {
+    marginLeft: 4,
   },
 });

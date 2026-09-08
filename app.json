@@ -1,14 +1,19 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "GetAIPilot",
+    "slug": "getaipilot",
+    "owner": "theycallmetanishk",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mobile",
+    "scheme": "getaipilot",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "supportsTablet": true,
+      "bundleIdentifier": "com.unreala9.mobile",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Allow GetAIPilot to use Face ID for fast and secure authentication."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +23,11 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.unreala9.mobile"
+      "package": "com.unreala9.mobile",
+      "permissions": [
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT"
+      ]
     },
     "web": {
       "output": "static",
@@ -33,11 +42,22 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow GetAIPilot to use Face ID for fast and secure authentication."
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4f4400f4-3afc-4f61-8927-a4e8274bfb83"
+      }
     }
   }
 }
