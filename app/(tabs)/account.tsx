@@ -41,9 +41,10 @@ export default function AccountScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const { user } = useAuth();
-  const { isAdmin, planLabel, isActive } = usePlatformSubscription();
+  const { user, signOut } = useAuth();
+  const { isAdmin, planLabel, isActive, plan } = usePlatformSubscription();
   const queryClient = useQueryClient();
+
   const [activeTab, setActiveTab] = useState<AccountTab>('overview');
 
   // Animated Segmented Control state
@@ -408,7 +409,7 @@ export default function AccountScreen() {
           onPress: async () => {
             try {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              await supabase.auth.signOut();
+              await signOut();
             } catch (err: any) {
               console.error('Sign out error:', err);
             }
@@ -418,14 +419,15 @@ export default function AccountScreen() {
     );
   };
 
+
   const displayName =
     fullName || profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const initials = displayName.charAt(0).toUpperCase();
   const joinDate = user?.created_at
     ? new Date(user.created_at).toLocaleDateString('en-US', {
-        month: 'short',
-        year: 'numeric',
-      })
+      month: 'short',
+      year: 'numeric',
+    })
     : '-';
 
   // Calculate Subscription Days Left
@@ -828,8 +830,8 @@ export default function AccountScreen() {
                       biometricSettings.biometricType === 'FACE_ID'
                         ? 'scan-outline'
                         : biometricSettings.biometricType === 'TOUCH_ID' || biometricSettings.biometricType === 'FINGERPRINT'
-                        ? 'finger-print-outline'
-                        : 'lock-closed-outline'
+                          ? 'finger-print-outline'
+                          : 'lock-closed-outline'
                     }
                     size={18}
                     color="#10B981"

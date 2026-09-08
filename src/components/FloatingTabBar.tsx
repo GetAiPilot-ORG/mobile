@@ -28,6 +28,11 @@ const TAB_CONFIG: Record<string, TabItemConfig> = {
     activeIcon: 'home',
     inactiveIcon: 'home-outline',
   },
+  activity: {
+    label: 'Inbox',
+    activeIcon: 'chatbubbles',
+    inactiveIcon: 'chatbubbles-sharp',
+  },
   products: {
     label: 'Products',
     activeIcon: 'flash',

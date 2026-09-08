@@ -19,6 +19,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="activity"
+        options={{
+          title: 'Inbox',
+        }}
+      />
+      <Tabs.Screen
         name="products"
         options={{
           title: 'Products',
@@ -34,12 +40,6 @@ export default function TabLayout() {
         name="account"
         options={{
           title: 'Account',
-        }}
-      />
-      <Tabs.Screen
-        name="activity"
-        options={{
-          href: null, // Hidden from bottom bar
         }}
       />
       <Tabs.Screen
