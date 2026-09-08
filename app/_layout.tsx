@@ -1,85 +1,48 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Slot, useRouter, useSegments } from 'expo-router';
-import React, { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GlobalErrorBoundary } from '../src/components/GlobalErrorBoundary';
-import { AuthProvider } from '../src/contexts/AuthContext';
-import { useAuthStore } from '../src/core/store/authStore';
+import { AuthProvider, useAuth } from '../src/contexts/AuthContext';
+import { BiometricGuard } from '../src/components/BiometricGuard';
 
-export const queryClient = new QueryClient({
+const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 30,
       gcTime: 1000 * 60 * 10,
-      retry: (failureCount, error: any) => {
-        // Do not retry 401 (Unauthorized) or 403 (Forbidden) errors to prevent request storms
-        const msg = (error?.message || '').toLowerCase();
-        const status = error?.status || error?.statusCode || (error?.response ? error.response.status : undefined);
-        if (
-          status === 401 ||
-          status === 403 ||
-          msg.includes('401') ||
-          msg.includes('403') ||
-          msg.includes('forbidden') ||
-          msg.includes('not authenticated') ||
-          msg.includes('session expired') ||
-          msg.includes('unauthorized')
-        ) {
-          return false;
-        }
-        return failureCount < 2;
-      },
+      retry: 1,
     },
   },
 });
 
-/**
- * Authoritative, single-point auth route guard.
- * Listens exclusively to [authStatus, segments] and performs redirects
- * ONLY after session hydration has resolved.
- */
-function AuthRouteGuard() {
-  const authStatus = useAuthStore((s) => s.authStatus);
+// This component handles the routing based on auth and onboarding state
+function RootLayoutNav() {
+  const { session, isLoading, onboardingComplete } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    // 1. NEVER navigate during hydration
-    if (authStatus === 'hydrating') return;
+    if (isLoading) return;
 
-    // 2. Identify active route group
-    const segment0 = segments[0] as string | undefined;
-    const inAuthGroup = segment0 === '(auth)';
+    const inAuthGroup = (segments[0] as string) === '(auth)';
+    const inOnboarding = (segments[0] as string) === 'onboarding';
 
-    if (authStatus === 'unauthenticated' && !inAuthGroup) {
-      if (__DEV__) {
-        console.log('[AuthGuard] Unauthenticated user on protected route -> navigating to login');
-      }
+    if (!session && !inAuthGroup) {
+      // Unauthenticated -> redirect to login
       router.replace('/(auth)/login' as any);
-    } else if (authStatus === 'authenticated' && inAuthGroup) {
-      if (__DEV__) {
-        console.log('[AuthGuard] Authenticated user on auth route -> navigating to tabs');
+    } else if (session) {
+      if (!onboardingComplete && !inOnboarding) {
+        // Needs onboarding -> redirect to onboarding
+        router.replace('/onboarding' as any);
+      } else if ((inAuthGroup || (inOnboarding && onboardingComplete))) {
+        // Logged in & completed -> redirect to main tabs
+        router.replace('/(tabs)' as any);
       }
-      router.replace('/(tabs)' as any);
     }
-  }, [authStatus, segments]);
+  }, [session, isLoading, onboardingComplete, segments]);
 
-  return null;
-}
-
-function SplashOverlay() {
-  const authStatus = useAuthStore((s) => s.authStatus);
-
-  if (authStatus !== 'hydrating') {
-    return null;
-  }
-
-  return (
-    <View style={[StyleSheet.absoluteFill, styles.splashContainer]}>
-      <ActivityIndicator size="large" color="#6366f1" />
-    </View>
-  );
+  return <Slot />;
 }
 
 export default function RootLayout() {
@@ -88,23 +51,12 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <AuthRouteGuard />
-            {/* Slot is ALWAYS mounted to keep Expo Router's navigation tree stable */}
-            <Slot />
-            <SplashOverlay />
+            <BiometricGuard>
+              <RootLayoutNav />
+            </BiometricGuard>
           </AuthProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
     </GlobalErrorBoundary>
   );
 }
-
-const styles = StyleSheet.create({
-  splashContainer: {
-    backgroundColor: '#020617',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 99999,
-  },
-});
-

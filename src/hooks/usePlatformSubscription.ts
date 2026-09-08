@@ -1,9 +1,7 @@
-import React, { useEffect } from 'react';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 import { formatPlanLabel } from "../lib/utils";
-
 
 export function usePlatformSubscription() {
   const queryClient = useQueryClient();
@@ -62,27 +60,15 @@ export function usePlatformSubscription() {
     : null;
 
   // Sync DB status if expiration timestamp has passed but status is still marked active
-  useEffect(() => {
-    if (
-      userId &&
-      subData &&
-      !isAdmin &&
-      expiresAt &&
-      expiresAt <= now &&
-      (subData.subscription_status === 'active' ||
-        subData.subscription_status === 'authenticated' ||
-        subData.subscription_status === 'created')
-    ) {
-      supabase
-        .from('app_user_subscriptions')
-        .update({ subscription_status: 'expired' })
-        .eq('user_id', userId)
-        .then(({ error }) => {
-          if (error) console.warn('Failed to sync expired subscription status in DB:', error);
-        });
-    }
-  }, [userId, subData, isAdmin, expiresAt, now]);
-
+  if (userId && subData && !isAdmin && expiresAt && expiresAt <= now && (subData.subscription_status === "active" || subData.subscription_status === "authenticated" || subData.subscription_status === "created")) {
+    supabase
+      .from("app_user_subscriptions")
+      .update({ subscription_status: "expired" })
+      .eq("user_id", userId)
+      .then(({ error }) => {
+        if (error) console.warn("Failed to sync expired subscription status in DB:", error);
+      });
+  }
 
   const rawStatus = isAdmin && subData ? "active" : (subData?.subscription_status || null);
   const subscriptionStatus = isAdmin && subData

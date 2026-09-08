@@ -1,43 +1,42 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Image } from 'expo-image';
-import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  ActivityIndicator,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
+  View,
   Text,
   TextInput,
+  Pressable,
+  StyleSheet,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   TouchableWithoutFeedback,
-  View,
+  Keyboard,
+  useColorScheme,
 } from 'react-native';
+import { Image } from 'expo-image';
+import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuthStore } from '../../src/core/store/authStore';
 import { supabase } from '../../src/lib/supabase';
 import { isValidEmail } from '../../src/lib/validators';
-import { colors } from '../../src/theme/colors';
 
-const REMEMBER_ME_KEY = '@gap_remember_me';
-const SAVE_LOGIN_KEY = '@gap_saved_identifier';
-const brandLogo = require('../../assets/images/icon.png');
+const SAVE_LOGIN_KEY = '@gap_save_login_email';
+const REMEMBER_ME_KEY = '@gap_save_login_enabled';
+const brandLogo = require('../../assets/images/logo.jpg');
 
 export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const isDark = true;
-  const login = useAuthStore((s) => s.login);
-  const [authMode, setAuthMode] = useState<'password' | 'otp'>('password');
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [saveLoginInfo, setSaveLoginInfo] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [authMode, setAuthMode] = useState<'password' | 'otp'>('password');
   const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(
     null
   );
@@ -56,7 +55,7 @@ export default function LoginScreen() {
             setIdentifier(savedEmail);
           }
         }
-      } catch { }
+      } catch {}
     })();
   }, []);
 
@@ -70,9 +69,9 @@ export default function LoginScreen() {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
     const nextState = !saveLoginInfo;
     setSaveLoginInfo(nextState);
-    AsyncStorage.setItem(REMEMBER_ME_KEY, String(nextState)).catch(() => { });
+    AsyncStorage.setItem(REMEMBER_ME_KEY, String(nextState)).catch(() => {});
     if (!nextState) {
-      AsyncStorage.removeItem(SAVE_LOGIN_KEY).catch(() => { });
+      AsyncStorage.removeItem(SAVE_LOGIN_KEY).catch(() => {});
     }
   };
 
@@ -100,8 +99,21 @@ export default function LoginScreen() {
       triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
 
       try {
-        await login(cleanIdentifier, password);
-        router.replace('/(tabs)');
+        const { error } = await supabase.auth.signInWithPassword({
+          email: cleanIdentifier,
+          password: password,
+        });
+
+        if (error) throw error;
+
+        // Persist email if save login info is enabled
+        if (saveLoginInfo) {
+          await AsyncStorage.setItem(SAVE_LOGIN_KEY, cleanIdentifier);
+        } else {
+          await AsyncStorage.removeItem(SAVE_LOGIN_KEY);
+        }
+
+        triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
       } catch (err: any) {
         triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
         setFeedback({
@@ -145,11 +157,10 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={[styles.container, isDark && styles.containerDark]}>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
-        enabled={Platform.OS === 'ios'}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={[styles.container, isDark && styles.containerDark]}
       >
         <ScrollView
           contentContainerStyle={[
@@ -343,7 +354,7 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -447,7 +458,6 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: '#000000',
     paddingVertical: 14,
-    ...(Platform.OS === 'web' ? { outlineStyle: 'none' as any } : {}),
   },
   nativeInputDark: {
     color: '#FFFFFF',
