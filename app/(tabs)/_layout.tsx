@@ -25,6 +25,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="inbox"
+        options={{
+          title: 'Inbox',
+        }}
+      />
+      <Tabs.Screen
         name="tools"
         options={{
           title: 'Tools',
@@ -33,13 +39,13 @@ export default function TabLayout() {
       <Tabs.Screen
         name="account"
         options={{
-          title: 'Account',
+          href: null, // Hidden from bottom bar (accessible via top header avatar)
         }}
       />
       <Tabs.Screen
         name="activity"
         options={{
-          href: null, // Hidden from bottom bar
+          href: null, // Hidden from bottom bar (accessible via Fleet widget)
         }}
       />
       <Tabs.Screen

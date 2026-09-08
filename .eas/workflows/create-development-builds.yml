@@ -1,0 +1,24 @@
+name: Create Development Builds
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    types: [labeled]
+
+jobs:
+  build_android:
+    name: Build Android Dev Client
+    if: ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'eas-build-development') }}
+    type: build
+    params:
+      platform: android
+      profile: development
+
+  build_ios:
+    name: Build iOS Dev Client
+    if: ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'eas-build-development') }}
+    type: build
+    params:
+      platform: ios
+      profile: development
