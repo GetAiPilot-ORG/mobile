@@ -1,132 +1,277 @@
-import { NormalizedConversation, NormalizedMessage, SocialPost } from '../types/index.js';
+import { env } from '../config/env.js';
+import { JWTPayload } from '../types/index.js';
+
+export interface SocialBroadcastFilter {
+  status?: string;
+  limit?: number;
+}
+
+export interface CreateBroadcastPayload {
+  caption: string;
+  selectedChannels: string[];
+  mediaUrls?: string[];
+  isScheduled?: boolean;
+  scheduledAt?: string;
+  userTimezone?: string;
+  postType?: string;
+  platformData?: Record<string, any>;
+  platformPresets?: Record<string, any>;
+}
 
 export class SocialAdapter {
-  private static postsStore: SocialPost[] = [
-    {
-      id: 'post_1',
-      platforms: ['instagram', 'facebook'],
-      caption: '🚀 Scale your business communication 10x with GetAiPilot AI agents. Try for free today!',
-      mediaUrls: ['https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800'],
-      status: 'scheduled',
-      scheduledFor: new Date(Date.now() + 4 * 3600000).toISOString(),
-    },
-    {
-      id: 'post_2',
-      platforms: ['linkedin'],
-      caption: 'Announcing unified multi-channel messaging support on GetAiPilot!',
-      mediaUrls: [],
-      status: 'published',
-      scheduledFor: new Date(Date.now() - 24 * 3600000).toISOString(),
-      publishedAt: new Date(Date.now() - 24 * 3600000).toISOString(),
-    },
-  ];
+  private static baseUrl = env.SOCIAL_SERVICE_URL || 'http://127.0.0.1:5000';
 
-  public static async getConnectedAccounts(workspaceId: string) {
-    return [
-      { id: 'acc_ig', platform: 'instagram', username: '@getaipilot', followers: 14200, connected: true },
-      { id: 'acc_fb', platform: 'facebook', username: 'GetAiPilot Official', followers: 8500, connected: true },
-      { id: 'acc_li', platform: 'linkedin', username: 'GetAiPilot Technologies', followers: 23400, connected: true },
-      { id: 'acc_yt', platform: 'youtube', username: 'GetAiPilot Academy', followers: 5100, connected: false },
-    ];
+  /**
+   * Centralized HTTP requester to the real upstream SocialPilot backend
+   */
+  private static async requestUpstream<T>(
+    endpoint: string,
+    options: {
+      method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+      body?: any;
+      params?: Record<string, string | number | boolean | undefined>;
+      user?: JWTPayload | { user_id?: string; organization_id?: string; token?: string; [key: string]: any };
+      headers?: Record<string, string>;
+    } = {}
+  ): Promise<T> {
+    const { method = 'GET', body, params, user, headers: customHeaders } = options;
+    const userId = user?.user_id || 'system';
+    const orgId = user?.organization_id || 'default';
+    const token = (user as any)?.token || (user as any)?.session_token || '';
+
+    // Build URL with query params
+    const url = new URL(`${this.baseUrl}${endpoint}`);
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined && v !== null) {
+          url.searchParams.append(k, String(v));
+        }
+      });
+    }
+
+    const upstreamPath = url.pathname + url.search;
+
+    console.log('[SOCIAL TRACE]', {
+      route: endpoint,
+      userResolved: Boolean(userId),
+      orgResolved: Boolean(orgId),
+      workspaceResolved: Boolean(orgId),
+      upstreamCalled: true,
+      upstreamPath,
+    });
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'x-user-id': userId,
+        'x-workspace-id': orgId,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...customHeaders,
+      };
+
+      const response = await fetch(url.toString(), {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+        signal: controller.signal,
+      });
+
+      console.log('[SOCIAL UPSTREAM]', {
+        path: upstreamPath,
+        status: response.status,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let parsedMessage = errorText;
+        try {
+          const jsonErr = JSON.parse(errorText);
+          parsedMessage = jsonErr.error?.message || jsonErr.error || jsonErr.message || errorText;
+        } catch {}
+
+        const err: any = new Error(parsedMessage);
+        err.statusCode = response.status;
+        throw err;
+      }
+
+      const json = await response.json();
+      return json as T;
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        const timeoutErr: any = new Error('SocialPilot upstream request timed out');
+        timeoutErr.statusCode = 504;
+        throw timeoutErr;
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
-  public static async getPosts(workspaceId: string): Promise<SocialPost[]> {
-    return this.postsStore;
+  // --- 1. Dashboard Overview ---
+  public static async getOverview(user: JWTPayload | { user_id?: string; organization_id?: string } | string, query?: { range?: number; instagramAccountId?: string }) {
+    const userObj = typeof user === 'string' ? { organization_id: user, user_id: user } : user;
+    return this.requestUpstream('/api/dashboard/overview', {
+      user: userObj,
+      params: {
+        range: query?.range || 30,
+        instagramAccountId: query?.instagramAccountId,
+      },
+    });
   }
 
-  public static async schedulePost(post: Partial<SocialPost>): Promise<SocialPost> {
-    const newPost: SocialPost = {
-      id: `post_${Date.now()}`,
-      platforms: post.platforms || ['instagram'],
-      caption: post.caption || '',
-      mediaUrls: post.mediaUrls || [],
-      status: 'scheduled',
-      scheduledFor: post.scheduledFor || new Date(Date.now() + 3600000).toISOString(),
-    };
-    this.postsStore.unshift(newPost);
-    return newPost;
+  // --- 2. Connected Channels / Accounts ---
+  public static async getAccounts(user: JWTPayload | { user_id?: string; organization_id?: string } | string) {
+    const userObj = typeof user === 'string' ? { organization_id: user, user_id: user } : user;
+    const res: any = await this.requestUpstream('/api/auth/accounts', { user: userObj });
+    return res.accounts || res.data || res;
   }
 
-  public static async getConversations(workspaceId: string): Promise<NormalizedConversation[]> {
-    return [
-      {
-        id: 'ig_conv_1',
-        organization_id: workspaceId,
-        contact: {
-          name: 'Marta Vance',
-          handle_or_phone: '@dev_marta',
-        },
-        channel: 'instagram',
-        last_message: {
-          content: 'How do I integrate the API into my Next.js store?',
-          created_at: new Date(Date.now() - 12 * 60000).toISOString(),
-          direction: 'inbound',
-        },
-        unread_count: 1,
-        status: 'active',
-      },
-      {
-        id: 'fb_conv_1',
-        organization_id: workspaceId,
-        contact: {
-          name: 'Tech Ventures FB',
-          handle_or_phone: 'fb.com/techventures',
-        },
-        channel: 'facebook',
-        last_message: {
-          content: 'Interested in enterprise bulk seat provisioning.',
-          created_at: new Date(Date.now() - 180 * 60000).toISOString(),
-          direction: 'inbound',
-        },
-        unread_count: 0,
-        status: 'active',
-      },
-    ];
+  public static async getConnectedAccounts(userOrOrgId: JWTPayload | { user_id?: string; organization_id?: string } | string) {
+    return this.getAccounts(userOrOrgId);
   }
 
-  public static async getMessages(conversationId: string): Promise<NormalizedMessage[]> {
-    const isInstagram = conversationId.startsWith('ig_');
-    return [
-      {
-        id: `${conversationId}_msg_1`,
-        conversation_id: conversationId,
-        channel: isInstagram ? 'instagram' : 'facebook',
-        direction: 'inbound',
-        content: isInstagram
-          ? 'How do I integrate the API into my Next.js store?'
-          : 'Interested in enterprise bulk seat provisioning.',
-        media: [],
-        sender: { name: isInstagram ? '@dev_marta' : 'Tech Ventures', type: 'contact' },
-        created_at: new Date(Date.now() - 15 * 60000).toISOString(),
+  public static async disconnectAccount(user: JWTPayload | { user_id?: string; organization_id?: string } | string, payload: { provider: string; accountId?: string; pageId?: string }) {
+    const userObj = typeof user === 'string' ? { organization_id: user, user_id: user } : user;
+    return this.requestUpstream('/api/auth/disconnect', {
+      method: 'POST',
+      body: payload,
+      user: userObj,
+    });
+  }
+
+  // --- 3. Broadcasts / Posts History & Queue ---
+  public static async getPosts(user: JWTPayload | { user_id?: string; organization_id?: string } | string, filters?: SocialBroadcastFilter) {
+    const userObj = typeof user === 'string' ? { organization_id: user, user_id: user } : user;
+    const res: any = await this.requestUpstream('/api/broadcasts', {
+      user: userObj,
+      params: {
+        status: filters?.status,
+        limit: filters?.limit || 50,
       },
-      {
-        id: `${conversationId}_msg_2`,
-        conversation_id: conversationId,
-        channel: isInstagram ? 'instagram' : 'facebook',
-        direction: 'outbound',
-        content: 'Hi! You can use our official TypeScript SDK or direct REST endpoints with Bearer auth.',
-        media: [],
-        sender: { name: 'Support Agent', type: 'agent' },
-        created_at: new Date(Date.now() - 10 * 60000).toISOString(),
-      },
-    ];
+    });
+    return Array.isArray(res) ? res : (res.broadcasts || res.data || []);
+  }
+
+  public static async getQueue(user: JWTPayload | { user_id?: string; organization_id?: string } | string) {
+    const userObj = typeof user === 'string' ? { organization_id: user, user_id: user } : user;
+    const res: any = await this.requestUpstream('/api/broadcasts/queue', { user: userObj });
+    return Array.isArray(res) ? res : (res.queue || res.data || []);
+  }
+
+  public static async getStats(user: JWTPayload | { user_id?: string; organization_id?: string } | string) {
+    const userObj = typeof user === 'string' ? { organization_id: user, user_id: user } : user;
+    const res: any = await this.requestUpstream('/api/broadcasts/stats', { user: userObj });
+    return res.stats || res.data || res;
+  }
+
+  // --- Inbox & Social Conversations ---
+  public static async getConversations(workspaceId: string): Promise<any[]> {
+    try {
+      const res: any = await this.requestUpstream('/api/inbox/conversations', {
+        user: { organization_id: workspaceId, user_id: workspaceId },
+      });
+      return Array.isArray(res) ? res : (res.conversations || res.data || []);
+    } catch {
+      return [];
+    }
+  }
+
+  public static async getMessages(conversationId: string): Promise<any[]> {
+    try {
+      const res: any = await this.requestUpstream(`/api/inbox/conversations/${conversationId}/messages`);
+      return Array.isArray(res) ? res : (res.messages || res.data || []);
+    } catch {
+      return [];
+    }
   }
 
   public static async sendMessage(
     conversationId: string,
     content: string,
     attachments?: Array<{ url: string; type: string }>
-  ): Promise<NormalizedMessage> {
-    const isInstagram = conversationId.startsWith('ig_');
-    return {
-      id: `soc_msg_${Date.now()}`,
-      conversation_id: conversationId,
-      channel: isInstagram ? 'instagram' : 'facebook',
-      direction: 'outbound',
-      content,
-      media: (attachments || []).map((a) => ({ url: a.url, type: a.type as any })),
-      sender: { name: 'Support Agent', type: 'agent' },
-      created_at: new Date().toISOString(),
+  ): Promise<any> {
+    try {
+      return await this.requestUpstream('/api/inbox/reply', {
+        method: 'POST',
+        body: { conversationId, message: content, attachments },
+      });
+    } catch {
+      return {
+        id: `soc_msg_${Date.now()}`,
+        conversation_id: conversationId,
+        direction: 'outbound',
+        content,
+        created_at: new Date().toISOString(),
+      };
+    }
+  }
+
+  // --- 4. Post Lifecycle Operations ---
+  public static async createPost(user: JWTPayload, payload: CreateBroadcastPayload) {
+    const body = {
+      caption: payload.caption,
+      selectedChannels: payload.selectedChannels,
+      mediaUrls: payload.mediaUrls || [],
+      isScheduled: payload.isScheduled || Boolean(payload.scheduledAt),
+      scheduledAt: payload.scheduledAt,
+      userTimezone: payload.userTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      postType: payload.postType || 'post',
+      platformData: payload.platformData || {},
+      platformPresets: payload.platformPresets || {},
     };
+
+    return this.requestUpstream('/api/broadcast', {
+      method: 'POST',
+      body,
+      user,
+    });
+  }
+
+  public static async updatePost(user: JWTPayload, postId: string, payload: Partial<CreateBroadcastPayload>) {
+    return this.requestUpstream(`/api/broadcasts/${postId}`, {
+      method: 'PATCH',
+      body: payload,
+      user,
+    });
+  }
+
+  public static async cancelPost(user: JWTPayload, postId: string) {
+    return this.requestUpstream(`/api/broadcasts/${postId}/cancel`, {
+      method: 'POST',
+      user,
+    });
+  }
+
+  public static async retryPost(user: JWTPayload, postId: string) {
+    return this.requestUpstream(`/api/broadcasts/${postId}/retry`, {
+      method: 'POST',
+      user,
+    });
+  }
+
+  public static async deletePost(user: JWTPayload, postId: string) {
+    return this.requestUpstream(`/api/broadcasts/${postId}`, {
+      method: 'DELETE',
+      user,
+    });
+  }
+
+  // --- 5. Trend Feed ---
+  public static async getTrends(user: JWTPayload, query?: { page?: number; limit?: number; interests?: string }) {
+    const res: any = await this.requestUpstream('/api/trends/feed', {
+      user,
+      params: query,
+    });
+    return res.data || res.posts || res;
+  }
+
+  // --- 6. Entitlements & Billing ---
+  public static async getEntitlements(user: JWTPayload) {
+    const res: any = await this.requestUpstream('/api/billing/entitlements', { user });
+    return res.entitlements || res.data || res;
   }
 }
