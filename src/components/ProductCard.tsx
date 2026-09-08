@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { colors } from '../theme/colors';
+import * as Haptics from 'expo-haptics';
 import { StatusBadge } from './StatusBadge';
 
 interface ProductCardProps {
@@ -22,15 +22,30 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   icon,
   themeColor,
   status = 'operational',
-  actionText = 'Open Dashboard',
+  actionText = 'Open Engine',
   onPress,
   onActionPress,
 }) => {
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  };
+
+  const handleAction = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (onActionPress) {
+      onActionPress();
+    } else {
+      onPress();
+    }
+  };
+
   return (
-    <Pressable style={styles.card} onPress={onPress}>
+    <Pressable style={styles.card} onPress={handlePress}>
+      {/* Header */}
       <View style={styles.header}>
-        <View style={[styles.iconContainer, { backgroundColor: themeColor + '18' }]}>
-          <Text style={[styles.iconText, { color: themeColor }]}>{icon}</Text>
+        <View style={[styles.iconContainer, { backgroundColor: `${themeColor}22`, borderColor: `${themeColor}44` }]}>
+          <Text style={styles.iconText}>{icon}</Text>
         </View>
         <View style={styles.titleInfo}>
           <Text style={styles.category}>{category}</Text>
@@ -43,12 +58,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {description}
       </Text>
 
+      {/* Footer */}
       <View style={styles.footer}>
+        <View style={styles.engineBadge}>
+          <View style={[styles.engineDot, { backgroundColor: themeColor }]} />
+          <Text style={styles.engineBadgeText}>AI Engine Active</Text>
+        </View>
         <Pressable
-          style={[styles.actionBtn, { backgroundColor: themeColor }]}
-          onPress={onActionPress || onPress}
+          style={[styles.actionBtn, { backgroundColor: `${themeColor}25`, borderColor: `${themeColor}66` }]}
+          onPress={handleAction}
         >
-          <Text style={styles.actionBtnText}>{actionText} →</Text>
+          <Text style={[styles.actionBtnText, { color: themeColor }]}>{actionText} →</Text>
         </Pressable>
       </View>
     </Pressable>
@@ -57,34 +77,29 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: '#0D1117',
+    borderRadius: 20,
+    padding: 18,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: colors.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    borderColor: '#1F242F',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    borderWidth: 1,
   },
   iconText: {
-    fontSize: 20,
-    fontWeight: '900',
+    fontSize: 22,
   },
   titleInfo: {
     flex: 1,
@@ -93,36 +108,53 @@ const styles = StyleSheet.create({
   category: {
     fontSize: 10.5,
     fontWeight: '800',
-    color: colors.mutedForeground,
+    color: '#9CA3AF',
     textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
   },
   name: {
     fontSize: 16,
-    fontWeight: '800',
-    color: colors.foreground,
-    marginTop: 1,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    marginTop: 2,
+    letterSpacing: -0.2,
   },
   description: {
     fontSize: 13,
-    color: colors.mutedForeground,
+    color: '#9CA3AF',
     lineHeight: 18,
     marginBottom: 14,
   },
   footer: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: colors.muted,
-    paddingTop: 10,
+    borderTopColor: '#161B22',
+    paddingTop: 12,
+  },
+  engineBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  engineDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  engineBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#9CA3AF',
   },
   actionBtn: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 10,
+    borderWidth: 1,
   },
   actionBtnText: {
-    color: '#FFFFFF',
     fontWeight: '800',
     fontSize: 12.5,
   },

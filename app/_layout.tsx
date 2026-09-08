@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GlobalErrorBoundary } from '../src/components/GlobalErrorBoundary';
 import { AuthProvider, useAuth } from '../src/contexts/AuthContext';
+import { BiometricGuard } from '../src/components/BiometricGuard';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,7 +51,9 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <RootLayoutNav />
+            <BiometricGuard>
+              <RootLayoutNav />
+            </BiometricGuard>
           </AuthProvider>
         </QueryClientProvider>
       </SafeAreaProvider>

@@ -11,22 +11,31 @@ export const colors = {
   accentSoft: 'rgba(0, 132, 255, 0.12)',
 
   // Surfaces & Layout
-  background: '#FFFFFF', // Pure clean iOS light canvas
+  background: '#F8F9FA', // Clean iOS light canvas
   backgroundDark: '#000000', // Deep iOS OLED dark canvas
-  canvas: '#FFFFFF',
+  canvas: '#F8F9FA',
+  canvasDark: '#000000',
   surface: '#FFFFFF',
+  surfaceDark: '#1C1C1E',
   surfaceGrouped: '#F2F4F7', // iOS Grouped tableview background
   surfaceElevated: '#FFFFFF',
+  surfaceElevatedDark: '#1C1C1E',
   foreground: '#000000', // Crisp primary text
+  foregroundDark: '#FFFFFF', // Clean white primary text
 
   // Cards & Modals
   card: '#FFFFFF',
   cardDark: '#1C1C1E',
-  cardShell: '#F2F4F7',
-  cardShellBorder: '#E5E7EB',
-  cardForeground: '#000000',
   cardBorder: '#E5E7EB',
+  cardBorderDark: '#2C2C2E',
+  cardShell: '#F2F4F7',
+  cardShellDark: '#1C1C1E',
+  cardShellBorder: '#E5E7EB',
+  cardShellBorderDark: '#2C2C2E',
+  cardForeground: '#000000',
+  cardForegroundDark: '#FFFFFF',
   border: '#E5E7EB',
+  borderDark: '#2C2C2E',
 
   // Functional Colors
   destructive: '#DC2626',

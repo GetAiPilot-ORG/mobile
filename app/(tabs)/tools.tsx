@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
+  useColorScheme,
 } from 'react-native';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
@@ -129,6 +130,8 @@ const CATEGORIES = ['All', 'Templates', 'Messaging', 'Utilities', 'AI Audio'];
 
 export default function FreeToolsScreen() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
@@ -142,14 +145,14 @@ export default function FreeToolsScreen() {
   });
 
   return (
-    <AppScreen safeArea={false} backgroundColor={colors.background}>
+    <AppScreen safeArea={false}>
       <AppTopBar title="Free Tools Hub" subtitle="Complete Utility Inventory (10 Tools)" />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Hero Card */}
-        <View style={styles.heroCard}>
+        <View style={[styles.heroCard, isDark && styles.heroCardDark]}>
           <Text style={styles.heroTitle}>Production Utilities</Text>
-          <Text style={styles.heroSub}>
+          <Text style={[styles.heroSub, isDark && styles.heroSubDark]}>
             Zero-cost growth tools powered by GetAIPilot infrastructure. No credit card required.
           </Text>
         </View>
@@ -166,11 +169,19 @@ export default function FreeToolsScreen() {
           {CATEGORIES.map((cat) => (
             <Pressable
               key={cat}
-              style={[styles.categoryChip, selectedCategory === cat && styles.categoryChipActive]}
+              style={[
+                styles.categoryChip,
+                isDark && styles.categoryChipDark,
+                selectedCategory === cat && styles.categoryChipActive,
+              ]}
               onPress={() => setSelectedCategory(cat)}
             >
               <Text
-                style={[styles.categoryText, selectedCategory === cat && styles.categoryTextActive]}
+                style={[
+                  styles.categoryText,
+                  isDark && styles.categoryTextDark,
+                  selectedCategory === cat && styles.categoryTextActive,
+                ]}
               >
                 {cat}
               </Text>
@@ -200,13 +211,18 @@ export default function FreeToolsScreen() {
 const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
-    paddingBottom: 110,
+    paddingBottom: 140,
   },
   heroCard: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#0A84FF',
     borderRadius: 18,
     padding: 18,
     marginBottom: 16,
+  },
+  heroCardDark: {
+    backgroundColor: '#1C1C1E',
+    borderWidth: 1,
+    borderColor: '#2C2C2E',
   },
   heroTitle: {
     fontSize: 18,
@@ -215,9 +231,12 @@ const styles = StyleSheet.create({
   },
   heroSub: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255,255,255,0.85)',
     marginTop: 4,
     lineHeight: 18,
+  },
+  heroSubDark: {
+    color: '#8E8E93',
   },
   categoryScroll: {
     flexDirection: 'row',
@@ -227,22 +246,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 20,
-    backgroundColor: colors.card,
+    backgroundColor: '#FFFFFF',
     marginRight: 8,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#E5E7EB',
+  },
+  categoryChipDark: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
   },
   categoryChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: '#0A84FF',
+    borderColor: '#0A84FF',
   },
   categoryText: {
     fontSize: 12,
     fontWeight: '700',
-    color: colors.mutedForeground,
+    color: '#6B7280',
+  },
+  categoryTextDark: {
+    color: '#8E8E93',
   },
   categoryTextActive: {
-    color: colors.primaryForeground,
+    color: '#FFFFFF',
   },
   toolsList: {
     marginTop: 4,
