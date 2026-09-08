@@ -1,6 +1,5 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import React, { createContext, useContext, useEffect, useMemo } from 'react';
+import { AuthStatus, useAuthStore, User as BFFUser } from '../core/store/authStore';
 
 export interface UserProfile {
   id: string;
@@ -15,11 +14,12 @@ export interface UserProfile {
 }
 
 interface AuthContextType {
-  session: Session | null;
-  user: User | null;
+  session: { access_token: string; user: BFFUser } | null;
+  user: BFFUser | null;
   profile: UserProfile | null;
   isAdmin: boolean;
   isLoading: boolean;
+  authStatus: AuthStatus;
   onboardingComplete: boolean;
   accountStatus: 'active' | 'suspended' | 'banned' | null;
   signOut: () => Promise<void>;
@@ -32,6 +32,7 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   isAdmin: false,
   isLoading: true,
+  authStatus: 'hydrating',
   onboardingComplete: true,
   accountStatus: 'active',
   signOut: async () => {},
@@ -41,101 +42,78 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isLoading = useAuthStore((s) => s.isLoading);
+  const authStatus = useAuthStore((s) => s.authStatus);
+  const logout = useAuthStore((s) => s.logout);
+  const loadSession = useAuthStore((s) => s.loadSession);
 
-  const fetchProfile = useCallback(async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (data && !error) {
-        setProfile(data as UserProfile);
-        const adminStatus = Boolean(data.is_admin || data.role === 'admin' || data.role === 'superadmin');
-        setIsAdmin(adminStatus);
-      } else {
-        setProfile(null);
-        setIsAdmin(false);
-      }
-    } catch (err) {
-      console.warn('Failed to fetch user profile:', err);
-    }
+  // Load session only once on mount
+  useEffect(() => {
+    loadSession();
   }, []);
 
-  const refreshProfile = useCallback(async () => {
-    if (user?.id) {
-      await fetchProfile(user.id);
-    }
-  }, [user?.id, fetchProfile]);
-
-  useEffect(() => {
-    // 1. Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      if (currentUser?.id) {
-        fetchProfile(currentUser.id).finally(() => setIsLoading(false));
-      } else {
-        setIsLoading(false);
-      }
-    });
-
-    // 2. Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
-      setSession(newSession);
-      const currentUser = newSession?.user ?? null;
-      setUser(currentUser);
-      if (currentUser?.id) {
-        await fetchProfile(currentUser.id);
-      } else {
-        setProfile(null);
-        setIsAdmin(false);
-      }
-      setIsLoading(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
+  const userWithMeta: BFFUser | null = useMemo(() => {
+    if (!user) return null;
+    return {
+      ...user,
+      user_metadata: {
+        full_name: user.name,
+        ...user.user_metadata,
+      },
     };
-  }, [fetchProfile]);
+  }, [user]);
 
-  const signOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      setSession(null);
-      setUser(null);
-      setProfile(null);
-      setIsAdmin(false);
-    } catch (err) {
-      console.error('Sign out error:', err);
-    }
-  };
+  const profile: UserProfile | null = useMemo(() => {
+    if (!userWithMeta) return null;
+    return {
+      id: userWithMeta.id,
+      email: userWithMeta.email,
+      full_name: userWithMeta.name,
+      role: userWithMeta.role,
+      is_admin: userWithMeta.role === 'Admin' || userWithMeta.role === 'Owner',
+      onboarding_completed: true,
+      account_status: 'active',
+    };
+  }, [userWithMeta]);
 
-  const onboardingComplete = profile?.onboarding_completed !== false;
-  const accountStatus = profile?.account_status || 'active';
+  const session = useMemo(() => {
+    if (!isAuthenticated || !userWithMeta) return null;
+    return {
+      access_token: 'bff_session_active',
+      user: userWithMeta,
+    };
+  }, [isAuthenticated, userWithMeta]);
+
+  const isAdmin = Boolean(userWithMeta?.role === 'Admin' || userWithMeta?.role === 'Owner');
+  const onboardingComplete = true;
+  const accountStatus: 'active' | 'suspended' | 'banned' = 'active';
+
+  const contextValue = useMemo(
+    () => ({
+      session,
+      user: userWithMeta,
+      profile,
+      isAdmin,
+      isLoading,
+      authStatus,
+      onboardingComplete,
+      accountStatus,
+      signOut: async () => {
+        await logout();
+      },
+      refreshProfile: async () => {
+        await loadSession();
+      },
+    }),
+    [session, userWithMeta, profile, isAdmin, isLoading, authStatus, logout, loadSession]
+  );
 
   return (
-    <AuthContext.Provider
-      value={{
-        session,
-        user,
-        profile,
-        isAdmin,
-        isLoading,
-        onboardingComplete,
-        accountStatus,
-        signOut,
-        refreshProfile,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
 }
+
