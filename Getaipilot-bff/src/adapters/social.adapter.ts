@@ -47,7 +47,7 @@ export class SocialAdapter {
   private static baseUrl = env.SOCIAL_SERVICE_URL || 'https://api.getaipilot.in';
   private static secret = env.JWT_SECRET || 'getaipilot-super-secure-mobile-bff-jwt-secret-2026';
   private static socialSupabase: SupabaseClient | null = env.SOCIAL_SUPABASE_SERVICE_ROLE_KEY
-    ? createClient(env.SOCIAL_SUPABASE_URL, env.SOCIAL_SUPABASE_SERVICE_ROLE_KEY)
+    ? createClient(env.SOCIAL_SUPABASE_URL, env.SOCIAL_SUPABASE_SERVICE_ROLE_KEY as string)
     : null;
   private static tokenCache = new Map<string, { token: string; expiresAt: number }>();
 
