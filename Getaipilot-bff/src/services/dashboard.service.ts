@@ -202,7 +202,7 @@ export class DashboardService {
         },
         social: {
           scheduled_posts: Array.isArray(socialPosts) ? socialPosts.filter((p: any) => p.status === 'scheduled').length : 0,
-          connected_accounts: Array.isArray(socialAccounts) ? socialAccounts.filter((a: any) => a.connected).length : (socialAccounts?.accounts?.length || 0),
+          connected_accounts: Array.isArray(socialAccounts) ? (socialAccounts as any[]).filter((a: any) => a.connected !== false).length : ((socialAccounts as any)?.accounts?.length || 0),
         },
         telegram: {
           bot_status: tgSummary.botConnected ? 'connected' : 'disconnected',
