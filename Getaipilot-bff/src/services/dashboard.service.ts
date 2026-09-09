@@ -127,12 +127,12 @@ export class DashboardService {
 
     // 3. Compute CRM Pipeline Summary
     const pipelineSummary = {
-      new: leadList.filter((l) => l.stage_id === 'lead' || l.stage_name === 'New Lead' || l.stage_name === 'New').length,
-      contacted: leadList.filter((l) => l.stage_id === 'contacted' || l.stage_name === 'Contacted').length,
-      qualified: leadList.filter((l) => l.stage_id === 'qualified' || l.stage_name === 'Qualified').length,
-      proposal: leadList.filter((l) => l.stage_id === 'proposal' || l.stage_name === 'Proposal').length,
-      won: leadList.filter((l) => l.stage_id === 'closed_won' || l.stage_name === 'Closed Won').length,
-      total_value: leadList.reduce((sum, l) => sum + (l.value || 0), 0),
+      new: leadList.filter((l: any) => l.stage_id === 'lead' || l.stage_name === 'New Lead' || l.stage_name === 'New').length,
+      contacted: leadList.filter((l: any) => l.stage_id === 'contacted' || l.stage_name === 'Contacted').length,
+      qualified: leadList.filter((l: any) => l.stage_id === 'qualified' || l.stage_name === 'Qualified').length,
+      proposal: leadList.filter((l: any) => l.stage_id === 'proposal' || l.stage_name === 'Proposal').length,
+      won: leadList.filter((l: any) => l.stage_id === 'closed_won' || l.stage_name === 'Closed Won').length,
+      total_value: leadList.reduce((sum: number, l: any) => sum + (l.value || 0), 0),
     };
 
     const recentActivity: UnifiedDashboardResponse['recent_activity'] = [];
@@ -201,8 +201,8 @@ export class DashboardService {
           currency: 'INR',
         },
         social: {
-          scheduled_posts: socialPosts.filter((p) => p.status === 'scheduled').length,
-          connected_accounts: socialAccounts.filter((a) => a.connected).length,
+          scheduled_posts: Array.isArray(socialPosts) ? socialPosts.filter((p: any) => p.status === 'scheduled').length : 0,
+          connected_accounts: Array.isArray(socialAccounts) ? socialAccounts.filter((a: any) => a.connected).length : (socialAccounts?.accounts?.length || 0),
         },
         telegram: {
           bot_status: tgSummary.botConnected ? 'connected' : 'disconnected',

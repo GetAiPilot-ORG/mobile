@@ -19,12 +19,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="activity"
-        options={{
-          title: 'Inbox',
-        }}
-      />
-      <Tabs.Screen
         name="products"
         options={{
           title: 'Products',
@@ -43,15 +37,21 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="activity"
+        options={{
+          href: null, // Hidden from bottom bar (accessible via Home Automation Fleet card)
+        }}
+      />
+      <Tabs.Screen
         name="account"
         options={{
           href: null, // Hidden from bottom bar (accessible via top header avatar)
         }}
       />
       <Tabs.Screen
-        name="activity"
+        name="fleet"
         options={{
-          href: null, // Hidden from bottom bar (accessible via Fleet widget)
+          href: null,
         }}
       />
       <Tabs.Screen
