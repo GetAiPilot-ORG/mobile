@@ -42,6 +42,9 @@ export interface WhatsAppTemplate {
   components: any[];
   quality_score?: string;
   rejection_reason?: string | null;
+  approved_at?: string | null;
+  submitted_at?: string | null;
+  created_at?: string;
   updated_at: string;
 }
 
