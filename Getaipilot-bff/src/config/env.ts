@@ -24,10 +24,12 @@ const envSchema = z.object({
   CRM_SUPABASE_URL: z.string().url().default('https://hhieilvvechtdhhfjomn.supabase.co'),
   CRM_SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   VOICE_SUPABASE_URL: z.string().url().default('https://gkyilicraflkgcfgqypc.supabase.co'),
-  VOICE_SUPABASE_SERVICE_ROLE_KEY: z.string(),
+  VOICE_SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   SOCIAL_SUPABASE_URL: z.string().url().default('https://oqaysrnncwbtrujnxsdo.supabase.co'),
   SOCIAL_SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+  TOKEN_ENCRYPTION_KEY: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);
+
 
