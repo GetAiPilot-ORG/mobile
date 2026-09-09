@@ -1,180 +1,389 @@
+import { useCallback, useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
+  FlatList,
+  Image,
+  Linking,
   Pressable,
-  ScrollView,
+  RefreshControl,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
+import { supabase } from "../../src/lib/supabase";
 import { colors } from "../../src/theme/colors";
 
-type BioTemplate = {
-  id: string;
-  title: string;
-  style: string;
-  tags: string[];
-  color: string;
+type TemplateFormData = {
+  imageUrl?: string;
+  channelName?: string;
+  channelTitle?: string;
+  channelDesc1?: string;
+  channelLink?: string;
+  ctaButtonText?: string;
 };
 
-const BIO_TEMPLATES: BioTemplate[] = [
-  {
-    id: "1",
-    title: "Creator & Influencer",
-    style: "Dark Glassmorphic",
-    tags: ["Instagram", "YouTube"],
-    color: "#E1306C",
-  },
-  {
-    id: "2",
-    title: "Agency Portfolio",
-    style: "Forest Clean",
-    tags: ["Services", "Booking"],
-    color: "#003C33",
-  },
-  {
-    id: "3",
-    title: "Developer & Tech",
-    style: "Minimalist Terminal",
-    tags: ["GitHub", "Portfolio"],
-    color: "#229ED9",
-  },
-  {
-    id: "4",
-    title: "E-commerce & Store",
-    style: "Vibrant Showcase",
-    tags: ["Products", "Discounts"],
-    color: "#F59E0B",
-  },
-];
+type TemplateSubmission = {
+  id: string;
+  user_id: string;
+  email: string;
+  template_id: string;
+  niche: string;
+  form_data?: TemplateFormData;
+  downloaded_at?: string;
+  created_at?: string;
+  slug?: string;
+};
 
 export default function BioTemplatesScreen() {
-  const handleUseTemplate = (template: BioTemplate) => {
+  const [templates, setTemplates] = useState<TemplateSubmission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const fetchTemplates = useCallback(async () => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setTemplates([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("free_template_submissions")
+        .select("*")
+        .eq("user_id", user.id)
+        .neq("niche", "earn_storefront")
+        .order("downloaded_at", {
+          ascending: false,
+        });
+
+      if (error) throw error;
+
+      setTemplates(data ?? []);
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+
+      Alert.alert("Error", "Failed to load your templates.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchTemplates();
+  }, [fetchTemplates]);
+
+  const handleDelete = useCallback((template: TemplateSubmission) => {
     Alert.alert(
-      "Template Selected",
-      `Ready to launch ${template.title}.\n\nCanvas initialized with ${template.style} presets.`,
+      "Delete Template",
+      `Are you sure you want to delete "${getTemplateName(template)}"?`,
       [
         {
           text: "Cancel",
           style: "cancel",
         },
         {
-          text: "Continue",
-          onPress: () => {
-            console.log("Selected template:", template.id);
-            console.log("Template:", template.title);
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setDeletingId(template.id);
+
+              const {
+                data: { user },
+              } = await supabase.auth.getUser();
+
+              if (!user) {
+                Alert.alert("Error", "Please login again.");
+                return;
+              }
+
+              const { error } = await supabase
+                .from("free_template_submissions")
+                .delete()
+                .eq("id", template.id)
+                .eq("user_id", user.id);
+
+              if (error) throw error;
+
+              setTemplates((current) =>
+                current.filter((item) => item.id !== template.id),
+              );
+            } catch (error) {
+              console.error("Delete template error:", error);
+
+              Alert.alert("Error", "Failed to delete template.");
+            } finally {
+              setDeletingId(null);
+            }
           },
         },
       ],
     );
-  };
+  }, []);
+
+  const handlePreview = useCallback((template: TemplateSubmission) => {
+    Linking.openURL(`https://gbio.us/${template.slug}/` || "").catch((err) => {
+      console.error("Failed to open URL:", err);
+      Alert.alert("Error", "Failed to open the template link.");
+    });
+  }, []);
+
+  const renderTemplate = useCallback(
+    ({ item }: { item: TemplateSubmission }) => {
+      const formData = item.form_data ?? {};
+      const templateName = getTemplateName(item);
+
+      return (
+        <View style={styles.templateCard}>
+          {/* Preview */}
+          <View style={styles.previewContainer}>
+            {formData.imageUrl ? (
+              <Image
+                source={{ uri: formData.imageUrl }}
+                style={styles.previewImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={styles.previewPlaceholder}>
+                <Text style={styles.previewPlaceholderText}>
+                  Template Preview
+                </Text>
+              </View>
+            )}
+
+            <View style={styles.templateBadge}>
+              <Text style={styles.templateBadgeText}>TEMPLATE</Text>
+            </View>
+          </View>
+
+          {/* Content */}
+          <View style={styles.cardContent}>
+            <Text style={styles.templateName} numberOfLines={1}>
+              {templateName}
+            </Text>
+
+            <Text style={styles.templateId} numberOfLines={1}>
+              {item.template_id}
+            </Text>
+
+            {formData.channelTitle ? (
+              <Text style={styles.channelTitle} numberOfLines={1}>
+                {formData.channelTitle}
+              </Text>
+            ) : null}
+
+            {formData.channelDesc1 ? (
+              <Text style={styles.description} numberOfLines={2}>
+                {formData.channelDesc1}
+              </Text>
+            ) : null}
+
+            {/* Meta */}
+            <View style={styles.metaRow}>
+              <View style={styles.metaItem}>
+                <Text style={styles.metaLabel}>Niche</Text>
+
+                <Text style={styles.metaValue} numberOfLines={1}>
+                  {item.niche || "General"}
+                </Text>
+              </View>
+
+              <View style={styles.metaItem}>
+                <Text style={styles.metaLabel}>Downloaded</Text>
+
+                <Text style={styles.metaValue}>
+                  {formatDate(item.downloaded_at)}
+                </Text>
+              </View>
+            </View>
+
+            {/* Actions */}
+            <View style={styles.actions}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.previewButton,
+                  pressed && styles.pressed,
+                ]}
+                onPress={() => handlePreview(item)}
+              >
+                <Text style={styles.previewButtonText}>Preview</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.deleteButton,
+                  pressed && styles.pressed,
+                ]}
+                onPress={() => handleDelete(item)}
+                disabled={deletingId === item.id}
+              >
+                {deletingId === item.id ? (
+                  <ActivityIndicator size="small" color={colors.foreground} />
+                ) : (
+                  <Text style={styles.deleteButtonText}>Delete</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      );
+    },
+    [deletingId, handleDelete, handlePreview],
+  );
 
   return (
     <AppScreen safeArea={false} backgroundColor={colors.background}>
       <AppTopBar
-        title="Bio Link Templates"
-        subtitle="High-Converting Profile Themes"
-        showBack={true}
+        title="Bio Templates"
+        subtitle="Your downloaded templates"
+        showBack
       />
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Mobile Bio Presets</Text>
+      {loading ? (
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" color={colors.primary} />
 
-          <Text style={styles.cardSubtitle}>
-            Select a verified responsive template to launch your single-link
-            profile across Instagram, TikTok, and Twitter.
-          </Text>
+          <Text style={styles.loadingText}>Loading templates...</Text>
         </View>
+      ) : (
+        <FlatList
+          data={templates}
+          keyExtractor={(item) => item.id}
+          renderItem={renderTemplate}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.listContent,
+            templates.length === 0 && styles.emptyListContent,
+          ]}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
+          ListHeaderComponent={
+            templates.length > 0 ? (
+              <View style={styles.headerCard}>
+                <View>
+                  <Text style={styles.headerTitle}>My Templates</Text>
 
-        {/* Template List */}
-        <View style={styles.templateList}>
-          {BIO_TEMPLATES.map((template) => (
-            <View key={template.id} style={styles.templateCard}>
-              {/* Color Bar */}
-              <View
-                style={[
-                  styles.colorBar,
-                  {
-                    backgroundColor: template.color,
-                  },
-                ]}
-              />
-
-              <View style={styles.cardBody}>
-                {/* Title + Style */}
-                <View style={styles.cardTop}>
-                  <Text style={styles.tplTitle}>{template.title}</Text>
-
-                  <Text style={styles.tplStyle}>{template.style}</Text>
+                  <Text style={styles.headerSubtitle}>
+                    {templates.length}{" "}
+                    {templates.length === 1 ? "template" : "templates"}{" "}
+                    downloaded
+                  </Text>
                 </View>
 
-                {/* Tags */}
-                <View style={styles.tagsRow}>
-                  {template.tags.map((tag) => (
-                    <View key={tag} style={styles.tag}>
-                      <Text style={styles.tagText}>{tag}</Text>
-                    </View>
-                  ))}
+                <View style={styles.countBadge}>
+                  <Text style={styles.countText}>{templates.length}</Text>
                 </View>
-
-                {/* Use Template */}
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.useBtn,
-                    {
-                      backgroundColor: template.color,
-                    },
-                    pressed && styles.useBtnPressed,
-                  ]}
-                  onPress={() => handleUseTemplate(template)}
-                >
-                  <Text style={styles.useBtnText}>Use Template →</Text>
-                </Pressable>
               </View>
+            ) : null
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyIcon}>▣</Text>
+
+              <Text style={styles.emptyTitle}>No Templates Found</Text>
+
+              <Text style={styles.emptyText}>
+                Your downloaded bio templates will appear here.
+              </Text>
             </View>
-          ))}
-        </View>
-      </ScrollView>
+          }
+        />
+      )}
     </AppScreen>
   );
 }
 
+/* ---------------- Helpers ---------------- */
+
+const getTemplateName = (template: TemplateSubmission) => {
+  return (
+    template.form_data?.channelName ||
+    template.form_data?.channelTitle ||
+    template.template_id ||
+    "Untitled Template"
+  );
+};
+
+const formatDate = (date?: string) => {
+  if (!date) return "N/A";
+
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "N/A";
+  }
+
+  return parsedDate.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+/* ---------------- Styles ---------------- */
+
 const styles = StyleSheet.create({
-  scrollContent: {
+  listContent: {
     padding: 16,
     paddingBottom: 40,
   },
 
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
+  emptyListContent: {
+    flexGrow: 1,
   },
 
-  cardTitle: {
+  headerCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 16,
+    marginBottom: 16,
+  },
+
+  headerTitle: {
     fontSize: 17,
     fontWeight: "800",
     color: colors.foreground,
-    marginBottom: 4,
   },
 
-  cardSubtitle: {
-    fontSize: 13,
+  headerSubtitle: {
+    marginTop: 3,
+    fontSize: 12,
     color: colors.mutedForeground,
-    lineHeight: 18,
   },
 
-  templateList: {
-    gap: 14,
+  countBadge: {
+    minWidth: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.muted,
+  },
+
+  countText: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: colors.foreground,
   },
 
   templateCard: {
@@ -183,67 +392,180 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     overflow: "hidden",
-  },
-
-  colorBar: {
-    height: 6,
-    width: "100%",
-  },
-
-  cardBody: {
-    padding: 16,
-  },
-
-  cardTop: {
-    marginBottom: 10,
-  },
-
-  tplTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: colors.foreground,
-  },
-
-  tplStyle: {
-    fontSize: 12,
-    color: colors.mutedForeground,
-    marginTop: 3,
-  },
-
-  tagsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
     marginBottom: 14,
   },
 
-  tag: {
+  previewContainer: {
+    height: 170,
     backgroundColor: colors.muted,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    position: "relative",
   },
 
-  tagText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.mutedForeground,
+  previewImage: {
+    width: "100%",
+    height: "100%",
   },
 
-  useBtn: {
-    paddingVertical: 11,
-    borderRadius: 8,
+  previewPlaceholder: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
 
-  useBtnPressed: {
+  previewPlaceholderText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.mutedForeground,
+  },
+
+  templateBadge: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 7,
+    backgroundColor: "rgba(0,0,0,0.65)",
+  },
+
+  templateBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 9,
+    fontWeight: "800",
+  },
+
+  cardContent: {
+    padding: 16,
+  },
+
+  templateName: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: colors.foreground,
+  },
+
+  templateId: {
+    marginTop: 3,
+    fontSize: 11,
+    color: colors.mutedForeground,
+  },
+
+  channelTitle: {
+    marginTop: 10,
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.foreground,
+  },
+
+  description: {
+    marginTop: 4,
+    fontSize: 12,
+    lineHeight: 17,
+    color: colors.mutedForeground,
+  },
+
+  metaRow: {
+    flexDirection: "row",
+    marginTop: 14,
+    paddingTop: 13,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+
+  metaItem: {
+    flex: 1,
+  },
+
+  metaLabel: {
+    fontSize: 10,
+    color: colors.mutedForeground,
+    marginBottom: 3,
+  },
+
+  metaValue: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.foreground,
+  },
+
+  actions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 15,
+  },
+
+  previewButton: {
+    flex: 1,
+    height: 42,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primary,
+  },
+
+  previewButtonText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+
+  deleteButton: {
+    width: 90,
+    height: 42,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.muted,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+
+  deleteButtonText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.foreground,
+  },
+
+  pressed: {
     opacity: 0.7,
   },
 
-  useBtnText: {
-    color: "#FFFFFF",
-    fontWeight: "800",
+  loader: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  loadingText: {
+    marginTop: 10,
     fontSize: 13,
+    color: colors.mutedForeground,
+  },
+
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 30,
+  },
+
+  emptyIcon: {
+    fontSize: 38,
+    color: colors.mutedForeground,
+    marginBottom: 12,
+  },
+
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.foreground,
+  },
+
+  emptyText: {
+    marginTop: 6,
+    textAlign: "center",
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.mutedForeground,
   },
 });
