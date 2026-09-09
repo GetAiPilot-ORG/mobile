@@ -17,6 +17,8 @@ const envSchema = z.object({
   CRM_BASE_URL: z.string().default('https://getaipilot.online'),
   CRM_SUPABASE_URL: z.string().url().default('https://hhieilvvechtdhhfjomn.supabase.co'),
   CRM_SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+  WEB_APP_URL: z.string().url().default('https://getaipilot.in'),
+  WEBVIEW_AUTH_CODE_TTL_SECONDS: z.coerce.number().int().min(30).max(600).default(300),
 });
 
 export const env = envSchema.parse(process.env);
