@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { env } from '../config/env.js';
 import { UpstreamSessionService } from '../services/upstream-session.service.js';
 
-function decryptToken(stored: string | null | undefined, key: string = env.TOKEN_ENCRYPTION_KEY || '1234567890123456789012345678901a'): string {
+function decryptToken(stored: string | null | undefined, key: string = env.TOKEN_ENCRYPTION_KEY || ''): string {
   if (!stored) return '';
   if (!key || key.length !== 32 || !stored.includes(':')) return stored;
   try {

@@ -60,7 +60,7 @@ export class VoiceAdapter {
   private static baseUrl = env.VOICE_SERVICE_URL || 'http://127.0.0.1:8000';
   private static voiceSupabase: SupabaseClient = createClient(
     env.VOICE_SUPABASE_URL,
-    env.VOICE_SUPABASE_SERVICE_ROLE_KEY
+    env.VOICE_SUPABASE_SERVICE_ROLE_KEY || ''
   );
 
   /**
