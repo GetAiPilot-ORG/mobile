@@ -21,14 +21,13 @@ export class InboxService {
     const orgId = user.organization_id;
     const userId = user.user_id;
 
-    // Concurrently fetch conversations across all channel adapters
-    const [waConvs, tgConvs, socialConvs] = await Promise.all([
+    // Concurrently fetch conversations across WhatsApp and Social channels (Telegram excluded per configuration)
+    const [waConvs, socialConvs] = await Promise.all([
       WhatsAppAdapter.getConversations(orgId),
-      TelegramAdapter.getConversations(userId),
       SocialAdapter.getConversations(orgId),
     ]);
 
-    let allConversations: NormalizedConversation[] = [...waConvs, ...tgConvs, ...socialConvs];
+    let allConversations: NormalizedConversation[] = [...waConvs, ...socialConvs];
 
     // Filter by Channel
     if (options.channel && options.channel !== 'all') {
@@ -91,7 +90,11 @@ export class InboxService {
     conversationId: string,
     content: string,
     attachments: Array<{ url: string; type: string }> = [],
-    user: JWTPayload
+    user: JWTPayload,
+    options?: {
+      is_internal_note?: boolean;
+      template?: any;
+    }
   ): Promise<NormalizedMessage> {
     let sentMessage: NormalizedMessage;
 
@@ -100,7 +103,18 @@ export class InboxService {
     } else if (conversationId.startsWith('ig_') || conversationId.startsWith('fb_')) {
       sentMessage = await SocialAdapter.sendMessage(conversationId, content, attachments);
     } else {
-      sentMessage = await WhatsAppAdapter.sendMessage(conversationId, content, attachments);
+      sentMessage = await WhatsAppAdapter.sendMessage(conversationId, content, attachments, {
+        is_internal_note: options?.is_internal_note,
+        template: options?.template,
+        sender_user_id: user.user_id,
+        sender_name: user.email?.split('@')[0] || 'You',
+        context: {
+          userId: user.user_id,
+          organizationId: user.organization_id,
+          role: user.role,
+          sessionId: user.session_id,
+        },
+      });
     }
 
     // Broadcast Realtime Events across WebSocket Gateway
@@ -108,12 +122,50 @@ export class InboxService {
     WebSocketService.broadcastToOrg(user.organization_id, 'conversation.updated', {
       conversation_id: conversationId,
       last_message: {
-        content,
+        content: options?.is_internal_note ? `🔒 Note: ${content}` : content,
         created_at: sentMessage.created_at,
         direction: 'outbound',
       },
     });
 
     return sentMessage;
+  }
+
+  public static async assignAgent(
+    conversationId: string,
+    agentId: string | null,
+    agentName: string | null,
+    user: JWTPayload
+  ) {
+    const res = await WhatsAppAdapter.assignAgent(conversationId, user.organization_id, agentId, agentName);
+    WebSocketService.broadcastToOrg(user.organization_id, 'conversation.assigned', {
+      conversation_id: conversationId,
+      assigned_agent_id: agentId,
+      assigned_agent_name: agentName,
+    });
+    return res;
+  }
+
+  public static async toggleBot(
+    conversationId: string,
+    enabled: boolean,
+    botId: string | null,
+    user: JWTPayload
+  ) {
+    const res = await WhatsAppAdapter.toggleBot(conversationId, user.organization_id, enabled, botId);
+    WebSocketService.broadcastToOrg(user.organization_id, 'conversation.bot_toggled', {
+      conversation_id: conversationId,
+      bot_enabled: enabled,
+      assigned_bot_id: botId,
+    });
+    return res;
+  }
+
+  public static async getTeamMembers(user: JWTPayload) {
+    return await WhatsAppAdapter.getTeamMembers(user.organization_id);
+  }
+
+  public static async getOrCreateConversation(contactId: string, user: JWTPayload) {
+    return await WhatsAppAdapter.getOrCreateConversation(user.organization_id, contactId);
   }
 }
