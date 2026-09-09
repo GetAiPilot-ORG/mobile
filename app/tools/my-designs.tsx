@@ -1,179 +1,452 @@
-import React from 'react';
+import { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
+  ActivityIndicator,
   Alert,
-} from 'react-native';
-import { AppScreen } from '../../src/components/AppScreen';
-import { AppTopBar } from '../../src/components/AppTopBar';
-import { colors } from '../../src/theme/colors';
-import { useAuth } from '../../src/contexts/AuthContext';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../../src/lib/supabase';
+  FlatList,
+  Image,
+  Linking,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { AppScreen } from "../../src/components/AppScreen";
+import { AppTopBar } from "../../src/components/AppTopBar";
+import { supabase } from "../../src/lib/supabase";
+import { colors } from "../../src/theme/colors";
 
-export default function MyDesignsScreen() {
-  const { user } = useAuth();
+type FormData = {
+  imageUrl?: string;
+  channelLink?: string;
+  channelName?: string;
+  metaPixelId?: string;
+  channelDesc1?: string;
+  channelDesc2?: string | null;
+  channelTitle?: string;
+  ctaButtonText?: string;
+  customContent?: Record<string, any>;
+  channelSubscribers?: number;
+};
 
-  const { data: landingPages, isLoading } = useQuery({
-    queryKey: ['my-designs-pages', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
+type LandingSubmission = {
+  id: string;
+  user_id: string;
+  email: string;
+  template_id: string;
+  form_data: FormData;
+  created_at: string;
+  updated_at: string;
+  page_title: string;
+  slug: string;
+  page_views: number;
+  button_clicks: number;
+};
+
+export default function MyDesignScreen() {
+  const [submissions, setSubmissions] = useState<LandingSubmission[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchSubmissions();
+  }, []);
+
+  const fetchSubmissions = async () => {
+    setLoading(true);
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        Alert.alert("Please login", "You need to login to view your pages.");
+        return;
+      }
+
       const { data, error } = await supabase
-        .from('landing_pages')
-        .select('*')
-        .eq('user_id', user.id);
-      if (error || !data) return [];
-      return data;
-    },
-    enabled: !!user?.id,
-  });
+        .from("landing_template_submissions")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
 
-  const demoDesigns = [
-    { id: '1', title: 'Creator Bio Portfolio', theme: 'Minimalist Dark', views: '1,240', status: 'Published' },
-    { id: '2', title: 'Agency Lead Magnet', theme: 'Emerald Pro', views: '480', status: 'Draft' },
-  ];
+      if (error) throw error;
 
-  const designs = (landingPages && landingPages.length > 0) ? landingPages : demoDesigns;
+      setSubmissions(data || []);
+    } catch (error) {
+      console.error("Error fetching submissions:", error);
+      Alert.alert("Error", "Failed to load your landing pages.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleViewTemplate = (template: LandingSubmission) => {
+    Linking.openURL(
+      `https://gpage.us/${template.slug == template.slug ? template.slug : template.page_title}/`,
+    ).catch((err) => console.error("Error opening URL:", err));
+  };
+
+  const renderTemplate = ({ item }: { item: LandingSubmission }) => {
+    const formData = item.form_data || {};
+
+    return (
+      <View style={styles.templateCard}>
+        {/* Preview Image */}
+        <View style={styles.imageContainer}>
+          {formData.imageUrl ? (
+            <Image
+              source={{ uri: formData.imageUrl }}
+              style={styles.previewImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <Text style={styles.imagePlaceholderText}>No Preview</Text>
+            </View>
+          )}
+
+          {/* Template Badge */}
+          <View style={styles.templateBadge}>
+            <Text style={styles.templateBadgeText}>{item.template_id}</Text>
+          </View>
+        </View>
+
+        {/* Content */}
+        <View style={styles.cardBody}>
+          {/* Page Title */}
+          <Text style={styles.pageTitle}>
+            {item.page_title || "Untitled Page"}
+          </Text>
+
+          {/* Channel Name */}
+          <Text style={styles.channelName}>
+            {formData.channelName || "Your Channel"}
+          </Text>
+
+          {/* Channel Title */}
+          {formData.channelTitle ? (
+            <Text style={styles.channelTitle}>{formData.channelTitle}</Text>
+          ) : null}
+
+          {/* Description */}
+          {formData.channelDesc1 ? (
+            <Text style={styles.description} numberOfLines={2}>
+              {formData.channelDesc1}
+            </Text>
+          ) : null}
+
+          {/* Stats */}
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{item.page_views || 0}</Text>
+              <Text style={styles.statLabel}>Views</Text>
+            </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{item.button_clicks || 0}</Text>
+              <Text style={styles.statLabel}>Clicks</Text>
+            </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>
+                {formData.channelSubscribers || 0}
+              </Text>
+              <Text style={styles.statLabel}>Subscribers</Text>
+            </View>
+          </View>
+
+          {/* Slug */}
+          <View style={styles.slugContainer}>
+            <Text style={styles.slugLabel}>Your Link</Text>
+
+            <Text style={styles.slugText} numberOfLines={1}>
+              /{item.slug}
+            </Text>
+          </View>
+
+          {/* CTA */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.useButton,
+              pressed && styles.buttonPressed,
+            ]}
+            onPress={() => handleViewTemplate(item)}
+          >
+            <Text style={styles.useButtonText}>
+              {formData.ctaButtonText || "View Template"} →
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  };
 
   return (
     <AppScreen safeArea={false} backgroundColor={colors.background}>
-      <AppTopBar title="My Designs" subtitle="Custom Bio & Landing Pages" showBack={true} />
+      <AppTopBar
+        title="Bio Link Templates"
+        subtitle="High-Converting Profile Themes"
+        showBack={true}
+      />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.heroCard}>
-          <Text style={styles.heroTitle}>Your Canvas Library</Text>
-          <Text style={styles.heroSub}>
-            Manage, publish, and track analytics for your custom bio sites and campaign landing pages.
-          </Text>
-          <Pressable
-            style={styles.newDesignBtn}
-            onPress={() => Alert.alert('New Page', 'Select a Bio or Landing Template to initialize a new canvas.')}
-          >
-            <Text style={styles.newDesignBtnText}>+ Create New Design</Text>
-          </Pressable>
+      {loading ? (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+
+          <Text style={styles.loadingText}>Loading your templates...</Text>
         </View>
+      ) : (
+        <FlatList
+          data={submissions}
+          keyExtractor={(item) => item.id}
+          renderItem={renderTemplate}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={
+            <View style={styles.headerCard}>
+              <Text style={styles.cardTitle}>My Bio Pages</Text>
 
-        <Text style={styles.sectionTitle}>Active Projects ({designs.length})</Text>
-
-        <View style={styles.grid}>
-          {designs.map((d: any) => (
-            <View key={d.id} style={styles.designCard}>
-              <View style={styles.previewBox}>
-                <Text style={styles.previewIcon}>🎨</Text>
-              </View>
-              <View style={styles.cardInfo}>
-                <Text style={styles.cardTitle}>{d.title || 'Untitled Design'}</Text>
-                <Text style={styles.cardMeta}>{d.theme || 'Default Theme'} • {d.status || 'Active'}</Text>
-              </View>
-              <View style={styles.cardActions}>
-                <Pressable
-                  style={styles.actionBtnEdit}
-                  onPress={() => Alert.alert('Editor', `Opening canvas editor for ${d.title}`)}
-                >
-                  <Text style={styles.actionBtnText}>Edit</Text>
-                </Pressable>
-              </View>
+              <Text style={styles.cardSubtitle}>
+                Manage your landing pages and bio link templates from one place.
+              </Text>
             </View>
-          ))}
-        </View>
-      </ScrollView>
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyTitle}>No Bio Pages Yet</Text>
+
+              <Text style={styles.emptyText}>
+                Create your first bio landing page to see it here.
+              </Text>
+            </View>
+          }
+        />
+      )}
     </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContent: {
+  listContent: {
     padding: 16,
     paddingBottom: 40,
   },
-  heroCard: {
-    backgroundColor: colors.primary,
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 20,
-  },
-  heroTitle: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: '#FFFFFF',
-  },
-  heroSub: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 4,
-    lineHeight: 18,
-    marginBottom: 14,
-  },
-  newDesignBtn: {
-    backgroundColor: '#16B882',
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  newDesignBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '800',
-    fontSize: 13.5,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.foreground,
-    marginBottom: 12,
-  },
-  grid: {
-    gap: 12,
-  },
-  designCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+
+  headerCard: {
     backgroundColor: colors.card,
-    borderRadius: 14,
-    padding: 14,
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  previewBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 10,
-    backgroundColor: colors.muted,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  previewIcon: {
-    fontSize: 22,
-  },
-  cardInfo: {
-    flex: 1,
-    marginRight: 8,
-  },
+
   cardTitle: {
-    fontSize: 14.5,
-    fontWeight: '800',
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.foreground,
+    marginBottom: 5,
+  },
+
+  cardSubtitle: {
+    fontSize: 13,
+    color: colors.mutedForeground,
+    lineHeight: 19,
+  },
+
+  templateCard: {
+    backgroundColor: colors.card,
+    borderRadius: 18,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+  },
+
+  imageContainer: {
+    height: 180,
+    width: "100%",
+    position: "relative",
+    backgroundColor: colors.muted,
+  },
+
+  previewImage: {
+    width: "100%",
+    height: "100%",
+  },
+
+  imagePlaceholder: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  imagePlaceholderText: {
+    fontSize: 14,
+    color: colors.mutedForeground,
+    fontWeight: "600",
+  },
+
+  templateBadge: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    backgroundColor: "rgba(0,0,0,0.65)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+
+  templateBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "700",
+  },
+
+  cardBody: {
+    padding: 16,
+  },
+
+  pageTitle: {
+    fontSize: 18,
+    fontWeight: "800",
     color: colors.foreground,
   },
-  cardMeta: {
-    fontSize: 12,
+
+  channelName: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.primary,
+    marginTop: 4,
+  },
+
+  channelTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.foreground,
+    marginTop: 12,
+  },
+
+  description: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.mutedForeground,
+    marginTop: 5,
+  },
+
+  statsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+    marginTop: 16,
+    paddingVertical: 14,
+    backgroundColor: colors.muted,
+    borderRadius: 12,
+  },
+
+  statItem: {
+    alignItems: "center",
+    flex: 1,
+  },
+
+  statValue: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: colors.foreground,
+  },
+
+  statLabel: {
+    fontSize: 11,
     color: colors.mutedForeground,
     marginTop: 2,
   },
-  cardActions: {
-    flexDirection: 'row',
+
+  divider: {
+    width: 1,
+    height: 28,
+    backgroundColor: colors.border,
   },
-  actionBtnEdit: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 6,
+
+  slugContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  actionBtnText: {
-    color: '#FFFFFF',
+
+  slugLabel: {
+    fontSize: 11,
+    color: colors.mutedForeground,
+    fontWeight: "600",
+  },
+
+  slugText: {
+    flex: 1,
+    textAlign: "right",
+    marginLeft: 10,
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
+    color: colors.foreground,
+  },
+
+  useButton: {
+    marginTop: 14,
+    paddingVertical: 13,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primary,
+  },
+
+  buttonPressed: {
+    opacity: 0.7,
+  },
+
+  useButtonText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+
+  loaderContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  loadingText: {
+    marginTop: 10,
+    fontSize: 13,
+    color: colors.mutedForeground,
+  },
+
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
+    paddingHorizontal: 30,
+  },
+
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.foreground,
+    marginBottom: 6,
+  },
+
+  emptyText: {
+    textAlign: "center",
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.mutedForeground,
   },
 });
