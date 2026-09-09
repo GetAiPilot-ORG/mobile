@@ -13,18 +13,24 @@ export const queryClient = new QueryClient({
       staleTime: 1000 * 30,
       gcTime: 1000 * 60 * 10,
       retry: (failureCount, error: any) => {
-        // Do not retry 401 (Unauthorized) or 403 (Forbidden) errors to prevent request storms
+        // Do not retry 400, 401, 403, 404 or 502 errors to prevent request storms
         const msg = (error?.message || '').toLowerCase();
         const status = error?.status || error?.statusCode || (error?.response ? error.response.status : undefined);
         if (
+          status === 400 ||
           status === 401 ||
           status === 403 ||
+          status === 404 ||
+          status === 502 ||
+          msg.includes('400') ||
           msg.includes('401') ||
           msg.includes('403') ||
+          msg.includes('404') ||
           msg.includes('forbidden') ||
           msg.includes('not authenticated') ||
           msg.includes('session expired') ||
-          msg.includes('unauthorized')
+          msg.includes('unauthorized') ||
+          msg.includes('unavailable')
         ) {
           return false;
         }

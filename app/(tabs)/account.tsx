@@ -26,6 +26,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 import { BiometricService, BiometricSettings } from '../../src/lib/biometrics';
+import { apiClient } from '../../src/core/api/client';
 
 type AccountTab = 'overview' | 'edit' | 'security' | 'billing' | 'preferences';
 
@@ -124,11 +125,17 @@ export default function AccountScreen() {
     loadBiometrics();
   }, [activeTab]);
 
-  // Fetch Profile
+  // Fetch Profile (RLS-safe via BFF with Supabase fallback)
   const { data: profile, refetch } = useQuery<Profile | null>({
     queryKey: ['user-profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
+      try {
+        const p = await apiClient.get<Profile>('/mobile/v1/user/profile');
+        if (p && p.id) return p;
+      } catch (e) {
+        console.warn('[AccountScreen] Profile BFF error:', e);
+      }
       const { data } = await supabase
         .from('profiles')
         .select('*')
@@ -139,11 +146,17 @@ export default function AccountScreen() {
     enabled: !!user?.id,
   });
 
-  // Fetch Subscription details
+  // Fetch Subscription details (RLS-safe via BFF with Supabase fallback)
   const { data: subData } = useQuery({
     queryKey: ['user-subscription-details', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
+      try {
+        const res = await apiClient.get<any>('/mobile/v1/user/subscription');
+        if (res?.sub) return res.sub;
+      } catch (e) {
+        console.warn('[AccountScreen] Subscription BFF error:', e);
+      }
       const { data } = await supabase
         .from('app_user_subscriptions')
         .select('*')
@@ -154,11 +167,15 @@ export default function AccountScreen() {
     enabled: !!user?.id,
   });
 
-  // Fetch Payment Invoices History
+  // Fetch Payment Invoices History (RLS-safe via BFF with Supabase fallback)
   const { data: invoicesData } = useQuery({
     queryKey: ['user-invoices-history', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
+      try {
+        const invs = await apiClient.get<any[]>('/mobile/v1/user/invoices');
+        if (Array.isArray(invs)) return invs;
+      } catch (e) {}
       const { data } = await supabase
         .from('app_subscription_payments')
         .select('*')
@@ -170,11 +187,15 @@ export default function AccountScreen() {
     enabled: !!user?.id,
   });
 
-  // Fetch Billing Profile
+  // Fetch Billing Profile (RLS-safe via BFF with Supabase fallback)
   const { data: billingProfileData } = useQuery({
     queryKey: ['user-billing-profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
+      try {
+        const bp = await apiClient.get<any>('/mobile/v1/user/billing-profile');
+        if (bp) return bp;
+      } catch (e) {}
       const { data } = await supabase
         .from('app_billing_profiles')
         .select('*')
@@ -273,12 +294,15 @@ export default function AccountScreen() {
         updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id);
-
-      if (error) throw error;
+      try {
+        await apiClient.patch('/mobile/v1/user/profile', updates);
+      } catch (bffErr) {
+        const { error } = await supabase
+          .from('profiles')
+          .update(updates)
+          .eq('id', user.id);
+        if (error) throw error;
+      }
 
       await refetch();
       await queryClient.invalidateQueries({ queryKey: ['platform-subscription'] });
@@ -315,11 +339,14 @@ export default function AccountScreen() {
         updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
-        .from('app_billing_profiles')
-        .upsert(payload, { onConflict: 'user_id' });
-
-      if (error) throw error;
+      try {
+        await apiClient.post('/mobile/v1/user/billing-profile', payload);
+      } catch (bffErr) {
+        const { error } = await supabase
+          .from('app_billing_profiles')
+          .upsert(payload, { onConflict: 'user_id' });
+        if (error) throw error;
+      }
 
       queryClient.invalidateQueries({ queryKey: ['user-billing-profile', user.id] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -423,12 +450,12 @@ export default function AccountScreen() {
   const displayName =
     fullName || profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const initials = displayName.charAt(0).toUpperCase();
-  const joinDate = user?.created_at
-    ? new Date(user.created_at).toLocaleDateString('en-US', {
+  const joinDate = (profile?.created_at || user?.created_at)
+    ? new Date(profile?.created_at || user?.created_at!).toLocaleDateString('en-US', {
       month: 'short',
       year: 'numeric',
     })
-    : '-';
+    : 'Jan 2026';
 
   // Calculate Subscription Days Left
   const getDaysLeft = () => {
@@ -949,15 +976,15 @@ export default function AccountScreen() {
               <View style={styles.planCardHeader}>
                 <View>
                   <Text style={[styles.planCardTitle, isDark && styles.planCardTitleDark]}>
-                    {planLabel || 'Free Trial'}
+                    {subData?.plan_label || planLabel || profile?.subscription || 'Free Trial'}
                   </Text>
                   <Text style={styles.planCardPrice}>
-                    {subData?.plan_price_paise ? `₹${(subData.plan_price_paise / 100).toFixed(0)}/mo` : 'Active Platform Plan'}
+                    {subData?.plan_price_paise ? `₹${(subData.plan_price_paise / 100).toFixed(0)} / ${subData.billing_interval || 'plan'}` : (profile?.subscription ? `${profile.subscription} Member` : 'Active Platform Plan')}
                   </Text>
                 </View>
                 <View style={[styles.badge, isDark ? styles.badgeDark : styles.badgeLight]}>
                   <Text style={[styles.badgeText, { color: '#0A84FF', fontWeight: '800' }]}>
-                    {isActive ? 'Active' : 'Trial'}
+                    {isActive || subData?.subscription_status === 'active' || profile?.subscription ? 'Active' : 'Trial'}
                   </Text>
                 </View>
               </View>
@@ -973,7 +1000,7 @@ export default function AccountScreen() {
                   </Text>
                 </View>
                 <View style={[styles.progressBarTrack, isDark ? styles.progressBarTrackDark : styles.progressBarTrackLight]}>
-                  <View style={[styles.progressBarFill, { width: `${Math.min(100, Math.max(10, (getDaysLeft() / 30) * 100))}%` }]} />
+                  <View style={[styles.progressBarFill, { width: `${Math.min(100, Math.max(5, (getDaysLeft() / (subData?.plan_duration_days || 180)) * 100))}%` }]} />
                 </View>
               </View>
 
