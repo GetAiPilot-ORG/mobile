@@ -6,11 +6,13 @@ import {
   ScrollView,
   TextInput,
   Pressable,
+  ActivityIndicator,
   Alert,
   Share,
 } from 'react-native';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
+import { openAuthenticatedTemplate } from '../../src/lib/template-deep-link';
 import { colors } from '../../src/theme/colors';
 
 interface LandingTemplate {
@@ -85,6 +87,7 @@ const LANDING_TEMPLATES_CATALOG: LandingTemplate[] = [
 export default function LandingTemplatesScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [search, setSearch] = useState('');
+  const [openingTemplateId, setOpeningTemplateId] = useState<string | null>(null);
 
   const filtered = LANDING_TEMPLATES_CATALOG.filter((item) => {
     const matchesCat = selectedCategory === 'All' || item.category === selectedCategory;
@@ -94,6 +97,18 @@ export default function LandingTemplatesScreen() {
       item.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()));
     return matchesCat && matchesSearch;
   });
+
+  const handleOpenCanvas = async (item: LandingTemplate) => {
+    try {
+      setOpeningTemplateId(item.id);
+      await openAuthenticatedTemplate('landing-builder', item.id);
+    } catch (error) {
+      console.error('Failed to open authenticated landing template:', error);
+      Alert.alert('Unable to open canvas', 'Please check your connection and try again.');
+    } finally {
+      setOpeningTemplateId(null);
+    }
+  };
 
   const handleDeploy = (item: LandingTemplate) => {
     Alert.alert(
@@ -112,7 +127,7 @@ export default function LandingTemplatesScreen() {
         {
           text: 'Open in Canvas 🚀',
           onPress: () => {
-            Alert.alert('Canvas Ready', `Template "${item.name}" loaded into your visual editing workspace.`);
+            void handleOpenCanvas(item);
           },
         },
       ]
@@ -178,8 +193,13 @@ export default function LandingTemplatesScreen() {
                 <Pressable
                   style={[styles.useBtn, { backgroundColor: item.color }]}
                   onPress={() => handleDeploy(item)}
+                  disabled={openingTemplateId === item.id}
                 >
-                  <Text style={styles.useBtnText}>Deploy Template →</Text>
+                  {openingTemplateId === item.id ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.useBtnText}>Deploy Template →</Text>
+                  )}
                 </Pressable>
               </View>
             </View>

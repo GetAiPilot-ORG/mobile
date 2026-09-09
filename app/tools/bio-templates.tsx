@@ -14,6 +14,7 @@ import {
 
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
+import { openAuthenticatedTemplate } from "../../src/lib/template-deep-link";
 import { supabase } from "../../src/lib/supabase";
 import { colors } from "../../src/theme/colors";
 
@@ -43,6 +44,7 @@ export default function BioTemplatesScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [openingId, setOpeningId] = useState<string | null>(null);
 
   const fetchTemplates = useCallback(async () => {
     try {
@@ -78,7 +80,12 @@ export default function BioTemplatesScreen() {
   }, []);
 
   useEffect(() => {
-    fetchTemplates();
+    // Defer the initial network request until after this render is committed.
+    const loadTimer = setTimeout(() => {
+      void fetchTemplates();
+    }, 0);
+
+    return () => clearTimeout(loadTimer);
   }, [fetchTemplates]);
 
   const handleRefresh = useCallback(() => {
@@ -140,6 +147,18 @@ export default function BioTemplatesScreen() {
       console.error("Failed to open URL:", err);
       Alert.alert("Error", "Failed to open the template link.");
     });
+  }, []);
+
+  const handleOpenEditor = useCallback(async (template: TemplateSubmission) => {
+    try {
+      setOpeningId(template.id);
+      await openAuthenticatedTemplate("bio-builder", template.id);
+    } catch (error) {
+      console.error("Failed to open authenticated bio template:", error);
+      Alert.alert("Unable to open editor", "Please check your connection and try again.");
+    } finally {
+      setOpeningId(null);
+    }
   }, []);
 
   const renderTemplate = useCallback(
@@ -225,6 +244,21 @@ export default function BioTemplatesScreen() {
 
               <Pressable
                 style={({ pressed }) => [
+                  styles.editButton,
+                  pressed && styles.pressed,
+                ]}
+                onPress={() => handleOpenEditor(item)}
+                disabled={openingId === item.id}
+              >
+                {openingId === item.id ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.editButtonText}>Edit</Text>
+                )}
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
                   styles.deleteButton,
                   pressed && styles.pressed,
                 ]}
@@ -242,7 +276,7 @@ export default function BioTemplatesScreen() {
         </View>
       );
     },
-    [deletingId, handleDelete, handlePreview],
+    [deletingId, handleDelete, handleOpenEditor, handlePreview, openingId],
   );
 
   return (
@@ -504,6 +538,21 @@ const styles = StyleSheet.create({
   },
 
   previewButtonText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+
+  editButton: {
+    width: 72,
+    height: 42,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primary,
+  },
+
+  editButtonText: {
     color: "#FFFFFF",
     fontSize: 13,
     fontWeight: "800",
