@@ -1,0 +1,27 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: ['main']
+
+jobs:
+  fingerprint:
+    name: Check Native Fingerprint
+    type: fingerprint
+
+  build_and_submit:
+    name: Build & Submit Production Binaries
+    needs: [fingerprint]
+    if: ${{ needs.fingerprint.outputs.android_fingerprint_changed || needs.fingerprint.outputs.ios_fingerprint_changed }}
+    type: build
+    params:
+      platform: all
+      profile: production
+
+  publish_update:
+    name: Publish Production OTA Update
+    needs: [fingerprint]
+    if: ${{ !needs.fingerprint.outputs.android_fingerprint_changed && !needs.fingerprint.outputs.ios_fingerprint_changed }}
+    type: update
+    params:
+      branch: production

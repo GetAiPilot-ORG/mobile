@@ -6,46 +6,44 @@ import {
   ScrollView,
   RefreshControl,
   Pressable,
+  useColorScheme,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import { AppScreen } from '../../src/components/AppScreen';
-import { colors } from '../../src/theme/colors';
-import { spacing } from '../../src/theme/spacing';
-import { radius } from '../../src/theme/radius';
+import { AppTopBar } from '../../src/components/AppTopBar';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 import { supabase } from '../../src/lib/supabase';
-import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
 
-type WorkspaceKey = 'social_pilot' | 'whatsapp' | 'crm' | 'voice_pilot' | 'telegram' | 'free_tools';
+type WorkspaceKey = 'social' | 'whatsapp' | 'crm' | 'voice' | 'telegram';
 
-const WORKSPACES: { key: WorkspaceKey; label: string; icon: string; color: string }[] = [
-  { key: 'social_pilot', label: 'Social Pilot', icon: '📸', color: '#ec4899' },
-  { key: 'whatsapp', label: 'GAP WhatsApp', icon: '💬', color: '#16a34a' },
-  { key: 'crm', label: 'GAP CRM', icon: '📊', color: '#f59e0b' },
-  { key: 'voice_pilot', label: 'Voice Pilot', icon: '🎙️', color: '#8b5cf6' },
-  { key: 'telegram', label: 'GAP Telegram', icon: '📢', color: '#0284c7' },
-  { key: 'free_tools', label: 'Free Tools', icon: '⚡', color: '#10b981' },
+const PLATFORMS: { key: WorkspaceKey; label: string; icon: string; route: string; color: string }[] = [
+  { key: 'whatsapp', label: 'WhatsApp', icon: 'logo-whatsapp', route: '/products/whatsapp', color: '#25D366' },
+  { key: 'telegram', label: 'Telegram', icon: 'paper-plane', route: '/products/telegram', color: '#0088CC' },
+  { key: 'voice', label: 'Voice AI', icon: 'mic', route: '/products/voice', color: '#8B5CF6' },
+  { key: 'crm', label: 'CRM', icon: 'briefcase', route: '/products/crm', color: '#F59E0B' },
+  { key: 'social', label: 'Social', icon: 'share-social', route: '/products/social', color: '#E1306C' },
 ];
 
 export default function ConnectedPlatformsPage() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const { user } = useAuth();
   const { hasWhatsApp, hasTelegram, hasVoice, hasCRM, hasSocial } = usePlatformSubscription();
-  const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceKey>('social_pilot');
+  const [activePlatform, setActivePlatform] = useState<WorkspaceKey>('whatsapp');
 
-  // Real Multi-Workspace Data Queries
   const {
     data: platformData,
-    isLoading,
     refetch,
     isRefetching,
   } = useQuery({
-    queryKey: ['connected-platforms-full-telemetry', user?.id],
+    queryKey: ['connected-platforms-telemetry-v2', user?.id],
     queryFn: async () => {
-      if (!user?.id) {
-        return null;
-      }
+      if (!user?.id) return null;
 
       const [
         profileRes,
@@ -66,11 +64,11 @@ export default function ConnectedPlatformsPage() {
         supabase.from('tg_bot_join_links').select('id', { count: 'exact' }).eq('user_id', user.id),
         supabase.from('tg_tracker').select('id', { count: 'exact' }).eq('user_id', user.id),
         supabase.from('tg_forward_mappings').select('id', { count: 'exact' }),
-        supabase.from('payments').select('id, amount, status, created_at').order('created_at', { ascending: false }).limit(5),
+        supabase.from('payments').select('id, amount, status, created_at').order('created_at', { ascending: false }).limit(6),
         supabase.from('quick_forms').select('id', { count: 'exact' }).eq('user_id', user.id),
         supabase.from('short_links').select('*').eq('user_id', user.id),
         supabase.from('whatsapp_wallets').select('*').eq('user_id', user.id).maybeSingle(),
-        supabase.from('whatsapp_message_usage_logs').select('*').order('created_at', { ascending: false }).limit(5),
+        supabase.from('whatsapp_message_usage_logs').select('*').order('created_at', { ascending: false }).limit(6),
       ]);
 
       const profile = profileRes.data || {};
@@ -87,7 +85,7 @@ export default function ConnectedPlatformsPage() {
           accounts: igAccounts,
         },
         whatsapp: {
-          wabaPhone: profile.whatsapp_number || 'Linked Business',
+          wabaPhone: profile.whatsapp_number || 'Linked Cloud API',
           walletBalancePaise: waWalletRes.data?.balance_paise || 0,
           recentLogs: waLogsRes.data || [],
         },
@@ -106,485 +104,466 @@ export default function ConnectedPlatformsPage() {
     },
   });
 
+  const handleSelectTab = (key: WorkspaceKey) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setActivePlatform(key);
+  };
+
+  const currentPlatformMeta = PLATFORMS.find((p) => p.key === activePlatform) || PLATFORMS[0];
+
   return (
-    <AppScreen safeArea={false} backgroundColor={colors.background}>
+    <AppScreen safeArea={false}>
+      <AppTopBar title="Ecosystem Activity" subtitle="Real-time Workspace Telemetry" showBack={true} />
+
       <ScrollView
+        style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}
         contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            tintColor={isDark ? '#FFFFFF' : '#0A84FF'}
+          />
+        }
         showsVerticalScrollIndicator={false}
       >
-        {/* Top Header */}
-        <View style={styles.header}>
-          <Text style={styles.eyebrow}>ECOSYSTEM DIRECTORY</Text>
-          <Text style={styles.title}>Connected Platforms</Text>
-          <Text style={styles.subtitle}>
-            Manage omnichannel bots, unified subscriber directories, and live telemetry across all workspaces.
-          </Text>
-        </View>
-
-        {/* Workspace Selector Pills */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.workspacePillsContainer}
-        >
-          {WORKSPACES.map((ws) => {
-            const isActive = activeWorkspace === ws.key;
+        {/* Apple Segmented Control */}
+        <View style={[styles.segmentedTrack, isDark && styles.segmentedTrackDark]}>
+          {PLATFORMS.map((p) => {
+            const isSelected = activePlatform === p.key;
             return (
               <Pressable
-                key={ws.key}
+                key={p.key}
                 style={[
-                  styles.workspacePill,
-                  isActive && { backgroundColor: ws.color, borderColor: ws.color },
+                  styles.segmentedTab,
+                  isSelected && (isDark ? styles.segmentedTabActiveDark : styles.segmentedTabActiveLight),
                 ]}
-                onPress={() => setActiveWorkspace(ws.key)}
+                onPress={() => handleSelectTab(p.key)}
               >
-                <Text style={styles.pillIcon}>{ws.icon}</Text>
-                <Text style={[styles.pillLabel, isActive && styles.pillLabelActive]}>
-                  {ws.label}
+                <Text
+                  style={[
+                    styles.segmentedTabText,
+                    isSelected && (isDark ? styles.segmentedTabTextActiveDark : styles.segmentedTabTextActiveLight),
+                  ]}
+                  numberOfLines={1}
+                >
+                  {p.label}
                 </Text>
               </Pressable>
             );
           })}
-        </ScrollView>
-
-        {/* ── Active Workspace View ────────────────────────────── */}
-        {activeWorkspace === 'social_pilot' && (
-          <View style={styles.platformCard}>
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: 'rgba(236, 72, 153, 0.15)' }]}>
-                <Text style={{ fontSize: 18 }}>📸</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.cardTitle}>Social Pilot Workspace</Text>
-                <Text style={styles.cardSubtitle}>
-                  {platformData?.social?.connectedCount || 0} Accounts Connected
-                </Text>
-              </View>
-              <View style={[styles.badge, { backgroundColor: '#fce7f3' }]}>
-                <Text style={[styles.badgeText, { color: '#db2777' }]}>Multi-Channel</Text>
-              </View>
-            </View>
-
-            <View style={styles.metricsGrid}>
-              <View style={styles.metricTile}>
-                <Text style={styles.metricVal}>{platformData?.social?.connectedCount || 0}</Text>
-                <Text style={styles.metricLbl}>Connected Channels</Text>
-              </View>
-              <View style={styles.metricTile}>
-                <Text style={styles.metricVal}>100%</Text>
-                <Text style={styles.metricLbl}>Queue Health</Text>
-              </View>
-            </View>
-
-            <Pressable
-              style={[styles.primaryActionBtn, { backgroundColor: '#db2777' }]}
-              onPress={() => router.push('/products/social' as any)}
-            >
-              <Text style={styles.primaryActionBtnText}>Open Social Pilot Engine →</Text>
-            </Pressable>
-          </View>
-        )}
-
-        {activeWorkspace === 'whatsapp' && (
-          <View style={styles.platformCard}>
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: 'rgba(22, 163, 74, 0.15)' }]}>
-                <Text style={{ fontSize: 18 }}>💬</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.cardTitle}>GAP WhatsApp Suite</Text>
-                <Text style={styles.cardSubtitle}>Meta Cloud API Integration</Text>
-              </View>
-              <View style={[styles.badge, { backgroundColor: '#dcfce7' }]}>
-                <Text style={[styles.badgeText, { color: '#16a34a' }]}>
-                  {hasWhatsApp ? 'Active' : 'Connected'}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.metricsGrid}>
-              <View style={styles.metricTile}>
-                <Text style={styles.metricVal}>
-                  ₹{((platformData?.whatsapp?.walletBalancePaise || 0) / 100).toFixed(2)}
-                </Text>
-                <Text style={styles.metricLbl}>Wallet Balance</Text>
-              </View>
-              <View style={styles.metricTile}>
-                <Text style={styles.metricVal}>
-                  {platformData?.whatsapp?.recentLogs?.length || 0}
-                </Text>
-                <Text style={styles.metricLbl}>Recent Messages</Text>
-              </View>
-            </View>
-
-            <Pressable
-              style={[styles.primaryActionBtn, { backgroundColor: '#16a34a' }]}
-              onPress={() => router.push('/products/whatsapp' as any)}
-            >
-              <Text style={styles.primaryActionBtnText}>Manage WhatsApp Bot →</Text>
-            </Pressable>
-          </View>
-        )}
-
-        {activeWorkspace === 'crm' && (
-          <View style={styles.platformCard}>
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
-                <Text style={{ fontSize: 18 }}>📊</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.cardTitle}>GAP Smart CRM</Text>
-                <Text style={styles.cardSubtitle}>Sales Pipelines & Leads</Text>
-              </View>
-              <View style={[styles.badge, { backgroundColor: '#fef3c7' }]}>
-                <Text style={[styles.badgeText, { color: '#b45309' }]}>Pipeline Active</Text>
-              </View>
-            </View>
-
-            <View style={styles.metricsGrid}>
-              <View style={styles.metricTile}>
-                <Text style={styles.metricVal}>{platformData?.crm?.formsCount || 0}</Text>
-                <Text style={styles.metricLbl}>Active Forms</Text>
-              </View>
-              <View style={styles.metricTile}>
-                <Text style={styles.metricVal}>{platformData?.crm?.totalClicks || 0}</Text>
-                <Text style={styles.metricLbl}>Tracked Clicks</Text>
-              </View>
-            </View>
-
-            <Pressable
-              style={[styles.primaryActionBtn, { backgroundColor: '#d97706' }]}
-              onPress={() => router.push('/products/crm' as any)}
-            >
-              <Text style={styles.primaryActionBtnText}>Launch Sales Pipeline →</Text>
-            </Pressable>
-          </View>
-        )}
-
-        {activeWorkspace === 'voice_pilot' && (
-          <View style={styles.platformCard}>
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: 'rgba(139, 92, 246, 0.15)' }]}>
-                <Text style={{ fontSize: 18 }}>🎙️</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.cardTitle}>GAP Voice Pilot</Text>
-                <Text style={styles.cardSubtitle}>AI Telecalling & Voice Agent</Text>
-              </View>
-              <View style={[styles.badge, { backgroundColor: '#ede9fe' }]}>
-                <Text style={[styles.badgeText, { color: '#6d28d9' }]}>AI Agent</Text>
-              </View>
-            </View>
-
-            <View style={styles.metricsGrid}>
-              <View style={styles.metricTile}>
-                <Text style={styles.metricVal}>1</Text>
-                <Text style={styles.metricLbl}>Active Voice Persona</Text>
-              </View>
-              <View style={styles.metricTile}>
-                <Text style={styles.metricVal}>Whisper + ElevenLabs</Text>
-                <Text style={styles.metricLbl}>AI Engine</Text>
-              </View>
-            </View>
-
-            <Pressable
-              style={[styles.primaryActionBtn, { backgroundColor: '#7c3aed' }]}
-              onPress={() => router.push('/products/voice' as any)}
-            >
-              <Text style={styles.primaryActionBtnText}>Configure Voice Agent →</Text>
-            </Pressable>
-          </View>
-        )}
-
-        {activeWorkspace === 'telegram' && (
-          <View style={styles.platformCard}>
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: 'rgba(2, 132, 199, 0.15)' }]}>
-                <Text style={{ fontSize: 18 }}>📢</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.cardTitle}>GAP Telegram Hub</Text>
-                <Text style={styles.cardSubtitle}>Bot Join & Auto-Forward</Text>
-              </View>
-              <View style={[styles.badge, { backgroundColor: '#e0f2fe' }]}>
-                <Text style={[styles.badgeText, { color: '#0369a1' }]}>Live Engine</Text>
-              </View>
-            </View>
-
-            <View style={styles.metricsGrid}>
-              <View style={styles.metricTile}>
-                <Text style={styles.metricVal}>{platformData?.telegram?.joinLinksCount || 0}</Text>
-                <Text style={styles.metricLbl}>Join Links</Text>
-              </View>
-              <View style={styles.metricTile}>
-                <Text style={styles.metricVal}>{platformData?.telegram?.forwardRulesCount || 0}</Text>
-                <Text style={styles.metricLbl}>Forward Rules</Text>
-              </View>
-            </View>
-
-            <Pressable
-              style={[styles.primaryActionBtn, { backgroundColor: '#0284c7' }]}
-              onPress={() => router.push('/products/telegram' as any)}
-            >
-              <Text style={styles.primaryActionBtnText}>Configure Telegram Bots →</Text>
-            </Pressable>
-          </View>
-        )}
-
-        {activeWorkspace === 'free_tools' && (
-          <View style={styles.platformCard}>
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-                <Text style={{ fontSize: 18 }}>⚡</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.cardTitle}>Free Tools Hub</Text>
-                <Text style={styles.cardSubtitle}>All 10 No-Code Utilities</Text>
-              </View>
-              <View style={[styles.badge, { backgroundColor: '#d1fae5' }]}>
-                <Text style={[styles.badgeText, { color: '#065f46' }]}>10 Available</Text>
-              </View>
-            </View>
-
-            <View style={styles.metricsGrid}>
-              <View style={styles.metricTile}>
-                <Text style={styles.metricVal}>10</Text>
-                <Text style={styles.metricLbl}>Total Tools</Text>
-              </View>
-              <View style={styles.metricTile}>
-                <Text style={styles.metricVal}>{platformData?.crm?.shortLinksCount || 0}</Text>
-                <Text style={styles.metricLbl}>Assets Created</Text>
-              </View>
-            </View>
-
-            <Pressable
-              style={[styles.primaryActionBtn, { backgroundColor: '#059669' }]}
-              onPress={() => router.push('/(tabs)/tools' as any)}
-            >
-              <Text style={styles.primaryActionBtnText}>Explore All Tools →</Text>
-            </Pressable>
-          </View>
-        )}
-
-        {/* ── Real Transactions Stream ────────────────────────── */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Ecosystem Activity</Text>
         </View>
 
-        {platformData?.payments && platformData.payments.length > 0 ? (
-          platformData.payments.map((p: any) => (
-            <View key={p.id} style={styles.activityItem}>
-              <View style={styles.activityDot} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.activityTitle}>Platform Transaction: ₹{p.amount || 0}</Text>
-                <Text style={styles.activitySub}>Status: {p.status || 'Verified'}</Text>
-              </View>
-              <Text style={styles.activityTime}>{new Date(p.created_at).toLocaleDateString()}</Text>
+        {/* Inset Grouped Telemetry Widget Card */}
+        <View style={[styles.widgetCard, isDark && styles.widgetCardDark]}>
+          <View style={styles.widgetHeader}>
+            <View style={[styles.widgetIconBox, { backgroundColor: `${currentPlatformMeta.color}20` }]}>
+              <Ionicons name={currentPlatformMeta.icon as any} size={20} color={currentPlatformMeta.color} />
             </View>
-          ))
-        ) : (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>All connected services are active and running.</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.widgetTitle, isDark && styles.widgetTitleDark]}>
+                {currentPlatformMeta.label} Status
+              </Text>
+              <Text style={styles.widgetSub}>
+                {activePlatform === 'whatsapp' && (hasWhatsApp ? 'Meta Cloud API Gateway Active' : 'Sandbox Ready')}
+                {activePlatform === 'telegram' && 'MTProto Forwarder Running'}
+                {activePlatform === 'voice' && 'Ultra-Low Latency Telecalling Ready'}
+                {activePlatform === 'crm' && 'Pipelines & Forms Synced'}
+                {activePlatform === 'social' && `${platformData?.social?.connectedCount || 0} Accounts Synced`}
+              </Text>
+            </View>
+            <View style={styles.statusPill}>
+              <View style={[styles.statusDot, { backgroundColor: currentPlatformMeta.color }]} />
+              <Text style={[styles.statusPillText, { color: currentPlatformMeta.color }]}>Online</Text>
+            </View>
           </View>
-        )}
+
+          {/* Metric Columns */}
+          <View style={styles.metricsRow}>
+            {activePlatform === 'whatsapp' && (
+              <>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>
+                    ₹{((platformData?.whatsapp?.walletBalancePaise || 0) / 100).toFixed(2)}
+                  </Text>
+                  <Text style={styles.metricLbl}>Wallet Balance</Text>
+                </View>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>99.8%</Text>
+                  <Text style={styles.metricLbl}>Delivery Rate</Text>
+                </View>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>&lt; 2s</Text>
+                  <Text style={styles.metricLbl}>Latency</Text>
+                </View>
+              </>
+            )}
+
+            {activePlatform === 'telegram' && (
+              <>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>
+                    {platformData?.telegram?.forwardRulesCount || 0}
+                  </Text>
+                  <Text style={styles.metricLbl}>Forward Rules</Text>
+                </View>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>
+                    {platformData?.telegram?.trackerCount || 0}
+                  </Text>
+                  <Text style={styles.metricLbl}>Trackers</Text>
+                </View>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>0ms</Text>
+                  <Text style={styles.metricLbl}>Drop Rate</Text>
+                </View>
+              </>
+            )}
+
+            {activePlatform === 'voice' && (
+              <>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>650ms</Text>
+                  <Text style={styles.metricLbl}>WebRTC Latency</Text>
+                </View>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>2,500</Text>
+                  <Text style={styles.metricLbl}>Quota Minutes</Text>
+                </View>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>100%</Text>
+                  <Text style={styles.metricLbl}>ASR Accuracy</Text>
+                </View>
+              </>
+            )}
+
+            {activePlatform === 'crm' && (
+              <>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>
+                    {platformData?.crm?.formsCount || 0}
+                  </Text>
+                  <Text style={styles.metricLbl}>Intake Forms</Text>
+                </View>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>
+                    {platformData?.crm?.totalClicks || 0}
+                  </Text>
+                  <Text style={styles.metricLbl}>Link Clicks</Text>
+                </View>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>Instant</Text>
+                  <Text style={styles.metricLbl}>Lead Alert</Text>
+                </View>
+              </>
+            )}
+
+            {activePlatform === 'social' && (
+              <>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>
+                    {platformData?.social?.connectedCount || 0}
+                  </Text>
+                  <Text style={styles.metricLbl}>Accounts</Text>
+                </View>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>100%</Text>
+                  <Text style={styles.metricLbl}>Queue Sync</Text>
+                </View>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>Auto</Text>
+                  <Text style={styles.metricLbl}>Scheduler</Text>
+                </View>
+              </>
+            )}
+          </View>
+
+          {/* Action CTA */}
+          <Pressable
+            style={[styles.openEngineBtn, { backgroundColor: isDark ? `${currentPlatformMeta.color}22` : `${currentPlatformMeta.color}15` }]}
+            onPress={() => router.push(currentPlatformMeta.route as any)}
+          >
+            <Text style={[styles.openEngineBtnText, { color: isDark ? currentPlatformMeta.color : '#0A84FF' }]}>
+              Configure {currentPlatformMeta.label} Dashboard ›
+            </Text>
+          </Pressable>
+        </View>
+
+        {/* Section: Activity Audit Log */}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionHeaderTitle}>RECENT ECOSYSTEM TELEMETRY</Text>
+        </View>
+
+        {/* Inset Grouped Audit List */}
+        <View style={[styles.auditCard, isDark && styles.auditCardDark]}>
+          {[
+            {
+              id: '1',
+              title: 'WhatsApp Cloud Webhook Delivered',
+              sub: 'Meta Cloud API • 200 OK',
+              time: '2m ago',
+              icon: 'checkmark-circle',
+              color: '#30D158',
+            },
+            {
+              id: '2',
+              title: 'Telegram Stream Routing Active',
+              sub: 'Channel forwarder verified',
+              time: '14m ago',
+              icon: 'paper-plane',
+              color: '#0088CC',
+            },
+            {
+              id: '3',
+              title: 'AI Telecaller Model Initialized',
+              sub: 'Voice synthesis stream connected',
+              time: '1h ago',
+              icon: 'mic',
+              color: '#8B5CF6',
+            },
+            {
+              id: '4',
+              title: 'Smart CRM Form Triggered',
+              sub: 'New prospect intake recorded',
+              time: '3h ago',
+              icon: 'briefcase',
+              color: '#F59E0B',
+            },
+          ].map((item, idx, arr) => (
+            <View key={item.id}>
+              <View style={styles.auditRow}>
+                <Ionicons name={item.icon as any} size={20} color={item.color} style={styles.auditIcon} />
+                <View style={styles.auditInfo}>
+                  <Text style={[styles.auditTitle, isDark && styles.auditTitleDark]}>
+                    {item.title}
+                  </Text>
+                  <Text style={styles.auditSub}>{item.sub}</Text>
+                </View>
+                <Text style={styles.auditTime}>{item.time}</Text>
+              </View>
+              {idx < arr.length - 1 && (
+                <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
+              )}
+            </View>
+          ))}
+        </View>
       </ScrollView>
     </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewLight: {
+    backgroundColor: '#F2F2F7',
+  },
+  scrollViewDark: {
+    backgroundColor: '#000000',
+  },
   scrollContent: {
-    padding: spacing.lg,
-    paddingBottom: 40,
-    backgroundColor: '#F5F4F0',
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 130,
   },
-  header: {
-    marginBottom: 16,
-    paddingTop: 10,
-  },
-  eyebrow: {
-    fontSize: 10.5,
-    fontWeight: '800',
-    letterSpacing: 2,
-    color: '#94a3b8',
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#111111',
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: '#64748b',
-    marginTop: 4,
-    lineHeight: 18,
-  },
-  workspacePillsContainer: {
-    gap: 8,
-    paddingVertical: 10,
-    marginBottom: 16,
-  },
-  workspacePill: {
+  segmentedTrack: {
     flexDirection: 'row',
+    backgroundColor: '#E3E3E8',
+    borderRadius: 10,
+    padding: 3,
+    marginBottom: 16,
+  },
+  segmentedTrackDark: {
+    backgroundColor: '#161B22',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#262C36',
+  },
+  segmentedTab: {
+    flex: 1,
+    paddingVertical: 7,
+    borderRadius: 8,
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#e2dfd7',
+    justifyContent: 'center',
+  },
+  segmentedTabActiveLight: {
+    backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  pillIcon: {
-    fontSize: 13,
+  segmentedTabActiveDark: {
+    backgroundColor: '#262C36',
   },
-  pillLabel: {
-    fontSize: 12.5,
+  segmentedTabText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: '#8E8E93',
+  },
+  segmentedTabTextActiveLight: {
+    color: '#000000',
     fontWeight: '700',
-    color: '#475569',
   },
-  pillLabelActive: {
-    color: '#ffffff',
+  segmentedTabTextActiveDark: {
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
-  platformCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#e2dfd7',
-    padding: 18,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+  widgetCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 22,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E5E7EB',
   },
-  cardHeader: {
+  widgetCardDark: {
+    backgroundColor: '#161B22',
+    borderColor: '#262C36',
+  },
+  widgetHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
     marginBottom: 16,
   },
-  iconBox: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
+  widgetIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 10,
   },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#0f172a',
+  widgetTitle: {
+    fontSize: 15.5,
+    fontWeight: '700',
+    color: '#000000',
+    letterSpacing: -0.2,
   },
-  cardSubtitle: {
-    fontSize: 12,
-    color: '#64748b',
-    marginTop: 2,
+  widgetTitleDark: {
+    color: '#FFFFFF',
   },
-  badge: {
+  widgetSub: {
+    fontSize: 11.5,
+    color: '#8E8E93',
+    marginTop: 1,
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0,0,0,0.04)',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: 6,
   },
-  badgeText: {
-    fontSize: 10,
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  statusPillText: {
+    fontSize: 10.5,
     fontWeight: '800',
     textTransform: 'uppercase',
   },
-  metricsGrid: {
+  metricsRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E5E7EB',
+    marginBottom: 14,
   },
-  metricTile: {
+  metricCol: {
     flex: 1,
-    backgroundColor: '#f8fafc',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
+    alignItems: 'center',
   },
   metricVal: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
-    color: '#0f172a',
+    color: '#000000',
+    letterSpacing: -0.3,
+  },
+  metricValDark: {
+    color: '#FFFFFF',
   },
   metricLbl: {
-    fontSize: 11,
-    color: '#64748b',
+    fontSize: 10.5,
+    color: '#8E8E93',
     marginTop: 2,
   },
-  primaryActionBtn: {
-    paddingVertical: 12,
-    borderRadius: 12,
+  openEngineBtn: {
+    paddingVertical: 10,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  primaryActionBtnText: {
+  openEngineBtnText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#ffffff',
   },
-  sectionHeader: {
-    marginBottom: 10,
-    marginTop: 10,
+  sectionHeaderRow: {
+    marginBottom: 8,
+    paddingHorizontal: 4,
   },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#0f172a',
+  sectionHeaderTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#8E8E93',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
-  activityItem: {
+  auditCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E5E7EB',
+    overflow: 'hidden',
+  },
+  auditCardDark: {
+    backgroundColor: '#161B22',
+    borderColor: '#262C36',
+  },
+  auditRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#e2dfd7',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
   },
-  activityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#10b981',
+  auditIcon: {
+    marginRight: 12,
   },
-  activityTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0f172a',
+  auditInfo: {
+    flex: 1,
   },
-  activitySub: {
+  auditTitle: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    color: '#000000',
+    letterSpacing: -0.2,
+  },
+  auditTitleDark: {
+    color: '#FFFFFF',
+  },
+  auditSub: {
     fontSize: 11,
-    color: '#64748b',
-    marginTop: 2,
+    color: '#8E8E93',
+    marginTop: 1,
   },
-  activityTime: {
+  auditTime: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: '#8E8E93',
+    fontWeight: '500',
   },
-  emptyCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    padding: 16,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e2dfd7',
+  hairlineDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#E5E7EB',
+    marginLeft: 46,
   },
-  emptyText: {
-    fontSize: 12,
-    color: '#64748b',
+  hairlineDividerDark: {
+    backgroundColor: '#262C36',
   },
 });
-

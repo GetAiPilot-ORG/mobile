@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
@@ -33,15 +32,20 @@ const TAB_CONFIG: Record<string, TabItemConfig> = {
     activeIcon: 'flash',
     inactiveIcon: 'flash-outline',
   },
+  inbox: {
+    label: 'Inbox',
+    activeIcon: 'chatbubbles',
+    inactiveIcon: 'chatbubbles-outline',
+  },
   tools: {
     label: 'Tools',
     activeIcon: 'telescope',
     inactiveIcon: 'telescope-outline',
   },
-  account: {
-    label: 'Account',
-    activeIcon: 'person',
-    inactiveIcon: 'person-outline',
+  activity: {
+    label: 'Activity',
+    activeIcon: 'pulse',
+    inactiveIcon: 'pulse-outline',
   },
 };
 
@@ -58,7 +62,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   const isDark = colorScheme === 'dark';
 
   // Bottom floating offset based on safe area
-  const bottomOffset = Math.max(insets.bottom + 8, 24);
+  const bottomOffset = Math.max(insets.bottom + 6, 20);
 
   // Filter visible routes
   const visibleRoutes = state.routes.filter((route: any) => {
@@ -80,15 +84,15 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   const availableWidth = Math.max(0, containerWidth - paddingHorizontal * 2);
   const tabWidth = numTabs > 0 ? availableWidth / numTabs : 0;
 
-  // Spring animation for the liquid glass gliding indicator
+  // Spring animation for the smooth gliding active pill
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (tabWidth > 0) {
       Animated.spring(slideAnim, {
         toValue: activeVisibleIndex * tabWidth,
-        tension: 68,
-        friction: 9,
+        tension: 80,
+        friction: 10,
         useNativeDriver: true,
       }).start();
     }
@@ -110,34 +114,20 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
           isDark ? styles.tabBarContainerDark : styles.tabBarContainerLight,
         ]}
       >
-        {/* Animated Sliding Liquid Glass Pill */}
+        {/* Soft Gliding Active Pill */}
         {tabWidth > 0 && (
           <Animated.View
             style={[
               styles.slidingIndicator,
               {
-                width: tabWidth,
-                left: paddingHorizontal,
+                width: tabWidth - 4,
+                left: paddingHorizontal + 2,
                 transform: [{ translateX: slideAnim }],
               },
             ]}
             pointerEvents="none"
           >
-            {isDark ? (
-              <LinearGradient
-                colors={['rgba(10, 132, 255, 0.32)', 'rgba(10, 132, 255, 0.16)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.indicatorPillDark}
-              />
-            ) : (
-              <LinearGradient
-                colors={['rgba(0, 132, 255, 0.16)', 'rgba(0, 132, 255, 0.08)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.indicatorPillLight}
-              />
-            )}
+            <View style={isDark ? styles.indicatorPillDark : styles.indicatorPillLight} />
           </Animated.View>
         )}
 
@@ -172,11 +162,8 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
           };
 
           const iconName = isFocused ? config.activeIcon : config.inactiveIcon;
-          const iconColor = isFocused
-            ? '#0A84FF'
-            : isDark
-            ? '#8E8E93'
-            : '#6B7280';
+          const activeColor = isDark ? '#0A84FF' : '#007AFF';
+          const inactiveColor = isDark ? '#8E8E93' : '#6B7280';
 
           return (
             <Pressable
@@ -192,15 +179,15 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
               <View style={styles.tabContent}>
                 <Ionicons
                   name={iconName}
-                  size={isFocused ? 22 : 21}
-                  color={iconColor}
-                  style={isFocused ? styles.activeIconTransform : undefined}
+                  size={isFocused ? 21 : 20}
+                  color={isFocused ? activeColor : inactiveColor}
                 />
                 <Text
                   style={[
                     styles.tabLabel,
-                    isDark ? styles.tabLabelDark : styles.tabLabelLight,
-                    isFocused && styles.tabLabelActive,
+                    isFocused
+                      ? [styles.tabLabelActive, { color: activeColor }]
+                      : [styles.tabLabelInactive, { color: inactiveColor }],
                   ]}
                   numberOfLines={1}
                 >
@@ -218,8 +205,8 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
 const styles = StyleSheet.create({
   floatingWrapper: {
     position: 'absolute',
-    left: 20,
-    right: 20,
+    left: 24,
+    right: 24,
     alignItems: 'center',
     zIndex: 9999,
   },
@@ -227,30 +214,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    maxWidth: 390,
-    height: 64,
-    borderRadius: 32,
+    maxWidth: 380,
+    height: 58,
+    borderRadius: 29,
     paddingHorizontal: 6,
-    borderWidth: 1.2,
+    borderWidth: StyleSheet.hairlineWidth,
     position: 'relative',
   },
   tabBarContainerLight: {
     backgroundColor: 'rgba(255, 255, 255, 0.94)',
-    borderColor: 'rgba(255, 255, 255, 0.85)',
+    borderColor: 'rgba(0, 0, 0, 0.08)',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 8,
   },
   tabBarContainerDark: {
-    backgroundColor: 'rgba(24, 24, 27, 0.88)',
-    borderColor: 'rgba(255, 255, 255, 0.14)',
+    backgroundColor: 'rgba(28, 28, 30, 0.94)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.55,
-    shadowRadius: 28,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 10,
   },
   slidingIndicator: {
     position: 'absolute',
@@ -263,26 +250,14 @@ const styles = StyleSheet.create({
   indicatorPillDark: {
     width: '100%',
     height: '100%',
-    borderRadius: 25,
-    borderWidth: 1.2,
-    borderColor: 'rgba(10, 132, 255, 0.45)',
-    shadowColor: '#0A84FF',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 3,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   indicatorPillLight: {
     width: '100%',
     height: '100%',
-    borderRadius: 25,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 132, 255, 0.25)',
-    shadowColor: '#0084FF',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 2,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0, 122, 255, 0.08)',
   },
   tabItem: {
     flex: 1,
@@ -294,25 +269,16 @@ const styles = StyleSheet.create({
   tabContent: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 3,
-  },
-  activeIconTransform: {
-    transform: [{ scale: 1.08 }],
+    gap: 2,
   },
   tabLabel: {
     fontSize: 10.5,
     letterSpacing: -0.2,
   },
-  tabLabelLight: {
-    color: '#6B7280',
-    fontWeight: '600',
-  },
-  tabLabelDark: {
-    color: '#8E8E93',
-    fontWeight: '600',
+  tabLabelInactive: {
+    fontWeight: '500',
   },
   tabLabelActive: {
-    color: '#0A84FF',
-    fontWeight: '800',
+    fontWeight: '600',
   },
 });
