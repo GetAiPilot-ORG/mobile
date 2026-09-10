@@ -1,4 +1,5 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { z } from 'zod';
 import { TelegramAdapter } from '../adapters/telegram.adapter.js';
 import { authenticateToken, requirePermission } from '../middleware/auth.middleware.js';
 import { JWTPayload } from '../types/index.js';
@@ -292,5 +293,6 @@ export async function telegramRoutes(fastify: FastifyInstance) {
     return reply.send(result);
   });
 }
+
 
 

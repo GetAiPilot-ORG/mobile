@@ -55,9 +55,9 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "reset-project": "node ./scripts/reset-project.js",
-    "bff:dev": "npm --prefix bff run dev",
-    "bff:start": "npm --prefix bff run start",
-    "bff:build": "npm --prefix bff run build"
+    "bff:dev": "npm --prefix Getaipilot-bff run dev",
+    "bff:start": "npm --prefix Getaipilot-bff run start",
+    "bff:build": "npm --prefix Getaipilot-bff run build"
   },
   "private": true
 }

@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "../core/api/client";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 import { formatPlanLabel } from "../lib/utils";
-
 
 export function usePlatformSubscription() {
   const queryClient = useQueryClient();
@@ -16,6 +16,20 @@ export function usePlatformSubscription() {
     queryFn: async () => {
       if (!userId) return null;
 
+      // 1. Primary: Fetch via BFF API (bypasses RLS safely server-side)
+      try {
+        const bffRes = await apiClient.get<any>("/mobile/v1/user/subscription");
+        if (bffRes && (bffRes.sub || bffRes.isAdmin !== undefined)) {
+          return {
+            sub: bffRes.sub,
+            isAdmin: bffRes.isAdmin || false,
+          };
+        }
+      } catch (e) {
+        console.warn("[usePlatformSubscription] BFF sub fetch error, falling back:", e);
+      }
+
+      // 2. Fallback: Direct Supabase client
       const [subRes, profileRes] = await Promise.all([
         supabase
           .from("app_user_subscriptions")
@@ -24,17 +38,14 @@ export function usePlatformSubscription() {
           .maybeSingle(),
         supabase
           .from("profiles")
-          .select("is_admin")
+          .select("is_admin, role, subscription")
           .eq("id", userId)
           .maybeSingle()
       ]);
 
-      if (subRes.error && subRes.error.code !== "PGRST116") {
-        console.warn("Sub error", subRes.error);
-      }
       return {
         sub: subRes.data,
-        isAdmin: profileRes.data?.is_admin || false
+        isAdmin: profileRes.data?.is_admin || profileRes.data?.role === 'owner' || profileRes.data?.role === 'admin' || false
       };
     },
   });
