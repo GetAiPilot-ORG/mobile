@@ -13,7 +13,10 @@ import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
 import { SearchInput } from "../../src/components/SearchInput";
 import { ToolCard } from "../../src/components/ToolCard";
-import { openAuthenticatedTemplate } from "../../src/lib/template-deep-link";
+import {
+  openAuthenticatedTemplate,
+  openAuthenticatedWebApp,
+} from "../../src/lib/template-deep-link";
 
 interface ToolItem {
   id: string;
@@ -24,12 +27,24 @@ interface ToolItem {
   badge: string;
   route: string;
   builder?: {
-    targetTool: "landing-builder" | "bio-builder";
-    templateId: string;
+    targetTool: "landing-builder" | "bio-builder" | "web-app";
+    templateId?: string;
   };
 }
 
 const ALL_10_FREE_TOOLS: ToolItem[] = [
+  {
+    id: "web-app",
+    title: "Open Web App",
+    category: "Templates",
+    description: "Open the full GetAIPilot web application with secure SSO.",
+    icon: "🌐",
+    badge: "",
+    route: "/",
+    builder: {
+      targetTool: "web-app",
+    },
+  },
   {
     id: "my-designs",
     title: "My Designs",
@@ -48,7 +63,11 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
       "Pick mobile bio site themes optimized for creators, agencies, and businesses.",
     icon: "🔗",
     badge: "Popular",
-    route: "/free-tools/builder/creators-v1",
+    route: "/free-tools/bio-templates",
+    builder: {
+      targetTool: "bio-builder",
+      templateId: "creators-v1",
+    },
   },
   {
     id: "landing-templates",
@@ -58,6 +77,7 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
       "Pre-built high-converting lead capture funnels and product waitlist pages.",
     icon: "🚀",
     badge: "Ready",
+    // route: "/free-tools/landing-templates",
     route: "/free-tools/landing-templates",
     builder: {
       targetTool: "landing-builder",
@@ -166,10 +186,14 @@ export default function FreeToolsScreen() {
 
     try {
       setOpeningToolId(tool.id);
-      await openAuthenticatedTemplate(
-        tool.builder.targetTool,
-        tool.builder.templateId,
-      );
+      if (tool.builder.targetTool === "web-app") {
+        await openAuthenticatedWebApp();
+      } else if (tool.builder.templateId) {
+        await openAuthenticatedTemplate(
+          tool.builder.targetTool,
+          tool.builder.templateId,
+        );
+      }
     } catch (error) {
       console.error(`Failed to open ${tool.id}:`, error);
       Alert.alert(

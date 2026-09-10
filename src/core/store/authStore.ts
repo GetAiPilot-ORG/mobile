@@ -1,12 +1,13 @@
-import { create } from 'zustand';
-import { apiClient } from '../api/client';
-import { authStorage } from '../storage/authStorage';
+import { create } from "zustand";
+import { supabase } from "../../lib/supabase";
+import { apiClient } from "../api/client";
+import { authStorage } from "../storage/authStorage";
 
 export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'Owner' | 'Admin' | 'Manager' | 'Agent';
+  role: "Owner" | "Admin" | "Manager" | "Agent";
   organizationId: string;
   permissions: string[];
   phone?: string;
@@ -27,7 +28,7 @@ export interface TenantMapping {
   telegram_user_id: string;
 }
 
-export type AuthStatus = 'hydrating' | 'authenticated' | 'unauthenticated';
+export type AuthStatus = "hydrating" | "authenticated" | "unauthenticated";
 
 interface AuthState {
   user: User | null;
@@ -49,7 +50,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
       tenantMapping: null,
       isAuthenticated: false,
       isLoading: false,
-      authStatus: 'unauthenticated',
+      authStatus: "unauthenticated",
     });
   });
 
@@ -58,18 +59,24 @@ export const useAuthStore = create<AuthState>((set, get) => {
     tenantMapping: null,
     isAuthenticated: false,
     isLoading: true,
-    authStatus: 'hydrating',
+    authStatus: "hydrating",
 
     login: async (email: string, password?: string) => {
       set({ isLoading: true });
       try {
+        const supabaseAuth = await supabase.auth.signInWithPassword({
+          email,
+          password: password || "Password123!",
+        });
+        if (supabaseAuth.error) throw supabaseAuth.error;
+
         const data = await apiClient.post(
-          '/mobile/v1/auth/login',
+          "/mobile/v1/auth/login",
           {
             email,
-            password: password || 'Password123!',
+            password: password || "Password123!",
           },
-          { skipAuth: true }
+          { skipAuth: true },
         );
 
         await authStorage.setTokens(data.accessToken, data.refreshToken);
@@ -79,17 +86,17 @@ export const useAuthStore = create<AuthState>((set, get) => {
           tenantMapping: data.tenantMapping,
           isAuthenticated: true,
           isLoading: false,
-          authStatus: 'authenticated',
+          authStatus: "authenticated",
         });
       } catch (e) {
-        set({ isLoading: false, authStatus: 'unauthenticated' });
+        set({ isLoading: false, authStatus: "unauthenticated" });
         throw e;
       }
     },
 
     logout: async () => {
       try {
-        await apiClient.post('/mobile/v1/auth/logout', {}).catch(() => {});
+        await apiClient.post("/mobile/v1/auth/logout", {}).catch(() => {});
       } finally {
         await authStorage.clear();
         set({
@@ -97,13 +104,13 @@ export const useAuthStore = create<AuthState>((set, get) => {
           tenantMapping: null,
           isAuthenticated: false,
           isLoading: false,
-          authStatus: 'unauthenticated',
+          authStatus: "unauthenticated",
         });
       }
     },
 
     loadSession: async () => {
-      set({ isLoading: true, authStatus: 'hydrating' });
+      set({ isLoading: true, authStatus: "hydrating" });
       try {
         const token = await authStorage.getAccessToken();
         if (!token) {
@@ -112,12 +119,12 @@ export const useAuthStore = create<AuthState>((set, get) => {
             tenantMapping: null,
             isAuthenticated: false,
             isLoading: false,
-            authStatus: 'unauthenticated',
+            authStatus: "unauthenticated",
           });
           return;
         }
 
-        const me = await apiClient.get<any>('/mobile/v1/auth/me');
+        const me = await apiClient.get<any>("/mobile/v1/auth/me");
         set({
           user: {
             id: me.id,
@@ -130,7 +137,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
           tenantMapping: me.tenantMapping,
           isAuthenticated: true,
           isLoading: false,
-          authStatus: 'authenticated',
+          authStatus: "authenticated",
         });
       } catch (e) {
         await authStorage.clear();
@@ -139,7 +146,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
           tenantMapping: null,
           isAuthenticated: false,
           isLoading: false,
-          authStatus: 'unauthenticated',
+          authStatus: "unauthenticated",
         });
       }
     },
@@ -147,9 +154,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
     hasPermission: (permission: string) => {
       const { user } = get();
       if (!user || !user.permissions) return false;
-      if (user.permissions.includes('*')) return true;
+      if (user.permissions.includes("*")) return true;
       return user.permissions.includes(permission);
     },
   };
 });
-
