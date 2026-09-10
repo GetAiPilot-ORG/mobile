@@ -1,10 +1,12 @@
 import React from 'react';
-import { StyleSheet, Text, View, Pressable, Linking, Platform } from 'react-native';
+import { StyleSheet, Text, View, Pressable, Linking, Platform, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { WhatsAppTemplate } from '../types';
 
 interface TemplateCardProps {
   template: WhatsAppTemplate;
+  onSelect?: (template: WhatsAppTemplate) => void;
+  onPress?: (template: WhatsAppTemplate) => void;
 }
 
 function formatLanguage(lang?: string): string {
@@ -41,37 +43,41 @@ function formatDate(template: WhatsAppTemplate): string {
   }
 }
 
-export const TemplateCard: React.FC<TemplateCardProps> = ({ template }) => {
+export const TemplateCard: React.FC<TemplateCardProps> = ({ template, onSelect, onPress }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const isApproved = template.status === 'APPROVED';
   const isPending = template.status === 'PENDING';
   const isRejected = template.status === 'REJECTED';
 
   const category = (template.category || 'UTILITY').toUpperCase();
+  const handlePress = onSelect ? () => onSelect(template) : onPress ? () => onPress(template) : undefined;
 
   // Category Icon & Accent Colors
   const getCategoryTheme = () => {
     switch (category) {
       case 'MARKETING':
         return {
-          bg: 'rgba(99, 102, 241, 0.15)',
-          border: 'rgba(99, 102, 241, 0.3)',
-          iconColor: '#818cf8',
+          bg: isDark ? 'rgba(99, 102, 241, 0.15)' : 'rgba(99, 102, 241, 0.1)',
+          border: isDark ? 'rgba(99, 102, 241, 0.3)' : 'rgba(99, 102, 241, 0.2)',
+          iconColor: isDark ? '#818cf8' : '#4f46e5',
           label: 'Marketing',
         };
       case 'AUTHENTICATION':
       case 'OTP':
         return {
-          bg: 'rgba(168, 85, 247, 0.15)',
-          border: 'rgba(168, 85, 247, 0.3)',
-          iconColor: '#c084fc',
+          bg: isDark ? 'rgba(168, 85, 247, 0.15)' : 'rgba(168, 85, 247, 0.1)',
+          border: isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)',
+          iconColor: isDark ? '#c084fc' : '#9333ea',
           label: 'Authentication',
         };
       case 'UTILITY':
       default:
         return {
-          bg: 'rgba(37, 211, 102, 0.15)',
-          border: 'rgba(37, 211, 102, 0.3)',
-          iconColor: '#25d366',
+          bg: isDark ? 'rgba(37, 211, 102, 0.15)' : 'rgba(37, 211, 102, 0.12)',
+          border: isDark ? 'rgba(37, 211, 102, 0.3)' : 'rgba(37, 211, 102, 0.25)',
+          iconColor: isDark ? '#25d366' : '#16a34a',
           label: 'Utility',
         };
     }
@@ -95,11 +101,20 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({ template }) => {
   const renderBodyText = () => {
     const parts = String(bodyText).split(/(\{\{\d+\}\})/g);
     return (
-      <Text style={styles.bodyText}>
+      <Text style={[styles.bodyText, { color: isDark ? '#e9edef' : '#111b21' }]}>
         {parts.map((part, index) => {
           if (/^\{\{\d+\}\}$/.test(part)) {
             return (
-              <Text key={`${part}-${index}`} style={styles.variableBadge}>
+              <Text
+                key={`${part}-${index}`}
+                style={[
+                  styles.variableBadge,
+                  {
+                    backgroundColor: isDark ? 'rgba(0, 168, 132, 0.2)' : 'rgba(0, 168, 132, 0.12)',
+                    color: isDark ? '#25d366' : '#008069',
+                  },
+                ]}
+              >
                 {` ${part} `}
               </Text>
             );
@@ -111,7 +126,15 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({ template }) => {
   };
 
   return (
-    <View style={styles.card}>
+    <Pressable
+      style={({ pressed }) => [
+        styles.card,
+        isDark ? styles.cardDark : styles.cardLight,
+        pressed && handlePress ? { opacity: 0.85 } : null,
+      ]}
+      onPress={handlePress}
+      disabled={!handlePress}
+    >
       {/* 1. Header Row */}
       <View style={styles.topRow}>
         <View style={[styles.iconBox, { backgroundColor: theme.bg, borderColor: theme.border }]}>
@@ -119,10 +142,10 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({ template }) => {
         </View>
 
         <View style={styles.infoCol}>
-          <Text style={styles.templateName} numberOfLines={1}>
+          <Text style={[styles.templateName, { color: isDark ? '#f8fafc' : '#0f172a' }]} numberOfLines={1}>
             {template.name}
           </Text>
-          <Text style={styles.metaSubtitle}>
+          <Text style={[styles.metaSubtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>
             {theme.label} • {formatLanguage(template.language)}
           </Text>
         </View>
@@ -137,16 +160,16 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({ template }) => {
       )}
 
       {/* 3. WhatsApp Mock Chat Wallpaper Canvas */}
-      <View style={styles.canvasContainer}>
+      <View style={[styles.canvasContainer, isDark ? styles.canvasContainerDark : styles.canvasContainerLight]}>
         {/* Subtle decorative background pattern elements */}
         <View style={styles.canvasPattern} />
 
-        {/* WhatsApp Dark Chat Bubble */}
-        <View style={styles.chatBubble}>
+        {/* WhatsApp Chat Bubble */}
+        <View style={[styles.chatBubble, isDark ? styles.chatBubbleDark : styles.chatBubbleLight]}>
           {/* Header */}
           {headerText ? (
-            <View style={styles.headerContainer}>
-              <Text style={styles.headerText}>{headerText}</Text>
+            <View style={[styles.headerContainer, { borderBottomColor: isDark ? '#2a3942' : '#f1f5f9' }]}>
+              <Text style={[styles.headerText, { color: isDark ? '#e9edef' : '#111b21' }]}>{headerText}</Text>
             </View>
           ) : null}
 
@@ -154,15 +177,17 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({ template }) => {
           <View style={styles.bodyContainer}>{renderBodyText()}</View>
 
           {/* Footer Text */}
-          {footerText ? <Text style={styles.footerText}>{footerText}</Text> : null}
+          {footerText ? (
+            <Text style={[styles.footerText, { color: isDark ? '#8696a0' : '#667781' }]}>{footerText}</Text>
+          ) : null}
 
           {/* Timestamp & Sky Blue Double Ticks */}
           <View style={styles.tickRow}>
-            <Text style={styles.timeText}>10:38 AM</Text>
+            <Text style={[styles.timeText, { color: isDark ? '#8696a0' : '#667781' }]}>10:38 AM</Text>
             <Ionicons
               name={isApproved ? 'checkmark-done' : 'checkmark'}
               size={13}
-              color={isApproved ? '#38bdf8' : '#8696a0'}
+              color={isApproved ? '#38bdf8' : isDark ? '#8696a0' : '#94a3b8'}
               style={{ marginLeft: 3 }}
             />
           </View>
@@ -177,7 +202,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({ template }) => {
               return (
                 <Pressable
                   key={idx}
-                  style={styles.actionBtn}
+                  style={[styles.actionBtn, isDark ? styles.actionBtnDark : styles.actionBtnLight]}
                   onPress={() => {
                     if (isUrl && btn.url) {
                       Linking.openURL(btn.url).catch(() => {});
@@ -189,10 +214,13 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({ template }) => {
                   <Ionicons
                     name={isUrl ? 'open-outline' : isPhone ? 'call-outline' : 'chatbubble-outline'}
                     size={13}
-                    color="#38bdf8"
+                    color={isDark ? '#38bdf8' : '#0284c7'}
                     style={{ marginRight: 6 }}
                   />
-                  <Text style={styles.actionBtnText} numberOfLines={1}>
+                  <Text
+                    style={[styles.actionBtnText, { color: isDark ? '#38bdf8' : '#0284c7' }]}
+                    numberOfLines={1}
+                  >
                     {btn.text || 'Action'}
                   </Text>
                 </Pressable>
@@ -205,8 +233,8 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({ template }) => {
       {/* 4. Bottom Footer Status & Date */}
       <View style={styles.bottomBar}>
         <View style={styles.dateGroup}>
-          <Ionicons name="calendar-outline" size={13} color="#64748b" style={{ marginRight: 4 }} />
-          <Text style={styles.dateText}>{formatDate(template)}</Text>
+          <Ionicons name="calendar-outline" size={13} color={isDark ? '#64748b' : '#94a3b8'} style={{ marginRight: 4 }} />
+          <Text style={[styles.dateText, { color: isDark ? '#64748b' : '#64748b' }]}>{formatDate(template)}</Text>
         </View>
 
         <View
@@ -241,23 +269,29 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({ template }) => {
           </Text>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#0f172a',
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#1e293b',
     marginBottom: 14,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 2,
+  },
+  cardDark: {
+    backgroundColor: '#0f172a',
+    borderColor: '#1e293b',
+  },
+  cardLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
   },
   topRow: {
     flexDirection: 'row',
@@ -279,13 +313,11 @@ const styles = StyleSheet.create({
   templateName: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#f8fafc',
     marginBottom: 2,
   },
   metaSubtitle: {
     fontSize: 11,
     fontWeight: '500',
-    color: '#94a3b8',
   },
   pendingBanner: {
     flexDirection: 'row',
@@ -311,42 +343,52 @@ const styles = StyleSheet.create({
     color: '#fbbf24',
   },
   canvasContainer: {
-    backgroundColor: '#0b141a',
     borderRadius: 14,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#1e293b',
     marginBottom: 12,
     position: 'relative',
     overflow: 'hidden',
+  },
+  canvasContainerDark: {
+    backgroundColor: '#0b141a',
+    borderColor: '#1e293b',
+  },
+  canvasContainerLight: {
+    backgroundColor: '#efeae2',
+    borderColor: '#e2e8f0',
   },
   canvasPattern: {
     ...StyleSheet.absoluteFill,
     opacity: 0.15,
   },
   chatBubble: {
-    backgroundColor: '#1f2c34',
     borderRadius: 12,
     padding: 12,
     paddingBottom: 6,
     borderWidth: 1,
-    borderColor: '#2a3942',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 3,
     elevation: 1,
   },
+  chatBubbleDark: {
+    backgroundColor: '#1f2c34',
+    borderColor: '#2a3942',
+  },
+  chatBubbleLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
+  },
   headerContainer: {
     borderBottomWidth: 1,
-    borderBottomColor: '#2a3942',
     paddingBottom: 6,
     marginBottom: 6,
   },
   headerText: {
     fontSize: 12.5,
     fontWeight: '800',
-    color: '#e9edef',
   },
   bodyContainer: {
     marginBottom: 4,
@@ -354,19 +396,17 @@ const styles = StyleSheet.create({
   bodyText: {
     fontSize: 12,
     lineHeight: 18,
-    color: '#e9edef',
     fontWeight: '400',
   },
   variableBadge: {
-    backgroundColor: 'rgba(0, 168, 132, 0.2)',
-    color: '#25d366',
     fontWeight: '700',
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     fontSize: 11,
+    borderRadius: 4,
+    paddingHorizontal: 2,
   },
   footerText: {
     fontSize: 9.5,
-    color: '#8696a0',
     marginTop: 4,
   },
   tickRow: {
@@ -377,7 +417,6 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: 9,
-    color: '#8696a0',
     fontWeight: '500',
   },
   buttonsContainer: {
@@ -388,22 +427,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#182229',
     borderWidth: 1,
-    borderColor: '#2a3942',
     borderRadius: 10,
     paddingVertical: 7,
     paddingHorizontal: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
+  },
+  actionBtnDark: {
+    backgroundColor: '#182229',
+    borderColor: '#2a3942',
+  },
+  actionBtnLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
   },
   actionBtnText: {
     fontSize: 11.5,
     fontWeight: '700',
-    color: '#38bdf8',
   },
   bottomBar: {
     flexDirection: 'row',
@@ -417,7 +461,6 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 11,
-    color: '#64748b',
     fontWeight: '500',
   },
   statusPill: {

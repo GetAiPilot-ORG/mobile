@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useColorScheme,
   View,
   ScrollView,
   Alert,
@@ -40,6 +41,8 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
 }) => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const handleBack = onBack || (() => router.back());
   const queryClient = useQueryClient();
   const [inputText, setInputText] = useState<string>('');
@@ -88,6 +91,17 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
       setAssignedAgentName(conversation.assigned_agent_name);
     }
   }, [conversation]);
+
+  // Mark conversation as read on open
+  useEffect(() => {
+    if (activeId) {
+      queryClient.setQueriesData<NormalizedConversation[]>({ queryKey: ['conversations'] }, (old) => {
+        if (!old) return old;
+        return old.map((c) => (c.id === activeId ? { ...c, unread_count: 0 } : c));
+      });
+      inboxApi.markAsRead(activeId);
+    }
+  }, [activeId, queryClient]);
 
   // -------------------------------------------------------------
   // 1. Meta 24-Hour Customer Service Window Calculation
@@ -334,16 +348,19 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: isDark ? '#0b141a' : '#f0f2f5' }]}
+      edges={['top', 'left', 'right']}
+    >
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         {/* Top Header Bar */}
-        <View style={styles.header}>
+        <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
           <View style={styles.headerTopRow}>
             <Pressable style={styles.backBtn} onPress={handleBack} hitSlop={10}>
-              <Ionicons name="arrow-back" size={22} color="#e9edef" />
+              <Ionicons name="arrow-back" size={22} color={isDark ? '#e9edef' : '#0f172a'} />
             </Pressable>
 
             {/* Avatar & Contact Info Clickable to Drawer */}
@@ -353,19 +370,19 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
             >
               <View style={styles.headerAvatar}>
                 <Text style={styles.headerAvatarText}>
-                  {conversation.contact.name ? conversation.contact.name.charAt(0).toUpperCase() : 'W'}
+                  {conversation?.contact?.name ? conversation.contact.name.charAt(0).toUpperCase() : 'W'}
                 </Text>
               </View>
 
               <View style={styles.headerCenter}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <Text style={styles.contactName} numberOfLines={1}>
-                    {conversation.contact.name}
+                  <Text style={[styles.contactName, { color: isDark ? '#e9edef' : '#0f172a' }]} numberOfLines={1}>
+                    {conversation?.contact?.name || 'WhatsApp Contact'}
                   </Text>
                   <Ionicons name="shield-checkmark" size={13} color="#00a884" />
                 </View>
-                <Text style={styles.contactHandle} numberOfLines={1}>
-                  +{conversation.contact.handle_or_phone}
+                <Text style={[styles.contactHandle, { color: isDark ? '#8696a0' : '#64748b' }]} numberOfLines={1}>
+                  +{conversation?.contact?.handle_or_phone || ''}
                 </Text>
               </View>
             </Pressable>
@@ -391,17 +408,21 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
               <Ionicons
                 name={isWindowExpired ? 'alert-circle' : 'time'}
                 size={12}
-                color={isWindowExpired ? '#f87171' : '#34d399'}
+                color={isWindowExpired ? '#dc2626' : '#16a34a'}
               />
               <Text
                 style={[
                   styles.metaWindowText,
-                  { color: isWindowExpired ? '#fca5a5' : '#6ee7b7' },
+                  { color: isWindowExpired ? (isDark ? '#fca5a5' : '#dc2626') : (isDark ? '#6ee7b7' : '#15803d') },
                 ]}
               >
                 {isWindowExpired ? '24h Window Closed' : `24h Window: ${timeRemainingStr}`}
               </Text>
-              <Ionicons name="information-circle-outline" size={12} color={isWindowExpired ? '#fca5a5' : '#6ee7b7'} />
+              <Ionicons
+                name="information-circle-outline"
+                size={12}
+                color={isWindowExpired ? (isDark ? '#fca5a5' : '#dc2626') : (isDark ? '#6ee7b7' : '#15803d')}
+              />
             </Pressable>
 
             {/* Bot Active / Paused Pill */}
@@ -412,21 +433,21 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
               ]}
               onPress={toggleBot}
             >
-              <Text style={styles.botControlText}>
+              <Text style={[styles.botControlText, { color: isDark ? '#e9edef' : '#0f172a' }]}>
                 {isBotPaused ? '⏸️ Bot Paused' : '🤖 Bot Active'}
               </Text>
             </Pressable>
 
             {/* Assigned Agent Button */}
             <Pressable
-              style={styles.agentPill}
+              style={[styles.agentPill, isDark ? styles.agentPillDark : styles.agentPillLight]}
               onPress={() => setShowAgentModal(true)}
             >
-              <Ionicons name="person-circle-outline" size={13} color="#8696a0" />
-              <Text style={styles.agentPillText} numberOfLines={1}>
+              <Ionicons name="person-circle-outline" size={13} color={isDark ? '#8696a0' : '#64748b'} />
+              <Text style={[styles.agentPillText, { color: isDark ? '#8696a0' : '#64748b' }]} numberOfLines={1}>
                 {assignedAgentName}
               </Text>
-              <Ionicons name="chevron-down" size={10} color="#8696a0" />
+              <Ionicons name="chevron-down" size={10} color={isDark ? '#8696a0' : '#64748b'} />
             </Pressable>
           </View>
         </View>
@@ -450,13 +471,16 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
           data={messages}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <MessageBubble message={item} />}
+          style={{ backgroundColor: isDark ? '#0b141a' : '#efeae2' }}
           contentContainerStyle={styles.messagesList}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Ionicons name="chatbubbles-outline" size={44} color="#334155" />
-              <Text style={styles.emptyTitle}>No messages in this chat yet</Text>
-              <Text style={styles.emptySubtitle}>
+              <Ionicons name="chatbubbles-outline" size={44} color={isDark ? '#334155' : '#cbd5e1'} />
+              <Text style={[styles.emptyTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                No messages in this chat yet
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: isDark ? '#8696a0' : '#64748b' }]}>
                 Send a message or record an internal note to start communicating with this customer.
               </Text>
             </View>
@@ -467,37 +491,72 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
         <View
           style={[
             styles.composerWrapper,
-            isInternalNote && styles.composerWrapperNote,
+            isDark ? styles.composerDark : styles.composerLight,
+            isInternalNote && (isDark ? styles.composerWrapperNoteDark : styles.composerWrapperNoteLight),
             { paddingBottom: Math.max(insets.bottom + 6, 16) },
           ]}
         >
           {/* Note / Reply Mode Toggle Pill Bar */}
           <View style={styles.composerModeBar}>
             <Pressable
-              style={[styles.modeTab, !isInternalNote && styles.modeTabActive]}
+              style={[
+                styles.modeTab,
+                isDark ? styles.modeTabDark : styles.modeTabLight,
+                !isInternalNote && styles.modeTabActive,
+              ]}
               onPress={() => setIsInternalNote(false)}
             >
-              <Ionicons name="logo-whatsapp" size={13} color={!isInternalNote ? '#00a884' : '#8696a0'} />
-              <Text style={[styles.modeTabText, !isInternalNote && styles.modeTabTextActive]}>
+              <Ionicons
+                name="logo-whatsapp"
+                size={13}
+                color={!isInternalNote ? '#00a884' : isDark ? '#8696a0' : '#64748b'}
+              />
+              <Text
+                style={[
+                  styles.modeTabText,
+                  { color: !isInternalNote ? '#00a884' : isDark ? '#8696a0' : '#64748b' },
+                  !isInternalNote && styles.modeTabTextActive,
+                ]}
+              >
                 WhatsApp Reply
               </Text>
             </Pressable>
 
             <Pressable
-              style={[styles.modeTab, isInternalNote && styles.modeTabNoteActive]}
+              style={[
+                styles.modeTab,
+                isDark ? styles.modeTabDark : styles.modeTabLight,
+                isInternalNote && styles.modeTabNoteActive,
+              ]}
               onPress={() => setIsInternalNote(true)}
             >
-              <Ionicons name="lock-closed" size={13} color={isInternalNote ? '#fbbf24' : '#8696a0'} />
-              <Text style={[styles.modeTabText, isInternalNote && styles.modeTabNoteTextActive]}>
+              <Ionicons
+                name="lock-closed"
+                size={13}
+                color={isInternalNote ? '#fbbf24' : isDark ? '#8696a0' : '#64748b'}
+              />
+              <Text
+                style={[
+                  styles.modeTabText,
+                  { color: isInternalNote ? '#fbbf24' : isDark ? '#8696a0' : '#64748b' },
+                  isInternalNote && styles.modeTabNoteTextActive,
+                ]}
+              >
                 Internal Note
               </Text>
             </Pressable>
           </View>
 
           {/* Main Input Row */}
-          <View style={[styles.inputRow, isInternalNote && styles.inputRowNote]}>
+          <View
+            style={[
+              styles.inputRow,
+              isDark ? styles.inputRowDark : styles.inputRowLight,
+              isInternalNote && (isDark ? styles.inputRowNoteDark : styles.inputRowNoteLight),
+            ]}
+          >
             <TextInput
-              style={styles.textInput}
+              style={[styles.textInput, { color: isDark ? '#e9edef' : '#0f172a' }]}
               placeholder={
                 isInternalNote
                   ? 'Write an internal note for your team (customer won’t see this)...'
@@ -505,7 +564,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
                   ? '24h window closed — write an internal note...'
                   : 'Type a message...'
               }
-              placeholderTextColor="#8696a0"
+              placeholderTextColor={isDark ? '#8696a0' : '#94a3b8'}
               value={inputText}
               onChangeText={setInputText}
               multiline
@@ -514,7 +573,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
             <Pressable
               style={[
                 styles.sendBtn,
-                !inputText.trim() && styles.sendBtnDisabled,
+                !inputText.trim() && (isDark ? styles.sendBtnDisabledDark : styles.sendBtnDisabledLight),
                 isInternalNote && styles.sendBtnNote,
               ]}
               disabled={!inputText.trim() || sendMutation.isPending}
@@ -533,8 +592,6 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
           </View>
         </View>
 
-
-
         {/* ------------------------------------------------------------- */}
         {/* Agent Assignment Modal */}
         {/* ------------------------------------------------------------- */}
@@ -545,53 +602,66 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
           onRequestClose={() => setShowAgentModal(false)}
         >
           <View style={styles.modalOverlay}>
-            <View style={styles.agentModalBox}>
+            <View style={[styles.agentModalBox, isDark ? styles.modalBoxDark : styles.modalBoxLight]}>
               <View style={styles.modalHeader}>
                 <View>
-                  <Text style={styles.modalTitle}>Assign Agent</Text>
-                  <Text style={styles.modalSub}>
+                  <Text style={[styles.modalTitle, { color: isDark ? '#e9edef' : '#0f172a' }]}>Assign Agent</Text>
+                  <Text style={[styles.modalSub, { color: isDark ? '#8696a0' : '#64748b' }]}>
                     Route this customer conversation to a workspace team member.
                   </Text>
                 </View>
                 <Pressable onPress={() => setShowAgentModal(false)} hitSlop={10}>
-                  <Ionicons name="close" size={24} color="#8696a0" />
+                  <Ionicons name="close" size={24} color={isDark ? '#8696a0' : '#64748b'} />
                 </Pressable>
               </View>
 
               {/* Assign to Me Button */}
-              <Pressable style={styles.assignOptionBtn} onPress={handleAssignToMe}>
+              <Pressable
+                style={[styles.assignOptionBtn, isDark ? styles.assignOptionDark : styles.assignOptionLight]}
+                onPress={handleAssignToMe}
+              >
                 <View style={styles.agentAvatarPill}>
                   <Ionicons name="person" size={16} color="#00a884" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.assignOptionText}>Assign to Me</Text>
-                  <Text style={styles.assignOptionSub}>{user?.email || 'Logged in user'}</Text>
+                  <Text style={[styles.assignOptionText, { color: isDark ? '#e9edef' : '#0f172a' }]}>
+                    Assign to Me
+                  </Text>
+                  <Text style={[styles.assignOptionSub, { color: isDark ? '#8696a0' : '#64748b' }]}>
+                    {user?.email || 'Logged in user'}
+                  </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color="#8696a0" />
+                <Ionicons name="chevron-forward" size={16} color={isDark ? '#8696a0' : '#94a3b8'} />
               </Pressable>
 
               {/* Unassign Button */}
               <Pressable
-                style={styles.assignOptionBtn}
+                style={[styles.assignOptionBtn, isDark ? styles.assignOptionDark : styles.assignOptionLight]}
                 onPress={() => handleAssignAgent(null)}
               >
-                <View style={[styles.agentAvatarPill, { backgroundColor: '#334155' }]}>
-                  <Ionicons name="close-circle-outline" size={16} color="#94a3b8" />
+                <View style={[styles.agentAvatarPill, { backgroundColor: isDark ? '#334155' : '#e2e8f0' }]}>
+                  <Ionicons name="close-circle-outline" size={16} color={isDark ? '#94a3b8' : '#64748b'} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.assignOptionText}>Mark as Unassigned</Text>
-                  <Text style={styles.assignOptionSub}>Open to any agent in inbox queue</Text>
+                  <Text style={[styles.assignOptionText, { color: isDark ? '#e9edef' : '#0f172a' }]}>
+                    Mark as Unassigned
+                  </Text>
+                  <Text style={[styles.assignOptionSub, { color: isDark ? '#8696a0' : '#64748b' }]}>
+                    Open to any agent in inbox queue
+                  </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color="#8696a0" />
+                <Ionicons name="chevron-forward" size={16} color={isDark ? '#8696a0' : '#94a3b8'} />
               </Pressable>
 
               {/* Organization Team Members List */}
-              <Text style={styles.sectionHeaderLabel}>Team Members</Text>
+              <Text style={[styles.sectionHeaderLabel, { color: isDark ? '#8696a0' : '#64748b' }]}>
+                Team Members
+              </Text>
               <ScrollView style={{ maxHeight: 200 }}>
                 {(teamMembers || []).map((member) => (
                   <Pressable
                     key={member.id}
-                    style={styles.memberRow}
+                    style={[styles.memberRow, isDark ? styles.memberRowDark : styles.memberRowLight]}
                     onPress={() => handleAssignAgent(member)}
                   >
                     <View style={styles.memberAvatar}>
@@ -600,11 +670,17 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
                       </Text>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.memberName}>{member.name}</Text>
-                      <Text style={styles.memberEmail}>{member.email}</Text>
+                      <Text style={[styles.memberName, { color: isDark ? '#e9edef' : '#0f172a' }]}>
+                        {member.name}
+                      </Text>
+                      <Text style={[styles.memberEmail, { color: isDark ? '#8696a0' : '#64748b' }]}>
+                        {member.email}
+                      </Text>
                     </View>
-                    <View style={styles.memberRoleTag}>
-                      <Text style={styles.memberRoleText}>{member.role}</Text>
+                    <View style={[styles.memberRoleTag, isDark ? styles.roleTagDark : styles.roleTagLight]}>
+                      <Text style={[styles.memberRoleText, { color: isDark ? '#8696a0' : '#64748b' }]}>
+                        {member.role}
+                      </Text>
                     </View>
                     {assignedAgentName === member.name && (
                       <Ionicons name="checkmark-circle" size={18} color="#00a884" style={{ marginLeft: 6 }} />
@@ -626,35 +702,37 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
           onRequestClose={() => setShowGuideModal(false)}
         >
           <View style={styles.modalOverlay}>
-            <View style={styles.guideModalBox}>
+            <View style={[styles.guideModalBox, isDark ? styles.modalBoxDark : styles.modalBoxLight]}>
               <View style={styles.modalHeader}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Ionicons name="shield-checkmark" size={24} color="#00a884" />
-                  <Text style={styles.modalTitle}>Meta 24-Hour Messaging Rule</Text>
+                  <Text style={[styles.modalTitle, { color: isDark ? '#e9edef' : '#0f172a' }]}>
+                    Meta 24-Hour Messaging Rule
+                  </Text>
                 </View>
                 <Pressable onPress={() => setShowGuideModal(false)} hitSlop={10}>
-                  <Ionicons name="close" size={24} color="#8696a0" />
+                  <Ionicons name="close" size={24} color={isDark ? '#8696a0' : '#64748b'} />
                 </Pressable>
               </View>
 
               <ScrollView style={{ maxHeight: 380 }} showsVerticalScrollIndicator={false}>
-                <View style={styles.guideCard}>
+                <View style={[styles.guideCard, isDark ? styles.guideCardDark : styles.guideCardLight]}>
                   <Text style={styles.guideCardTitle}>⏱️ How the 24-Hour Window Works</Text>
-                  <Text style={styles.guideCardBody}>
+                  <Text style={[styles.guideCardBody, { color: isDark ? '#8696a0' : '#475569' }]}>
                     Meta allows businesses to send freeform messages to WhatsApp users only within 24 hours of the customer's last message. Every incoming message from the customer resets this 24-hour timer.
                   </Text>
                 </View>
 
-                <View style={styles.guideCard}>
+                <View style={[styles.guideCard, isDark ? styles.guideCardDark : styles.guideCardLight]}>
                   <Text style={styles.guideCardTitle}>🔒 When the Window is Closed</Text>
-                  <Text style={styles.guideCardBody}>
+                  <Text style={[styles.guideCardBody, { color: isDark ? '#8696a0' : '#475569' }]}>
                     Once 24 hours pass with no customer response, WhatsApp closes freeform messaging to prevent spam. You must send a Meta-approved Template Message to re-open the conversation.
                   </Text>
                 </View>
 
-                <View style={styles.guideCard}>
+                <View style={[styles.guideCard, isDark ? styles.guideCardDark : styles.guideCardLight]}>
                   <Text style={styles.guideCardTitle}>💡 Internal Team Notes</Text>
-                  <Text style={styles.guideCardBody}>
+                  <Text style={[styles.guideCardBody, { color: isDark ? '#8696a0' : '#475569' }]}>
                     Internal team notes can be added at any time, even when the 24-hour customer window is closed. They are private and only visible to your workspace team members.
                   </Text>
                 </View>
@@ -680,39 +758,60 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
           onRequestClose={() => setShowContactDrawer(false)}
         >
           <View style={styles.modalOverlay}>
-            <View style={styles.contactDrawerBox}>
+            <View style={[styles.contactDrawerBox, isDark ? styles.modalBoxDark : styles.modalBoxLight]}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Contact Details</Text>
+                <Text style={[styles.modalTitle, { color: isDark ? '#e9edef' : '#0f172a' }]}>Contact Details</Text>
                 <Pressable onPress={() => setShowContactDrawer(false)} hitSlop={10}>
-                  <Ionicons name="close" size={24} color="#8696a0" />
+                  <Ionicons name="close" size={24} color={isDark ? '#8696a0' : '#64748b'} />
                 </Pressable>
               </View>
 
-              <View style={styles.drawerAvatarContainer}>
+              <View style={[styles.drawerAvatarContainer, isDark ? styles.borderDark : styles.borderLight]}>
                 <View style={styles.drawerAvatar}>
                   <Text style={styles.drawerAvatarText}>
-                    {conversation.contact.name ? conversation.contact.name.charAt(0).toUpperCase() : 'C'}
+                    {conversation?.contact?.name ? conversation.contact.name.charAt(0).toUpperCase() : 'C'}
                   </Text>
                 </View>
-                <Text style={styles.drawerName}>{conversation.contact.name}</Text>
-                <Text style={styles.drawerPhone}>+{conversation.contact.handle_or_phone}</Text>
+                <Text style={[styles.drawerName, { color: isDark ? '#e9edef' : '#0f172a' }]}>
+                  {conversation?.contact?.name}
+                </Text>
+                <Text style={[styles.drawerPhone, { color: isDark ? '#8696a0' : '#64748b' }]}>
+                  +{conversation?.contact?.handle_or_phone}
+                </Text>
               </View>
 
               <View style={styles.drawerSection}>
-                <Text style={styles.drawerSectionLabel}>Channel Status</Text>
+                <Text style={[styles.drawerSectionLabel, { color: isDark ? '#8696a0' : '#64748b' }]}>
+                  Channel Status
+                </Text>
                 <View style={styles.drawerRow}>
-                  <Text style={styles.drawerRowKey}>Messaging Window</Text>
-                  <Text style={[styles.drawerRowVal, { color: isWindowExpired ? '#f87171' : '#34d399' }]}>
+                  <Text style={[styles.drawerRowKey, { color: isDark ? '#8696a0' : '#64748b' }]}>
+                    Messaging Window
+                  </Text>
+                  <Text
+                    style={[
+                      styles.drawerRowVal,
+                      { color: isWindowExpired ? '#dc2626' : '#16a34a' },
+                    ]}
+                  >
                     {isWindowExpired ? 'Closed (>24h)' : `Open (${timeRemainingStr})`}
                   </Text>
                 </View>
                 <View style={styles.drawerRow}>
-                  <Text style={styles.drawerRowKey}>Assigned Agent</Text>
-                  <Text style={styles.drawerRowVal}>{assignedAgentName}</Text>
+                  <Text style={[styles.drawerRowKey, { color: isDark ? '#8696a0' : '#64748b' }]}>
+                    Assigned Agent
+                  </Text>
+                  <Text style={[styles.drawerRowVal, { color: isDark ? '#e9edef' : '#0f172a' }]}>
+                    {assignedAgentName}
+                  </Text>
                 </View>
                 <View style={styles.drawerRow}>
-                  <Text style={styles.drawerRowKey}>AI Bot Auto-Reply</Text>
-                  <Text style={styles.drawerRowVal}>{isBotPaused ? 'Paused' : 'Active'}</Text>
+                  <Text style={[styles.drawerRowKey, { color: isDark ? '#8696a0' : '#64748b' }]}>
+                    AI Bot Auto-Reply
+                  </Text>
+                  <Text style={[styles.drawerRowVal, { color: isDark ? '#e9edef' : '#0f172a' }]}>
+                    {isBotPaused ? 'Paused' : 'Active'}
+                  </Text>
                 </View>
               </View>
 
@@ -729,9 +828,9 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
                 </Pressable>
 
                 <Pressable
-                  style={styles.drawerSecondaryBtn}
+                  style={[styles.drawerSecondaryBtn, isDark ? styles.drawerSecondaryBtnDark : styles.drawerSecondaryBtnLight]}
                   onPress={() => {
-                    const phone = conversation.contact.handle_or_phone.replace(/\D+/g, '');
+                    const phone = (conversation?.contact?.handle_or_phone || '').replace(/\D+/g, '');
                     if (phone) Linking.openURL(`tel:+${phone}`).catch(() => {});
                   }}
                 >
@@ -753,9 +852,11 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
           onRequestClose={() => setShowCrmModal(false)}
         >
           <View style={styles.modalOverlay}>
-            <View style={styles.crmModalBox}>
-              <Text style={styles.modalTitle}>Convert WhatsApp Contact to Lead</Text>
-              <Text style={styles.modalSub}>
+            <View style={[styles.crmModalBox, isDark ? styles.modalBoxDark : styles.modalBoxLight]}>
+              <Text style={[styles.modalTitle, { color: isDark ? '#e9edef' : '#0f172a' }]}>
+                Convert WhatsApp Contact to Lead
+              </Text>
+              <Text style={[styles.modalSub, { color: isDark ? '#8696a0' : '#64748b' }]}>
                 Create an instant sales opportunity in GetAiPilot CRM pipeline.
               </Text>
 
@@ -766,24 +867,34 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
                 </View>
               ) : (
                 <View style={styles.formGroup}>
-                  <Text style={styles.inputLabel}>Contact Name</Text>
-                  <View style={styles.readOnlyInput}>
-                    <Text style={styles.readOnlyText}>{conversation.contact.name}</Text>
+                  <Text style={[styles.inputLabel, { color: isDark ? '#8696a0' : '#64748b' }]}>
+                    Contact Name
+                  </Text>
+                  <View style={[styles.readOnlyInput, isDark ? styles.inputDark : styles.inputLight]}>
+                    <Text style={[styles.readOnlyText, { color: isDark ? '#e9edef' : '#0f172a' }]}>
+                      {conversation?.contact?.name}
+                    </Text>
                   </View>
 
-                  <Text style={styles.inputLabel}>Phone Number</Text>
-                  <View style={styles.readOnlyInput}>
-                    <Text style={styles.readOnlyText}>{conversation.contact.handle_or_phone}</Text>
+                  <Text style={[styles.inputLabel, { color: isDark ? '#8696a0' : '#64748b' }]}>
+                    Phone Number
+                  </Text>
+                  <View style={[styles.readOnlyInput, isDark ? styles.inputDark : styles.inputLight]}>
+                    <Text style={[styles.readOnlyText, { color: isDark ? '#e9edef' : '#0f172a' }]}>
+                      {conversation?.contact?.handle_or_phone}
+                    </Text>
                   </View>
 
-                  <Text style={styles.inputLabel}>Expected Deal Value (₹)</Text>
+                  <Text style={[styles.inputLabel, { color: isDark ? '#8696a0' : '#64748b' }]}>
+                    Expected Deal Value (₹)
+                  </Text>
                   <TextInput
-                    style={styles.editableInput}
+                    style={[styles.editableInput, isDark ? styles.inputDark : styles.inputLight]}
                     value={leadDealValue}
                     onChangeText={setLeadDealValue}
                     keyboardType="numeric"
                     placeholder="25000"
-                    placeholderTextColor="#64748b"
+                    placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
                   />
 
                   <View style={styles.modalActions}>
@@ -791,7 +902,9 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
                       style={styles.cancelBtn}
                       onPress={() => setShowCrmModal(false)}
                     >
-                      <Text style={styles.cancelBtnText}>Cancel</Text>
+                      <Text style={[styles.cancelBtnText, { color: isDark ? '#8696a0' : '#64748b' }]}>
+                        Cancel
+                      </Text>
                     </Pressable>
                     <Pressable
                       style={styles.confirmBtn}
@@ -818,7 +931,6 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0b141a', // WhatsApp Dark background
   },
   container: {
     flex: 1,
@@ -835,7 +947,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   notFoundTitle: {
-    color: '#f8fafc',
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 16,
@@ -851,12 +962,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   header: {
-    backgroundColor: '#1f2c34', // WhatsApp dark header
     paddingHorizontal: 12,
     paddingTop: 8,
     paddingBottom: 10,
     borderBottomWidth: 1,
+  },
+  headerDark: {
+    backgroundColor: '#1f2c34',
     borderBottomColor: '#2a3942',
+  },
+  headerLight: {
+    backgroundColor: '#ffffff',
+    borderBottomColor: '#e2e8f0',
   },
   headerTopRow: {
     flexDirection: 'row',
@@ -889,23 +1006,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contactName: {
-    color: '#e9edef',
     fontSize: 15,
     fontWeight: '700',
   },
   contactHandle: {
-    color: '#8696a0',
     fontSize: 11.5,
   },
   headerRightActions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  },
-  actionIconBtn: {
-    padding: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 18,
   },
   crmBtn: {
     backgroundColor: '#6366f1',
@@ -935,12 +1045,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   metaWindowOpen: {
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-    borderColor: 'rgba(16, 185, 129, 0.4)',
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    borderColor: 'rgba(16, 185, 129, 0.35)',
   },
   metaWindowClosed: {
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-    borderColor: 'rgba(239, 68, 68, 0.4)',
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    borderColor: 'rgba(239, 68, 68, 0.35)',
   },
   metaWindowText: {
     fontSize: 10.5,
@@ -961,7 +1071,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(245, 158, 11, 0.4)',
   },
   botControlText: {
-    color: '#e9edef',
     fontSize: 10.5,
     fontWeight: '700',
   },
@@ -969,15 +1078,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#111b21',
     paddingHorizontal: 8,
     paddingVertical: 3.5,
     borderRadius: 12,
     borderWidth: 1,
+  },
+  agentPillDark: {
+    backgroundColor: '#111b21',
     borderColor: '#2a3942',
   },
+  agentPillLight: {
+    backgroundColor: '#f1f5f9',
+    borderColor: '#e2e8f0',
+  },
   agentPillText: {
-    color: '#8696a0',
     fontSize: 10.5,
     fontWeight: '600',
     maxWidth: 90,
@@ -985,19 +1099,19 @@ const styles = StyleSheet.create({
   windowNoticeBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#3b2505',
+    backgroundColor: '#fef3c7',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#78350f',
+    borderBottomColor: '#fde68a',
   },
   windowNoticeTitle: {
-    color: '#fbbf24',
+    color: '#92400e',
     fontSize: 11.5,
     fontWeight: '800',
   },
   windowNoticeText: {
-    color: '#fef3c7',
+    color: '#78350f',
     fontSize: 10.5,
     lineHeight: 14,
   },
@@ -1014,28 +1128,36 @@ const styles = StyleSheet.create({
     marginTop: 40,
   },
   emptyTitle: {
-    color: '#f8fafc',
     fontSize: 15,
     fontWeight: '700',
     marginTop: 10,
   },
   emptySubtitle: {
-    color: '#8696a0',
     fontSize: 12,
     textAlign: 'center',
     marginTop: 4,
     lineHeight: 17,
   },
   composerWrapper: {
-    backgroundColor: '#111b21',
     borderTopWidth: 1,
-    borderTopColor: '#2a3942',
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
-  composerWrapperNote: {
+  composerDark: {
+    backgroundColor: '#111b21',
+    borderTopColor: '#2a3942',
+  },
+  composerLight: {
+    backgroundColor: '#f0f2f5',
+    borderTopColor: '#e2e8f0',
+  },
+  composerWrapperNoteDark: {
     backgroundColor: '#271607',
     borderTopColor: '#78350f',
+  },
+  composerWrapperNoteLight: {
+    backgroundColor: '#fffbeb',
+    borderTopColor: '#fde68a',
   },
   composerModeBar: {
     flexDirection: 'row',
@@ -1050,48 +1172,60 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 14,
+    borderWidth: 1,
+  },
+  modeTabDark: {
     backgroundColor: '#1f2c34',
+    borderColor: '#2a3942',
+  },
+  modeTabLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
   },
   modeTabActive: {
-    backgroundColor: 'rgba(0, 168, 132, 0.2)',
-    borderWidth: 1,
+    backgroundColor: 'rgba(0, 168, 132, 0.15)',
     borderColor: '#00a884',
   },
   modeTabNoteActive: {
-    backgroundColor: 'rgba(245, 158, 11, 0.2)',
-    borderWidth: 1,
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
     borderColor: '#fbbf24',
   },
   modeTabText: {
-    color: '#8696a0',
     fontSize: 11,
     fontWeight: '600',
   },
   modeTabTextActive: {
-    color: '#00a884',
     fontWeight: '800',
   },
   modeTabNoteTextActive: {
-    color: '#fbbf24',
     fontWeight: '800',
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    backgroundColor: '#202c33',
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderWidth: 1,
+  },
+  inputRowDark: {
+    backgroundColor: '#202c33',
     borderColor: '#2a3942',
   },
-  inputRowNote: {
+  inputRowLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
+  },
+  inputRowNoteDark: {
     backgroundColor: '#3b200b',
     borderColor: '#78350f',
   },
+  inputRowNoteLight: {
+    backgroundColor: '#fef3c7',
+    borderColor: '#f59e0b',
+  },
   textInput: {
     flex: 1,
-    color: '#e9edef',
     fontSize: 14,
     maxHeight: 100,
     paddingTop: 6,
@@ -1107,43 +1241,54 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     marginBottom: 2,
   },
-  sendBtnDisabled: {
+  sendBtnDisabledDark: {
     backgroundColor: '#2a3942',
+  },
+  sendBtnDisabledLight: {
+    backgroundColor: '#cbd5e1',
   },
   sendBtnNote: {
     backgroundColor: '#d97706',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'flex-end',
   },
   agentModalBox: {
-    backgroundColor: '#1f2c34',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 18,
     maxHeight: '75%',
+    borderWidth: 1,
   },
   guideModalBox: {
-    backgroundColor: '#1f2c34',
     borderRadius: 20,
     padding: 18,
     margin: 20,
     maxHeight: '80%',
+    borderWidth: 1,
   },
   contactDrawerBox: {
-    backgroundColor: '#1f2c34',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
     maxHeight: '80%',
+    borderWidth: 1,
   },
   crmModalBox: {
-    backgroundColor: '#1f2c34',
     borderRadius: 20,
     padding: 20,
     margin: 20,
+    borderWidth: 1,
+  },
+  modalBoxDark: {
+    backgroundColor: '#1f2c34',
+    borderColor: '#2a3942',
+  },
+  modalBoxLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1152,12 +1297,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   modalTitle: {
-    color: '#e9edef',
     fontSize: 17,
     fontWeight: '800',
   },
   modalSub: {
-    color: '#8696a0',
     fontSize: 12,
     marginTop: 2,
     lineHeight: 16,
@@ -1165,33 +1308,36 @@ const styles = StyleSheet.create({
   assignOptionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#111b21',
     padding: 12,
     borderRadius: 12,
     marginBottom: 8,
     gap: 10,
     borderWidth: 1,
+  },
+  assignOptionDark: {
+    backgroundColor: '#111b21',
     borderColor: '#2a3942',
+  },
+  assignOptionLight: {
+    backgroundColor: '#f8fafc',
+    borderColor: '#e2e8f0',
   },
   agentAvatarPill: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(0, 168, 132, 0.2)',
+    backgroundColor: 'rgba(0, 168, 132, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   assignOptionText: {
-    color: '#e9edef',
     fontSize: 13.5,
     fontWeight: '700',
   },
   assignOptionSub: {
-    color: '#8696a0',
     fontSize: 11,
   },
   sectionHeaderLabel: {
-    color: '#8696a0',
     fontSize: 11.5,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -1203,7 +1349,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: 1,
+  },
+  memberRowDark: {
     borderBottomColor: '#2a3942',
+  },
+  memberRowLight: {
+    borderBottomColor: '#e2e8f0',
   },
   memberAvatar: {
     width: 30,
@@ -1220,35 +1371,44 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   memberName: {
-    color: '#e9edef',
     fontSize: 13,
     fontWeight: '600',
   },
   memberEmail: {
-    color: '#8696a0',
     fontSize: 11,
   },
   memberRoleTag: {
-    backgroundColor: '#111b21',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
     borderWidth: 1,
+  },
+  roleTagDark: {
+    backgroundColor: '#111b21',
     borderColor: '#2a3942',
   },
+  roleTagLight: {
+    backgroundColor: '#f1f5f9',
+    borderColor: '#e2e8f0',
+  },
   memberRoleText: {
-    color: '#8696a0',
     fontSize: 9.5,
     fontWeight: '700',
     textTransform: 'uppercase',
   },
   guideCard: {
-    backgroundColor: '#111b21',
     borderRadius: 12,
     padding: 12,
     marginBottom: 10,
     borderWidth: 1,
+  },
+  guideCardDark: {
+    backgroundColor: '#111b21',
     borderColor: '#2a3942',
+  },
+  guideCardLight: {
+    backgroundColor: '#f8fafc',
+    borderColor: '#e2e8f0',
   },
   guideCardTitle: {
     color: '#00a884',
@@ -1257,7 +1417,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   guideCardBody: {
-    color: '#8696a0',
     fontSize: 12,
     lineHeight: 17,
   },
@@ -1277,7 +1436,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     borderBottomWidth: 1,
+  },
+  borderDark: {
     borderBottomColor: '#2a3942',
+  },
+  borderLight: {
+    borderBottomColor: '#e2e8f0',
   },
   drawerAvatar: {
     width: 56,
@@ -1294,12 +1458,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   drawerName: {
-    color: '#e9edef',
     fontSize: 16,
     fontWeight: '700',
   },
   drawerPhone: {
-    color: '#8696a0',
     fontSize: 13,
     marginTop: 2,
   },
@@ -1308,7 +1470,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   drawerSectionLabel: {
-    color: '#8696a0',
     fontSize: 11.5,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -1320,11 +1481,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   drawerRowKey: {
-    color: '#8696a0',
     fontSize: 13,
   },
   drawerRowVal: {
-    color: '#e9edef',
     fontSize: 13,
     fontWeight: '600',
   },
@@ -1352,11 +1511,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#111b21',
     borderWidth: 1,
     borderColor: '#00a884',
     paddingVertical: 10,
     borderRadius: 12,
+  },
+  drawerSecondaryBtnDark: {
+    backgroundColor: '#111b21',
+  },
+  drawerSecondaryBtnLight: {
+    backgroundColor: '#f8fafc',
   },
   drawerSecondaryBtnText: {
     color: '#00a884',
@@ -1367,30 +1531,33 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   inputLabel: {
-    color: '#8696a0',
     fontSize: 11.5,
     fontWeight: '700',
     marginTop: 8,
     marginBottom: 4,
   },
   readOnlyInput: {
-    backgroundColor: '#111b21',
     padding: 10,
     borderRadius: 8,
     borderWidth: 1,
+  },
+  inputDark: {
+    backgroundColor: '#111b21',
     borderColor: '#2a3942',
+    color: '#e9edef',
+  },
+  inputLight: {
+    backgroundColor: '#f8fafc',
+    borderColor: '#e2e8f0',
+    color: '#0f172a',
   },
   readOnlyText: {
-    color: '#e9edef',
     fontSize: 13,
   },
   editableInput: {
-    backgroundColor: '#111b21',
     padding: 10,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#00a884',
-    color: '#e9edef',
     fontSize: 14,
     fontWeight: '700',
   },
@@ -1405,7 +1572,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   cancelBtnText: {
-    color: '#8696a0',
     fontSize: 13,
   },
   confirmBtn: {

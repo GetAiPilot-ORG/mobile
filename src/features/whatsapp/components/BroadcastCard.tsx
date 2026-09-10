@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { WhatsAppBroadcast } from '../types';
 
 interface BroadcastCardProps {
@@ -8,6 +8,9 @@ interface BroadcastCardProps {
 }
 
 export const BroadcastCard: React.FC<BroadcastCardProps> = ({ broadcast, onPress }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const isCompleted = broadcast.status === 'completed';
   const isQueued = broadcast.status === 'queued' || broadcast.status === 'preparing';
   const isScheduled = broadcast.status === 'scheduled';
@@ -20,15 +23,19 @@ export const BroadcastCard: React.FC<BroadcastCardProps> = ({ broadcast, onPress
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      style={({ pressed }) => [
+        styles.card,
+        isDark ? styles.cardDark : styles.cardLight,
+        pressed && styles.cardPressed,
+      ]}
       onPress={() => onPress && onPress(broadcast)}
     >
       <View style={styles.headerRow}>
         <View style={styles.titleContainer}>
-          <Text style={styles.name} numberOfLines={1}>
+          <Text style={[styles.name, { color: isDark ? '#f8fafc' : '#0f172a' }]} numberOfLines={1}>
             {broadcast.name}
           </Text>
-          <Text style={styles.templateName}>
+          <Text style={[styles.templateName, { color: isDark ? '#94a3b8' : '#64748b' }]}>
             Template: {broadcast.template_name} ({broadcast.template_language})
           </Text>
         </View>
@@ -41,10 +48,12 @@ export const BroadcastCard: React.FC<BroadcastCardProps> = ({ broadcast, onPress
       </View>
 
       {/* Metrics Row */}
-      <View style={styles.metricsRow}>
+      <View style={[styles.metricsRow, isDark ? styles.metricsRowDark : styles.metricsRowLight]}>
         <View style={styles.metricItem}>
           <Text style={styles.metricLabel}>Audience</Text>
-          <Text style={styles.metricValue}>{broadcast.recipients_count.toLocaleString()}</Text>
+          <Text style={[styles.metricValue, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+            {broadcast.recipients_count.toLocaleString()}
+          </Text>
         </View>
 
         <View style={styles.metricItem}>
@@ -56,23 +65,23 @@ export const BroadcastCard: React.FC<BroadcastCardProps> = ({ broadcast, onPress
 
         <View style={styles.metricItem}>
           <Text style={styles.metricLabel}>Read</Text>
-          <Text style={[styles.metricValue, { color: '#38bdf8' }]}>
+          <Text style={[styles.metricValue, { color: isDark ? '#38bdf8' : '#0284c7' }]}>
             {broadcast.read_count.toLocaleString()}
           </Text>
         </View>
 
         <View style={styles.metricItem}>
           <Text style={styles.metricLabel}>Success Rate</Text>
-          <Text style={styles.metricValue}>{deliveryRate}%</Text>
+          <Text style={[styles.metricValue, { color: isDark ? '#f8fafc' : '#0f172a' }]}>{deliveryRate}%</Text>
         </View>
       </View>
 
       {broadcast.estimated_cost_paise ? (
-        <View style={styles.footerRow}>
-          <Text style={styles.costText}>
+        <View style={[styles.footerRow, { borderTopColor: isDark ? '#1e293b' : '#e2e8f0' }]}>
+          <Text style={[styles.costText, { color: isDark ? '#a5b4fc' : '#4f46e5' }]}>
             Cost: ₹{((broadcast.actual_cost_paise || broadcast.estimated_cost_paise) / 100).toFixed(2)}
           </Text>
-          <Text style={styles.dateText}>
+          <Text style={[styles.dateText, { color: isDark ? '#64748b' : '#94a3b8' }]}>
             {new Date(broadcast.created_at).toLocaleDateString()}
           </Text>
         </View>
@@ -83,12 +92,23 @@ export const BroadcastCard: React.FC<BroadcastCardProps> = ({ broadcast, onPress
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#0f172a',
     borderRadius: 14,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#1e293b',
     marginBottom: 10,
+  },
+  cardDark: {
+    backgroundColor: '#0f172a',
+    borderColor: '#1e293b',
+  },
+  cardLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   cardPressed: {
     opacity: 0.8,
@@ -104,13 +124,11 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   name: {
-    color: '#f8fafc',
     fontSize: 15,
     fontWeight: '700',
     marginBottom: 2,
   },
   templateName: {
-    color: '#94a3b8',
     fontSize: 11,
     fontWeight: '600',
   },
@@ -127,10 +145,17 @@ const styles = StyleSheet.create({
   metricsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#020617',
     borderRadius: 10,
     padding: 10,
     marginBottom: 10,
+  },
+  metricsRowDark: {
+    backgroundColor: '#020617',
+  },
+  metricsRowLight: {
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   metricItem: {
     alignItems: 'center',
@@ -143,7 +168,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   metricValue: {
-    color: '#f8fafc',
     fontSize: 14,
     fontWeight: '800',
   },
@@ -152,16 +176,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#1e293b',
     paddingTop: 8,
   },
   costText: {
-    color: '#a5b4fc',
     fontSize: 11,
     fontWeight: '700',
   },
   dateText: {
-    color: '#64748b',
     fontSize: 11,
   },
 });

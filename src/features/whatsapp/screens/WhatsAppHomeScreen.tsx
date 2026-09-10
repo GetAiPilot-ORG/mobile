@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useColorScheme,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,13 +25,15 @@ import { WhatsAppTemplatesScreen } from './WhatsAppTemplatesScreen';
 
 export const WhatsAppHomeScreen: React.FC = () => {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const [activeTab, setActiveTab] = useState<'home' | 'contacts' | 'templates' | 'broadcasts'>('home');
 
   const { data: status, isLoading: statusLoading, refetch: refetchStatus, isRefetching: statusRefetching } = useWhatsAppStatus();
   const { data: contactsData, refetch: refetchContacts } = useWhatsAppContacts({ limit: 5 });
   const { data: templates, refetch: refetchTemplates } = useWhatsAppTemplates('APPROVED');
   const { data: broadcastsData, refetch: refetchBroadcasts } = useWhatsAppBroadcasts({ limit: 3 });
-  const { data: usage, refetch: refetchUsage } = useWhatsAppUsage();
+  const { data: usage, isLoading: usageLoading, refetch: refetchUsage } = useWhatsAppUsage();
 
   const handleRefresh = async () => {
     await Promise.all([
@@ -62,10 +65,10 @@ export const WhatsAppHomeScreen: React.FC = () => {
     : '100.0%';
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
+      <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
         <View style={styles.headerTitleContainer}>
-          <Text style={styles.title}>WhatsApp Business</Text>
+          <Text style={[styles.title, { color: isDark ? '#f8fafc' : '#0f172a' }]}>WhatsApp Business</Text>
           <Text style={styles.subtitle}>Meta Cloud Enterprise Hub</Text>
         </View>
 
@@ -88,10 +91,10 @@ export const WhatsAppHomeScreen: React.FC = () => {
         <ConnectionStatusCard connection={status} isLoading={statusLoading} />
 
         {/* Cloud Wallet & Usage Card */}
-        <UsageCard usage={usage} />
+        <UsageCard usage={usage} isLoading={usageLoading} />
 
         {/* Metrics 2x2 Grid */}
-        <Text style={styles.sectionTitle}>Overview & Capabilities</Text>
+        <Text style={[styles.sectionTitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>Overview & Capabilities</Text>
         <View style={styles.grid}>
           <WhatsAppMetricCard
             label="Contacts"
@@ -120,33 +123,48 @@ export const WhatsAppHomeScreen: React.FC = () => {
         </View>
 
         {/* Quick Actions Navigation */}
-        <Text style={styles.sectionTitle}>Product Navigation</Text>
+        <Text style={[styles.sectionTitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>Product Navigation</Text>
         <View style={styles.actionsList}>
-          <Pressable style={styles.actionCard} onPress={() => setActiveTab('contacts')}>
-            <View style={styles.actionIcon}><Text style={styles.actionEmoji}>👥</Text></View>
-            <View style={styles.actionDetails}>
-              <Text style={styles.actionTitle}>Audience & Contacts</Text>
-              <Text style={styles.actionSub}>View contacts, segment tags & link CRM leads</Text>
+          <Pressable
+            style={[styles.actionCard, isDark ? styles.actionCardDark : styles.actionCardLight]}
+            onPress={() => setActiveTab('contacts')}
+          >
+            <View style={[styles.actionIcon, { backgroundColor: isDark ? '#020617' : '#f1f5f9' }]}>
+              <Text style={styles.actionEmoji}>👥</Text>
             </View>
-            <Text style={styles.actionArrow}>→</Text>
+            <View style={styles.actionDetails}>
+              <Text style={[styles.actionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Audience & Contacts</Text>
+              <Text style={[styles.actionSub, { color: isDark ? '#64748b' : '#64748b' }]}>View contacts, segment tags & link CRM leads</Text>
+            </View>
+            <Text style={[styles.actionArrow, { color: isDark ? '#475569' : '#94a3b8' }]}>→</Text>
           </Pressable>
 
-          <Pressable style={styles.actionCard} onPress={() => setActiveTab('templates')}>
-            <View style={styles.actionIcon}><Text style={styles.actionEmoji}>📄</Text></View>
-            <View style={styles.actionDetails}>
-              <Text style={styles.actionTitle}>Meta Templates</Text>
-              <Text style={styles.actionSub}>Approved marketing, utility & otp message templates</Text>
+          <Pressable
+            style={[styles.actionCard, isDark ? styles.actionCardDark : styles.actionCardLight]}
+            onPress={() => setActiveTab('templates')}
+          >
+            <View style={[styles.actionIcon, { backgroundColor: isDark ? '#020617' : '#f1f5f9' }]}>
+              <Text style={styles.actionEmoji}>📄</Text>
             </View>
-            <Text style={styles.actionArrow}>→</Text>
+            <View style={styles.actionDetails}>
+              <Text style={[styles.actionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Meta Templates</Text>
+              <Text style={[styles.actionSub, { color: isDark ? '#64748b' : '#64748b' }]}>Approved marketing, utility & otp message templates</Text>
+            </View>
+            <Text style={[styles.actionArrow, { color: isDark ? '#475569' : '#94a3b8' }]}>→</Text>
           </Pressable>
 
-          <Pressable style={styles.actionCard} onPress={() => setActiveTab('broadcasts')}>
-            <View style={styles.actionIcon}><Text style={styles.actionEmoji}>📢</Text></View>
-            <View style={styles.actionDetails}>
-              <Text style={styles.actionTitle}>Broadcast Campaigns</Text>
-              <Text style={styles.actionSub}>Launch new bulk sends & view delivery funnels</Text>
+          <Pressable
+            style={[styles.actionCard, isDark ? styles.actionCardDark : styles.actionCardLight]}
+            onPress={() => setActiveTab('broadcasts')}
+          >
+            <View style={[styles.actionIcon, { backgroundColor: isDark ? '#020617' : '#f1f5f9' }]}>
+              <Text style={styles.actionEmoji}>📢</Text>
             </View>
-            <Text style={styles.actionArrow}>→</Text>
+            <View style={styles.actionDetails}>
+              <Text style={[styles.actionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Broadcast Campaigns</Text>
+              <Text style={[styles.actionSub, { color: isDark ? '#64748b' : '#64748b' }]}>Launch new bulk sends & view delivery funnels</Text>
+            </View>
+            <Text style={[styles.actionArrow, { color: isDark ? '#475569' : '#94a3b8' }]}>→</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -157,7 +175,6 @@ export const WhatsAppHomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#020617',
   },
   header: {
     flexDirection: 'row',
@@ -166,8 +183,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#1e293b',
+  },
+  headerDark: {
     backgroundColor: '#0b1329',
+    borderBottomColor: '#1e293b',
+  },
+  headerLight: {
+    backgroundColor: '#ffffff',
+    borderBottomColor: '#e2e8f0',
   },
   headerTitleContainer: {
     flex: 1,
@@ -175,7 +198,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '900',
-    color: '#f8fafc',
   },
   subtitle: {
     fontSize: 12,
@@ -203,7 +225,6 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   sectionTitle: {
-    color: '#94a3b8',
     fontSize: 13,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -222,17 +243,22 @@ const styles = StyleSheet.create({
   actionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0f172a',
     borderRadius: 14,
     padding: 14,
     borderWidth: 1,
+  },
+  actionCardDark: {
+    backgroundColor: '#0f172a',
     borderColor: '#1e293b',
+  },
+  actionCardLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
   },
   actionIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#020617',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -244,17 +270,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   actionTitle: {
-    color: '#f8fafc',
     fontSize: 15,
     fontWeight: '700',
     marginBottom: 2,
   },
   actionSub: {
-    color: '#64748b',
     fontSize: 12,
   },
   actionArrow: {
-    color: '#475569',
     fontSize: 16,
     fontWeight: '800',
   },

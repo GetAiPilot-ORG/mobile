@@ -9,11 +9,12 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useColorScheme,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../../core/store/authStore';
 import { inboxApi } from '../api/inboxApi';
 import { ConversationCard } from '../components/ConversationCard';
@@ -22,7 +23,11 @@ import { ContactItem, NormalizedConversation } from '../types';
 import { ConversationScreen } from './ConversationScreen';
 
 export const InboxScreen: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'ALL' | 'UNASSIGNED' | 'MINE' | 'BOT_ACTIVE' | 'UNREAD'>('ALL');
+  const queryClient = useQueryClient();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  const [activeTab, setActiveTab] = useState<'ALL' | 'UNREAD' | 'UNASSIGNED' | 'MINE' | 'BOT_ACTIVE'>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeConversation, setActiveConversation] = useState<NormalizedConversation | null>(null);
   const [showNewChatModal, setShowNewChatModal] = useState<boolean>(false);
@@ -131,16 +136,30 @@ export const InboxScreen: React.FC = () => {
     }
   };
 
+  const handleOpenConversation = (item: NormalizedConversation) => {
+    // 1. Optimistically clear unread_count in React Query cache so badges clear immediately
+    queryClient.setQueriesData<NormalizedConversation[]>({ queryKey: ['conversations'] }, (old) => {
+      if (!old) return old;
+      return old.map((c) => (c.id === item.id ? { ...c, unread_count: 0 } : c));
+    });
 
+    // 2. Set active conversation with unread_count: 0
+    setActiveConversation({ ...item, unread_count: 0 });
+
+    // 3. Mark as read on the backend
+    if (item.unread_count > 0) {
+      inboxApi.markAsRead(item.id);
+    }
+  };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0b141a' : '#f8fafc' }]}>
       <View style={styles.container}>
         {/* Header Bar */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.title}>WhatsApp LiveChat</Text>
-            <Text style={styles.subtitle}>Omnichannel Customer Inbox</Text>
+            <Text style={[styles.title, { color: isDark ? '#e9edef' : '#0f172a' }]}>WhatsApp LiveChat</Text>
+            <Text style={[styles.subtitle, { color: isDark ? '#8696a0' : '#64748b' }]}>Omnichannel Customer Inbox</Text>
           </View>
           <View style={styles.headerRightActions}>
             {unreadTotal > 0 && (
@@ -159,18 +178,18 @@ export const InboxScreen: React.FC = () => {
         </View>
 
         {/* Search Bar */}
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={16} color="#8696a0" style={styles.searchIcon} />
+        <View style={[styles.searchBar, isDark ? styles.searchBarDark : styles.searchBarLight]}>
+          <Ionicons name="search" size={16} color={isDark ? '#8696a0' : '#94a3b8'} style={styles.searchIcon} />
           <TextInput
-            style={styles.searchInput}
-            placeholder="Search contacts, numbers or message content..."
-            placeholderTextColor="#8696a0"
+            style={[styles.searchInput, { color: isDark ? '#e9edef' : '#0f172a' }]}
+            placeholder="Search contacts, numbers or messages..."
+            placeholderTextColor={isDark ? '#8696a0' : '#94a3b8'}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
           {searchQuery ? (
             <Pressable onPress={() => setSearchQuery('')} hitSlop={10}>
-              <Ionicons name="close-circle" size={16} color="#8696a0" />
+              <Ionicons name="close-circle" size={16} color={isDark ? '#8696a0' : '#94a3b8'} />
             </Pressable>
           ) : null}
         </View>
@@ -179,34 +198,49 @@ export const InboxScreen: React.FC = () => {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll}>
           {[
             { id: 'ALL', label: 'All Chats', icon: 'chatbubbles' },
-            { id: 'UNASSIGNED', label: 'Unassigned', icon: 'help-circle' },
-            { id: 'MINE', label: 'Mine', icon: 'person' },
-            { id: 'BOT_ACTIVE', label: 'Bot Active', icon: 'hardware-chip' },
             { id: 'UNREAD', label: 'Unread', icon: 'mail-unread' },
-          ].map((tab) => (
-            <Pressable
-              key={tab.id}
-              style={[styles.tabPill, activeTab === tab.id && styles.activeTabPill]}
-              onPress={() => setActiveTab(tab.id as any)}
-            >
-              <Ionicons
-                name={tab.icon as any}
-                size={13}
-                color={activeTab === tab.id ? '#ffffff' : '#8696a0'}
-                style={{ marginRight: 5 }}
-              />
-              <Text style={[styles.tabText, activeTab === tab.id && styles.activeTabText]}>
-                {tab.label}
-              </Text>
-            </Pressable>
-          ))}
+            { id: 'UNASSIGNED', label: 'Unassigned', icon: 'person-add' },
+            { id: 'MINE', label: 'Assigned to Me', icon: 'person' },
+            { id: 'BOT_ACTIVE', label: 'AI Active', icon: 'hardware-chip' },
+          ].map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <Pressable
+                key={tab.id}
+                style={[
+                  styles.tabPill,
+                  isDark ? styles.tabPillDark : styles.tabPillLight,
+                  isActive && styles.activeTabPill,
+                ]}
+                onPress={() => setActiveTab(tab.id as any)}
+              >
+                <Ionicons
+                  name={tab.icon as any}
+                  size={13}
+                  color={isActive ? '#ffffff' : isDark ? '#8696a0' : '#64748b'}
+                  style={{ marginRight: 5 }}
+                />
+                <Text
+                  style={[
+                    styles.tabText,
+                    { color: isActive ? '#ffffff' : isDark ? '#8696a0' : '#64748b' },
+                    isActive && styles.activeTabText,
+                  ]}
+                >
+                  {tab.label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </ScrollView>
 
         {/* Conversation List */}
         {isLoading && !conversations ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#00a884" />
-            <Text style={styles.loadingText}>Syncing WhatsApp conversations...</Text>
+            <Text style={[styles.loadingText, { color: isDark ? '#8696a0' : '#64748b' }]}>
+              Syncing WhatsApp conversations...
+            </Text>
           </View>
         ) : (
           <FlatList
@@ -215,7 +249,7 @@ export const InboxScreen: React.FC = () => {
             renderItem={({ item }) => (
               <ConversationCard
                 conversation={item}
-                onPress={() => setActiveConversation(item)}
+                onPress={() => handleOpenConversation(item)}
               />
             )}
             contentContainerStyle={styles.listContent}
@@ -224,9 +258,11 @@ export const InboxScreen: React.FC = () => {
             }
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Ionicons name="chatbubble-ellipses-outline" size={48} color="#334155" />
-                <Text style={styles.emptyTitle}>No conversations found</Text>
-                <Text style={styles.emptySubtitle}>
+                <Ionicons name="chatbubble-ellipses-outline" size={48} color={isDark ? '#334155' : '#cbd5e1'} />
+                <Text style={[styles.emptyTitle, { color: isDark ? '#e9edef' : '#0f172a' }]}>
+                  No conversations found
+                </Text>
+                <Text style={[styles.emptySubtitle, { color: isDark ? '#8696a0' : '#64748b' }]}>
                   {activeTab !== 'ALL'
                     ? `No conversations match the '${activeTab}' filter.`
                     : 'Incoming messages from WhatsApp customers will appear here in real time.'}
@@ -253,26 +289,28 @@ export const InboxScreen: React.FC = () => {
           onRequestClose={() => setShowNewChatModal(false)}
         >
           <View style={styles.modalOverlay}>
-            <View style={styles.newChatModalBox}>
+            <View style={[styles.newChatModalBox, isDark ? styles.modalBoxDark : styles.modalBoxLight]}>
               <View style={styles.modalHeader}>
                 <View>
-                  <Text style={styles.modalTitle}>Start New WhatsApp Chat</Text>
-                  <Text style={styles.modalSub}>
+                  <Text style={[styles.modalTitle, { color: isDark ? '#e9edef' : '#0f172a' }]}>
+                    Start New WhatsApp Chat
+                  </Text>
+                  <Text style={[styles.modalSub, { color: isDark ? '#8696a0' : '#64748b' }]}>
                     Select a contact from your workspace to open live chat.
                   </Text>
                 </View>
                 <Pressable onPress={() => setShowNewChatModal(false)} hitSlop={10}>
-                  <Ionicons name="close" size={24} color="#8696a0" />
+                  <Ionicons name="close" size={24} color={isDark ? '#8696a0' : '#64748b'} />
                 </Pressable>
               </View>
 
               {/* Search Contacts */}
-              <View style={styles.contactSearchBox}>
-                <Ionicons name="search" size={15} color="#8696a0" style={{ marginRight: 8 }} />
+              <View style={[styles.contactSearchBox, isDark ? styles.contactSearchDark : styles.contactSearchLight]}>
+                <Ionicons name="search" size={15} color={isDark ? '#8696a0' : '#94a3b8'} style={{ marginRight: 8 }} />
                 <TextInput
-                  style={styles.contactSearchInput}
+                  style={[styles.contactSearchInput, { color: isDark ? '#e9edef' : '#0f172a' }]}
                   placeholder="Search contacts by name or phone..."
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={isDark ? '#8696a0' : '#94a3b8'}
                   value={contactSearchQuery}
                   onChangeText={setContactSearchQuery}
                 />
@@ -284,13 +322,13 @@ export const InboxScreen: React.FC = () => {
                   <ActivityIndicator size="small" color="#00a884" style={{ marginVertical: 20 }} />
                 ) : filteredContacts.length === 0 ? (
                   <View style={{ padding: 20, alignItems: 'center' }}>
-                    <Text style={{ color: '#8696a0', fontSize: 13 }}>No contacts found</Text>
+                    <Text style={{ color: isDark ? '#8696a0' : '#64748b', fontSize: 13 }}>No contacts found</Text>
                   </View>
                 ) : (
                   filteredContacts.map((cnt) => (
                     <Pressable
                       key={cnt.id}
-                      style={styles.contactItemRow}
+                      style={[styles.contactItemRow, isDark ? styles.contactItemDark : styles.contactItemLight]}
                       onPress={() => handleStartChatWithContact(cnt)}
                     >
                       <View style={styles.contactItemAvatar}>
@@ -299,10 +337,14 @@ export const InboxScreen: React.FC = () => {
                         </Text>
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.contactItemName}>{cnt.name || cnt.custom_name || 'Contact'}</Text>
-                        <Text style={styles.contactItemPhone}>+{cnt.phone || cnt.wa_id}</Text>
+                        <Text style={[styles.contactItemName, { color: isDark ? '#e9edef' : '#0f172a' }]}>
+                          {cnt.name || cnt.custom_name || 'Contact'}
+                        </Text>
+                        <Text style={[styles.contactItemPhone, { color: isDark ? '#8696a0' : '#64748b' }]}>
+                          +{cnt.phone || cnt.wa_id}
+                        </Text>
                       </View>
-                      <Ionicons name="chevron-forward" size={16} color="#8696a0" />
+                      <Ionicons name="chevron-forward" size={16} color={isDark ? '#8696a0' : '#94a3b8'} />
                     </Pressable>
                   ))
                 )}
@@ -311,7 +353,7 @@ export const InboxScreen: React.FC = () => {
           </View>
         </Modal>
 
-        {/* Fullscreen WhatsApp Conversation Modal (Completely overlays and hides bottom tab bar) */}
+        {/* Fullscreen WhatsApp Conversation Modal */}
         <Modal
           visible={!!activeConversation}
           animationType="slide"
@@ -339,7 +381,6 @@ export const InboxScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0b141a', // WhatsApp dark background
   },
   container: {
     flex: 1,
@@ -353,12 +394,10 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   title: {
-    color: '#e9edef',
     fontSize: 22,
     fontWeight: '800',
   },
   subtitle: {
-    color: '#8696a0',
     fontSize: 12,
     marginTop: 2,
   },
@@ -394,20 +433,25 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#111b21',
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 9,
     borderWidth: 1,
-    borderColor: '#202c33',
     marginBottom: 10,
+  },
+  searchBarDark: {
+    backgroundColor: '#111b21',
+    borderColor: '#202c33',
+  },
+  searchBarLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
   },
   searchIcon: {
     marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    color: '#e9edef',
     fontSize: 13.5,
   },
   tabsScroll: {
@@ -420,17 +464,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: '#111b21',
     marginRight: 6,
     borderWidth: 1,
+  },
+  tabPillDark: {
+    backgroundColor: '#111b21',
     borderColor: '#202c33',
+  },
+  tabPillLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
   },
   activeTabPill: {
     backgroundColor: '#00a884',
     borderColor: '#00a884',
   },
   tabText: {
-    color: '#8696a0',
     fontSize: 11.5,
     fontWeight: '600',
   },
@@ -447,7 +496,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: '#8696a0',
     fontSize: 13,
     marginTop: 12,
   },
@@ -456,14 +504,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyTitle: {
-    color: '#e9edef',
     fontSize: 15,
     fontWeight: '700',
     marginTop: 10,
     marginBottom: 6,
   },
   emptySubtitle: {
-    color: '#8696a0',
     fontSize: 12.5,
     textAlign: 'center',
     lineHeight: 18,
@@ -484,15 +530,23 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'flex-end',
   },
   newChatModalBox: {
-    backgroundColor: '#1f2c34',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 18,
     maxHeight: '80%',
+    borderWidth: 1,
+  },
+  modalBoxDark: {
+    backgroundColor: '#1f2c34',
+    borderColor: '#2a3942',
+  },
+  modalBoxLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -501,12 +555,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   modalTitle: {
-    color: '#e9edef',
     fontSize: 17,
     fontWeight: '800',
   },
   modalSub: {
-    color: '#8696a0',
     fontSize: 12,
     marginTop: 2,
     lineHeight: 16,
@@ -514,28 +566,39 @@ const styles = StyleSheet.create({
   contactSearchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#111b21',
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: '#2a3942',
     marginBottom: 10,
+  },
+  contactSearchDark: {
+    backgroundColor: '#111b21',
+    borderColor: '#2a3942',
+  },
+  contactSearchLight: {
+    backgroundColor: '#f8fafc',
+    borderColor: '#e2e8f0',
   },
   contactSearchInput: {
     flex: 1,
-    color: '#e9edef',
     fontSize: 13,
   },
   contactItemRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#111b21',
     padding: 12,
     borderRadius: 12,
     marginBottom: 8,
     borderWidth: 1,
+  },
+  contactItemDark: {
+    backgroundColor: '#111b21',
     borderColor: '#2a3942',
+  },
+  contactItemLight: {
+    backgroundColor: '#f8fafc',
+    borderColor: '#e2e8f0',
   },
   contactItemAvatar: {
     width: 36,
@@ -552,13 +615,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   contactItemName: {
-    color: '#e9edef',
     fontSize: 14,
     fontWeight: '700',
   },
   contactItemPhone: {
-    color: '#8696a0',
     fontSize: 11.5,
     marginTop: 2,
   },
 });
+

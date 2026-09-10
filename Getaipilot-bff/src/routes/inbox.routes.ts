@@ -94,6 +94,14 @@ export async function inboxRoutes(fastify: FastifyInstance) {
     return reply.send({ success: true, updated });
   });
 
+  // PATCH /mobile/v1/conversations/:id/read - Mark conversation as read
+  fastify.patch('/conversations/:id/read', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { id } = request.params as { id: string };
+    await InboxService.markConversationAsRead(id, user);
+    return reply.send({ success: true, id, unread_count: 0 });
+  });
+
   // GET /mobile/v1/team/members - Organization team members for agent assignment
   fastify.get('/team/members', { preHandler: [authenticateToken] }, async (request, reply) => {
     const user = request.user as JWTPayload;
