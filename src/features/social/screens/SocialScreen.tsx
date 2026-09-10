@@ -148,16 +148,21 @@ export const SocialScreen: React.FC = () => {
 
   // Extract all genuinely connected accounts
   const connectedList = React.useMemo(() => {
-    if (Array.isArray(accountsData)) return accountsData;
+    if (Array.isArray(accountsData)) {
+      return accountsData.map((a: any) => ({
+        ...a,
+        provider: a.provider || a.platform || 'channel',
+      }));
+    }
     if (accountsData && typeof accountsData === 'object') {
       const list: any[] = [];
       const providers = ['facebook', 'instagram', 'threads', 'youtube', 'linkedin', 'x', 'pinterest', 'reddit', 'bluesky', 'mastodon', 'googleBusiness'];
       for (const p of providers) {
         const arrKey = `${p}Accounts`;
         if (Array.isArray(accountsData[arrKey]) && accountsData[arrKey].length > 0) {
-          list.push(...accountsData[arrKey].map((a: any) => ({ ...a, provider: a.provider || p })));
+          list.push(...accountsData[arrKey].map((a: any) => ({ ...a, provider: a.provider || a.platform || p })));
         } else if (accountsData[p]?.connected) {
-          list.push({ ...accountsData[p], provider: p });
+          list.push({ ...accountsData[p], provider: accountsData[p].provider || accountsData[p].platform || p });
         }
       }
       return list;
@@ -165,13 +170,29 @@ export const SocialScreen: React.FC = () => {
     return [];
   }, [accountsData]);
 
-  const totalSentCount = ops.sent ?? postsList.filter((p: any) => p.status === 'sent' || p.status === 'published').length;
-  const totalFailedCount = ops.failed ?? postsList.filter((p: any) => p.status === 'failed').length;
+  const sentPostsCount = postsList.filter((p: any) => {
+    const s = (p.status || '').toLowerCase();
+    return s === 'sent' || s === 'published' || s === 'completed' || s === 'success' || s === 'delivered';
+  }).length;
+
+  const scheduledPostsCount = queueList.length > 0
+    ? queueList.length
+    : postsList.filter((p: any) => {
+        const s = (p.status || '').toLowerCase();
+        return s === 'scheduled' || s === 'queued' || s === 'pending';
+      }).length;
+
+  const totalSentCount = (ops.sent && ops.sent > 0) ? Math.max(ops.sent, sentPostsCount) : sentPostsCount;
+  const totalScheduledCount = (ops.scheduled && ops.scheduled > 0) ? Math.max(ops.scheduled, scheduledPostsCount) : scheduledPostsCount;
+  const totalFailedCount = (ops.failed && ops.failed > 0) ? ops.failed : postsList.filter((p: any) => (p.status || '').toLowerCase() === 'failed').length;
+
   const totalCompleted = totalSentCount + totalFailedCount;
-  const computedSuccessRate = totalCompleted > 0 ? `${Math.round((totalSentCount / totalCompleted) * 100)}%` : '0%';
+  const computedSuccessRate = totalCompleted > 0
+    ? `${Math.round((totalSentCount / totalCompleted) * 100)}%`
+    : (totalSentCount > 0 ? '100%' : '0%');
   const recentActivityList = (ops.recentActivity && ops.recentActivity.length > 0 ? ops.recentActivity : postsList).slice(0, 5);
 
-  const getPlatformIconName = (provider: string) => {
+  const getPlatformIconName = (provider?: string) => {
     switch (provider?.toLowerCase()) {
       case 'facebook':
         return 'logo-facebook';
@@ -188,12 +209,14 @@ export const SocialScreen: React.FC = () => {
         return 'logo-twitter';
       case 'reddit':
         return 'logo-reddit';
+      case 'pinterest':
+        return 'logo-pinterest';
       default:
         return 'globe-outline';
     }
   };
 
-  const getPlatformColor = (provider: string) => {
+  const getPlatformColor = (provider?: string) => {
     switch (provider?.toLowerCase()) {
       case 'facebook':
         return '#1877f2';
@@ -208,6 +231,10 @@ export const SocialScreen: React.FC = () => {
       case 'x':
       case 'twitter':
         return '#000000';
+      case 'reddit':
+        return '#ff4500';
+      case 'pinterest':
+        return '#e60023';
       default:
         return '#ec4899';
     }
@@ -303,7 +330,7 @@ export const SocialScreen: React.FC = () => {
               <View style={[styles.metricCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
                 <Ionicons name="time" size={18} color="#3b82f6" />
                 <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                  {ops.scheduled ?? queueList.length}
+                  {totalScheduledCount}
                 </Text>
                 <Text style={styles.metricLabel}>Scheduled</Text>
               </View>
@@ -344,7 +371,7 @@ export const SocialScreen: React.FC = () => {
               ) : (
                 <View style={styles.channelsPillsRow}>
                   {connectedList.map((acc: any, idx: number) => {
-                    const provider = acc.provider || 'Channel';
+                    const provider = acc.provider || acc.platform || 'channel';
                     const name = acc.username || acc.name || acc.channelTitle || provider;
                     const avatarUrl = acc.profilePicture || acc.profile_picture_url;
                     return (

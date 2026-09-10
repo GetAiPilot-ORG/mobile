@@ -357,6 +357,7 @@ export class SocialAdapter {
             normalized.push({
               id: acc.id || acc.accountId || acc.pageId || `${p}_${normalized.length}`,
               platform: p,
+              provider: p,
               account_name: acc.name || acc.username || acc.channelTitle || p,
               username: acc.username || acc.name || '',
               avatar: acc.profilePicture || acc.profile_picture_url || acc.thumbnailUrl || null,
@@ -370,6 +371,7 @@ export class SocialAdapter {
           normalized.push({
             id: acc.id || acc.accountId || `${p}_0`,
             platform: p,
+            provider: p,
             account_name: acc.name || acc.username || p,
             username: acc.username || acc.name || '',
             avatar: acc.profilePicture || acc.profile_picture_url || null,
