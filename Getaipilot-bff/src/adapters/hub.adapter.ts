@@ -239,7 +239,7 @@ export class HubAdapter {
 
     const isAdmin = role === 'Admin' || role === 'Owner';
     const organizationId = member?.organization_id || profile?.organization_id || `org_${userId.slice(0, 8)}`;
-    const subscriptionTier = subscription?.plan_label || subscription?.plan_id || 'Growth Pro Plan';
+    const subscriptionTier = subscription?.plan_label || subscription?.plan_id || profile?.subscription || 'Growth Pro Plan';
 
     return {
       id: userId,
@@ -253,6 +253,164 @@ export class HubAdapter {
       subscriptionTier,
       subscriptionStatus: subscription?.subscription_status || 'active',
     };
+  }
+
+  /**
+   * Fetches full profile record bypassing RLS
+   */
+  public static async getUserProfileDetails(userId: string) {
+    const client = this.adminClient;
+    const { data: profile, error } = await client
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.warn(`[HubAdapter] Failed to fetch full profile for ${userId}:`, error.message);
+    }
+    return profile;
+  }
+
+  /**
+   * Updates user profile record bypassing RLS
+   */
+  public static async updateUserProfile(userId: string, updates: Record<string, any>) {
+    const client = this.adminClient;
+    const { data, error } = await client
+      .from('profiles')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', userId)
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+    return data;
+  }
+
+  /**
+   * Fetches real user subscription details bypassing RLS
+   */
+  public static async getUserSubscriptionDetails(userId: string) {
+    const client = this.adminClient;
+
+    // 1. Check direct personal subscription
+    let { data: sub } = await client
+      .from('app_user_subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    // 2. Fetch profile to check isAdmin or profile-level subscription string
+    const { data: profile } = await client
+      .from('profiles')
+      .select('is_admin, role, subscription, full_name, mobile_number')
+      .eq('id', userId)
+      .maybeSingle();
+
+    // 3. If no direct sub, check organization owner's subscription
+    if (!sub) {
+      const { data: member } = await client
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (member?.organization_id) {
+        const { data: ownerMember } = await client
+          .from('organization_members')
+          .select('user_id')
+          .eq('organization_id', member.organization_id)
+          .eq('role', 'owner')
+          .maybeSingle();
+
+        if (ownerMember?.user_id) {
+          const { data: ownerSub } = await client
+            .from('app_user_subscriptions')
+            .select('*')
+            .eq('user_id', ownerMember.user_id)
+            .maybeSingle();
+
+          if (ownerSub) {
+            sub = ownerSub;
+          }
+        }
+      }
+    }
+
+    // 4. Fallback if profile has a declared subscription but app_user_subscriptions row is missing
+    if (!sub && profile?.subscription) {
+      sub = {
+        user_id: userId,
+        plan_id: profile.subscription.toLowerCase().replace(/\s+/g, '_'),
+        plan_label: profile.subscription,
+        subscription_status: 'active',
+        started_at: '2026-08-01T00:00:00.000Z',
+        expires_at: '2027-02-03T00:00:00.000Z',
+      };
+    }
+
+    const isAdmin = Boolean(profile?.is_admin || profile?.role === 'owner' || profile?.role === 'admin');
+
+    return {
+      sub,
+      isAdmin,
+    };
+  }
+
+  /**
+   * Fetches user payment invoice history bypassing RLS
+   */
+  public static async getUserInvoices(userId: string) {
+    const client = this.adminClient;
+    const { data } = await client
+      .from('app_subscription_payments')
+      .select('*')
+      .eq('user_id', userId)
+      .order('charged_at', { ascending: false })
+      .limit(20);
+
+    return data || [];
+  }
+
+  /**
+   * Fetches user billing profile bypassing RLS
+   */
+  public static async getUserBillingProfile(userId: string) {
+    const client = this.adminClient;
+    const { data } = await client
+      .from('app_billing_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    return data;
+  }
+
+  /**
+   * Saves or updates user billing profile bypassing RLS
+   */
+  public static async saveUserBillingProfile(userId: string, data: Record<string, any>) {
+    const client = this.adminClient;
+    const { data: saved, error } = await client
+      .from('app_billing_profiles')
+      .upsert({
+        user_id: userId,
+        ...data,
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+    return saved;
   }
 
   /**
