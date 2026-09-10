@@ -17,8 +17,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../core/store/authStore';
 import { crmApi } from '../../crm/api/crm.api';
 import { inboxApi } from '../api/inboxApi';
-import { ChannelBadge } from '../components/ChannelBadge';
-import { MessageBubble } from '../components/MessageBubble';
+import { ChannelBadge, MessageBubble } from '../components';
 import { useInboxWebSocket } from '../hooks/useInboxWebSocket';
 import { NormalizedConversation } from '../types';
 

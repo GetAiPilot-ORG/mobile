@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { TemplateCard } from '../components/TemplateCard';
+import { TemplateCard } from '../components';
 import { useWhatsAppTemplates } from '../hooks/useWhatsAppTemplates';
 
 interface WhatsAppTemplatesScreenProps {

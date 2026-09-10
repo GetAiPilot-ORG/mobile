@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { FlatList, RefreshControl, SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import { LeadCard } from '../components/LeadCard';
-import { PipelineStage } from '../components/PipelineStage';
+import { LeadCard, PipelineStage } from '../components';
 import { useLeads } from '../hooks/useLeads';
 import { usePipelines } from '../hooks/usePipelines';
 import { LeadDetailScreen } from './LeadDetailScreen';

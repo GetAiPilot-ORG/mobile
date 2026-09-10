@@ -15,10 +15,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AppScreen } from '../../../components/AppScreen';
 import { AppTopBar } from '../../../components/AppTopBar';
 import { apiClient } from '../../../core/api/client';
-import { CallDetailsModal } from '../components/CallDetailsModal';
-import { TriggerCallModal } from '../components/TriggerCallModal';
-import { CreateCampaignModal } from '../components/CreateCampaignModal';
-import { CreateAgentModal } from '../components/CreateAgentModal';
+import {
+  CallDetailsModal,
+  TriggerCallModal,
+  CreateCampaignModal,
+  CreateAgentModal,
+} from '../components';
 
 type VoiceSectionKey = 'overview' | 'calls' | 'agents' | 'campaigns' | 'numbers';
 

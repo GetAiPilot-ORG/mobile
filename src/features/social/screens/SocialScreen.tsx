@@ -18,9 +18,11 @@ import * as Haptics from 'expo-haptics';
 import { AppScreen } from '../../../components/AppScreen';
 import { AppTopBar } from '../../../components/AppTopBar';
 import { apiClient } from '../../../core/api/client';
-import { CreatePostModal } from '../components/CreatePostModal';
-import { PostDetailsModal } from '../components/PostDetailsModal';
-import { AccountsModal } from '../components/AccountsModal';
+import {
+  CreatePostModal,
+  PostDetailsModal,
+  AccountsModal,
+} from '../components';
 
 type TabType = 'overview' | 'posts' | 'calendar' | 'trends';
 

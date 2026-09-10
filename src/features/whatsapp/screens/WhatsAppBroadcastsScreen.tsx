@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BroadcastCard } from '../components/BroadcastCard';
+import { BroadcastCard } from '../components';
 import { useWhatsAppBroadcasts } from '../hooks/useWhatsAppBroadcasts';
 import { WhatsAppBroadcast } from '../types';
 import { CreateBroadcastScreen } from './CreateBroadcastScreen';
