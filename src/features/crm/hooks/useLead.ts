@@ -13,10 +13,9 @@ export function useLead(leadId: string) {
 
   const timelineQuery = useQuery({
     queryKey: ['crm_lead_activities', leadId],
-    queryFn: () => crmApi.getLeadActivities(leadId),
+    queryFn: () => crmApi.getActivities({ contact_id: leadId }),
     enabled: isAuthenticated && !!leadId,
   });
-
 
   return {
     lead: leadQuery.data,
