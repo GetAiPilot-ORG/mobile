@@ -27,7 +27,7 @@ interface ToolItem {
   badge: string;
   route: string;
   builder?: {
-    targetTool: "landing-builder" | "bio-builder" | "web-app";
+    targetTool: "landing-templates" | "bio-builder" | "web-app";
     templateId?: string;
   };
 }
@@ -77,11 +77,9 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
       "Pre-built high-converting lead capture funnels and product waitlist pages.",
     icon: "🚀",
     badge: "Ready",
-    // route: "/free-tools/landing-templates",
     route: "/free-tools/landing-templates",
     builder: {
-      targetTool: "landing-builder",
-      templateId: "axnix-saas",
+      targetTool: "landing-templates",
     },
   },
   {
@@ -193,6 +191,8 @@ export default function FreeToolsScreen() {
           tool.builder.targetTool,
           tool.builder.templateId,
         );
+      } else if (tool.builder.targetTool === "landing-templates") {
+        await openAuthenticatedTemplate(tool.builder.targetTool, "");
       }
     } catch (error) {
       console.error(`Failed to open ${tool.id}:`, error);

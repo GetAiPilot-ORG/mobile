@@ -2,7 +2,7 @@ import { randomBytes } from "crypto";
 
 export type WebviewTool =
   | "web-app"
-  | "landing-builder"
+  | "landing-templates"
   | "bio-builder"
   | "flow-builder"
   | "workflow-builder";

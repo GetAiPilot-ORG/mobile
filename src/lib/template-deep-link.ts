@@ -1,8 +1,8 @@
 import * as Linking from "expo-linking";
 import { supabase } from "./supabase";
 
-type Builder = "bio-builder" | "landing-builder";
-type SsoClientId = "web" | "bio-builder" | "landing-builder";
+type Builder = "bio-builder" | "landing-templates";
+type SsoClientId = "web" | "bio-builder" | "landing-templates";
 
 interface SsoResponse {
   targetUrl: string;
@@ -55,16 +55,17 @@ export async function openAuthenticatedWebApp(): Promise<void> {
  * Starts a browser builder with a one-time Supabase SSO handoff.
  */
 export async function openAuthenticatedTemplate(
-  builder: Builder,
+  // builder: Builder,
+  targetTool: "landing-templates" | "bio-builder",
   templateId: string,
 ): Promise<void> {
   const normalizedTemplateId = templateId.trim();
-  if (!normalizedTemplateId) {
+  if (!normalizedTemplateId && targetTool === "bio-builder") {
     throw new Error("A template must be selected before opening the editor.");
   }
 
   await openExternalSSO({
-    clientId: builder,
+    clientId: targetTool,
     templateId: normalizedTemplateId,
   });
 }

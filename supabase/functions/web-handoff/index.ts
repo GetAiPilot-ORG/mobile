@@ -12,7 +12,7 @@ const corsHeaders = {
 const HANDOFF_TTL_SECONDS = 300;
 const targetTools = new Set([
   "web-app",
-  "landing-builder",
+  "landing-templates",
   "bio-builder",
   "flow-builder",
   "workflow-builder",
@@ -28,7 +28,7 @@ const clients = new Map([
     ]),
   ],
   ["bio-builder", new Set(["/free-tools/bio-templates"])],
-  ["landing-builder", new Set(["/free-tools/landing-templates"])],
+  ["landing-templates", new Set(["/free-tools/landing-templates"])],
 ]);
 
 function isAllowedRedirect(clientId: string, redirectPath: string) {
@@ -68,7 +68,10 @@ Deno.serve(async (request) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const webAppUrl = Deno.env.get("WEB_APP_URL") || "https://getaipilot.com";
+  const webAppUrl =
+    Deno.env.get("WEB_APP_URL") ||
+    "http://localhost:8080" ||
+    "https://getaipilot.com";
 
   if (!supabaseUrl || !anonKey || !serviceRoleKey) {
     return json({ error: "Function is not configured" }, 500);
@@ -102,7 +105,7 @@ Deno.serve(async (request) => {
     const redirectPath =
       body.targetTool === "bio-builder"
         ? `/free-tools/builder/${encodeURIComponent(body.templateId?.trim() || "creators-v1")}`
-        : body.targetTool === "landing-builder"
+        : body.targetTool === "landing-templates"
           ? "/free-tools/landing-templates"
           : "/";
     if (!isAllowedRedirect(clientId, redirectPath)) {

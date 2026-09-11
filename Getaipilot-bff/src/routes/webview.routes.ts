@@ -11,7 +11,7 @@ import { JWTPayload } from "../types/index.js";
 
 const targetToolSchema = z.enum([
   "web-app",
-  "landing-builder",
+  "landing-templates",
   "bio-builder",
   "flow-builder",
   "workflow-builder",
