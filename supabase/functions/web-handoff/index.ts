@@ -71,7 +71,7 @@ Deno.serve(async (request) => {
   const webAppUrl =
     Deno.env.get("WEB_APP_URL") ||
     "http://localhost:8080" ||
-    "https://getaipilot.com";
+    "https://getaipilot.in";
 
   if (!supabaseUrl || !anonKey || !serviceRoleKey) {
     return json({ error: "Function is not configured" }, 500);
