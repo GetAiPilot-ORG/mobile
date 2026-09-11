@@ -223,6 +223,69 @@ export interface TelegramTrackerBot {
   created_at: string;
 }
 
+export interface TelegramTrackerLink {
+  id: string;
+  title: string;
+  bot_id?: string;
+  bot_username: string;
+  channel_name: string;
+  source_type: string;
+  bot_starts: number;
+  joined: number;
+  conversion_rate: number;
+  deep_link_url: string;
+  created_at: string;
+}
+
+export interface TelegramTrackerChannelReport {
+  channel_id: string;
+  channel_name: string;
+  channel_icon_url?: string | null;
+  total_links: number;
+  period_joins: number;
+  joined: number;
+  left: number;
+  all_active: number;
+  links: Array<{
+    id: string;
+    title: string;
+    joins: number;
+  }>;
+}
+
+export interface TelegramTrackerNewUser {
+  id: string;
+  telegram_user_id: string | number;
+  name: string;
+  username?: string;
+  channel_name: string;
+  bot_username: string;
+  time_ago: string;
+  status: 'Bot Start' | 'Active' | 'Leave' | 'Pending';
+  created_at: string;
+}
+
+export interface TelegramTrackerDashboardData {
+  kpis: {
+    totalJoins: number;
+    todaysJoins: number;
+    thisMonthJoins: number;
+    botStarts: number;
+    pendingJoins: number;
+    conversionRate: number;
+  };
+  period: {
+    startDate: string;
+    endDate: string;
+    periodJoins: number;
+    totalTracked: number;
+    allTimeActive: number;
+  };
+  channels: TelegramTrackerChannelReport[];
+  newUsers: TelegramTrackerNewUser[];
+  totalUsersCount: number;
+}
+
 export interface TelegramSummary {
   botConnected: boolean;
   botUsername?: string;
