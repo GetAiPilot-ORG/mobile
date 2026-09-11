@@ -458,7 +458,7 @@ export class TelegramAdapter {
           .maybeSingle(),
         this.supabase
           .from('profiles')
-          .select('telegram_user_id, business_name, full_name, website, business_email')
+          .select('telegram_user_id, business_name, full_name, website, business_email, avatar_url')
           .eq('id', effectiveUserId)
           .maybeSingle(),
         this.supabase
@@ -487,7 +487,7 @@ export class TelegramAdapter {
           website: profile?.website || 'getaipilot.com',
           email: profile?.business_email || 'research@example.com',
           officeAddress: 'e.g. Kallam, Latur, Maharashtra',
-          logoUrl: null,
+          logoUrl: profile?.avatar_url || null,
           page1Disclaimer: 'Add short SEBI/risk disclaimer for the first page.',
           page2Disclosure: 'Optional disclosure content.',
           page3Conflicts: 'Optional conflict of interest content.',
@@ -543,17 +543,20 @@ export class TelegramAdapter {
   public static async saveReportBotSettings(payload: any, context?: TelegramUserSessionContext) {
     const effectiveUserId = context?.userId || '9f77c84d-89bb-4406-8ca0-e412ebc33f7f';
     try {
-      if (payload.advisoryFirm || payload.researchAnalyst || payload.website) {
-        await this.supabase
-          .from('profiles')
-          .update({
-            business_name: payload.advisoryFirm,
-            full_name: payload.researchAnalyst,
-            website: payload.website,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', effectiveUserId);
-      }
+      const updateData: any = {
+        updated_at: new Date().toISOString(),
+      };
+      if (payload.advisoryFirm !== undefined) updateData.business_name = payload.advisoryFirm;
+      if (payload.researchAnalyst !== undefined) updateData.full_name = payload.researchAnalyst;
+      if (payload.website !== undefined) updateData.website = payload.website;
+      if (payload.email !== undefined) updateData.business_email = payload.email;
+      if (payload.logoUrl !== undefined) updateData.avatar_url = payload.logoUrl;
+
+      await this.supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', effectiveUserId);
+
       return { success: true, settings: payload };
     } catch (err) {
       console.warn('[TG REPORT BOT SAVE ERROR]', err);
