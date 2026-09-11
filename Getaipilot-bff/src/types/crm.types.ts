@@ -1,8 +1,8 @@
-export type ContactStatus = 'lead' | 'prospect' | 'customer' | 'churned' | 'open' | 'active' | 'archived';
+export type ContactStatus = 'lead' | 'prospect' | 'customer' | 'churned';
 export type DealStage = 'lead' | 'qualified' | 'proposal' | 'negotiation' | 'closed_won' | 'closed_lost';
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'cancelled';
-export type ActivityType = 'call' | 'email' | 'meeting' | 'note' | 'task' | 'follow_up' | 'message' | 'stage_change' | 'assignment' | 'form_submission';
+export type ActivityType = 'call' | 'email' | 'meeting' | 'note' | 'task' | 'follow_up';
 
 export interface CRMMember {
   id: string;
@@ -20,7 +20,7 @@ export interface CRMContact {
   org_id: string;
   first_name: string;
   last_name: string;
-  name: string;
+  name?: string; // computed first_name + last_name
   email?: string | null;
   phone?: string | null;
   company?: string | null;
@@ -31,20 +31,9 @@ export interface CRMContact {
   tags?: string[];
   created_at: string;
   updated_at: string;
-  assignee?: CRMMember | null;
-  // Compatibility fields
-  pipeline_id?: string;
-  stage_id?: string;
-  stage_name?: string;
-  value?: number | null;
-  currency?: string | null;
-  source?: string | null;
-  avatar_url?: string | null;
-  owner?: { id: string; name: string } | null;
+  // Joins
+  assignee?: { id: string; name: string; email: string } | null;
 }
-
-export type Lead = CRMContact;
-export type CRMLead = CRMContact;
 
 export interface CRMDeal {
   id: string;
@@ -60,8 +49,9 @@ export interface CRMDeal {
   notes?: string | null;
   created_at: string;
   updated_at: string;
+  // Joins
   contact?: CRMContact | null;
-  assignee?: CRMMember | null;
+  assignee?: { id: string; name: string; email: string } | null;
 }
 
 export interface CRMTask {
@@ -77,9 +67,10 @@ export interface CRMTask {
   deal_id?: string | null;
   created_at: string;
   updated_at: string;
+  // Joins
   contact?: { id: string; first_name: string; last_name: string; email?: string | null; phone?: string | null } | null;
   deal?: { id: string; title: string; value: number } | null;
-  assignee?: CRMMember | null;
+  assignee?: { id: string; name: string; email: string } | null;
 }
 
 export interface CRMActivityComment {
@@ -93,13 +84,10 @@ export interface CRMActivityComment {
 
 export interface CRMActivity {
   id: string;
-  org_id?: string;
-  lead_id?: string;
+  org_id: string;
   type: ActivityType;
-  subject?: string;
-  title?: string;
+  subject: string;
   description?: string | null;
-  product?: string;
   contact_id?: string | null;
   deal_id?: string | null;
   created_by?: string | null;
@@ -109,31 +97,13 @@ export interface CRMActivity {
   scheduled_for?: string | null;
   completed_at?: string | null;
   created_at: string;
-  updated_at?: string;
+  updated_at: string;
+  // Joins
   contact?: { id: string; first_name: string; last_name: string } | null;
   deal?: { id: string; title: string } | null;
   user?: { id: string; name: string; email: string } | null;
-  assignee?: CRMMember | null;
+  assignee?: { id: string; name: string; email: string } | null;
   comments?: CRMActivityComment[];
-}
-
-export interface PipelineStage {
-  id?: string;
-  name?: string;
-  order?: number;
-  stage: DealStage;
-  label: string;
-  color: string;
-  count: number;
-  lead_count?: number;
-  totalValue: number;
-  total_value?: number;
-}
-
-export interface Pipeline {
-  id: string;
-  name: string;
-  stages: PipelineStage[];
 }
 
 export interface CRMDashboardSummary {
@@ -153,16 +123,20 @@ export interface CRMDashboardSummary {
   recentLeads: CRMContact[];
   upcomingTasks: CRMTask[];
   recentActivities: CRMActivity[];
-  pipelineSummary: PipelineStage[];
+  pipelineSummary: Array<{
+    stage: DealStage;
+    label: string;
+    count: number;
+    totalValue: number;
+    color: string;
+  }>;
 }
 
-export interface PaginatedLeadsResponse {
-  leads: CRMContact[];
-  total_count: number;
-  next_cursor?: string | null;
-}
-
-export interface PaginatedContactsResponse {
-  contacts: CRMContact[];
-  total_count: number;
+export interface CRMContext {
+  hubUserId: string;
+  hubOrgId: string;
+  crmOrgId: string;
+  crmMemberId: string;
+  crmRole: string;
+  permissions: Record<string, boolean>;
 }
