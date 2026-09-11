@@ -1,10 +1,11 @@
-import { randomBytes } from 'crypto';
+import { randomBytes } from "crypto";
 
 export type WebviewTool =
-  | 'landing-builder'
-  | 'bio-builder'
-  | 'flow-builder'
-  | 'workflow-builder';
+  | "web-app"
+  | "landing-templates"
+  | "bio-builder"
+  | "flow-builder"
+  | "workflow-builder";
 
 export interface WebviewAuthCodePayload {
   userId: string;
@@ -32,7 +33,7 @@ export class WebviewAuthCodeService {
   static create(payload: WebviewAuthCodePayload, ttlSeconds: number): string {
     this.removeExpired();
 
-    const code = randomBytes(32).toString('base64url');
+    const code = randomBytes(32).toString("base64url");
     this.pendingCodes.set(code, {
       ...payload,
       expiresAt: Date.now() + ttlSeconds * 1000,

@@ -10,7 +10,8 @@ import {
 import { JWTPayload } from "../types/index.js";
 
 const targetToolSchema = z.enum([
-  "landing-builder",
+  "web-app",
+  "landing-templates",
   "bio-builder",
   "flow-builder",
   "workflow-builder",
@@ -24,11 +25,12 @@ const exchangeSessionSchema = z.object({
   authCode: z.string().trim().min(1).max(512),
 });
 const builderWebPaths = {
+  "web-app": "/",
   "landing-builder": "/free-tools/landing-templates",
-  "bio-builder": "/free-tools/bio-templates",
   "flow-builder": "/tools/flow-builder",
   "workflow-builder": "/tools/workflow-builder",
 } as const;
+const publicBioTemplateIds = new Set(["creators-v1"]);
 
 function invalidPayload(reply: any) {
   return reply.status(400).send({
@@ -51,7 +53,11 @@ export async function webviewRoutes(fastify: FastifyInstance) {
       const parsedBody = createSessionSchema.safeParse(request.body);
       if (!parsedBody.success) return invalidPayload(reply);
       const body = parsedBody.data;
-      if (body.targetTool === "bio-builder" && body.templateId) {
+      if (
+        body.targetTool === "bio-builder" &&
+        body.templateId &&
+        !publicBioTemplateIds.has(body.templateId)
+      ) {
         const ownsTemplate = await HubAdapter.userOwnsBioTemplate(
           user.user_id,
           body.templateId,
@@ -76,10 +82,11 @@ export async function webviewRoutes(fastify: FastifyInstance) {
         env.WEBVIEW_AUTH_CODE_TTL_SECONDS,
       );
 
-      const targetUrl = new URL(
-        builderWebPaths[body.targetTool],
-        env.WEB_APP_URL,
-      );
+      const webPath =
+        body.targetTool === "bio-builder"
+          ? `/free-tools/builder/${encodeURIComponent(body.templateId ?? "creators-v1")}`
+          : builderWebPaths[body.targetTool];
+      const targetUrl = new URL(webPath, env.WEB_APP_URL);
       targetUrl.searchParams.set("auth_code", authCode);
       if (body.templateId) {
         targetUrl.searchParams.set("template_id", body.templateId);
