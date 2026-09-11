@@ -249,7 +249,7 @@ export const TelegramScreen: React.FC = () => {
           <ActivityIndicator size="large" color="#0284C7" style={{ marginTop: 40 }} />
         ) : (
           <>
-            {/* ≡ƒîƒ HERO: TELEGRAM MASTER DASHBOARD (6 KPI CARDS) */}
+            {/* HERO: TELEGRAM MASTER DASHBOARD (6 KPI CARDS) */}
             <View style={[styles.commandCenterCard, isDark ? styles.cardDark : styles.cardLight]}>
               {/* Header with DB Synced Badge & Actions */}
               <View style={styles.commandHeader}>
@@ -405,7 +405,7 @@ export const TelegramScreen: React.FC = () => {
                     <Ionicons name="card-outline" size={13} color="#F59E0B" />
                   </View>
                   <Text style={[styles.metricValue, { color: '#0284C7' }]}>
-                    Γé╣{(summary?.revenue ?? 0).toLocaleString()}
+                    ₹{(summary?.revenue ?? 0).toLocaleString()}
                   </Text>
                   <View style={styles.metricFooterRow}>
                     <Text style={styles.metricSub}>Total collected</Text>
@@ -415,10 +415,10 @@ export const TelegramScreen: React.FC = () => {
               </View>
             </View>
 
-            {/* ≡ƒôè VISUAL ANALYTICS CHARTS (CHANNEL JOIN TRACKING & TELESUB REVENUE) */}
+            {/* VISUAL ANALYTICS CHARTS (CHANNEL JOIN TRACKING & TELESUB REVENUE) */}
             <DashboardAnalyticsCharts />
 
-            {/* ΓÜí QUICK LAUNCH ACTIONS PILL BAR (WITH DIRECT NAVIGATION & TOOL TRIGGERS) */}
+            {/* QUICK LAUNCH ACTIONS PILL BAR (WITH DIRECT NAVIGATION & TOOL TRIGGERS) */}
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -429,7 +429,7 @@ export const TelegramScreen: React.FC = () => {
                 onPress={() => handleTabChange('hub')}
               >
                 <Ionicons name="apps" size={15} color="#0284C7" />
-                <Text style={[styles.quickLaunchText, { color: '#0284C7', fontWeight: '800' }]}>ΓÜí 8-Tool Suite</Text>
+                <Text style={[styles.quickLaunchText, { color: '#0284C7', fontWeight: '800' }]}>8-Tool Suite</Text>
               </Pressable>
 
               <Pressable
@@ -451,7 +451,7 @@ export const TelegramScreen: React.FC = () => {
                 }}
               >
                 <Ionicons name="card" size={15} color="#EC4899" />
-                <Text style={[styles.quickLaunchText, { color: '#EC4899' }]}>≡ƒÆÄ TeleSub Pages</Text>
+                <Text style={[styles.quickLaunchText, { color: '#EC4899' }]}>TeleSub Pages</Text>
               </Pressable>
 
               <Pressable
@@ -459,7 +459,7 @@ export const TelegramScreen: React.FC = () => {
                 onPress={() => openToolModal('broadcast')}
               >
                 <Ionicons name="megaphone" size={15} color="#0284C7" />
-                <Text style={[styles.quickLaunchText, { color: '#0284C7' }]}>≡ƒôó Broadcast</Text>
+                <Text style={[styles.quickLaunchText, { color: '#0284C7' }]}>Broadcast</Text>
               </Pressable>
 
               <Pressable
@@ -467,7 +467,7 @@ export const TelegramScreen: React.FC = () => {
                 onPress={() => openToolModal('reactions')}
               >
                 <Ionicons name="flash" size={15} color="#F59E0B" />
-                <Text style={[styles.quickLaunchText, { color: '#F59E0B' }]}>≡ƒöÑ Reactions</Text>
+                <Text style={[styles.quickLaunchText, { color: '#F59E0B' }]}>Reactions</Text>
               </Pressable>
 
               <Pressable
@@ -478,7 +478,7 @@ export const TelegramScreen: React.FC = () => {
                 }}
               >
                 <Ionicons name="analytics" size={15} color="#10B981" />
-                <Text style={[styles.quickLaunchText, { color: '#10B981' }]}>≡ƒôè Tracker Bots</Text>
+                <Text style={[styles.quickLaunchText, { color: '#10B981' }]}>Tracker Bots</Text>
               </Pressable>
             </ScrollView>
 
@@ -628,7 +628,7 @@ export const TelegramScreen: React.FC = () => {
             {/* TAB 2: 1:1 GAP AUTOFORWARD CONTROL DASHBOARD */}
             {activeTab === 'automations' && (
               <>
-                {/* ΓÜí HERO CARD: AUTOFORWARD CONTROL */}
+                {/* HERO CARD: AUTOFORWARD CONTROL */}
                 <View style={[styles.afControlCard, isDark ? styles.cardDark : styles.cardLight]}>
                   <View style={styles.afControlHeader}>
                     <View style={styles.afControlHeaderLeft}>
@@ -739,7 +739,7 @@ export const TelegramScreen: React.FC = () => {
                   </View>
                 </ScrollView>
 
-                {/* ≡ƒîƒ 5 MAIN DASHBOARD CONTROL SECTIONS (MATCHING SCREENSHOT) */}
+                {/* 5 MAIN DASHBOARD CONTROL SECTIONS (MATCHING SCREENSHOT) */}
                 <View style={styles.afSectionsStack}>
                   {/* SECTION 1: ACTIVE MAPPINGS */}
                   <View style={[styles.afSectionCard, isDark ? styles.cardDark : styles.cardLight]}>
@@ -932,7 +932,7 @@ export const TelegramScreen: React.FC = () => {
                   <View style={styles.revenueRow}>
                     <View>
                       <Text style={styles.revenueLabel}>ESTIMATED MRR</Text>
-                      <Text style={styles.revenueVal}>Γé╣{(summary?.telesubMonthlyRevenue || 0).toLocaleString()}</Text>
+                      <Text style={styles.revenueVal}>₹{(summary?.telesubMonthlyRevenue || 0).toLocaleString()}</Text>
                     </View>
                     <Pressable
                       style={styles.actionBtnPrimary}
@@ -968,7 +968,7 @@ export const TelegramScreen: React.FC = () => {
                     <View key={plan.id} style={[styles.planCard, isDark ? styles.cardDark : styles.cardLight]}>
                       <View style={styles.planHeader}>
                         <Text style={[styles.planTitle, isDark ? styles.textDark : styles.textLight]}>{plan.name}</Text>
-                        <Text style={styles.planPrice}>Γé╣{plan.price} / {plan.durationDays}d</Text>
+                        <Text style={styles.planPrice}>₹{plan.price} / {plan.durationDays}d</Text>
                       </View>
                       <Text style={styles.planSubtitle}>{plan.landingPageTitle || 'VIP Community Membership'}</Text>
                       <View style={[styles.planFooter, isDark ? styles.borderDark : styles.borderLight]}>
