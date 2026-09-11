@@ -9,7 +9,11 @@ interface LeadActivityItemProps {
 const TYPE_ICONS: Record<string, { icon: string; color: string }> = {
   message: { icon: '💬', color: '#22c55e' },
   call: { icon: '🎙️', color: '#a855f7' },
+  meeting: { icon: '📅', color: '#8b5cf6' },
   note: { icon: '📝', color: '#3b82f6' },
+  task: { icon: '✅', color: '#6366f1' },
+  follow_up: { icon: '⏰', color: '#ec4899' },
+  email: { icon: '✉️', color: '#3b82f6' },
   stage_change: { icon: '🔀', color: '#f59e0b' },
   assignment: { icon: '👤', color: '#ec4899' },
   form_submission: { icon: '📋', color: '#0ea5e9' },
@@ -31,7 +35,7 @@ export const LeadActivityItem: React.FC<LeadActivityItemProps> = ({ activity }) 
       </View>
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>{activity.title}</Text>
+          <Text style={styles.title}>{activity.subject || activity.title || 'Activity'}</Text>
           <Text style={styles.time}>{time}</Text>
         </View>
         {activity.description ? (
@@ -60,7 +64,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   iconText: {
-    fontSize: 14,
+    fontSize: 16,
   },
   content: {
     flex: 1,
@@ -72,19 +76,17 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   title: {
-    color: '#f8fafc',
-    fontSize: 13,
-    fontWeight: '700',
-    flex: 1,
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   time: {
-    color: '#64748b',
+    color: '#6b7280',
     fontSize: 11,
-    marginLeft: 8,
   },
   description: {
-    color: '#94a3b8',
-    fontSize: 12,
-    lineHeight: 17,
+    color: '#9ca3af',
+    fontSize: 13,
+    lineHeight: 18,
   },
 });
