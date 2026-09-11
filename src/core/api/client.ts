@@ -189,6 +189,14 @@ class ApiClient {
     });
   }
 
+  public put<T = any>(endpoint: string, body?: any, options?: RequestOptions): Promise<T> {
+    return this.request<T>(endpoint, {
+      ...options,
+      method: 'PUT',
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
   public patch<T = any>(endpoint: string, body?: any, options?: RequestOptions): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
@@ -201,6 +209,7 @@ class ApiClient {
     return this.request<T>(endpoint, { ...options, method: 'DELETE' });
   }
 }
+
 
 export const apiClient = new ApiClient(BFF_BASE_URL);
 

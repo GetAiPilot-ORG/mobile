@@ -17,6 +17,7 @@
     "expo-glass-effect": "~57.0.2",
     "expo-haptics": "~57.0.2",
     "expo-image": "~57.0.4",
+    "expo-image-picker": "~57.0.16",
     "expo-linear-gradient": "~57.0.1",
     "expo-linking": "~57.0.9",
     "expo-local-authentication": "^57.0.2",
@@ -42,6 +43,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@expo/ngrok": "^4.1.3",
     "@types/react": "~19.2.2",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.2",
@@ -54,9 +56,9 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "reset-project": "node ./scripts/reset-project.js",
-    "bff:dev": "npm --prefix bff run dev",
-    "bff:start": "npm --prefix bff run start",
-    "bff:build": "npm --prefix bff run build"
+    "bff:dev": "npm --prefix Getaipilot-bff run dev",
+    "bff:start": "npm --prefix Getaipilot-bff run start",
+    "bff:build": "npm --prefix Getaipilot-bff run build"
   },
   "private": true
 }

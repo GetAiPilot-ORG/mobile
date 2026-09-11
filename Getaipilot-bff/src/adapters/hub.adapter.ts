@@ -134,6 +134,23 @@ export class HubAdapter {
     }
   }
 
+  /** Returns true only when the saved bio submission belongs to the caller. */
+  public static async userOwnsBioTemplate(userId: string, templateId: string): Promise<boolean> {
+    const { data, error } = await this.adminClient
+      .from('free_template_submissions')
+      .select('id')
+      .eq('id', templateId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.warn(`[HubAdapter] Bio template access check failed for ${userId}:`, error.message);
+      return false;
+    }
+
+    return Boolean(data?.id);
+  }
+
   /**
    * Fetches real user profile and subscription data from Supabase
    */
