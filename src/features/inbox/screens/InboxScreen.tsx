@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../../../core/store/authStore';
 import { inboxApi } from '../api/inboxApi';
-import { ConversationCard } from '../components/ConversationCard';
+import { ConversationCard } from '../components';
 import { useInboxWebSocket } from '../hooks/useInboxWebSocket';
 import { ContactItem, NormalizedConversation } from '../types';
 import { ConversationScreen } from './ConversationScreen';

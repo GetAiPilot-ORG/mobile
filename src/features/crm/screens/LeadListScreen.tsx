@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { FlatList, RefreshControl, SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import { LeadCard } from '../components/LeadCard';
-import { LeadFilters } from '../components/LeadFilters';
+import { LeadCard, LeadFilters } from '../components';
 import { useLeads } from '../hooks/useLeads';
 import { LeadDetailScreen } from './LeadDetailScreen';
 
