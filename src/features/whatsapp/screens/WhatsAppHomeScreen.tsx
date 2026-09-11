@@ -24,6 +24,46 @@ import { useWhatsAppUsage } from '../hooks/useWhatsAppUsage';
 import { WhatsAppBroadcastsScreen } from './WhatsAppBroadcastsScreen';
 import { WhatsAppContactsScreen } from './WhatsAppContactsScreen';
 import { WhatsAppTemplatesScreen } from './WhatsAppTemplatesScreen';
+import { CreateBroadcastScreen } from './CreateBroadcastScreen';
+import {
+  ProductFloatingBottomBar,
+  ProductTabItem,
+} from '../../../components/ProductFloatingBottomBar';
+
+type WhatsAppTab = 'home' | 'broadcasts' | 'contacts' | 'templates' | 'create';
+
+const WHATSAPP_TABS: ProductTabItem[] = [
+  {
+    key: 'home',
+    label: 'Overview',
+    activeIcon: 'chatbubbles',
+    inactiveIcon: 'chatbubbles-outline',
+  },
+  {
+    key: 'broadcasts',
+    label: 'Broadcasts',
+    activeIcon: 'megaphone',
+    inactiveIcon: 'megaphone-outline',
+  },
+  {
+    key: 'contacts',
+    label: 'Contacts',
+    activeIcon: 'people',
+    inactiveIcon: 'people-outline',
+  },
+  {
+    key: 'templates',
+    label: 'Templates',
+    activeIcon: 'document-text',
+    inactiveIcon: 'document-text-outline',
+  },
+  {
+    key: 'create',
+    label: 'New Send',
+    activeIcon: 'add-circle',
+    inactiveIcon: 'add-circle-outline',
+  },
+];
 
 export const WhatsAppHomeScreen: React.FC = () => {
   const router = useRouter();
@@ -31,7 +71,12 @@ export const WhatsAppHomeScreen: React.FC = () => {
   const isDark = colorScheme === 'dark';
   const [activeTab, setActiveTab] = useState<'home' | 'contacts' | 'templates' | 'broadcasts'>('home');
 
-  const { data: status, isLoading: statusLoading, refetch: refetchStatus, isRefetching: statusRefetching } = useWhatsAppStatus();
+  const {
+    data: status,
+    isLoading: statusLoading,
+    refetch: refetchStatus,
+    isRefetching: statusRefetching,
+  } = useWhatsAppStatus();
   const { data: contactsData, refetch: refetchContacts } = useWhatsAppContacts({ limit: 5 });
   const { data: templates, refetch: refetchTemplates } = useWhatsAppTemplates('APPROVED');
   const { data: broadcastsData, refetch: refetchBroadcasts } = useWhatsAppBroadcasts({ limit: 3 });
@@ -47,134 +92,147 @@ export const WhatsAppHomeScreen: React.FC = () => {
     ]);
   };
 
-  if (activeTab === 'contacts') {
-    return <WhatsAppContactsScreen onBack={() => setActiveTab('home')} />;
-  }
-
-  if (activeTab === 'templates') {
-    return <WhatsAppTemplatesScreen onBack={() => setActiveTab('home')} />;
-  }
-
-  if (activeTab === 'broadcasts') {
-    return <WhatsAppBroadcastsScreen onBack={() => setActiveTab('home')} />;
-  }
-
   const approvedTemplatesCount = templates?.length ?? 0;
   const totalContactsCount = contactsData?.total_count ?? 0;
   const totalBroadcastsCount = broadcastsData?.total_count ?? 0;
-  const deliveryRate = usage && usage.messages_sent > 0
-    ? `${Math.min(100, Math.round((usage.messages_delivered / usage.messages_sent) * 1000) / 10)}%`
-    : '100.0%';
+  const deliveryRate =
+    usage && usage.messages_sent > 0
+      ? `${Math.min(100, Math.round((usage.messages_delivered / usage.messages_sent) * 1000) / 10)}%`
+      : '100.0%';
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
-      <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
-        <View style={styles.headerTitleContainer}>
-          <Text style={[styles.title, { color: isDark ? '#f8fafc' : '#0f172a' }]}>WhatsApp Business</Text>
-          <Text style={styles.subtitle}>Meta Cloud Enterprise Hub</Text>
-        </View>
+    <View style={styles.rootContainer}>
+      {activeTab === 'contacts' && <WhatsAppContactsScreen onBack={() => setActiveTab('home')} />}
+      {activeTab === 'templates' && <WhatsAppTemplatesScreen onBack={() => setActiveTab('home')} />}
+      {activeTab === 'broadcasts' && <WhatsAppBroadcastsScreen onBack={() => setActiveTab('home')} />}
+      {activeTab === 'create' && (
+        <CreateBroadcastScreen
+          onBack={() => setActiveTab('home')}
+          onCreated={() => setActiveTab('broadcasts')}
+        />
+      )}
 
-        <Pressable
-          style={styles.inboxButton}
-          onPress={() => router.push('/(tabs)/inbox' as any)}
-        >
-          <Text style={styles.inboxButtonText}>💬 Open Inbox</Text>
-        </Pressable>
-      </View>
+      {activeTab === 'home' && (
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.header}>
+            <View style={styles.headerTitleContainer}>
+              <Text style={styles.title}>WhatsApp Business</Text>
+              <Text style={styles.subtitle}>Meta Cloud Enterprise Hub</Text>
+            </View>
 
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={statusRefetching} onRefresh={handleRefresh} tintColor="#25d366" />
-        }
-      >
-        {/* Connection Status Card */}
-        <ConnectionStatusCard connection={status} isLoading={statusLoading} />
+            <Pressable
+              style={styles.inboxButton}
+              onPress={() => router.push('/(tabs)/inbox' as any)}
+            >
+              <Text style={styles.inboxButtonText}>💬 Open Inbox</Text>
+            </Pressable>
+          </View>
 
-        {/* Cloud Wallet & Usage Card */}
-        <UsageCard usage={usage} isLoading={usageLoading} />
-
-        {/* Metrics 2x2 Grid */}
-        <Text style={[styles.sectionTitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>Overview & Capabilities</Text>
-        <View style={styles.grid}>
-          <WhatsAppMetricCard
-            label="Contacts"
-            value={totalContactsCount.toLocaleString()}
-            subtext="Synchronized audience"
-            icon="👥"
-          />
-          <WhatsAppMetricCard
-            label="Templates"
-            value={approvedTemplatesCount}
-            subtext="Approved by Meta"
-            icon="📄"
-          />
-          <WhatsAppMetricCard
-            label="Broadcasts"
-            value={totalBroadcastsCount}
-            subtext="Campaigns executed"
-            icon="📢"
-          />
-          <WhatsAppMetricCard
-            label="Delivery Rate"
-            value={deliveryRate}
-            subtext="Cloud SLA"
-            icon="⚡"
-          />
-        </View>
-
-        {/* Quick Actions Navigation */}
-        <Text style={[styles.sectionTitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>Product Navigation</Text>
-        <View style={styles.actionsList}>
-          <Pressable
-            style={[styles.actionCard, isDark ? styles.actionCardDark : styles.actionCardLight]}
-            onPress={() => setActiveTab('contacts')}
+          <ScrollView
+            style={styles.container}
+            contentContainerStyle={styles.content}
+            refreshControl={
+              <RefreshControl
+                refreshing={statusRefetching}
+                onRefresh={handleRefresh}
+                tintColor="#25d366"
+              />
+            }
           >
-            <View style={[styles.actionIcon, { backgroundColor: isDark ? '#020617' : '#f1f5f9' }]}>
-              <Text style={styles.actionEmoji}>👥</Text>
-            </View>
-            <View style={styles.actionDetails}>
-              <Text style={[styles.actionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Audience & Contacts</Text>
-              <Text style={[styles.actionSub, { color: isDark ? '#64748b' : '#64748b' }]}>View contacts, segment tags & link CRM leads</Text>
-            </View>
-            <Text style={[styles.actionArrow, { color: isDark ? '#475569' : '#94a3b8' }]}>→</Text>
-          </Pressable>
+            {/* Connection Status Card */}
+            <ConnectionStatusCard connection={status} isLoading={statusLoading} />
 
-          <Pressable
-            style={[styles.actionCard, isDark ? styles.actionCardDark : styles.actionCardLight]}
-            onPress={() => setActiveTab('templates')}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: isDark ? '#020617' : '#f1f5f9' }]}>
-              <Text style={styles.actionEmoji}>📄</Text>
-            </View>
-            <View style={styles.actionDetails}>
-              <Text style={[styles.actionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Meta Templates</Text>
-              <Text style={[styles.actionSub, { color: isDark ? '#64748b' : '#64748b' }]}>Approved marketing, utility & otp message templates</Text>
-            </View>
-            <Text style={[styles.actionArrow, { color: isDark ? '#475569' : '#94a3b8' }]}>→</Text>
-          </Pressable>
+            {/* Cloud Wallet & Usage Card */}
+            <UsageCard usage={usage} />
 
-          <Pressable
-            style={[styles.actionCard, isDark ? styles.actionCardDark : styles.actionCardLight]}
-            onPress={() => setActiveTab('broadcasts')}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: isDark ? '#020617' : '#f1f5f9' }]}>
-              <Text style={styles.actionEmoji}>📢</Text>
+            {/* Metrics 2x2 Grid */}
+            <Text style={styles.sectionTitle}>Overview & Capabilities</Text>
+            <View style={styles.grid}>
+              <WhatsAppMetricCard
+                label="Contacts"
+                value={totalContactsCount.toLocaleString()}
+                subtext="Synchronized audience"
+                icon="👥"
+              />
+              <WhatsAppMetricCard
+                label="Templates"
+                value={approvedTemplatesCount}
+                subtext="Approved by Meta"
+                icon="📄"
+              />
+              <WhatsAppMetricCard
+                label="Broadcasts"
+                value={totalBroadcastsCount}
+                subtext="Campaigns executed"
+                icon="📢"
+              />
+              <WhatsAppMetricCard
+                label="Delivery Rate"
+                value={deliveryRate}
+                subtext="Cloud SLA"
+                icon="⚡"
+              />
             </View>
-            <View style={styles.actionDetails}>
-              <Text style={[styles.actionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Broadcast Campaigns</Text>
-              <Text style={[styles.actionSub, { color: isDark ? '#64748b' : '#64748b' }]}>Launch new bulk sends & view delivery funnels</Text>
+
+            {/* Quick Actions Navigation */}
+            <Text style={styles.sectionTitle}>Product Navigation</Text>
+            <View style={styles.actionsList}>
+              <Pressable style={styles.actionCard} onPress={() => setActiveTab('contacts')}>
+                <View style={styles.actionIcon}>
+                  <Text style={styles.actionEmoji}>👥</Text>
+                </View>
+                <View style={styles.actionDetails}>
+                  <Text style={styles.actionTitle}>Audience & Contacts</Text>
+                  <Text style={styles.actionSub}>View contacts, segment tags & link CRM leads</Text>
+                </View>
+                <Text style={styles.actionArrow}>→</Text>
+              </Pressable>
+
+              <Pressable style={styles.actionCard} onPress={() => setActiveTab('templates')}>
+                <View style={styles.actionIcon}>
+                  <Text style={styles.actionEmoji}>📄</Text>
+                </View>
+                <View style={styles.actionDetails}>
+                  <Text style={styles.actionTitle}>Meta Templates</Text>
+                  <Text style={styles.actionSub}>
+                    Approved marketing, utility & otp message templates
+                  </Text>
+                </View>
+                <Text style={styles.actionArrow}>→</Text>
+              </Pressable>
+
+              <Pressable style={styles.actionCard} onPress={() => setActiveTab('broadcasts')}>
+                <View style={styles.actionIcon}>
+                  <Text style={styles.actionEmoji}>📢</Text>
+                </View>
+                <View style={styles.actionDetails}>
+                  <Text style={styles.actionTitle}>Broadcast Campaigns</Text>
+                  <Text style={styles.actionSub}>Launch new bulk sends & view delivery funnels</Text>
+                </View>
+                <Text style={styles.actionArrow}>→</Text>
+              </Pressable>
             </View>
-            <Text style={[styles.actionArrow, { color: isDark ? '#475569' : '#94a3b8' }]}>→</Text>
-          </Pressable>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          </ScrollView>
+        </SafeAreaView>
+      )}
+
+      {/* Floating Home-Style Product Bottom Navigation Bar */}
+      <ProductFloatingBottomBar
+        items={WHATSAPP_TABS}
+        activeKey={activeTab}
+        onChangeTab={(tab) => setActiveTab(tab as WhatsAppTab)}
+        accentColor="#22C55E"
+        moreMenuTitle="WhatsApp Business Suite"
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  rootContainer: {
+    flex: 1,
+    backgroundColor: '#020617',
+  },
   safeArea: {
     flex: 1,
   },
@@ -224,7 +282,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 130,
   },
   sectionTitle: {
     fontSize: 13,

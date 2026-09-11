@@ -17,6 +17,10 @@ import * as Haptics from 'expo-haptics';
 
 import { AppScreen } from '../../../components/AppScreen';
 import { AppTopBar } from '../../../components/AppTopBar';
+import {
+  ProductFloatingBottomBar,
+  ProductTabItem,
+} from '../../../components/ProductFloatingBottomBar';
 import { apiClient } from '../../../core/api/client';
 import {
   CreatePostModal,
@@ -24,7 +28,15 @@ import {
   AccountsModal,
 } from '../components';
 
-type TabType = 'overview' | 'posts' | 'calendar' | 'trends';
+type TabType = 'overview' | 'posts' | 'calendar' | 'trends' | 'accounts';
+
+const SOCIAL_TABS: ProductTabItem[] = [
+  { key: 'overview', label: 'Overview', activeIcon: 'grid', inactiveIcon: 'grid-outline' },
+  { key: 'posts', label: 'Posts', activeIcon: 'paper-plane', inactiveIcon: 'paper-plane-outline' },
+  { key: 'calendar', label: 'Calendar', activeIcon: 'calendar', inactiveIcon: 'calendar-outline' },
+  { key: 'trends', label: 'Trends', activeIcon: 'flame', inactiveIcon: 'flame-outline' },
+  { key: 'accounts', label: 'Channels', activeIcon: 'share-social', inactiveIcon: 'share-social-outline' },
+];
 
 export const SocialScreen: React.FC = () => {
   const colorScheme = useColorScheme();
@@ -245,40 +257,6 @@ export const SocialScreen: React.FC = () => {
   return (
     <AppScreen>
       <AppTopBar title="SocialPilot" subtitle="Cross-Platform Social Publishing" />
-
-      {/* Tab Switcher */}
-      <View style={styles.tabBar}>
-        {(['overview', 'posts', 'calendar', 'trends'] as TabType[]).map((tab) => {
-          const isActive = activeTab === tab;
-          return (
-            <Pressable
-              key={tab}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setActiveTab(tab);
-              }}
-              style={[
-                styles.tabItem,
-                isActive && [
-                  styles.tabItemActive,
-                  { backgroundColor: isDark ? '#1e293b' : '#ffffff' },
-                ],
-              ]}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  isActive
-                    ? { color: '#ec4899', fontWeight: '800' }
-                    : { color: isDark ? '#64748b' : '#94a3b8' },
-                ]}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
 
       {/* Main Content Area */}
       <ScrollView
@@ -774,6 +752,21 @@ export const SocialScreen: React.FC = () => {
         }}
         isLoading={disconnectAccountMutation.isPending}
       />
+
+      {/* Floating Home-Style Product Bottom Navigation Bar */}
+      <ProductFloatingBottomBar
+        items={SOCIAL_TABS}
+        activeKey={activeTab}
+        onChangeTab={(key) => {
+          if (key === 'accounts') {
+            setShowAccountsModal(true);
+          } else {
+            setActiveTab(key as TabType);
+          }
+        }}
+        accentColor="#EC4899"
+        moreMenuTitle="SocialPilot Menu"
+      />
     </AppScreen>
   );
 };
@@ -784,7 +777,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 130,
   },
   tabBar: {
     flexDirection: 'row',
