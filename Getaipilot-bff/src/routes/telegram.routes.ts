@@ -156,6 +156,37 @@ export async function telegramRoutes(fastify: FastifyInstance) {
   });
 
 
+  // GET /mobile/v1/telegram/sub-manager/dashboard
+  fastify.get('/telegram/sub-manager/dashboard', { preHandler: [authenticateToken, requirePermission('telegram.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const dashboard = await TelegramAdapter.getSubManagerDashboard(user.user_id, getContext(user));
+    return reply.send(dashboard);
+  });
+
+  // POST /mobile/v1/telegram/sub-manager/pages
+  fastify.post('/telegram/sub-manager/pages', { preHandler: [authenticateToken, requirePermission('telegram.manage')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const payload = request.body as any;
+    const result = await TelegramAdapter.createSubManagerLandingPage(payload, getContext(user));
+    return reply.send(result);
+  });
+
+  // POST /mobile/v1/telegram/sub-manager/pages/toggle
+  fastify.post('/telegram/sub-manager/pages/toggle', { preHandler: [authenticateToken, requirePermission('telegram.manage')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const body = request.body as { pageId: string; isActive: boolean };
+    const result = await TelegramAdapter.toggleSubManagerLandingPage(body.pageId, body.isActive, getContext(user));
+    return reply.send(result);
+  });
+
+  // DELETE /mobile/v1/telegram/sub-manager/pages/:id
+  fastify.delete('/telegram/sub-manager/pages/:id', { preHandler: [authenticateToken, requirePermission('telegram.manage')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const params = request.params as { id: string };
+    const result = await TelegramAdapter.deleteSubManagerLandingPage(params.id, getContext(user));
+    return reply.send(result);
+  });
+
   // GET /mobile/v1/telegram/sub-manager/plans
   fastify.get('/telegram/sub-manager/plans', { preHandler: [authenticateToken, requirePermission('telegram.read')] }, async (request, reply) => {
     const user = request.user as JWTPayload;
