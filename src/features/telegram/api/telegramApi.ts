@@ -60,6 +60,28 @@ export const telegramApi = {
   }) => apiClient.post('/mobile/v1/telegram/broadcast', payload),
 
 
+  // GAP Sub Manager
+  getSubManagerDashboard: () =>
+    apiClient.get<any>('/mobile/v1/telegram/sub-manager/dashboard'),
+
+  createSubManagerLandingPage: (payload: {
+    communityId?: number | string | null;
+    title: string;
+    slug: string;
+    description?: string;
+    logoUrl?: string;
+    buttonText?: string;
+    theme?: string;
+    metaPixelId?: string;
+    plans?: Array<{ name: string; price: number; durationDays: number; currency?: string }>;
+  }) => apiClient.post<any>('/mobile/v1/telegram/sub-manager/pages', payload),
+
+  toggleSubManagerLandingPage: (payload: { pageId: string; isActive: boolean }) =>
+    apiClient.post<any>('/mobile/v1/telegram/sub-manager/pages/toggle', payload),
+
+  deleteSubManagerLandingPage: (pageId: string) =>
+    apiClient.delete<any>(`/mobile/v1/telegram/sub-manager/pages/${pageId}`),
+
   createSubPlan: (payload: {
     tierName: string;
     price: number;
