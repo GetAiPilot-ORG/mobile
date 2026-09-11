@@ -38,6 +38,16 @@ export class WebSocketService {
     });
   }
 
+  public static broadcast(organizationId: string, eventOrPayload: any, data?: any) {
+    if (typeof eventOrPayload === 'string') {
+      this.broadcastToOrg(organizationId, eventOrPayload, data);
+    } else if (eventOrPayload && (eventOrPayload.event || eventOrPayload.type)) {
+      this.broadcastToOrg(organizationId, eventOrPayload.event || eventOrPayload.type, eventOrPayload);
+    } else {
+      this.broadcastToOrg(organizationId, 'conversation.updated', eventOrPayload);
+    }
+  }
+
   public static broadcastToOrg(organizationId: string, event: RealtimeEvent['event'], data: any) {
     const orgSockets = this.connections.get(organizationId);
     if (!orgSockets || orgSockets.size === 0) return;

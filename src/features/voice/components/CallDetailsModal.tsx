@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Alert,
   Modal,
   View,
   Text,
@@ -28,10 +29,26 @@ export const CallDetailsModal: React.FC<CallDetailsModalProps> = ({ visible, cal
     call.transcriptMessages ||
     (call.transcript ? [{ role: 'assistant', content: call.transcript }] : []);
 
-  const handleOpenRecording = () => {
-    if (call.recordingUrl) {
+  const handleOpenRecording = async () => {
+    let url = call.recordingUrl;
+    if (!url) return;
+
+    // If only filename is provided, construct full HTTPS URL
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = `https://api.vomyra.com/recordings/${url}`;
+    }
+
+    try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      Linking.openURL(call.recordingUrl);
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Recording Unavailable', 'No application found to stream this audio recording URL.');
+      }
+    } catch (err: any) {
+      console.warn('[CallDetailsModal] Failed to open recording URL:', err?.message || err);
+      Alert.alert('Playback Error', 'Could not open the call audio recording at this time.');
     }
   };
 

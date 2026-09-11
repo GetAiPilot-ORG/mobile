@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, Pressable, Linking } from 'react-native';
+import { StyleSheet, Text, View, Pressable, Linking, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NormalizedMessage } from '../types';
 import { useAuthStore } from '../../../core/store/authStore';
@@ -9,6 +9,9 @@ interface MessageBubbleProps {
 }
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const user = useAuthStore((s) => s.user);
   const currentUserId = user?.id;
   const currentUserName = user?.name;
@@ -53,13 +56,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
       case 'read':
         return <Ionicons name="checkmark-done" size={14} color="#53bdeb" style={styles.statusIcon} />;
       case 'delivered':
-        return <Ionicons name="checkmark-done" size={14} color="#8696a0" style={styles.statusIcon} />;
+        return <Ionicons name="checkmark-done" size={14} color={isDark ? '#8696a0' : '#64748b'} style={styles.statusIcon} />;
       case 'sent':
-        return <Ionicons name="checkmark" size={14} color="#8696a0" style={styles.statusIcon} />;
+        return <Ionicons name="checkmark" size={14} color={isDark ? '#8696a0' : '#64748b'} style={styles.statusIcon} />;
       case 'failed':
         return <Ionicons name="alert-circle" size={14} color="#ef4444" style={styles.statusIcon} />;
       default:
-        return <Ionicons name="checkmark" size={14} color="#8696a0" style={styles.statusIcon} />;
+        return <Ionicons name="checkmark" size={14} color={isDark ? '#8696a0' : '#64748b'} style={styles.statusIcon} />;
     }
   };
 
@@ -67,15 +70,17 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   if (isInternalNote) {
     return (
       <View style={styles.internalNoteWrapper}>
-        <View style={styles.internalNoteBubble}>
+        <View style={[styles.internalNoteBubble, isDark ? styles.internalNoteBubbleDark : styles.internalNoteBubbleLight]}>
           <View style={styles.internalNoteHeader}>
             <Ionicons name="lock-closed" size={13} color="#f59e0b" />
-            <Text style={styles.internalNoteTitle}>
+            <Text style={[styles.internalNoteTitle, { color: isDark ? '#fbbf24' : '#b45309' }]}>
               Internal Note • {outboundLabel}
             </Text>
           </View>
-          <Text style={styles.internalNoteContent}>{message.content}</Text>
-          <Text style={styles.internalNoteTime}>{time}</Text>
+          <Text style={[styles.internalNoteContent, { color: isDark ? '#fef3c7' : '#78350f' }]}>
+            {message.content}
+          </Text>
+          <Text style={[styles.internalNoteTime, { color: isDark ? '#b45309' : '#92400e' }]}>{time}</Text>
         </View>
       </View>
     );
@@ -88,7 +93,17 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
       <View
         style={[
           styles.bubble,
-          isOutbound ? (isBot ? styles.botBubble : styles.outboundBubble) : styles.inboundBubble,
+          isOutbound
+            ? isBot
+              ? isDark
+                ? styles.botBubbleDark
+                : styles.botBubbleLight
+              : isDark
+              ? styles.outboundBubbleDark
+              : styles.outboundBubbleLight
+            : isDark
+            ? styles.inboundBubbleDark
+            : styles.inboundBubbleLight,
         ]}
       >
         {/* Sender Name / Bot Badge */}
@@ -112,20 +127,27 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
             {template.header?.text && (
               <Text style={styles.templateHeader}>{template.header.text}</Text>
             )}
-            <Text style={[styles.content, isOutbound ? styles.outboundContent : styles.inboundContent]}>
+            <Text
+              style={[
+                styles.content,
+                { color: isDark ? '#e9edef' : '#111b21' },
+              ]}
+            >
               {template.body || message.content}
             </Text>
             {template.footer && (
-              <Text style={styles.templateFooter}>{template.footer}</Text>
+              <Text style={[styles.templateFooter, { color: isDark ? '#8696a0' : '#64748b' }]}>
+                {template.footer}
+              </Text>
             )}
 
             {/* Template Interactive Action Buttons */}
             {template.buttons && template.buttons.length > 0 && (
-              <View style={styles.templateButtonsContainer}>
+              <View style={[styles.templateButtonsContainer, isDark ? styles.borderDark : styles.borderLight]}>
                 {template.buttons.map((btn, idx) => (
                   <Pressable
                     key={idx}
-                    style={styles.templateButton}
+                    style={[styles.templateButton, isDark ? styles.templateBtnDark : styles.templateBtnLight]}
                     onPress={() => {
                       if (btn.url) Linking.openURL(btn.url).catch(() => {});
                     }}
@@ -147,7 +169,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
           <Text
             style={[
               styles.content,
-              isOutbound ? styles.outboundContent : styles.inboundContent,
+              { color: isDark ? '#e9edef' : '#111b21' },
             ]}
           >
             {message.content}
@@ -158,13 +180,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
         {message.media && message.media.length > 0 && (
           <View style={styles.mediaContainer}>
             {message.media.map((med, idx) => (
-              <View key={idx} style={styles.mediaBox}>
+              <View key={idx} style={[styles.mediaBox, isDark ? styles.mediaBoxDark : styles.mediaBoxLight]}>
                 <Ionicons
                   name={med.type === 'image' ? 'image' : med.type === 'audio' ? 'mic' : 'document'}
                   size={16}
-                  color="#e2e8f0"
+                  color={isDark ? '#e2e8f0' : '#475569'}
                 />
-                <Text style={styles.mediaText}>
+                <Text style={[styles.mediaText, { color: isDark ? '#f8fafc' : '#1e293b' }]}>
                   {med.type === 'image' ? 'Photo' : med.type === 'audio' ? 'Voice Note' : 'Document'}
                 </Text>
               </View>
@@ -174,7 +196,12 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
 
         {/* Footer Timestamp & Delivery Ticks */}
         <View style={styles.footerRow}>
-          <Text style={[styles.time, isOutbound ? styles.outboundTime : styles.inboundTime]}>
+          <Text
+            style={[
+              styles.time,
+              { color: isDark ? (isOutbound ? 'rgba(233, 237, 239, 0.65)' : '#8696a0') : '#667781' },
+            ]}
+          >
             {time}
           </Text>
           {renderDeliveryStatus()}
@@ -201,25 +228,49 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 14,
   },
-  outboundBubble: {
+  outboundBubbleDark: {
     backgroundColor: '#005c4b', // WhatsApp Dark Outbound Green
     borderBottomRightRadius: 2,
   },
-  botBubble: {
+  outboundBubbleLight: {
+    backgroundColor: '#d9fdd3', // WhatsApp Light Outbound Green
+    borderBottomRightRadius: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 1,
+    elevation: 1,
+  },
+  botBubbleDark: {
     backgroundColor: '#004c3e',
     borderBottomRightRadius: 2,
     borderWidth: 1,
     borderColor: 'rgba(0, 168, 132, 0.4)',
   },
-  inboundBubble: {
+  botBubbleLight: {
+    backgroundColor: '#cbfcd4',
+    borderBottomRightRadius: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 168, 132, 0.3)',
+  },
+  inboundBubbleDark: {
     backgroundColor: '#202c33', // WhatsApp Dark Inbound Slate
     borderBottomLeftRadius: 2,
+  },
+  inboundBubbleLight: {
+    backgroundColor: '#ffffff', // WhatsApp Light Inbound White
+    borderBottomLeftRadius: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 1,
+    elevation: 1,
   },
   senderHeader: {
     marginBottom: 3,
   },
   botBadge: {
-    backgroundColor: 'rgba(0, 168, 132, 0.2)',
+    backgroundColor: 'rgba(0, 168, 132, 0.15)',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
@@ -237,7 +288,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   outboundSenderYou: {
-    color: '#53bdeb',
+    color: '#0084ff',
     fontWeight: '700',
   },
   inboundSenderText: {
@@ -249,12 +300,6 @@ const styles = StyleSheet.create({
     fontSize: 14.2,
     lineHeight: 19.5,
   },
-  outboundContent: {
-    color: '#e9edef',
-  },
-  inboundContent: {
-    color: '#e9edef',
-  },
   templateCard: {
     gap: 4,
   },
@@ -265,25 +310,34 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   templateFooter: {
-    color: '#8696a0',
     fontSize: 11.5,
     marginTop: 4,
   },
   templateButtonsContainer: {
     marginTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255, 255, 255, 0.15)',
     paddingTop: 6,
     gap: 6,
+  },
+  borderDark: {
+    borderTopColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  borderLight: {
+    borderTopColor: 'rgba(0, 0, 0, 0.08)',
   },
   templateButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.25)',
     paddingVertical: 7,
     paddingHorizontal: 12,
     borderRadius: 8,
+  },
+  templateBtnDark: {
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+  },
+  templateBtnLight: {
+    backgroundColor: 'rgba(0, 0, 0, 0.04)',
   },
   templateButtonText: {
     color: '#00a884',
@@ -297,14 +351,18 @@ const styles = StyleSheet.create({
   mediaBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.25)',
     paddingHorizontal: 10,
     paddingVertical: 7,
     borderRadius: 8,
     gap: 8,
   },
+  mediaBoxDark: {
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+  },
+  mediaBoxLight: {
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+  },
   mediaText: {
-    color: '#f8fafc',
     fontSize: 12.5,
     fontWeight: '600',
   },
@@ -318,12 +376,6 @@ const styles = StyleSheet.create({
   time: {
     fontSize: 10.5,
   },
-  outboundTime: {
-    color: 'rgba(233, 237, 239, 0.65)',
-  },
-  inboundTime: {
-    color: '#8696a0',
-  },
   statusIcon: {
     marginLeft: 2,
   },
@@ -333,13 +385,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   internalNoteBubble: {
-    backgroundColor: '#3b200b',
-    borderWidth: 1,
-    borderColor: '#78350f',
     borderRadius: 12,
     padding: 10,
     maxWidth: '92%',
     width: '100%',
+    borderWidth: 1,
+  },
+  internalNoteBubbleDark: {
+    backgroundColor: '#3b200b',
+    borderColor: '#78350f',
+  },
+  internalNoteBubbleLight: {
+    backgroundColor: '#fffbeb',
+    borderColor: '#fde68a',
   },
   internalNoteHeader: {
     flexDirection: 'row',
@@ -348,20 +406,18 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   internalNoteTitle: {
-    color: '#fbbf24',
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
   },
   internalNoteContent: {
-    color: '#fef3c7',
     fontSize: 13,
     lineHeight: 18,
   },
   internalNoteTime: {
-    color: '#b45309',
     fontSize: 10,
     marginTop: 4,
     alignSelf: 'flex-end',
   },
 });
+
