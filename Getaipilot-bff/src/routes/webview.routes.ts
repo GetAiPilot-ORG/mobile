@@ -26,7 +26,7 @@ const exchangeSessionSchema = z.object({
 });
 const builderWebPaths = {
   "web-app": "/",
-  "landing-builder": "/free-tools/landing-templates",
+  "landing-templates": "/free-tools/landing-templates",
   "flow-builder": "/tools/flow-builder",
   "workflow-builder": "/tools/workflow-builder",
 } as const;

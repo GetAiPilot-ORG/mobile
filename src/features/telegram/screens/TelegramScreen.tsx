@@ -169,10 +169,6 @@ export const TelegramScreen: React.FC = () => {
       handleTabChange('sub_manager');
       return;
     }
-    if (key === 'tracker') {
-      handleTabChange('bots');
-      return;
-    }
     setActiveModal(key);
   };
 

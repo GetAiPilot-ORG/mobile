@@ -34,18 +34,6 @@ interface ToolItem {
 
 const ALL_10_FREE_TOOLS: ToolItem[] = [
   {
-    id: "web-app",
-    title: "Open Web App",
-    category: "Templates",
-    description: "Open the full GetAIPilot web application with secure SSO.",
-    icon: "🌐",
-    badge: "",
-    route: "/",
-    builder: {
-      targetTool: "web-app",
-    },
-  },
-  {
     id: "my-designs",
     title: "My Designs",
     category: "Templates",
