@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, View } from 'react-native';
 import { CRMHomeScreen } from '../../../src/features/crm/screens/CRMHomeScreen';
 import { LeadListScreen } from '../../../src/features/crm/screens/LeadListScreen';
 import { LeadDetailScreen } from '../../../src/features/crm/screens/LeadDetailScreen';
@@ -9,14 +8,64 @@ import { TasksScreen } from '../../../src/features/crm/screens/TasksScreen';
 import { ContactsScreen } from '../../../src/features/crm/screens/ContactsScreen';
 import { ActivitiesScreen } from '../../../src/features/crm/screens/ActivitiesScreen';
 import { CRMMoreScreen } from '../../../src/features/crm/screens/CRMMoreScreen';
+import {
+  ProductFloatingBottomBar,
+  ProductTabItem,
+} from '../../../src/components/ProductFloatingBottomBar';
 
-type CRMTab = 'home' | 'leads' | 'pipeline' | 'tasks' | 'more';
-type MoreSection = 'main' | 'contacts' | 'activities';
+type CRMTab = 'home' | 'leads' | 'pipeline' | 'tasks' | 'contacts' | 'activities' | 'more';
+
+const CRM_TABS: ProductTabItem[] = [
+  {
+    key: 'home',
+    label: 'Home',
+    activeIcon: 'home',
+    inactiveIcon: 'home-outline',
+  },
+  {
+    key: 'leads',
+    label: 'Leads',
+    activeIcon: 'people',
+    inactiveIcon: 'people-outline',
+  },
+  {
+    key: 'pipeline',
+    label: 'Pipeline',
+    activeIcon: 'briefcase',
+    inactiveIcon: 'briefcase-outline',
+  },
+  {
+    key: 'tasks',
+    label: 'Tasks',
+    activeIcon: 'checkbox',
+    inactiveIcon: 'checkbox-outline',
+  },
+  {
+    key: 'contacts',
+    label: 'Contacts',
+    activeIcon: 'book',
+    inactiveIcon: 'book-outline',
+    description: 'All organization contacts & clients',
+  },
+  {
+    key: 'activities',
+    label: 'Activities',
+    activeIcon: 'pulse',
+    inactiveIcon: 'pulse-outline',
+    description: 'Calls, meetings, emails & note logs',
+  },
+  {
+    key: 'more',
+    label: 'Team & Hub',
+    activeIcon: 'grid',
+    inactiveIcon: 'grid-outline',
+    description: 'Team members, roles & settings',
+  },
+];
 
 export default function CRMIndexRoute() {
   const [activeTab, setActiveTab] = useState<CRMTab>('home');
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
-  const [moreSection, setMoreSection] = useState<MoreSection>('main');
 
   // If a lead is selected, show LeadDetailScreen
   if (selectedLeadId) {
@@ -34,7 +83,14 @@ export default function CRMIndexRoute() {
         {activeTab === 'home' && (
           <CRMHomeScreen
             onNavigateTab={(tab) => {
-              if (tab === 'leads' || tab === 'pipeline' || tab === 'tasks' || tab === 'more') {
+              if (
+                tab === 'leads' ||
+                tab === 'pipeline' ||
+                tab === 'tasks' ||
+                tab === 'contacts' ||
+                tab === 'activities' ||
+                tab === 'more'
+              ) {
                 setActiveTab(tab as CRMTab);
               }
             }}
@@ -43,66 +99,37 @@ export default function CRMIndexRoute() {
         )}
 
         {activeTab === 'leads' && (
-          <LeadListScreen
-            onSelectLead={(id) => setSelectedLeadId(id)}
-          />
+          <LeadListScreen onSelectLead={(id) => setSelectedLeadId(id)} />
         )}
 
         {activeTab === 'pipeline' && <PipelineScreen />}
 
         {activeTab === 'tasks' && <TasksScreen />}
 
+        {activeTab === 'contacts' && (
+          <ContactsScreen onSelectContact={(id) => setSelectedLeadId(id)} />
+        )}
+
+        {activeTab === 'activities' && <ActivitiesScreen />}
+
         {activeTab === 'more' && (
-          <>
-            {moreSection === 'main' && (
-              <CRMMoreScreen
-                onSelectSection={(section) => setMoreSection(section)}
-              />
-            )}
-            {moreSection === 'contacts' && (
-              <ContactsScreen
-                onSelectContact={(id) => setSelectedLeadId(id)}
-              />
-            )}
-            {moreSection === 'activities' && <ActivitiesScreen />}
-          </>
+          <CRMMoreScreen
+            onSelectSection={(section) => {
+              if (section === 'contacts') setActiveTab('contacts');
+              else if (section === 'activities') setActiveTab('activities');
+            }}
+          />
         )}
       </View>
 
-      {/* Floating Modern CRM Bottom Bar */}
-      <View style={styles.bottomBar}>
-        {[
-          { key: 'home', label: 'Home', icon: 'home' as const },
-          { key: 'leads', label: 'Leads', icon: 'people' as const },
-          { key: 'pipeline', label: 'Pipeline', icon: 'briefcase' as const },
-          { key: 'tasks', label: 'Tasks', icon: 'checkbox' as const },
-          { key: 'more', label: 'More', icon: 'grid' as const },
-        ].map((tab) => {
-          const isSelected = activeTab === tab.key;
-          return (
-            <Pressable
-              key={tab.key}
-              style={[styles.tabItem, isSelected && styles.tabItemSelected]}
-              onPress={() => {
-                setActiveTab(tab.key as CRMTab);
-                if (tab.key === 'more') {
-                  setMoreSection('main');
-                }
-              }}
-              hitSlop={6}
-            >
-              <Ionicons
-                name={isSelected ? tab.icon : (`${tab.icon}-outline` as any)}
-                size={20}
-                color={isSelected ? '#3B82F6' : '#9CA3AF'}
-              />
-              <Text style={[styles.tabLabel, isSelected && styles.tabLabelSelected]}>
-                {tab.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      {/* Floating Home-Style Product Bottom Navigation Bar */}
+      <ProductFloatingBottomBar
+        items={CRM_TABS}
+        activeKey={activeTab}
+        onChangeTab={(key) => setActiveTab(key as CRMTab)}
+        accentColor="#3B82F6"
+        moreMenuTitle="CRM Tools & Management"
+      />
     </View>
   );
 }
@@ -114,36 +141,5 @@ const styles = StyleSheet.create({
   },
   screenContainer: {
     flex: 1,
-  },
-  bottomBar: {
-    flexDirection: 'row',
-    backgroundColor: '#181A20',
-    borderTopWidth: 1,
-    borderTopColor: '#262A34',
-    paddingBottom: 18,
-    paddingTop: 8,
-    paddingHorizontal: 12,
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  tabItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
-  tabItemSelected: {
-    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-  },
-  tabLabel: {
-    color: '#9CA3AF',
-    fontSize: 11,
-    fontWeight: '500',
-    marginTop: 3,
-  },
-  tabLabelSelected: {
-    color: '#60A5FA',
-    fontWeight: '700',
   },
 });

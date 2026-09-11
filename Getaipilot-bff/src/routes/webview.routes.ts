@@ -24,12 +24,12 @@ const createSessionSchema = z.object({
 const exchangeSessionSchema = z.object({
   authCode: z.string().trim().min(1).max(512),
 });
-const builderWebPaths = {
+const builderWebPaths: Record<string, string> = {
   "web-app": "/",
   "landing-templates": "/free-tools/landing-templates",
   "flow-builder": "/tools/flow-builder",
   "workflow-builder": "/tools/workflow-builder",
-} as const;
+};
 const publicBioTemplateIds = new Set(["creators-v1"]);
 
 function invalidPayload(reply: any) {

@@ -360,7 +360,11 @@ export class VoiceAdapter {
             cost: c.cost ? `$${c.cost}` : '$0.04',
             time: 'Sep 09, 2026, 12:34 PM',
             createdAt: c.created_at || new Date().toISOString(),
-            recordingUrl: c.recording_url || '',
+            recordingUrl: c.recording_url
+              ? c.recording_url.startsWith('http')
+                ? c.recording_url
+                : `https://api.vomyra.com/recordings/${c.recording_url}`
+              : '',
           };
         });
       }

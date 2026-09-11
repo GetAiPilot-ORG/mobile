@@ -80,7 +80,35 @@ export class InboxService {
       messages = await WhatsAppAdapter.getMessages(conversationId);
     }
 
+    // Automatically mark conversation as read when details/messages are retrieved
+    await this.markConversationAsRead(conversationId, user).catch(() => {});
+    if (conversation) {
+      conversation.unread_count = 0;
+    }
+
     return { conversation, messages };
+  }
+
+  /**
+   * Marks a conversation as read and clears unread count
+   */
+  public static async markConversationAsRead(
+    conversationId: string,
+    user: JWTPayload
+  ): Promise<void> {
+    if (
+      !conversationId.startsWith('tg_') &&
+      !conversationId.startsWith('ig_') &&
+      !conversationId.startsWith('fb_')
+    ) {
+      await WhatsAppAdapter.markConversationAsRead(conversationId, user.organization_id);
+    }
+
+    // Broadcast realtime event
+    WebSocketService.broadcastToOrg(user.organization_id, 'conversation.updated', {
+      conversation_id: conversationId,
+      unread_count: 0,
+    });
   }
 
   /**
