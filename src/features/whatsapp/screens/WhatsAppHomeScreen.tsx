@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useColorScheme,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -66,7 +67,9 @@ const WHATSAPP_TABS: ProductTabItem[] = [
 
 export const WhatsAppHomeScreen: React.FC = () => {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<WhatsAppTab>('home');
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const [activeTab, setActiveTab] = useState<'home' | 'contacts' | 'templates' | 'broadcasts'>('home');
 
   const {
     data: status,
@@ -77,7 +80,7 @@ export const WhatsAppHomeScreen: React.FC = () => {
   const { data: contactsData, refetch: refetchContacts } = useWhatsAppContacts({ limit: 5 });
   const { data: templates, refetch: refetchTemplates } = useWhatsAppTemplates('APPROVED');
   const { data: broadcastsData, refetch: refetchBroadcasts } = useWhatsAppBroadcasts({ limit: 3 });
-  const { data: usage, refetch: refetchUsage } = useWhatsAppUsage();
+  const { data: usage, isLoading: usageLoading, refetch: refetchUsage } = useWhatsAppUsage();
 
   const handleRefresh = async () => {
     await Promise.all([
@@ -232,7 +235,6 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    backgroundColor: '#020617',
   },
   header: {
     flexDirection: 'row',
@@ -241,8 +243,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#1e293b',
+  },
+  headerDark: {
     backgroundColor: '#0b1329',
+    borderBottomColor: '#1e293b',
+  },
+  headerLight: {
+    backgroundColor: '#ffffff',
+    borderBottomColor: '#e2e8f0',
   },
   headerTitleContainer: {
     flex: 1,
@@ -250,7 +258,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '900',
-    color: '#f8fafc',
   },
   subtitle: {
     fontSize: 12,
@@ -278,7 +285,6 @@ const styles = StyleSheet.create({
     paddingBottom: 130,
   },
   sectionTitle: {
-    color: '#94a3b8',
     fontSize: 13,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -297,17 +303,22 @@ const styles = StyleSheet.create({
   actionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0f172a',
     borderRadius: 14,
     padding: 14,
     borderWidth: 1,
+  },
+  actionCardDark: {
+    backgroundColor: '#0f172a',
     borderColor: '#1e293b',
+  },
+  actionCardLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
   },
   actionIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#020617',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -319,17 +330,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   actionTitle: {
-    color: '#f8fafc',
     fontSize: 15,
     fontWeight: '700',
     marginBottom: 2,
   },
   actionSub: {
-    color: '#64748b',
     fontSize: 12,
   },
   actionArrow: {
-    color: '#475569',
     fontSize: 16,
     fontWeight: '800',
   },

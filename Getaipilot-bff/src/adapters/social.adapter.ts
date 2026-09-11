@@ -46,6 +46,16 @@ function createInternalBffToken(payload: { user_id: string; email?: string; orga
 export class SocialAdapter {
   private static baseUrl = env.SOCIAL_SERVICE_URL || 'https://api.getaipilot.in';
   private static secret = env.JWT_SECRET || 'getaipilot-super-secure-mobile-bff-jwt-secret-2026';
+  private static hubAdmin: SupabaseClient = createClient(
+    env.SUPABASE_URL,
+    env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
   private static socialSupabase: SupabaseClient | null = env.SOCIAL_SUPABASE_SERVICE_ROLE_KEY
     ? createClient(env.SOCIAL_SUPABASE_URL, env.SOCIAL_SUPABASE_SERVICE_ROLE_KEY as string)
     : null;
@@ -55,7 +65,7 @@ export class SocialAdapter {
    * Generates or retrieves a valid access token for the live SocialPilot backend
    */
   private static async getSocialSupabaseToken(email?: string, userId?: string): Promise<string | null> {
-    if (!this.socialSupabase || (!email && !userId)) return null;
+    if (!email && !userId) return null;
 
     const cacheKey = email || userId || '';
     const cached = this.tokenCache.get(cacheKey);
@@ -66,27 +76,127 @@ export class SocialAdapter {
     try {
       let targetEmail = email;
       if (!targetEmail && userId) {
-        const { data: userRes } = await this.socialSupabase.auth.admin.getUserById(userId);
-        targetEmail = userRes?.user?.email;
+        const { data: p } = await this.hubAdmin
+          .from('profiles')
+          .select('email')
+          .eq('id', userId)
+          .maybeSingle();
+        targetEmail = p?.email;
+
+        if (!targetEmail) {
+          const { data: userRes } = await this.hubAdmin.auth.admin.getUserById(userId);
+          targetEmail = userRes?.user?.email;
+        }
       }
 
       if (!targetEmail) return null;
 
-      const { data: linkData, error: linkErr } = await this.socialSupabase.auth.admin.generateLink({
+      // 1. Direct SocialPilot Supabase admin resolution if service role key configured
+      if (this.socialSupabase) {
+        const { data: linkData, error: linkErr } = await this.socialSupabase.auth.admin.generateLink({
+          type: 'magiclink',
+          email: targetEmail,
+        });
+
+        if (!linkErr && (linkData as any)?.properties?.hashed_token) {
+          const { data: sessionData, error: sessionErr } = await this.socialSupabase.auth.verifyOtp({
+            token_hash: (linkData as any).properties.hashed_token,
+            type: 'email',
+          });
+
+          if (!sessionErr && sessionData?.session?.access_token) {
+            const token = sessionData.session.access_token;
+            this.tokenCache.set(cacheKey, { token, expiresAt: Date.now() + 3500 * 1000 });
+            return token;
+          }
+        }
+      }
+
+      // 2. Hub SSO Bridge exchange flow with api.getaipilot.in
+      const { data: hubLinkData, error: hubLinkErr } = await this.hubAdmin.auth.admin.generateLink({
         type: 'magiclink',
         email: targetEmail,
       });
 
-      if (!linkErr && linkData?.properties?.hashed_token) {
-        const { data: sessionData, error: sessionErr } = await this.socialSupabase.auth.verifyOtp({
-          token_hash: linkData.properties.hashed_token,
-          type: 'email',
+      if (!hubLinkErr && hubLinkData?.properties?.hashed_token) {
+        const hubVerifyRes = await fetch(`${env.SUPABASE_URL}/auth/v1/verify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            type: 'magiclink',
+            token_hash: hubLinkData.properties.hashed_token,
+          }),
         });
 
-        if (!sessionErr && sessionData?.session?.access_token) {
-          const token = sessionData.session.access_token;
-          this.tokenCache.set(cacheKey, { token, expiresAt: Date.now() + 3500 * 1000 });
-          return token;
+        if (hubVerifyRes.ok) {
+          const hubSession: any = await hubVerifyRes.json();
+          const hubUserToken = hubSession?.access_token;
+
+          if (hubUserToken) {
+            const ssoEdgeRes = await fetch(`${env.SUPABASE_URL}/functions/v1/social-sso`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${hubUserToken}`,
+              },
+              body: JSON.stringify({ dmpilot_url: 'https://social.getaipilot.in' }),
+            });
+
+            if (ssoEdgeRes.ok) {
+              const ssoEdgeData: any = await ssoEdgeRes.json();
+              if (ssoEdgeData?.launch_url) {
+                const launchUrl = new URL(ssoEdgeData.launch_url);
+                const ssoJwt = launchUrl.searchParams.get('token');
+
+                if (ssoJwt) {
+                  const exchangeRes = await fetch(`${this.baseUrl}/api/auth/sso`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: ssoJwt }),
+                  });
+
+                  if (exchangeRes.ok) {
+                    const exchangeData: any = await exchangeRes.json();
+                    if (exchangeData?.magic_link_url) {
+                      const magicUrl = new URL(exchangeData.magic_link_url);
+                      const socialTokenHash = magicUrl.searchParams.get('token');
+                      const socialOtpType = magicUrl.searchParams.get('type') || 'signup';
+
+                      if (socialTokenHash) {
+                        const socialVerifyRes = await fetch(`${env.SOCIAL_SUPABASE_URL}/auth/v1/verify`, {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYXlzcm5uY3didHJ1am54c2RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2NzkzMDcsImV4cCI6MjA4MzI1NTMwN30.ijLQ4PvBuL9BtuDnNfjQeRh12Q1MPInbI_Tvj1mvOd8',
+                          },
+                          body: JSON.stringify({
+                            type: socialOtpType,
+                            token_hash: socialTokenHash,
+                          }),
+                        });
+
+                        if (socialVerifyRes.ok) {
+                          const socialSession: any = await socialVerifyRes.json();
+                          const socialAccessToken = socialSession?.access_token;
+                          if (socialAccessToken) {
+                            this.tokenCache.set(cacheKey, {
+                              token: socialAccessToken,
+                              expiresAt: Date.now() + 3000 * 1000,
+                            });
+                            console.log('[SOCIAL ADAPTER] Issued & cached live SocialPilot token for', targetEmail);
+                            return socialAccessToken;
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     } catch (err: any) {
@@ -247,6 +357,7 @@ export class SocialAdapter {
             normalized.push({
               id: acc.id || acc.accountId || acc.pageId || `${p}_${normalized.length}`,
               platform: p,
+              provider: p,
               account_name: acc.name || acc.username || acc.channelTitle || p,
               username: acc.username || acc.name || '',
               avatar: acc.profilePicture || acc.profile_picture_url || acc.thumbnailUrl || null,
@@ -260,6 +371,7 @@ export class SocialAdapter {
           normalized.push({
             id: acc.id || acc.accountId || `${p}_0`,
             platform: p,
+            provider: p,
             account_name: acc.name || acc.username || p,
             username: acc.username || acc.name || '',
             avatar: acc.profilePicture || acc.profile_picture_url || null,
@@ -416,7 +528,7 @@ export class SocialAdapter {
       user,
       params: query,
     });
-    return res.data || res.posts || res;
+    return Array.isArray(res) ? res : (res.posts || res.data || []);
   }
 
   // --- 7. Entitlements & Billing ---
