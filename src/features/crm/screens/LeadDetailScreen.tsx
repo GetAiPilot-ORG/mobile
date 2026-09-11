@@ -14,8 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { crmApi } from '../api/crm.api';
-import { LeadActivityItem } from '../components/LeadActivityItem';
-import { LeadValueBadge } from '../components/LeadValueBadge';
+import { LeadActivityItem, LeadValueBadge } from '../components';
 import { useLead } from '../hooks/useLead';
 import { usePipelines } from '../hooks/usePipelines';
 

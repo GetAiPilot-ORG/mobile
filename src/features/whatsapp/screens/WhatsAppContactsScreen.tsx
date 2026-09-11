@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { crmApi } from '../../crm/api/crm.api';
-import { ContactCard } from '../components/ContactCard';
+import { ContactCard } from '../components';
 import { useWhatsAppContacts } from '../hooks/useWhatsAppContacts';
 import { WhatsAppContact } from '../types';
 

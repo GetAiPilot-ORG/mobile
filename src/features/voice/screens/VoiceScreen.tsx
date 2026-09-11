@@ -15,10 +15,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AppScreen } from '../../../components/AppScreen';
 import { AppTopBar } from '../../../components/AppTopBar';
 import { apiClient } from '../../../core/api/client';
-import { CallDetailsModal } from '../components/CallDetailsModal';
-import { TriggerCallModal } from '../components/TriggerCallModal';
-import { CreateCampaignModal } from '../components/CreateCampaignModal';
-import { CreateAgentModal } from '../components/CreateAgentModal';
+import {
+  CallDetailsModal,
+  TriggerCallModal,
+  CreateCampaignModal,
+  CreateAgentModal,
+} from '../components';
 
 type VoiceSectionKey = 'overview' | 'calls' | 'agents' | 'campaigns' | 'numbers';
 
@@ -189,46 +191,60 @@ export const VoiceScreen: React.FC = () => {
         {/* --- SECTION 1: OVERVIEW --- */}
         {activeSection === 'overview' && (
           <View style={styles.sectionContainer}>
-            {/* Telemetry Metric Cards */}
-            <View style={styles.metricsGrid}>
-              <View style={[styles.metricCard, isDark ? styles.cardDark : styles.cardLight]}>
-                <View style={[styles.metricIconBox, { backgroundColor: 'rgba(139, 92, 246, 0.15)' }]}>
-                  <Ionicons name="mic" size={16} color="#8B5CF6" />
+            {/* Telemetry Metric Cards - Balanced 2x2 Grid */}
+            <View style={styles.metricsGridContainer}>
+              {/* Row 1 */}
+              <View style={styles.metricsRow}>
+                <View style={[styles.metricCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <View style={styles.metricHeader}>
+                    <View style={[styles.metricIconBox, { backgroundColor: 'rgba(139, 92, 246, 0.15)' }]}>
+                      <Ionicons name="mic" size={18} color="#8B5CF6" />
+                    </View>
+                  </View>
+                  <Text style={[styles.metricNumber, isDark && styles.textDark]} numberOfLines={1}>
+                    {overview.totalAssistants ?? agents.length}
+                  </Text>
+                  <Text style={styles.metricLabel}>Active AI Agents</Text>
                 </View>
-                <Text style={[styles.metricNumber, isDark && styles.textDark]}>
-                  {overview.totalAssistants ?? agents.length}
-                </Text>
-                <Text style={styles.metricLabel}>Active AI Agents</Text>
+
+                <View style={[styles.metricCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <View style={styles.metricHeader}>
+                    <View style={[styles.metricIconBox, { backgroundColor: 'rgba(10, 132, 255, 0.15)' }]}>
+                      <Ionicons name="call" size={18} color="#0A84FF" />
+                    </View>
+                  </View>
+                  <Text style={[styles.metricNumber, isDark && styles.textDark]} numberOfLines={1}>
+                    {overview.totalCalls ?? calls.length}
+                  </Text>
+                  <Text style={styles.metricLabel}>Dispatched Calls</Text>
+                </View>
               </View>
 
-              <View style={[styles.metricCard, isDark ? styles.cardDark : styles.cardLight]}>
-                <View style={[styles.metricIconBox, { backgroundColor: 'rgba(10, 132, 255, 0.15)' }]}>
-                  <Ionicons name="call" size={16} color="#0A84FF" />
+              {/* Row 2 */}
+              <View style={styles.metricsRow}>
+                <View style={[styles.metricCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <View style={styles.metricHeader}>
+                    <View style={[styles.metricIconBox, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
+                      <Ionicons name="rocket" size={18} color="#F59E0B" />
+                    </View>
+                  </View>
+                  <Text style={[styles.metricNumber, isDark && styles.textDark]} numberOfLines={1}>
+                    {overview.activeCampaigns ?? campaigns.length}
+                  </Text>
+                  <Text style={styles.metricLabel}>Voice Campaigns</Text>
                 </View>
-                <Text style={[styles.metricNumber, isDark && styles.textDark]}>
-                  {overview.totalCalls ?? calls.length}
-                </Text>
-                <Text style={styles.metricLabel}>Dispatched Calls</Text>
-              </View>
 
-              <View style={[styles.metricCard, isDark ? styles.cardDark : styles.cardLight]}>
-                <View style={[styles.metricIconBox, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
-                  <Ionicons name="rocket" size={16} color="#F59E0B" />
+                <View style={[styles.metricCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <View style={styles.metricHeader}>
+                    <View style={[styles.metricIconBox, { backgroundColor: 'rgba(48, 209, 88, 0.15)' }]}>
+                      <Ionicons name="wallet" size={18} color="#30D158" />
+                    </View>
+                  </View>
+                  <Text style={[styles.metricNumber, { color: '#30D158' }]} numberOfLines={1}>
+                    {overview.creditBalanceDisplay || `${Math.floor(overview.creditBalance ?? 0)} AI Mins`}
+                  </Text>
+                  <Text style={styles.metricLabel}>Credit Balance</Text>
                 </View>
-                <Text style={[styles.metricNumber, isDark && styles.textDark]}>
-                  {overview.activeCampaigns ?? campaigns.length}
-                </Text>
-                <Text style={styles.metricLabel}>Voice Campaigns</Text>
-              </View>
-
-              <View style={[styles.metricCard, isDark ? styles.cardDark : styles.cardLight]}>
-                <View style={[styles.metricIconBox, { backgroundColor: 'rgba(48, 209, 88, 0.15)' }]}>
-                  <Ionicons name="wallet" size={16} color="#30D158" />
-                </View>
-                <Text style={[styles.metricNumber, { color: '#30D158' }]}>
-                  {overview.creditBalanceDisplay || `${Math.floor(overview.creditBalance || 94)} AI Mins`}
-                </Text>
-                <Text style={styles.metricLabel}>Credit Balance</Text>
               </View>
             </View>
 
@@ -243,8 +259,8 @@ export const VoiceScreen: React.FC = () => {
                     setIsTriggerModalOpen(true);
                   }}
                 >
-                  <Ionicons name="call" size={16} color="#FFFFFF" />
-                  <Text style={styles.primaryActionBtnText}>Trigger Call</Text>
+                  <Ionicons name="call" size={15} color="#FFFFFF" />
+                  <Text style={styles.primaryActionBtnText} numberOfLines={1}>Trigger Call</Text>
                 </Pressable>
 
                 <Pressable
@@ -254,8 +270,8 @@ export const VoiceScreen: React.FC = () => {
                     setIsCampaignModalOpen(true);
                   }}
                 >
-                  <Ionicons name="rocket" size={16} color="#FFFFFF" />
-                  <Text style={styles.primaryActionBtnText}>New Campaign</Text>
+                  <Ionicons name="rocket" size={15} color="#FFFFFF" />
+                  <Text style={styles.primaryActionBtnText} numberOfLines={1}>Campaign</Text>
                 </Pressable>
 
                 <Pressable
@@ -266,7 +282,7 @@ export const VoiceScreen: React.FC = () => {
                   }}
                 >
                   <Ionicons name="add-circle" size={16} color={isDark ? '#FFFFFF' : '#000000'} />
-                  <Text style={[styles.primaryActionBtnText, isDark ? styles.textDark : { color: '#000000' }]}>
+                  <Text style={[styles.primaryActionBtnText, isDark ? styles.textDark : { color: '#000000' }]} numberOfLines={1}>
                     New Agent
                   </Text>
                 </Pressable>
@@ -570,24 +586,24 @@ export const VoiceScreen: React.FC = () => {
 const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   scrollViewLight: { backgroundColor: '#F2F2F7' },
-  scrollViewDark: { backgroundColor: '#000000' },
+  scrollViewDark: { backgroundColor: '#020617' },
   scrollContent: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 130 },
   segmentedTrack: {
     flexDirection: 'row',
     backgroundColor: '#E3E3E8',
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 3,
     marginBottom: 16,
   },
   segmentedTrackDark: {
-    backgroundColor: '#161B22',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#262C36',
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   segmentedTab: {
     flex: 1,
-    paddingVertical: 7,
-    borderRadius: 8,
+    paddingVertical: 8,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -599,96 +615,105 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  segmentedTabActiveDark: { backgroundColor: '#262C36' },
-  segmentedTabText: { fontSize: 11, fontWeight: '600', color: '#8E8E93' },
+  segmentedTabActiveDark: { backgroundColor: '#1E293B' },
+  segmentedTabText: { fontSize: 11.5, fontWeight: '600', color: '#64748B' },
   segmentedTabTextActiveLight: { color: '#000000', fontWeight: '700' },
-  segmentedTabTextActiveDark: { color: '#FFFFFF', fontWeight: '700' },
+  segmentedTabTextActiveDark: { color: '#F8FAFC', fontWeight: '700' },
   sectionContainer: { gap: 14 },
-  metricsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  metricsGridContainer: { gap: 10 },
+  metricsRow: { flexDirection: 'row', gap: 10 },
   metricCard: {
-    width: '48.5%',
+    flex: 1,
     borderRadius: 16,
     padding: 14,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
+    justifyContent: 'space-between',
+    minHeight: 104,
   },
-  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E5E7EB' },
-  cardDark: { backgroundColor: '#161B22', borderColor: '#262C36' },
-  metricIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    justifyContent: 'center',
+  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
+  cardDark: { backgroundColor: '#0F172A', borderColor: '#1E293B' },
+  metricHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-  metricNumber: { fontSize: 18, fontWeight: '800', letterSpacing: -0.3 },
-  metricLabel: { fontSize: 11, color: '#8E8E93', marginTop: 2 },
-  textDark: { color: '#FFFFFF' },
+  metricIconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  metricNumber: { fontSize: 20, fontWeight: '800', letterSpacing: -0.5 },
+  metricLabel: { fontSize: 11.5, color: '#64748B', marginTop: 3, fontWeight: '500' },
+  textDark: { color: '#F8FAFC' },
   actionsCard: {
     borderRadius: 16,
     padding: 16,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
-  cardHeaderTitle: { fontSize: 11, fontWeight: '700', color: '#8E8E93', letterSpacing: 0.5, marginBottom: 12 },
+  cardHeaderTitle: { fontSize: 11, fontWeight: '700', color: '#64748B', letterSpacing: 0.6, marginBottom: 12 },
   actionButtonsRow: { flexDirection: 'row', gap: 8 },
   primaryActionBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 5,
     paddingVertical: 10,
+    paddingHorizontal: 4,
     borderRadius: 10,
   },
-  primaryActionBtnText: { color: '#FFFFFF', fontSize: 12.5, fontWeight: '700' },
-  secondaryBtnLight: { backgroundColor: '#F3F4F6' },
-  secondaryBtnDark: { backgroundColor: '#262C36' },
+  primaryActionBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
+  secondaryBtnLight: { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#CBD5E1' },
+  secondaryBtnDark: { backgroundColor: '#1E293B', borderWidth: 1, borderColor: '#334155' },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 },
-  sectionTitle: { fontSize: 11.5, fontWeight: '700', color: '#8E8E93', letterSpacing: 0.5 },
+  sectionTitle: { fontSize: 11.5, fontWeight: '700', color: '#64748B', letterSpacing: 0.5 },
   headerBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   headerBtnText: { color: '#8B5CF6', fontSize: 12.5, fontWeight: '700' },
   listCard: {
     borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     overflow: 'hidden',
   },
-  callRow: { flexDirection: 'row', alignItems: 'center', padding: 13 },
-  callIconBox: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  callRow: { flexDirection: 'row', alignItems: 'center', padding: 14 },
+  callIconBox: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   callInfo: { flex: 1, marginRight: 8 },
   callRowHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
   callPhone: { fontSize: 14, fontWeight: '700' },
-  callDuration: { fontSize: 11, color: '#8E8E93', fontWeight: '600' },
-  callAgent: { fontSize: 11.5, color: '#8E8E93' },
-  callSummarySnippet: { fontSize: 11, color: '#6B7280', fontStyle: 'italic', marginTop: 3 },
-  divider: { height: StyleSheet.hairlineWidth, marginLeft: 60 },
-  dividerLight: { backgroundColor: '#E5E7EB' },
-  dividerDark: { backgroundColor: '#262C36' },
-  emptyContainer: { alignItems: 'center', paddingVertical: 24, gap: 8 },
-  emptyText: { fontSize: 12.5, color: '#8E8E93' },
+  callDuration: { fontSize: 11, color: '#64748B', fontWeight: '600' },
+  callAgent: { fontSize: 11.5, color: '#64748B' },
+  callSummarySnippet: { fontSize: 11, color: '#94A3B8', fontStyle: 'italic', marginTop: 3 },
+  divider: { height: 1, marginLeft: 62 },
+  dividerLight: { backgroundColor: '#E2E8F0' },
+  dividerDark: { backgroundColor: '#1E293B' },
+  emptyContainer: { alignItems: 'center', paddingVertical: 28, gap: 8 },
+  emptyText: { fontSize: 12.5, color: '#64748B' },
   cardsStack: { gap: 10 },
-  agentCard: { borderRadius: 16, padding: 16, borderWidth: StyleSheet.hairlineWidth },
+  agentCard: { borderRadius: 16, padding: 16, borderWidth: 1 },
   agentCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  agentAvatarBox: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  agentAvatarBox: { width: 42, height: 42, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   agentName: { fontSize: 15, fontWeight: '700' },
-  agentSub: { fontSize: 11.5, color: '#8E8E93', marginTop: 1 },
+  agentSub: { fontSize: 11.5, color: '#64748B', marginTop: 1 },
   onlinePill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(48, 209, 88, 0.1)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   onlineDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#30D158' },
   onlinePillText: { fontSize: 10.5, fontWeight: '700', color: '#30D158' },
-  agentPromptSnippet: { fontSize: 11.5, color: '#6B7280', fontStyle: 'italic', marginTop: 10, lineHeight: 16 },
-  agentPromptSnippetDark: { color: '#9CA3AF' },
+  agentPromptSnippet: { fontSize: 11.5, color: '#94A3B8', fontStyle: 'italic', marginTop: 10, lineHeight: 16 },
+  agentPromptSnippetDark: { color: '#94A3B8' },
   agentCardFooter: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 },
   agentActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   agentActionBtnText: { fontSize: 12, fontWeight: '700' },
   campaignRow: { flexDirection: 'row', alignItems: 'center', padding: 14 },
-  campaignIconBox: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  campaignIconBox: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   campaignInfo: { flex: 1, marginRight: 8 },
   campaignName: { fontSize: 14, fontWeight: '700' },
-  campaignMeta: { fontSize: 11.5, color: '#8E8E93', marginTop: 2 },
+  campaignMeta: { fontSize: 11.5, color: '#64748B', marginTop: 2 },
   numberRow: { flexDirection: 'row', alignItems: 'center', padding: 14 },
-  numberIconBox: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  numberIconBox: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   numberInfo: { flex: 1, marginRight: 8 },
   numberVal: { fontSize: 14, fontWeight: '700' },
-  numberMeta: { fontSize: 11.5, color: '#8E8E93', marginTop: 2 },
+  numberMeta: { fontSize: 11.5, color: '#64748B', marginTop: 2 },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   badgeSuccess: { backgroundColor: 'rgba(48, 209, 88, 0.15)' },
   badgeWarning: { backgroundColor: 'rgba(245, 158, 11, 0.15)' },

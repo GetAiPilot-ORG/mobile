@@ -10,9 +10,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ConnectionStatusCard } from '../components/ConnectionStatusCard';
-import { UsageCard } from '../components/UsageCard';
-import { WhatsAppMetricCard } from '../components/WhatsAppMetricCard';
+import {
+  ConnectionStatusCard,
+  UsageCard,
+  WhatsAppMetricCard,
+} from '../components';
 import { useWhatsAppBroadcasts } from '../hooks/useWhatsAppBroadcasts';
 import { useWhatsAppContacts } from '../hooks/useWhatsAppContacts';
 import { useWhatsAppStatus } from '../hooks/useWhatsAppStatus';

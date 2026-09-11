@@ -112,6 +112,8 @@ async function main() {
   });
 
   try {
+    console.log('=== FASTIFY REGISTERED ROUTES ===');
+    console.log(app.printRoutes());
     await app.listen({ port: env.PORT, host: env.HOST });
     console.log(`🚀 GetAiPilot-BFF running on http://${env.HOST}:${env.PORT}`);
   } catch (err) {

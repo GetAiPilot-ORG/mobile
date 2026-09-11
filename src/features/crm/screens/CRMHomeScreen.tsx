@@ -15,9 +15,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { crmApi } from '../api/crm.api';
-import { LeadCard } from '../components/LeadCard';
-import { LeadFilters } from '../components/LeadFilters';
-import { PipelineStage } from '../components/PipelineStage';
+import {
+  LeadCard,
+  LeadFilters,
+  PipelineStage,
+} from '../components';
 import { useLeads } from '../hooks/useLeads';
 import { usePipelines } from '../hooks/usePipelines';
 import { Lead } from '../types';

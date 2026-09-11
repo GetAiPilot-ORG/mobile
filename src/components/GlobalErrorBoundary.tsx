@@ -33,13 +33,18 @@ export class GlobalErrorBoundary extends React.Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: '#111827', padding: 20 }]}>
           <View style={styles.content}>
-            <Text style={styles.title}>Something went wrong</Text>
-            <Text style={styles.description}>
-              {this.state.error?.message || "An unexpected error occurred."}
+            <Text style={[styles.title, { color: '#ef4444' }]}>Error Caught by Boundary</Text>
+            <Text style={[styles.description, { color: '#f87171', fontSize: 16, marginBottom: 12 }]}>
+              {this.state.error?.name}: {this.state.error?.message || "An unexpected error occurred."}
             </Text>
-            <Pressable style={styles.button} onPress={this.handleReset}>
+            {this.state.error?.stack && (
+              <Text style={{ color: '#9ca3af', fontSize: 11, fontFamily: 'monospace', maxHeight: 250 }}>
+                {this.state.error.stack}
+              </Text>
+            )}
+            <Pressable style={[styles.button, { marginTop: 20 }]} onPress={this.handleReset}>
               <Text style={styles.buttonText}>Try Again</Text>
             </Pressable>
           </View>
