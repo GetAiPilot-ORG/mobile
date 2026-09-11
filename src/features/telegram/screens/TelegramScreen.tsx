@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -34,7 +34,7 @@ import {
 } from '../components';
 
 type TelegramCategory = 'all' | 'automation' | 'monetization' | 'growth';
-type TelegramTab = 'bots' | 'hub' | 'automations' | 'sub_manager' | 'broadcasts';
+type TelegramTab = 'bots' | 'hub' | 'automations' | 'sub_manager' | 'broadcasts' | 'reactions';
 
 const CATEGORIES: { key: TelegramCategory; label: string; icon: string }[] = [
   { key: 'all', label: 'All 8 Tools', icon: 'grid-outline' },
@@ -51,6 +51,9 @@ export const TelegramScreen: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<TelegramCategory>('all');
   const [activeModal, setActiveModal] = useState<TelegramToolKey | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  const mainScrollRef = useRef<ScrollView>(null);
+  const sectionContentY = useRef<number>(0);
 
   const queryClient = useQueryClient();
 
@@ -139,9 +142,17 @@ export const TelegramScreen: React.FC = () => {
     await Promise.all([refetch(), refetchBots(), refetchSession(), refetchChats(), refetchRules(), refetchPlans()]);
   };
 
-  const handleTabChange = (tab: TelegramTab) => {
+  const handleTabChange = (tab: TelegramTab, shouldScroll = false) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setActiveTab(tab);
+    if (shouldScroll || tab === 'hub') {
+      setTimeout(() => {
+        mainScrollRef.current?.scrollTo({
+          y: sectionContentY.current > 0 ? sectionContentY.current - 12 : 540,
+          animated: true,
+        });
+      }, 60);
+    }
   };
 
   const handleCategoryChange = (cat: TelegramCategory) => {
@@ -188,57 +199,168 @@ export const TelegramScreen: React.FC = () => {
 
   const botsList = trackerBots || summary?.trackerBots || [];
 
-  const dynamicTabs: { key: TelegramTab; label: string; icon: string }[] = [
-    { key: 'automations', label: `AutoForward (${(forwardRules || []).length})`, icon: 'flash' },
-    { key: 'bots', label: `Connected Bots (${botsList.length})`, icon: 'logo-android' },
-    { key: 'sub_manager', label: `TeleSub Pages (${(subPlans || []).length})`, icon: 'card-outline' },
-    { key: 'hub', label: '8-Tool Suite', icon: 'apps-outline' },
-  ];
-
   return (
     <AppScreen safeArea="top">
       <AppTopBar title="Telegram Master Dashboard" subtitle="Overview of bots, mapped channels, deep links, forwarding rules & monetization" />
 
-      {/* Segmented Top Navigation Tabs */}
+      {/* Quick Launch & Section Action Bar */}
       <View style={[styles.tabBarWrapper, isDark ? styles.borderDark : styles.borderLight]}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tabScroll}
         >
-          {dynamicTabs.map((tab) => {
-            const isActive = activeTab === tab.key;
-            return (
-              <Pressable
-                key={tab.key}
-                style={[
-                  styles.tabButton,
-                  isDark ? styles.tabButtonDark : styles.tabButtonLight,
-                  isActive && styles.tabButtonActive,
-                ]}
-                onPress={() => handleTabChange(tab.key)}
-              >
-                <Ionicons
-                  name={tab.icon as any}
-                  size={14}
-                  color={isActive ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
-                />
-                <Text
-                  style={[
-                    styles.tabButtonText,
-                    isDark ? styles.tabButtonTextDark : styles.tabButtonTextLight,
-                    isActive && styles.tabButtonTextActive,
-                  ]}
-                >
-                  {tab.label}
-                </Text>
-              </Pressable>
-            );
-          })}
+          <Pressable
+            style={[
+              styles.quickLaunchPill,
+              {
+                borderColor: '#0284C7',
+                backgroundColor: activeTab === 'hub'
+                  ? '#0284C7'
+                  : isDark ? 'rgba(2,132,199,0.15)' : 'rgba(2,132,199,0.08)',
+              },
+            ]}
+            onPress={() => handleTabChange('hub', true)}
+          >
+            <Ionicons name="apps" size={15} color={activeTab === 'hub' ? '#FFFFFF' : '#0284C7'} />
+            <Text
+              style={[
+                styles.quickLaunchText,
+                { color: activeTab === 'hub' ? '#FFFFFF' : '#0284C7', fontWeight: '800' },
+              ]}
+            >
+              8-Tool Suite
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.quickLaunchPill,
+              {
+                borderColor: '#8B5CF6',
+                backgroundColor: activeTab === 'automations'
+                  ? '#8B5CF6'
+                  : isDark ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.08)',
+              },
+            ]}
+            onPress={() => {
+              handleTabChange('automations');
+              openToolModal('autoforward');
+            }}
+          >
+            <Ionicons name="git-compare" size={15} color={activeTab === 'automations' ? '#FFFFFF' : '#8B5CF6'} />
+            <Text
+              style={[
+                styles.quickLaunchText,
+                { color: activeTab === 'automations' ? '#FFFFFF' : '#8B5CF6' },
+              ]}
+            >
+              + Forward Rule
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.quickLaunchPill,
+              {
+                borderColor: '#EC4899',
+                backgroundColor: activeTab === 'sub_manager'
+                  ? '#EC4899'
+                  : isDark ? 'rgba(236,72,153,0.15)' : 'rgba(236,72,153,0.08)',
+              },
+            ]}
+            onPress={() => {
+              handleTabChange('sub_manager');
+              openToolModal('sub_manager');
+            }}
+          >
+            <Ionicons name="card" size={15} color={activeTab === 'sub_manager' ? '#FFFFFF' : '#EC4899'} />
+            <Text
+              style={[
+                styles.quickLaunchText,
+                { color: activeTab === 'sub_manager' ? '#FFFFFF' : '#EC4899' },
+              ]}
+            >
+              TeleSub Pages
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.quickLaunchPill,
+              {
+                borderColor: '#0284C7',
+                backgroundColor: activeTab === 'broadcasts'
+                  ? '#0284C7'
+                  : isDark ? 'rgba(2,132,199,0.15)' : 'rgba(2,132,199,0.08)',
+              },
+            ]}
+            onPress={() => handleTabChange('broadcasts', true)}
+          >
+            <Ionicons name="megaphone" size={15} color={activeTab === 'broadcasts' ? '#FFFFFF' : '#0284C7'} />
+            <Text
+              style={[
+                styles.quickLaunchText,
+                { color: activeTab === 'broadcasts' ? '#FFFFFF' : '#0284C7' },
+              ]}
+            >
+              Broadcast
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.quickLaunchPill,
+              {
+                borderColor: '#F59E0B',
+                backgroundColor: activeTab === 'reactions'
+                  ? '#F59E0B'
+                  : isDark ? 'rgba(245,158,11,0.15)' : 'rgba(245,158,11,0.08)',
+              },
+            ]}
+            onPress={() => handleTabChange('reactions', true)}
+          >
+            <Ionicons name="flash" size={15} color={activeTab === 'reactions' ? '#FFFFFF' : '#F59E0B'} />
+            <Text
+              style={[
+                styles.quickLaunchText,
+                { color: activeTab === 'reactions' ? '#FFFFFF' : '#F59E0B' },
+              ]}
+            >
+              Reactions
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.quickLaunchPill,
+              {
+                borderColor: '#10B981',
+                backgroundColor: activeTab === 'bots'
+                  ? '#10B981'
+                  : isDark ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.08)',
+              },
+            ]}
+            onPress={() => {
+              handleTabChange('bots');
+              openToolModal('tracker');
+            }}
+          >
+            <Ionicons name="analytics" size={15} color={activeTab === 'bots' ? '#FFFFFF' : '#10B981'} />
+            <Text
+              style={[
+                styles.quickLaunchText,
+                { color: activeTab === 'bots' ? '#FFFFFF' : '#10B981' },
+              ]}
+            >
+              Tracker Bots
+            </Text>
+          </Pressable>
         </ScrollView>
       </View>
 
       <ScrollView
+        ref={mainScrollRef}
         style={styles.container}
         contentContainerStyle={styles.content}
         refreshControl={
@@ -418,72 +540,14 @@ export const TelegramScreen: React.FC = () => {
             {/* VISUAL ANALYTICS CHARTS (CHANNEL JOIN TRACKING & TELESUB REVENUE) */}
             <DashboardAnalyticsCharts />
 
-            {/* QUICK LAUNCH ACTIONS PILL BAR (WITH DIRECT NAVIGATION & TOOL TRIGGERS) */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.quickLaunchScroll}
+            {/* ACTIVE TAB CONTENT SECTIONS CONTAINER */}
+            <View
+              onLayout={(e) => {
+                sectionContentY.current = e.nativeEvent.layout.y;
+              }}
             >
-              <Pressable
-                style={[styles.quickLaunchPill, { borderColor: '#0284C7', backgroundColor: isDark ? 'rgba(2,132,199,0.2)' : 'rgba(2,132,199,0.1)' }]}
-                onPress={() => handleTabChange('hub')}
-              >
-                <Ionicons name="apps" size={15} color="#0284C7" />
-                <Text style={[styles.quickLaunchText, { color: '#0284C7', fontWeight: '800' }]}>8-Tool Suite</Text>
-              </Pressable>
-
-              <Pressable
-                style={[styles.quickLaunchPill, { borderColor: '#8B5CF6', backgroundColor: isDark ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.08)' }]}
-                onPress={() => {
-                  handleTabChange('automations');
-                  openToolModal('autoforward');
-                }}
-              >
-                <Ionicons name="git-compare" size={15} color="#8B5CF6" />
-                <Text style={[styles.quickLaunchText, { color: '#8B5CF6' }]}>+ Forward Rule</Text>
-              </Pressable>
-
-              <Pressable
-                style={[styles.quickLaunchPill, { borderColor: '#EC4899', backgroundColor: isDark ? 'rgba(236,72,153,0.15)' : 'rgba(236,72,153,0.08)' }]}
-                onPress={() => {
-                  handleTabChange('sub_manager');
-                  openToolModal('sub_manager');
-                }}
-              >
-                <Ionicons name="card" size={15} color="#EC4899" />
-                <Text style={[styles.quickLaunchText, { color: '#EC4899' }]}>TeleSub Pages</Text>
-              </Pressable>
-
-              <Pressable
-                style={[styles.quickLaunchPill, { borderColor: '#0284C7', backgroundColor: isDark ? 'rgba(2,132,199,0.15)' : 'rgba(2,132,199,0.08)' }]}
-                onPress={() => openToolModal('broadcast')}
-              >
-                <Ionicons name="megaphone" size={15} color="#0284C7" />
-                <Text style={[styles.quickLaunchText, { color: '#0284C7' }]}>Broadcast</Text>
-              </Pressable>
-
-              <Pressable
-                style={[styles.quickLaunchPill, { borderColor: '#F59E0B', backgroundColor: isDark ? 'rgba(245,158,11,0.15)' : 'rgba(245,158,11,0.08)' }]}
-                onPress={() => openToolModal('reactions')}
-              >
-                <Ionicons name="flash" size={15} color="#F59E0B" />
-                <Text style={[styles.quickLaunchText, { color: '#F59E0B' }]}>Reactions</Text>
-              </Pressable>
-
-              <Pressable
-                style={[styles.quickLaunchPill, { borderColor: '#10B981', backgroundColor: isDark ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.08)' }]}
-                onPress={() => {
-                  handleTabChange('bots');
-                  openToolModal('tracker');
-                }}
-              >
-                <Ionicons name="analytics" size={15} color="#10B981" />
-                <Text style={[styles.quickLaunchText, { color: '#10B981' }]}>Tracker Bots</Text>
-              </Pressable>
-            </ScrollView>
-
-            {/* TAB 0: CONNECTED TRACKER BOTS */}
-            {activeTab === 'bots' && (
+              {/* TAB 0: CONNECTED TRACKER BOTS */}
+              {activeTab === 'bots' && (
               <>
                 <View style={styles.sectionHeaderRow}>
                   <View>
@@ -1030,6 +1094,70 @@ export const TelegramScreen: React.FC = () => {
                 </View>
               </>
             )}
+
+            {/* TAB 5: REACTIONS & AUDIENCE ENGAGEMENT */}
+            {activeTab === 'reactions' && (
+              <>
+                <Pressable
+                  style={[styles.broadcastBanner, isDark ? styles.cardDark : styles.cardLight]}
+                  onPress={() => openToolModal('reactions')}
+                >
+                  <View style={[styles.broadcastBannerIcon, { backgroundColor: 'rgba(245,158,11,0.12)' }]}>
+                    <Ionicons name="flash" size={24} color="#F59E0B" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.broadcastBannerTitle, isDark ? styles.textDark : styles.textLight]}>
+                      Configure Auto Reactions & Boosts
+                    </Text>
+                    <Text style={styles.broadcastBannerDesc}>
+                      Set up instant emoji reactions, post views, and member retention boosts
+                    </Text>
+                  </View>
+                  <Ionicons name="arrow-forward-circle" size={28} color="#F59E0B" />
+                </Pressable>
+
+                <View style={styles.sectionHeaderRow}>
+                  <View>
+                    <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight, { marginBottom: 2 }]}>
+                      Reaction Automation & Refill Services
+                    </Text>
+                    <Text style={styles.sectionSub}>Live boost rates & engagement engine</Text>
+                  </View>
+                  <Pressable
+                    style={[styles.actionBtnPrimary, { backgroundColor: '#F59E0B' }]}
+                    onPress={() => openToolModal('reactions')}
+                  >
+                    <Ionicons name="cart" size={16} color="#FFFFFF" />
+                    <Text style={styles.actionBtnPrimaryText}>Open Console</Text>
+                  </Pressable>
+                </View>
+
+                {/* 4 Quick Highlight Service Cards */}
+                <View style={[styles.metricsGrid, { borderTopWidth: 0, paddingTop: 0, marginBottom: 16 }]}>
+                  <View style={[styles.metricItem, isDark ? styles.cardDark : styles.cardLight, { padding: 12, borderRadius: 12, borderWidth: 1 }]}>
+                    <Text style={styles.metricLabel}>CUSTOM REACTIONS</Text>
+                    <Text style={[styles.metricValue, { color: '#F59E0B' }]}>₹14 / 1k</Text>
+                    <Text style={styles.metricSub}>❤️ 👍 🔥 👏 🚀 🥰</Text>
+                  </View>
+                  <View style={[styles.metricItem, isDark ? styles.cardDark : styles.cardLight, { padding: 12, borderRadius: 12, borderWidth: 1 }]}>
+                    <Text style={styles.metricLabel}>AUTO VIEWS</Text>
+                    <Text style={[styles.metricValue, { color: '#0284C7' }]}>₹4.8 / 1k</Text>
+                    <Text style={styles.metricSub}>Immediate post delivery</Text>
+                  </View>
+                  <View style={[styles.metricItem, isDark ? styles.cardDark : styles.cardLight, { padding: 12, borderRadius: 12, borderWidth: 1 }]}>
+                    <Text style={styles.metricLabel}>MEMBERS 30D</Text>
+                    <Text style={[styles.metricValue, { color: '#10B981' }]}>₹80 / 1k</Text>
+                    <Text style={styles.metricSub}>30-Day auto-refill</Text>
+                  </View>
+                  <View style={[styles.metricItem, isDark ? styles.cardDark : styles.cardLight, { padding: 12, borderRadius: 12, borderWidth: 1 }]}>
+                    <Text style={styles.metricLabel}>MEMBERS 365D</Text>
+                    <Text style={[styles.metricValue, { color: '#8B5CF6' }]}>₹250 / 1k</Text>
+                    <Text style={styles.metricSub}>1-Year persistent refill</Text>
+                  </View>
+                </View>
+              </>
+            )}
+            </View>
           </>
         )}
       </ScrollView>
