@@ -161,14 +161,7 @@ export const TelegramScreen: React.FC = () => {
   };
 
   const openToolModal = (key: TelegramToolKey) => {
-    if (key === 'autoforward') {
-      handleTabChange('automations');
-      return;
-    }
-    if (key === 'sub_manager') {
-      handleTabChange('sub_manager');
-      return;
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setActiveModal(key);
   };
 
@@ -495,7 +488,7 @@ export const TelegramScreen: React.FC = () => {
                     styles.metricItem,
                     pressed && styles.metricItemPressed,
                   ]}
-                  onPress={() => handleTabChange('sub_manager')}
+                  onPress={() => openToolModal('sub_manager')}
                 >
                   <View style={styles.metricHeaderRow}>
                     <Text style={styles.metricLabel}>TELESUB PAGES</Text>
@@ -510,13 +503,13 @@ export const TelegramScreen: React.FC = () => {
                   </View>
                 </Pressable>
 
-                {/* 6. Revenue -> Redirects to sub_manager tab */}
+                {/* 6. Revenue -> Opens Sub Manager */}
                 <Pressable
                   style={({ pressed }) => [
                     styles.metricItem,
                     pressed && styles.metricItemPressed,
                   ]}
-                  onPress={() => handleTabChange('sub_manager')}
+                  onPress={() => openToolModal('sub_manager')}
                 >
                   <View style={styles.metricHeaderRow}>
                     <Text style={styles.metricLabel}>REVENUE</Text>
