@@ -140,16 +140,16 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     badge: "Free",
     route: "/tools/qr-code",
   },
-  {
-    id: "website-audit",
-    title: "Website Health Audit",
-    category: "AI Audio",
-    description:
-      "Instantly audit SEO, performance, UX, and conversion with an AI health score.",
-    icon: "🔍",
-    badge: "AI Score",
-    route: "/tools/website-audit",
-  },
+  // {
+  //   id: "website-audit",
+  //   title: "Website Health Audit",
+  //   category: "AI Audio",
+  //   description:
+  //     "Instantly audit SEO, performance, UX, and conversion with an AI health score.",
+  //   icon: "🔍",
+  //   badge: "AI Score",
+  //   route: "/tools/website-audit",
+  // },
 ];
 
 const CATEGORIES = ["All", "Templates", "Messaging", "Utilities", "AI Audio"];
