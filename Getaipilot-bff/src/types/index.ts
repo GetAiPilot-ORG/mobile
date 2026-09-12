@@ -184,6 +184,108 @@ export interface SocialPost {
   publishedAt?: string;
 }
 
+export type TelegramToolKey =
+  | 'autoforward'
+  | 'sub_manager'
+  | 'tracker'
+  | 'report_bot'
+  | 'broadcast'
+  | 'auto_approve'
+  | 'chatbot'
+  | 'reactions';
+
+export interface TelegramHubTool {
+  key: TelegramToolKey;
+  title: string;
+  description: string;
+  isCompleted: boolean;
+  statusText: string;
+  badge?: string;
+  icon: string;
+  stats?: Record<string, any>;
+}
+
+export interface TelegramHubStatus {
+  totalModules: number;
+  completedModules: number;
+  tools: TelegramHubTool[];
+}
+
+export interface TelegramTrackerBot {
+  id: string;
+  bot_name: string;
+  bot_username: string;
+  status: string;
+  channel_id?: string | null;
+  channel_name?: string | null;
+  channel_icon_url?: string | null;
+  bot_icon_url?: string | null;
+  created_at: string;
+}
+
+export interface TelegramTrackerLink {
+  id: string;
+  title: string;
+  bot_id?: string;
+  bot_username: string;
+  channel_name: string;
+  source_type: string;
+  bot_starts: number;
+  joined: number;
+  conversion_rate: number;
+  deep_link_url: string;
+  created_at: string;
+}
+
+export interface TelegramTrackerChannelReport {
+  channel_id: string;
+  channel_name: string;
+  channel_icon_url?: string | null;
+  total_links: number;
+  period_joins: number;
+  joined: number;
+  left: number;
+  all_active: number;
+  links: Array<{
+    id: string;
+    title: string;
+    joins: number;
+  }>;
+}
+
+export interface TelegramTrackerNewUser {
+  id: string;
+  telegram_user_id: string | number;
+  name: string;
+  username?: string;
+  channel_name: string;
+  bot_username: string;
+  time_ago: string;
+  status: 'Bot Start' | 'Active' | 'Leave' | 'Pending';
+  created_at: string;
+}
+
+export interface TelegramTrackerDashboardData {
+  kpis: {
+    totalJoins: number;
+    todaysJoins: number;
+    thisMonthJoins: number;
+    botStarts: number;
+    pendingJoins: number;
+    conversionRate: number;
+  };
+  period: {
+    startDate: string;
+    endDate: string;
+    periodJoins: number;
+    totalTracked: number;
+    allTimeActive: number;
+  };
+  channels: TelegramTrackerChannelReport[];
+  newUsers: TelegramTrackerNewUser[];
+  totalUsersCount: number;
+}
+
 export interface TelegramSummary {
   botConnected: boolean;
   botUsername?: string;
@@ -193,6 +295,14 @@ export interface TelegramSummary {
   autoForwardRulesCount: number;
   autoApproveRequestsCount: number;
   autoReactionsActive: boolean;
+  trackedBotsCount: number;
+  channelsCount: number;
+  deepLinksCount: number;
+  forwardsCount: number;
+  teleSubPagesCount: number;
+  revenue: number;
+  trackerBots: TelegramTrackerBot[];
+  hub: TelegramHubStatus;
 }
 
 // ==========================================
@@ -304,4 +414,56 @@ export interface PaginatedBroadcastsResponse {
   page_size: number;
   has_more: boolean;
 }
+
+export interface TelegramSessionStatus {
+  connected: boolean;
+  phone?: string;
+  user_id?: number | string;
+  first_name?: string;
+  username?: string;
+  is_active: boolean;
+}
+
+export interface TelegramChat {
+  id: number | string;
+  title: string;
+  type: 'channel' | 'supergroup' | 'group' | 'chat';
+  username?: string;
+  member_count?: number;
+  is_creator?: boolean;
+  is_admin?: boolean;
+  join_mode?: 'request' | 'auto';
+  photo_url?: string;
+}
+
+export interface ForwardRule {
+  id: string;
+  name?: string;
+  source_chat_id: number | string;
+  source_chat_title: string;
+  target_chat_id: number | string;
+  target_chat_title: string;
+  keywords_filter?: string[];
+  blacklist_keywords?: string[];
+  replace_header?: string;
+  replace_footer?: string;
+  delay_seconds: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface TelegramLoginPayload {
+  phone: string;
+}
+
+export interface TelegramOtpPayload {
+  phone: string;
+  otp: string;
+  phone_code_hash?: string;
+}
+
+export interface TelegramPasswordPayload {
+  password: string;
+}
+
 

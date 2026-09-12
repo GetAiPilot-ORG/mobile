@@ -1,257 +1,258 @@
-import { CRMAdapter, CRMContactRecord, LeadFilters, PaginatedLeadsResult } from '../adapters/crm.adapter.js';
-import { VoiceAdapter } from '../adapters/voice.adapter.js';
-import { WhatsAppAdapter } from '../adapters/whatsapp.adapter.js';
-import { CRMActivity, JWTPayload, Lead, Pipeline, PipelineStage } from '../types/index.js';
-import { PermissionService } from './permission.service.js';
+import { CRMRepository, PIPELINE_STAGES } from './crm/crm.repository.js';
+import { JWTPayload } from '../types/index.js';
+import {
+  CRMActivity,
+  CRMContact,
+  CRMDashboardSummary,
+  CRMDeal,
+  CRMMember,
+  CRMTask,
+  DealStage,
+} from '../types/crm.types.js';
 import { WebSocketService } from './websocket.service.js';
 
 export class CRMService {
-  /**
-   * Fetches pipelines with stages & metrics
-   */
-  public static async getPipelines(user: JWTPayload): Promise<Pipeline[]> {
-    if (!PermissionService.hasPermission(user.permissions, 'crm.read')) {
-      throw new Error('Forbidden: Missing crm.read permission');
-    }
-    return await CRMAdapter.getPipelines(user);
+  // ── Context & Stages ───────────────────────────────────────────────────────
+
+  public static async getStages(_user: JWTPayload) {
+    return PIPELINE_STAGES;
   }
 
-  /**
-   * Fetches pipeline stages definition
-   */
-  public static async getStages(user: JWTPayload): Promise<PipelineStage[]> {
-    const pipelines = await this.getPipelines(user);
-    return pipelines[0]?.stages || [];
+  public static async getMembers(user: JWTPayload): Promise<CRMMember[]> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.getMembers(ctx.crmOrgId);
   }
 
-  /**
-   * Fetches leads with filtering and pagination
-   */
+  // ── Dashboard Summary ──────────────────────────────────────────────────────
+
+  public static async getDashboardSummary(user: JWTPayload): Promise<CRMDashboardSummary> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.getDashboardSummary(ctx.crmOrgId);
+  }
+
+  // ── Leads (Contacts with status='lead' or all contacts) ─────────────────────
+
   public static async getLeads(
     user: JWTPayload,
-    filters: LeadFilters = {}
-  ): Promise<PaginatedLeadsResult> {
-    if (!PermissionService.hasPermission(user.permissions, 'crm.read')) {
-      throw new Error('Forbidden: Missing crm.read permission');
-    }
-
-    return await CRMAdapter.getLeads(user, filters);
+    filters: { status?: string; search?: string; assigned_to?: string; limit?: number; offset?: number } = {}
+  ): Promise<{ leads: CRMContact[]; total_count: number }> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    const effectiveStatus = filters.status || 'lead';
+    const result = await CRMRepository.getContacts(ctx.crmOrgId, {
+      ...filters,
+      status: effectiveStatus,
+    });
+    return {
+      leads: result.contacts,
+      total_count: result.totalCount,
+    };
   }
 
-  /**
-   * Fetches single lead with cross-tenant authorization check
-   */
-  public static async getLead(user: JWTPayload, id: string): Promise<Lead> {
-    if (!PermissionService.hasPermission(user.permissions, 'crm.read')) {
-      throw new Error('Forbidden: Missing crm.read permission');
-    }
-
-    const lead = await CRMAdapter.getLead(user, id);
+  public static async getLead(user: JWTPayload, id: string): Promise<CRMContact> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    const lead = await CRMRepository.getContactById(ctx.crmOrgId, id);
     if (!lead) {
-      throw new Error('NotFound: Lead does not exist in this organization');
+      throw new Error('NotFound: Lead not found in this organization');
     }
     return lead;
   }
 
-  /**
-   * Fetches CRM contacts list
-   */
-  public static async getContacts(user: JWTPayload): Promise<CRMContactRecord[]> {
-    if (!PermissionService.hasPermission(user.permissions, 'crm.read')) {
-      throw new Error('Forbidden: Missing crm.read permission');
-    }
-    return await CRMAdapter.getContacts(user);
-  }
+  public static async createLead(user: JWTPayload, data: Partial<CRMContact>): Promise<CRMContact> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    const leadData: Partial<CRMContact> = {
+      ...data,
+      status: data.status || 'lead',
+      assigned_to: data.assigned_to || (ctx.crmMemberId !== ctx.hubUserId ? ctx.crmMemberId : null),
+    };
+    const newLead = await CRMRepository.createContact(ctx.crmOrgId, leadData);
 
-  /**
-   * Creates a new lead
-   */
-  public static async createLead(user: JWTPayload, data: Partial<Lead>): Promise<Lead> {
-    const canWrite =
-      PermissionService.hasPermission(user.permissions, 'crm.write') ||
-      PermissionService.hasPermission(user.permissions, 'crm.write_assigned');
-
-    if (!canWrite) {
-      throw new Error('Forbidden: Missing crm.write permission');
-    }
-
-    // Assign to creator by default if agent
-    if (!data.owner && user.role === 'Agent') {
-      data.owner = { id: user.user_id, name: user.email.split('@')[0] };
-    }
-
-    const newLead = await CRMAdapter.createLead(user, data);
-
-    // Broadcast Realtime Event
     WebSocketService.broadcastToOrg(user.organization_id, 'lead.created' as any, newLead);
-
     return newLead;
   }
 
-  /**
-   * Updates lead with strict ownership enforcement for agents
-   */
-  public static async updateLead(
-    user: JWTPayload,
-    id: string,
-    patch: Partial<Lead>
-  ): Promise<Lead> {
-    const existing = await this.getLead(user, id);
-
-    // Enforce crm.write_assigned rule on backend
-    if (
-      !PermissionService.hasPermission(user.permissions, 'crm.write') &&
-      PermissionService.hasPermission(user.permissions, 'crm.write_assigned')
-    ) {
-      if (existing.owner?.id !== user.user_id) {
-        throw new Error('Forbidden: Agent cannot modify leads assigned to other members');
-      }
-    }
-
-    const updated = await CRMAdapter.updateLead(user, id, patch);
-    if (!updated) {
-      throw new Error('NotFound: Lead update failed');
-    }
+  public static async updateLead(user: JWTPayload, id: string, data: Partial<CRMContact>): Promise<CRMContact> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    const updated = await CRMRepository.updateContact(ctx.crmOrgId, id, data);
 
     WebSocketService.broadcastToOrg(user.organization_id, 'lead.updated' as any, updated);
-
     return updated;
   }
 
-  /**
-   * Moves lead to a new pipeline stage
-   */
-  public static async moveLead(
-    user: JWTPayload,
-    id: string,
-    stageId: string
-  ): Promise<Lead> {
-    const existing = await this.getLead(user, id);
-
-    if (
-      !PermissionService.hasPermission(user.permissions, 'crm.write') &&
-      PermissionService.hasPermission(user.permissions, 'crm.write_assigned')
-    ) {
-      if (existing.owner?.id !== user.user_id) {
-        throw new Error('Forbidden: Agent cannot move leads assigned to other members');
-      }
-    }
-
-    const moved = await CRMAdapter.moveLead(
-      user,
-      id,
-      stageId,
-      user.email.split('@')[0]
-    );
-
-    if (!moved) {
-      throw new Error('BadRequest: Invalid stage or lead');
-    }
-
-    WebSocketService.broadcastToOrg(user.organization_id, 'lead.stage_changed' as any, moved);
-
-    return moved;
+  public static async deleteLead(user: JWTPayload, id: string): Promise<boolean> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.deleteContact(ctx.crmOrgId, id);
   }
 
-  /**
-   * Assigns lead to an owner
-   */
-  public static async assignLead(
+  // ── Contacts Directory ─────────────────────────────────────────────────────
+
+  public static async getContacts(
     user: JWTPayload,
-    id: string,
-    ownerId: string,
-    ownerName: string
-  ): Promise<Lead> {
-    if (
-      !PermissionService.hasPermission(user.permissions, 'crm.write') &&
-      !PermissionService.hasPermission(user.permissions, 'crm.assign')
-    ) {
-      throw new Error('Forbidden: Missing permission to assign leads');
-    }
-
-    const assigned = await CRMAdapter.assignLead(
-      user,
-      id,
-      ownerId,
-      ownerName,
-      user.email.split('@')[0]
-    );
-
-    if (!assigned) {
-      throw new Error('NotFound: Lead not found');
-    }
-
-    WebSocketService.broadcastToOrg(user.organization_id, 'lead.assigned' as any, assigned);
-
-    return assigned;
+    filters: { status?: string; search?: string; assigned_to?: string; limit?: number; offset?: number } = {}
+  ): Promise<{ contacts: CRMContact[]; total_count: number }> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    const result = await CRMRepository.getContacts(ctx.crmOrgId, filters);
+    return {
+      contacts: result.contacts,
+      total_count: result.totalCount,
+    };
   }
 
-  /**
-   * Gets unified timeline merging CRM events, WhatsApp messages, and Voice calls
-   */
-  public static async getLeadUnifiedTimeline(
+  public static async getContact(user: JWTPayload, id: string): Promise<CRMContact> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    const contact = await CRMRepository.getContactById(ctx.crmOrgId, id);
+    if (!contact) {
+      throw new Error('NotFound: Contact not found in this organization');
+    }
+    return contact;
+  }
+
+  public static async createContact(user: JWTPayload, data: Partial<CRMContact>): Promise<CRMContact> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.createContact(ctx.crmOrgId, data);
+  }
+
+  public static async updateContact(user: JWTPayload, id: string, data: Partial<CRMContact>): Promise<CRMContact> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.updateContact(ctx.crmOrgId, id, data);
+  }
+
+  public static async deleteContact(user: JWTPayload, id: string): Promise<boolean> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.deleteContact(ctx.crmOrgId, id);
+  }
+
+  // ── Deals / Pipeline ───────────────────────────────────────────────────────
+
+  public static async getDeals(
     user: JWTPayload,
-    id: string
+    filters: { stage?: string; assigned_to?: string; search?: string; contact_id?: string } = {}
+  ): Promise<CRMDeal[]> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.getDeals(ctx.crmOrgId, filters);
+  }
+
+  public static async getDeal(user: JWTPayload, id: string): Promise<CRMDeal> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    const deal = await CRMRepository.getDealById(ctx.crmOrgId, id);
+    if (!deal) {
+      throw new Error('NotFound: Deal not found in this organization');
+    }
+    return deal;
+  }
+
+  public static async createDeal(user: JWTPayload, data: Partial<CRMDeal>): Promise<CRMDeal> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    const created = await CRMRepository.createDeal(ctx.crmOrgId, data);
+    WebSocketService.broadcastToOrg(user.organization_id, 'deal.created' as any, created);
+    return created;
+  }
+
+  public static async updateDeal(user: JWTPayload, id: string, data: Partial<CRMDeal>): Promise<CRMDeal> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    const updated = await CRMRepository.updateDeal(ctx.crmOrgId, id, data);
+    WebSocketService.broadcastToOrg(user.organization_id, 'deal.updated' as any, updated);
+    return updated;
+  }
+
+  public static async updateDealStage(user: JWTPayload, id: string, stage: DealStage): Promise<CRMDeal> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    const updated = await CRMRepository.updateDealStage(ctx.crmOrgId, id, stage);
+    WebSocketService.broadcastToOrg(user.organization_id, 'deal.updated' as any, updated);
+    return updated;
+  }
+
+  public static async deleteDeal(user: JWTPayload, id: string): Promise<boolean> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.deleteDeal(ctx.crmOrgId, id);
+  }
+
+  // ── Tasks & Follow-ups ─────────────────────────────────────────────────────
+
+  public static async getTasks(
+    user: JWTPayload,
+    filters: {
+      status?: string;
+      priority?: string;
+      assigned_to?: string;
+      contact_id?: string;
+      deal_id?: string;
+      timeframe?: 'today' | 'upcoming' | 'overdue' | 'completed' | 'all';
+    } = {}
+  ): Promise<CRMTask[]> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.getTasks(ctx.crmOrgId, filters);
+  }
+
+  public static async getTask(user: JWTPayload, id: string): Promise<CRMTask> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    const task = await CRMRepository.getTaskById(ctx.crmOrgId, id);
+    if (!task) {
+      throw new Error('NotFound: Task not found in this organization');
+    }
+    return task;
+  }
+
+  public static async createTask(user: JWTPayload, data: Partial<CRMTask>): Promise<CRMTask> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    const created = await CRMRepository.createTask(ctx.crmOrgId, data);
+    WebSocketService.broadcastToOrg(user.organization_id, 'task.created' as any, created);
+    return created;
+  }
+
+  public static async updateTask(user: JWTPayload, id: string, data: Partial<CRMTask>): Promise<CRMTask> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    const updated = await CRMRepository.updateTask(ctx.crmOrgId, id, data);
+    WebSocketService.broadcastToOrg(user.organization_id, 'task.updated' as any, updated);
+    return updated;
+  }
+
+  public static async toggleTask(user: JWTPayload, id: string, done: boolean): Promise<CRMTask> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    const toggled = await CRMRepository.toggleTask(ctx.crmOrgId, id, done);
+    WebSocketService.broadcastToOrg(user.organization_id, 'task.updated' as any, toggled);
+    return toggled;
+  }
+
+  public static async deleteTask(user: JWTPayload, id: string): Promise<boolean> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.deleteTask(ctx.crmOrgId, id);
+  }
+
+  // ── Activities & Timeline ──────────────────────────────────────────────────
+
+  public static async getActivities(
+    user: JWTPayload,
+    filters: {
+      type?: string;
+      contact_id?: string;
+      deal_id?: string;
+      assigned_to?: string;
+      search?: string;
+      limit?: number;
+    } = {}
   ): Promise<CRMActivity[]> {
-    const lead = await this.getLead(user, id);
-    const crmActivities = await CRMAdapter.getLeadActivities(user, id);
-
-    const mergedActivities: CRMActivity[] = [...crmActivities];
-
-    // If phone exists, fetch and merge linked voice calls
-    if (lead.phone) {
-      try {
-        const calls = await VoiceAdapter.getCallLogs(user.organization_id);
-        const matchedCalls = calls.filter((c) => c.customerPhone.includes(lead.phone!.slice(-8)));
-
-        matchedCalls.forEach((call) => {
-          mergedActivities.push({
-            id: `call_${call.id}`,
-            lead_id: id,
-            type: 'call',
-            title: `VoicePilot Call (${call.status})`,
-            description: `Agent: ${call.agentName} • Duration: ${call.durationSeconds}s. Transcript: "${call.transcriptSnippet || 'N/A'}"`,
-            product: 'voice',
-            created_at: call.timestamp,
-          });
-        });
-      } catch (_) {}
-    }
-
-    mergedActivities.sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-
-    return mergedActivities;
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.getActivities(ctx.crmOrgId, filters);
   }
 
-  /**
-   * Adds an agent note to lead
-   */
-  public static async addLeadNote(
-    user: JWTPayload,
-    id: string,
-    note: string
-  ): Promise<CRMActivity> {
-    await this.getLead(user, id);
+  public static async createActivity(user: JWTPayload, data: Partial<CRMActivity>): Promise<CRMActivity> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    const payload: Partial<CRMActivity> = {
+      ...data,
+      created_by: ctx.crmMemberId !== ctx.hubUserId ? ctx.crmMemberId : undefined,
+    };
+    const created = await CRMRepository.createActivity(ctx.crmOrgId, payload);
+    WebSocketService.broadcastToOrg(user.organization_id, 'activity.created' as any, created);
+    return created;
+  }
 
-    const activity = await CRMAdapter.addLeadNote(
-      user,
-      id,
-      note,
-      user.email.split('@')[0]
-    );
+  public static async updateActivityStatus(user: JWTPayload, id: string, status: string): Promise<CRMActivity> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.updateActivityStatus(ctx.crmOrgId, id, status);
+  }
 
-    if (!activity) {
-      throw new Error('BadRequest: Note could not be created');
-    }
-
-    WebSocketService.broadcastToOrg(
-      user.organization_id,
-      'crm.activity.created' as any,
-      activity
-    );
-
-    return activity;
+  public static async deleteActivity(user: JWTPayload, id: string): Promise<boolean> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.deleteActivity(ctx.crmOrgId, id);
   }
 }

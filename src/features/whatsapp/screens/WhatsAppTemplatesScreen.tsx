@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-import { TemplateCard } from '../components/TemplateCard';
+import { TemplateCard } from '../components';
 import { useWhatsAppTemplates } from '../hooks/useWhatsAppTemplates';
 
 interface WhatsAppTemplatesScreenProps {
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 14,
-    paddingBottom: 20,
+    paddingBottom: 130,
   },
   loadingContainer: {
     flex: 1,

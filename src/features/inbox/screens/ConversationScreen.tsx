@@ -22,7 +22,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../../core/store/authStore';
 import { crmApi } from '../../crm/api/crm.api';
 import { inboxApi } from '../api/inboxApi';
-import { MessageBubble } from '../components/MessageBubble';
+import { ChannelBadge, MessageBubble } from '../components';
 import { useInboxWebSocket } from '../hooks/useInboxWebSocket';
 import { NormalizedConversation, NormalizedMessage, TeamMember } from '../types';
 

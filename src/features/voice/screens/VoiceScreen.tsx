@@ -14,20 +14,26 @@ import * as Haptics from 'expo-haptics';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AppScreen } from '../../../components/AppScreen';
 import { AppTopBar } from '../../../components/AppTopBar';
+import {
+  ProductFloatingBottomBar,
+  ProductTabItem,
+} from '../../../components/ProductFloatingBottomBar';
 import { apiClient } from '../../../core/api/client';
-import { CallDetailsModal } from '../components/CallDetailsModal';
-import { TriggerCallModal } from '../components/TriggerCallModal';
-import { CreateCampaignModal } from '../components/CreateCampaignModal';
-import { CreateAgentModal } from '../components/CreateAgentModal';
+import {
+  CallDetailsModal,
+  TriggerCallModal,
+  CreateCampaignModal,
+  CreateAgentModal,
+} from '../components';
 
 type VoiceSectionKey = 'overview' | 'calls' | 'agents' | 'campaigns' | 'numbers';
 
-const SECTIONS: { key: VoiceSectionKey; label: string; icon: string }[] = [
-  { key: 'overview', label: 'Overview', icon: 'grid-outline' },
-  { key: 'calls', label: 'Calls', icon: 'call-outline' },
-  { key: 'agents', label: 'Agents', icon: 'mic-outline' },
-  { key: 'campaigns', label: 'Campaigns', icon: 'rocket-outline' },
-  { key: 'numbers', label: 'Numbers', icon: 'keypad-outline' },
+const VOICE_TABS: ProductTabItem[] = [
+  { key: 'overview', label: 'Overview', activeIcon: 'grid', inactiveIcon: 'grid-outline' },
+  { key: 'calls', label: 'Calls', activeIcon: 'call', inactiveIcon: 'call-outline' },
+  { key: 'agents', label: 'Agents', activeIcon: 'mic', inactiveIcon: 'mic-outline' },
+  { key: 'campaigns', label: 'Campaigns', activeIcon: 'rocket', inactiveIcon: 'rocket-outline' },
+  { key: 'numbers', label: 'Numbers', activeIcon: 'keypad', inactiveIcon: 'keypad-outline' },
 ];
 
 export const VoiceScreen: React.FC = () => {
@@ -159,33 +165,6 @@ export const VoiceScreen: React.FC = () => {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Segmented Control Bar */}
-        <View style={[styles.segmentedTrack, isDark && styles.segmentedTrackDark]}>
-          {SECTIONS.map((sec) => {
-            const isSelected = activeSection === sec.key;
-            return (
-              <Pressable
-                key={sec.key}
-                style={[
-                  styles.segmentedTab,
-                  isSelected && (isDark ? styles.segmentedTabActiveDark : styles.segmentedTabActiveLight),
-                ]}
-                onPress={() => handleSelectSection(sec.key)}
-              >
-                <Text
-                  style={[
-                    styles.segmentedTabText,
-                    isSelected && (isDark ? styles.segmentedTabTextActiveDark : styles.segmentedTabTextActiveLight),
-                  ]}
-                  numberOfLines={1}
-                >
-                  {sec.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
         {/* --- SECTION 1: OVERVIEW --- */}
         {activeSection === 'overview' && (
           <View style={styles.sectionContainer}>
@@ -576,6 +555,15 @@ export const VoiceScreen: React.FC = () => {
           await createAgentMutation.mutateAsync(payload);
         }}
         isLoading={createAgentMutation.isPending}
+      />
+
+      {/* Floating Home-Style Product Bottom Navigation Bar */}
+      <ProductFloatingBottomBar
+        items={VOICE_TABS}
+        activeKey={activeSection}
+        onChangeTab={(key) => setActiveSection(key as VoiceSectionKey)}
+        accentColor="#8B5CF6"
+        moreMenuTitle="VoicePilot Tools"
       />
     </AppScreen>
   );

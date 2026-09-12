@@ -1,1425 +1,2290 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   ActivityIndicator,
-  FlatList,
-  Modal,
+  Linking,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
   useColorScheme,
 } from 'react-native';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { AppScreen } from '../../../components/AppScreen';
 import { AppTopBar } from '../../../components/AppTopBar';
-import { useTelegram } from '../hooks/useTelegram';
-import { TelegramApi } from '../api/telegram.api';
-import { TelegramConnectModal } from '../components/TelegramConnectModal';
-import { TelegramBroadcastModal } from '../components/TelegramBroadcastModal';
-import { TelegramSection, TelegramToolType } from '../types/telegram.types';
+import {
+  ProductFloatingBottomBar,
+  ProductTabItem,
+} from '../../../components/ProductFloatingBottomBar';
+import { telegramApi } from '../api/telegramApi';
+import { TelegramToolKey, TelegramHubTool } from '../types';
+import {
+  HubProgressCard,
+  ToolCard,
+  AutoforwardModal,
+  SubManagerModal,
+  TrackerModal,
+  ReportBotModal,
+  BroadcastModal,
+  AutoApproveModal,
+  ChatBotModal,
+  ReactionsModal,
+  TelegramLoginModal,
+  DashboardAnalyticsCharts,
+} from '../components';
+
+type TelegramCategory = 'all' | 'automation' | 'monetization' | 'growth';
+type TelegramTab = 'automations' | 'bots' | 'sub_manager' | 'broadcasts' | 'reactions' | 'hub';
+
+const TELEGRAM_TABS: ProductTabItem[] = [
+  {
+    key: 'hub',
+    label: 'Overview',
+    activeIcon: 'grid',
+    inactiveIcon: 'grid-outline',
+  },
+  {
+    key: 'automations',
+    label: 'AutoForward',
+    activeIcon: 'git-compare',
+    inactiveIcon: 'git-compare-outline',
+  },
+  {
+    key: 'bots',
+    label: 'Tracker Bots',
+    activeIcon: 'logo-android',
+    inactiveIcon: 'logo-android',
+  },
+  {
+    key: 'sub_manager',
+    label: 'TeleSub',
+    activeIcon: 'card',
+    inactiveIcon: 'card-outline',
+  },
+  {
+    key: 'broadcasts',
+    label: 'Broadcast',
+    activeIcon: 'megaphone',
+    inactiveIcon: 'megaphone-outline',
+    description: 'Mass broadcast campaigns to mapped channels',
+  },
+  {
+    key: 'reactions',
+    label: 'Reactions',
+    activeIcon: 'flash',
+    inactiveIcon: 'flash-outline',
+    description: 'Automated post emojis and reaction boosts',
+  },
+];
+
+const CATEGORIES: { key: TelegramCategory; label: string; icon: string }[] = [
+  { key: 'all', label: 'All 8 Tools', icon: 'grid-outline' },
+  { key: 'automation', label: 'Automation & Routing', icon: 'git-compare-outline' },
+  { key: 'monetization', label: 'Monetization & VIP', icon: 'card-outline' },
+  { key: 'growth', label: 'Audience Growth', icon: 'trending-up-outline' },
+];
 
 export const TelegramScreen: React.FC = () => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const {
-    statusQuery,
-    dashboardQuery,
-    setupHubQuery,
-    chatsQuery,
-    autoforwardQuery,
-    subManagerQuery,
-    trackerQuery,
-    reportBotQuery,
-    broadcastsQuery,
-    autoApproveQuery,
-    chatbotsQuery,
-    reactionsQuery,
-    syncChatsMutation,
-    createMappingMutation,
-    toggleMappingMutation,
-    deleteMappingMutation,
-    saveTrackerBotMutation,
-    createJoinLinkMutation,
-    updateReportBotMutation,
-    createBroadcastMutation,
-    createReactionOrderMutation,
-    logoutMutation,
-  } = useTelegram();
+  const [activeTab, setActiveTab] = useState<TelegramTab>('hub');
+  const [selectedCategory, setSelectedCategory] = useState<TelegramCategory>('all');
+  const [activeModal, setActiveModal] = useState<TelegramToolKey | null>(null);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  // State
-  const [activeSection, setActiveSection] = useState<TelegramSection>('dashboard');
-  const [activeTool, setActiveTool] = useState<TelegramToolType>('autoforward');
-  const [showConnectModal, setShowConnectModal] = useState(false);
-  const [showBroadcastModal, setShowBroadcastModal] = useState(false);
+  // Sub-section states for deep access
+  const [afSection, setAfSection] = useState<'mappings' | 'filters' | 'blocked' | 'delays' | 'headers'>('mappings');
+  const [trackerSection, setTrackerSection] = useState<'bots' | 'joins' | 'links'>('bots');
+  const [subSection, setSubSection] = useState<'plans' | 'subscribers' | 'landing'>('plans');
 
-  // Tool-specific creation modals
-  const [showMappingModal, setShowMappingModal] = useState(false);
-  const [newSourceChannel, setNewSourceChannel] = useState('');
-  const [newDestChannel, setNewDestChannel] = useState('');
+  const mainScrollRef = useRef<ScrollView>(null);
 
-  const [showBotModal, setShowBotModal] = useState(false);
-  const [newBotToken, setNewBotToken] = useState('');
+  const queryClient = useQueryClient();
 
-  const [showJoinLinkModal, setShowJoinLinkModal] = useState(false);
-  const [newLinkName, setNewLinkName] = useState('');
-  const [newLinkChannel, setNewLinkChannel] = useState('');
+  const { data: summary, isLoading, refetch, isRefetching } = useQuery({
+    queryKey: ['telegram_summary'],
+    queryFn: telegramApi.getSummary,
+  });
 
-  const [showReactionModal, setShowReactionModal] = useState(false);
-  const [reactionPostUrl, setReactionPostUrl] = useState('');
-  const [selectedEmojis, setSelectedEmojis] = useState<string[]>(['👍', '🔥', '❤️']);
+  const { data: trackerBots, refetch: refetchBots } = useQuery({
+    queryKey: ['telegram_tracker_bots'],
+    queryFn: telegramApi.getTrackerBots,
+  });
 
-  const refreshing =
-    dashboardQuery.isRefetching ||
-    statusQuery.isRefetching ||
-    setupHubQuery.isRefetching ||
-    chatsQuery.isRefetching;
+  const { data: sessionStatus, refetch: refetchSession } = useQuery({
+    queryKey: ['telegram_session_status'],
+    queryFn: telegramApi.getSessionStatus,
+  });
 
-  const onRefresh = () => {
+  const { data: chats, refetch: refetchChats } = useQuery({
+    queryKey: ['telegram_chats'],
+    queryFn: telegramApi.getChats,
+  });
+
+  const { data: forwardRules, refetch: refetchRules } = useQuery({
+    queryKey: ['telegram_forward_rules'],
+    queryFn: telegramApi.getForwardRules,
+  });
+
+  const { data: subPlans, refetch: refetchPlans } = useQuery({
+    queryKey: ['telegram_sub_plans'],
+    queryFn: telegramApi.getSubPlans,
+  });
+
+  const { mutateAsync: syncChats, isPending: isSyncingChats } = useMutation({
+    mutationFn: telegramApi.syncChats,
+    onSuccess: () => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      queryClient.invalidateQueries({ queryKey: ['telegram_chats'] });
+      queryClient.invalidateQueries({ queryKey: ['telegram_summary'] });
+    },
+  });
+
+  const { mutateAsync: sendBroadcast, isPending: isBroadcasting } = useMutation({
+    mutationFn: telegramApi.sendBroadcast,
+    onSuccess: () => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      queryClient.invalidateQueries({ queryKey: ['telegram_summary'] });
+    },
+  });
+
+  const { mutateAsync: createForwardRule, isPending: isSavingRule } = useMutation({
+    mutationFn: telegramApi.createForwardRule,
+    onSuccess: () => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      queryClient.invalidateQueries({ queryKey: ['telegram_forward_rules'] });
+      queryClient.invalidateQueries({ queryKey: ['telegram_summary'] });
+    },
+  });
+
+  const { mutateAsync: createSubPlan, isPending: isCreatingPlan } = useMutation({
+    mutationFn: telegramApi.createSubPlan,
+    onSuccess: () => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      queryClient.invalidateQueries({ queryKey: ['telegram_sub_plans'] });
+      queryClient.invalidateQueries({ queryKey: ['telegram_summary'] });
+    },
+  });
+
+  const { mutateAsync: toggleAutoApprove } = useMutation({
+    mutationFn: telegramApi.toggleAutoApprove,
+    onSuccess: () => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      queryClient.invalidateQueries({ queryKey: ['telegram_summary'] });
+    },
+  });
+
+  const { mutateAsync: updateReactions } = useMutation({
+    mutationFn: telegramApi.updateReactions,
+    onSuccess: () => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      queryClient.invalidateQueries({ queryKey: ['telegram_summary'] });
+    },
+  });
+
+  const handleRefreshAll = async () => {
+    await Promise.all([refetch(), refetchBots(), refetchSession(), refetchChats(), refetchRules(), refetchPlans()]);
+  };
+
+  const handleTabChange = (tab: TelegramTab) => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setActiveTab(tab);
+    mainScrollRef.current?.scrollTo({ y: 0, animated: false });
+  };
+
+  const handleCategoryChange = (cat: TelegramCategory) => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setSelectedCategory(cat);
+  };
+
+  const openToolModal = (key: TelegramToolKey) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    dashboardQuery.refetch();
-    statusQuery.refetch();
-    setupHubQuery.refetch();
-    chatsQuery.refetch();
-    autoforwardQuery.refetch();
-    subManagerQuery.refetch();
-    trackerQuery.refetch();
-    reportBotQuery.refetch();
-    broadcastsQuery.refetch();
-    autoApproveQuery.refetch();
-    chatbotsQuery.refetch();
-    reactionsQuery.refetch();
-  };
-
-  const isConnected = statusQuery.data?.connected;
-  const metrics = dashboardQuery.data?.metrics;
-  const setupHub = setupHubQuery.data;
-
-  // Render Sub-Sections
-  const renderDashboard = () => {
-    if (dashboardQuery.isLoading && !dashboardQuery.data) {
-      return (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#6366F1" />
-          <Text style={[styles.loadingText, isDark ? styles.subTextDark : styles.subTextLight]}>
-            Loading Telegram Dashboard...
-          </Text>
-        </View>
-      );
+    if (key === 'autoforward') {
+      setActiveTab('automations');
+      mainScrollRef.current?.scrollTo({ y: 0, animated: false });
+      return;
     }
-
-    if (dashboardQuery.isError) {
-      return (
-        <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={36} color="#EF4444" />
-          <Text style={styles.errorText}>Failed to load Telegram Dashboard data.</Text>
-          <Pressable style={styles.retryButton} onPress={() => dashboardQuery.refetch()}>
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </Pressable>
-        </View>
-      );
+    if (key === 'sub_manager') {
+      setActiveTab('sub_manager');
+      mainScrollRef.current?.scrollTo({ y: 0, animated: false });
+      return;
     }
-
-    return (
-      <View style={styles.tabContent}>
-        {/* Account Status Card */}
-      <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
-        <View style={styles.cardHeader}>
-          <View style={styles.rowAlign}>
-            <View
-              style={[
-                styles.statusIndicator,
-                { backgroundColor: isConnected ? '#10B981' : '#F59E0B' },
-              ]}
-            />
-            <Text style={[styles.cardTitle, isDark ? styles.textDark : styles.textLight]}>
-              Telegram Session
-            </Text>
-          </View>
-          <View style={[styles.badge, isConnected ? styles.badgeSuccess : styles.badgeWarning]}>
-            <Text style={[styles.badgeText, isConnected ? styles.badgeTextSuccess : styles.badgeTextWarning]}>
-              {isConnected ? 'Active & Synced' : 'Not Connected'}
-            </Text>
-          </View>
-        </View>
-
-        <Text style={[styles.cardSubText, isDark ? styles.subTextDark : styles.subTextLight]}>
-          {isConnected
-            ? `Connected phone: ${statusQuery.data?.phone || 'Linked via MTProto Session'}`
-            : 'Link your Telegram account to activate live multi-channel automation & routing.'}
-        </Text>
-
-        <View style={styles.cardActions}>
-          {!isConnected ? (
-            <Pressable
-              style={[styles.primaryButton, { flex: 1 }]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                setShowConnectModal(true);
-              }}
-            >
-              <Ionicons name="link" size={16} color="#FFF" />
-              <Text style={styles.primaryButtonText}>Connect Telegram</Text>
-            </Pressable>
-          ) : (
-            <View style={styles.rowGap}>
-              <Pressable
-                style={[styles.secondaryButton, { flex: 1 }]}
-                onPress={() => syncChatsMutation.mutate()}
-                disabled={syncChatsMutation.isPending}
-              >
-                {syncChatsMutation.isPending ? (
-                  <ActivityIndicator size="small" color="#6366F1" />
-                ) : (
-                  <>
-                    <Ionicons name="sync" size={16} color="#6366F1" />
-                    <Text style={styles.secondaryButtonText}>Sync Channels</Text>
-                  </>
-                )}
-              </Pressable>
-              <Pressable
-                style={[styles.dangerOutlineButton]}
-                onPress={() => logoutMutation.mutate()}
-              >
-                <Ionicons name="log-out-outline" size={16} color="#EF4444" />
-              </Pressable>
-            </View>
-          )}
-        </View>
-      </View>
-
-      {/* Metric Grid */}
-      <View style={styles.metricsGrid}>
-        <View style={[styles.metricCard, isDark ? styles.cardDark : styles.cardLight]}>
-          <Ionicons name="chatbubbles" size={20} color="#3B82F6" />
-          <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
-            {metrics?.totalChannels || chatsQuery.data?.length || 0}
-          </Text>
-          <Text style={[styles.metricLabel, isDark ? styles.subTextDark : styles.subTextLight]}>
-            Channels & Groups
-          </Text>
-        </View>
-
-        <View style={[styles.metricCard, isDark ? styles.cardDark : styles.cardLight]}>
-          <Ionicons name="hardware-chip" size={20} color="#8B5CF6" />
-          <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
-            {metrics?.activeBots || 0}
-          </Text>
-          <Text style={[styles.metricLabel, isDark ? styles.subTextDark : styles.subTextLight]}>
-            Active Bots
-          </Text>
-        </View>
-
-        <View style={[styles.metricCard, isDark ? styles.cardDark : styles.cardLight]}>
-          <Ionicons name="repeat" size={20} color="#10B981" />
-          <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
-            {metrics?.activeForwards || 0}
-          </Text>
-          <Text style={[styles.metricLabel, isDark ? styles.subTextDark : styles.subTextLight]}>
-            Forward Mappings
-          </Text>
-        </View>
-
-        <View style={[styles.metricCard, isDark ? styles.cardDark : styles.cardLight]}>
-          <Ionicons name="card" size={20} color="#F59E0B" />
-          <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
-            {metrics?.totalLandingPages || 0}
-          </Text>
-          <Text style={[styles.metricLabel, isDark ? styles.subTextDark : styles.subTextLight]}>
-            TeleSub Pages
-          </Text>
-        </View>
-      </View>
-
-      {/* Quick Launch Shortcuts */}
-      <Text style={[styles.sectionHeader, isDark ? styles.textDark : styles.textLight]}>
-        Quick Actions
-      </Text>
-
-      <View style={styles.quickActionsRow}>
-        <Pressable
-          style={[styles.quickActionButton, isDark ? styles.cardDark : styles.cardLight]}
-          onPress={() => {
-            setActiveSection('setup');
-          }}
-        >
-          <Ionicons name="checkmark-done-circle" size={24} color="#10B981" />
-          <Text style={[styles.quickActionText, isDark ? styles.textDark : styles.textLight]}>
-            Setup Hub ({setupHub?.completed || 0}/{setupHub?.total || 8})
-          </Text>
-        </Pressable>
-
-        <Pressable
-          style={[styles.quickActionButton, isDark ? styles.cardDark : styles.cardLight]}
-          onPress={() => {
-            setShowBroadcastModal(true);
-          }}
-        >
-          <Ionicons name="megaphone" size={24} color="#EC4899" />
-          <Text style={[styles.quickActionText, isDark ? styles.textDark : styles.textLight]}>
-            New Broadcast
-          </Text>
-        </Pressable>
-      </View>
-    </View>
-  );
+    if (key === 'tracker') {
+      setActiveTab('bots');
+      mainScrollRef.current?.scrollTo({ y: 0, animated: false });
+      return;
+    }
+    setActiveModal(key);
   };
 
-  const renderSetupHub = () => (
-    <View style={styles.tabContent}>
-      {/* Overall Progress */}
-      <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
-        <View style={styles.cardHeader}>
-          <Text style={[styles.cardTitle, isDark ? styles.textDark : styles.textLight]}>
-            Setup Progress
-          </Text>
-          <Text style={[styles.progressBadge, { color: '#6366F1' }]}>
-            {setupHub?.completed || 0} / {setupHub?.total || 8} Completed
-          </Text>
-        </View>
-        <View style={styles.progressBarBackground}>
-          <View
-            style={[
-              styles.progressBarFill,
-              { width: `${setupHub?.progressPercentage || 0}%` },
-            ]}
-          />
-        </View>
-        <Text style={[styles.cardSubText, isDark ? styles.subTextDark : styles.subTextLight]}>
-          Complete module prerequisites to enable automated multi-channel growth.
-        </Text>
-      </View>
-
-      {/* 8 Module Cards */}
-      {(setupHub?.modules || []).map((mod) => (
-        <View
-          key={mod.id}
-          style={[styles.moduleCard, isDark ? styles.cardDark : styles.cardLight]}
-        >
-          <View style={styles.moduleHeader}>
-            <View style={styles.rowAlign}>
-              <Ionicons
-                name={mod.completed ? 'checkmark-circle' : 'alert-circle'}
-                size={22}
-                color={mod.completed ? '#10B981' : '#F59E0B'}
-              />
-              <Text style={[styles.moduleName, isDark ? styles.textDark : styles.textLight]}>
-                {mod.name}
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.badge,
-                mod.completed ? styles.badgeSuccess : styles.badgeWarning,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.badgeText,
-                  mod.completed ? styles.badgeTextSuccess : styles.badgeTextWarning,
-                ]}
-              >
-                {mod.completed ? 'Ready' : 'Incomplete'}
-              </Text>
-            </View>
-          </View>
-          <Text style={[styles.moduleDesc, isDark ? styles.subTextDark : styles.subTextLight]}>
-            {mod.description}
-          </Text>
-          {mod.missingRequirements.length > 0 && (
-            <View style={styles.missingBox}>
-              <Text style={styles.missingHeader}>Missing Requirement:</Text>
-              {mod.missingRequirements.map((req, idx) => (
-                <Text key={idx} style={styles.missingItem}>
-                  • {req}
-                </Text>
-              ))}
-            </View>
-          )}
-        </View>
-      ))}
-    </View>
-  );
-
-  const renderMonetization = () => {
-    const subManager = subManagerQuery.data;
-    const readiness = subManager?.readiness;
-
-    return (
-      <View style={styles.tabContent}>
-        {/* Revenue Card */}
-        <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
-          <Text style={[styles.cardSubText, isDark ? styles.subTextDark : styles.subTextLight]}>
-            Total TeleSub Earnings
-          </Text>
-          <Text style={[styles.revenueAmount, { color: '#10B981' }]}>
-            ₹{subManager?.totalRevenue?.toLocaleString('en-IN') || '0.00'}
-          </Text>
-          <View style={styles.revenueMetaRow}>
-            <Text style={[styles.metaLabel, isDark ? styles.subTextDark : styles.subTextLight]}>
-              Active Subscribers: <Text style={{ color: '#6366F1', fontWeight: 'bold' }}>{subManager?.activeSubscribers || 0}</Text>
-            </Text>
-            <Text style={[styles.metaLabel, isDark ? styles.subTextDark : styles.subTextLight]}>
-              Subscription Pages: <Text style={{ color: '#6366F1', fontWeight: 'bold' }}>{subManager?.totalPages || 0}</Text>
-            </Text>
-          </View>
-        </View>
-
-        {/* 4-Step Launch Readiness */}
-        <Text style={[styles.sectionHeader, isDark ? styles.textDark : styles.textLight]}>
-          Client Launch Readiness
-        </Text>
-
-        <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
-          <View style={styles.readinessItem}>
-            <Ionicons
-              name={readiness?.telegramOwnerLinked ? 'checkbox' : 'square-outline'}
-              size={20}
-              color={readiness?.telegramOwnerLinked ? '#10B981' : '#9CA3AF'}
-            />
-            <Text style={[styles.readinessText, isDark ? styles.textDark : styles.textLight]}>
-              1. Link Telegram Owner Account
-            </Text>
-          </View>
-
-          <View style={styles.readinessItem}>
-            <Ionicons
-              name={readiness?.channelBotAdmin ? 'checkbox' : 'square-outline'}
-              size={20}
-              color={readiness?.channelBotAdmin ? '#10B981' : '#9CA3AF'}
-            />
-            <Text style={[styles.readinessText, isDark ? styles.textDark : styles.textLight]}>
-              2. Channel Bot Admin Verification
-            </Text>
-          </View>
-
-          <View style={styles.readinessItem}>
-            <Ionicons
-              name={readiness?.payoutKycCompleted ? 'checkbox' : 'square-outline'}
-              size={20}
-              color={readiness?.payoutKycCompleted ? '#10B981' : '#9CA3AF'}
-            />
-            <Text style={[styles.readinessText, isDark ? styles.textDark : styles.textLight]}>
-              3. Payout Bank KYC (Razorpay Linked)
-            </Text>
-          </View>
-
-          <View style={styles.readinessItem}>
-            <Ionicons
-              name={readiness?.subscriptionPagePublished ? 'checkbox' : 'square-outline'}
-              size={20}
-              color={readiness?.subscriptionPagePublished ? '#10B981' : '#9CA3AF'}
-            />
-            <Text style={[styles.readinessText, isDark ? styles.textDark : styles.textLight]}>
-              4. Subscription Page Published
-            </Text>
-          </View>
-        </View>
-
-        {/* Subscription Pages */}
-        <Text style={[styles.sectionHeader, isDark ? styles.textDark : styles.textLight]}>
-          Hosted Subscription Pages ({subManager?.pages?.length || 0})
-        </Text>
-
-        {(subManager?.pages || []).length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyText, isDark ? styles.subTextDark : styles.subTextLight]}>
-              No subscription pages created yet.
-            </Text>
-          </View>
-        ) : (
-          subManager?.pages?.map((page) => (
-            <View key={page.id} style={[styles.pageCard, isDark ? styles.cardDark : styles.cardLight]}>
-              <View style={styles.cardHeader}>
-                <Text style={[styles.cardTitle, isDark ? styles.textDark : styles.textLight]}>
-                  {page.title}
-                </Text>
-                <Text style={[styles.pagePrice, { color: '#10B981' }]}>
-                  ₹{page.price} / {page.duration_days}d
-                </Text>
-              </View>
-              <Text style={[styles.pageSlug, isDark ? styles.subTextDark : styles.subTextLight]}>
-                Slug: /p/{page.slug}
-              </Text>
-            </View>
-          ))
-        )}
-      </View>
-    );
+  const hub = summary?.hub || {
+    totalModules: 8,
+    completedModules: 8,
+    tools: [],
   };
 
-  const renderChannelsAndBots = () => {
-    const chats = chatsQuery.data || [];
-    const tracker = trackerQuery.data;
+  // Filter tools by category
+  const filteredTools = (hub.tools || []).filter((tool) => {
+    if (selectedCategory === 'all') return true;
+    if (selectedCategory === 'automation') {
+      return ['autoforward', 'auto_approve', 'chatbot', 'reactions'].includes(tool.key);
+    }
+    if (selectedCategory === 'monetization') {
+      return ['sub_manager', 'report_bot'].includes(tool.key);
+    }
+    if (selectedCategory === 'growth') {
+      return ['broadcast', 'tracker', 'auto_approve', 'reactions'].includes(tool.key);
+    }
+    return true;
+  });
 
-    return (
-      <View style={styles.tabContent}>
-        {/* Tracker Bots Section */}
-        <View style={styles.rowBetween}>
-          <Text style={[styles.sectionHeader, isDark ? styles.textDark : styles.textLight]}>
-            Connected Tracker Bots ({tracker?.bots?.length || 0})
-          </Text>
-          <Pressable
-            style={styles.actionSmallButton}
-            onPress={() => setShowBotModal(true)}
-          >
-            <Ionicons name="add" size={16} color="#FFF" />
-            <Text style={styles.actionSmallText}>Add Bot</Text>
-          </Pressable>
-        </View>
-
-        {(tracker?.bots || []).length === 0 ? (
-          <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
-            <Text style={[styles.cardSubText, isDark ? styles.subTextDark : styles.subTextLight]}>
-              No tracker bots connected. Connect a bot via BotFather token to track channel joins and attribution.
-            </Text>
-          </View>
-        ) : (
-          tracker?.bots?.map((bot) => (
-            <View key={bot.id} style={[styles.botCard, isDark ? styles.cardDark : styles.cardLight]}>
-              <Ionicons name="logo-android" size={24} color="#6366F1" />
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={[styles.botName, isDark ? styles.textDark : styles.textLight]}>
-                  {bot.bot_name}
-                </Text>
-                <Text style={[styles.botUsername, isDark ? styles.subTextDark : styles.subTextLight]}>
-                  @{bot.bot_username || 'bot'}
-                </Text>
-              </View>
-              <View style={[styles.badge, styles.badgeSuccess]}>
-                <Text style={[styles.badgeText, styles.badgeTextSuccess]}>Active</Text>
-              </View>
-            </View>
-          ))
-        )}
-
-        {/* Synced Channels */}
-        <View style={styles.rowBetween}>
-          <Text style={[styles.sectionHeader, isDark ? styles.textDark : styles.textLight]}>
-            Synced Telegram Channels ({chats.length})
-          </Text>
-          <Pressable
-            style={styles.actionSmallSecondaryButton}
-            onPress={() => syncChatsMutation.mutate()}
-            disabled={syncChatsMutation.isPending}
-          >
-            <Ionicons name="sync" size={14} color="#6366F1" />
-            <Text style={styles.actionSmallSecondaryText}>Sync</Text>
-          </Pressable>
-        </View>
-
-        {chats.length === 0 ? (
-          <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
-            <Text style={[styles.cardSubText, isDark ? styles.subTextDark : styles.subTextLight]}>
-              No channels synced. Tap Sync to discover channels where you are owner or admin.
-            </Text>
-          </View>
-        ) : (
-          chats.map((chat: any) => (
-            <View key={chat.id} style={[styles.chatRow, isDark ? styles.cardDark : styles.cardLight]}>
-              <Ionicons
-                name={chat.type === 'channel' ? 'megaphone-outline' : 'people-outline'}
-                size={20}
-                color="#3B82F6"
-              />
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={[styles.chatTitle, isDark ? styles.textDark : styles.textLight]}>
-                  {chat.title}
-                </Text>
-                <Text style={[styles.chatMeta, isDark ? styles.subTextDark : styles.subTextLight]}>
-                  {chat.type} • {chat.members_count || 0} members
-                </Text>
-              </View>
-              {chat.is_admin && (
-                <View style={[styles.badge, styles.badgeSuccess]}>
-                  <Text style={[styles.badgeText, styles.badgeTextSuccess]}>Admin</Text>
-                </View>
-              )}
-            </View>
-          ))
-        )}
-      </View>
-    );
-  };
-
-  const renderTools = () => {
-    const autoforward = autoforwardQuery.data;
-    const tracker = trackerQuery.data;
-    const reportBot = reportBotQuery.data;
-    const broadcasts = broadcastsQuery.data || [];
-    const chatbots = chatbotsQuery.data || [];
-    const reactions = reactionsQuery.data;
-
-    return (
-      <View style={styles.tabContent}>
-        {/* Tool Segmented Bar */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.toolSelectorScroll}>
-          {[
-            { id: 'autoforward', label: 'Autoforward' },
-            { id: 'tracker', label: 'Tracker' },
-            { id: 'report_bot', label: 'Report Bot' },
-            { id: 'broadcast', label: 'Broadcast' },
-            { id: 'auto_approve', label: 'Auto Approve' },
-            { id: 'chatbot', label: 'AI Chatbot' },
-            { id: 'reactions', label: 'Reactions' },
-          ].map((t) => (
-            <Pressable
-              key={t.id}
-              style={[
-                styles.toolPill,
-                activeTool === t.id && styles.toolPillActive,
-                isDark ? styles.cardDark : styles.cardLight,
-              ]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setActiveTool(t.id as TelegramToolType);
-              }}
-            >
-              <Text
-                style={[
-                  styles.toolPillText,
-                  activeTool === t.id && styles.toolPillTextActive,
-                  isDark ? styles.textDark : styles.textLight,
-                ]}
-              >
-                {t.label}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-
-        {/* 1. Autoforward Tool */}
-        {activeTool === 'autoforward' && (
-          <View>
-            <View style={styles.rowBetween}>
-              <Text style={[styles.sectionHeader, isDark ? styles.textDark : styles.textLight]}>
-                Active Forward Mappings ({autoforward?.mappings?.length || 0})
-              </Text>
-              <Pressable
-                style={styles.actionSmallButton}
-                onPress={() => setShowMappingModal(true)}
-              >
-                <Ionicons name="add" size={16} color="#FFF" />
-                <Text style={styles.actionSmallText}>Add Mapping</Text>
-              </Pressable>
-            </View>
-
-            {(autoforward?.mappings || []).length === 0 ? (
-              <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
-                <Text style={[styles.cardSubText, isDark ? styles.subTextDark : styles.subTextLight]}>
-                  No forward mappings configured. Forward posts seamlessly from source channels to destination channels.
-                </Text>
-              </View>
-            ) : (
-              autoforward?.mappings?.map((m) => (
-                <View key={m.id} style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
-                  <View style={styles.cardHeader}>
-                    <Text style={[styles.mappingText, isDark ? styles.textDark : styles.textLight]}>
-                      {m.source_channel_id} → {m.destination_channel_id}
-                    </Text>
-                    <Pressable
-                      onPress={() =>
-                        toggleMappingMutation.mutate({ id: m.id, is_active: !m.is_active })
-                      }
-                    >
-                      <Ionicons
-                        name={m.is_active ? 'toggle' : 'toggle-outline'}
-                        size={28}
-                        color={m.is_active ? '#10B981' : '#9CA3AF'}
-                      />
-                    </Pressable>
-                  </View>
-                  <Pressable
-                    style={styles.deleteButton}
-                    onPress={() => deleteMappingMutation.mutate(m.id)}
-                  >
-                    <Text style={styles.deleteButtonText}>Delete</Text>
-                  </Pressable>
-                </View>
-              ))
-            )}
-          </View>
-        )}
-
-        {/* 2. Tracker Tool */}
-        {activeTool === 'tracker' && (
-          <View>
-            <View style={styles.rowBetween}>
-              <Text style={[styles.sectionHeader, isDark ? styles.textDark : styles.textLight]}>
-                Tracking Join Links ({tracker?.links?.length || 0})
-              </Text>
-              <Pressable
-                style={styles.actionSmallButton}
-                onPress={() => setShowJoinLinkModal(true)}
-              >
-                <Ionicons name="add" size={16} color="#FFF" />
-                <Text style={styles.actionSmallText}>Create Link</Text>
-              </Pressable>
-            </View>
-
-            {(tracker?.links || []).map((link) => (
-              <View key={link.id} style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
-                <Text style={[styles.cardTitle, isDark ? styles.textDark : styles.textLight]}>
-                  {link.link_name}
-                </Text>
-                <Text style={[styles.cardSubText, isDark ? styles.subTextDark : styles.subTextLight]}>
-                  Campaign: {link.campaign_name}
-                </Text>
-                <Text style={[styles.linkUrlText, { color: '#3B82F6' }]}>
-                  {link.public_url}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* 3. Report Bot Tool */}
-        {activeTool === 'report_bot' && (
-          <View>
-            <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
-              <Text style={[styles.cardTitle, isDark ? styles.textDark : styles.textLight]}>
-                SEBI Research Profile
-              </Text>
-              <Text style={[styles.cardSubText, isDark ? styles.subTextDark : styles.subTextLight]}>
-                Analyst: {reportBot?.brand?.analyst_name || 'Not Configured'}
-              </Text>
-              <Text style={[styles.cardSubText, isDark ? styles.subTextDark : styles.subTextLight]}>
-                Registration: {reportBot?.brand?.registration_no || 'Not Configured'}
-              </Text>
-            </View>
-
-            <Text style={[styles.sectionHeader, isDark ? styles.textDark : styles.textLight]}>
-              Recent Trading Call Reports ({reportBot?.recentReports?.length || 0})
-            </Text>
-          </View>
-        )}
-
-        {/* 4. Broadcast Tool */}
-        {activeTool === 'broadcast' && (
-          <View>
-            <View style={styles.rowBetween}>
-              <Text style={[styles.sectionHeader, isDark ? styles.textDark : styles.textLight]}>
-                Broadcast Tasks ({broadcasts.length})
-              </Text>
-              <Pressable
-                style={styles.actionSmallButton}
-                onPress={() => setShowBroadcastModal(true)}
-              >
-                <Ionicons name="add" size={16} color="#FFF" />
-                <Text style={styles.actionSmallText}>Compose</Text>
-              </Pressable>
-            </View>
-
-            {broadcasts.map((b) => (
-              <View key={b.id} style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
-                <Text style={[styles.cardTitle, isDark ? styles.textDark : styles.textLight]}>
-                  {b.message}
-                </Text>
-                <Text style={[styles.cardSubText, isDark ? styles.subTextDark : styles.subTextLight]}>
-                  Target: {b.target_audience} • Status: {b.status}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* 5. Auto Approve Tool */}
-        {activeTool === 'auto_approve' && (
-          <View>
-            <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
-              <Text style={[styles.cardTitle, isDark ? styles.textDark : styles.textLight]}>
-                24/7 Smart Gatekeeper
-              </Text>
-              <Text style={[styles.cardSubText, isDark ? styles.subTextDark : styles.subTextLight]}>
-                Automatic approval of private channel join requests is active.
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {/* 6. AI Chatbot Tool */}
-        {activeTool === 'chatbot' && (
-          <View>
-            <Text style={[styles.sectionHeader, isDark ? styles.textDark : styles.textLight]}>
-              AI Chatbot Configurations ({chatbots.length})
-            </Text>
-            {chatbots.map((cb) => (
-              <View key={cb.id} style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
-                <Text style={[styles.cardTitle, isDark ? styles.textDark : styles.textLight]}>
-                  {cb.bot_name} ({cb.provider})
-                </Text>
-                <Text style={[styles.cardSubText, isDark ? styles.subTextDark : styles.subTextLight]}>
-                  Prompt: {cb.system_prompt || 'Standard Assistant'}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* 7. Reactions Tool */}
-        {activeTool === 'reactions' && (
-          <View>
-            <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
-              <Text style={[styles.cardSubText, isDark ? styles.subTextDark : styles.subTextLight]}>
-                Wallet Balance
-              </Text>
-              <Text style={[styles.revenueAmount, { color: '#6366F1' }]}>
-                ₹{reactions?.walletBalance || 0}
-              </Text>
-            </View>
-
-            <View style={styles.rowBetween}>
-              <Text style={[styles.sectionHeader, isDark ? styles.textDark : styles.textLight]}>
-                Reaction Orders ({reactions?.orders?.length || 0})
-              </Text>
-              <Pressable
-                style={styles.actionSmallButton}
-                onPress={() => setShowReactionModal(true)}
-              >
-                <Ionicons name="add" size={16} color="#FFF" />
-                <Text style={styles.actionSmallText}>New Order</Text>
-              </Pressable>
-            </View>
-
-            {(reactions?.orders || []).map((o) => (
-              <View key={o.id} style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
-                <Text style={[styles.cardTitle, isDark ? styles.textDark : styles.textLight]}>
-                  {o.post_link}
-                </Text>
-                <Text style={[styles.cardSubText, isDark ? styles.subTextDark : styles.subTextLight]}>
-                  Quantity: {o.quantity} • Status: {o.status}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
-    );
-  };
+  const botsList = trackerBots || summary?.trackerBots || [];
 
   return (
-    <AppScreen>
-      <AppTopBar title="Telegram Automation" subtitle="Ecosystem & Channels" />
+    <AppScreen safeArea="top">
+      <AppTopBar title="Telegram Master Dashboard" subtitle="Overview of bots, mapped channels, deep links, forwarding rules & monetization" />
 
-      {/* 5 Primary Tabs */}
-      <View style={styles.primaryTabsContainer}>
-        {[
-          { id: 'dashboard', label: 'Dashboard', icon: 'grid-outline' },
-          { id: 'setup', label: 'Setup Hub', icon: 'checkbox-outline' },
-          { id: 'monetization', label: 'TeleSub', icon: 'cash-outline' },
-          { id: 'channels', label: 'Channels & Bots', icon: 'chatbubbles-outline' },
-          { id: 'tools', label: 'Tools', icon: 'construct-outline' },
-        ].map((tab) => (
-          <Pressable
-            key={tab.id}
-            style={[
-              styles.primaryTab,
-              activeSection === tab.id && styles.primaryTabActive,
-            ]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setActiveSection(tab.id as TelegramSection);
-            }}
-          >
-            <Ionicons
-              name={tab.icon as any}
-              size={18}
-              color={activeSection === tab.id ? '#6366F1' : isDark ? '#9CA3AF' : '#6B7280'}
-            />
-            <Text
-              style={[
-                styles.primaryTabText,
-                activeSection === tab.id && styles.primaryTabTextActive,
-                isDark ? styles.textDark : styles.textLight,
-              ]}
-            >
-              {tab.label}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-
-      {/* Main Scroll Content */}
       <ScrollView
-        style={styles.scrollContainer}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        ref={mainScrollRef}
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={handleRefreshAll} tintColor="#0284C7" />
+        }
       >
-        {activeSection === 'dashboard' && renderDashboard()}
-        {activeSection === 'setup' && renderSetupHub()}
-        {activeSection === 'monetization' && renderMonetization()}
-        {activeSection === 'channels' && renderChannelsAndBots()}
-        {activeSection === 'tools' && renderTools()}
+        {isLoading ? (
+          <ActivityIndicator size="large" color="#0284C7" style={{ marginTop: 40 }} />
+        ) : (
+          <>
+            {/* TAB 0: GAP TRACKER & BOTS */}
+            {activeTab === 'bots' && (
+              <>
+                <View style={styles.sectionHeaderRow}>
+                  <View>
+                    <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight, { marginBottom: 2 }]}>
+                      GAP Tracker & Join Bot Engine
+                    </Text>
+                    <Text style={styles.sectionSub}>Track channel growth, conversions, UTM invite links & greeting bots</Text>
+                  </View>
+                </View>
+
+                {/* Sub-Section Navigation Pills */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+                  {[
+                    { key: 'bots', label: `Connected Bots (${botsList.length})`, icon: 'logo-android' },
+                    { key: 'joins', label: 'Join Analytics', icon: 'analytics-outline' },
+                    { key: 'links', label: 'Deep Link Campaigns', icon: 'link-outline' },
+                  ].map((sub) => {
+                    const isSelected = trackerSection === sub.key;
+                    return (
+                      <Pressable
+                        key={sub.key}
+                        style={[
+                          styles.catPill,
+                          isDark ? styles.pillDark : styles.pillLight,
+                          isSelected && styles.catPillSelected,
+                        ]}
+                        onPress={() => {
+                          if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          setTrackerSection(sub.key as any);
+                        }}
+                      >
+                        <Ionicons name={sub.icon as any} size={13} color={isSelected ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'} />
+                        <Text style={[styles.catPillText, isDark ? styles.textDark : styles.textLight, isSelected && styles.catPillTextSelected]}>
+                          {sub.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+
+                {/* Quick Action Bar for GAP Tracker */}
+                <View style={{ flexDirection: 'row', gap: 8, marginVertical: 12 }}>
+                  <Pressable
+                    style={[styles.actionBtnPrimary, { flex: 1, justifyContent: 'center' }]}
+                    onPress={() => setActiveModal('tracker')}
+                  >
+                    <Ionicons name="add" size={15} color="#FFFFFF" />
+                    <Text style={styles.actionBtnPrimaryText}>Connect New Bot</Text>
+                  </Pressable>
+                </View>
+              </View>
+
+              {/* 6 Real Interactive KPI Metric Cards matching Web Dashboard */}
+              <View style={[styles.metricsGrid, isDark ? styles.borderDark : styles.borderLight]}>
+                {/* 1. Tracked Bots */}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.metricItem,
+                    pressed && styles.metricItemPressed,
+                  ]}
+                  onPress={() => handleTabChange('bots')}
+                >
+                  <View style={styles.metricHeaderRow}>
+                    <Text style={styles.metricLabel}>TRACKED BOTS</Text>
+                    <Ionicons name="cloud-outline" size={13} color="#0284C7" />
+                  </View>
+                  <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
+                    {summary?.trackedBotsCount ?? botsList.length}
+                  </Text>
+                  <View style={styles.metricFooterRow}>
+                    <Text style={styles.metricSub}>Connected bots</Text>
+                    <Ionicons name="chevron-forward" size={11} color="#0284C7" />
+                  </View>
+                </Pressable>
+
+                {/* 2. Channels */}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.metricItem,
+                    pressed && styles.metricItemPressed,
+                  ]}
+                  onPress={() => openToolModal('tracker')}
+                >
+                  <View style={styles.metricHeaderRow}>
+                    <Text style={styles.metricLabel}>CHANNELS</Text>
+                    <Ionicons name="share-social-outline" size={13} color="#10B981" />
+                  </View>
+                  <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
+                    {summary?.channelsCount ?? (chats || []).length}
+                  </Text>
+                  <View style={styles.metricFooterRow}>
+                    <Text style={styles.metricSub}>Mapped channels</Text>
+                    <Ionicons name="chevron-forward" size={11} color="#10B981" />
+                  </View>
+                </Pressable>
+
+                {/* 3. Deep Links */}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.metricItem,
+                    pressed && styles.metricItemPressed,
+                  ]}
+                  onPress={() => openToolModal('tracker')}
+                >
+                  <View style={styles.metricHeaderRow}>
+                    <Text style={styles.metricLabel}>DEEP LINKS</Text>
+                    <Ionicons name="link-outline" size={13} color="#0284C7" />
+                  </View>
+                  <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
+                    {summary?.deepLinksCount ?? 15}
+                  </Text>
+                  <View style={styles.metricFooterRow}>
+                    <Text style={styles.metricSub}>Tracked join links</Text>
+                    <Ionicons name="chevron-forward" size={11} color="#0284C7" />
+                  </View>
+                </Pressable>
+
+                {/* 4. Forwards -> Redirects to automations tab */}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.metricItem,
+                    pressed && styles.metricItemPressed,
+                  ]}
+                  onPress={() => handleTabChange('automations')}
+                >
+                  <View style={styles.metricHeaderRow}>
+                    <Text style={styles.metricLabel}>FORWARDS</Text>
+                    <Ionicons name="git-compare-outline" size={13} color="#8B5CF6" />
+                  </View>
+                  <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
+                    {(forwardRules || []).length}
+                  </Text>
+                  <View style={styles.metricFooterRow}>
+                    <Text style={styles.metricSub}>Active rules</Text>
+                    <Ionicons name="chevron-forward" size={11} color="#8B5CF6" />
+                  </View>
+                </Pressable>
+
+                {/* 5. TeleSub Pages -> Redirects to sub_manager tab */}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.metricItem,
+                    pressed && styles.metricItemPressed,
+                  ]}
+                  onPress={() => openToolModal('sub_manager')}
+                >
+                  <View style={styles.metricHeaderRow}>
+                    <Text style={styles.metricLabel}>TELESUB PAGES</Text>
+                    <Ionicons name="wallet-outline" size={13} color="#EC4899" />
+                  </View>
+                  <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
+                    {summary?.teleSubPagesCount ?? (subPlans || []).length}
+                  </Text>
+                  <View style={styles.metricFooterRow}>
+                    <Text style={styles.metricSub}>Monetized pages</Text>
+                    <Ionicons name="chevron-forward" size={11} color="#EC4899" />
+                  </View>
+                </Pressable>
+
+                {/* 6. Revenue -> Opens Sub Manager */}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.metricItem,
+                    pressed && styles.metricItemPressed,
+                  ]}
+                  onPress={() => openToolModal('sub_manager')}
+                >
+                  <View style={styles.metricHeaderRow}>
+                    <Text style={styles.metricLabel}>REVENUE</Text>
+                    <Ionicons name="card-outline" size={13} color="#F59E0B" />
+                  </View>
+                  <Text style={[styles.metricValue, { color: '#0284C7' }]}>
+                    ₹{(summary?.revenue ?? 0).toLocaleString()}
+                  </Text>
+                  <View style={styles.metricFooterRow}>
+                    <Text style={styles.metricSub}>Total collected</Text>
+                    <Ionicons name="chevron-forward" size={11} color="#F59E0B" />
+                  </View>
+                </Pressable>
+              </View>
+            </View>
+
+            {/* VISUAL ANALYTICS CHARTS (CHANNEL JOIN TRACKING & TELESUB REVENUE) */}
+            <DashboardAnalyticsCharts />
+
+            {/* ACTIVE TAB CONTENT SECTIONS CONTAINER */}
+            <View
+              onLayout={(e) => {
+                sectionContentY.current = e.nativeEvent.layout.y;
+              }}
+            >
+              {/* TAB 0: CONNECTED TRACKER BOTS */}
+              {activeTab === 'bots' && (
+              <>
+                <View style={styles.sectionHeaderRow}>
+                  <View>
+                    <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight, { marginBottom: 2 }]}>
+                      Connected Tracker Bots ({botsList.length})
+                    </Text>
+                    <Text style={styles.sectionSub}>Live bots tracking joins, campaigns, and mapped communities</Text>
+                  </View>
+                  <Pressable
+                    style={[styles.afGhostBtn, isDark ? styles.afGhostBtnDark : styles.afGhostBtnLight, { flex: 1, justifyContent: 'center' }]}
+                    onPress={() => setActiveModal('tracker')}
+                  >
+                    <Ionicons name="link-outline" size={15} color={isDark ? '#CBD5E1' : '#475569'} />
+                    <Text style={[styles.afGhostBtnText, isDark ? styles.textDark : styles.textLight]}>+ Tracking Link</Text>
+                  </Pressable>
+                </View>
+
+                {/* SUB-SECTION 1: CONNECTED BOTS */}
+                {trackerSection === 'bots' && (
+                  <>
+                    {botsList.length === 0 ? (
+                      <View style={[styles.emptyCard, isDark ? styles.cardDark : styles.cardLight]}>
+                        <Ionicons name="logo-android" size={36} color="#0284C7" style={{ marginBottom: 8 }} />
+                        <Text style={[styles.emptyTitle, isDark ? styles.textDark : styles.textLight]}>No Bots Connected</Text>
+                        <Text style={styles.emptySubtitle}>
+                          Connect Telegram bots to track channel joins, conversions, and automate subscriber flows.
+                        </Text>
+                        <Pressable
+                          style={[styles.actionBtnPrimary, { marginTop: 12 }]}
+                          onPress={() => setActiveModal('tracker')}
+                        >
+                          <Ionicons name="add" size={16} color="#FFFFFF" />
+                          <Text style={styles.actionBtnPrimaryText}>Connect First Bot</Text>
+                        </Pressable>
+                      </View>
+                    ) : (
+                      botsList.map((bot) => (
+                        <View key={bot.id} style={[styles.botCard, isDark ? styles.cardDark : styles.cardLight]}>
+                          <View style={styles.botCardTop}>
+                            <View style={styles.botAvatar}>
+                              <Text style={styles.botAvatarText}>
+                                {(bot.bot_name || 'B').charAt(0).toUpperCase()}
+                              </Text>
+                            </View>
+                            <View style={{ flex: 1 }}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                <Text style={[styles.botTitle, isDark ? styles.textDark : styles.textLight]} numberOfLines={1}>
+                                  {bot.bot_name}
+                                </Text>
+                                <View style={styles.activePill}>
+                                  <Text style={styles.activePillText}>{bot.status || 'ACTIVE'}</Text>
+                                </View>
+                              </View>
+                              <Text style={styles.botUsername}>@{bot.bot_username}</Text>
+                            </View>
+                            <Pressable
+                              style={styles.createLinkBtn}
+                              onPress={() => setActiveModal('tracker')}
+                            >
+                              <Text style={styles.createLinkBtnText}>Create Link</Text>
+                            </Pressable>
+                          </View>
+
+                          {/* Mapped Channels Tags */}
+                          <View style={[styles.mappedChannelsRow, isDark ? styles.borderDark : styles.borderLight]}>
+                            <Text style={styles.mappedLabel}>MAPPED CHANNELS:</Text>
+                            {bot.channel_name ? (
+                              <View style={styles.channelTag}>
+                                <Ionicons name="radio-button-on" size={10} color="#059669" />
+                                <Text style={styles.channelTagText} numberOfLines={1}>{bot.channel_name}</Text>
+                              </View>
+                            ) : (
+                              <Text style={styles.noChannelsText}>No channels mapped</Text>
+                            )}
+                          </View>
+                        </View>
+                      ))
+                    )}
+                  </>
+                )}
+
+                {/* SUB-SECTION 2: JOIN ANALYTICS */}
+                {trackerSection === 'joins' && (
+                  <View style={{ gap: 12 }}>
+                    <DashboardAnalyticsCharts />
+                    <View style={[styles.afSectionCard, isDark ? styles.cardDark : styles.cardLight]}>
+                      <Text style={[styles.afSectionTitle, isDark ? styles.textDark : styles.textLight]}>
+                        Live Join Attribution Stream
+                      </Text>
+                      <Text style={styles.afSectionSubtitle}>
+                        Real-time visitor captures and conversion funnels
+                      </Text>
+                      <Pressable
+                        style={[styles.actionBtnPrimary, { marginTop: 12 }]}
+                        onPress={() => setActiveModal('tracker')}
+                      >
+                        <Ionicons name="analytics" size={15} color="#FFFFFF" />
+                        <Text style={styles.actionBtnPrimaryText}>Open Live Tracking Telemetry</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                )}
+
+                {/* SUB-SECTION 3: DEEP LINK CAMPAIGNS */}
+                {trackerSection === 'links' && (
+                  <View style={[styles.afSectionCard, isDark ? styles.cardDark : styles.cardLight]}>
+                    <View style={styles.afSectionHeader}>
+                      <View style={styles.afSectionIconCircle}>
+                        <Ionicons name="link-outline" size={16} color="#0284C7" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.afSectionTitle, isDark ? styles.textDark : styles.textLight]}>
+                          UTM & Campaign Deep Links
+                        </Text>
+                        <Text style={styles.afSectionSubtitle}>
+                          Custom parameter links to track advertising sources
+                        </Text>
+                      </View>
+                    </View>
+                    <Pressable
+                      style={[styles.actionBtnPrimary, { marginTop: 8 }]}
+                      onPress={() => setActiveModal('tracker')}
+                    >
+                      <Ionicons name="add" size={15} color="#FFFFFF" />
+                      <Text style={styles.actionBtnPrimaryText}>Generate Campaign Link</Text>
+                    </Pressable>
+                  </View>
+                )}
+              </>
+            )}
+
+            {/* TAB 1: OVERVIEW / MASTER COMMAND CENTER & 8-TOOL HUB */}
+            {activeTab === 'hub' && (
+              <>
+                {/* HERO: TELEGRAM MASTER DASHBOARD (6 KPI CARDS) */}
+                <View style={[styles.commandCenterCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  {/* Header with DB Synced Badge & Actions */}
+                  <View style={styles.commandHeader}>
+                    <View style={styles.sessionPillRow}>
+                      <View style={styles.syncedBadge}>
+                        <View style={styles.sessionDotGreen} />
+                        <Text style={styles.syncedBadgeText}>Database Synced</Text>
+                      </View>
+                      <View style={styles.botCountBadge}>
+                        <Text style={styles.botCountBadgeText}>{botsList.length} Bots Connected</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.headerBtnGroup}>
+                      <Pressable
+                        style={[styles.refreshHeaderBtn, isRefetching && { opacity: 0.6 }]}
+                        onPress={handleRefreshAll}
+                        disabled={isRefetching}
+                      >
+                        <Ionicons name="refresh-outline" size={13} color={isDark ? '#94A3B8' : '#475569'} />
+                        <Text style={[styles.refreshHeaderBtnText, isDark ? styles.textDark : styles.textLight]}>
+                          Refresh Data
+                        </Text>
+                      </Pressable>
+
+                      <Pressable
+                        style={styles.connectHeaderBtn}
+                        onPress={() => setActiveModal('tracker')}
+                      >
+                        <Ionicons name="add" size={14} color="#FFFFFF" />
+                        <Text style={styles.connectHeaderBtnText}>+ Connect Bot</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+
+                  {/* 6 Real Interactive KPI Metric Cards */}
+                  <View style={[styles.metricsGrid, isDark ? styles.borderDark : styles.borderLight]}>
+                    <Pressable style={({ pressed }) => [styles.metricItem, pressed && styles.metricItemPressed]} onPress={() => handleTabChange('bots')}>
+                      <View style={styles.metricHeaderRow}>
+                        <Text style={styles.metricLabel}>TRACKED BOTS</Text>
+                        <Ionicons name="cloud-outline" size={13} color="#0284C7" />
+                      </View>
+                      <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
+                        {summary?.trackedBotsCount ?? botsList.length}
+                      </Text>
+                      <View style={styles.metricFooterRow}>
+                        <Text style={styles.metricSub}>Connected bots</Text>
+                        <Ionicons name="chevron-forward" size={11} color="#0284C7" />
+                      </View>
+                    </Pressable>
+
+                    <Pressable style={({ pressed }) => [styles.metricItem, pressed && styles.metricItemPressed]} onPress={() => handleTabChange('bots')}>
+                      <View style={styles.metricHeaderRow}>
+                        <Text style={styles.metricLabel}>CHANNELS</Text>
+                        <Ionicons name="share-social-outline" size={13} color="#10B981" />
+                      </View>
+                      <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
+                        {summary?.channelsCount ?? (chats || []).length}
+                      </Text>
+                      <View style={styles.metricFooterRow}>
+                        <Text style={styles.metricSub}>Mapped channels</Text>
+                        <Ionicons name="chevron-forward" size={11} color="#10B981" />
+                      </View>
+                    </Pressable>
+
+                    <Pressable style={({ pressed }) => [styles.metricItem, pressed && styles.metricItemPressed]} onPress={() => handleTabChange('bots')}>
+                      <View style={styles.metricHeaderRow}>
+                        <Text style={styles.metricLabel}>DEEP LINKS</Text>
+                        <Ionicons name="link-outline" size={13} color="#0284C7" />
+                      </View>
+                      <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
+                        {summary?.deepLinksCount ?? 15}
+                      </Text>
+                      <View style={styles.metricFooterRow}>
+                        <Text style={styles.metricSub}>Tracked join links</Text>
+                        <Ionicons name="chevron-forward" size={11} color="#0284C7" />
+                      </View>
+                    </Pressable>
+
+                    <Pressable style={({ pressed }) => [styles.metricItem, pressed && styles.metricItemPressed]} onPress={() => handleTabChange('automations')}>
+                      <View style={styles.metricHeaderRow}>
+                        <Text style={styles.metricLabel}>FORWARDS</Text>
+                        <Ionicons name="git-compare-outline" size={13} color="#8B5CF6" />
+                      </View>
+                      <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
+                        {(forwardRules || []).length}
+                      </Text>
+                      <View style={styles.metricFooterRow}>
+                        <Text style={styles.metricSub}>Active rules</Text>
+                        <Ionicons name="chevron-forward" size={11} color="#8B5CF6" />
+                      </View>
+                    </Pressable>
+
+                    <Pressable style={({ pressed }) => [styles.metricItem, pressed && styles.metricItemPressed]} onPress={() => handleTabChange('sub_manager')}>
+                      <View style={styles.metricHeaderRow}>
+                        <Text style={styles.metricLabel}>TELESUB PAGES</Text>
+                        <Ionicons name="wallet-outline" size={13} color="#EC4899" />
+                      </View>
+                      <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
+                        {summary?.teleSubPagesCount ?? (subPlans || []).length}
+                      </Text>
+                      <View style={styles.metricFooterRow}>
+                        <Text style={styles.metricSub}>Monetized pages</Text>
+                        <Ionicons name="chevron-forward" size={11} color="#EC4899" />
+                      </View>
+                    </Pressable>
+
+                    <Pressable style={({ pressed }) => [styles.metricItem, pressed && styles.metricItemPressed]} onPress={() => handleTabChange('sub_manager')}>
+                      <View style={styles.metricHeaderRow}>
+                        <Text style={styles.metricLabel}>REVENUE</Text>
+                        <Ionicons name="card-outline" size={13} color="#F59E0B" />
+                      </View>
+                      <Text style={[styles.metricValue, { color: '#0284C7' }]}>
+                        ₹{(summary?.revenue ?? 0).toLocaleString()}
+                      </Text>
+                      <View style={styles.metricFooterRow}>
+                        <Text style={styles.metricSub}>Total collected</Text>
+                        <Ionicons name="chevron-forward" size={11} color="#F59E0B" />
+                      </View>
+                    </Pressable>
+                  </View>
+                </View>
+
+                {/* VISUAL ANALYTICS CHARTS */}
+                <DashboardAnalyticsCharts />
+
+                <HubProgressCard
+                  total={hub.totalModules || 8}
+                  completed={hub.completedModules || 8}
+                  onRefresh={handleRefreshAll}
+                  isRefreshing={isRefetching}
+                />
+
+                {/* Category Filter Pills */}
+                <View style={styles.categorySection}>
+                  <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight]}>
+                    Platform Integration Tools ({filteredTools.length}/8)
+                  </Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.categoryScroll}
+                  >
+                    {CATEGORIES.map((cat) => {
+                      const isSelected = selectedCategory === cat.key;
+                      return (
+                        <Pressable
+                          key={cat.key}
+                          style={[
+                            styles.catPill,
+                            isDark ? styles.pillDark : styles.pillLight,
+                            isSelected && styles.catPillSelected,
+                          ]}
+                          onPress={() => handleCategoryChange(cat.key)}
+                        >
+                          <Ionicons
+                            name={cat.icon as any}
+                            size={13}
+                            color={isSelected ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
+                          />
+                          <Text
+                            style={[
+                              styles.catPillText,
+                              isDark ? styles.textDark : styles.textLight,
+                              isSelected && styles.catPillTextSelected,
+                            ]}
+                          >
+                            {cat.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+
+                {/* All 8 Tool Cards */}
+                {filteredTools.map((tool) => (
+                  <ToolCard
+                    key={tool.key}
+                    tool={tool}
+                    onPress={() => openToolModal(tool.key)}
+                  />
+                ))}
+              </>
+            )}
+
+            {/* TAB 2: AUTOFORWARD ENGINE */}
+            {activeTab === 'automations' && (
+              <>
+                {/* HERO CARD: AUTOFORWARD CONTROL */}
+                <View style={[styles.afControlCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <View style={styles.afControlHeader}>
+                    <View style={styles.afControlHeaderLeft}>
+                      <View style={styles.afHeroIconCircle}>
+                        <Ionicons name="flash" size={20} color="#0284C7" />
+                      </View>
+                      <View>
+                        <Text style={[styles.afHeroTitle, isDark ? styles.textDark : styles.textLight]}>
+                          AutoForward Control
+                        </Text>
+                        <View style={styles.afSystemActiveRow}>
+                          <View style={styles.sessionDotGreen} />
+                          <Text style={styles.afSystemActiveText}>System Active</Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    {/* Top Action Buttons: Reset, Refresh, Open Bot */}
+                    <View style={styles.afHeaderActions}>
+                      <Pressable
+                        style={styles.afOpenBotBtn}
+                        onPress={() => {
+                          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                          Linking.openURL('https://t.me/Gapautoforwardingbot');
+                        }}
+                      >
+                        <Ionicons name="logo-android" size={15} color="#FFFFFF" />
+                        <Text style={styles.afOpenBotBtnText}>Open Bot</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                </View>
+
+                {/* 5 KPI METRIC CARDS ROW */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.afKpiScroll}>
+                  <View style={[styles.afKpiCard, isDark ? styles.cardDark : styles.cardLight]}>
+                    <View style={[styles.afKpiIconCircle, { backgroundColor: 'rgba(2, 132, 199, 0.12)' }]}>
+                      <Ionicons name="arrow-redo" size={14} color="#0284C7" />
+                    </View>
+                    <Text style={[styles.afKpiValue, isDark ? styles.textDark : styles.textLight]}>
+                      {(forwardRules || []).length}
+                    </Text>
+                    <Text style={styles.afKpiSub}>Active Mappings</Text>
+                  </View>
+
+                  <View style={[styles.afKpiCard, isDark ? styles.cardDark : styles.cardLight]}>
+                    <View style={[styles.afKpiIconCircle, { backgroundColor: 'rgba(139, 92, 246, 0.12)' }]}>
+                      <Ionicons name="filter-outline" size={14} color="#8B5CF6" />
+                    </View>
+                    <Text style={[styles.afKpiValue, isDark ? styles.textDark : styles.textLight]}>0</Text>
+                    <Text style={styles.afKpiSub}>Text Filters</Text>
+                  </View>
+
+                  <View style={[styles.afKpiCard, isDark ? styles.cardDark : styles.cardLight]}>
+                    <View style={[styles.afKpiIconCircle, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]}>
+                      <Ionicons name="shield-outline" size={14} color="#EF4444" />
+                    </View>
+                    <Text style={[styles.afKpiValue, isDark ? styles.textDark : styles.textLight]}>0</Text>
+                    <Text style={styles.afKpiSub}>Blocked Words</Text>
+                  </View>
+
+                  <View style={[styles.afKpiCard, isDark ? styles.cardDark : styles.cardLight]}>
+                    <View style={[styles.afKpiIconCircle, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
+                      <Ionicons name="time-outline" size={14} color="#F59E0B" />
+                    </View>
+                    <Text style={[styles.afKpiValue, isDark ? styles.textDark : styles.textLight]}>0</Text>
+                    <Text style={styles.afKpiSub}>Delay (seconds)</Text>
+                  </View>
+
+                  <View style={[styles.afKpiCard, isDark ? styles.cardDark : styles.cardLight]}>
+                    <View style={[styles.afKpiIconCircle, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
+                      <Ionicons name="text-outline" size={14} color="#10B981" />
+                    </View>
+                    <Text style={[styles.afKpiValue, isDark ? styles.textDark : styles.textLight, { fontSize: 16 }]}>
+                      None
+                    </Text>
+                    <Text style={styles.afKpiSub}>Text Actions</Text>
+                  </View>
+                </ScrollView>
+
+                {/* Sub-Section Navigation Pills for AutoForward */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+                  {[
+                    { key: 'mappings', label: `Mappings (${(forwardRules || []).length})`, icon: 'git-compare-outline' },
+                    { key: 'filters', label: 'Word Filters', icon: 'filter-outline' },
+                    { key: 'blocked', label: 'Blocked Words', icon: 'shield-outline' },
+                    { key: 'delays', label: 'Delay & Throttle', icon: 'time-outline' },
+                    { key: 'headers', label: 'Prefix & Suffix', icon: 'text-outline' },
+                  ].map((sub) => {
+                    const isSelected = afSection === sub.key;
+                    return (
+                      <Pressable
+                        key={sub.key}
+                        style={[
+                          styles.catPill,
+                          isDark ? styles.pillDark : styles.pillLight,
+                          isSelected && styles.catPillSelected,
+                        ]}
+                        onPress={() => {
+                          if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          setAfSection(sub.key as any);
+                        }}
+                      >
+                        <Ionicons name={sub.icon as any} size={13} color={isSelected ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'} />
+                        <Text style={[styles.catPillText, isDark ? styles.textDark : styles.textLight, isSelected && styles.catPillTextSelected]}>
+                          {sub.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+
+                {/* Quick Add Rule Button */}
+                <View style={{ marginVertical: 12 }}>
+                  <Pressable
+                    style={styles.actionBtnPrimary}
+                    onPress={() => setActiveModal('autoforward')}
+                  >
+                    <Ionicons name="add" size={16} color="#FFFFFF" />
+                    <Text style={styles.actionBtnPrimaryText}>+ Configure New Forwarding Rule</Text>
+                  </Pressable>
+                </View>
+
+                {/* SUB-SECTION: MAPPINGS */}
+                {afSection === 'mappings' && (
+                  <View style={[styles.afSectionCard, isDark ? styles.cardDark : styles.cardLight]}>
+                    <View style={styles.afSectionHeader}>
+                      <View style={styles.afSectionIconCircle}>
+                        <Ionicons name="arrow-redo" size={14} color="#0284C7" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.afSectionTitle, isDark ? styles.textDark : styles.textLight]}>
+                          Active Routing Rules
+                        </Text>
+                        <Text style={styles.afSectionSubtitle}>
+                          {(forwardRules || []).length} source to target forwarding channels configured
+                        </Text>
+                      </View>
+                    </View>
+
+                    {(forwardRules || []).length === 0 ? (
+                      <View style={[styles.afEmptyBox, isDark ? styles.afEmptyBoxDark : styles.afEmptyBoxLight]}>
+                        <Text style={styles.afEmptyText}>No active mappings configured</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.afMappingsList}>
+                        {(forwardRules || []).map((rule, idx) => (
+                          <View
+                            key={`af_rule_${rule.id || idx}`}
+                            style={[styles.afMappingRow, isDark ? styles.afMappingRowDark : styles.afMappingRowLight]}
+                          >
+                            <View style={styles.afMappingLeft}>
+                              <View style={styles.afMappingArrowCircle}>
+                                <Ionicons name="arrow-redo" size={12} color="#0284C7" />
+                              </View>
+                              <Text
+                                style={[styles.afSourceChannelName, isDark ? styles.textDark : styles.textLight]}
+                                numberOfLines={1}
+                              >
+                                {rule.source_chat_title || 'Source Channel'}
+                              </Text>
+                            </View>
+
+                            <Ionicons name="arrow-forward" size={14} color="#94A3B8" style={{ marginHorizontal: 8 }} />
+
+                            <View style={[styles.afTargetBadge, isDark ? styles.afTargetBadgeDark : styles.afTargetBadgeLight]}>
+                              <Text style={[styles.afTargetBadgeText, isDark ? styles.textDark : styles.textLight]} numberOfLines={1}>
+                                {rule.target_chat_title || 'Target Channel'}
+                              </Text>
+                            </View>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                {/* SUB-SECTION: FILTERS */}
+                {afSection === 'filters' && (
+                  <View style={[styles.afSectionCard, isDark ? styles.cardDark : styles.cardLight]}>
+                    <View style={styles.afSectionHeader}>
+                      <View style={[styles.afSectionIconCircle, { backgroundColor: 'rgba(139, 92, 246, 0.12)' }]}>
+                        <Ionicons name="filter-outline" size={14} color="#8B5CF6" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.afSectionTitle, isDark ? styles.textDark : styles.textLight]}>
+                          Word Filters & Text Replacements
+                        </Text>
+                        <Text style={styles.afSectionSubtitle}>Regex replacements and rewrite rules</Text>
+                      </View>
+                    </View>
+                    <Pressable style={[styles.actionBtnPrimary, { marginTop: 8 }]} onPress={() => setActiveModal('autoforward')}>
+                      <Ionicons name="add" size={15} color="#FFFFFF" />
+                      <Text style={styles.actionBtnPrimaryText}>Add Word Filter</Text>
+                    </Pressable>
+                  </View>
+                )}
+
+                {/* SUB-SECTION: BLOCKED */}
+                {afSection === 'blocked' && (
+                  <View style={[styles.afSectionCard, isDark ? styles.cardDark : styles.cardLight]}>
+                    <View style={styles.afSectionHeader}>
+                      <View style={[styles.afSectionIconCircle, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]}>
+                        <Ionicons name="shield-outline" size={14} color="#EF4444" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.afSectionTitle, isDark ? styles.textDark : styles.textLight]}>
+                          Blacklisted Words
+                        </Text>
+                        <Text style={styles.afSectionSubtitle}>Messages containing these words will be dropped</Text>
+                      </View>
+                    </View>
+                    <Pressable style={[styles.actionBtnPrimary, { marginTop: 8 }]} onPress={() => setActiveModal('autoforward')}>
+                      <Ionicons name="add" size={15} color="#FFFFFF" />
+                      <Text style={styles.actionBtnPrimaryText}>Add Blocked Word</Text>
+                    </Pressable>
+                  </View>
+                )}
+
+                {/* SUB-SECTION: DELAY */}
+                {afSection === 'delays' && (
+                  <View style={[styles.afSectionCard, isDark ? styles.cardDark : styles.cardLight]}>
+                    <View style={styles.afSectionHeader}>
+                      <View style={[styles.afSectionIconCircle, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
+                        <Ionicons name="time-outline" size={14} color="#F59E0B" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.afSectionTitle, isDark ? styles.textDark : styles.textLight]}>
+                          Forwarding Delay Interval
+                        </Text>
+                        <Text style={styles.afSectionSubtitle}>Artificial pause between messages</Text>
+                      </View>
+                    </View>
+                    <View style={[styles.afDelayBigBox, isDark ? styles.afEmptyBoxDark : styles.afEmptyBoxLight]}>
+                      <Text style={[styles.afDelayBigNumber, isDark ? styles.textDark : styles.textLight]}>0</Text>
+                      <Text style={styles.afDelayBigLabel}>seconds delay active</Text>
+                    </View>
+                  </View>
+                )}
+
+                {/* SUB-SECTION: HEADERS */}
+                {afSection === 'headers' && (
+                  <View style={[styles.afSectionCard, isDark ? styles.cardDark : styles.cardLight]}>
+                    <View style={styles.afSectionHeader}>
+                      <View style={[styles.afSectionIconCircle, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
+                        <Ionicons name="text-outline" size={14} color="#10B981" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.afSectionTitle, isDark ? styles.textDark : styles.textLight]}>
+                          Prefix & Suffix Headers
+                        </Text>
+                        <Text style={styles.afSectionSubtitle}>Added to the start or end of every forwarded post</Text>
+                      </View>
+                    </View>
+                    <Pressable style={[styles.actionBtnPrimary, { marginTop: 8 }]} onPress={() => setActiveModal('autoforward')}>
+                      <Ionicons name="create-outline" size={15} color="#FFFFFF" />
+                      <Text style={styles.actionBtnPrimaryText}>Configure Headers & Footers</Text>
+                    </Pressable>
+                  </View>
+                )}
+              </>
+            )}
+
+            {/* TAB 3: TELESUB MONETIZATION & VIP TIERS */}
+            {activeTab === 'sub_manager' && (
+              <>
+                <View style={[styles.telesubCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <View style={styles.revenueRow}>
+                    <View>
+                      <Text style={styles.revenueLabel}>ESTIMATED MRR & TOTAL REVENUE</Text>
+                      <Text style={styles.revenueVal}>₹{(summary?.telesubMonthlyRevenue || summary?.revenue || 0).toLocaleString()}</Text>
+                    </View>
+                    <Pressable
+                      style={styles.actionBtnPrimary}
+                      onPress={() => setActiveModal('sub_manager')}
+                    >
+                      <Ionicons name="add" size={16} color="#FFFFFF" />
+                      <Text style={styles.actionBtnPrimaryText}>Add VIP Tier</Text>
+                    </Pressable>
+                  </View>
+                </View>
+
+                {/* Sub-Section Navigation Pills for TeleSub */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+                  {[
+                    { key: 'plans', label: `Active Plans (${(subPlans || []).length})`, icon: 'card-outline' },
+                    { key: 'subscribers', label: 'VIP Subscribers', icon: 'people-outline' },
+                    { key: 'landing', label: 'Landing Page Builder', icon: 'globe-outline' },
+                  ].map((sub) => {
+                    const isSelected = subSection === sub.key;
+                    return (
+                      <Pressable
+                        key={sub.key}
+                        style={[
+                          styles.catPill,
+                          isDark ? styles.pillDark : styles.pillLight,
+                          isSelected && styles.catPillSelected,
+                        ]}
+                        onPress={() => {
+                          if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          setSubSection(sub.key as any);
+                        }}
+                      >
+                        <Ionicons name={sub.icon as any} size={13} color={isSelected ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'} />
+                        <Text style={[styles.catPillText, isDark ? styles.textDark : styles.textLight, isSelected && styles.catPillTextSelected]}>
+                          {sub.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+
+                {/* SUB-SECTION 1: PLANS */}
+                {subSection === 'plans' && (
+                  <View style={{ marginTop: 12 }}>
+                    {(subPlans || []).length === 0 ? (
+                      <View style={[styles.emptyCard, isDark ? styles.cardDark : styles.cardLight]}>
+                        <Ionicons name="card-outline" size={36} color="#0284C7" style={{ marginBottom: 8 }} />
+                        <Text style={[styles.emptyTitle, isDark ? styles.textDark : styles.textLight]}>No Subscription Tiers Yet</Text>
+                        <Text style={styles.emptySubtitle}>
+                          Create monetized VIP membership plans and landing pages for your Telegram channels.
+                        </Text>
+                        <Pressable
+                          style={[styles.actionBtnPrimary, { marginTop: 12 }]}
+                          onPress={() => setActiveModal('sub_manager')}
+                        >
+                          <Ionicons name="add" size={16} color="#FFFFFF" />
+                          <Text style={styles.actionBtnPrimaryText}>Create First Tier</Text>
+                        </Pressable>
+                      </View>
+                    ) : (
+                      (subPlans || []).map((plan) => (
+                        <View key={plan.id} style={[styles.planCard, isDark ? styles.cardDark : styles.cardLight]}>
+                          <View style={styles.planHeader}>
+                            <Text style={[styles.planTitle, isDark ? styles.textDark : styles.textLight]}>{plan.name}</Text>
+                            <Text style={styles.planPrice}>₹{plan.price} / {plan.durationDays}d</Text>
+                          </View>
+                          <Text style={styles.planSubtitle}>{plan.landingPageTitle || 'VIP Community Membership'}</Text>
+                          <View style={[styles.planFooter, isDark ? styles.borderDark : styles.borderLight]}>
+                            <Text style={styles.planSubs}>{plan.inviteLink ? 'Live Landing Page' : 'VIP Channel Access'}</Text>
+                            <Pressable
+                              style={styles.copyBtn}
+                              onPress={() => {
+                                if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                              }}
+                            >
+                              <Ionicons name="copy-outline" size={14} color="#0284C7" />
+                              <Text style={styles.copyBtnText}>Copy Link</Text>
+                            </Pressable>
+                          </View>
+                        </View>
+                      ))
+                    )}
+                  </View>
+                )}
+
+                {/* SUB-SECTION 2: VIP SUBSCRIBERS */}
+                {subSection === 'subscribers' && (
+                  <View style={[styles.afSectionCard, isDark ? styles.cardDark : styles.cardLight, { marginTop: 12 }]}>
+                    <View style={styles.afSectionHeader}>
+                      <View style={[styles.afSectionIconCircle, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
+                        <Ionicons name="people-outline" size={16} color="#10B981" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.afSectionTitle, isDark ? styles.textDark : styles.textLight]}>
+                          VIP Subscribers Directory
+                        </Text>
+                        <Text style={styles.afSectionSubtitle}>
+                          Auto-eviction daemon active • Auto-removes expired members
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={[styles.afEmptyBox, isDark ? styles.afEmptyBoxDark : styles.afEmptyBoxLight]}>
+                      <Text style={styles.afEmptyText}>Active subscribers will appear here upon Razorpay payment</Text>
+                    </View>
+                  </View>
+                )}
+
+                {/* SUB-SECTION 3: LANDING BUILDER */}
+                {subSection === 'landing' && (
+                  <View style={[styles.afSectionCard, isDark ? styles.cardDark : styles.cardLight, { marginTop: 12 }]}>
+                    <View style={styles.afSectionHeader}>
+                      <View style={[styles.afSectionIconCircle, { backgroundColor: 'rgba(236, 72, 153, 0.12)' }]}>
+                        <Ionicons name="globe-outline" size={16} color="#EC4899" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.afSectionTitle, isDark ? styles.textDark : styles.textLight]}>
+                          Monetized Checkout Page
+                        </Text>
+                        <Text style={styles.afSectionSubtitle}>
+                          Instant Razorpay checkout link with Telegram verification
+                        </Text>
+                      </View>
+                    </View>
+                    <Pressable style={[styles.actionBtnPrimary, { marginTop: 8 }]} onPress={() => setActiveModal('sub_manager')}>
+                      <Ionicons name="create-outline" size={15} color="#FFFFFF" />
+                      <Text style={styles.actionBtnPrimaryText}>Customize Checkout Design</Text>
+                    </Pressable>
+                  </View>
+                )}
+              </>
+            )}
+
+            {/* TAB 4: BROADCASTS & OUTREACH */}
+            {activeTab === 'broadcasts' && (
+              <>
+                <Pressable
+                  style={[styles.broadcastBanner, isDark ? styles.cardDark : styles.cardLight]}
+                  onPress={() => openToolModal('broadcast')}
+                >
+                  <View style={styles.broadcastBannerIcon}>
+                    <Ionicons name="megaphone" size={24} color="#0284C7" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.broadcastBannerTitle, isDark ? styles.textDark : styles.textLight]}>
+                      Create New Broadcast
+                    </Text>
+                    <Text style={styles.broadcastBannerDesc}>
+                      Blast rich announcements with CTA buttons to your Telegram audience
+                    </Text>
+                  </View>
+                  <Ionicons name="arrow-forward-circle" size={28} color="#0284C7" />
+                </Pressable>
+
+                <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight]}>
+                  Recent Broadcast History
+                </Text>
+
+                <View style={[styles.emptyCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <Ionicons name="megaphone-outline" size={36} color="#0284C7" style={{ marginBottom: 8 }} />
+                  <Text style={[styles.emptyTitle, isDark ? styles.textDark : styles.textLight]}>No Broadcasts Sent Yet</Text>
+                  <Text style={styles.emptySubtitle}>
+                    Send instant or scheduled announcements to all your connected Telegram communities.
+                  </Text>
+                  <Pressable
+                    style={[styles.actionBtnPrimary, { marginTop: 12 }]}
+                    onPress={() => openToolModal('broadcast')}
+                  >
+                    <Ionicons name="megaphone" size={16} color="#FFFFFF" />
+                    <Text style={styles.actionBtnPrimaryText}>Send First Broadcast</Text>
+                  </Pressable>
+                </View>
+              </>
+            )}
+
+            {/* TAB 5: REACTIONS & AUDIENCE ENGAGEMENT */}
+            {activeTab === 'reactions' && (
+              <>
+                <Pressable
+                  style={[styles.broadcastBanner, isDark ? styles.cardDark : styles.cardLight]}
+                  onPress={() => openToolModal('reactions')}
+                >
+                  <View style={[styles.broadcastBannerIcon, { backgroundColor: 'rgba(245,158,11,0.12)' }]}>
+                    <Ionicons name="flash" size={24} color="#F59E0B" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.broadcastBannerTitle, isDark ? styles.textDark : styles.textLight]}>
+                      Configure Auto Reactions & Boosts
+                    </Text>
+                    <Text style={styles.broadcastBannerDesc}>
+                      Set up instant emoji reactions, post views, and member retention boosts
+                    </Text>
+                  </View>
+                  <Ionicons name="arrow-forward-circle" size={28} color="#F59E0B" />
+                </Pressable>
+
+                <View style={styles.sectionHeaderRow}>
+                  <View>
+                    <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight, { marginBottom: 2 }]}>
+                      Reaction Automation & Refill Services
+                    </Text>
+                    <Text style={styles.sectionSub}>Live boost rates & engagement engine</Text>
+                  </View>
+                  <Pressable
+                    style={[styles.actionBtnPrimary, { backgroundColor: '#F59E0B' }]}
+                    onPress={() => openToolModal('reactions')}
+                  >
+                    <Ionicons name="cart" size={16} color="#FFFFFF" />
+                    <Text style={styles.actionBtnPrimaryText}>Open Console</Text>
+                  </Pressable>
+                </View>
+
+                {/* 4 Quick Highlight Service Cards */}
+                <View style={[styles.metricsGrid, { borderTopWidth: 0, paddingTop: 0, marginBottom: 16 }]}>
+                  <View style={[styles.metricItem, isDark ? styles.cardDark : styles.cardLight, { padding: 12, borderRadius: 12, borderWidth: 1 }]}>
+                    <Text style={styles.metricLabel}>CUSTOM REACTIONS</Text>
+                    <Text style={[styles.metricValue, { color: '#F59E0B' }]}>₹14 / 1k</Text>
+                    <Text style={styles.metricSub}>❤️ 👍 🔥 👏 🚀 🥰</Text>
+                  </View>
+                  <View style={[styles.metricItem, isDark ? styles.cardDark : styles.cardLight, { padding: 12, borderRadius: 12, borderWidth: 1 }]}>
+                    <Text style={styles.metricLabel}>AUTO VIEWS</Text>
+                    <Text style={[styles.metricValue, { color: '#0284C7' }]}>₹4.8 / 1k</Text>
+                    <Text style={styles.metricSub}>Immediate post delivery</Text>
+                  </View>
+                  <View style={[styles.metricItem, isDark ? styles.cardDark : styles.cardLight, { padding: 12, borderRadius: 12, borderWidth: 1 }]}>
+                    <Text style={styles.metricLabel}>MEMBERS 30D</Text>
+                    <Text style={[styles.metricValue, { color: '#10B981' }]}>₹80 / 1k</Text>
+                    <Text style={styles.metricSub}>30-Day auto-refill</Text>
+                  </View>
+                  <View style={[styles.metricItem, isDark ? styles.cardDark : styles.cardLight, { padding: 12, borderRadius: 12, borderWidth: 1 }]}>
+                    <Text style={styles.metricLabel}>MEMBERS 365D</Text>
+                    <Text style={[styles.metricValue, { color: '#8B5CF6' }]}>₹250 / 1k</Text>
+                    <Text style={styles.metricSub}>1-Year persistent refill</Text>
+                  </View>
+                </View>
+              </>
+            )}
+          </>
+        )}
       </ScrollView>
 
-      {/* Modals */}
-      <TelegramConnectModal
-        visible={showConnectModal}
-        onClose={() => setShowConnectModal(false)}
-        isConnected={Boolean(isConnected)}
-        connectedPhone={statusQuery.data?.phone}
-        onStartLogin={(phone) => TelegramApi.startLogin(phone)}
-        onVerifyOtp={(otp) => TelegramApi.verifyOtp(otp)}
-        onVerifyPassword={(pass, ph) => TelegramApi.verifyPassword(pass, ph)}
-        onLogout={() => logoutMutation.mutateAsync()}
+      {/* Interactive Modals for all 8 Tools */}
+      <AutoforwardModal
+        visible={activeModal === 'autoforward'}
+        onClose={() => setActiveModal(null)}
+        onSubmit={createForwardRule}
+        isLoading={isSavingRule}
+        chats={chats || []}
+        onRefreshChats={syncChats}
       />
 
-      <TelegramBroadcastModal
-        visible={showBroadcastModal}
-        onClose={() => setShowBroadcastModal(false)}
-        channels={chatsQuery.data || []}
-        onSubmit={async (payload) => {
-          await createBroadcastMutation.mutateAsync({
-            message: payload.text,
-            target_audience: payload.channel_id,
-          });
-          setShowBroadcastModal(false);
+      <TelegramLoginModal
+        visible={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onSuccess={() => {
+          handleRefreshAll();
         }}
-        isLoading={createBroadcastMutation.isPending}
+        onStartLogin={(phone) => telegramApi.startLogin(phone)}
+        onVerifyOtp={(payload) => telegramApi.verifyOtp(payload)}
+        onSubmitPassword={(password) => telegramApi.submitPassword(password)}
       />
 
-      {/* Mapping Creator Modal */}
-      <Modal visible={showMappingModal} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, isDark ? styles.cardDark : styles.cardLight]}>
-            <Text style={[styles.modalTitle, isDark ? styles.textDark : styles.textLight]}>
-              Create Forward Mapping
-            </Text>
-            <TextInput
-              style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
-              placeholder="Source Channel ID"
-              placeholderTextColor="#9CA3AF"
-              value={newSourceChannel}
-              onChangeText={setNewSourceChannel}
-            />
-            <TextInput
-              style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
-              placeholder="Destination Channel ID"
-              placeholderTextColor="#9CA3AF"
-              value={newDestChannel}
-              onChangeText={setNewDestChannel}
-            />
-            <View style={styles.rowGap}>
-              <Pressable
-                style={[styles.secondaryButton, { flex: 1 }]}
-                onPress={() => setShowMappingModal(false)}
-              >
-                <Text style={styles.secondaryButtonText}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.primaryButton, { flex: 1 }]}
-                onPress={() => {
-                  createMappingMutation.mutate({
-                    source_channel_id: newSourceChannel,
-                    destination_channel_id: newDestChannel,
-                  });
-                  setShowMappingModal(false);
-                  setNewSourceChannel('');
-                  setNewDestChannel('');
-                }}
-              >
-                <Text style={styles.primaryButtonText}>Create</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <SubManagerModal
+        visible={activeModal === 'sub_manager'}
+        onClose={() => setActiveModal(null)}
+        onSubmit={createSubPlan}
+        isLoading={isCreatingPlan}
+        chats={chats || []}
+      />
 
-      {/* Tracker Bot Creator Modal */}
-      <Modal visible={showBotModal} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, isDark ? styles.cardDark : styles.cardLight]}>
-            <Text style={[styles.modalTitle, isDark ? styles.textDark : styles.textLight]}>
-              Connect Tracker Bot
-            </Text>
-            <TextInput
-              style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
-              placeholder="Enter BotFather Token (e.g. 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11)"
-              placeholderTextColor="#9CA3AF"
-              value={newBotToken}
-              onChangeText={setNewBotToken}
-              secureTextEntry
-            />
-            <View style={styles.rowGap}>
-              <Pressable
-                style={[styles.secondaryButton, { flex: 1 }]}
-                onPress={() => setShowBotModal(false)}
-              >
-                <Text style={styles.secondaryButtonText}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.primaryButton, { flex: 1 }]}
-                onPress={() => {
-                  saveTrackerBotMutation.mutate(newBotToken);
-                  setShowBotModal(false);
-                  setNewBotToken('');
-                }}
-              >
-                <Text style={styles.primaryButtonText}>Save Token</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <TrackerModal
+        visible={activeModal === 'tracker'}
+        onClose={() => setActiveModal(null)}
+      />
+
+      <ReportBotModal
+        visible={activeModal === 'report_bot'}
+        onClose={() => setActiveModal(null)}
+      />
+
+      <BroadcastModal
+        visible={activeModal === 'broadcast'}
+        onClose={() => setActiveModal(null)}
+        onSubmit={sendBroadcast}
+        isLoading={isBroadcasting}
+        chats={chats || []}
+      />
+
+      <AutoApproveModal
+        visible={activeModal === 'auto_approve'}
+        onClose={() => setActiveModal(null)}
+        onToggle={async (enabled) => {
+          await toggleAutoApprove({ enabled, channelId: '@my_private_channel' });
+        }}
+      />
+
+      <ChatBotModal
+        visible={activeModal === 'chatbot'}
+        onClose={() => setActiveModal(null)}
+      />
+
+      <ReactionsModal
+        visible={activeModal === 'reactions'}
+        onClose={() => setActiveModal(null)}
+        onUpdate={async (emojis, speed) => {
+          await updateReactions({ emojis, speed });
+        }}
+      />
+
+      {/* Floating Home-Style Product Bottom Navigation Bar */}
+      <ProductFloatingBottomBar
+        items={TELEGRAM_TABS}
+        activeKey={activeTab}
+        onChangeTab={(key) => handleTabChange(key as TelegramTab)}
+        accentColor="#0284C7"
+        moreMenuTitle="Telegram Platform Tools"
+      />
     </AppScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    flex: 1,
+  container: { flex: 1 },
+  content: { padding: 16, paddingBottom: 130 },
+  tabBarWrapper: {
+    borderBottomWidth: 1,
   },
-  primaryTabsContainer: {
+  borderLight: { borderBottomColor: '#E2E8F0', borderTopColor: '#E2E8F0' },
+  borderDark: { borderBottomColor: '#262C36', borderTopColor: '#262C36' },
+  tabScroll: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  tabButton: {
     flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB22',
+    borderRadius: 20,
+    borderWidth: 1,
   },
-  primaryTab: {
-    flex: 1,
+  tabButtonLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+  },
+  tabButtonDark: {
+    backgroundColor: '#161B26',
+    borderColor: '#262C36',
+  },
+  tabButtonActive: {
+    backgroundColor: '#0284C7',
+    borderColor: '#0284C7',
+  },
+  tabButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  tabButtonTextLight: { color: '#64748B' },
+  tabButtonTextDark: { color: '#94A3B8' },
+  tabButtonTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  commandCenterCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 14,
+  },
+  commandHeader: {
+    flexDirection: 'column',
+    gap: 12,
+    marginBottom: 14,
+  },
+  sessionPillRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  headerBtnGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  refreshHeaderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(148, 163, 184, 0.1)',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
   },
-  primaryTabActive: {
-    backgroundColor: '#6366F11A',
-  },
-  primaryTabText: {
-    fontSize: 10,
-    marginTop: 2,
-    fontWeight: '500',
-  },
-  primaryTabTextActive: {
-    color: '#6366F1',
+  refreshHeaderBtnText: {
+    fontSize: 11,
     fontWeight: '700',
   },
-  tabContent: {
-    padding: 16,
-    gap: 14,
-  },
-  card: {
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-  },
-  cardLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E5E7EB',
-  },
-  cardDark: {
-    backgroundColor: '#1E1E2D',
-    borderColor: '#2E2E3E',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  cardSubText: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  textLight: {
-    color: '#111827',
-  },
-  textDark: {
-    color: '#F9FAFB',
-  },
-  subTextLight: {
-    color: '#6B7280',
-  },
-  subTextDark: {
-    color: '#9CA3AF',
-  },
-  rowAlign: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  rowBetween: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  rowGap: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  statusIndicator: {
+  sessionDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
   },
-  badge: {
+  sessionDotGreen: { backgroundColor: '#10B981', width: 7, height: 7, borderRadius: 3.5 },
+  sessionDotYellow: { backgroundColor: '#F59E0B', width: 7, height: 7, borderRadius: 3.5 },
+  sessionStatusText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  syncHeaderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(2, 132, 199, 0.1)',
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 5,
     borderRadius: 6,
   },
-  badgeSuccess: {
-    backgroundColor: '#10B98120',
-  },
-  badgeWarning: {
-    backgroundColor: '#F59E0B20',
-  },
-  badgeText: {
+  syncHeaderBtnText: {
+    color: '#0284C7',
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
   },
-  badgeTextSuccess: {
-    color: '#10B981',
-  },
-  badgeTextWarning: {
-    color: '#F59E0B',
-  },
-  cardActions: {
-    marginTop: 12,
-  },
-  primaryButton: {
-    backgroundColor: '#6366F1',
+  connectHeaderBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    gap: 4,
+    backgroundColor: '#0284C7',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: 8,
   },
-  primaryButtonText: {
-    color: '#FFF',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  secondaryButton: {
-    backgroundColor: '#6366F11A',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-  },
-  secondaryButtonText: {
-    color: '#6366F1',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  dangerOutlineButton: {
-    borderWidth: 1,
-    borderColor: '#EF4444',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+  connectHeaderBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
   },
   metricsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    borderTopWidth: 1,
+    paddingTop: 12,
+    rowGap: 12,
   },
-  metricCard: {
-    width: '48%',
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 4,
+  metricItem: {
+    width: '50%',
+    paddingRight: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
-  metricValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 4,
+  metricItemPressed: {
+    opacity: 0.7,
+    backgroundColor: 'rgba(2, 132, 199, 0.08)',
   },
-  metricLabel: {
-    fontSize: 12,
-  },
-  sectionHeader: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginTop: 6,
-    marginBottom: 2,
-  },
-  quickActionsRow: {
+  metricHeaderRow: {
     flexDirection: 'row',
-    gap: 10,
-  },
-  quickActionButton: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
     alignItems: 'center',
-    gap: 8,
-  },
-  quickActionText: {
-    fontSize: 12,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  progressBarBackground: {
-    height: 8,
-    backgroundColor: '#E5E7EB33',
-    borderRadius: 4,
-    marginVertical: 10,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#6366F1',
-    borderRadius: 4,
-  },
-  progressBadge: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  moduleCard: {
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 6,
-  },
-  moduleHeader: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
+    paddingRight: 4,
+  },
+  metricFooterRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  moduleName: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  moduleDesc: {
-    fontSize: 12,
-  },
-  missingBox: {
-    backgroundColor: '#F59E0B15',
-    padding: 8,
-    borderRadius: 6,
-    marginTop: 4,
-  },
-  missingHeader: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#F59E0B',
-  },
-  missingItem: {
-    fontSize: 11,
-    color: '#D97706',
+    justifyContent: 'space-between',
+    paddingRight: 4,
     marginTop: 2,
   },
-  revenueAmount: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginVertical: 4,
-  },
-  revenueMetaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  metaLabel: {
-    fontSize: 12,
-  },
-  readinessItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 6,
-  },
-  readinessText: {
-    fontSize: 13,
-  },
-  pageCard: {
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    gap: 4,
-  },
-  pagePrice: {
-    fontSize: 13,
+  metricLabel: {
+    color: '#64748B',
+    fontSize: 10,
     fontWeight: '700',
+    letterSpacing: 0.5,
   },
-  pageSlug: {
-    fontSize: 11,
+  metricValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    marginTop: 2,
   },
-  emptyContainer: {
-    padding: 20,
-    alignItems: 'center',
+  metricSub: {
+    fontSize: 10,
+    color: '#94A3B8',
   },
-  emptyText: {
-    fontSize: 13,
-  },
-  actionSmallButton: {
-    backgroundColor: '#6366F1',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+  quickLaunchScroll: {
     paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 6,
+    gap: 8,
+    marginBottom: 14,
   },
-  actionSmallText: {
-    color: '#FFF',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  actionSmallSecondaryButton: {
-    backgroundColor: '#6366F11A',
+  quickLaunchPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 6,
-  },
-  actionSmallSecondaryText: {
-    color: '#6366F1',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  botCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  botName: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  botUsername: {
-    fontSize: 12,
-  },
-  chatRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  chatTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  chatMeta: {
-    fontSize: 11,
-  },
-  toolSelectorScroll: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  toolPill: {
-    paddingVertical: 6,
+    gap: 6,
     paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    marginRight: 8,
   },
-  toolPillActive: {
-    backgroundColor: '#6366F1',
-    borderColor: '#6366F1',
-  },
-  toolPillText: {
+  quickLaunchText: {
     fontSize: 12,
-    fontWeight: '500',
-  },
-  toolPillTextActive: {
-    color: '#FFF',
     fontWeight: '700',
   },
-  mappingText: {
-    fontSize: 13,
-    fontWeight: '600',
+  categorySection: {
+    marginBottom: 12,
   },
-  deleteButton: {
-    alignSelf: 'flex-end',
-    marginTop: 6,
+  categoryScroll: {
+    gap: 8,
+    marginTop: 8,
   },
-  deleteButtonText: {
-    color: '#EF4444',
+  catPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  pillLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
+  pillDark: { backgroundColor: '#161B26', borderColor: '#262C36' },
+  catPillSelected: {
+    backgroundColor: '#0284C7',
+    borderColor: '#0284C7',
+  },
+  catPillText: {
     fontSize: 11,
     fontWeight: '600',
   },
-  linkUrlText: {
-    fontSize: 12,
-    marginTop: 4,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: '#00000080',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalCard: {
-    width: '100%',
-    maxWidth: 380,
-    padding: 20,
-    borderRadius: 14,
-    borderWidth: 1,
-    gap: 12,
-  },
-  modalTitle: {
-    fontSize: 16,
+  catPillTextSelected: {
+    color: '#FFFFFF',
     fontWeight: '700',
   },
-  input: {
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  sectionSub: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  textLight: { color: '#0F172A' },
+  textDark: { color: '#F8FAFC' },
+  cardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  cardDark: {
+    backgroundColor: '#161B26',
+    borderColor: '#262C36',
+  },
+  telesubCard: {
+    borderRadius: 14,
+    padding: 16,
     borderWidth: 1,
-    borderRadius: 8,
+    marginBottom: 14,
+  },
+  revenueRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  revenueLabel: { color: '#64748B', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
+  revenueVal: { color: '#0284C7', fontSize: 24, fontWeight: '800', marginTop: 4 },
+  actionBtnPrimary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#0284C7',
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 13,
-  },
-  inputLight: {
-    backgroundColor: '#F9FAFB',
-    borderColor: '#D1D5DB',
-    color: '#111827',
-  },
-  inputDark: {
-    backgroundColor: '#111827',
-    borderColor: '#374151',
-    color: '#F9FAFB',
-  },
-  loadingContainer: {
-    padding: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  loadingText: {
-    fontSize: 13,
-  },
-  errorContainer: {
-    padding: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  errorText: {
-    color: '#EF4444',
-    fontSize: 13,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  retryButton: {
-    backgroundColor: '#6366F11A',
-    paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
   },
-  retryButtonText: {
-    color: '#6366F1',
-    fontSize: 13,
+  actionBtnPrimaryText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
+  planCard: {
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 10,
+  },
+  planHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  planTitle: { fontSize: 14, fontWeight: '700' },
+  planPrice: { color: '#0284C7', fontSize: 14, fontWeight: '800' },
+  planSubtitle: { color: '#64748B', fontSize: 12, marginTop: 4 },
+  planFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+  },
+  planSubs: { color: '#64748B', fontSize: 11, fontWeight: '600' },
+  copyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  copyBtnText: { color: '#0284C7', fontSize: 11, fontWeight: '700' },
+  ruleCard: {
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  ruleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  ruleTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  ruleDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#10B981',
+  },
+  ruleName: {
+    fontSize: 14,
+    fontWeight: '700',
+    flex: 1,
+  },
+  delayBadge: {
+    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  delayBadgeText: {
+    color: '#0284C7',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  routeBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(148, 163, 184, 0.08)',
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  routeEndpoint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+  },
+  routeText: {
+    fontSize: 12,
     fontWeight: '600',
+  },
+  keywordsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  kwTag: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  kwTagLight: {
+    backgroundColor: '#F1F5F9',
+    borderColor: '#E2E8F0',
+  },
+  kwTagDark: {
+    backgroundColor: '#0F172A',
+    borderColor: '#334155',
+  },
+  kwTagText: {
+    fontSize: 11,
+    color: '#0284C7',
+    fontWeight: '600',
+  },
+  autoCard: {
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 10,
+  },
+  autoRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  autoIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  autoTitle: { fontSize: 14, fontWeight: '700' },
+  autoDesc: { color: '#64748B', fontSize: 12, marginTop: 2 },
+  broadcastBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 12,
+    marginBottom: 16,
+  },
+  broadcastBannerIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  broadcastBannerTitle: { fontSize: 15, fontWeight: '700' },
+  broadcastBannerDesc: { color: '#64748B', fontSize: 12, marginTop: 2 },
+  historyCard: {
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 10,
+  },
+  historyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  historyTitle: { fontSize: 13, fontWeight: '700' },
+  historyTime: { color: '#64748B', fontSize: 11 },
+  historyDesc: { color: '#64748B', fontSize: 12, marginTop: 4 },
+  emptyCard: {
+    padding: 24,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 18,
+    maxWidth: 300,
+  },
+  syncedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  syncedBadgeText: { color: '#059669', fontSize: 11, fontWeight: '700' },
+  botCountBadge: {
+    backgroundColor: 'rgba(2, 132, 199, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  botCountBadgeText: { color: '#0284C7', fontSize: 11, fontWeight: '700' },
+  botCard: {
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 10,
+  },
+  botCardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  botAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: '#0284C7',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  botAvatarText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
+  botTitle: { fontSize: 14, fontWeight: '700', flex: 1 },
+  botUsername: { color: '#0284C7', fontSize: 12, marginTop: 1, fontWeight: '600' },
+  activePill: {
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  activePillText: { color: '#059669', fontSize: 9, fontWeight: '800' },
+  createLinkBtn: {
+    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+    borderWidth: 1,
+    borderColor: '#0284C7',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  createLinkBtnText: { color: '#0284C7', fontSize: 11, fontWeight: '700' },
+  mappedChannelsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    flexWrap: 'wrap',
+  },
+  mappedLabel: { color: '#94A3B8', fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
+  channelTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  channelTagText: { color: '#059669', fontSize: 11, fontWeight: '600' },
+  noChannelsText: { color: '#94A3B8', fontSize: 11, fontStyle: 'italic' },
+  // Autoforwarding Pipeline Styles
+  pipelineHeroCard: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  pipelineHeroHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  pipelineHeroLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  pipelineHeroIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: 'rgba(2, 132, 199, 0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pipelineHeroTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  pipelineHeroSub: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  pipelineStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  pipelineStatusText: {
+    color: '#059669',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  flowDiagramBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  flowDiagramDark: { backgroundColor: 'rgba(15, 23, 42, 0.6)' },
+  flowDiagramLight: { backgroundColor: 'rgba(241, 245, 249, 0.8)' },
+  flowNode: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  flowNodeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  flowArrowBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  flowFilterTag: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#0284C7',
+    backgroundColor: 'rgba(2, 132, 199, 0.12)',
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  stationActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  emptyIconCircle: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  ruleEditBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    backgroundColor: 'rgba(148, 163, 184, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  routeBoxDark: {
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    borderColor: 'rgba(51, 65, 85, 0.6)',
+  },
+  routeBoxLight: {
+    backgroundColor: 'rgba(248, 250, 252, 0.9)',
+    borderColor: '#E2E8F0',
+  },
+  routeDotIcon: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  routeLabelSmall: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 0.5,
+  },
+  routeConnector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+  },
+  routeConnectorLine: {
+    width: 14,
+    height: 1.5,
+    backgroundColor: '#0284C7',
+  },
+  keywordsSection: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(148, 163, 184, 0.12)',
+  },
+  keywordsSectionLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  // AutoForward Control Styles (Matching Web 1:1)
+  afControlCard: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 14,
+  },
+  afControlHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  afControlHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  afHeroIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: 'rgba(2, 132, 199, 0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  afHeroTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  afSystemActiveRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 2,
+  },
+  afSystemActiveText: {
+    color: '#64748B',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  afHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  afGhostBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  afGhostBtnLight: { backgroundColor: 'rgba(241, 245, 249, 0.9)', borderColor: '#CBD5E1' },
+  afGhostBtnDark: { backgroundColor: 'rgba(30, 41, 59, 0.7)', borderColor: '#334155' },
+  afGhostBtnText: { fontSize: 11, fontWeight: '700' },
+  afIconBtn: {
+    padding: 7,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  afOpenBotBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#0284C7',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  afOpenBotBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
+  afKpiScroll: {
+    paddingVertical: 4,
+    gap: 10,
+    marginBottom: 16,
+  },
+  afKpiCard: {
+    width: 120,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  afKpiIconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  afKpiValue: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  afKpiSub: {
+    fontSize: 10,
+    color: '#64748B',
+    marginTop: 2,
+    fontWeight: '600',
+  },
+  afSectionsStack: {
+    gap: 14,
+    marginBottom: 16,
+  },
+  afSectionCard: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  afSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 14,
+  },
+  afSectionIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: 'rgba(2, 132, 199, 0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  afSectionTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  afSectionSubtitle: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  afEmptyBox: {
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  afEmptyBoxLight: { backgroundColor: 'rgba(241, 245, 249, 0.6)' },
+  afEmptyBoxDark: { backgroundColor: 'rgba(15, 23, 42, 0.4)' },
+  afEmptyText: {
+    fontSize: 12,
+    color: '#94A3B8',
+    fontWeight: '600',
+  },
+  afMappingsList: {
+    gap: 10,
+  },
+  afMappingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  afMappingRowLight: {
+    backgroundColor: 'rgba(248, 250, 252, 0.9)',
+    borderColor: '#E2E8F0',
+  },
+  afMappingRowDark: {
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    borderColor: '#334155',
+  },
+  afMappingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  afMappingArrowCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(2, 132, 199, 0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  afSourceChannelName: {
+    fontSize: 12,
+    fontWeight: '700',
+    flex: 1,
+  },
+  afTargetBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    maxWidth: '50%',
+  },
+  afTargetBadgeLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#CBD5E1',
+  },
+  afTargetBadgeDark: {
+    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+    borderColor: '#475569',
+  },
+  afTargetBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  afDelayBigBox: {
+    paddingVertical: 24,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  afDelayBigNumber: {
+    fontSize: 32,
+    fontWeight: '900',
+  },
+  afDelayBigLabel: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  afPrefixSuffixStack: {
+    gap: 12,
+  },
+  afInputLabelSmall: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  afInputDisplayBox: {
+    padding: 12,
+    borderRadius: 10,
+  },
+  afInputDisplayText: {
+    fontSize: 12,
+    color: '#94A3B8',
+    fontStyle: 'italic',
   },
 });
