@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useColorScheme,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,6 +29,9 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
   onOpenChat,
 }) => {
   const queryClient = useQueryClient();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | undefined>(undefined);
 
@@ -69,27 +73,32 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
   const contacts = data?.contacts || [];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
       <View style={styles.container}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
           {onBack ? (
-            <Pressable style={styles.backButton} onPress={onBack}>
+            <Pressable
+              style={[styles.backButton, isDark ? styles.backButtonDark : styles.backButtonLight]}
+              onPress={onBack}
+            >
               <Text style={styles.backText}>← Back</Text>
             </Pressable>
           ) : null}
           <View>
-            <Text style={styles.title}>WhatsApp Contacts</Text>
-            <Text style={styles.subtitle}>Audience & CRM Federation</Text>
+            <Text style={[styles.title, { color: isDark ? '#f8fafc' : '#0f172a' }]}>WhatsApp Contacts</Text>
+            <Text style={[styles.subtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+              Audience & CRM Federation
+            </Text>
           </View>
         </View>
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, isDark ? styles.searchInputDark : styles.searchInputLight]}
             placeholder="Search contacts by name or phone..."
-            placeholderTextColor="#64748b"
+            placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -106,10 +115,20 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
             const isSelected = item === 'All' ? !selectedTag : selectedTag === item;
             return (
               <Pressable
-                style={[styles.tagChip, isSelected && styles.tagChipActive]}
+                style={[
+                  styles.tagChip,
+                  isDark ? styles.tagChipDark : styles.tagChipLight,
+                  isSelected && styles.tagChipActive,
+                ]}
                 onPress={() => setSelectedTag(item === 'All' ? undefined : item)}
               >
-                <Text style={[styles.tagChipText, isSelected && styles.tagChipTextActive]}>
+                <Text
+                  style={[
+                    styles.tagChipText,
+                    { color: isDark ? '#94a3b8' : '#64748b' },
+                    isSelected && styles.tagChipTextActive,
+                  ]}
+                >
                   {item}
                 </Text>
               </Pressable>
@@ -121,7 +140,9 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
         {isLoading && !data ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#25d366" />
-            <Text style={styles.loadingText}>Loading contacts...</Text>
+            <Text style={[styles.loadingText, { color: isDark ? '#64748b' : '#94a3b8' }]}>
+              Loading contacts...
+            </Text>
           </View>
         ) : (
           <FlatList
@@ -140,7 +161,9 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
             }
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No contacts found matching your query</Text>
+                <Text style={[styles.emptyText, { color: isDark ? '#64748b' : '#94a3b8' }]}>
+                  No contacts found matching your query
+                </Text>
               </View>
             }
           />
@@ -154,9 +177,11 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
           onRequestClose={() => setSelectedContactForCRM(null)}
         >
           <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Convert to CRM Deal</Text>
-              <Text style={styles.modalSubtitle}>
+            <View style={[styles.modalContent, isDark ? styles.modalContentDark : styles.modalContentLight]}>
+              <Text style={[styles.modalTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                Convert to CRM Deal
+              </Text>
+              <Text style={[styles.modalSubtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>
                 Create a high-value sales lead from this WhatsApp contact.
               </Text>
 
@@ -167,21 +192,31 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
                 </View>
               ) : (
                 <View style={styles.formGroup}>
-                  <Text style={styles.inputLabel}>Customer Name</Text>
-                  <View style={styles.readOnlyInput}>
-                    <Text style={styles.readOnlyText}>{selectedContactForCRM?.name || 'Contact'}</Text>
+                  <Text style={[styles.inputLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                    Customer Name
+                  </Text>
+                  <View style={[styles.readOnlyInput, isDark ? styles.inputBgDark : styles.inputBgLight]}>
+                    <Text style={[styles.readOnlyText, { color: isDark ? '#e2e8f0' : '#0f172a' }]}>
+                      {selectedContactForCRM?.name || 'Contact'}
+                    </Text>
                   </View>
 
-                  <Text style={styles.inputLabel}>Phone Number</Text>
-                  <View style={styles.readOnlyInput}>
-                    <Text style={styles.readOnlyText}>{selectedContactForCRM?.phone}</Text>
+                  <Text style={[styles.inputLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                    Phone Number
+                  </Text>
+                  <View style={[styles.readOnlyInput, isDark ? styles.inputBgDark : styles.inputBgLight]}>
+                    <Text style={[styles.readOnlyText, { color: isDark ? '#e2e8f0' : '#0f172a' }]}>
+                      {selectedContactForCRM?.phone}
+                    </Text>
                   </View>
 
-                  <Text style={styles.inputLabel}>Estimated Deal Value (₹)</Text>
+                  <Text style={[styles.inputLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                    Estimated Deal Value (₹)
+                  </Text>
                   <TextInput
-                    style={styles.modalInput}
+                    style={[styles.modalInput, isDark ? styles.inputBgDark : styles.inputBgLight, { color: isDark ? '#f8fafc' : '#0f172a' }]}
                     placeholder="e.g. 50000"
-                    placeholderTextColor="#64748b"
+                    placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
                     keyboardType="numeric"
                     value={dealValue}
                     onChangeText={setDealValue}
@@ -189,10 +224,10 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
 
                   <View style={styles.modalActions}>
                     <Pressable
-                      style={styles.cancelButton}
+                      style={[styles.cancelButton, isDark ? styles.cancelButtonDark : styles.cancelButtonLight]}
                       onPress={() => setSelectedContactForCRM(null)}
                     >
-                      <Text style={styles.cancelButtonText}>Cancel</Text>
+                      <Text style={[styles.cancelButtonText, { color: isDark ? '#94a3b8' : '#64748b' }]}>Cancel</Text>
                     </Pressable>
                     <Pressable
                       style={[
@@ -222,7 +257,6 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#020617',
   },
   container: {
     flex: 1,
@@ -233,42 +267,57 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
+  },
+  headerDark: {
     borderBottomColor: '#1e293b',
+  },
+  headerLight: {
+    borderBottomColor: '#e2e8f0',
   },
   backButton: {
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 8,
-    backgroundColor: '#1e293b',
     marginRight: 12,
   },
+  backButtonDark: {
+    backgroundColor: '#1e293b',
+  },
+  backButtonLight: {
+    backgroundColor: '#e2e8f0',
+  },
   backText: {
-    color: '#818cf8',
+    color: '#6366f1',
     fontSize: 13,
     fontWeight: '700',
   },
   title: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#f8fafc',
   },
   subtitle: {
     fontSize: 11,
-    color: '#94a3b8',
   },
   searchContainer: {
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
   searchInput: {
-    backgroundColor: '#0f172a',
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    color: '#f8fafc',
     fontSize: 14,
     borderWidth: 1,
+  },
+  searchInputDark: {
+    backgroundColor: '#0f172a',
     borderColor: '#1e293b',
+    color: '#f8fafc',
+  },
+  searchInputLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
+    color: '#0f172a',
   },
   tagList: {
     paddingHorizontal: 16,
@@ -276,19 +325,24 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tagChip: {
-    backgroundColor: '#0f172a',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
+  },
+  tagChipDark: {
+    backgroundColor: '#0f172a',
     borderColor: '#1e293b',
+  },
+  tagChipLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
   },
   tagChipActive: {
     backgroundColor: '#25d366',
     borderColor: '#25d366',
   },
   tagChipText: {
-    color: '#94a3b8',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -298,7 +352,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 130,
   },
   loadingContainer: {
     flex: 1,
@@ -306,7 +360,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: '#64748b',
     fontSize: 13,
     marginTop: 10,
   },
@@ -315,34 +368,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
-    color: '#64748b',
     fontSize: 14,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   modalContent: {
-    backgroundColor: '#0b1329',
     borderRadius: 16,
     padding: 24,
     width: '100%',
     maxWidth: 400,
     borderWidth: 1,
+  },
+  modalContentDark: {
+    backgroundColor: '#0b1329',
     borderColor: '#1e293b',
+  },
+  modalContentLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#f8fafc',
     marginBottom: 6,
   },
   modalSubtitle: {
     fontSize: 13,
-    color: '#94a3b8',
     marginBottom: 18,
   },
   formGroup: {
@@ -351,29 +407,30 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#cbd5e1',
     marginBottom: 4,
   },
   readOnlyInput: {
-    backgroundColor: '#020617',
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
+  },
+  inputBgDark: {
+    backgroundColor: '#020617',
     borderColor: '#1e293b',
   },
+  inputBgLight: {
+    backgroundColor: '#f8fafc',
+    borderColor: '#e2e8f0',
+  },
   readOnlyText: {
-    color: '#e2e8f0',
     fontSize: 14,
     fontWeight: '600',
   },
   modalInput: {
-    backgroundColor: '#020617',
     borderRadius: 10,
     padding: 12,
-    color: '#f8fafc',
     fontSize: 14,
     borderWidth: 1,
-    borderColor: '#334155',
   },
   modalActions: {
     flexDirection: 'row',
@@ -384,11 +441,15 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: '#1e293b',
     alignItems: 'center',
   },
+  cancelButtonDark: {
+    backgroundColor: '#1e293b',
+  },
+  cancelButtonLight: {
+    backgroundColor: '#f1f5f9',
+  },
   cancelButtonText: {
-    color: '#94a3b8',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -422,3 +483,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+

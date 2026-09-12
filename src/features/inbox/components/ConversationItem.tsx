@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { NormalizedConversation } from '../types';
 import { ChannelBadge } from './ChannelBadge';
 
@@ -9,6 +9,9 @@ interface ConversationItemProps {
 }
 
 export const ConversationItem: React.FC<ConversationItemProps> = ({ conversation, onPress }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const time = new Date(conversation.last_message.created_at).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
@@ -16,29 +19,33 @@ export const ConversationItem: React.FC<ConversationItemProps> = ({ conversation
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.container, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.container,
+        isDark ? styles.containerDark : styles.containerLight,
+        pressed && styles.pressed,
+      ]}
       onPress={onPress}
     >
-      <View style={styles.avatar}>
-        <Text style={styles.avatarLetter}>
+      <View style={[styles.avatar, isDark ? styles.avatarDark : styles.avatarLight]}>
+        <Text style={[styles.avatarLetter, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
           {conversation.contact.name ? conversation.contact.name.charAt(0).toUpperCase() : 'U'}
         </Text>
       </View>
       <View style={styles.info}>
         <View style={styles.topRow}>
-          <Text style={styles.name} numberOfLines={1}>
+          <Text style={[styles.name, { color: isDark ? '#f8fafc' : '#0f172a' }]} numberOfLines={1}>
             {conversation.contact.name}
           </Text>
-          <Text style={styles.time}>{time}</Text>
+          <Text style={[styles.time, { color: isDark ? '#64748b' : '#94a3b8' }]}>{time}</Text>
         </View>
         <View style={styles.metaRow}>
-          <Text style={styles.handle} numberOfLines={1}>
+          <Text style={[styles.handle, { color: isDark ? '#64748b' : '#94a3b8' }]} numberOfLines={1}>
             {conversation.contact.handle_or_phone}
           </Text>
           <ChannelBadge channel={conversation.channel} />
         </View>
         <View style={styles.bottomRow}>
-          <Text style={styles.lastMessage} numberOfLines={1}>
+          <Text style={[styles.lastMessage, { color: isDark ? '#94a3b8' : '#64748b' }]} numberOfLines={1}>
             {conversation.last_message.direction === 'outbound' ? 'You: ' : ''}
             {conversation.last_message.content}
           </Text>
@@ -59,11 +66,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     paddingHorizontal: 16,
-    backgroundColor: '#0f172a',
     borderRadius: 14,
     marginBottom: 8,
     borderWidth: 1,
+  },
+  containerDark: {
+    backgroundColor: '#0f172a',
     borderColor: '#1e293b',
+  },
+  containerLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
   },
   pressed: {
     opacity: 0.75,
@@ -72,15 +85,20 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#1e293b',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#334155',
+    borderWidth: 1,
     marginRight: 12,
   },
+  avatarDark: {
+    backgroundColor: '#1e293b',
+    borderColor: '#334155',
+  },
+  avatarLight: {
+    backgroundColor: '#f1f5f9',
+    borderColor: '#e2e8f0',
+  },
   avatarLetter: {
-    color: '#f8fafc',
     fontSize: 18,
     fontWeight: '700',
   },
@@ -94,13 +112,11 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   name: {
-    color: '#f8fafc',
     fontSize: 15,
     fontWeight: '700',
     flex: 1,
   },
   time: {
-    color: '#64748b',
     fontSize: 11,
     marginLeft: 8,
   },
@@ -111,7 +127,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   handle: {
-    color: '#64748b',
     fontSize: 12,
     flex: 1,
     marginRight: 8,
@@ -122,7 +137,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   lastMessage: {
-    color: '#94a3b8',
     fontSize: 13,
     flex: 1,
   },
