@@ -69,7 +69,7 @@ export const WhatsAppHomeScreen: React.FC = () => {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const [activeTab, setActiveTab] = useState<'home' | 'contacts' | 'templates' | 'broadcasts'>('home');
+  const [activeTab, setActiveTab] = useState<WhatsAppTab>('home');
 
   const {
     data: status,

@@ -53,20 +53,39 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
   const bottomOffset = Math.max(insets.bottom + 6, 20);
 
   const hasOverflow = items.length > 5;
-  const visibleItems = hasOverflow
-    ? [
-        ...items.slice(0, 4),
-        {
-          key: '__more__',
-          label: 'More',
-          activeIcon: 'grid' as IoniconsName,
-          inactiveIcon: 'grid-outline' as IoniconsName,
-          description: 'Additional tools and settings',
-        },
-      ]
-    : items;
 
-  const overflowItems = hasOverflow ? items.slice(4) : [];
+  // Dynamic slot computation:
+  // If items > 5 and the user selects an overflow item, dynamically promote it to the visible 4th slot
+  // so the active tool is directly highlighted in the bottom navigation bar.
+  let visibleItems: (ProductTabItem | { key: string; label: string; activeIcon: IoniconsName; inactiveIcon: IoniconsName; description?: string })[];
+  let overflowItems: ProductTabItem[];
+
+  const moreTabItem = {
+    key: '__more__',
+    label: 'More',
+    activeIcon: 'grid' as IoniconsName,
+    inactiveIcon: 'grid-outline' as IoniconsName,
+    description: 'All additional tools and services',
+  };
+
+  if (hasOverflow) {
+    const defaultPrimary = items.slice(0, 4);
+    const activeItem = items.find((i) => i.key === activeKey);
+    const isPrimaryActive = defaultPrimary.some((i) => i.key === activeKey);
+
+    if (!isPrimaryActive && activeItem) {
+      // Keep top 3 anchors (e.g. Overview, AutoForward, Tracker), place activeItem at 4th slot
+      visibleItems = [...items.slice(0, 3), activeItem, moreTabItem];
+      // All remaining items go into the More menu
+      overflowItems = items.filter((item) => !visibleItems.some((v) => v.key === item.key));
+    } else {
+      visibleItems = [...defaultPrimary, moreTabItem];
+      overflowItems = items.slice(4);
+    }
+  } else {
+    visibleItems = items;
+    overflowItems = [];
+  }
 
   // Determine which visible tab is active
   const isOverflowActive = overflowItems.some((item) => item.key === activeKey);
