@@ -1,4 +1,3 @@
-import { useRouter } from "expo-router";
 import { FileText, Inbox, Pencil, Plus, Trash2 } from "lucide-react-native";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -13,10 +12,10 @@ import {
   useColorScheme,
 } from "react-native";
 
+import { openAuthenticatedTemplate } from "@/lib/template-deep-link";
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
 import { supabase } from "../../src/lib/supabase";
-import { openAuthenticatedTemplate } from "../../src/lib/template-deep-link";
 
 interface QuickForm {
   id: string;
@@ -32,7 +31,6 @@ interface QuickForm {
 }
 
 export default function SimpleQuickFormsScreen() {
-  const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
@@ -93,7 +91,20 @@ export default function SimpleQuickFormsScreen() {
   };
 
   const handleRedirect = async (form: QuickForm) => {
-    await openAuthenticatedTemplate("quick-form", form.id);
+    console.log("[QuickForms] Opening form:", form.id);
+
+    await openAuthenticatedTemplate({
+      targetTool: "quick-forms",
+      quickFormId: form.id,
+    });
+  };
+
+  const handleCreate = async () => {
+    console.log("[QuickForms] Creating new form");
+
+    await openAuthenticatedTemplate({
+      targetTool: "quick-forms",
+    });
   };
 
   const handleDelete = (form: QuickForm) => {
@@ -300,7 +311,7 @@ export default function SimpleQuickFormsScreen() {
             </Text>
 
             <Pressable
-              onPress={() => handleRedirect}
+              onPress={() => void handleCreate()}
               style={styles.createButton}
             >
               <Plus size={20} color="#FFFFFF" />
@@ -318,7 +329,7 @@ export default function SimpleQuickFormsScreen() {
               </Text>
 
               <Pressable
-                onPress={() => handleRedirect}
+                onPress={() => void handleCreate()}
                 style={styles.smallCreateButton}
               >
                 <Plus size={18} color="#FFFFFF" />
