@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useColorScheme,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,6 +28,8 @@ export const CreateBroadcastScreen: React.FC<CreateBroadcastScreenProps> = ({
   onCreated,
 }) => {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const handleBack = onBack || (() => router.back());
   const handleCreated = onCreated || (() => router.back());
   const queryClient = useQueryClient();
@@ -42,7 +45,7 @@ export const CreateBroadcastScreen: React.FC<CreateBroadcastScreenProps> = ({
 
   const estimatedRecipients = selectedTag === 'All' ? 850 : 150;
   const estimatedCostInRupees = (estimatedRecipients * 0.8).toFixed(2);
-  const walletBalance = usage?.credits_balance || 2500;
+  const walletBalance = usage?.credits_balance ?? 0;
   const hasSufficientBalance = walletBalance >= parseFloat(estimatedCostInRupees);
 
   const createMutation = useMutation({
@@ -76,25 +79,28 @@ export const CreateBroadcastScreen: React.FC<CreateBroadcastScreenProps> = ({
   });
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={handleBack}>
-          <Text style={styles.backText}>← Cancel</Text>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
+      <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
+        <Pressable
+          style={[styles.backButton, isDark ? styles.backButtonDark : styles.backButtonLight]}
+          onPress={handleBack}
+        >
+          <Text style={[styles.backText, { color: isDark ? '#818cf8' : '#4f46e5' }]}>← Cancel</Text>
         </Pressable>
         <View style={styles.headerTitleContainer}>
-          <Text style={styles.title}>New Broadcast</Text>
-          <Text style={styles.subtitle}>Meta Verified Delivery</Text>
+          <Text style={[styles.title, { color: isDark ? '#f8fafc' : '#0f172a' }]}>New Broadcast</Text>
+          <Text style={[styles.subtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>Meta Verified Delivery</Text>
         </View>
       </View>
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* Field 1: Name */}
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Campaign Name</Text>
+          <Text style={[styles.label, { color: isDark ? '#cbd5e1' : '#334155' }]}>Campaign Name</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
             placeholder="e.g. Festive Product Launch Announcement"
-            placeholderTextColor="#64748b"
+            placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
             value={name}
             onChangeText={setName}
           />
@@ -102,17 +108,29 @@ export const CreateBroadcastScreen: React.FC<CreateBroadcastScreenProps> = ({
 
         {/* Field 2: Audience Segment */}
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Audience Segment</Text>
+          <Text style={[styles.label, { color: isDark ? '#cbd5e1' : '#334155' }]}>Audience Segment</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tagRow}>
             {tags.map((tag) => {
               const isSelected = selectedTag === tag;
               return (
                 <Pressable
                   key={tag}
-                  style={[styles.tagChip, isSelected && styles.tagChipActive]}
+                  style={[
+                    styles.tagChip,
+                    isDark ? styles.tagChipDark : styles.tagChipLight,
+                    isSelected && styles.tagChipActive,
+                  ]}
                   onPress={() => setSelectedTag(tag)}
                 >
-                  <Text style={[styles.tagText, isSelected && styles.tagTextActive]}>{tag}</Text>
+                  <Text
+                    style={[
+                      styles.tagText,
+                      { color: isSelected ? '#020617' : isDark ? '#94a3b8' : '#64748b' },
+                      isSelected && styles.tagTextActive,
+                    ]}
+                  >
+                    {tag}
+                  </Text>
                 </Pressable>
               );
             })}
@@ -121,7 +139,7 @@ export const CreateBroadcastScreen: React.FC<CreateBroadcastScreenProps> = ({
 
         {/* Field 3: Template Selector */}
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Select Approved Meta Template</Text>
+          <Text style={[styles.label, { color: isDark ? '#cbd5e1' : '#334155' }]}>Select Approved Meta Template</Text>
           {templatesLoading ? (
             <ActivityIndicator size="small" color="#25d366" />
           ) : (
@@ -131,17 +149,26 @@ export const CreateBroadcastScreen: React.FC<CreateBroadcastScreenProps> = ({
                 return (
                   <Pressable
                     key={tpl.id}
-                    style={[styles.templateOption, isSelected && styles.templateOptionActive]}
+                    style={[
+                      styles.templateOption,
+                      isDark ? styles.templateOptionDark : styles.templateOptionLight,
+                      isSelected && (isDark ? styles.templateOptionActiveDark : styles.templateOptionActiveLight),
+                    ]}
                     onPress={() => setSelectedTemplate(tpl)}
                   >
                     <View style={styles.templateRadio}>
-                      <View style={[styles.radioOuter, isSelected && styles.radioOuterActive]}>
+                      <View
+                        style={[
+                          styles.radioOuter,
+                          { borderColor: isSelected ? '#25d366' : isDark ? '#475569' : '#cbd5e1' },
+                        ]}
+                      >
                         {isSelected ? <View style={styles.radioInner} /> : null}
                       </View>
                     </View>
                     <View style={styles.templateTextContainer}>
-                      <Text style={styles.templateName}>{tpl.name}</Text>
-                      <Text style={styles.templateCategory}>
+                      <Text style={[styles.templateName, { color: isDark ? '#f8fafc' : '#0f172a' }]}>{tpl.name}</Text>
+                      <Text style={[styles.templateCategory, { color: isDark ? '#94a3b8' : '#64748b' }]}>
                         {tpl.category} • {tpl.language} • {tpl.status}
                       </Text>
                     </View>
@@ -153,18 +180,18 @@ export const CreateBroadcastScreen: React.FC<CreateBroadcastScreenProps> = ({
         </View>
 
         {/* Cost & Wallet Card */}
-        <View style={styles.estimateCard}>
-          <Text style={styles.estimateTitle}>Billing & Delivery Estimate</Text>
+        <View style={[styles.estimateCard, isDark ? styles.estimateCardDark : styles.estimateCardLight]}>
+          <Text style={[styles.estimateTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Billing & Delivery Estimate</Text>
           <View style={styles.estimateRow}>
-            <Text style={styles.estimateLabel}>Estimated Audience</Text>
-            <Text style={styles.estimateValue}>{estimatedRecipients} Contacts</Text>
+            <Text style={[styles.estimateLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>Estimated Audience</Text>
+            <Text style={[styles.estimateValue, { color: isDark ? '#f8fafc' : '#0f172a' }]}>{estimatedRecipients} Contacts</Text>
           </View>
           <View style={styles.estimateRow}>
-            <Text style={styles.estimateLabel}>Estimated Cost</Text>
-            <Text style={styles.estimateValue}>₹{estimatedCostInRupees}</Text>
+            <Text style={[styles.estimateLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>Estimated Cost</Text>
+            <Text style={[styles.estimateValue, { color: isDark ? '#f8fafc' : '#0f172a' }]}>₹{estimatedCostInRupees}</Text>
           </View>
           <View style={styles.estimateRow}>
-            <Text style={styles.estimateLabel}>Available Balance</Text>
+            <Text style={[styles.estimateLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>Available Balance</Text>
             <Text style={[styles.estimateValue, { color: hasSufficientBalance ? '#10b981' : '#ef4444' }]}>
               ₹{walletBalance.toFixed(2)}
             </Text>
@@ -197,7 +224,6 @@ export const CreateBroadcastScreen: React.FC<CreateBroadcastScreenProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#020617',
   },
   header: {
     flexDirection: 'row',
@@ -205,17 +231,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
+  },
+  headerDark: {
+    backgroundColor: '#0b1329',
     borderBottomColor: '#1e293b',
+  },
+  headerLight: {
+    backgroundColor: '#ffffff',
+    borderBottomColor: '#e2e8f0',
   },
   backButton: {
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 8,
-    backgroundColor: '#1e293b',
     marginRight: 12,
   },
+  backButtonDark: {
+    backgroundColor: '#1e293b',
+  },
+  backButtonLight: {
+    backgroundColor: '#f1f5f9',
+  },
   backText: {
-    color: '#818cf8',
     fontSize: 13,
     fontWeight: '700',
   },
@@ -225,59 +262,67 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#f8fafc',
   },
   subtitle: {
     fontSize: 11,
-    color: '#94a3b8',
   },
   container: {
     flex: 1,
   },
   content: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 130,
   },
   formGroup: {
     marginBottom: 20,
   },
   label: {
-    color: '#cbd5e1',
     fontSize: 13,
     fontWeight: '700',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#0f172a',
     borderRadius: 12,
     padding: 14,
-    color: '#f8fafc',
     fontSize: 14,
     borderWidth: 1,
+  },
+  inputDark: {
+    backgroundColor: '#0f172a',
     borderColor: '#1e293b',
+    color: '#f8fafc',
+  },
+  inputLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
+    color: '#0f172a',
   },
   tagRow: {
     gap: 8,
   },
   tagChip: {
-    backgroundColor: '#0f172a',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1,
+  },
+  tagChipDark: {
+    backgroundColor: '#0f172a',
     borderColor: '#1e293b',
+  },
+  tagChipLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
   },
   tagChipActive: {
     backgroundColor: '#25d366',
     borderColor: '#25d366',
   },
   tagText: {
-    color: '#94a3b8',
     fontSize: 12,
     fontWeight: '600',
   },
   tagTextActive: {
-    color: '#020617',
     fontWeight: '800',
   },
   templateList: {
@@ -286,15 +331,25 @@ const styles = StyleSheet.create({
   templateOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0f172a',
     padding: 14,
     borderRadius: 12,
     borderWidth: 1,
+  },
+  templateOptionDark: {
+    backgroundColor: '#0f172a',
     borderColor: '#1e293b',
   },
-  templateOptionActive: {
+  templateOptionLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
+  },
+  templateOptionActiveDark: {
     borderColor: '#25d366',
     backgroundColor: '#0a1a14',
+  },
+  templateOptionActiveLight: {
+    borderColor: '#25d366',
+    backgroundColor: '#f0fdf4',
   },
   templateRadio: {
     marginRight: 12,
@@ -304,12 +359,8 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#475569',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  radioOuterActive: {
-    borderColor: '#25d366',
   },
   radioInner: {
     width: 10,
@@ -321,25 +372,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   templateName: {
-    color: '#f8fafc',
     fontSize: 14,
     fontWeight: '700',
     marginBottom: 2,
   },
   templateCategory: {
-    color: '#94a3b8',
     fontSize: 11,
   },
   estimateCard: {
-    backgroundColor: '#0b1329',
     borderRadius: 14,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#1e293b',
     marginBottom: 24,
   },
+  estimateCardDark: {
+    backgroundColor: '#0b1329',
+    borderColor: '#1e293b',
+  },
+  estimateCardLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
   estimateTitle: {
-    color: '#f8fafc',
     fontSize: 14,
     fontWeight: '700',
     marginBottom: 12,
@@ -350,11 +409,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   estimateLabel: {
-    color: '#94a3b8',
     fontSize: 13,
   },
   estimateValue: {
-    color: '#f8fafc',
     fontSize: 13,
     fontWeight: '700',
   },

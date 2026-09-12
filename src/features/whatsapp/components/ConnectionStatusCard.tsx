@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { WhatsAppConnection } from '../types';
 
 interface ConnectionStatusCardProps {
@@ -11,6 +11,9 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
   connection,
   isLoading,
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const isConnected = connection?.connected ?? true;
   const ratingColor =
     connection?.quality_rating === 'GREEN'
@@ -20,7 +23,7 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
       : '#ef4444';
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
       <View style={styles.headerRow}>
         <View style={styles.badgeContainer}>
           <View style={[styles.statusDot, { backgroundColor: isConnected ? '#10b981' : '#ef4444' }]} />
@@ -35,13 +38,17 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
       </View>
 
       <View style={styles.infoRow}>
-        <Text style={styles.displayName}>{connection?.display_name || 'GetAiPilot Verified Business'}</Text>
-        <Text style={styles.phoneNumber}>{connection?.phone_number || '+91 98765 43210'}</Text>
+        <Text style={[styles.displayName, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+          {connection?.display_name || 'GetAiPilot Verified Business'}
+        </Text>
+        <Text style={[styles.phoneNumber, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+          {connection?.phone_number || '+91 98765 43210'}
+        </Text>
       </View>
 
-      <View style={styles.footerRow}>
+      <View style={[styles.footerRow, { borderTopColor: isDark ? '#1e293b' : '#e2e8f0' }]}>
         <Text style={styles.limitLabel}>
-          Tier Limit: <Text style={styles.limitValue}>{connection?.messaging_limit || 'TIER_10K'} / 24h</Text>
+          Tier Limit: <Text style={[styles.limitValue, { color: isDark ? '#cbd5e1' : '#334155' }]}>{connection?.messaging_limit || 'TIER_10K'} / 24h</Text>
         </Text>
       </View>
     </View>
@@ -50,12 +57,23 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#0f172a',
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#1e293b',
     marginBottom: 16,
+  },
+  cardDark: {
+    backgroundColor: '#0f172a',
+    borderColor: '#1e293b',
+  },
+  cardLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   headerRow: {
     flexDirection: 'row',
@@ -96,19 +114,16 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   displayName: {
-    color: '#f8fafc',
     fontSize: 17,
     fontWeight: '800',
     marginBottom: 2,
   },
   phoneNumber: {
-    color: '#94a3b8',
     fontSize: 14,
     fontFamily: 'monospace',
   },
   footerRow: {
     borderTopWidth: 1,
-    borderTopColor: '#1e293b',
     paddingTop: 8,
   },
   limitLabel: {
@@ -116,7 +131,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   limitValue: {
-    color: '#cbd5e1',
     fontWeight: '700',
   },
 });

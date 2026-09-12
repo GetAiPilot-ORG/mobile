@@ -490,6 +490,39 @@ export const inboxApi = {
       return [];
     }
   },
+
+  markAsRead: async (conversationId: string): Promise<{ success: boolean }> => {
+    try {
+      await apiClient.patch(`/mobile/v1/conversations/${conversationId}/read`, {});
+      return { success: true };
+    } catch {
+      try {
+        let orgId = (await import('../../../core/store/authStore')).useAuthStore.getState().user?.organizationId;
+        if (!orgId) {
+          const { data: authData } = await supabase.auth.getUser();
+          if (authData?.user?.id) {
+            const { data: member } = await supabase
+              .from('organization_members')
+              .select('organization_id')
+              .eq('user_id', authData.user.id)
+              .maybeSingle();
+            orgId = member?.organization_id;
+          }
+        }
+
+        if (orgId) {
+          await supabase
+            .from('w_conversations')
+            .update({ unread_count: 0 })
+            .eq('id', conversationId)
+            .eq('organization_id', orgId);
+        }
+        return { success: true };
+      } catch {
+        return { success: false };
+      }
+    }
+  },
 };
 
 

@@ -5,6 +5,10 @@ import {
   TelegramSessionStatus,
   TelegramChat,
   TelegramTrackerBot,
+  TelegramTrackerLink,
+  TelegramTrackerChannelReport,
+  TelegramTrackerNewUser,
+  TelegramTrackerDashboardData,
   ForwardRuleDetails,
   CreateForwardRulePayload,
 } from '../types';
@@ -13,6 +17,16 @@ export const telegramApi = {
   getSummary: () => apiClient.get<TelegramSummary>('/mobile/v1/telegram/summary'),
   getHub: () => apiClient.get<TelegramHubStatus>('/mobile/v1/telegram/hub'),
   getTrackerBots: () => apiClient.get<TelegramTrackerBot[]>('/mobile/v1/telegram/tracker/bots'),
+  getTrackerDashboard: () => apiClient.get<TelegramTrackerDashboardData>('/mobile/v1/telegram/tracker/dashboard'),
+  getTrackerLinks: () => apiClient.get<TelegramTrackerLink[]>('/mobile/v1/telegram/tracker/links'),
+  createTrackerLink: (payload: { title: string; botUsername: string; channelName: string; campaignSource?: string }) =>
+    apiClient.post<{ success: boolean; link: TelegramTrackerLink }>('/mobile/v1/telegram/tracker/links', payload),
+  connectTrackerBot: (payload: { botToken: string; botName?: string; botUsername?: string; channelId?: string; channelName?: string }) =>
+    apiClient.post<{ success: boolean; bot: TelegramTrackerBot }>('/mobile/v1/telegram/tracker/bots/connect', payload),
+  mapTrackerChannel: (payload: { botId: string; channelId: string; channelName: string }) =>
+    apiClient.post<{ success: boolean }>('/mobile/v1/telegram/tracker/bots/map-channel', payload),
+  deleteTrackerBot: (botId: string) =>
+    apiClient.delete<{ success: boolean; deletedId: string }>(`/mobile/v1/telegram/tracker/bots/${botId}`),
 
   // Session Management
   getSessionStatus: () => apiClient.get<TelegramSessionStatus>('/mobile/v1/telegram/status'),
@@ -45,6 +59,28 @@ export const telegramApi = {
     buttonUrl?: string;
   }) => apiClient.post('/mobile/v1/telegram/broadcast', payload),
 
+
+  // GAP Sub Manager
+  getSubManagerDashboard: () =>
+    apiClient.get<any>('/mobile/v1/telegram/sub-manager/dashboard'),
+
+  createSubManagerLandingPage: (payload: {
+    communityId?: number | string | null;
+    title: string;
+    slug: string;
+    description?: string;
+    logoUrl?: string;
+    buttonText?: string;
+    theme?: string;
+    metaPixelId?: string;
+    plans?: Array<{ name: string; price: number; durationDays: number; currency?: string }>;
+  }) => apiClient.post<any>('/mobile/v1/telegram/sub-manager/pages', payload),
+
+  toggleSubManagerLandingPage: (payload: { pageId: string; isActive: boolean }) =>
+    apiClient.post<any>('/mobile/v1/telegram/sub-manager/pages/toggle', payload),
+
+  deleteSubManagerLandingPage: (pageId: string) =>
+    apiClient.delete<any>(`/mobile/v1/telegram/sub-manager/pages/${pageId}`),
 
   createSubPlan: (payload: {
     tierName: string;

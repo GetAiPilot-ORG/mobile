@@ -1530,6 +1530,19 @@ export class WhatsAppAdapter {
       .eq('organization_id', orgId);
   }
 
+  public static async markConversationAsRead(conversationId: string, orgId: string) {
+    try {
+      return await this.supabase
+        .from('w_conversations')
+        .update({ unread_count: 0 })
+        .eq('id', conversationId)
+        .eq('organization_id', orgId);
+    } catch (e) {
+      console.warn('[WhatsAppAdapter] Failed to mark conversation as read:', e);
+      return null;
+    }
+  }
+
   public static async getTeamMembers(orgId: string) {
     const { data, error } = await this.supabase
       .from('organization_members')

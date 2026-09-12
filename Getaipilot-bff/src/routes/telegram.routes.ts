@@ -27,6 +27,52 @@ export async function telegramRoutes(fastify: FastifyInstance) {
     return reply.send(bots);
   });
 
+  // GET /mobile/v1/telegram/tracker/dashboard
+  fastify.get('/telegram/tracker/dashboard', { preHandler: [authenticateToken, requirePermission('telegram.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const dashboard = await TelegramAdapter.getTrackerDashboard(getContext(user));
+    return reply.send(dashboard);
+  });
+
+  // GET /mobile/v1/telegram/tracker/links
+  fastify.get('/telegram/tracker/links', { preHandler: [authenticateToken, requirePermission('telegram.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const links = await TelegramAdapter.getTrackerLinks(user.user_id, getContext(user));
+    return reply.send(links);
+  });
+
+  // POST /mobile/v1/telegram/tracker/links
+  fastify.post('/telegram/tracker/links', { preHandler: [authenticateToken, requirePermission('telegram.manage')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const body = request.body as any;
+    const result = await TelegramAdapter.createTrackerLink(body, getContext(user));
+    return reply.send(result);
+  });
+
+  // POST /mobile/v1/telegram/tracker/bots/connect
+  fastify.post('/telegram/tracker/bots/connect', { preHandler: [authenticateToken, requirePermission('telegram.manage')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const body = request.body as any;
+    const result = await TelegramAdapter.connectTrackerBot(body, getContext(user));
+    return reply.send(result);
+  });
+
+  // POST /mobile/v1/telegram/tracker/bots/map-channel
+  fastify.post('/telegram/tracker/bots/map-channel', { preHandler: [authenticateToken, requirePermission('telegram.manage')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const body = request.body as any;
+    const result = await TelegramAdapter.mapTrackerChannel(body, getContext(user));
+    return reply.send(result);
+  });
+
+  // DELETE /mobile/v1/telegram/tracker/bots/:id
+  fastify.delete('/telegram/tracker/bots/:id', { preHandler: [authenticateToken, requirePermission('telegram.manage')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const params = request.params as { id: string };
+    const result = await TelegramAdapter.deleteTrackerBot(params.id, getContext(user));
+    return reply.send(result);
+  });
+
   // GET /mobile/v1/telegram/hub
   fastify.get('/telegram/hub', { preHandler: [authenticateToken, requirePermission('telegram.read')] }, async (request, reply) => {
     const user = request.user as JWTPayload;
@@ -109,6 +155,37 @@ export async function telegramRoutes(fastify: FastifyInstance) {
     return reply.send(result);
   });
 
+
+  // GET /mobile/v1/telegram/sub-manager/dashboard
+  fastify.get('/telegram/sub-manager/dashboard', { preHandler: [authenticateToken, requirePermission('telegram.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const dashboard = await TelegramAdapter.getSubManagerDashboard(user.user_id, getContext(user));
+    return reply.send(dashboard);
+  });
+
+  // POST /mobile/v1/telegram/sub-manager/pages
+  fastify.post('/telegram/sub-manager/pages', { preHandler: [authenticateToken, requirePermission('telegram.manage')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const payload = request.body as any;
+    const result = await TelegramAdapter.createSubManagerLandingPage(payload, getContext(user));
+    return reply.send(result);
+  });
+
+  // POST /mobile/v1/telegram/sub-manager/pages/toggle
+  fastify.post('/telegram/sub-manager/pages/toggle', { preHandler: [authenticateToken, requirePermission('telegram.manage')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const body = request.body as { pageId: string; isActive: boolean };
+    const result = await TelegramAdapter.toggleSubManagerLandingPage(body.pageId, body.isActive, getContext(user));
+    return reply.send(result);
+  });
+
+  // DELETE /mobile/v1/telegram/sub-manager/pages/:id
+  fastify.delete('/telegram/sub-manager/pages/:id', { preHandler: [authenticateToken, requirePermission('telegram.manage')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const params = request.params as { id: string };
+    const result = await TelegramAdapter.deleteSubManagerLandingPage(params.id, getContext(user));
+    return reply.send(result);
+  });
 
   // GET /mobile/v1/telegram/sub-manager/plans
   fastify.get('/telegram/sub-manager/plans', { preHandler: [authenticateToken, requirePermission('telegram.read')] }, async (request, reply) => {
