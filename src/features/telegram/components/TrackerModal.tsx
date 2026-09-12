@@ -35,7 +35,7 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const [activeTab, setActiveTab] = useState<TrackerTab>('connect');
+  const [activeTab, setActiveTab] = useState<TrackerTab>('joins');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 

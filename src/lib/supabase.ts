@@ -48,5 +48,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: isClient,
     persistSession: isClient,
     detectSessionInUrl: false,
+    storageKey: "getaipilot-auth-token",
   },
 });

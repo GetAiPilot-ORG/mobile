@@ -35,6 +35,16 @@ export class HubAdapter {
   );
 
   /**
+   * Generates a Supabase auth magic link / token_hash for seamless SSO
+   */
+  public static async generateMagicLink(email: string) {
+    return await this.adminClient.auth.admin.generateLink({
+      type: 'magiclink',
+      email,
+    });
+  }
+
+  /**
    * Authenticates user against real Supabase Hub Auth
    */
   public static async authenticateUser(email: string, password?: string) {

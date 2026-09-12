@@ -186,6 +186,54 @@ export async function authRoutes(fastify: FastifyInstance) {
     });
   });
 
+  // POST /mobile/v1/auth/sso-url - Generate authentic SSO URL for Web App
+  fastify.post('/sso-url', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const body = (request.body || {}) as { redirectPath?: string; webAppUrl?: string };
+    const redirectPath = body.redirectPath && body.redirectPath.startsWith('/') ? body.redirectPath : '/free-tools/dashboard';
+    const rawWebAppUrl = (body.webAppUrl || 'https://getaipilot.in').replace(/\/+$/, '');
+
+    // 1. Check if we have an active upstream Supabase session
+    const upstreamSession = UpstreamSessionService.getSession(user.session_id, user.user_id);
+    if (upstreamSession?.accessToken && upstreamSession?.refreshToken) {
+      const ssoUrl = `${rawWebAppUrl}/auth/callback?next=${encodeURIComponent(
+        redirectPath
+      )}#access_token=${encodeURIComponent(
+        upstreamSession.accessToken
+      )}&refresh_token=${encodeURIComponent(
+        upstreamSession.refreshToken
+      )}&token_type=bearer`;
+
+      return reply.send({
+        success: true,
+        ssoUrl,
+      });
+    }
+
+    // 2. Generate magiclink token_hash via Supabase Admin
+    try {
+      const { data, error } = await HubAdapter.generateMagicLink(user.email);
+      if (data?.properties?.hashed_token) {
+        const ssoUrl = `${rawWebAppUrl}/auth/callback?next=${encodeURIComponent(
+          redirectPath
+        )}&token_hash=${encodeURIComponent(data.properties.hashed_token)}&type=email`;
+
+        return reply.send({
+          success: true,
+          ssoUrl,
+        });
+      }
+    } catch (e: any) {
+      request.log.warn(e, '[SSO_URL_GENERATE_ERROR]');
+    }
+
+    // 3. Fallback to direct web URL
+    return reply.send({
+      success: true,
+      ssoUrl: `${rawWebAppUrl}${redirectPath}`,
+    });
+  });
+
   // POST /mobile/v1/auth/logout
   fastify.post('/logout', { preHandler: [authenticateToken] }, async (request, reply) => {
     const user = request.user as JWTPayload | undefined;
