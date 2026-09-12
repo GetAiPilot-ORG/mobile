@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { WhatsAppUsage } from '../types';
 
 interface UsageCardProps {
@@ -8,19 +8,22 @@ interface UsageCardProps {
 }
 
 export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading }) => {
-  const balance = usage ? `₹${usage.credits_balance.toFixed(2)}` : '₹2,500.00';
-  const sent = usage?.messages_sent ?? 3864;
-  const delivered = usage?.messages_delivered ?? 3792;
-  const failed = usage?.messages_failed ?? 72;
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
-  const deliveryRate = sent > 0 ? Math.round((delivered / sent) * 100) : 100;
+  const balance = usage ? `₹${usage.credits_balance.toFixed(2)}` : isLoading ? '₹...' : '₹0.00';
+  const sent = usage?.messages_sent ?? 0;
+  const delivered = usage?.messages_delivered ?? 0;
+  const failed = usage?.messages_failed ?? 0;
+
+  const deliveryRate = sent > 0 ? Math.round((delivered / sent) * 100) : (isLoading ? 0 : 100);
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
       <View style={styles.topRow}>
         <View>
-          <Text style={styles.label}>WhatsApp Cloud Wallet</Text>
-          <Text style={styles.balance}>{balance}</Text>
+          <Text style={[styles.label, { color: isDark ? '#94a3b8' : '#64748b' }]}>WhatsApp Cloud Wallet</Text>
+          <Text style={[styles.balance, { color: isDark ? '#ffffff' : '#0f172a' }]}>{balance}</Text>
         </View>
 
         <View style={styles.safeBadge}>
@@ -28,12 +31,12 @@ export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading }) => {
         </View>
       </View>
 
-      <View style={styles.divider} />
+      <View style={[styles.divider, { backgroundColor: isDark ? '#1e293b' : '#e2e8f0' }]} />
 
       <View style={styles.statsGrid}>
         <View style={styles.statBox}>
           <Text style={styles.statLabel}>Sent</Text>
-          <Text style={styles.statNumber}>{sent.toLocaleString()}</Text>
+          <Text style={[styles.statNumber, { color: isDark ? '#f8fafc' : '#0f172a' }]}>{sent.toLocaleString()}</Text>
         </View>
 
         <View style={styles.statBox}>
@@ -45,14 +48,14 @@ export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading }) => {
 
         <View style={styles.statBox}>
           <Text style={styles.statLabel}>Failed</Text>
-          <Text style={[styles.statNumber, { color: failed > 0 ? '#ef4444' : '#64748b' }]}>
+          <Text style={[styles.statNumber, { color: failed > 0 ? '#ef4444' : isDark ? '#64748b' : '#94a3b8' }]}>
             {failed.toLocaleString()}
           </Text>
         </View>
 
         <View style={styles.statBox}>
           <Text style={styles.statLabel}>Delivery %</Text>
-          <Text style={[styles.statNumber, { color: '#38bdf8' }]}>{deliveryRate}%</Text>
+          <Text style={[styles.statNumber, { color: '#0284c7' }]}>{deliveryRate}%</Text>
         </View>
       </View>
     </View>
@@ -61,12 +64,23 @@ export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading }) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#0b1329',
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#1e293b',
     marginBottom: 16,
+  },
+  cardDark: {
+    backgroundColor: '#0b1329',
+    borderColor: '#1e293b',
+  },
+  cardLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   topRow: {
     flexDirection: 'row',
@@ -74,14 +88,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   label: {
-    color: '#94a3b8',
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
     marginBottom: 4,
   },
   balance: {
-    color: '#ffffff',
     fontSize: 26,
     fontWeight: '900',
   },
@@ -100,7 +112,6 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#1e293b',
     marginVertical: 14,
   },
   statsGrid: {
@@ -118,7 +129,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   statNumber: {
-    color: '#f8fafc',
     fontSize: 14,
     fontWeight: '800',
   },

@@ -5,6 +5,21 @@ import { authenticateToken, requirePermission } from '../middleware/auth.middlew
 import { JWTPayload } from '../types/index.js';
 
 export async function socialRoutes(fastify: FastifyInstance) {
+  // Log BFF Auth diagnostics after authentication middleware
+  fastify.addHook('preHandler', async (request) => {
+    const user = request.user as any;
+    console.log('[SOCIAL BFF AUTH]', {
+      route: request.url,
+      bffAuthenticated: Boolean(request.user),
+      userIdPresent: Boolean(user?.id || user?.userId || user?.user_id),
+      orgIdPresent: Boolean(
+        user?.organizationId ||
+        user?.orgId ||
+        user?.organization_id
+      ),
+    });
+  });
+
   // 1. Overview & Summary
   fastify.get('/social/overview', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
     const user = request.user as JWTPayload;

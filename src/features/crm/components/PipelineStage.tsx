@@ -13,19 +13,23 @@ export const PipelineStage: React.FC<PipelineStageProps> = ({
   isSelected,
   onPress,
 }) => {
+  const name = stage.label || stage.name || stage.stage || 'Stage';
+  const count = stage.count ?? stage.lead_count ?? 0;
+  const val = Number(stage.totalValue ?? stage.total_value ?? 0);
+
   return (
     <Pressable
       style={[styles.container, isSelected && styles.selected]}
       onPress={onPress}
     >
       <View style={styles.topRow}>
-        <Text style={[styles.name, isSelected && styles.selectedText]}>{stage.name}</Text>
+        <Text style={[styles.name, isSelected && styles.selectedText]}>{name}</Text>
         <View style={styles.countBadge}>
-          <Text style={styles.countText}>{stage.lead_count}</Text>
+          <Text style={styles.countText}>{count}</Text>
         </View>
       </View>
       <Text style={styles.totalValue}>
-        ₹{(stage.total_value >= 100000 ? `${(stage.total_value / 100000).toFixed(1)}L` : stage.total_value.toLocaleString())}
+        ₹{val >= 100000 ? `${(val / 100000).toFixed(1)}L` : val.toLocaleString()}
       </Text>
     </Pressable>
   );
@@ -60,19 +64,19 @@ const styles = StyleSheet.create({
     color: '#818cf8',
   },
   countBadge: {
-    backgroundColor: '#1e293b',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 6,
     paddingHorizontal: 6,
     paddingVertical: 1,
-    borderRadius: 8,
   },
   countText: {
-    color: '#f8fafc',
+    color: '#ffffff',
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   totalValue: {
-    color: '#34d399',
-    fontSize: 13,
+    color: '#ffffff',
+    fontSize: 15,
     fontWeight: '700',
   },
 });

@@ -12,10 +12,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../core/store/authStore';
 import { dashboardApi } from '../api/dashboardApi';
-import { ActivityFeedItem } from '../components/ActivityFeedItem';
-import { MetricGlassCard } from '../components/MetricGlassCard';
-import { ProductActionCard } from '../components/ProductActionCard';
-import { UsageMeterCard } from '../components/UsageMeterCard';
+import {
+  ActivityFeedItem,
+  MetricGlassCard,
+  ProductActionCard,
+  UsageMeterCard,
+} from '../components';
 
 export const DashboardScreen: React.FC = () => {
   const user = useAuthStore((s) => s.user);

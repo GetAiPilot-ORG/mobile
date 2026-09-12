@@ -1,6 +1,21 @@
+import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { env } from '../config/env.js';
 import { UpstreamSessionService } from '../services/upstream-session.service.js';
+
+function decryptToken(stored: string | null | undefined, key: string = env.TOKEN_ENCRYPTION_KEY || ''): string {
+  if (!stored) return '';
+  if (!key || key.length !== 32 || !stored.includes(':')) return stored;
+  try {
+    const [ivHex, encHex] = stored.split(':');
+    const iv = Buffer.from(ivHex, 'hex');
+    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key), iv);
+    return Buffer.concat([decipher.update(Buffer.from(encHex, 'hex')), decipher.final()]).toString('utf8');
+  } catch {
+    return '';
+  }
+}
+
 import {
   CreateBroadcastPayload,
   NormalizedConversation,
@@ -536,7 +551,7 @@ export class WhatsAppAdapter {
 
     try {
       let query = this.supabase
-        .from('w_templates')
+        .from('w_template_submissions')
         .select('*')
         .eq('organization_id', orgId);
 
@@ -546,9 +561,7 @@ export class WhatsAppAdapter {
 
       const { data, error } = await query.order('name', { ascending: true });
 
-      if (error) throw error;
-
-      if (data && data.length > 0) {
+      if (!error && data && data.length > 0) {
         return data.map((t) => ({
           id: t.id,
           name: t.name,
@@ -556,7 +569,35 @@ export class WhatsAppAdapter {
           category: t.category || 'MARKETING',
           status: t.status || 'APPROVED',
           components: Array.isArray(t.components) ? t.components : [],
-          quality_score: t.quality_score || 'HIGH',
+          quality_score: typeof t.quality_score === 'string' ? t.quality_score : 'HIGH',
+          rejection_reason: t.rejection_reason || null,
+          approved_at: t.approved_at || null,
+          submitted_at: t.submitted_at || null,
+          created_at: t.created_at || new Date().toISOString(),
+          updated_at: t.updated_at || t.created_at || new Date().toISOString(),
+        }));
+      }
+
+      let fallbackQuery = this.supabase
+        .from('w_templates')
+        .select('*')
+        .eq('organization_id', orgId);
+
+      if (statusFilter && statusFilter !== 'ALL') {
+        fallbackQuery = fallbackQuery.eq('status', statusFilter.toUpperCase());
+      }
+
+      const { data: fallbackData } = await fallbackQuery.order('name', { ascending: true });
+
+      if (fallbackData && fallbackData.length > 0) {
+        return fallbackData.map((t) => ({
+          id: t.id,
+          name: t.name,
+          language: t.language || 'en_US',
+          category: t.category || 'MARKETING',
+          status: t.status || 'APPROVED',
+          components: Array.isArray(t.components) ? t.components : [],
+          quality_score: typeof t.quality_score === 'string' ? t.quality_score : 'HIGH',
           rejection_reason: t.rejection_reason || null,
           updated_at: t.updated_at || t.created_at || new Date().toISOString(),
         }));
@@ -912,21 +953,27 @@ export class WhatsAppAdapter {
   }> {
     if (context) {
       try {
-        const upstream = await this.executeUpstreamRequest<{
-          balance_paise?: number;
-          currency?: string;
-        }>('/api/billing/wallet', {
+        const upstream = await this.executeUpstreamRequest<any>('/api/billing/wallet', {
           method: 'GET',
           context,
         });
 
         if (upstream.handled && upstream.data) {
-          const paise = Number(upstream.data.balance_paise || 0);
-          return {
-            balance_paise: paise,
-            balance_inr: paise / 100,
-            currency: upstream.data.currency || 'INR',
-          };
+          const raw = upstream.data;
+          const paise = Number(
+            raw.balance_paise ??
+            (raw.balance_inr !== undefined ? Math.round(Number(raw.balance_inr) * 100) : undefined) ??
+            (raw.credits_balance !== undefined ? Math.round(Number(raw.credits_balance) * 100) : undefined) ??
+            (raw.balance !== undefined ? Math.round(Number(raw.balance) * (raw.balance < 1000 ? 100 : 1)) : undefined) ??
+            0
+          );
+          if (paise > 0 || raw.balance_paise !== undefined || raw.balance_inr !== undefined) {
+            return {
+              balance_paise: paise,
+              balance_inr: paise / 100,
+              currency: raw.currency || 'INR',
+            };
+          }
         }
       } catch (err) {
         if ((err as any).statusCode) throw err;
@@ -1033,6 +1080,10 @@ export class WhatsAppAdapter {
 
   public static async getConversations(orgId: string): Promise<NormalizedConversation[]> {
     try {
+      if (!orgId) {
+        return [];
+      }
+
       const { data: convs, error } = await this.supabase
         .from('w_conversations')
         .select(`
@@ -1043,12 +1094,15 @@ export class WhatsAppAdapter {
           last_message_preview,
           unread_count,
           assigned_agent_name,
+          assigned_agent_id,
+          assigned_to,
+          bot_enabled,
           status,
           created_at
         `)
         .eq('organization_id', orgId)
         .order('last_message_at', { ascending: false, nullsFirst: false })
-        .limit(20);
+        .limit(50);
 
       if (error || !convs || convs.length === 0) {
         return [];
@@ -1087,7 +1141,12 @@ export class WhatsAppAdapter {
             direction: 'inbound',
           },
           unread_count: c.unread_count || 0,
-          assigned_to: c.assigned_agent_name || undefined,
+          assigned_to: c.assigned_agent_name || c.assigned_to || undefined,
+          assigned_agent_name: c.assigned_agent_name || undefined,
+          assigned_agent_id: c.assigned_agent_id || undefined,
+          bot_enabled: c.bot_enabled !== false,
+          bot_paused: c.bot_enabled === false,
+          latest_customer_message_at: c.last_message_at || undefined,
           status: c.status === 'resolved' ? 'resolved' : 'active',
         };
       });
@@ -1103,14 +1162,32 @@ export class WhatsAppAdapter {
         .select('*')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true })
-        .limit(50);
+        .limit(100);
 
       if (error || !msgs || msgs.length === 0) {
         return [];
       }
 
+      // Fetch team members for sender names
+      const senderUserIds = msgs.map((m) => m.sender_user_id).filter(Boolean);
+      let userMap = new Map<string, string>();
+      if (senderUserIds.length > 0) {
+        try {
+          const { data: members } = await this.supabase
+            .from('organization_members')
+            .select('user_id, name, email')
+            .in('user_id', senderUserIds);
+          (members || []).forEach((mem) => {
+            userMap.set(mem.user_id, mem.name || mem.email?.split('@')[0] || 'Agent');
+          });
+        } catch (_) {}
+      }
+
       return msgs.map((m) => {
-        const textContent = m.text_body || (typeof m.content === 'object' ? m.content?.text : m.content) || '';
+        const textContent =
+          m.text_body ||
+          (typeof m.content === 'object' ? m.content?.text || m.content?.body : m.content) ||
+          '';
         const mediaList: Array<{ url: string; type: 'image' | 'audio' | 'video' | 'document' }> = [];
 
         if (m.media_url) {
@@ -1120,24 +1197,47 @@ export class WhatsAppAdapter {
           });
         }
 
-        const senderType: 'contact' | 'agent' | 'bot' | 'system' =
-          m.direction === 'inbound'
-            ? 'contact'
-            : m.is_bot_reply || m.sender_type === 'ai_agent'
-            ? 'bot'
-            : 'agent';
+        const isNote = m.is_internal_note || m.type === 'note';
+        const isBot = m.is_bot_reply || m.sender_type === 'bot' || m.sender_type === 'ai_agent';
+
+        const senderType: 'contact' | 'agent' | 'bot' | 'system' = isNote
+          ? 'agent'
+          : m.direction === 'inbound'
+          ? 'contact'
+          : isBot
+          ? 'bot'
+          : 'agent';
+
+        let templateData: any = undefined;
+        if (m.type === 'template' || (typeof m.content === 'object' && m.content?.template)) {
+          templateData = typeof m.content === 'object' && m.content?.template ? m.content.template : m.content;
+        }
+
+        const agentName = (m.sender_user_id ? userMap.get(m.sender_user_id) : null) || 'Agent';
 
         return {
           id: m.id,
           conversation_id: conversationId,
           channel: 'whatsapp',
           direction: m.direction === 'inbound' ? 'inbound' : 'outbound',
-          content: textContent || 'Attached Media',
+          content: textContent || (isNote ? 'Internal Note' : 'Message'),
           media: mediaList,
           sender: {
-            name: senderType === 'contact' ? 'Contact' : senderType === 'bot' ? 'GAP AI Pilot' : 'Agent',
+            name: isNote
+              ? agentName
+              : senderType === 'contact'
+              ? 'Contact'
+              : senderType === 'bot'
+              ? 'AI Bot'
+              : agentName,
             type: senderType,
           },
+          sender_user_id: m.sender_user_id || undefined,
+          sender_type: m.sender_type || undefined,
+          is_internal_note: isNote,
+          is_bot_reply: isBot,
+          status: m.status || 'delivered',
+          template: templateData,
           created_at: m.created_at || new Date().toISOString(),
         };
       });
@@ -1149,10 +1249,229 @@ export class WhatsAppAdapter {
   public static async sendMessage(
     conversationId: string,
     content: string,
-    attachments?: Array<{ url: string; type: string }>
+    attachments?: Array<{ url: string; type: string }>,
+    options?: {
+      is_internal_note?: boolean;
+      template?: any;
+      sender_name?: string;
+      sender_user_id?: string;
+      organization_id?: string;
+      context?: UserSessionContext;
+    }
   ): Promise<NormalizedMessage> {
-    const newMessage: NormalizedMessage = {
-      id: `wa_msg_${Date.now()}`,
+    const isNote = !!options?.is_internal_note;
+    const isTemplate = !!options?.template;
+    const senderName = options?.sender_name || (isNote ? 'Agent Note' : 'Agent Support');
+
+    let orgId = options?.organization_id || options?.context?.organizationId;
+    let contactId: string | null = null;
+    let waAccountId: string | null = null;
+    let contactWaId: string | null = null;
+    let contactPhone: string | null = null;
+    let phoneNumberId: string | null = null;
+    let encryptedToken: string | null = null;
+
+    try {
+      const { data: conv } = await this.supabase
+        .from('w_conversations')
+        .select(`
+          id,
+          organization_id,
+          wa_account_id,
+          contact_id,
+          contact:w_contacts(id, wa_id, phone, name),
+          account:w_wa_accounts(id, phone_number_id, display_phone_number, access_token_encrypted)
+        `)
+        .eq('id', conversationId)
+        .maybeSingle();
+
+      if (conv) {
+        if (!orgId) orgId = conv.organization_id;
+        contactId = conv.contact_id;
+        waAccountId = conv.wa_account_id;
+        if (conv.contact) {
+          contactWaId = (conv.contact as any).wa_id || null;
+          contactPhone = (conv.contact as any).phone || null;
+          if (!contactId) contactId = (conv.contact as any).id;
+        }
+        if (conv.account) {
+          phoneNumberId = (conv.account as any).phone_number_id || null;
+          encryptedToken = (conv.account as any).access_token_encrypted || null;
+        }
+      }
+    } catch (_) {}
+
+    // Fallback if account details weren't joined
+    if ((!phoneNumberId || !encryptedToken) && orgId) {
+      try {
+        let accountQuery = this.supabase
+          .from('w_wa_accounts')
+          .select('id, phone_number_id, access_token_encrypted')
+          .eq('organization_id', orgId);
+        if (waAccountId) {
+          accountQuery = accountQuery.eq('id', waAccountId);
+        }
+        const { data: acc } = await accountQuery.order('created_at', { ascending: false }).limit(1).maybeSingle();
+        if (acc) {
+          phoneNumberId = acc.phone_number_id || null;
+          encryptedToken = acc.access_token_encrypted || null;
+        }
+      } catch (_) {}
+    }
+
+    // Fallback if contact details weren't joined
+    if (!contactWaId && !contactPhone && contactId) {
+      try {
+        const { data: cnt } = await this.supabase
+          .from('w_contacts')
+          .select('id, wa_id, phone')
+          .eq('id', contactId)
+          .maybeSingle();
+        if (cnt) {
+          contactWaId = cnt.wa_id || null;
+          contactPhone = cnt.phone || null;
+        }
+      } catch (_) {}
+    }
+
+    const msgType = isTemplate
+      ? 'template'
+      : attachments && attachments.length > 0
+      ? (attachments[0].type as string)
+      : 'text';
+
+    let wa_message_id: string | null = null;
+    let rawSendMeta: any = null;
+
+    // 1. If not an internal note, dispatch message to Meta Cloud API
+    if (!isNote) {
+      const rawPhone = contactWaId || contactPhone || '';
+      const recipientPhone = rawPhone.replace(/\D+/g, '');
+      const metaToken = decryptToken(encryptedToken, env.TOKEN_ENCRYPTION_KEY);
+
+      if (phoneNumberId && metaToken && recipientPhone) {
+        let metaPayload: any;
+        if (isTemplate && options?.template) {
+          metaPayload = {
+            messaging_product: 'whatsapp',
+            recipient_type: 'individual',
+            to: recipientPhone,
+            type: 'template',
+            template: options.template,
+          };
+        } else if (attachments && attachments.length > 0) {
+          const att = attachments[0];
+          const mediaType =
+            att.type === 'audio'
+              ? 'audio'
+              : att.type === 'video'
+              ? 'video'
+              : att.type === 'document'
+              ? 'document'
+              : 'image';
+          metaPayload = {
+            messaging_product: 'whatsapp',
+            recipient_type: 'individual',
+            to: recipientPhone,
+            type: mediaType,
+            [mediaType]: {
+              link: att.url,
+              ...(content ? { caption: content } : {}),
+            },
+          };
+        } else {
+          metaPayload = {
+            messaging_product: 'whatsapp',
+            recipient_type: 'individual',
+            to: recipientPhone,
+            type: 'text',
+            text: { body: content },
+          };
+        }
+
+        const metaUrl = `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`;
+        console.log(`[Meta Cloud API Send] Dispatching to ${recipientPhone} from phone_number_id ${phoneNumberId}`);
+
+        const metaRes = await fetch(metaUrl, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${metaToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(metaPayload),
+        });
+
+        const metaJson: any = await metaRes.json().catch(() => ({}));
+        if (!metaRes.ok) {
+          console.error('[Meta Cloud API Send Failed]', metaRes.status, metaJson);
+          const metaErrMsg =
+            metaJson?.error?.message ||
+            metaJson?.error?.error_user_msg ||
+            `Meta send failed (HTTP ${metaRes.status})`;
+          throw new Error(metaErrMsg);
+        }
+
+        wa_message_id = metaJson?.messages?.[0]?.id || null;
+        rawSendMeta = metaJson;
+        console.log(`[Meta Cloud API Send Success] wa_message_id: ${wa_message_id}`);
+      } else {
+        console.warn('[WhatsAppAdapter] Missing Meta credentials or recipient phone for Cloud API send', {
+          hasPhoneNumberId: !!phoneNumberId,
+          hasMetaToken: !!metaToken,
+          recipientPhone,
+        });
+      }
+    }
+
+    const insertPayload: any = {
+      conversation_id: conversationId,
+      organization_id: orgId || null,
+      contact_id: contactId || null,
+      wa_message_id: wa_message_id || null,
+      direction: 'outbound',
+      type: isNote ? 'note' : msgType,
+      text_body: content,
+      content: isTemplate
+        ? options?.template
+        : { text: content, ...(rawSendMeta ? { raw_send: rawSendMeta } : {}) },
+      is_internal_note: isNote,
+      status: 'sent',
+      sender_type: isNote ? null : 'human_agent',
+      sender_user_id: options?.sender_user_id || null,
+      automation_source: 'manual',
+    };
+
+    let insertedId: string | undefined;
+    let createdAt = new Date().toISOString();
+
+    try {
+      const { data: insertedMsg, error } = await this.supabase
+        .from('w_messages')
+        .insert(insertPayload)
+        .select('id, created_at')
+        .single();
+
+      if (!error && insertedMsg) {
+        insertedId = insertedMsg.id;
+        if (insertedMsg.created_at) createdAt = insertedMsg.created_at;
+      }
+
+      // Update conversation preview
+      const previewText = isNote ? `🔒 Note: ${content}` : content;
+      await this.supabase
+        .from('w_conversations')
+        .update({
+          last_message_preview: previewText,
+          last_message_at: createdAt,
+          last_human_message_id: insertedId || null,
+        })
+        .eq('id', conversationId);
+    } catch (e: any) {
+      console.error('[WhatsAppAdapter] Error inserting message to DB:', e?.message || e);
+    }
+
+    return {
+      id: insertedId || `wa_msg_${Date.now()}`,
       conversation_id: conversationId,
       channel: 'whatsapp',
       direction: 'outbound',
@@ -1162,25 +1481,113 @@ export class WhatsAppAdapter {
         type: a.type as any,
       })),
       sender: {
-        name: 'Agent Support',
+        name: senderName || 'You',
         type: 'agent',
       },
-      created_at: new Date().toISOString(),
+      sender_user_id: options?.sender_user_id || undefined,
+      sender_type: isNote ? undefined : 'human_agent',
+      is_internal_note: isNote,
+      is_bot_reply: false,
+      status: 'sent',
+      template: options?.template,
+      created_at: createdAt,
+    };
+  }
+
+  public static async assignAgent(
+    conversationId: string,
+    orgId: string,
+    agentId: string | null,
+    agentName?: string | null
+  ) {
+    const payload: any = {
+      assigned_agent_id: agentId,
+      assigned_to: agentId,
+      assigned_agent_name: agentName || null,
     };
 
-    try {
-      await this.supabase.from('w_messages').insert({
-        id: newMessage.id,
-        conversation_id: conversationId,
-        direction: 'outbound',
-        type: 'text',
-        text_body: content,
-        content: { text: content },
-        status: 'sent',
-        sender_type: 'agent',
-      });
-    } catch (_) {}
+    return await this.supabase
+      .from('w_conversations')
+      .update(payload)
+      .eq('id', conversationId)
+      .eq('organization_id', orgId);
+  }
 
-    return newMessage;
+  public static async toggleBot(
+    conversationId: string,
+    orgId: string,
+    botEnabled: boolean,
+    botId?: string | null
+  ) {
+    return await this.supabase
+      .from('w_conversations')
+      .update({
+        bot_enabled: botEnabled,
+        assigned_bot_id: botId || null,
+        handoff_status: botEnabled ? 'bot_active' : 'human_takeover',
+      })
+      .eq('id', conversationId)
+      .eq('organization_id', orgId);
+  }
+
+  public static async markConversationAsRead(conversationId: string, orgId: string) {
+    try {
+      return await this.supabase
+        .from('w_conversations')
+        .update({ unread_count: 0 })
+        .eq('id', conversationId)
+        .eq('organization_id', orgId);
+    } catch (e) {
+      console.warn('[WhatsAppAdapter] Failed to mark conversation as read:', e);
+      return null;
+    }
+  }
+
+  public static async getTeamMembers(orgId: string) {
+    const { data, error } = await this.supabase
+      .from('organization_members')
+      .select('id, organization_id, user_id, role, name, email, is_active, is_online')
+      .eq('organization_id', orgId)
+      .eq('is_active', true);
+
+    if (error || !data) return [];
+    return data;
+  }
+
+  public static async getOrCreateConversation(orgId: string, contactId: string) {
+    // Check if conversation already exists
+    const { data: existing } = await this.supabase
+      .from('w_conversations')
+      .select('id')
+      .eq('organization_id', orgId)
+      .eq('contact_id', contactId)
+      .maybeSingle();
+
+    if (existing) return existing;
+
+    // Fetch contact details for wa_account_id
+    const { data: contact } = await this.supabase
+      .from('w_contacts')
+      .select('wa_account_id')
+      .eq('id', contactId)
+      .maybeSingle();
+
+    const { data: created, error } = await this.supabase
+      .from('w_conversations')
+      .insert({
+        organization_id: orgId,
+        contact_id: contactId,
+        wa_account_id: contact?.wa_account_id || null,
+        last_message_at: new Date().toISOString(),
+        last_message_preview: 'Conversation started',
+        unread_count: 0,
+        status: 'open',
+        bot_enabled: true,
+      })
+      .select('id')
+      .single();
+
+    if (error) throw error;
+    return created;
   }
 }

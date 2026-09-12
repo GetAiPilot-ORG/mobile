@@ -4,12 +4,14 @@
 node_modules/
 
 # Expo
+.eas
 .expo/
 dist/
 web-build/
 expo-env.d.ts
 
 # Native
+.claude
 .kotlin/
 *.orig.*
 *.jks

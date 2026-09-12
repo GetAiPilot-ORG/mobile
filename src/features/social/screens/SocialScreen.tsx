@@ -17,12 +17,26 @@ import * as Haptics from 'expo-haptics';
 
 import { AppScreen } from '../../../components/AppScreen';
 import { AppTopBar } from '../../../components/AppTopBar';
+import {
+  ProductFloatingBottomBar,
+  ProductTabItem,
+} from '../../../components/ProductFloatingBottomBar';
 import { apiClient } from '../../../core/api/client';
-import { CreatePostModal } from '../components/CreatePostModal';
-import { PostDetailsModal } from '../components/PostDetailsModal';
-import { AccountsModal } from '../components/AccountsModal';
+import {
+  CreatePostModal,
+  PostDetailsModal,
+  AccountsModal,
+} from '../components';
 
-type TabType = 'overview' | 'posts' | 'calendar' | 'trends';
+type TabType = 'overview' | 'posts' | 'calendar' | 'trends' | 'accounts';
+
+const SOCIAL_TABS: ProductTabItem[] = [
+  { key: 'overview', label: 'Overview', activeIcon: 'grid', inactiveIcon: 'grid-outline' },
+  { key: 'posts', label: 'Posts', activeIcon: 'paper-plane', inactiveIcon: 'paper-plane-outline' },
+  { key: 'calendar', label: 'Calendar', activeIcon: 'calendar', inactiveIcon: 'calendar-outline' },
+  { key: 'trends', label: 'Trends', activeIcon: 'flame', inactiveIcon: 'flame-outline' },
+  { key: 'accounts', label: 'Channels', activeIcon: 'share-social', inactiveIcon: 'share-social-outline' },
+];
 
 export const SocialScreen: React.FC = () => {
   const colorScheme = useColorScheme();
@@ -146,43 +160,103 @@ export const SocialScreen: React.FC = () => {
   const queueList = Array.isArray(queueData) ? queueData : [];
   const trendsList = Array.isArray(trendsData) ? trendsData : [];
 
+  // Extract all genuinely connected accounts
+  const connectedList = React.useMemo(() => {
+    if (Array.isArray(accountsData)) {
+      return accountsData.map((a: any) => ({
+        ...a,
+        provider: a.provider || a.platform || 'channel',
+      }));
+    }
+    if (accountsData && typeof accountsData === 'object') {
+      const list: any[] = [];
+      const providers = ['facebook', 'instagram', 'threads', 'youtube', 'linkedin', 'x', 'pinterest', 'reddit', 'bluesky', 'mastodon', 'googleBusiness'];
+      for (const p of providers) {
+        const arrKey = `${p}Accounts`;
+        if (Array.isArray(accountsData[arrKey]) && accountsData[arrKey].length > 0) {
+          list.push(...accountsData[arrKey].map((a: any) => ({ ...a, provider: a.provider || a.platform || p })));
+        } else if (accountsData[p]?.connected) {
+          list.push({ ...accountsData[p], provider: accountsData[p].provider || accountsData[p].platform || p });
+        }
+      }
+      return list;
+    }
+    return [];
+  }, [accountsData]);
+
+  const sentPostsCount = postsList.filter((p: any) => {
+    const s = (p.status || '').toLowerCase();
+    return s === 'sent' || s === 'published' || s === 'completed' || s === 'success' || s === 'delivered';
+  }).length;
+
+  const scheduledPostsCount = queueList.length > 0
+    ? queueList.length
+    : postsList.filter((p: any) => {
+        const s = (p.status || '').toLowerCase();
+        return s === 'scheduled' || s === 'queued' || s === 'pending';
+      }).length;
+
+  const totalSentCount = (ops.sent && ops.sent > 0) ? Math.max(ops.sent, sentPostsCount) : sentPostsCount;
+  const totalScheduledCount = (ops.scheduled && ops.scheduled > 0) ? Math.max(ops.scheduled, scheduledPostsCount) : scheduledPostsCount;
+  const totalFailedCount = (ops.failed && ops.failed > 0) ? ops.failed : postsList.filter((p: any) => (p.status || '').toLowerCase() === 'failed').length;
+
+  const totalCompleted = totalSentCount + totalFailedCount;
+  const computedSuccessRate = totalCompleted > 0
+    ? `${Math.round((totalSentCount / totalCompleted) * 100)}%`
+    : (totalSentCount > 0 ? '100%' : '0%');
+  const recentActivityList = (ops.recentActivity && ops.recentActivity.length > 0 ? ops.recentActivity : postsList).slice(0, 5);
+
+  const getPlatformIconName = (provider?: string) => {
+    switch (provider?.toLowerCase()) {
+      case 'facebook':
+        return 'logo-facebook';
+      case 'instagram':
+        return 'logo-instagram';
+      case 'threads':
+        return 'at-circle';
+      case 'youtube':
+        return 'logo-youtube';
+      case 'linkedin':
+        return 'logo-linkedin';
+      case 'x':
+      case 'twitter':
+        return 'logo-twitter';
+      case 'reddit':
+        return 'logo-reddit';
+      case 'pinterest':
+        return 'logo-pinterest';
+      default:
+        return 'globe-outline';
+    }
+  };
+
+  const getPlatformColor = (provider?: string) => {
+    switch (provider?.toLowerCase()) {
+      case 'facebook':
+        return '#1877f2';
+      case 'instagram':
+        return '#e1306c';
+      case 'threads':
+        return '#000000';
+      case 'youtube':
+        return '#ff0000';
+      case 'linkedin':
+        return '#0a66c2';
+      case 'x':
+      case 'twitter':
+        return '#000000';
+      case 'reddit':
+        return '#ff4500';
+      case 'pinterest':
+        return '#e60023';
+      default:
+        return '#ec4899';
+    }
+  };
+
   return (
     <AppScreen>
       <AppTopBar title="SocialPilot" subtitle="Cross-Platform Social Publishing" />
-
-      {/* Tab Switcher */}
-      <View style={styles.tabBar}>
-        {(['overview', 'posts', 'calendar', 'trends'] as TabType[]).map((tab) => {
-          const isActive = activeTab === tab;
-          return (
-            <Pressable
-              key={tab}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setActiveTab(tab);
-              }}
-              style={[
-                styles.tabItem,
-                isActive && [
-                  styles.tabItemActive,
-                  { backgroundColor: isDark ? '#1e293b' : '#ffffff' },
-                ],
-              ]}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  isActive
-                    ? { color: '#ec4899', fontWeight: '800' }
-                    : { color: isDark ? '#64748b' : '#94a3b8' },
-                ]}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
 
       {/* Main Content Area */}
       <ScrollView
@@ -206,7 +280,9 @@ export const SocialScreen: React.FC = () => {
                   Broadcast Engine Ready
                 </Text>
                 <Text style={[styles.actionSub, { color: isDark ? '#cbd5e1' : '#64748b' }]}>
-                  Publish or schedule posts across Instagram, Facebook, YouTube, LinkedIn and X.
+                  {connectedList.length > 0
+                    ? `${connectedList.length} connected channel${connectedList.length === 1 ? '' : 's'} active across your workspace.`
+                    : 'Publish or schedule posts across Instagram, Facebook, YouTube, LinkedIn and Threads.'}
                 </Text>
               </View>
               <Pressable
@@ -226,7 +302,7 @@ export const SocialScreen: React.FC = () => {
               <View style={[styles.metricCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
                 <Ionicons name="send" size={18} color="#22c55e" />
                 <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                  {ops.sent ?? 0}
+                  {totalSentCount}
                 </Text>
                 <Text style={styles.metricLabel}>Published</Text>
               </View>
@@ -234,7 +310,7 @@ export const SocialScreen: React.FC = () => {
               <View style={[styles.metricCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
                 <Ionicons name="time" size={18} color="#3b82f6" />
                 <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                  {ops.scheduled ?? queueList.length}
+                  {totalScheduledCount}
                 </Text>
                 <Text style={styles.metricLabel}>Scheduled</Text>
               </View>
@@ -242,19 +318,19 @@ export const SocialScreen: React.FC = () => {
               <View style={[styles.metricCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
                 <Ionicons name="checkmark-done-circle" size={18} color="#ec4899" />
                 <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                  {ops.successRate != null ? `${ops.successRate}%` : '100%'}
+                  {ops.successRate != null ? `${ops.successRate}%` : computedSuccessRate}
                 </Text>
                 <Text style={styles.metricLabel}>Success Rate</Text>
               </View>
             </View>
 
-            {/* Channels Summary Card */}
+            {/* Connected Channels Summary Card */}
             <View style={[styles.sectionCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
               <View style={styles.sectionHeader}>
                 <View style={styles.sectionHeaderLeft}>
                   <Ionicons name="share-social" size={18} color="#ec4899" />
                   <Text style={[styles.sectionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                    Connected Channels
+                    Connected Channels ({connectedList.length})
                   </Text>
                 </View>
                 <Pressable
@@ -265,19 +341,57 @@ export const SocialScreen: React.FC = () => {
                 </Pressable>
               </View>
 
-              <View style={styles.channelsPillsRow}>
-                {['Instagram', 'Facebook', 'YouTube', 'LinkedIn', 'X'].map((plat, idx) => (
-                  <View
-                    key={idx}
-                    style={[styles.platformPill, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}
-                  >
-                    <View style={styles.liveDot} />
-                    <Text style={[styles.platformText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
-                      {plat}
-                    </Text>
-                  </View>
-                ))}
-              </View>
+              {connectedList.length === 0 ? (
+                <View style={styles.emptyInlineWrap}>
+                  <Ionicons name="link-outline" size={20} color={isDark ? '#475569' : '#94a3b8'} />
+                  <Text style={[styles.emptyInlineText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                    No active channels connected. Tap Manage to link Instagram, Facebook, Threads or YouTube.
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.channelsPillsRow}>
+                  {connectedList.map((acc: any, idx: number) => {
+                    const provider = acc.provider || acc.platform || 'channel';
+                    const name = acc.username || acc.name || acc.channelTitle || provider;
+                    const avatarUrl = acc.profilePicture || acc.profile_picture_url;
+                    return (
+                      <View
+                        key={acc.id || idx}
+                        style={[
+                          styles.platformPill,
+                          {
+                            backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                            borderColor: isDark ? '#334155' : '#e2e8f0',
+                            borderWidth: 1,
+                          },
+                        ]}
+                      >
+                        {avatarUrl ? (
+                          <Image source={{ uri: avatarUrl }} style={styles.pillAvatar} />
+                        ) : (
+                          <Ionicons
+                            name={getPlatformIconName(provider) as any}
+                            size={14}
+                            color={getPlatformColor(provider)}
+                          />
+                        )}
+                        <View style={{ maxWidth: 120 }}>
+                          <Text
+                            style={[styles.platformText, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+                            numberOfLines={1}
+                          >
+                            {name}
+                          </Text>
+                          <Text style={styles.pillSubText}>
+                            {provider.toUpperCase()}
+                          </Text>
+                        </View>
+                        <View style={styles.liveDot} />
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
             </View>
 
             {/* Recent Broadcasts */}
@@ -286,7 +400,7 @@ export const SocialScreen: React.FC = () => {
                 <View style={styles.sectionHeaderLeft}>
                   <Ionicons name="albums" size={18} color="#3b82f6" />
                   <Text style={[styles.sectionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                    Recent Activity
+                    Recent Activity ({recentActivityList.length})
                   </Text>
                 </View>
                 <Pressable onPress={() => setActiveTab('posts')}>
@@ -294,59 +408,73 @@ export const SocialScreen: React.FC = () => {
                 </Pressable>
               </View>
 
-              {postsList.slice(0, 4).map((post: any) => (
-                <Pressable
-                  key={post.id}
-                  onPress={() => setSelectedPost(post)}
-                  style={[styles.postItem, { borderBottomColor: isDark ? '#1e293b' : '#f1f5f9' }]}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={[styles.postCaption, { color: isDark ? '#f8fafc' : '#0f172a' }]}
-                      numberOfLines={2}
+              {recentActivityList.length === 0 ? (
+                <View style={styles.emptyInlineWrap}>
+                  <Text style={[styles.emptyInlineText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                    No broadcast history yet. Create your first post above.
+                  </Text>
+                </View>
+              ) : (
+                recentActivityList.map((post: any) => {
+                  const mediaThumb = post.thumbnail_url || post.media_url;
+                  return (
+                    <Pressable
+                      key={post.id}
+                      onPress={() => setSelectedPost(post)}
+                      style={[styles.postItem, { borderBottomColor: isDark ? '#1e293b' : '#f1f5f9' }]}
                     >
-                      {post.caption || 'Untitled Post'}
-                    </Text>
-                    <Text style={styles.postMeta}>
-                      {new Date(post.posted_at || post.scheduled_for || post.created_at || Date.now()).toLocaleDateString([], {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </Text>
-                  </View>
-                  <View
-                    style={[
-                      styles.badge,
-                      {
-                        backgroundColor:
-                          post.status === 'sent' || post.status === 'published'
-                            ? 'rgba(34, 197, 94, 0.15)'
-                            : post.status === 'failed'
-                            ? 'rgba(239, 68, 68, 0.15)'
-                            : 'rgba(59, 130, 246, 0.15)',
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.badgeText,
-                        {
-                          color:
-                            post.status === 'sent' || post.status === 'published'
-                              ? '#22c55e'
-                              : post.status === 'failed'
-                              ? '#ef4444'
-                              : '#3b82f6',
-                        },
-                      ]}
-                    >
-                      {post.status || 'sent'}
-                    </Text>
-                  </View>
-                </Pressable>
-              ))}
+                      {mediaThumb && (
+                        <Image source={{ uri: mediaThumb }} style={styles.recentThumb} />
+                      )}
+                      <View style={{ flex: 1, paddingHorizontal: mediaThumb ? 10 : 0 }}>
+                        <Text
+                          style={[styles.postCaption, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+                          numberOfLines={2}
+                        >
+                          {post.caption || 'Untitled Broadcast'}
+                        </Text>
+                        <Text style={styles.postMeta}>
+                          {new Date(post.posted_at || post.scheduled_for || post.created_at || Date.now()).toLocaleDateString([], {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.badge,
+                          {
+                            backgroundColor:
+                              post.status === 'sent' || post.status === 'published'
+                                ? 'rgba(34, 197, 94, 0.15)'
+                                : post.status === 'failed'
+                                  ? 'rgba(239, 68, 68, 0.15)'
+                                  : 'rgba(59, 130, 246, 0.15)',
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.badgeText,
+                            {
+                              color:
+                                post.status === 'sent' || post.status === 'published'
+                                  ? '#22c55e'
+                                  : post.status === 'failed'
+                                    ? '#ef4444'
+                                    : '#3b82f6',
+                            },
+                          ]}
+                        >
+                          {post.status || 'sent'}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  );
+                })
+              )}
             </View>
           </View>
         )}
@@ -371,7 +499,7 @@ export const SocialScreen: React.FC = () => {
               <ActivityIndicator size="large" color="#ec4899" style={{ marginTop: 30 }} />
             ) : postsList.length === 0 ? (
               <View style={styles.emptyContainer}>
-                <Ionicons name="newspaper-outline" size={40} color={isDark ? '#475569' : '#94a3b8'} />
+                <Ionicons name="newspaper-outline" size={40} color={isDark ? '#475569' : '#94a3b8'} />s
                 <Text style={[styles.emptyTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
                   No Broadcast Posts Found
                 </Text>
@@ -402,8 +530,8 @@ export const SocialScreen: React.FC = () => {
                             post.status === 'sent' || post.status === 'published'
                               ? 'rgba(34, 197, 94, 0.15)'
                               : post.status === 'failed'
-                              ? 'rgba(239, 68, 68, 0.15)'
-                              : 'rgba(59, 130, 246, 0.15)',
+                                ? 'rgba(239, 68, 68, 0.15)'
+                                : 'rgba(59, 130, 246, 0.15)',
                         },
                       ]}
                     >
@@ -415,8 +543,8 @@ export const SocialScreen: React.FC = () => {
                               post.status === 'sent' || post.status === 'published'
                                 ? '#22c55e'
                                 : post.status === 'failed'
-                                ? '#ef4444'
-                                : '#3b82f6',
+                                  ? '#ef4444'
+                                  : '#3b82f6',
                           },
                         ]}
                       >
@@ -624,6 +752,21 @@ export const SocialScreen: React.FC = () => {
         }}
         isLoading={disconnectAccountMutation.isPending}
       />
+
+      {/* Floating Home-Style Product Bottom Navigation Bar */}
+      <ProductFloatingBottomBar
+        items={SOCIAL_TABS}
+        activeKey={activeTab}
+        onChangeTab={(key) => {
+          if (key === 'accounts') {
+            setShowAccountsModal(true);
+          } else {
+            setActiveTab(key as TabType);
+          }
+        }}
+        accentColor="#EC4899"
+        moreMenuTitle="SocialPilot Menu"
+      />
     </AppScreen>
   );
 };
@@ -634,7 +777,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 130,
   },
   tabBar: {
     flexDirection: 'row',
@@ -754,10 +897,31 @@ const styles = StyleSheet.create({
   platformPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
+  },
+  pillAvatar: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+  },
+  pillSubText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#94a3b8',
+    letterSpacing: 0.5,
+  },
+  emptyInlineWrap: {
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  emptyInlineText: {
+    fontSize: 12,
+    textAlign: 'center',
   },
   liveDot: {
     width: 6,
@@ -768,6 +932,12 @@ const styles = StyleSheet.create({
   platformText: {
     fontSize: 11,
     fontWeight: '600',
+  },
+  recentThumb: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    backgroundColor: '#000',
   },
   postItem: {
     flexDirection: 'row',

@@ -6,11 +6,12 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
+  useColorScheme,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BroadcastCard } from '../components/BroadcastCard';
+import { BroadcastCard } from '../components';
 import { useWhatsAppBroadcasts } from '../hooks/useWhatsAppBroadcasts';
 import { WhatsAppBroadcast } from '../types';
 import { CreateBroadcastScreen } from './CreateBroadcastScreen';
@@ -21,6 +22,9 @@ interface WhatsAppBroadcastsScreenProps {
 }
 
 export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> = ({ onBack }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedBroadcast, setSelectedBroadcast] = useState<WhatsAppBroadcast | null>(null);
   const [showCreateScreen, setShowCreateScreen] = useState(false);
@@ -54,18 +58,23 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
   const statusTabs = ['all', 'completed', 'queued', 'scheduled'];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
       <View style={styles.container}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
           {onBack ? (
-            <Pressable style={styles.backButton} onPress={onBack}>
-              <Text style={styles.backText}>← Back</Text>
+            <Pressable
+              style={[styles.backButton, isDark ? styles.backButtonDark : styles.backButtonLight]}
+              onPress={onBack}
+            >
+              <Text style={[styles.backText, { color: isDark ? '#818cf8' : '#4f46e5' }]}>← Back</Text>
             </Pressable>
           ) : null}
           <View style={styles.titleContainer}>
-            <Text style={styles.title}>Broadcast Campaigns</Text>
-            <Text style={styles.subtitle}>High-Scale WhatsApp Outreach</Text>
+            <Text style={[styles.title, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Broadcast Campaigns</Text>
+            <Text style={[styles.subtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+              High-Scale WhatsApp Outreach
+            </Text>
           </View>
           <Pressable style={styles.newButton} onPress={() => setShowCreateScreen(true)}>
             <Text style={styles.newButtonText}>+ New</Text>
@@ -79,10 +88,20 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
             return (
               <Pressable
                 key={tab}
-                style={[styles.filterChip, isSelected && styles.filterChipActive]}
+                style={[
+                  styles.filterChip,
+                  isDark ? styles.filterChipDark : styles.filterChipLight,
+                  isSelected && styles.filterChipActive,
+                ]}
                 onPress={() => setSelectedStatus(tab)}
               >
-                <Text style={[styles.filterChipText, isSelected && styles.filterChipTextActive]}>
+                <Text
+                  style={[
+                    styles.filterChipText,
+                    { color: isSelected ? '#020617' : isDark ? '#94a3b8' : '#64748b' },
+                    isSelected && styles.filterChipTextActive,
+                  ]}
+                >
                   {tab.toUpperCase()}
                 </Text>
               </Pressable>
@@ -94,7 +113,7 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
         {isLoading && !data ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#25d366" />
-            <Text style={styles.loadingText}>Loading broadcasts...</Text>
+            <Text style={[styles.loadingText, { color: isDark ? '#64748b' : '#94a3b8' }]}>Loading broadcasts...</Text>
           </View>
         ) : (
           <FlatList
@@ -112,7 +131,7 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
             }
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No broadcast campaigns found</Text>
+                <Text style={[styles.emptyText, { color: isDark ? '#64748b' : '#94a3b8' }]}>No broadcast campaigns found</Text>
               </View>
             }
           />
@@ -125,7 +144,6 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#020617',
   },
   container: {
     flex: 1,
@@ -136,17 +154,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
+  },
+  headerDark: {
+    backgroundColor: '#0b1329',
     borderBottomColor: '#1e293b',
+  },
+  headerLight: {
+    backgroundColor: '#ffffff',
+    borderBottomColor: '#e2e8f0',
   },
   backButton: {
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 8,
-    backgroundColor: '#1e293b',
     marginRight: 12,
   },
+  backButtonDark: {
+    backgroundColor: '#1e293b',
+  },
+  backButtonLight: {
+    backgroundColor: '#f1f5f9',
+  },
   backText: {
-    color: '#818cf8',
     fontSize: 13,
     fontWeight: '700',
   },
@@ -156,11 +185,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#f8fafc',
   },
   subtitle: {
     fontSize: 11,
-    color: '#94a3b8',
   },
   newButton: {
     backgroundColor: '#25d366',
@@ -180,29 +207,33 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filterChip: {
-    backgroundColor: '#0f172a',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
+  },
+  filterChipDark: {
+    backgroundColor: '#0f172a',
     borderColor: '#1e293b',
+  },
+  filterChipLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
   },
   filterChipActive: {
     backgroundColor: '#25d366',
     borderColor: '#25d366',
   },
   filterChipText: {
-    color: '#94a3b8',
     fontSize: 12,
     fontWeight: '600',
   },
   filterChipTextActive: {
-    color: '#020617',
     fontWeight: '800',
   },
   listContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 130,
   },
   loadingContainer: {
     flex: 1,
@@ -210,7 +241,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: '#64748b',
     fontSize: 13,
     marginTop: 10,
   },
@@ -219,7 +249,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
-    color: '#64748b',
     fontSize: 14,
   },
 });

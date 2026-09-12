@@ -1,250 +1,670 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  Modal,
-  Pressable,
-  ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
+  ScrollView,
+  Pressable,
+  Linking,
+  TextInput,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { crmApi } from '../api/crm.api';
-import { LeadActivityItem } from '../components/LeadActivityItem';
-import { LeadValueBadge } from '../components/LeadValueBadge';
-import { useLead } from '../hooks/useLead';
-import { usePipelines } from '../hooks/usePipelines';
-
-import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useLead, useUpdateLead, useDeleteLead } from '../hooks/useLeads';
+import { useDeals, useCreateDeal } from '../hooks/useDeals';
+import { useTasks, useCreateTask, useToggleTask } from '../hooks/useTasks';
+import { useActivities, useCreateActivity, useAddLeadNote } from '../hooks/useActivities';
+import { ContactStatus } from '../types';
+import { DealCard } from '../components/DealCard';
+import { TaskItem } from '../components/TaskItem';
+import { ActivityTimelineItem } from '../components/ActivityTimelineItem';
+import { CreateDealModal } from '../components/CreateDealModal';
+import { CreateTaskModal } from '../components/CreateTaskModal';
+import { LogActivityModal } from '../components/LogActivityModal';
 
 interface LeadDetailScreenProps {
   leadId: string;
-  onBack?: () => void;
+  onBack: () => void;
 }
 
+const STATUS_CONFIG: Partial<Record<ContactStatus, { label: string; bg: string; text: string; dot: string }>> = {
+  lead: { label: 'New Lead', bg: 'rgba(59, 130, 246, 0.15)', text: '#60A5FA', dot: '#3B82F6' },
+  prospect: { label: 'Prospect', bg: 'rgba(245, 158, 11, 0.15)', text: '#FBBF24', dot: '#F59E0B' },
+  customer: { label: 'Customer', bg: 'rgba(16, 185, 129, 0.15)', text: '#34D399', dot: '#10B981' },
+  churned: { label: 'Churned', bg: 'rgba(239, 68, 68, 0.15)', text: '#F87171', dot: '#EF4444' },
+  open: { label: 'Open', bg: 'rgba(59, 130, 246, 0.15)', text: '#60A5FA', dot: '#3B82F6' },
+  active: { label: 'Active', bg: 'rgba(16, 185, 129, 0.15)', text: '#34D399', dot: '#10B981' },
+  archived: { label: 'Archived', bg: 'rgba(156, 163, 175, 0.15)', text: '#9CA3AF', dot: '#6B7280' },
+};
+
 export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBack }) => {
-  const router = useRouter();
-  const handleBack = onBack || (() => router.back());
-  const queryClient = useQueryClient();
-  const { lead, isLoadingLead, activities, isLoadingActivities, refetch } = useLead(leadId);
-  const { data: pipelines } = usePipelines();
+  const { data: lead, isLoading, refetch } = useLead(leadId);
+  const updateLead = useUpdateLead();
+  const deleteLead = useDeleteLead();
 
-  const [noteText, setNoteText] = useState<string>('');
-  const [showStageModal, setShowStageModal] = useState<boolean>(false);
+  const { data: deals = [] } = useDeals({ contact_id: leadId });
+  const { data: tasks = [] } = useTasks({ contact_id: leadId });
+  const { data: activities = [] } = useActivities({ contact_id: leadId });
 
-  const moveMutation = useMutation({
-    mutationFn: (stageId: string) => crmApi.moveLead(leadId, stageId),
-    onSuccess: () => {
-      setShowStageModal(false);
-      refetch();
-      queryClient.invalidateQueries({ queryKey: ['crm_leads'] });
-      queryClient.invalidateQueries({ queryKey: ['crm_pipelines'] });
-      queryClient.invalidateQueries({ queryKey: ['unified_dashboard'] });
-    },
-  });
+  const createDeal = useCreateDeal();
+  const createTask = useCreateTask();
+  const toggleTask = useToggleTask();
+  const createActivity = useCreateActivity();
+  const addLeadNote = useAddLeadNote();
 
-  const noteMutation = useMutation({
-    mutationFn: (note: string) => crmApi.addLeadNote(leadId, note),
-    onSuccess: () => {
-      setNoteText('');
-      refetch();
-      queryClient.invalidateQueries({ queryKey: ['crm_lead_activities', leadId] });
-    },
-  });
+  const [activeTab, setActiveTab] = useState<'overview' | 'deals' | 'tasks' | 'timeline'>('overview');
+  const [quickNote, setQuickNote] = useState('');
+  const [showAddDeal, setShowAddDeal] = useState(false);
+  const [showAddTask, setShowAddTask] = useState(false);
+  const [showLogActivity, setShowLogActivity] = useState(false);
 
-  if (isLoadingLead && !lead) {
+  const handleCall = () => {
+    if (lead?.phone) Linking.openURL(`tel:${lead.phone}`);
+  };
+
+  const handleEmail = () => {
+    if (lead?.email) Linking.openURL(`mailto:${lead.email}`);
+  };
+
+  const handleStatusChange = (newStatus: ContactStatus) => {
+    if (lead) {
+      updateLead.mutate({ id: lead.id, patch: { status: newStatus } });
+    }
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete Lead',
+      'Are you sure you want to delete this lead? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            if (lead) {
+              await deleteLead.mutateAsync(lead.id);
+              onBack();
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleSendQuickNote = async () => {
+    if (!quickNote.trim() || !lead) return;
+    await addLeadNote.mutateAsync({ leadId: lead.id, note: quickNote.trim() });
+    setQuickNote('');
+  };
+
+  if (isLoading || !lead) {
     return (
-      <SafeAreaView style={styles.stateContainer}>
-        <ActivityIndicator size="large" color="#6366f1" />
-        <Text style={styles.stateText}>Loading lead profile & timeline...</Text>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.loaderBox}>
+          <ActivityIndicator size="large" color="#3B82F6" />
+          <Text style={styles.loaderText}>Loading contact details...</Text>
+        </View>
       </SafeAreaView>
     );
   }
-
-  if (!lead) {
-    return (
-      <SafeAreaView style={styles.stateContainer}>
-        <Text style={styles.errorText}>Lead not found</Text>
-        <Pressable style={styles.backButton} onPress={handleBack}>
-          <Text style={styles.backButtonText}>← Return to Leads</Text>
-        </Pressable>
-      </SafeAreaView>
-    );
-  }
-
-  const stages = pipelines?.[0]?.stages || [];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {/* Navigation Header */}
-        <View style={styles.navHeader}>
-          <Pressable style={styles.navBack} onPress={handleBack}>
-            <Text style={styles.navBackText}>← Back</Text>
-          </Pressable>
-          <Text style={styles.navTitle}>Lead Overview</Text>
-          <View style={{ width: 60 }} />
-        </View>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      {/* Top Header */}
+      <View style={styles.header}>
+        <Pressable style={styles.iconBtn} onPress={onBack} hitSlop={8}>
+          <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+        </Pressable>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          {lead.name || `${lead.first_name} ${lead.last_name}`}
+        </Text>
+        <Pressable style={styles.iconBtn} onPress={handleDelete} hitSlop={8}>
+          <Ionicons name="trash-outline" size={18} color="#EF4444" />
+        </Pressable>
+      </View>
 
-        {/* Lead Profile Header Card */}
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Profile Card */}
         <View style={styles.profileCard}>
-          <View style={styles.profileTop}>
-            <View style={styles.avatarBox}>
-              <Text style={styles.avatarChar}>{lead.name.charAt(0).toUpperCase()}</Text>
+          <View style={styles.profileRow}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {(lead.first_name?.[0] || 'L').toUpperCase()}
+                {(lead.last_name?.[0] || '').toUpperCase()}
+              </Text>
             </View>
+
             <View style={styles.profileInfo}>
-              <Text style={styles.leadName}>{lead.name}</Text>
-              <Text style={styles.companyName}>{lead.company || 'Individual Client'}</Text>
-              <Text style={styles.sourceText}>Source: {lead.source || 'Direct Inbound'}</Text>
+              <Text style={styles.profileName}>
+                {lead.name || `${lead.first_name} ${lead.last_name}`}
+              </Text>
+              {lead.company || lead.job_title ? (
+                <Text style={styles.profileCompany}>
+                  {[lead.job_title, lead.company].filter(Boolean).join(' • ')}
+                </Text>
+              ) : null}
+
+              {/* Status Pill Switcher */}
+              <View style={styles.statusRow}>
+                {(['lead', 'prospect', 'customer', 'churned'] as ContactStatus[]).map((s) => {
+                  const isCurrent = lead.status === s;
+                  const cfg = STATUS_CONFIG[s] || {
+                    label: s,
+                    bg: 'rgba(59, 130, 246, 0.15)',
+                    text: '#60A5FA',
+                    dot: '#3B82F6',
+                  };
+                  return (
+                    <Pressable
+                      key={s}
+                      style={[styles.statusTab, isCurrent && { backgroundColor: cfg.bg, borderColor: cfg.dot }]}
+                      onPress={() => handleStatusChange(s)}
+                    >
+                      <Text
+                        style={[
+                          styles.statusTabText,
+                          isCurrent ? { color: cfg.text, fontWeight: '700' } : { color: '#6B7280' },
+                        ]}
+                      >
+                        {cfg.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
           </View>
 
-          <View style={styles.profileMetaGrid}>
-            <View style={styles.metaItem}>
-              <Text style={styles.metaLabel}>Estimated Value</Text>
-              <LeadValueBadge value={lead.value} currency={lead.currency} />
-            </View>
-            <View style={styles.metaItem}>
-              <Text style={styles.metaLabel}>Assigned Owner</Text>
-              <Text style={styles.metaVal}>👤 {lead.owner?.name || 'Unassigned'}</Text>
-            </View>
-          </View>
+          {/* Quick Action Toolbar */}
+          <View style={styles.actionToolbar}>
+            <Pressable
+              style={[styles.toolBtn, !lead.phone && styles.toolBtnDisabled]}
+              onPress={handleCall}
+              disabled={!lead.phone}
+            >
+              <Ionicons name="call" size={16} color={lead.phone ? '#10B981' : '#4B5563'} />
+              <Text style={[styles.toolBtnText, !lead.phone && styles.toolBtnTextDisabled]}>Call</Text>
+            </Pressable>
 
-          {/* Contact Details */}
-          <View style={styles.contactDetails}>
-            {lead.phone ? <Text style={styles.contactRow}>📞 {lead.phone}</Text> : null}
-            {lead.email ? <Text style={styles.contactRow}>✉️ {lead.email}</Text> : null}
-          </View>
+            <Pressable
+              style={[styles.toolBtn, !lead.email && styles.toolBtnDisabled]}
+              onPress={handleEmail}
+              disabled={!lead.email}
+            >
+              <Ionicons name="mail" size={16} color={lead.email ? '#3B82F6' : '#4B5563'} />
+              <Text style={[styles.toolBtnText, !lead.email && styles.toolBtnTextDisabled]}>Email</Text>
+            </Pressable>
 
-          {/* Current Stage Action */}
-          <View style={styles.stageActionRow}>
-            <View>
-              <Text style={styles.stageActionLabel}>Current Pipeline Stage</Text>
-              <Text style={styles.stageActionCurrent}>{lead.stage_name}</Text>
-            </View>
-            <Pressable style={styles.changeStageButton} onPress={() => setShowStageModal(true)}>
-              <Text style={styles.changeStageText}>Change Stage ▾</Text>
+            <Pressable style={styles.toolBtn} onPress={() => setShowAddTask(true)}>
+              <Ionicons name="checkbox-outline" size={16} color="#F59E0B" />
+              <Text style={styles.toolBtnText}>+ Task</Text>
+            </Pressable>
+
+            <Pressable style={styles.toolBtn} onPress={() => setShowAddDeal(true)}>
+              <Ionicons name="briefcase-outline" size={16} color="#8B5CF6" />
+              <Text style={styles.toolBtnText}>+ Deal</Text>
+            </Pressable>
+
+            <Pressable style={styles.toolBtn} onPress={() => setShowLogActivity(true)}>
+              <Ionicons name="add-circle-outline" size={16} color="#EC4899" />
+              <Text style={styles.toolBtnText}>Log</Text>
             </Pressable>
           </View>
         </View>
 
-        {/* Notes Input Section */}
-        <Text style={styles.sectionTitle}>Add Team Note</Text>
-        <View style={styles.noteInputCard}>
-          <TextInput
-            style={styles.noteInput}
-            placeholder="Log call notes, meeting takeaways, or next steps..."
-            placeholderTextColor="#64748b"
-            value={noteText}
-            onChangeText={setNoteText}
-            multiline
-          />
-          <Pressable
-            style={[styles.saveNoteButton, !noteText.trim() && styles.buttonDisabled]}
-            disabled={!noteText.trim() || noteMutation.isPending}
-            onPress={() => noteMutation.mutate(noteText.trim())}
-          >
-            <Text style={styles.saveNoteText}>
-              {noteMutation.isPending ? 'Saving...' : 'Add Note'}
-            </Text>
-          </Pressable>
+        {/* Navigation Tabs */}
+        <View style={styles.tabNav}>
+          {[
+            { key: 'overview', label: 'Overview', count: null },
+            { key: 'deals', label: 'Deals', count: deals.length },
+            { key: 'tasks', label: 'Tasks', count: tasks.length },
+            { key: 'timeline', label: 'Timeline', count: activities.length },
+          ].map((tab) => {
+            const isSelected = activeTab === tab.key;
+            return (
+              <Pressable
+                key={tab.key}
+                style={[styles.navTabItem, isSelected && styles.navTabItemSelected]}
+                onPress={() => setActiveTab(tab.key as any)}
+              >
+                <Text style={[styles.navTabText, isSelected && styles.navTabTextSelected]}>
+                  {tab.label} {tab.count !== null ? `(${tab.count})` : ''}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
 
-        {/* Unified Ecosystem Activity Timeline */}
-        <Text style={styles.sectionTitle}>Unified Cross-Product Timeline</Text>
-        <View style={styles.timelineCard}>
-          {isLoadingActivities ? (
-            <ActivityIndicator size="small" color="#6366f1" style={{ padding: 20 }} />
-          ) : activities.length > 0 ? (
-            activities.map((act) => <LeadActivityItem key={act.id} activity={act} />)
-          ) : (
-            <View style={styles.emptyTimeline}>
-              <Text style={styles.emptyTimelineText}>No activities logged yet</Text>
+        {/* Tab Content */}
+        <View style={styles.tabContent}>
+          {activeTab === 'overview' && (
+            <View style={styles.overviewContainer}>
+              {/* Contact Details Card */}
+              <View style={styles.infoCard}>
+                <Text style={styles.infoCardTitle}>Contact Information</Text>
+
+                <View style={styles.infoRow}>
+                  <Ionicons name="call-outline" size={16} color="#9CA3AF" />
+                  <View style={styles.infoCol}>
+                    <Text style={styles.infoLabel}>Phone</Text>
+                    <Text style={styles.infoValue}>{lead.phone || 'Not provided'}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.infoRow}>
+                  <Ionicons name="mail-outline" size={16} color="#9CA3AF" />
+                  <View style={styles.infoCol}>
+                    <Text style={styles.infoLabel}>Email</Text>
+                    <Text style={styles.infoValue}>{lead.email || 'Not provided'}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.infoRow}>
+                  <Ionicons name="business-outline" size={16} color="#9CA3AF" />
+                  <View style={styles.infoCol}>
+                    <Text style={styles.infoLabel}>Company</Text>
+                    <Text style={styles.infoValue}>{lead.company || 'Not provided'}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.infoRow}>
+                  <Ionicons name="person-circle-outline" size={16} color="#9CA3AF" />
+                  <View style={styles.infoCol}>
+                    <Text style={styles.infoLabel}>Assigned Representative</Text>
+                    <Text style={styles.infoValue}>{lead.assignee?.name || 'Unassigned'}</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Notes Card */}
+              <View style={styles.infoCard}>
+                <Text style={styles.infoCardTitle}>Notes & Context</Text>
+                <Text style={styles.notesText}>
+                  {lead.notes || 'No general notes logged for this contact.'}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {activeTab === 'deals' && (
+            <View>
+              <View style={styles.subHeader}>
+                <Text style={styles.subHeaderTitle}>Linked Deals</Text>
+                <Pressable style={styles.subHeaderBtn} onPress={() => setShowAddDeal(true)}>
+                  <Text style={styles.subHeaderBtnText}>+ New Deal</Text>
+                </Pressable>
+              </View>
+
+              {deals.length === 0 ? (
+                <View style={styles.emptyTabCard}>
+                  <Ionicons name="briefcase-outline" size={32} color="#6B7280" />
+                  <Text style={styles.emptyTabText}>No deals associated with this contact yet.</Text>
+                </View>
+              ) : (
+                deals.map((d) => (
+                  <DealCard key={d.id} deal={d} onPress={() => {}} />
+                ))
+              )}
+            </View>
+          )}
+
+          {activeTab === 'tasks' && (
+            <View>
+              <View style={styles.subHeader}>
+                <Text style={styles.subHeaderTitle}>Pending Follow-ups & Tasks</Text>
+                <Pressable style={styles.subHeaderBtn} onPress={() => setShowAddTask(true)}>
+                  <Text style={styles.subHeaderBtnText}>+ New Task</Text>
+                </Pressable>
+              </View>
+
+              {tasks.length === 0 ? (
+                <View style={styles.emptyTabCard}>
+                  <Ionicons name="checkbox-outline" size={32} color="#6B7280" />
+                  <Text style={styles.emptyTabText}>No open tasks for this contact.</Text>
+                </View>
+              ) : (
+                tasks.map((t) => (
+                  <TaskItem
+                    key={t.id}
+                    task={t}
+                    onToggle={(done) => toggleTask.mutate({ id: t.id, done })}
+                  />
+                ))
+              )}
+            </View>
+          )}
+
+          {activeTab === 'timeline' && (
+            <View>
+              {/* Quick Note Input Bar */}
+              <View style={styles.quickNoteBar}>
+                <TextInput
+                  style={styles.quickNoteInput}
+                  placeholder="Add a quick note or update..."
+                  placeholderTextColor="#6B7280"
+                  value={quickNote}
+                  onChangeText={setQuickNote}
+                />
+                <Pressable
+                  style={[styles.quickNoteSendBtn, !quickNote.trim() && { opacity: 0.5 }]}
+                  onPress={handleSendQuickNote}
+                  disabled={!quickNote.trim() || addLeadNote.isPending}
+                >
+                  <Ionicons name="send" size={16} color="#FFFFFF" />
+                </Pressable>
+              </View>
+
+              {activities.length === 0 ? (
+                <View style={styles.emptyTabCard}>
+                  <Ionicons name="time-outline" size={32} color="#6B7280" />
+                  <Text style={styles.emptyTabText}>No activity history logged yet.</Text>
+                </View>
+              ) : (
+                activities.map((act, idx) => (
+                  <ActivityTimelineItem
+                    key={act.id}
+                    activity={act}
+                    isLast={idx === activities.length - 1}
+                  />
+                ))
+              )}
             </View>
           )}
         </View>
-
-        {/* Stage Selection Modal */}
-        <Modal
-          visible={showStageModal}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setShowStageModal(false)}
-        >
-          <Pressable style={styles.modalOverlay} onPress={() => setShowStageModal(false)}>
-            <View style={styles.modalBody}>
-              <Text style={styles.modalHeading}>Move Lead to Stage</Text>
-              {stages.map((stg) => (
-                <Pressable
-                  key={stg.id}
-                  style={[styles.stageOption, lead.stage_id === stg.id && styles.stageOptionActive]}
-                  onPress={() => moveMutation.mutate(stg.id)}
-                >
-                  <Text style={[styles.stageOptionText, lead.stage_id === stg.id && styles.stageOptionTextActive]}>
-                    {stg.name}
-                  </Text>
-                  {lead.stage_id === stg.id ? <Text style={styles.checkIcon}>✓</Text> : null}
-                </Pressable>
-              ))}
-            </View>
-          </Pressable>
-        </Modal>
       </ScrollView>
+
+      {/* Modals */}
+      <CreateDealModal
+        visible={showAddDeal}
+        defaultContactId={lead.id}
+        onClose={() => setShowAddDeal(false)}
+        onSubmit={async (deal) => {
+          await createDeal.mutateAsync({ ...deal, contact_id: lead.id });
+          refetch();
+        }}
+        isLoading={createDeal.isPending}
+      />
+
+      <CreateTaskModal
+        visible={showAddTask}
+        defaultContactId={lead.id}
+        onClose={() => setShowAddTask(false)}
+        onSubmit={async (task) => {
+          await createTask.mutateAsync({ ...task, contact_id: lead.id });
+          refetch();
+        }}
+        isLoading={createTask.isPending}
+      />
+
+      <LogActivityModal
+        visible={showLogActivity}
+        defaultContactId={lead.id}
+        onClose={() => setShowLogActivity(false)}
+        onSubmit={async (act) => {
+          await createActivity.mutateAsync({ ...act, contact_id: lead.id });
+          refetch();
+        }}
+        isLoading={createActivity.isPending}
+      />
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#020617' },
-  container: { flex: 1 },
-  content: { padding: 16, paddingBottom: 40 },
-  stateContainer: { flex: 1, backgroundColor: '#020617', justifyContent: 'center', alignItems: 'center' },
-  stateText: { color: '#94a3b8', marginTop: 12, fontSize: 14 },
-  errorText: { color: '#ef4444', fontSize: 16, fontWeight: '700' },
-  backButton: { marginTop: 16, backgroundColor: '#1e293b', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
-  backButtonText: { color: '#818cf8', fontWeight: '700' },
-  navHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  navBack: { backgroundColor: '#1e293b', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
-  navBackText: { color: '#818cf8', fontWeight: '700', fontSize: 13 },
-  navTitle: { color: '#f8fafc', fontSize: 17, fontWeight: '700' },
-  profileCard: { backgroundColor: '#0f172a', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#1e293b', marginBottom: 16 },
-  profileTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
-  avatarBox: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#1e293b', justifyContent: 'center', alignItems: 'center', marginRight: 14, borderWidth: 2, borderColor: '#3b82f6' },
-  avatarChar: { color: '#f8fafc', fontSize: 20, fontWeight: '800' },
-  profileInfo: { flex: 1 },
-  leadName: { color: '#f8fafc', fontSize: 18, fontWeight: '800' },
-  companyName: { color: '#94a3b8', fontSize: 13, marginTop: 2 },
-  sourceText: { color: '#64748b', fontSize: 11, marginTop: 2 },
-  profileMetaGrid: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)', paddingVertical: 10 },
-  metaItem: { flex: 1 },
-  metaLabel: { color: '#64748b', fontSize: 11, marginBottom: 4 },
-  metaVal: { color: '#f8fafc', fontSize: 13, fontWeight: '600' },
-  contactDetails: { backgroundColor: '#020617', borderRadius: 10, padding: 12, marginVertical: 10, borderWidth: 1, borderColor: '#1e293b' },
-  contactRow: { color: '#cbd5e1', fontSize: 13, marginVertical: 2 },
-  stageActionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)' },
-  stageActionLabel: { color: '#64748b', fontSize: 11 },
-  stageActionCurrent: { color: '#818cf8', fontSize: 15, fontWeight: '700', marginTop: 2 },
-  changeStageButton: { backgroundColor: '#1e1b4b', borderWidth: 1, borderColor: '#6366f1', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
-  changeStageText: { color: '#818cf8', fontSize: 12, fontWeight: '700' },
-  sectionTitle: { color: '#cbd5e1', fontSize: 15, fontWeight: '700', marginTop: 14, marginBottom: 8 },
-  noteInputCard: { backgroundColor: '#0f172a', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: '#1e293b', marginBottom: 16 },
-  noteInput: { backgroundColor: '#020617', borderRadius: 10, padding: 12, color: '#f8fafc', fontSize: 13, minHeight: 60, textAlignVertical: 'top', borderWidth: 1, borderColor: '#1e293b' },
-  saveNoteButton: { alignSelf: 'flex-end', backgroundColor: '#6366f1', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 8, marginTop: 10 },
-  buttonDisabled: { opacity: 0.5 },
-  saveNoteText: { color: '#ffffff', fontSize: 13, fontWeight: '700' },
-  timelineCard: { backgroundColor: '#0f172a', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#1e293b' },
-  emptyTimeline: { padding: 20, alignItems: 'center' },
-  emptyTimelineText: { color: '#64748b', fontSize: 13 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  modalBody: { width: '100%', maxWidth: 360, backgroundColor: '#0f172a', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#1e293b' },
-  modalHeading: { color: '#f8fafc', fontSize: 18, fontWeight: '700', marginBottom: 14 },
-  stageOption: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 12, borderRadius: 8, marginBottom: 6 },
-  stageOptionActive: { backgroundColor: '#1e1b4b' },
-  stageOptionText: { color: '#cbd5e1', fontSize: 14, fontWeight: '600' },
-  stageOptionTextActive: { color: '#818cf8', fontWeight: '700' },
-  checkIcon: { color: '#818cf8', fontWeight: '800' },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#0F1015',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E2028',
+  },
+  headerTitle: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '700',
+    flex: 1,
+    textAlign: 'center',
+    marginHorizontal: 10,
+  },
+  iconBtn: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#181A20',
+  },
+  scroll: {
+    flex: 1,
+  },
+  profileCard: {
+    backgroundColor: '#181A20',
+    margin: 16,
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#262A34',
+  },
+  profileRow: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: '#262A34',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  avatarText: {
+    color: '#3B82F6',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  profileName: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  profileCompany: {
+    color: '#9CA3AF',
+    fontSize: 13,
+    marginTop: 2,
+    marginBottom: 8,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  statusTab: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: '#121316',
+    borderWidth: 1,
+    borderColor: '#262A34',
+  },
+  statusTabText: {
+    fontSize: 11,
+  },
+  actionToolbar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#222630',
+  },
+  toolBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 6,
+  },
+  toolBtnDisabled: {
+    opacity: 0.4,
+  },
+  toolBtnText: {
+    color: '#D1D5DB',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  toolBtnTextDisabled: {
+    color: '#6B7280',
+  },
+  tabNav: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E2028',
+    marginBottom: 16,
+  },
+  navTabItem: {
+    paddingVertical: 10,
+    marginRight: 16,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  navTabItemSelected: {
+    borderBottomColor: '#3B82F6',
+  },
+  navTabText: {
+    color: '#9CA3AF',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  navTabTextSelected: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  tabContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+  },
+  overviewContainer: {
+    gap: 14,
+  },
+  infoCard: {
+    backgroundColor: '#181A20',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#262A34',
+  },
+  infoCardTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 14,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 12,
+  },
+  infoCol: {
+    flex: 1,
+  },
+  infoLabel: {
+    color: '#6B7280',
+    fontSize: 11,
+  },
+  infoValue: {
+    color: '#E5E7EB',
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  notesText: {
+    color: '#D1D5DB',
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  subHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  subHeaderTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  subHeaderBtn: {
+    backgroundColor: '#262A34',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  subHeaderBtnText: {
+    color: '#60A5FA',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  emptyTabCard: {
+    backgroundColor: '#181A20',
+    borderRadius: 14,
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#262A34',
+    borderStyle: 'dashed',
+  },
+  emptyTabText: {
+    color: '#9CA3AF',
+    fontSize: 13,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  quickNoteBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#181A20',
+    borderRadius: 12,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: '#262A34',
+    marginBottom: 16,
+  },
+  quickNoteInput: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 13,
+    paddingHorizontal: 8,
+  },
+  quickNoteSendBtn: {
+    backgroundColor: '#3B82F6',
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loaderBox: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loaderText: {
+    color: '#9CA3AF',
+    fontSize: 13,
+    marginTop: 12,
+  },
 });

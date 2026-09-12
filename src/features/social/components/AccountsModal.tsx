@@ -81,7 +81,7 @@ export const AccountsModal: React.FC<AccountsModalProps> = ({
               accountList.map((acc, index) => {
                 const isLive = acc.connected !== false;
                 const username = acc.username || acc.name || acc.channelTitle || 'Connected Account';
-                const provider = acc.provider || 'Channel';
+                const provider = acc.provider || acc.platform || 'channel';
                 const followers = acc.followers || acc.subscriberCount;
 
                 return (

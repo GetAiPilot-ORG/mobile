@@ -8,6 +8,7 @@ import { billingRoutes } from './routes/billing.routes.js';
 import { crmRoutes } from './routes/crm.routes.js';
 import { dashboardRoutes } from './routes/dashboard.routes.js';
 import { inboxRoutes } from './routes/inbox.routes.js';
+import { redirectRoutes } from './routes/redirect.routes.js';
 import { socialRoutes } from './routes/social.routes.js';
 import { telegramRoutes } from './routes/telegram.routes.js';
 import { voiceRoutes } from './routes/voice.routes.js';
@@ -99,6 +100,7 @@ async function main() {
   await app.register(telegramRoutes, { prefix: '/mobile/v1' });
   await app.register(billingRoutes, { prefix: '/mobile/v1' });
   await app.register(webviewRoutes, { prefix: '/mobile/v1' });
+  await app.register(redirectRoutes);
 
   // Error Handler
   app.setErrorHandler((error, _request, reply) => {
@@ -112,6 +114,8 @@ async function main() {
   });
 
   try {
+    console.log('=== FASTIFY REGISTERED ROUTES ===');
+    console.log(app.printRoutes());
     await app.listen({ port: env.PORT, host: env.HOST });
     console.log(`🚀 GetAiPilot-BFF running on http://${env.HOST}:${env.PORT}`);
   } catch (err) {
