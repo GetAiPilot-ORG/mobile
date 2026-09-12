@@ -266,217 +266,56 @@ export const TelegramScreen: React.FC = () => {
           <ActivityIndicator size="large" color="#0284C7" style={{ marginTop: 40 }} />
         ) : (
           <>
-            {/* TAB 0: GAP TRACKER & BOTS */}
-            {activeTab === 'bots' && (
-              <>
-                <View style={styles.sectionHeaderRow}>
-                  <View>
-                    <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight, { marginBottom: 2 }]}>
-                      GAP Tracker & Join Bot Engine
-                    </Text>
-                    <Text style={styles.sectionSub}>Track channel growth, conversions, UTM invite links & greeting bots</Text>
-                  </View>
-                </View>
-
-                {/* Sub-Section Navigation Pills */}
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
-                  {[
-                    { key: 'bots', label: `Connected Bots (${botsList.length})`, icon: 'logo-android' },
-                    { key: 'joins', label: 'Join Analytics', icon: 'analytics-outline' },
-                    { key: 'links', label: 'Deep Link Campaigns', icon: 'link-outline' },
-                  ].map((sub) => {
-                    const isSelected = trackerSection === sub.key;
-                    return (
-                      <Pressable
-                        key={sub.key}
-                        style={[
-                          styles.catPill,
-                          isDark ? styles.pillDark : styles.pillLight,
-                          isSelected && styles.catPillSelected,
-                        ]}
-                        onPress={() => {
-                          if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          setTrackerSection(sub.key as any);
-                        }}
-                      >
-                        <Ionicons name={sub.icon as any} size={13} color={isSelected ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'} />
-                        <Text style={[styles.catPillText, isDark ? styles.textDark : styles.textLight, isSelected && styles.catPillTextSelected]}>
-                          {sub.label}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-
-                {/* Quick Action Bar for GAP Tracker */}
-                <View style={{ flexDirection: 'row', gap: 8, marginVertical: 12 }}>
-                  <Pressable
-                    style={[styles.actionBtnPrimary, { flex: 1, justifyContent: 'center' }]}
-                    onPress={() => setActiveModal('tracker')}
-                  >
-                    <Ionicons name="add" size={15} color="#FFFFFF" />
-                    <Text style={styles.actionBtnPrimaryText}>Connect New Bot</Text>
-                  </Pressable>
-                </View>
-              </View>
-
-              {/* 6 Real Interactive KPI Metric Cards matching Web Dashboard */}
-              <View style={[styles.metricsGrid, isDark ? styles.borderDark : styles.borderLight]}>
-                {/* 1. Tracked Bots */}
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.metricItem,
-                    pressed && styles.metricItemPressed,
-                  ]}
-                  onPress={() => handleTabChange('bots')}
-                >
-                  <View style={styles.metricHeaderRow}>
-                    <Text style={styles.metricLabel}>TRACKED BOTS</Text>
-                    <Ionicons name="cloud-outline" size={13} color="#0284C7" />
-                  </View>
-                  <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
-                    {summary?.trackedBotsCount ?? botsList.length}
-                  </Text>
-                  <View style={styles.metricFooterRow}>
-                    <Text style={styles.metricSub}>Connected bots</Text>
-                    <Ionicons name="chevron-forward" size={11} color="#0284C7" />
-                  </View>
-                </Pressable>
-
-                {/* 2. Channels */}
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.metricItem,
-                    pressed && styles.metricItemPressed,
-                  ]}
-                  onPress={() => openToolModal('tracker')}
-                >
-                  <View style={styles.metricHeaderRow}>
-                    <Text style={styles.metricLabel}>CHANNELS</Text>
-                    <Ionicons name="share-social-outline" size={13} color="#10B981" />
-                  </View>
-                  <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
-                    {summary?.channelsCount ?? (chats || []).length}
-                  </Text>
-                  <View style={styles.metricFooterRow}>
-                    <Text style={styles.metricSub}>Mapped channels</Text>
-                    <Ionicons name="chevron-forward" size={11} color="#10B981" />
-                  </View>
-                </Pressable>
-
-                {/* 3. Deep Links */}
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.metricItem,
-                    pressed && styles.metricItemPressed,
-                  ]}
-                  onPress={() => openToolModal('tracker')}
-                >
-                  <View style={styles.metricHeaderRow}>
-                    <Text style={styles.metricLabel}>DEEP LINKS</Text>
-                    <Ionicons name="link-outline" size={13} color="#0284C7" />
-                  </View>
-                  <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
-                    {summary?.deepLinksCount ?? 15}
-                  </Text>
-                  <View style={styles.metricFooterRow}>
-                    <Text style={styles.metricSub}>Tracked join links</Text>
-                    <Ionicons name="chevron-forward" size={11} color="#0284C7" />
-                  </View>
-                </Pressable>
-
-                {/* 4. Forwards -> Redirects to automations tab */}
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.metricItem,
-                    pressed && styles.metricItemPressed,
-                  ]}
-                  onPress={() => handleTabChange('automations')}
-                >
-                  <View style={styles.metricHeaderRow}>
-                    <Text style={styles.metricLabel}>FORWARDS</Text>
-                    <Ionicons name="git-compare-outline" size={13} color="#8B5CF6" />
-                  </View>
-                  <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
-                    {(forwardRules || []).length}
-                  </Text>
-                  <View style={styles.metricFooterRow}>
-                    <Text style={styles.metricSub}>Active rules</Text>
-                    <Ionicons name="chevron-forward" size={11} color="#8B5CF6" />
-                  </View>
-                </Pressable>
-
-                {/* 5. TeleSub Pages -> Redirects to sub_manager tab */}
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.metricItem,
-                    pressed && styles.metricItemPressed,
-                  ]}
-                  onPress={() => openToolModal('sub_manager')}
-                >
-                  <View style={styles.metricHeaderRow}>
-                    <Text style={styles.metricLabel}>TELESUB PAGES</Text>
-                    <Ionicons name="wallet-outline" size={13} color="#EC4899" />
-                  </View>
-                  <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
-                    {summary?.teleSubPagesCount ?? (subPlans || []).length}
-                  </Text>
-                  <View style={styles.metricFooterRow}>
-                    <Text style={styles.metricSub}>Monetized pages</Text>
-                    <Ionicons name="chevron-forward" size={11} color="#EC4899" />
-                  </View>
-                </Pressable>
-
-                {/* 6. Revenue -> Opens Sub Manager */}
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.metricItem,
-                    pressed && styles.metricItemPressed,
-                  ]}
-                  onPress={() => openToolModal('sub_manager')}
-                >
-                  <View style={styles.metricHeaderRow}>
-                    <Text style={styles.metricLabel}>REVENUE</Text>
-                    <Ionicons name="card-outline" size={13} color="#F59E0B" />
-                  </View>
-                  <Text style={[styles.metricValue, { color: '#0284C7' }]}>
-                    ₹{(summary?.revenue ?? 0).toLocaleString()}
-                  </Text>
-                  <View style={styles.metricFooterRow}>
-                    <Text style={styles.metricSub}>Total collected</Text>
-                    <Ionicons name="chevron-forward" size={11} color="#F59E0B" />
-                  </View>
-                </Pressable>
-              </View>
-            </View>
-
-            {/* VISUAL ANALYTICS CHARTS (CHANNEL JOIN TRACKING & TELESUB REVENUE) */}
-            <DashboardAnalyticsCharts />
-
             {/* ACTIVE TAB CONTENT SECTIONS CONTAINER */}
-            <View
-              onLayout={(e) => {
-                sectionContentY.current = e.nativeEvent.layout.y;
-              }}
-            >
+            <View>
               {/* TAB 0: CONNECTED TRACKER BOTS */}
               {activeTab === 'bots' && (
-              <>
-                <View style={styles.sectionHeaderRow}>
-                  <View>
-                    <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight, { marginBottom: 2 }]}>
-                      Connected Tracker Bots ({botsList.length})
-                    </Text>
-                    <Text style={styles.sectionSub}>Live bots tracking joins, campaigns, and mapped communities</Text>
+                <>
+                  <View style={styles.sectionHeaderRow}>
+                    <View>
+                      <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight, { marginBottom: 2 }]}>
+                        GAP Tracker & Join Bot Engine ({botsList.length})
+                      </Text>
+                      <Text style={styles.sectionSub}>Live bots tracking joins, campaigns, and mapped communities</Text>
+                    </View>
+                    <Pressable
+                      style={[styles.afGhostBtn, isDark ? styles.afGhostBtnDark : styles.afGhostBtnLight, { flex: 1, justifyContent: 'center' }]}
+                      onPress={() => setActiveModal('tracker')}
+                    >
+                      <Ionicons name="link-outline" size={15} color={isDark ? '#CBD5E1' : '#475569'} />
+                      <Text style={[styles.afGhostBtnText, isDark ? styles.textDark : styles.textLight]}>+ Tracking Link</Text>
+                    </Pressable>
                   </View>
-                  <Pressable
-                    style={[styles.afGhostBtn, isDark ? styles.afGhostBtnDark : styles.afGhostBtnLight, { flex: 1, justifyContent: 'center' }]}
-                    onPress={() => setActiveModal('tracker')}
-                  >
-                    <Ionicons name="link-outline" size={15} color={isDark ? '#CBD5E1' : '#475569'} />
-                    <Text style={[styles.afGhostBtnText, isDark ? styles.textDark : styles.textLight]}>+ Tracking Link</Text>
-                  </Pressable>
-                </View>
+
+                  {/* Sub-Section Navigation Pills */}
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+                    {[
+                      { key: 'bots', label: `Connected Bots (${botsList.length})`, icon: 'logo-android' },
+                      { key: 'joins', label: 'Join Analytics', icon: 'analytics-outline' },
+                      { key: 'links', label: 'Deep Link Campaigns', icon: 'link-outline' },
+                    ].map((sub) => {
+                      const isSelected = trackerSection === sub.key;
+                      return (
+                        <Pressable
+                          key={sub.key}
+                          style={[
+                            styles.catPill,
+                            isDark ? styles.pillDark : styles.pillLight,
+                            isSelected && styles.catPillSelected,
+                          ]}
+                          onPress={() => {
+                            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            setTrackerSection(sub.key as any);
+                          }}
+                        >
+                          <Ionicons name={sub.icon as any} size={13} color={isSelected ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'} />
+                          <Text style={[styles.catPillText, isDark ? styles.textDark : styles.textLight, isSelected && styles.catPillTextSelected]}>
+                            {sub.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
 
                 {/* SUB-SECTION 1: CONNECTED BOTS */}
                 {trackerSection === 'bots' && (
@@ -1293,6 +1132,7 @@ export const TelegramScreen: React.FC = () => {
                 </View>
               </>
             )}
+            </View>
           </>
         )}
       </ScrollView>
