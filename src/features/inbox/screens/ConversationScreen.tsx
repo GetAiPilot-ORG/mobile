@@ -195,15 +195,18 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
         created_at: new Date().toISOString(),
       };
 
-      if (conversation) {
-        queryClient.setQueryData(['conversation_details', conversation.id], (old: any) => {
-          if (!old) return { conversation, messages: [optimisticMsg] };
+      const updateCache = (key: string) => {
+        queryClient.setQueryData(['conversation_details', key], (old: any) => {
+          if (!old) return { conversation: conversation || null, messages: [optimisticMsg] };
           return {
             ...old,
-            messages: [...old.messages, optimisticMsg],
+            messages: [...(old.messages || []), optimisticMsg],
           };
         });
-      }
+      };
+
+      if (conversation) updateCache(conversation.id);
+      if (activeId && (!conversation || activeId !== conversation.id)) updateCache(activeId);
 
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
@@ -212,33 +215,46 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
       return { optimisticMsg };
     },
     onSuccess: (newMessage, _variables, context) => {
-      if (conversation) {
-        queryClient.setQueryData(['conversation_details', conversation.id], (old: any) => {
-          if (!old) return { conversation, messages: [newMessage] };
-          const filtered = (old.messages || []).filter((m: any) => m.id !== context?.optimisticMsg?.id);
+      const updateCache = (key: string) => {
+        queryClient.setQueryData(['conversation_details', key], (old: any) => {
+          if (!old) return { conversation: conversation || null, messages: [newMessage] };
+          const filtered = (old.messages || []).filter(
+            (m: any) => m.id !== context?.optimisticMsg?.id && m.id !== newMessage.id
+          );
           return {
             ...old,
             messages: [...filtered, newMessage],
           };
         });
+      };
+
+      if (conversation) updateCache(conversation.id);
+      if (activeId && (!conversation || activeId !== conversation.id)) updateCache(activeId);
+      if (newMessage.conversation_id && (!conversation || newMessage.conversation_id !== conversation.id)) {
+        updateCache(newMessage.conversation_id);
       }
+
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['conversation_details', activeId] });
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
     },
     onError: (err: any, _variables, context) => {
-      if (conversation && context?.optimisticMsg) {
-        queryClient.setQueryData(['conversation_details', conversation.id], (old: any) => {
+      const updateCache = (key: string) => {
+        queryClient.setQueryData(['conversation_details', key], (old: any) => {
           if (!old) return old;
           return {
             ...old,
-            messages: old.messages.map((m: any) =>
-              m.id === context.optimisticMsg.id ? { ...m, status: 'failed' } : m
+            messages: (old.messages || []).map((m: any) =>
+              m.id === context?.optimisticMsg?.id ? { ...m, status: 'failed' } : m
             ),
           };
         });
-      }
+      };
+
+      if (conversation) updateCache(conversation.id);
+      if (activeId && (!conversation || activeId !== conversation.id)) updateCache(activeId);
       Alert.alert('Send Failed', err?.message || 'Failed to dispatch message');
     },
   });
@@ -246,6 +262,19 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   const handleSend = () => {
     const trimmed = inputText.trim();
     if (!trimmed || sendMutation.isPending) return;
+
+    if (isWindowExpired && !isInternalNote) {
+      Alert.alert(
+        '24-Hour Window Closed',
+        'Meta WhatsApp blocks outbound free-form messages 24 hours after customer\'s last message. Switch to Internal Note to record private notes, or send an approved Template.',
+        [
+          { text: 'Switch to Note', onPress: () => setIsInternalNote(true) },
+          { text: 'Policy Details', onPress: () => setShowGuideModal(true) },
+          { text: 'OK', style: 'cancel' },
+        ]
+      );
+      return;
+    }
 
     sendMutation.mutate({ text: trimmed, isNote: isInternalNote });
   };
@@ -335,10 +364,10 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
 
   if (isLoading && !conversation) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0b141a' : '#f0f2f5' }]}>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#00a884" />
-          <Text style={styles.loadingText}>Loading WhatsApp conversation...</Text>
+          <Text style={[styles.loadingText, { color: isDark ? '#8696a0' : '#64748b' }]}>Loading WhatsApp conversation...</Text>
         </View>
       </SafeAreaView>
     );
@@ -346,9 +375,9 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
 
   if (!conversation) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0b141a' : '#f0f2f5' }]}>
         <View style={styles.centerContainer}>
-          <Text style={styles.notFoundTitle}>Conversation not found</Text>
+          <Text style={[styles.notFoundTitle, { color: isDark ? '#e9edef' : '#0f172a' }]}>Conversation not found</Text>
           <Pressable style={styles.backPill} onPress={handleBack}>
             <Text style={styles.backPillText}>← Return to Inbox</Text>
           </Pressable>
@@ -466,18 +495,6 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
           </View>
         </View>
 
-        {/* 24-Hour Policy Warning Banner (When Window is Expired) */}
-        {isWindowExpired && (
-          <View style={styles.windowNoticeBanner}>
-            <Ionicons name="warning" size={18} color="#f59e0b" style={{ marginRight: 8 }} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.windowNoticeTitle}>24-Hour Messaging Window Closed</Text>
-              <Text style={styles.windowNoticeText}>
-                The customer service window is closed. Outbound replies are restricted, but you can still record internal notes.
-              </Text>
-            </View>
-          </View>
-        )}
 
         {/* Chat Message List */}
         <FlatList
@@ -516,23 +533,44 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
               style={[
                 styles.modeTab,
                 isDark ? styles.modeTabDark : styles.modeTabLight,
-                !isInternalNote && styles.modeTabActive,
+                !isInternalNote && (isWindowExpired ? styles.modeTabClosedActive : styles.modeTabActive),
               ]}
-              onPress={() => setIsInternalNote(false)}
+              onPress={() => {
+                if (isWindowExpired) {
+                  Alert.alert(
+                    '24-Hour Window Closed',
+                    'Outbound customer replies are locked by WhatsApp. You can still record private Internal Notes for your team.',
+                    [
+                      { text: 'Write Internal Note', onPress: () => setIsInternalNote(true) },
+                      { text: 'Policy Details', onPress: () => setShowGuideModal(true) },
+                      { text: 'OK', style: 'cancel' },
+                    ]
+                  );
+                }
+                setIsInternalNote(false);
+              }}
             >
               <Ionicons
-                name="logo-whatsapp"
+                name={isWindowExpired ? 'lock-closed' : 'logo-whatsapp'}
                 size={13}
-                color={!isInternalNote ? '#00a884' : isDark ? '#8696a0' : '#64748b'}
+                color={
+                  !isInternalNote
+                    ? (isWindowExpired ? '#f59e0b' : '#00a884')
+                    : (isDark ? '#8696a0' : '#64748b')
+                }
               />
               <Text
                 style={[
                   styles.modeTabText,
-                  { color: !isInternalNote ? '#00a884' : isDark ? '#8696a0' : '#64748b' },
+                  {
+                    color: !isInternalNote
+                      ? (isWindowExpired ? '#f59e0b' : '#00a884')
+                      : (isDark ? '#8696a0' : '#64748b'),
+                  },
                   !isInternalNote && styles.modeTabTextActive,
                 ]}
               >
-                WhatsApp Reply
+                {isWindowExpired ? 'WhatsApp Reply (Closed)' : 'WhatsApp Reply'}
               </Text>
             </Pressable>
 
@@ -561,36 +599,58 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
             </Pressable>
           </View>
 
+          {/* Helper Banner when in Closed WhatsApp Mode */}
+          {isWindowExpired && !isInternalNote && (
+            <View style={[styles.closedWindowHelper, isDark ? styles.closedWindowHelperDark : styles.closedWindowHelperLight]}>
+              <Ionicons name="alert-circle" size={14} color="#f59e0b" style={{ marginRight: 6 }} />
+              <Text style={[styles.closedWindowHelperText, { color: isDark ? '#fbbf24' : '#b45309' }]}>
+                Free-form replies disabled (24h window closed)
+              </Text>
+              <Pressable
+                style={styles.closedWindowSwitchBtn}
+                onPress={() => setIsInternalNote(true)}
+              >
+                <Text style={styles.closedWindowSwitchText}>Switch to Note 📝</Text>
+              </Pressable>
+            </View>
+          )}
+
           {/* Main Input Row */}
           <View
             style={[
               styles.inputRow,
               isDark ? styles.inputRowDark : styles.inputRowLight,
               isInternalNote && (isDark ? styles.inputRowNoteDark : styles.inputRowNoteLight),
+              isWindowExpired && !isInternalNote && (isDark ? styles.inputRowDisabledDark : styles.inputRowDisabledLight),
             ]}
           >
             <TextInput
-              style={[styles.textInput, { color: isDark ? '#e9edef' : '#0f172a' }]}
+              style={[
+                styles.textInput,
+                { color: isDark ? '#e9edef' : '#0f172a' },
+                isWindowExpired && !isInternalNote && styles.textInputDisabled,
+              ]}
+              editable={!isWindowExpired || isInternalNote}
               placeholder={
                 isInternalNote
                   ? 'Write an internal note for your team (customer won’t see this)...'
                   : isWindowExpired
-                  ? '24h window closed — write an internal note...'
+                  ? '24h window closed — text entry disabled'
                   : 'Type a message...'
               }
               placeholderTextColor={isDark ? '#8696a0' : '#94a3b8'}
-              value={inputText}
+              value={isWindowExpired && !isInternalNote ? '' : inputText}
               onChangeText={setInputText}
-              multiline
+              multiline={!isWindowExpired || isInternalNote}
             />
 
             <Pressable
               style={[
                 styles.sendBtn,
-                !inputText.trim() && (isDark ? styles.sendBtnDisabledDark : styles.sendBtnDisabledLight),
+                (!inputText.trim() || (isWindowExpired && !isInternalNote)) && (isDark ? styles.sendBtnDisabledDark : styles.sendBtnDisabledLight),
                 isInternalNote && styles.sendBtnNote,
               ]}
-              disabled={!inputText.trim() || sendMutation.isPending}
+              disabled={!inputText.trim() || sendMutation.isPending || (isWindowExpired && !isInternalNote)}
               onPress={handleSend}
             >
               {sendMutation.isPending ? (
@@ -1110,25 +1170,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     maxWidth: 90,
   },
-  windowNoticeBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fef3c7',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#fde68a',
-  },
-  windowNoticeTitle: {
-    color: '#92400e',
-    fontSize: 11.5,
-    fontWeight: '800',
-  },
-  windowNoticeText: {
-    color: '#78350f',
-    fontSize: 10.5,
-    lineHeight: 14,
-  },
   messagesList: {
     paddingHorizontal: 10,
     paddingVertical: 12,
@@ -1200,6 +1241,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 168, 132, 0.15)',
     borderColor: '#00a884',
   },
+  modeTabClosedActive: {
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    borderColor: '#f59e0b',
+  },
   modeTabNoteActive: {
     backgroundColor: 'rgba(245, 158, 11, 0.15)',
     borderColor: '#fbbf24',
@@ -1238,12 +1283,60 @@ const styles = StyleSheet.create({
     backgroundColor: '#fef3c7',
     borderColor: '#f59e0b',
   },
+  inputRowDisabledDark: {
+    backgroundColor: '#161f26',
+    borderColor: '#2a3942',
+    opacity: 0.75,
+  },
+  inputRowDisabledLight: {
+    backgroundColor: '#f1f5f9',
+    borderColor: '#e2e8f0',
+    opacity: 0.85,
+  },
   textInput: {
     flex: 1,
     fontSize: 14,
     maxHeight: 100,
     paddingTop: 6,
     paddingBottom: 6,
+  },
+  textInputDisabled: {
+    fontStyle: 'italic',
+  },
+  closedWindowHelper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    marginBottom: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  closedWindowHelperDark: {
+    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+    borderColor: 'rgba(245, 158, 11, 0.25)',
+  },
+  closedWindowHelperLight: {
+    backgroundColor: '#fef3c7',
+    borderColor: '#fde68a',
+  },
+  closedWindowHelperText: {
+    fontSize: 11,
+    fontWeight: '600',
+    flex: 1,
+  },
+  closedWindowSwitchBtn: {
+    backgroundColor: '#f59e0b',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginLeft: 6,
+  },
+  closedWindowSwitchText: {
+    color: '#020617',
+    fontSize: 10.5,
+    fontWeight: '700',
   },
   sendBtn: {
     backgroundColor: '#00a884',
