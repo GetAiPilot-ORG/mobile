@@ -1,11 +1,18 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable, Platform, useColorScheme } from 'react-native';
-import { Image } from 'expo-image';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
+import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
+import { useRouter } from "expo-router";
+import React from "react";
+import {
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  useColorScheme,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const brandLogo = require('../../assets/images/logo.jpg');
+const brandLogo = require("../../assets/images/logo.jpg");
 
 interface AppTopBarProps {
   title?: string;
@@ -25,16 +32,36 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
+
+  // const handleBack = () => {
+  //   if (Platform.OS !== 'web') {
+  //     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  //   }
+  //   if (onBackPress) {
+  //     onBackPress();
+  //   } else if (router.canGoBack()) {
+  //     router.back();
+  //   }
+  // };
 
   const handleBack = () => {
-    if (Platform.OS !== 'web') {
+    if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+
     if (onBackPress) {
       onBackPress();
-    } else if (router.canGoBack()) {
+      console.log("Custom back handler executed");
+      return;
+    }
+
+    if (router.canGoBack()) {
+      console.log("Going back");
       router.back();
+    } else {
+      router.replace("/");
+      console.log("No back history, navigating to home");
     }
   };
 
@@ -50,25 +77,43 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
     >
       <View style={styles.leftSection}>
         {showBack && (
-          <Pressable style={[styles.backButton, isDark && styles.backButtonDark]} onPress={handleBack} hitSlop={10}>
-            <Text style={[styles.backText, isDark && styles.backTextDark]}>‹</Text>
+          <Pressable
+            style={[styles.backButton, isDark && styles.backButtonDark]}
+            onPress={handleBack}
+            hitSlop={10}
+          >
+            <Text style={[styles.backText, isDark && styles.backTextDark]}>
+              ‹
+            </Text>
           </Pressable>
         )}
         <View style={styles.titleWrapper}>
           {title ? (
-            <Text style={[styles.title, isDark && styles.titleDark]} numberOfLines={1}>
+            <Text
+              style={[styles.title, isDark && styles.titleDark]}
+              numberOfLines={1}
+            >
               {title}
             </Text>
           ) : (
             <View style={styles.brandRow}>
               <View style={styles.logoWrapper}>
-                <Image source={brandLogo} style={styles.logoImage} contentFit="cover" />
+                <Image
+                  source={brandLogo}
+                  style={styles.logoImage}
+                  contentFit="cover"
+                />
               </View>
-              <Text style={[styles.brandText, isDark && styles.brandTextDark]}>GetAiPilot</Text>
+              <Text style={[styles.brandText, isDark && styles.brandTextDark]}>
+                GetAiPilot
+              </Text>
             </View>
           )}
           {subtitle && (
-            <Text style={[styles.subtitle, isDark && styles.subtitleDark]} numberOfLines={1}>
+            <Text
+              style={[styles.subtitle, isDark && styles.subtitleDark]}
+              numberOfLines={1}
+            >
               {subtitle}
             </Text>
           )}
@@ -82,92 +127,92 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingBottom: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: "#E5E7EB",
   },
   containerDark: {
-    backgroundColor: '#000000',
-    borderBottomColor: '#2C2C2E',
+    backgroundColor: "#000000",
+    borderBottomColor: "#2C2C2E",
   },
   leftSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   backButton: {
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#F2F4F7',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#F2F4F7",
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 10,
   },
   backButtonDark: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: "#1C1C1E",
   },
   backText: {
     fontSize: 26,
-    fontWeight: '600',
-    color: '#0084FF',
+    fontWeight: "600",
+    color: "#0084FF",
     lineHeight: 28,
     marginTop: -2,
   },
   backTextDark: {
-    color: '#3B82F6',
+    color: "#3B82F6",
   },
   titleWrapper: {
     flex: 1,
   },
   title: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#000000',
+    fontWeight: "700",
+    color: "#000000",
     letterSpacing: -0.4,
   },
   titleDark: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   subtitle: {
     fontSize: 12,
-    color: '#6B7280',
+    color: "#6B7280",
     marginTop: 1,
   },
   subtitleDark: {
-    color: '#9CA3AF',
+    color: "#9CA3AF",
   },
   brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   logoWrapper: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   logoImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   brandText: {
     fontSize: 19,
-    fontWeight: '800',
-    color: '#000000',
+    fontWeight: "800",
+    color: "#000000",
     letterSpacing: -0.5,
   },
   brandTextDark: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   rightSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
 });
