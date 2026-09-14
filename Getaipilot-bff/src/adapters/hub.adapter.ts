@@ -15,6 +15,27 @@ export interface AuthenticatedUserResult {
   subscriptionStatus?: string;
 }
 
+export interface DeviceLoginInput {
+  installationId: string;
+  platform: string;
+  deviceName: string;
+  deviceType?: string;
+  osVersion?: string;
+  appVersion?: string;
+}
+
+export interface DeviceLoginSession {
+  sessionId: string;
+  platform: string;
+  deviceName: string;
+  deviceType: string | null;
+  osVersion: string | null;
+  appVersion: string | null;
+  signedInAt: string;
+  lastSeenAt: string;
+  isCurrent: boolean;
+}
+
 export class HubAdapter {
   // Public Client (for user sign-in & password validation)
   private static publicClient: SupabaseClient = createClient(
@@ -132,6 +153,106 @@ export class HubAdapter {
 
       throw err;
     }
+  }
+
+  /**
+   * Records a login for one app installation. The unique user/install pair
+   * means signing in again on the same phone refreshes its existing row rather
+   * than inflating the active-device count.
+   */
+  public static async registerDeviceSession(
+    userId: string,
+    sessionId: string,
+    device: DeviceLoginInput
+  ): Promise<void> {
+    const now = new Date().toISOString();
+    // This matches the BFF refresh-token lifetime. Expired rows are excluded
+    // from the count even when a device never explicitly signs out.
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { error } = await this.adminClient
+      .from('auth_device_sessions')
+      .upsert(
+        {
+          user_id: userId,
+          installation_id: device.installationId,
+          session_id: sessionId,
+          platform: device.platform,
+          device_name: device.deviceName,
+          device_type: device.deviceType || null,
+          os_version: device.osVersion || null,
+          app_version: device.appVersion || null,
+          signed_in_at: now,
+          last_seen_at: now,
+          expires_at: expiresAt,
+          signed_out_at: null,
+          updated_at: now,
+        },
+        { onConflict: 'user_id,installation_id' }
+      );
+
+    if (error) throw error;
+  }
+
+  /** Lists only active installations for the authenticated user. */
+  public static async getActiveDeviceSessions(
+    userId: string,
+    currentSessionId?: string
+  ): Promise<DeviceLoginSession[]> {
+    const { data, error } = await this.adminClient
+      .from('auth_device_sessions')
+      .select('session_id, platform, device_name, device_type, os_version, app_version, signed_in_at, last_seen_at')
+      .eq('user_id', userId)
+      .is('signed_out_at', null)
+      .gt('expires_at', new Date().toISOString())
+      .order('last_seen_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map((session) => ({
+      sessionId: session.session_id,
+      platform: session.platform,
+      deviceName: session.device_name,
+      deviceType: session.device_type,
+      osVersion: session.os_version,
+      appVersion: session.app_version,
+      signedInAt: session.signed_in_at,
+      lastSeenAt: session.last_seen_at,
+      isCurrent: session.session_id === currentSessionId,
+    }));
+  }
+
+  /** Checks whether a tracked BFF session can still access the API. */
+  public static async isDeviceSessionActive(userId: string, sessionId?: string): Promise<boolean> {
+    if (!sessionId) return false;
+
+    const { data, error } = await this.adminClient
+      .from('auth_device_sessions')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('session_id', sessionId)
+      .is('signed_out_at', null)
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle();
+
+    if (error) throw error;
+    return Boolean(data);
+  }
+
+  /** Marks one of the user's tracked installations signed out. */
+  public static async signOutDeviceSession(userId: string, sessionId?: string): Promise<boolean> {
+    if (!sessionId) return false;
+
+    const { data, error } = await this.adminClient
+      .from('auth_device_sessions')
+      .update({ signed_out_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .eq('session_id', sessionId)
+      .is('signed_out_at', null)
+      .select('session_id')
+      .maybeSingle();
+
+    if (error) throw error;
+    return Boolean(data);
   }
 
   /** Returns true only when the saved bio submission belongs to the caller. */

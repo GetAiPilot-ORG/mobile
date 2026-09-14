@@ -21,6 +21,21 @@ import { useAuth } from '../../src/contexts/AuthContext';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 import { supabase } from '../../src/lib/supabase';
 import { DashboardScreen } from '../../src/features/dashboard/screens/DashboardScreen';
+import { apiClient } from '../../src/core/api/client';
+
+interface LoginDevice {
+  sessionId: string;
+  platform: 'ios' | 'android' | 'web';
+  deviceName: string;
+  osVersion: string | null;
+  lastSeenAt: string;
+  isCurrent: boolean;
+}
+
+interface DeviceSessionsResponse {
+  activeDeviceCount: number;
+  devices: LoginDevice[];
+}
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -57,10 +72,17 @@ export default function HomeScreen() {
     },
   });
 
+  const { data: deviceSessions, isLoading: isLoadingDevices, refetch: refetchDeviceSessions } = useQuery<DeviceSessionsResponse>({
+    queryKey: ['auth-device-sessions', user?.id],
+    queryFn: () => apiClient.get<DeviceSessionsResponse>('/mobile/v1/auth/device-sessions'),
+    enabled: !!user?.id,
+    staleTime: 15_000,
+  });
+
   const onRefresh = async () => {
     setIsRefreshing(true);
     refreshSub();
-    await refetchTelemetry();
+    await Promise.all([refetchTelemetry(), refetchDeviceSessions()]);
     setIsRefreshing(false);
   };
 
@@ -283,6 +305,57 @@ export default function HomeScreen() {
             <Ionicons name="chevron-forward" size={13} color="#8E8E93" />
           </Pressable>
         </View>
+
+        {/* Signed-in device summary. Full device management lives in Account > Security. */}
+        <Pressable
+          style={[styles.loginSecurityCard, isDark && styles.loginSecurityCardDark]}
+          onPress={() => {
+            triggerHaptic();
+            router.push({ pathname: '/(tabs)/account', params: { tab: 'security' } } as any);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="View logged-in devices in account security"
+        >
+          <View style={[styles.loginSecurityIcon, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+            <Ionicons name="shield-checkmark-outline" size={20} color="#10B981" />
+          </View>
+          <View style={styles.loginSecurityContent}>
+            <View style={styles.loginSecurityHeader}>
+              <Text style={[styles.loginSecurityTitle, isDark && styles.loginSecurityTitleDark]}>Login security</Text>
+              <View style={styles.loginSecurityCount}>
+                <Text style={styles.loginSecurityCountText}>
+                  {isLoadingDevices ? 'Checking…' : `${deviceSessions?.activeDeviceCount ?? 0} active`}
+                </Text>
+              </View>
+            </View>
+            {deviceSessions?.devices.length ? (
+              <View style={styles.loginDeviceList}>
+                {deviceSessions.devices.slice(0, 2).map((device) => (
+                  <View key={device.sessionId} style={styles.loginDeviceRow}>
+                    <Ionicons
+                      name={device.platform === 'web' ? 'globe-outline' : 'phone-portrait-outline'}
+                      size={13}
+                      color="#8E8E93"
+                    />
+                    <Text style={[styles.loginDeviceText, isDark && styles.loginDeviceTextDark]} numberOfLines={1}>
+                      {device.deviceName}{device.isCurrent ? ' · This device' : ''}
+                    </Text>
+                  </View>
+                ))}
+                {deviceSessions.activeDeviceCount > 2 && (
+                  <Text style={[styles.loginMoreDevices, isDark && styles.loginMoreDevicesDark]}>
+                    +{deviceSessions.activeDeviceCount - 2} more device{deviceSessions.activeDeviceCount - 2 === 1 ? '' : 's'}
+                  </Text>
+                )}
+              </View>
+            ) : (
+              <Text style={[styles.loginSecuritySubtitle, isDark && styles.loginSecuritySubtitleDark]}>
+                {isLoadingDevices ? 'Loading signed-in devices' : 'No active device logins found'}
+              </Text>
+            )}
+          </View>
+          <Ionicons name="chevron-forward" size={17} color="#8E8E93" />
+        </Pressable>
 
         {/* iOS Native Segmented Filter Bar */}
         <View style={[styles.segmentedTrack, isDark && styles.segmentedTrackDark]}>
@@ -552,6 +625,90 @@ const styles = StyleSheet.create({
   },
   heroCardTitleDark: {
     color: '#FFFFFF',
+  },
+  loginSecurityCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 13,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E5E7EB',
+    marginBottom: 16,
+  },
+  loginSecurityCardDark: {
+    backgroundColor: '#161B22',
+    borderColor: '#262C36',
+  },
+  loginSecurityIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 11,
+  },
+  loginSecurityContent: {
+    flex: 1,
+  },
+  loginSecurityHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  loginSecurityTitle: {
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: '#000000',
+  },
+  loginSecurityTitleDark: {
+    color: '#FFFFFF',
+  },
+  loginSecurityCount: {
+    backgroundColor: 'rgba(16, 185, 129, 0.16)',
+    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  loginSecurityCountText: {
+    color: '#10B981',
+    fontSize: 10.5,
+    fontWeight: '800',
+  },
+  loginSecuritySubtitle: {
+    color: '#6B7280',
+    fontSize: 12,
+    marginTop: 3,
+  },
+  loginSecuritySubtitleDark: {
+    color: '#8E8E93',
+  },
+  loginDeviceList: {
+    marginTop: 5,
+    gap: 3,
+  },
+  loginDeviceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  loginDeviceText: {
+    flex: 1,
+    color: '#6B7280',
+    fontSize: 12,
+  },
+  loginDeviceTextDark: {
+    color: '#8E8E93',
+  },
+  loginMoreDevices: {
+    color: '#0A84FF',
+    fontSize: 11.5,
+    fontWeight: '700',
+    marginLeft: 18,
+  },
+  loginMoreDevicesDark: {
+    color: '#64B5FF',
   },
   // ─── iOS Native Segmented Track ────────────────────────────────
   segmentedTrack: {

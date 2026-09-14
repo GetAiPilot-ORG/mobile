@@ -23,12 +23,29 @@ import { supabase } from '../../src/lib/supabase';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Profile } from '../../src/types/database';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 import { BiometricService, BiometricSettings } from '../../src/lib/biometrics';
 import { apiClient } from '../../src/core/api/client';
 
 type AccountTab = 'overview' | 'edit' | 'security' | 'billing' | 'preferences';
+
+interface DeviceSession {
+  sessionId: string;
+  platform: 'ios' | 'android' | 'web';
+  deviceName: string;
+  deviceType: 'phone' | 'tablet' | 'desktop' | 'tv' | 'unknown' | null;
+  osVersion: string | null;
+  appVersion: string | null;
+  signedInAt: string;
+  lastSeenAt: string;
+  isCurrent: boolean;
+}
+
+interface DeviceSessionsResponse {
+  activeDeviceCount: number;
+  devices: DeviceSession[];
+}
 
 const TABS: { id: AccountTab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -40,6 +57,7 @@ const TABS: { id: AccountTab; label: string }[] = [
 
 export default function AccountScreen() {
   const router = useRouter();
+  const { tab } = useLocalSearchParams<{ tab?: string }>();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const { user, signOut } = useAuth();
@@ -47,6 +65,10 @@ export default function AccountScreen() {
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<AccountTab>('overview');
+
+  useEffect(() => {
+    if (tab === 'security') setActiveTab('security');
+  }, [tab]);
 
   // Animated Segmented Control state
   const activeTabIndex = TABS.findIndex((t) => t.id === activeTab);
@@ -204,6 +226,21 @@ export default function AccountScreen() {
       return data;
     },
     enabled: !!user?.id,
+  });
+
+  // Device sessions are BFF-only. Supabase's auth.sessions table is not
+  // available to the mobile client and the BFF uses its service role to read
+  // this user's safe, app-facing device metadata.
+  const {
+    data: deviceSessionsResponse,
+    isLoading: isLoadingDeviceSessions,
+    isFetching: isRefreshingDeviceSessions,
+    refetch: refetchDeviceSessions,
+  } = useQuery<DeviceSessionsResponse>({
+    queryKey: ['auth-device-sessions', user?.id],
+    queryFn: () => apiClient.get<DeviceSessionsResponse>('/mobile/v1/auth/device-sessions'),
+    enabled: activeTab === 'security' && !!user?.id,
+    staleTime: 15_000,
   });
 
   // Sync form state when profile loads
@@ -421,6 +458,13 @@ export default function AccountScreen() {
     } catch (err: any) {
       console.error('Error updating timeout:', err);
     }
+  };
+
+  const formatDeviceLastSeen = (device: DeviceSession) => {
+    if (device.isCurrent) return 'This device';
+    const date = new Date(device.lastSeenAt);
+    if (Number.isNaN(date.getTime())) return 'Recently signed in';
+    return `Signed in ${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
   };
 
   // Sign Out Handler
@@ -928,7 +972,83 @@ export default function AccountScreen() {
               )}
             </View>
 
-            {/* SECTION 2: AUTHENTICATION & CREDENTIALS */}
+            {/* SECTION 2: LOGGED-IN DEVICES */}
+            <View style={[styles.sectionHeaderRow, { marginTop: 14 }]}>
+              <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
+                LOGGED-IN DEVICES
+              </Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Refresh logged-in devices"
+                onPress={() => refetchDeviceSessions()}
+                disabled={isRefreshingDeviceSessions}
+                hitSlop={8}
+                style={styles.deviceRefreshButton}
+              >
+                {isRefreshingDeviceSessions ? (
+                  <ActivityIndicator size="small" color="#0A84FF" />
+                ) : (
+                  <Ionicons name="refresh" size={15} color="#0A84FF" />
+                )}
+                <Text style={styles.deviceRefreshText}>Refresh</Text>
+              </Pressable>
+            </View>
+            <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+              <View style={[styles.deviceSummaryRow, isDark ? styles.actionRowDark : styles.actionRowLight]}>
+                <View style={[styles.rowIconCircle, { backgroundColor: 'rgba(10, 132, 255, 0.15)' }]}>
+                  <Ionicons name="phone-portrait-outline" size={18} color="#0A84FF" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.actionTitle, isDark && styles.actionTitleDark]}>
+                    {deviceSessionsResponse?.activeDeviceCount ?? 0} active {deviceSessionsResponse?.activeDeviceCount === 1 ? 'device' : 'devices'}
+                  </Text>
+                  <Text style={[styles.actionSubtitle, isDark && styles.actionSubtitleDark]}>
+                    Devices currently signed in with this account
+                  </Text>
+                </View>
+              </View>
+
+              {isLoadingDeviceSessions ? (
+                <View style={styles.deviceLoadingRow}>
+                  <ActivityIndicator size="small" color="#0A84FF" />
+                  <Text style={[styles.actionSubtitle, isDark && styles.actionSubtitleDark]}>Loading devices…</Text>
+                </View>
+              ) : deviceSessionsResponse?.devices.length ? (
+                deviceSessionsResponse.devices.map((device, index) => (
+                  <View
+                    key={device.sessionId}
+                    style={[
+                      styles.deviceRow,
+                      index === deviceSessionsResponse.devices.length - 1 && { borderBottomWidth: 0 },
+                      isDark ? styles.actionRowDark : styles.actionRowLight,
+                    ]}
+                  >
+                    <View style={[styles.rowIconCircle, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+                      <Ionicons
+                        name={device.platform === 'web' ? 'globe-outline' : device.deviceType === 'tablet' ? 'tablet-portrait-outline' : 'phone-portrait-outline'}
+                        size={18}
+                        color="#10B981"
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.actionTitle, isDark && styles.actionTitleDark]} numberOfLines={1}>
+                        {device.deviceName}
+                      </Text>
+                      <Text style={[styles.actionSubtitle, isDark && styles.actionSubtitleDark]} numberOfLines={1}>
+                        {[device.platform, device.osVersion, formatDeviceLastSeen(device)].filter(Boolean).join(' • ')}
+                      </Text>
+                    </View>
+                    {device.isCurrent && <View style={styles.currentDeviceTag}><Text style={styles.currentDeviceTagText}>This device</Text></View>}
+                  </View>
+                ))
+              ) : (
+                <View style={styles.deviceLoadingRow}>
+                  <Text style={[styles.actionSubtitle, isDark && styles.actionSubtitleDark]}>No active device logins found.</Text>
+                </View>
+              )}
+            </View>
+
+            {/* SECTION 3: AUTHENTICATION & CREDENTIALS */}
             <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark, { marginTop: 14 }]}>
               AUTHENTICATION & CREDENTIALS
             </Text>
@@ -2031,6 +2151,46 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 6,
     paddingHorizontal: 4,
+  },
+  deviceRefreshButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+  },
+  deviceRefreshText: {
+    color: '#0A84FF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  deviceSummaryRow: {
+    paddingVertical: 13,
+  },
+  deviceLoadingRow: {
+    minHeight: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 14,
+  },
+  deviceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  currentDeviceTag: {
+    backgroundColor: 'rgba(16, 185, 129, 0.16)',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 7,
+    marginLeft: 8,
+  },
+  currentDeviceTagText: {
+    color: '#10B981',
+    fontSize: 10,
+    fontWeight: '800',
   },
   microBadge: {
     flexDirection: 'row',
