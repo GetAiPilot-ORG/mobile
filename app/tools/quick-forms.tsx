@@ -1,965 +1,620 @@
-import React, { useState } from 'react';
+import { FileText, Inbox, Pencil, Plus, Trash2 } from "lucide-react-native";
+import { useCallback, useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TextInput,
-  Pressable,
-  Switch,
-  Alert,
-  Modal,
   ActivityIndicator,
+  Alert,
+  FlatList,
+  Pressable,
   RefreshControl,
-  Share,
+  StyleSheet,
+  Text,
+  View,
   useColorScheme,
-} from 'react-native';
-import * as Haptics from 'expo-haptics';
-import * as Clipboard from 'expo-clipboard';
-import { AppScreen } from '../../src/components/AppScreen';
-import { AppTopBar } from '../../src/components/AppTopBar';
-import { colors } from '../../src/theme/colors';
-import { useAuth } from '../../src/contexts/AuthContext';
-import { supabase } from '../../src/lib/supabase';
-import { useQuery } from '@tanstack/react-query';
+} from "react-native";
 
-export interface FormField {
+import { openAuthenticatedTemplate } from "@/lib/template-deep-link";
+import { AppScreen } from "../../src/components/AppScreen";
+import { AppTopBar } from "../../src/components/AppTopBar";
+import { supabase } from "../../src/lib/supabase";
+
+interface QuickForm {
   id: string;
-  type: 'text' | 'email' | 'number' | 'textarea';
-  label: string;
-  placeholder?: string;
-  required?: boolean;
+  user_id: string;
+  title?: string | null;
+  name?: string | null;
+  description?: string | null;
+  slug?: string | null;
+  status?: string | null;
+  created_at: string;
+  updated_at: string;
+  [key: string]: unknown;
 }
 
-const QUICK_TEMPLATES = [
-  {
-    title: '🚀 Lead Capture',
-    desc: 'Name, Email & Phone',
-    fields: [
-      { id: '1', type: 'text' as const, label: 'Full Name', placeholder: 'e.g. John Doe', required: true },
-      { id: '2', type: 'email' as const, label: 'Email Address', placeholder: 'john@gmail.com', required: true },
-      { id: '3', type: 'number' as const, label: 'WhatsApp Number', placeholder: '+91 98765 43210', required: true },
-    ],
-  },
-  {
-    title: '⭐ Customer Review',
-    desc: 'Name & Feedback',
-    fields: [
-      { id: '1', type: 'text' as const, label: 'Your Name', placeholder: 'Sarah Jenkins', required: true },
-      { id: '2', type: 'textarea' as const, label: 'How was your experience?', placeholder: 'Write your thoughts here...', required: true },
-    ],
-  },
-  {
-    title: '📅 Book Meeting',
-    desc: 'Name, Email & Preferred Date',
-    fields: [
-      { id: '1', type: 'text' as const, label: 'Your Name', placeholder: 'Alex Smith', required: true },
-      { id: '2', type: 'email' as const, label: 'Work Email', placeholder: 'alex@company.com', required: true },
-      { id: '3', type: 'text' as const, label: 'Preferred Date & Time', placeholder: 'e.g. Tomorrow at 4 PM', required: true },
-    ],
-  },
-];
-
 export default function SimpleQuickFormsScreen() {
-  const { user } = useAuth();
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
 
-  const [activeTab, setActiveTab] = useState<'create' | 'saved'>('create');
+  const [forms, setForms] = useState<QuickForm[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Form State
-  const [title, setTitle] = useState('My Simple Form');
-  const [description, setDescription] = useState('Please answer the questions below.');
-  const [fields, setFields] = useState<FormField[]>([
-    { id: '1', type: 'text', label: 'Full Name', placeholder: 'e.g. John Doe', required: true },
-    { id: '2', type: 'email', label: 'Email Address', placeholder: 'john@example.com', required: true },
-    { id: '3', type: 'number', label: 'Phone Number', placeholder: '+91 98765 43210', required: false },
-  ]);
+  const loadForms = useCallback(async () => {
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
-  const [showPreview, setShowPreview] = useState(false);
-  const [isPublishing, setIsPublishing] = useState(false);
-
-  // AI Generator Modal State
-  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
-
-  // Dynamic Theme Mapping
-  const theme = {
-    bg: isDark ? colors.backgroundDark : colors.background,
-    card: isDark ? colors.surfaceDark : colors.card,
-    cardBorder: isDark ? colors.borderDark : colors.border,
-    text: isDark ? colors.foregroundDark : colors.foreground,
-    mutedText: colors.mutedForeground,
-    inputBg: isDark ? '#141416' : '#FFFFFF',
-    inputBorder: isDark ? '#2C2C2E' : colors.border,
-    tabBarBg: isDark ? '#1C1C1E' : '#E5E7EB',
-    primary: colors.primary, // Official GetAiPilot Electric Blue #0084FF
-    primarySoft: colors.accentSoft,
-  };
-
-  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
-
-  // Live Forms Fetching
-  const {
-    data: formsList = [],
-    isLoading,
-    refetch,
-  } = useQuery({
-    queryKey: ['user-quick-forms', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('quick_forms')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error || !data) return [];
-      return data;
-    },
-    retry: false,
-    staleTime: 1000 * 60,
-  });
-
-  const handlePullRefresh = async () => {
-    setIsPullRefreshing(true);
-    await refetch();
-    setIsPullRefreshing(false);
-  };
-
-  const handleAddField = (type: FormField['type']) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const newField: FormField = {
-      id: String(Date.now()),
-      type,
-      label: type === 'textarea' ? 'Long Message' : type === 'email' ? 'Email Address' : type === 'number' ? 'Phone Number' : 'Short Question',
-      placeholder: 'Enter response...',
-      required: false,
-    };
-    setFields([...fields, newField]);
-  };
-
-  const handleRemoveField = (id: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setFields(fields.filter((f) => f.id !== id));
-  };
-
-  const handleApplyTemplate = (tmpl: typeof QUICK_TEMPLATES[0]) => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setTitle(tmpl.title.replace(/[^a-zA-Z ]/g, '').trim());
-    setFields(tmpl.fields);
-    Alert.alert('Loaded! ✨', `"${tmpl.title}" is ready.`);
-  };
-
-  // AI Generator Engine
-  const handleGenerateWithAI = () => {
-    if (!aiPrompt.trim()) {
-      Alert.alert('Prompt Required', 'Please describe the form you want AI to generate.');
-      return;
-    }
-
-    setIsGeneratingAi(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    setTimeout(() => {
-      setIsGeneratingAi(false);
-      setIsAiModalOpen(false);
-
-      const query = aiPrompt.toLowerCase();
-      if (query.includes('job') || query.includes('career') || query.includes('hiring') || query.includes('resume')) {
-        setTitle('Job Application Form');
-        setDescription('Please submit your application and contact details below.');
-        setFields([
-          { id: '1', type: 'text', label: 'Candidate Full Name', placeholder: 'Jane Doe', required: true },
-          { id: '2', type: 'email', label: 'Email Address', placeholder: 'jane@gmail.com', required: true },
-          { id: '3', type: 'number', label: 'Phone Number', placeholder: '+91 98765 43210', required: true },
-          { id: '4', type: 'text', label: 'Portfolio / LinkedIn URL', placeholder: 'https://linkedin.com/in/...', required: true },
-          { id: '5', type: 'textarea', label: 'Why are you a good fit for this role?', placeholder: 'Describe your experience...', required: false },
-        ]);
-      } else if (query.includes('event') || query.includes('rsvp') || query.includes('webinar') || query.includes('conference')) {
-        setTitle('Event & Webinar Registration');
-        setDescription('Reserve your seat for the upcoming live session.');
-        setFields([
-          { id: '1', type: 'text', label: 'Attendee Name', placeholder: 'Michael Scott', required: true },
-          { id: '2', type: 'email', label: 'Work Email', placeholder: 'michael@dundermifflin.com', required: true },
-          { id: '3', type: 'number', label: 'WhatsApp for SMS Reminder', placeholder: '+91 98765 43210', required: true },
-          { id: '4', type: 'text', label: 'Company / Organization', placeholder: 'Dunder Mifflin Paper', required: false },
-        ]);
-      } else if (query.includes('gym') || query.includes('fitness') || query.includes('trainer')) {
-        setTitle('Fitness & Gym Membership Intake');
-        setDescription('Tell us your fitness goals and start your transformation.');
-        setFields([
-          { id: '1', type: 'text', label: 'Member Name', placeholder: 'Chris Bumstead', required: true },
-          { id: '2', type: 'number', label: 'Emergency Contact Phone', placeholder: '+91 98765 43210', required: true },
-          { id: '3', type: 'text', label: 'Primary Fitness Goal', placeholder: 'e.g. Muscle Gain, Weight Loss', required: true },
-          { id: '4', type: 'textarea', label: 'Any medical conditions or injuries?', placeholder: 'None or describe below...', required: false },
-        ]);
-      } else {
-        const cleanPromptTitle = aiPrompt.charAt(0).toUpperCase() + aiPrompt.slice(1);
-        setTitle(cleanPromptTitle.length > 30 ? cleanPromptTitle.slice(0, 27) + '...' : cleanPromptTitle);
-        setDescription('Please complete this form to help us understand your requirements.');
-        setFields([
-          { id: '1', type: 'text', label: 'Your Full Name', placeholder: 'Full name', required: true },
-          { id: '2', type: 'email', label: 'Contact Email', placeholder: 'name@email.com', required: true },
-          { id: '3', type: 'number', label: 'Phone / WhatsApp Number', placeholder: '+91 98765 43210', required: true },
-          { id: '4', type: 'textarea', label: 'Specific Requirements / Details', placeholder: 'Provide any additional details...', required: false },
-        ]);
+      if (userError) {
+        throw userError;
       }
 
-      setAiPrompt('');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('AI Form Ready! ✨', 'Your custom AI form schema was generated and loaded.');
-    }, 750);
-  };
+      if (!user) {
+        setForms([]);
+        return;
+      }
 
-  const handleCopyLink = async (url: string) => {
-    await Clipboard.setStringAsync(url);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert('Copied! 📋', 'Form link copied to your clipboard.');
-  };
+      const { data, error } = await supabase
+        .from("quick_forms")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("updated_at", {
+          ascending: false,
+        });
 
-  const handlePublish = async () => {
-    if (!title.trim()) {
-      Alert.alert('Required', 'Please enter a title for your form.');
-      return;
-    }
-    if (fields.length === 0) {
-      Alert.alert('Required', 'Please add at least one question.');
-      return;
-    }
+      if (error) {
+        throw error;
+      }
 
-    setIsPublishing(true);
-    try {
-      const slug = title.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Math.floor(Math.random() * 1000);
-      await supabase.from('quick_forms').insert({
-        title: title.trim(),
-        description: description.trim(),
-        elements: fields,
-        slug,
-        user_id: user?.id,
-        is_published: true,
-      });
+      setForms((data ?? []) as QuickForm[]);
+    } catch (error) {
+      console.error("[QuickForms] Failed to load forms:", error);
 
-      refetch();
-      setIsPublishing(false);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert(
-        'Form Published! 🎉',
-        `Your form is live!\nhttps://getaipilot.in/f/${slug}`,
-        [
-          { text: 'Copy Link', onPress: () => handleCopyLink(`https://getaipilot.in/f/${slug}`) },
-          { text: 'View Saved Forms', onPress: () => setActiveTab('saved') },
-        ]
+        "Unable to load forms",
+        "Something went wrong while loading your forms.",
       );
-    } catch {
-      setIsPublishing(false);
-      Alert.alert('Success', `Form "${title}" saved to your workspace.`);
-      setActiveTab('saved');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadForms();
+  }, [loadForms]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    void loadForms();
+  };
+
+  const handleRedirect = async (form: QuickForm) => {
+    console.log("[QuickForms] Opening form:", form.id);
+
+    await openAuthenticatedTemplate({
+      targetTool: "quick-forms",
+      quickFormId: form.id,
+    });
+  };
+
+  const handleCreate = async () => {
+    console.log("[QuickForms] Creating new form");
+
+    await openAuthenticatedTemplate({
+      targetTool: "quick-forms",
+    });
+  };
+
+  const handleDelete = (form: QuickForm) => {
+    Alert.alert(
+      "Delete form?",
+      `Are you sure you want to delete "${getFormTitle(
+        form,
+      )}"? This action cannot be undone.`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            void deleteForm(form.id);
+          },
+        },
+      ],
+    );
+  };
+
+  const deleteForm = async (formId: string) => {
+    try {
+      setDeletingId(formId);
+
+      const { error } = await supabase
+        .from("quick_forms")
+        .delete()
+        .eq("id", formId);
+
+      if (error) {
+        throw error;
+      }
+
+      setForms((current) => current.filter((form) => form.id !== formId));
+    } catch (error) {
+      console.error("[QuickForms] Failed to delete form:", error);
+
+      Alert.alert(
+        "Delete failed",
+        "Unable to delete the form. Please try again.",
+      );
+    } finally {
+      setDeletingId(null);
     }
   };
+
+  const getFormTitle = (form: QuickForm) => {
+    return form.title || form.name || "Untitled Form";
+  };
+
+  const getFormDescription = (form: QuickForm) => {
+    if (form.description) {
+      return form.description;
+    }
+
+    return "Create and share your customer form.";
+  };
+
+  const formatDate = (date: string) => {
+    try {
+      return new Date(date).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    } catch {
+      return "";
+    }
+  };
+
+  const renderForm = ({ item }: { item: QuickForm }) => {
+    const isDeleting = deletingId === item.id;
+
+    return (
+      <View style={[styles.card, isDark && styles.cardDark]}>
+        <View style={styles.cardHeader}>
+          <View
+            style={[styles.iconContainer, isDark && styles.iconContainerDark]}
+          >
+            <FileText size={22} color={isDark ? "#FFFFFF" : "#0A84FF"} />
+          </View>
+
+          <View style={styles.titleContainer}>
+            <Text
+              numberOfLines={1}
+              style={[styles.formTitle, isDark && styles.formTitleDark]}
+            >
+              {getFormTitle(item)}
+            </Text>
+
+            <Text
+              style={[styles.updatedText, isDark && styles.updatedTextDark]}
+            >
+              Updated {formatDate(item.updated_at)}
+            </Text>
+          </View>
+
+          {item.status ? (
+            <View style={styles.statusBadge}>
+              <Text style={styles.statusText}>{String(item.status)}</Text>
+            </View>
+          ) : null}
+        </View>
+
+        <Text
+          numberOfLines={2}
+          style={[styles.description, isDark && styles.descriptionDark]}
+        >
+          {getFormDescription(item)}
+        </Text>
+
+        <View style={styles.actions}>
+          <Pressable
+            disabled={isDeleting}
+            onPress={() => handleRedirect(item)}
+            style={[
+              styles.editButton,
+              isDark && styles.editButtonDark,
+              isDeleting && styles.disabledButton,
+            ]}
+          >
+            <Pencil size={17} color={isDark ? "#FFFFFF" : "#111827"} />
+
+            <Text
+              style={[
+                styles.editButtonText,
+                isDark && styles.editButtonTextDark,
+              ]}
+            >
+              Edit
+            </Text>
+          </Pressable>
+
+          <Pressable
+            disabled={isDeleting}
+            onPress={() => handleDelete(item)}
+            style={[styles.deleteButton, isDeleting && styles.disabledButton]}
+          >
+            {isDeleting ? (
+              <ActivityIndicator size="small" color="#DC2626" />
+            ) : (
+              <>
+                <Trash2 size={17} color="#DC2626" />
+
+                <Text style={styles.deleteText}>Delete</Text>
+              </>
+            )}
+          </Pressable>
+        </View>
+      </View>
+    );
+  };
+
+  if (loading) {
+    return (
+      <AppScreen safeArea={false}>
+        <AppTopBar title="QuickForms" subtitle="Manage your forms" />
+
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0A84FF" />
+
+          <Text style={[styles.loadingText, isDark && styles.loadingTextDark]}>
+            Loading your forms...
+          </Text>
+        </View>
+      </AppScreen>
+    );
+  }
 
   return (
-    <AppScreen safeArea={false} backgroundColor={theme.bg}>
-      <AppTopBar title="QuickForms" subtitle="Direct Customer Intake" showBack={true} />
+    <AppScreen safeArea={false}>
+      <AppTopBar
+        title="QuickForms"
+        subtitle={
+          forms.length > 0
+            ? `${forms.length} form${forms.length === 1 ? "" : "s"}`
+            : "Create your first form"
+        }
+      />
 
-      {/* Clean 2-Option Tab Bar */}
-      <View style={[styles.topTabBar, { backgroundColor: theme.tabBarBg }]}>
-        <Pressable
-          style={[styles.tabBtn, activeTab === 'create' && { backgroundColor: theme.primary }]}
-          onPress={() => setActiveTab('create')}
-        >
-          <Text style={[styles.tabBtnText, activeTab === 'create' ? { color: '#FFFFFF' } : { color: theme.mutedText }]}>
-            ➕ Create Form
-          </Text>
-        </Pressable>
+      <View style={styles.container}>
+        {forms.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <View style={[styles.emptyIcon, isDark && styles.emptyIconDark]}>
+              <Inbox size={38} color={isDark ? "#FFFFFF" : "#0A84FF"} />
+            </View>
 
-        <Pressable
-          style={[styles.tabBtn, activeTab === 'saved' && { backgroundColor: theme.primary }]}
-          onPress={() => setActiveTab('saved')}
-        >
-          <Text style={[styles.tabBtnText, activeTab === 'saved' ? { color: '#FFFFFF' } : { color: theme.mutedText }]}>
-            📁 My Forms ({formsList.length})
-          </Text>
-        </Pressable>
-      </View>
+            <Text style={[styles.emptyTitle, isDark && styles.emptyTitleDark]}>
+              No forms yet
+            </Text>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        refreshControl={<RefreshControl refreshing={isPullRefreshing} onRefresh={handlePullRefresh} tintColor={theme.primary} />}
-        showsVerticalScrollIndicator={false}
-      >
-        {activeTab === 'create' ? (
-          <View>
-            {/* AI Magic Generator Banner (GetAiPilot Brand Blue Accent) */}
-            <Pressable
+            <Text
               style={[
-                styles.aiBannerBtn,
-                {
-                  backgroundColor: isDark ? 'rgba(0, 132, 255, 0.12)' : '#EBF5FF',
-                  borderColor: isDark ? 'rgba(0, 132, 255, 0.35)' : '#B9E0FF',
-                },
+                styles.emptyDescription,
+                isDark && styles.emptyDescriptionDark,
               ]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                setIsAiModalOpen(true);
-              }}
             >
-              <View style={[styles.aiBannerIcon, { backgroundColor: theme.primary }]}>
-                <Text style={{ fontSize: 18, color: '#FFFFFF' }}>✨</Text>
-              </View>
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={[styles.aiBannerTitle, { color: isDark ? '#FFFFFF' : '#004F9E' }]}>
-                  Generate Form with AI
-                </Text>
-                <Text style={[styles.aiBannerSub, { color: isDark ? '#94A3B8' : '#3B82F6' }]}>
-                  Type your requirements and AI builds all questions instantly.
-                </Text>
-              </View>
-              <Text style={{ color: theme.primary, fontSize: 18, fontWeight: 'bold' }}>➔</Text>
-            </Pressable>
+              Create your first form to collect customer information, surveys,
+              consultations, or leads.
+            </Text>
 
-            {/* Quick 1-Tap Templates Strip */}
-            <Text style={[styles.sectionHeading, { color: theme.mutedText }]}>Or Pick a 1-Tap Starter</Text>
-            <View style={styles.templatesRow}>
-              {QUICK_TEMPLATES.map((tmpl, i) => (
-                <Pressable
-                  key={i}
-                  style={[
-                    styles.simpleTemplateCard,
-                    {
-                      backgroundColor: theme.card,
-                      borderColor: theme.cardBorder,
-                    },
-                  ]}
-                  onPress={() => handleApplyTemplate(tmpl)}
-                >
-                  <Text style={[styles.templateTitleText, { color: theme.text }]}>{tmpl.title}</Text>
-                  <Text style={[styles.templateDescText, { color: theme.mutedText }]}>{tmpl.desc}</Text>
-                </Pressable>
-              ))}
-            </View>
-
-            {/* Form Basics Card */}
-            <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-              <Text style={[styles.cardHeading, { color: theme.text }]}>Form Details</Text>
-              
-              <Text style={[styles.label, { color: theme.mutedText }]}>Form Title</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-                value={title}
-                onChangeText={setTitle}
-                placeholder="e.g. Free Quote Request"
-                placeholderTextColor={theme.mutedText}
-              />
-
-              <Text style={[styles.label, { color: theme.mutedText }]}>Short Instructions (Optional)</Text>
-              <TextInput
-                style={[styles.input, { height: 50, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-                value={description}
-                onChangeText={setDescription}
-                placeholder="e.g. Fill this out and we will contact you!"
-                placeholderTextColor={theme.mutedText}
-              />
-            </View>
-
-            {/* Questions Builder Card */}
-            <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <Text style={[styles.cardHeading, { color: theme.text }]}>Questions ({fields.length})</Text>
-                <Pressable
-                  style={[styles.previewToggleBtn, { backgroundColor: isDark ? '#2C2C2E' : '#EBF5FF' }]}
-                  onPress={() => setShowPreview(!showPreview)}
-                >
-                  <Text style={[styles.previewToggleText, { color: theme.primary }]}>
-                    {showPreview ? 'Hide Preview ✕' : '👀 Live Preview'}
-                  </Text>
-                </Pressable>
-              </View>
-
-              {/* Questions List */}
-              {fields.map((field, idx) => (
-                <View
-                  key={field.id}
-                  style={[
-                    styles.questionBox,
-                    {
-                      backgroundColor: isDark ? '#141416' : '#F9FAFB',
-                      borderColor: theme.cardBorder,
-                    },
-                  ]}
-                >
-                  <View style={styles.questionHeader}>
-                    <Text style={[styles.questionNumber, { color: theme.primary }]}>Question {idx + 1}</Text>
-                    
-                    <View style={styles.requiredRow}>
-                      <Text style={[styles.requiredText, { color: theme.mutedText }]}>Required</Text>
-                      <Switch
-                        value={field.required || false}
-                        onValueChange={(val) => {
-                          const updated = [...fields];
-                          updated[idx].required = val;
-                          setFields(updated);
-                        }}
-                        trackColor={{ false: '#3A3A3C', true: theme.primary }}
-                        thumbColor="#FFFFFF"
-                      />
-                    </View>
-
-                    <Pressable
-                      style={styles.removeBtn}
-                      onPress={() => handleRemoveField(field.id)}
-                    >
-                      <Text style={styles.removeBtnText}>✕</Text>
-                    </Pressable>
-                  </View>
-
-                  <TextInput
-                    style={[
-                      styles.questionInput,
-                      {
-                        backgroundColor: theme.card,
-                        borderColor: theme.inputBorder,
-                        color: theme.text,
-                      },
-                    ]}
-                    value={field.label}
-                    onChangeText={(txt) => {
-                      const updated = [...fields];
-                      updated[idx].label = txt;
-                      setFields(updated);
-                    }}
-                    placeholder="Enter your question here..."
-                    placeholderTextColor={theme.mutedText}
-                  />
-                </View>
-              ))}
-
-              {/* Add Question Buttons */}
-              <Text style={[styles.label, { color: theme.mutedText, marginTop: 10, marginBottom: 8 }]}>+ Add Another Question:</Text>
-              <View style={styles.addButtonsGrid}>
-                <Pressable
-                  style={[styles.addTypeBtn, { backgroundColor: isDark ? '#141416' : '#F3F4F6', borderColor: theme.cardBorder }]}
-                  onPress={() => handleAddField('text')}
-                >
-                  <Text style={styles.addTypeIcon}>🔤</Text>
-                  <Text style={[styles.addTypeText, { color: theme.text }]}>Short Text</Text>
-                </Pressable>
-
-                <Pressable
-                  style={[styles.addTypeBtn, { backgroundColor: isDark ? '#141416' : '#F3F4F6', borderColor: theme.cardBorder }]}
-                  onPress={() => handleAddField('email')}
-                >
-                  <Text style={styles.addTypeIcon}>📧</Text>
-                  <Text style={[styles.addTypeText, { color: theme.text }]}>Email</Text>
-                </Pressable>
-
-                <Pressable
-                  style={[styles.addTypeBtn, { backgroundColor: isDark ? '#141416' : '#F3F4F6', borderColor: theme.cardBorder }]}
-                  onPress={() => handleAddField('number')}
-                >
-                  <Text style={styles.addTypeIcon}>🔢</Text>
-                  <Text style={[styles.addTypeText, { color: theme.text }]}>Phone / Number</Text>
-                </Pressable>
-
-                <Pressable
-                  style={[styles.addTypeBtn, { backgroundColor: isDark ? '#141416' : '#F3F4F6', borderColor: theme.cardBorder }]}
-                  onPress={() => handleAddField('textarea')}
-                >
-                  <Text style={styles.addTypeIcon}>📝</Text>
-                  <Text style={[styles.addTypeText, { color: theme.text }]}>Long Text</Text>
-                </Pressable>
-              </View>
-            </View>
-
-            {/* Interactive Live Preview Accordion */}
-            {showPreview && (
-              <View style={[styles.previewContainer, { borderColor: theme.primary, backgroundColor: isDark ? '#000000' : '#F8F9FA' }]}>
-                <Text style={[styles.previewTitle, { color: theme.primary }]}>📱 Live Customer View</Text>
-                <View style={[styles.previewPhoneBox, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-                  <Text style={[styles.phoneFormTitle, { color: theme.text }]}>{title}</Text>
-                  <Text style={[styles.phoneFormDesc, { color: theme.mutedText }]}>{description}</Text>
-
-                  {fields.map((f) => (
-                    <View key={f.id} style={{ marginBottom: 12 }}>
-                      <Text style={[styles.phoneFieldLabel, { color: theme.text }]}>
-                        {f.label} {f.required && <Text style={{ color: '#EF4444' }}>*</Text>}
-                      </Text>
-                      <TextInput
-                        style={[styles.phoneMockInput, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-                        placeholder={f.placeholder || 'Customer types response here...'}
-                        placeholderTextColor={theme.mutedText}
-                        editable={false}
-                      />
-                    </View>
-                  ))}
-
-                  <View style={[styles.phoneSubmitBtn, { backgroundColor: theme.primary }]}>
-                    <Text style={styles.phoneSubmitText}>Submit</Text>
-                  </View>
-                </View>
-              </View>
-            )}
-
-            {/* Big Publish Button */}
             <Pressable
-              style={[styles.publishBtn, { backgroundColor: colors.products.whatsapp }]}
-              onPress={handlePublish}
-              disabled={isPublishing}
+              onPress={() => void handleCreate()}
+              style={styles.createButton}
             >
-              {isPublishing ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.publishBtnText}>Publish & Get Link 🚀</Text>
-              )}
+              <Plus size={20} color="#FFFFFF" />
+
+              <Text style={styles.createButtonText}>Create Form</Text>
             </Pressable>
           </View>
         ) : (
-          /* ── MY SAVED FORMS TAB ── */
-          <View>
-            {formsList.length === 0 ? (
-              <View style={[styles.emptyCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-                <Text style={{ fontSize: 40, marginBottom: 10 }}>📝</Text>
-                <Text style={[styles.emptyTitle, { color: theme.text }]}>No Forms Saved Yet</Text>
-                <Text style={[styles.emptySub, { color: theme.mutedText }]}>Create your first form in seconds!</Text>
-                <Pressable
-                  style={[styles.emptyCreateBtn, { backgroundColor: theme.primary }]}
-                  onPress={() => setActiveTab('create')}
-                >
-                  <Text style={styles.emptyCreateText}>+ Create a Form</Text>
-                </Pressable>
-              </View>
-            ) : (
-              <View style={{ gap: 12 }}>
-                {formsList.map((form: any) => {
-                  const formUrl = `https://getaipilot.in/f/${form.slug || form.id}`;
-                  return (
-                    <View
-                      key={form.id}
-                      style={[styles.savedCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
-                    >
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.savedFormTitle, { color: theme.text }]}>{form.title || 'Untitled Form'}</Text>
-                        <Text style={[styles.savedFormSub, { color: theme.mutedText }]} numberOfLines={1}>
-                          {form.description || 'No description'}
-                        </Text>
-                        <Text style={[styles.savedFieldsBadge, { color: theme.primary }]}>
-                          {Array.isArray(form.elements) ? form.elements.length : 3} Questions
-                        </Text>
-                      </View>
+          <>
+            <View style={styles.topActions}>
+              <Text
+                style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}
+              >
+                Your Forms
+              </Text>
 
-                      <View style={styles.savedActionsRow}>
-                        <Pressable
-                          style={[styles.savedActionBtn, { backgroundColor: isDark ? '#2C2C2E' : '#F3F4F6' }]}
-                          onPress={() => handleCopyLink(formUrl)}
-                        >
-                          <Text style={[styles.savedActionText, { color: theme.text }]}>Copy 📋</Text>
-                        </Pressable>
-                        <Pressable
-                          style={[styles.savedActionBtn, { backgroundColor: theme.primary }]}
-                          onPress={() =>
-                            Share.share({
-                              message: `Please fill out this form: ${formUrl}`,
-                            })
-                          }
-                        >
-                          <Text style={[styles.savedActionText, { color: '#FFFFFF' }]}>Share 🔗</Text>
-                        </Pressable>
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
-            )}
-          </View>
-        )}
-      </ScrollView>
+              <Pressable
+                onPress={() => void handleCreate()}
+                style={styles.smallCreateButton}
+              >
+                <Plus size={18} color="#FFFFFF" />
 
-      {/* Sleek AI Generator Modal */}
-      <Modal visible={isAiModalOpen} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-              <Text style={{ fontSize: 24, marginRight: 8 }}>✨</Text>
-              <Text style={[styles.modalTitle, { color: theme.text }]}>AI Form Generator</Text>
+                <Text style={styles.smallCreateText}>Create</Text>
+              </Pressable>
             </View>
-            <Text style={[styles.modalSub, { color: theme.mutedText }]}>
-              Describe your form in plain words and AI will generate all questions for you automatically.
-            </Text>
 
-            <TextInput
-              style={[
-                styles.modalInput,
-                {
-                  backgroundColor: theme.inputBg,
-                  borderColor: theme.inputBorder,
-                  color: theme.text,
-                },
-              ]}
-              multiline
-              placeholder="e.g. Create a 4-question intake form for a luxury gym membership with emergency contact and fitness goals..."
-              placeholderTextColor={theme.mutedText}
-              value={aiPrompt}
-              onChangeText={setAiPrompt}
-              autoFocus
+            <FlatList
+              data={forms}
+              keyExtractor={(item) => item.id}
+              renderItem={renderForm}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.listContent}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                />
+              }
             />
-
-            <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
-              <Pressable
-                style={[styles.modalCancelBtn, { backgroundColor: isDark ? '#2C2C2E' : '#F3F4F6' }]}
-                onPress={() => setIsAiModalOpen(false)}
-              >
-                <Text style={[styles.modalCancelText, { color: theme.text }]}>Cancel</Text>
-              </Pressable>
-
-              <Pressable
-                style={[styles.modalActionBtn, { backgroundColor: theme.primary }]}
-                onPress={handleGenerateWithAI}
-                disabled={isGeneratingAi}
-              >
-                {isGeneratingAi ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.modalActionText}>Generate Form ✨</Text>
-                )}
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
+          </>
+        )}
+      </View>
     </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  topTabBar: {
-    flexDirection: 'row',
-    marginHorizontal: 16,
-    marginTop: 12,
-    borderRadius: 12,
-    padding: 4,
-  },
-  tabBtn: {
+  container: {
     flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderRadius: 8,
+    paddingHorizontal: 16,
   },
-  tabBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  scrollContainer: {
-    padding: 16,
-    paddingBottom: 50,
-  },
-  aiBannerBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-    borderRadius: 14,
-    marginBottom: 16,
-    borderWidth: 1,
-  },
-  aiBannerIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  aiBannerTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    marginBottom: 2,
-  },
-  aiBannerSub: {
-    fontSize: 11.5,
-  },
-  sectionHeading: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginBottom: 8,
-    textTransform: 'uppercase',
-  },
-  templatesRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-  },
-  simpleTemplateCard: {
+
+  loadingContainer: {
     flex: 1,
-    padding: 10,
-    borderRadius: 10,
-    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
   },
-  templateTitleText: {
-    fontSize: 12,
-    fontWeight: '800',
-    marginBottom: 2,
-  },
-  templateDescText: {
-    fontSize: 10,
-  },
-  card: {
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-  },
-  cardHeading: {
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginBottom: 6,
-    marginTop: 10,
-  },
-  input: {
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 13.5,
-    borderWidth: 1,
-  },
-  previewToggleBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 6,
-  },
-  previewToggleText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  questionBox: {
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-  },
-  questionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  questionNumber: {
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  requiredRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  requiredText: {
-    fontSize: 11,
-  },
-  removeBtn: {
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
-  },
-  removeBtnText: {
-    color: '#EF4444',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  questionInput: {
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    fontSize: 13,
-    borderWidth: 1,
-  },
-  addButtonsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  addTypeBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 6,
-  },
-  addTypeIcon: {
+
+  loadingText: {
     fontSize: 14,
+    color: "#6B7280",
   },
-  addTypeText: {
-    fontSize: 12,
-    fontWeight: '600',
+
+  loadingTextDark: {
+    color: "#8E8E93",
   },
-  previewContainer: {
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 2,
+
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    paddingBottom: 80,
   },
-  previewTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    marginBottom: 10,
-    textAlign: 'center',
+
+  emptyIcon: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EAF3FF",
+    marginBottom: 20,
   },
-  previewPhoneBox: {
-    borderRadius: 10,
-    padding: 14,
-    borderWidth: 1,
+
+  emptyIconDark: {
+    backgroundColor: "#1C2A3A",
   },
-  phoneFormTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  phoneFormDesc: {
-    fontSize: 12,
-    marginBottom: 14,
-    textAlign: 'center',
-  },
-  phoneFieldLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  phoneMockInput: {
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    fontSize: 12,
-    borderWidth: 1,
-  },
-  phoneSubmitBtn: {
-    paddingVertical: 10,
-    borderRadius: 6,
-    alignItems: 'center',
-    marginTop: 6,
-  },
-  phoneSubmitText: {
-    color: '#FFFFFF',
-    fontWeight: '800',
-    fontSize: 13,
-  },
-  publishBtn: {
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  publishBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '800',
-    fontSize: 15,
-  },
-  emptyCard: {
-    borderRadius: 14,
-    padding: 30,
-    alignItems: 'center',
-    borderWidth: 1,
-  },
+
   emptyTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    marginBottom: 4,
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#111827",
   },
-  emptySub: {
-    fontSize: 13,
-    marginBottom: 16,
+
+  emptyTitleDark: {
+    color: "#FFFFFF",
   },
-  emptyCreateBtn: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  emptyCreateText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 13,
-  },
-  savedCard: {
-    borderRadius: 12,
-    padding: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  savedFormTitle: {
+
+  emptyDescription: {
+    marginTop: 10,
     fontSize: 14,
-    fontWeight: '800',
-    marginBottom: 2,
+    lineHeight: 21,
+    color: "#6B7280",
+    textAlign: "center",
+    maxWidth: 360,
   },
-  savedFormSub: {
-    fontSize: 11.5,
-    marginBottom: 6,
+
+  emptyDescriptionDark: {
+    color: "#8E8E93",
   },
-  savedFieldsBadge: {
-    fontSize: 11,
-    fontWeight: '700',
+
+  createButton: {
+    marginTop: 24,
+    minHeight: 50,
+    paddingHorizontal: 22,
+    borderRadius: 14,
+    backgroundColor: "#0A84FF",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
-  savedActionsRow: {
-    flexDirection: 'row',
+
+  createButtonText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+
+  topActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 16,
+  },
+
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#111827",
+  },
+
+  sectionTitleDark: {
+    color: "#FFFFFF",
+  },
+
+  smallCreateButton: {
+    minHeight: 40,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: "#0A84FF",
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
-  savedActionBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 6,
+
+  smallCreateText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "700",
   },
-  savedActionText: {
-    fontSize: 11.5,
-    fontWeight: '700',
+
+  listContent: {
+    paddingBottom: 120,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  modalCard: {
-    borderRadius: 16,
-    padding: 20,
+
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
     borderWidth: 1,
+    borderColor: "#E5E7EB",
+    padding: 16,
+    marginBottom: 12,
   },
-  modalTitle: {
-    fontSize: 17,
-    fontWeight: '800',
+
+  cardDark: {
+    backgroundColor: "#1C1C1E",
+    borderColor: "#2C2C2E",
   },
-  modalSub: {
-    fontSize: 12.5,
-    lineHeight: 18,
+
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
   },
-  modalInput: {
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 13.5,
-    height: 90,
-    textAlignVertical: 'top',
+
+  iconContainer: {
+    width: 46,
+    height: 46,
+    borderRadius: 13,
+    backgroundColor: "#EAF3FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  iconContainerDark: {
+    backgroundColor: "#263A4D",
+  },
+
+  titleContainer: {
+    flex: 1,
+    marginLeft: 12,
+    marginRight: 8,
+  },
+
+  formTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#111827",
+  },
+
+  formTitleDark: {
+    color: "#FFFFFF",
+  },
+
+  updatedText: {
+    marginTop: 4,
+    fontSize: 12,
+    color: "#9CA3AF",
+  },
+
+  updatedTextDark: {
+    color: "#8E8E93",
+  },
+
+  statusBadge: {
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 20,
+    backgroundColor: "#E8F8EE",
+  },
+
+  statusText: {
+    color: "#15803D",
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "capitalize",
+  },
+
+  description: {
     marginTop: 14,
-    borderWidth: 1,
+    fontSize: 13,
+    lineHeight: 19,
+    color: "#6B7280",
   },
-  modalCancelBtn: {
+
+  descriptionDark: {
+    color: "#8E8E93",
+  },
+
+  actions: {
+    flexDirection: "row",
+    marginTop: 16,
+    gap: 10,
+  },
+
+  editButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
+    minHeight: 42,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
   },
-  modalCancelText: {
-    fontWeight: '700',
+
+  editButtonDark: {
+    borderColor: "#3A3A3C",
+  },
+
+  editButtonText: {
     fontSize: 13,
+    fontWeight: "700",
+    color: "#111827",
   },
-  modalActionBtn: {
-    flex: 2,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
+
+  editButtonTextDark: {
+    color: "#FFFFFF",
   },
-  modalActionText: {
-    color: '#FFFFFF',
-    fontWeight: '800',
+
+  deleteButton: {
+    flex: 1,
+    minHeight: 42,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    backgroundColor: "#FEF2F2",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+  },
+
+  deleteText: {
     fontSize: 13,
+    fontWeight: "700",
+    color: "#DC2626",
+  },
+
+  disabledButton: {
+    opacity: 0.5,
   },
 });
