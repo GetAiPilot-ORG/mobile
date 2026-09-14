@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useColorScheme,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,6 +21,8 @@ import {
 } from '../components';
 
 export const DashboardScreen: React.FC = () => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
@@ -33,20 +36,20 @@ export const DashboardScreen: React.FC = () => {
 
   if (isLoading && !data) {
     return (
-      <SafeAreaView style={styles.stateContainer}>
+      <SafeAreaView style={[styles.stateContainer, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
         <ActivityIndicator size="large" color="#6366f1" />
-        <Text style={styles.stateTitle}>Loading GetAiPilot Workspace...</Text>
-        <Text style={styles.stateSubtitle}>Aggregating live telemetry across 6 products</Text>
+        <Text style={[styles.stateTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Loading GetAiPilot Workspace...</Text>
+        <Text style={[styles.stateSubtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>Aggregating live telemetry across 6 products</Text>
       </SafeAreaView>
     );
   }
 
   if (isError && !data) {
     return (
-      <SafeAreaView style={styles.stateContainer}>
+      <SafeAreaView style={[styles.stateContainer, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
         <Text style={styles.errorIcon}>⚠️</Text>
-        <Text style={styles.stateTitle}>Connection Error</Text>
-        <Text style={styles.stateSubtitle}>
+        <Text style={[styles.stateTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Connection Error</Text>
+        <Text style={[styles.stateSubtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>
           {(error as Error)?.message || 'Failed to communicate with GetAiPilot-BFF gateway.'}
         </Text>
         <Pressable style={styles.retryButton} onPress={() => refetch()}>
@@ -61,7 +64,7 @@ export const DashboardScreen: React.FC = () => {
   const sub = data?.subscription;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
@@ -72,8 +75,8 @@ export const DashboardScreen: React.FC = () => {
         {/* Organization & User Header */}
         <View style={styles.header}>
           <View style={styles.headerInfo}>
-            <Text style={styles.orgName}>{org?.name || 'GetAiPilot Workspace'}</Text>
-            <Text style={styles.userName}>{user?.name || org?.user_name || 'Commander'}</Text>
+            <Text style={[styles.orgName, { color: isDark ? '#64748b' : '#94a3b8' }]}>{org?.name || 'GetAiPilot Workspace'}</Text>
+            <Text style={[styles.userName, { color: isDark ? '#f8fafc' : '#0f172a' }]}>{user?.name || org?.user_name || 'Commander'}</Text>
           </View>
           <View style={styles.subBadge}>
             <View style={styles.subDot} />
@@ -82,7 +85,7 @@ export const DashboardScreen: React.FC = () => {
         </View>
 
         {/* Live Ecosystem Telemetry Grid */}
-        <Text style={styles.sectionTitle}>Ecosystem Realtime Telemetry</Text>
+        <Text style={[styles.sectionTitle, { color: isDark ? '#cbd5e1' : '#475569' }]}>Ecosystem Realtime Telemetry</Text>
         <View style={styles.metricsRow}>
           <MetricGlassCard
             title="WA Messages"
@@ -117,7 +120,7 @@ export const DashboardScreen: React.FC = () => {
         </View>
 
         {/* Resource Usage Gauges */}
-        <Text style={styles.sectionTitle}>Resource Allocation & Gauges</Text>
+        <Text style={[styles.sectionTitle, { color: isDark ? '#cbd5e1' : '#475569' }]}>Resource Allocation & Gauges</Text>
         <UsageMeterCard
           label="WhatsApp Contacts Synced"
           current={metrics?.whatsapp.contacts_count || 3003}
@@ -141,7 +144,7 @@ export const DashboardScreen: React.FC = () => {
         />
 
         {/* Product Hub Navigation Cards */}
-        <Text style={styles.sectionTitle}>Connected Product Hubs</Text>
+        <Text style={[styles.sectionTitle, { color: isDark ? '#cbd5e1' : '#475569' }]}>Connected Product Hubs</Text>
         <ProductActionCard
           title="GAP WhatsApp Business"
           description={`${(metrics?.whatsapp.contacts_count || 3003).toLocaleString()} contacts, ${(metrics?.whatsapp.messages_count || 3864).toLocaleString()} messages synced`}
@@ -184,8 +187,8 @@ export const DashboardScreen: React.FC = () => {
         />
 
         {/* Recent Ecosystem Timeline */}
-        <Text style={styles.sectionTitle}>Recent Ecosystem Activity Feed</Text>
-        <View style={styles.activityBox}>
+        <Text style={[styles.sectionTitle, { color: isDark ? '#cbd5e1' : '#475569' }]}>Recent Ecosystem Activity Feed</Text>
+        <View style={[styles.activityBox, isDark ? styles.activityBoxDark : styles.activityBoxLight]}>
           {data?.recent_activity?.map((act) => (
             <ActivityFeedItem
               key={act.id}
@@ -205,7 +208,6 @@ export const DashboardScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#020617',
   },
   container: {
     flex: 1,
@@ -216,20 +218,17 @@ const styles = StyleSheet.create({
   },
   stateContainer: {
     flex: 1,
-    backgroundColor: '#020617',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
   stateTitle: {
-    color: '#f8fafc',
     fontSize: 18,
     fontWeight: '700',
     marginTop: 16,
     textAlign: 'center',
   },
   stateSubtitle: {
-    color: '#94a3b8',
     fontSize: 13,
     marginTop: 6,
     textAlign: 'center',
@@ -261,14 +260,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   orgName: {
-    color: '#64748b',
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   userName: {
-    color: '#f8fafc',
     fontSize: 22,
     fontWeight: '800',
     marginTop: 2,
@@ -296,7 +293,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   sectionTitle: {
-    color: '#cbd5e1',
     fontSize: 15,
     fontWeight: '700',
     marginTop: 18,
@@ -309,11 +305,22 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   activityBox: {
-    backgroundColor: '#0b1329',
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
+  },
+  activityBoxDark: {
+    backgroundColor: '#0b1329',
     borderColor: '#1e293b',
+  },
+  activityBoxLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
 });
 

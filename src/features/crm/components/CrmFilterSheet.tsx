@@ -1,7 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, View, Modal, Pressable, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, Modal, Pressable, ScrollView, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ContactStatus } from '../types';
 import { useMembers } from '../hooks/useMembers';
 
 interface CrmFilterSheetProps {
@@ -29,6 +28,9 @@ export const CrmFilterSheet: React.FC<CrmFilterSheetProps> = ({
   onReset,
   onClose,
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [tempStatus, setTempStatus] = React.useState(selectedStatus);
   const [tempAssignee, setTempAssignee] = React.useState(selectedAssignee);
 
@@ -56,67 +58,123 @@ export const CrmFilterSheet: React.FC<CrmFilterSheetProps> = ({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <View style={styles.sheetContent}>
-          <View style={styles.dragHandle} />
+      <View style={[styles.backdrop, { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0.5)' }]}>
+        <View
+          style={[
+            styles.sheetContent,
+            {
+              backgroundColor: isDark ? '#181A20' : '#FFFFFF',
+              borderColor: isDark ? '#262A34' : '#E2E8F0',
+            },
+          ]}
+        >
+          <View style={[styles.dragHandle, { backgroundColor: isDark ? '#374151' : '#CBD5E1' }]} />
           <View style={styles.header}>
-            <Text style={styles.title}>Filter Records</Text>
-            <Pressable style={styles.closeBtn} onPress={onClose} hitSlop={8}>
-              <Ionicons name="close" size={20} color="#9CA3AF" />
+            <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Filter Records</Text>
+            <Pressable
+              style={[styles.closeBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              onPress={onClose}
+              hitSlop={8}
+            >
+              <Ionicons name="close" size={20} color={isDark ? '#9CA3AF' : '#64748B'} />
             </Pressable>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
             {/* Status Section */}
-            <Text style={styles.sectionTitle}>Status</Text>
+            <Text style={[styles.sectionTitle, { color: isDark ? '#D1D5DB' : '#475569' }]}>Status</Text>
             <View style={styles.chipGrid}>
-              {STATUS_FILTERS.map((s) => (
-                <Pressable
-                  key={s.key}
-                  style={[styles.chip, tempStatus === s.key && styles.chipSelected]}
-                  onPress={() => setTempStatus(s.key)}
-                >
-                  <Text style={[styles.chipText, tempStatus === s.key && styles.chipTextSelected]}>
-                    {s.label}
-                  </Text>
-                </Pressable>
-              ))}
+              {STATUS_FILTERS.map((s) => {
+                const isSelected = tempStatus === s.key;
+                return (
+                  <Pressable
+                    key={s.key}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: isSelected
+                          ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
+                          : isDark ? '#222630' : '#F1F5F9',
+                        borderColor: isSelected ? '#3B82F6' : 'transparent',
+                      },
+                    ]}
+                    onPress={() => setTempStatus(s.key)}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        {
+                          color: isSelected ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B',
+                          fontWeight: isSelected ? '600' : '500',
+                        },
+                      ]}
+                    >
+                      {s.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </View>
 
             {/* Assignee Section */}
             {members && members.length > 0 ? (
               <>
-                <Text style={styles.sectionTitle}>Assignee</Text>
+                <Text style={[styles.sectionTitle, { color: isDark ? '#D1D5DB' : '#475569' }]}>Assignee</Text>
                 <View style={styles.chipGrid}>
                   <Pressable
-                    style={[styles.chip, tempAssignee === 'all' && styles.chipSelected]}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: tempAssignee === 'all'
+                          ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
+                          : isDark ? '#222630' : '#F1F5F9',
+                        borderColor: tempAssignee === 'all' ? '#3B82F6' : 'transparent',
+                      },
+                    ]}
                     onPress={() => setTempAssignee('all')}
                   >
                     <Text
                       style={[
                         styles.chipText,
-                        tempAssignee === 'all' && styles.chipTextSelected,
+                        {
+                          color: tempAssignee === 'all' ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B',
+                          fontWeight: tempAssignee === 'all' ? '600' : '500',
+                        },
                       ]}
                     >
                       All Assignees
                     </Text>
                   </Pressable>
-                  {members.map((m) => (
-                    <Pressable
-                      key={m.id}
-                      style={[styles.chip, tempAssignee === m.id && styles.chipSelected]}
-                      onPress={() => setTempAssignee(m.id)}
-                    >
-                      <Text
+                  {members.map((m) => {
+                    const isSelected = tempAssignee === m.id;
+                    return (
+                      <Pressable
+                        key={m.id}
                         style={[
-                          styles.chipText,
-                          tempAssignee === m.id && styles.chipTextSelected,
+                          styles.chip,
+                          {
+                            backgroundColor: isSelected
+                              ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
+                              : isDark ? '#222630' : '#F1F5F9',
+                            borderColor: isSelected ? '#3B82F6' : 'transparent',
+                          },
                         ]}
+                        onPress={() => setTempAssignee(m.id)}
                       >
-                        {m.name}
-                      </Text>
-                    </Pressable>
-                  ))}
+                        <Text
+                          style={[
+                            styles.chipText,
+                            {
+                              color: isSelected ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B',
+                              fontWeight: isSelected ? '600' : '500',
+                            },
+                          ]}
+                        >
+                          {m.name}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
                 </View>
               </>
             ) : null}
@@ -124,8 +182,11 @@ export const CrmFilterSheet: React.FC<CrmFilterSheetProps> = ({
 
           {/* Footer Actions */}
           <View style={styles.footer}>
-            <Pressable style={styles.resetBtn} onPress={handleReset}>
-              <Text style={styles.resetBtnText}>Reset</Text>
+            <Pressable
+              style={[styles.resetBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              onPress={handleReset}
+            >
+              <Text style={[styles.resetBtnText, { color: isDark ? '#D1D5DB' : '#475569' }]}>Reset</Text>
             </Pressable>
             <Pressable style={styles.applyBtn} onPress={handleApply}>
               <Text style={styles.applyBtnText}>Apply Filters</Text>

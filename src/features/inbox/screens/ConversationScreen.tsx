@@ -354,10 +354,10 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
 
   if (isLoading && !conversation) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0b141a' : '#f0f2f5' }]}>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#00a884" />
-          <Text style={styles.loadingText}>Loading WhatsApp conversation...</Text>
+          <Text style={[styles.loadingText, { color: isDark ? '#8696a0' : '#64748b' }]}>Loading WhatsApp conversation...</Text>
         </View>
       </SafeAreaView>
     );
@@ -365,9 +365,9 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
 
   if (!conversation) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0b141a' : '#f0f2f5' }]}>
         <View style={styles.centerContainer}>
-          <Text style={styles.notFoundTitle}>Conversation not found</Text>
+          <Text style={[styles.notFoundTitle, { color: isDark ? '#e9edef' : '#0f172a' }]}>Conversation not found</Text>
           <Pressable style={styles.backPill} onPress={handleBack}>
             <Text style={styles.backPillText}>← Return to Inbox</Text>
           </Pressable>

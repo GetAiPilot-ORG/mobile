@@ -14,6 +14,7 @@ import {
   Text,
   TextInput,
   TouchableWithoutFeedback,
+  useColorScheme,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,7 +30,8 @@ const brandLogo = require('../../assets/images/icon.png');
 export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const isDark = true;
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const login = useAuthStore((s) => s.login);
   const [authMode, setAuthMode] = useState<'password' | 'otp'>('password');
 
@@ -48,7 +50,7 @@ export default function LoginScreen() {
       try {
         const savedEnabled = await AsyncStorage.getItem(REMEMBER_ME_KEY);
         if (savedEnabled !== null) {
-          setSaveLoginInfo(savedEnabled === 'true');
+          setSaveLoginInfo(savedEnabled === 'true');                                                                                                                                                                                 
         }
         if (savedEnabled !== 'false') {
           const savedEmail = await AsyncStorage.getItem(SAVE_LOGIN_KEY);

@@ -94,16 +94,16 @@ export const WhatsAppHomeScreen: React.FC = () => {
       : '100.0%';
 
   return (
-    <View style={styles.rootContainer}>
+    <View style={[styles.rootContainer, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
       {activeTab === 'contacts' && <WhatsAppContactsScreen onBack={() => setActiveTab('home')} />}
       {activeTab === 'templates' && <WhatsAppTemplatesScreen onBack={() => setActiveTab('home')} />}
       {activeTab === 'broadcasts' && <WhatsAppBroadcastsScreen onBack={() => setActiveTab('home')} />}
 
       {activeTab === 'home' && (
-        <SafeAreaView style={styles.safeArea}>
-          <View style={styles.header}>
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
+          <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
             <View style={styles.headerTitleContainer}>
-              <Text style={styles.title}>WhatsApp Business</Text>
+              <Text style={[styles.title, { color: isDark ? '#ffffff' : '#0f172a' }]}>WhatsApp Business</Text>
               <Text style={styles.subtitle}>Meta Cloud Enterprise Hub</Text>
             </View>
 
@@ -133,7 +133,7 @@ export const WhatsAppHomeScreen: React.FC = () => {
             <UsageCard usage={usage} />
 
             {/* Metrics 2x2 Grid */}
-            <Text style={styles.sectionTitle}>Overview & Capabilities</Text>
+            <Text style={[styles.sectionTitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>Overview & Capabilities</Text>
             <View style={styles.grid}>
               <WhatsAppMetricCard
                 label="Contacts"
@@ -162,41 +162,50 @@ export const WhatsAppHomeScreen: React.FC = () => {
             </View>
 
             {/* Quick Actions Navigation */}
-            <Text style={styles.sectionTitle}>Product Navigation</Text>
+            <Text style={[styles.sectionTitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>Product Navigation</Text>
             <View style={styles.actionsList}>
-              <Pressable style={styles.actionCard} onPress={() => setActiveTab('contacts')}>
-                <View style={styles.actionIcon}>
+              <Pressable
+                style={[styles.actionCard, isDark ? styles.actionCardDark : styles.actionCardLight]}
+                onPress={() => setActiveTab('contacts')}
+              >
+                <View style={[styles.actionIcon, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
                   <Text style={styles.actionEmoji}>👥</Text>
                 </View>
                 <View style={styles.actionDetails}>
-                  <Text style={styles.actionTitle}>Audience & Contacts</Text>
-                  <Text style={styles.actionSub}>View contacts, segment tags & link CRM leads</Text>
+                  <Text style={[styles.actionTitle, { color: isDark ? '#ffffff' : '#0f172a' }]}>Audience & Contacts</Text>
+                  <Text style={[styles.actionSub, { color: isDark ? '#94a3b8' : '#64748b' }]}>View contacts, segment tags & link CRM leads</Text>
                 </View>
-                <Text style={styles.actionArrow}>→</Text>
+                <Text style={[styles.actionArrow, { color: isDark ? '#64748b' : '#94a3b8' }]}>→</Text>
               </Pressable>
 
-              <Pressable style={styles.actionCard} onPress={() => setActiveTab('templates')}>
-                <View style={styles.actionIcon}>
+              <Pressable
+                style={[styles.actionCard, isDark ? styles.actionCardDark : styles.actionCardLight]}
+                onPress={() => setActiveTab('templates')}
+              >
+                <View style={[styles.actionIcon, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
                   <Text style={styles.actionEmoji}>📄</Text>
                 </View>
                 <View style={styles.actionDetails}>
-                  <Text style={styles.actionTitle}>Meta Templates</Text>
-                  <Text style={styles.actionSub}>
+                  <Text style={[styles.actionTitle, { color: isDark ? '#ffffff' : '#0f172a' }]}>Meta Templates</Text>
+                  <Text style={[styles.actionSub, { color: isDark ? '#94a3b8' : '#64748b' }]}>
                     Approved marketing, utility & otp message templates
                   </Text>
                 </View>
-                <Text style={styles.actionArrow}>→</Text>
+                <Text style={[styles.actionArrow, { color: isDark ? '#64748b' : '#94a3b8' }]}>→</Text>
               </Pressable>
 
-              <Pressable style={styles.actionCard} onPress={() => setActiveTab('broadcasts')}>
-                <View style={styles.actionIcon}>
+              <Pressable
+                style={[styles.actionCard, isDark ? styles.actionCardDark : styles.actionCardLight]}
+                onPress={() => setActiveTab('broadcasts')}
+              >
+                <View style={[styles.actionIcon, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
                   <Text style={styles.actionEmoji}>📢</Text>
                 </View>
                 <View style={styles.actionDetails}>
-                  <Text style={styles.actionTitle}>Broadcast Campaigns</Text>
-                  <Text style={styles.actionSub}>Launch new bulk sends & view delivery funnels</Text>
+                  <Text style={[styles.actionTitle, { color: isDark ? '#ffffff' : '#0f172a' }]}>Broadcast Campaigns</Text>
+                  <Text style={[styles.actionSub, { color: isDark ? '#94a3b8' : '#64748b' }]}>Launch new bulk sends & view delivery funnels</Text>
                 </View>
-                <Text style={styles.actionArrow}>→</Text>
+                <Text style={[styles.actionArrow, { color: isDark ? '#64748b' : '#94a3b8' }]}>→</Text>
               </Pressable>
             </View>
           </ScrollView>
@@ -218,7 +227,6 @@ export const WhatsAppHomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   rootContainer: {
     flex: 1,
-    backgroundColor: '#020617',
   },
   safeArea: {
     flex: 1,
