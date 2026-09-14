@@ -46,12 +46,7 @@ type TelegramTab =
   | 'hub'
   | 'automations'
   | 'bots'
-  | 'sub_manager'
-  | 'broadcasts'
-  | 'reactions'
-  | 'chatbot'
-  | 'auto_approve'
-  | 'report_bot';
+  | 'sub_manager';
 
 const TELEGRAM_TABS: ProductTabItem[] = [
   {
@@ -81,41 +76,6 @@ const TELEGRAM_TABS: ProductTabItem[] = [
     activeIcon: 'card',
     inactiveIcon: 'card-outline',
     description: 'VIP subscription monetization, tiers & paywalls',
-  },
-  {
-    key: 'broadcasts',
-    label: 'Broadcast',
-    activeIcon: 'megaphone',
-    inactiveIcon: 'megaphone-outline',
-    description: 'Mass broadcast campaigns to mapped channels',
-  },
-  {
-    key: 'reactions',
-    label: 'Reactions',
-    activeIcon: 'flash',
-    inactiveIcon: 'flash-outline',
-    description: 'Automated post emojis and reaction boosts',
-  },
-  {
-    key: 'chatbot',
-    label: 'AI ChatBot',
-    activeIcon: 'chatbubbles',
-    inactiveIcon: 'chatbubbles-outline',
-    description: 'AI automated replies, knowledge base & support flows',
-  },
-  {
-    key: 'auto_approve',
-    label: 'Auto-Approve',
-    activeIcon: 'shield-checkmark',
-    inactiveIcon: 'shield-checkmark-outline',
-    description: 'Instant accept for private channel join requests',
-  },
-  {
-    key: 'report_bot',
-    label: 'Report Bot',
-    activeIcon: 'analytics',
-    inactiveIcon: 'analytics-outline',
-    description: 'Channel analytics, subscriber growth & tracking logs',
   },
 ];
 
@@ -452,173 +412,7 @@ export const TelegramScreen: React.FC = () => {
     return matchesSearch && matchesFilter;
   });
 
-  // TeleSub Rich Datasets
-  const [telesubSearch, setTelesubSearch] = useState('');
-  const [telesubFilter, setTelesubFilter] = useState<'All' | 'Active' | 'Expiring' | 'Expired'>('All');
-
-  const DEFAULT_TELESUB_PLANS = [
-    {
-      id: 'p-1',
-      name: 'Trading Guru VIP Elite Club',
-      channel_name: 'TRADING GURU SEBI REGISTERED',
-      price: 999,
-      durationDays: 30,
-      subscribersCount: 24,
-      inviteLink: 'https://t.me/TradingGuruVIP_bot?start=sub_elite30',
-      features: ['Daily 3-5 Intraday Calls', 'Live Trading Room Access', 'Risk Management PDF', 'Weekend Webinar'],
-      status: 'ACTIVE',
-    },
-    {
-      id: 'p-2',
-      name: 'Zero to Hero Pro Signals',
-      channel_name: 'ZERO TO HERO ( TRADING )',
-      price: 2499,
-      durationDays: 90,
-      subscribersCount: 9,
-      inviteLink: 'https://t.me/ZeroToHeroTradbot?start=sub_pro90',
-      features: ['Options Index Expiry Calls', 'Hero-or-Zero Strategy', 'Direct Telegram DM with Mentors'],
-      status: 'ACTIVE',
-    },
-    {
-      id: 'p-3',
-      name: 'Gujju Forex Gold Mastermind',
-      channel_name: 'GUJJU FOREX VIP ACC',
-      price: 7999,
-      durationDays: 365,
-      subscribersCount: 5,
-      inviteLink: 'https://t.me/GujjuForexBot?start=sub_gold365',
-      features: ['XAUUSD 24/5 Live Setups', 'London & NY Session Breakouts', '1-on-1 Portfolio Reviews'],
-      status: 'ACTIVE',
-    },
-    {
-      id: 'p-4',
-      name: 'Intraday Nifty & BankNifty VIP',
-      channel_name: 'TEST BOT CHANNEL',
-      price: 1499,
-      durationDays: 30,
-      subscribersCount: 0,
-      inviteLink: 'https://t.me/TestBotChannel?start=sub_nifty',
-      features: ['Pre-Market Level Analysis', 'Realtime Buy/Sell Targets', 'Instant SL trailing updates'],
-      status: 'ACTIVE',
-    },
-  ];
-
-  const DEFAULT_TELESUB_SUBSCRIBERS = [
-    {
-      id: 'sub-1',
-      name: 'Rohan Sharma',
-      telegram_id: '109847291',
-      username: 'rohan_trader99',
-      plan_name: 'Trading Guru VIP Elite Club',
-      amount_paid: 999,
-      join_date: 'Aug 28, 2026',
-      expiry_date: 'Sep 27, 2026',
-      days_left: 15,
-      status: 'Active',
-      auto_kick: 'Protected',
-    },
-    {
-      id: 'sub-2',
-      name: 'Amit Patel',
-      telegram_id: '6492128140',
-      username: 'amit_gujju_fx',
-      plan_name: 'Gujju Forex Gold Mastermind',
-      amount_paid: 7999,
-      join_date: 'Jan 15, 2026',
-      expiry_date: 'Jan 15, 2027',
-      days_left: 125,
-      status: 'Active',
-      auto_kick: 'Protected',
-    },
-    {
-      id: 'sub-3',
-      name: 'Deepak Verma',
-      telegram_id: '5389658253',
-      username: 'deepak_optionking',
-      plan_name: 'Zero to Hero Pro Signals',
-      amount_paid: 2499,
-      join_date: 'Jun 18, 2026',
-      expiry_date: 'Sep 16, 2026',
-      days_left: 4,
-      status: 'Expiring',
-      auto_kick: 'Protected',
-    },
-    {
-      id: 'sub-4',
-      name: 'Suresh Reddy',
-      telegram_id: '7081700680',
-      username: 'suresh_hyderabad',
-      plan_name: 'Trading Guru VIP Elite Club',
-      amount_paid: 999,
-      join_date: 'Aug 14, 2026',
-      expiry_date: 'Sep 13, 2026',
-      days_left: 1,
-      status: 'Expiring',
-      auto_kick: 'Pending Eviction',
-    },
-    {
-      id: 'sub-5',
-      name: 'Priya Patel',
-      telegram_id: '5275608620',
-      username: 'priya_forex',
-      plan_name: 'Gujju Forex Gold Mastermind',
-      amount_paid: 7999,
-      join_date: 'Mar 10, 2026',
-      expiry_date: 'Mar 10, 2027',
-      days_left: 179,
-      status: 'Active',
-      auto_kick: 'Protected',
-    },
-    {
-      id: 'sub-6',
-      name: 'Rahul Verma',
-      telegram_id: '984084400',
-      username: 'rahul_crypto',
-      plan_name: 'Trading Guru VIP Elite Club',
-      amount_paid: 999,
-      join_date: 'Jul 02, 2026',
-      expiry_date: 'Aug 02, 2026',
-      days_left: 0,
-      status: 'Expired',
-      auto_kick: 'Evicted by Bot',
-    },
-  ];
-
-  const DEFAULT_TELESUB_LANDING = [
-    {
-      id: 'land-1',
-      title: 'Trading Guru Official VIP Access',
-      slug: 'trading-guru-vip',
-      url: 'https://getaipilot.in/vip/trading-guru',
-      views: 1420,
-      conversions: 264,
-      convRate: '18.6%',
-      revenue: '₹2,63,736',
-      theme: 'Dark Modern',
-    },
-    {
-      id: 'land-2',
-      title: 'Gujju Forex Premium Community',
-      slug: 'gujju-forex-mastery',
-      url: 'https://getaipilot.in/vip/gujju-forex',
-      views: 980,
-      conversions: 182,
-      convRate: '18.5%',
-      revenue: '₹14,55,818',
-      theme: 'Gold Luxury',
-    },
-    {
-      id: 'land-3',
-      title: 'Zero to Hero Trading Hub',
-      slug: 'zero-to-hero-pro',
-      url: 'https://getaipilot.in/vip/zero-to-hero',
-      views: 640,
-      conversions: 94,
-      convRate: '14.7%',
-      revenue: '₹2,34,906',
-      theme: 'Cyan Tech',
-    },
-  ];
+  // TeleSub Web Stats
 
   const TELESUB_WEB_STATS = {
     totalRevenue: 4,
@@ -743,157 +537,7 @@ export const TelegramScreen: React.FC = () => {
     pg.slug.toLowerCase().includes(telesubPageSearch.toLowerCase())
   );
 
-  const filteredSubscribers = DEFAULT_TELESUB_SUBSCRIBERS.filter((s) => {
-    const matchesQuery =
-      s.name.toLowerCase().includes(telesubSearch.toLowerCase()) ||
-      s.username.toLowerCase().includes(telesubSearch.toLowerCase()) ||
-      String(s.telegram_id).includes(telesubSearch);
-    const matchesStatus = telesubFilter === 'All' || s.status === telesubFilter;
-    return matchesQuery && matchesStatus;
-  });
-
   const [selectedAfDelay, setSelectedAfDelay] = useState<number>(0);
-  const [copiedBroadcastId, setCopiedBroadcastId] = useState<string | null>(null);
-
-  const DEFAULT_BROADCAST_HISTORY = [
-    {
-      id: 'bc-1',
-      title: '⚡ Nifty 24,500 CE Blast! 50% VIP Discount',
-      message: 'Exclusive weekend flash sale for our active traders! Unlock daily 3-5 intraday calls, live trade room access, and risk management webinars.',
-      target_channel: 'TRADING GURU SEBI REGISTERED',
-      sent_time: 'Today, 02:30 PM',
-      recipients: 18400,
-      clicks: 1940,
-      buttons: [
-        { text: '⚡ Claim 50% Off', url: 'https://getaipilot.in/vip/trading-guru' },
-        { text: '📊 View Setup Chart', url: 'https://t.me/TradingGuruVIP_bot' },
-      ],
-      status: 'Delivered',
-    },
-    {
-      id: 'bc-2',
-      title: '👑 XAUUSD Gold Buy Setup Triggered (1:4 RR)',
-      message: 'London session gold breakout confirmed on 15M timeframe. Stop loss trailing at 2510. VIP members have received direct TP1 and TP2 targets.',
-      target_channel: 'GUJJU FOREX VIP ACC',
-      sent_time: 'Yesterday, 06:15 PM',
-      recipients: 14200,
-      clicks: 1420,
-      buttons: [
-        { text: '👑 Join VIP Room', url: 'https://getaipilot.in/vip/gujju-forex' },
-      ],
-      status: 'Delivered',
-    },
-    {
-      id: 'bc-3',
-      title: '🎁 Weekend Algo Strategy Masterclass (Free Live Stream)',
-      message: 'Join SEBI registered analysts this Sunday at 7 PM for a complete breakdown of zero-loss option hedging strategies.',
-      target_channel: 'ZERO TO HERO ( TRADING )',
-      sent_time: 'Sep 09, 11:00 AM',
-      recipients: 15900,
-      clicks: 2180,
-      buttons: [
-        { text: '🎥 Register for Free Webinar', url: 'https://getaipilot.in/vip/zero-to-hero' },
-      ],
-      status: 'Delivered',
-    },
-  ];
-
-  const DEFAULT_REACTION_CHANNELS = [
-    {
-      id: 'rc-1',
-      name: 'TRADING GURU SEBI REGISTERED',
-      emojis: ['❤️', '👍', '🔥', '🚀', '🥰', '👏', '⚡', '💎'],
-      autoViews: '2,500 views / post',
-      status: 'ACTIVE',
-      refillDays: '365 Days Guaranteed',
-      postsBoosted: 142,
-    },
-    {
-      id: 'rc-2',
-      name: 'ZERO TO HERO ( TRADING )',
-      emojis: ['🔥', '👏', '⚡', '💎', '👍', '🚀'],
-      autoViews: '1,800 views / post',
-      status: 'ACTIVE',
-      refillDays: '30 Days Auto-Refill',
-      postsBoosted: 98,
-    },
-  ];
-
-  const DEFAULT_AI_ASSISTANTS = [
-    {
-      id: 'ai-1',
-      name: 'Trading Support AI Agent',
-      model: 'OpenAI GPT-4o',
-      channel: '@TradingGuruVIP',
-      status: 'Online',
-      knowledgeDocs: 24,
-      queriesResolved: 942,
-      promptPreview: 'You are an expert trading concierge. Help users with subscription queries, VIP access links, and technical FAQs.',
-    },
-    {
-      id: 'ai-2',
-      name: 'VIP Verification Concierge',
-      model: 'Claude 3.5 Sonnet',
-      channel: '@ZeroToHeroTradbot',
-      status: 'Online',
-      knowledgeDocs: 12,
-      queriesResolved: 486,
-      promptPreview: 'Verify payment screenshots from Razorpay/UPI, validate order IDs, and automatically grant private channel access.',
-    },
-  ];
-
-  const DEFAULT_AUTO_APPROVE_CHANNELS = [
-    {
-      id: 'aa-1',
-      name: 'TRADING GURU SEBI REGISTERED',
-      instantAccept: true,
-      welcomeDm: true,
-      webhookStatus: 'Connected',
-      approvedToday: 84,
-      totalApproved: 3120,
-      welcomeTemplate: '👋 Hello {first_name}, welcome to Trading Guru! Access your daily stock calls and research files here: {invite_link}',
-    },
-    {
-      id: 'aa-2',
-      name: 'ZERO TO HERO ( TRADING )',
-      instantAccept: true,
-      welcomeDm: true,
-      webhookStatus: 'Connected',
-      approvedToday: 58,
-      totalApproved: 1770,
-      welcomeTemplate: '🚀 Welcome {first_name}! You have been granted instant access to Zero to Hero Trading. Trade responsibly with proper SL.',
-    },
-  ];
-
-  const DEFAULT_REPORT_LOGS = [
-    {
-      id: 'rep-1',
-      title: 'Daily Channel Growth & Joins Telemetry',
-      date: 'Sep 11, 2026',
-      size: '1.4 MB',
-      channels: 4,
-      format: 'PDF Report',
-      status: 'Ready',
-    },
-    {
-      id: 'rep-2',
-      title: 'Weekly VIP Retention & Eviction Audit (W36)',
-      date: 'Sep 08, 2026',
-      size: '2.8 MB',
-      channels: 3,
-      format: 'PDF & Excel',
-      status: 'Ready',
-    },
-    {
-      id: 'rep-3',
-      title: 'Monthly Conversion & Inbound Traffic Report (August)',
-      date: 'Sep 01, 2026',
-      size: '4.1 MB',
-      channels: 4,
-      format: 'PDF & Excel',
-      status: 'Ready',
-    },
-  ];
 
   const handleCopyTeleSubLink = async (url: string, id: string) => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -904,17 +548,8 @@ export const TelegramScreen: React.FC = () => {
     }, 2500);
   };
 
-  const handleCopyBroadcastLink = async (url: string, id: string) => {
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    await Clipboard.setStringAsync(url);
-    setCopiedBroadcastId(id);
-    setTimeout(() => {
-      setCopiedBroadcastId(null);
-    }, 2500);
-  };
-
   return (
-    <AppScreen safeArea="top">
+    <AppScreen safeArea={false}>
       <AppTopBar title="Telegram Master Dashboard" subtitle="Overview of bots, mapped channels, deep links, forwarding rules & monetization" />
 
       <ScrollView
@@ -932,31 +567,31 @@ export const TelegramScreen: React.FC = () => {
             {/* TAB 0: GAP TRACKER & BOTS */}
             {activeTab === 'bots' && (
               <>
-                <View style={[styles.sectionHeaderRow, { marginBottom: 12 }]}>
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={styles.trackerHeader}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                       <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight, { marginBottom: 0 }]}>
                         GAP Tracker
                       </Text>
-                      <View style={[styles.activePill, { backgroundColor: '#ECFDF5', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 }]}>
-                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981', marginRight: 4 }} />
-                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#059669' }}>
+                      <View style={styles.trackerBadgeGreen}>
+                        <View style={styles.trackerBadgeDot} />
+                        <Text style={styles.trackerBadgeText}>
                           {botsList.length} Bots Connected
                         </Text>
                       </View>
                     </View>
-                    <Text style={styles.sectionSub}>Connect bots, map channels & generate deep link trackers</Text>
+                    <Text style={[styles.sectionSub, { marginTop: 2 }]}>Connect bots, map channels & generate deep link trackers</Text>
                   </View>
                   <Pressable
-                    style={[styles.actionBtnPrimary, { paddingHorizontal: 12, paddingVertical: 6 }]}
+                    style={styles.trackerConsoleBtn}
                     onPress={() => setActiveModal('tracker')}
                   >
-                    <Ionicons name="open-outline" size={14} color="#FFFFFF" />
-                    <Text style={[styles.actionBtnPrimaryText, { fontSize: 12 }]}>Console</Text>
+                    <Ionicons name="open-outline" size={13} color="#FFFFFF" />
+                    <Text style={styles.trackerConsoleBtnText}>Console</Text>
                   </Pressable>
                 </View>
 
-                {/* 3-Tab Segment Navigation matching Web */}
+                {/* 3-Tab Segment Navigation */}
                 <View style={[styles.trackerTabBar, isDark ? styles.cardDark : styles.cardLight]}>
                   <Pressable
                     style={[
@@ -968,24 +603,12 @@ export const TelegramScreen: React.FC = () => {
                       setTrackerSection('connect');
                     }}
                   >
-                    <Ionicons
-                      name="link-outline"
-                      size={15}
-                      color={trackerSection === 'connect' ? '#0284C7' : isDark ? '#94A3B8' : '#64748B'}
-                    />
-                    <Text
-                      style={[
-                        styles.trackerTabBtnText,
-                        trackerSection === 'connect' && styles.trackerTabBtnTextActive,
-                        isDark ? styles.textDark : styles.textLight,
-                      ]}
-                    >
+                    <Ionicons name="link-outline" size={14} color={trackerSection === 'connect' ? '#0284C7' : isDark ? '#94A3B8' : '#64748B'} />
+                    <Text style={[styles.trackerTabBtnText, trackerSection === 'connect' && styles.trackerTabBtnTextActive, isDark ? styles.textDark : styles.textLight]}>
                       Connect
                     </Text>
                     <View style={[styles.trackerTabBadge, trackerSection === 'connect' && styles.trackerTabBadgeActive]}>
-                      <Text style={[styles.trackerTabBadgeText, trackerSection === 'connect' && styles.trackerTabBadgeTextActive]}>
-                        {botsList.length}
-                      </Text>
+                      <Text style={[styles.trackerTabBadgeText, trackerSection === 'connect' && styles.trackerTabBadgeTextActive]}>{botsList.length}</Text>
                     </View>
                   </Pressable>
 
@@ -999,24 +622,12 @@ export const TelegramScreen: React.FC = () => {
                       setTrackerSection('links');
                     }}
                   >
-                    <Ionicons
-                      name="globe-outline"
-                      size={15}
-                      color={trackerSection === 'links' ? '#0284C7' : isDark ? '#94A3B8' : '#64748B'}
-                    />
-                    <Text
-                      style={[
-                        styles.trackerTabBtnText,
-                        trackerSection === 'links' && styles.trackerTabBtnTextActive,
-                        isDark ? styles.textDark : styles.textLight,
-                      ]}
-                    >
-                      Create Join Link
+                    <Ionicons name="globe-outline" size={14} color={trackerSection === 'links' ? '#0284C7' : isDark ? '#94A3B8' : '#64748B'} />
+                    <Text style={[styles.trackerTabBtnText, trackerSection === 'links' && styles.trackerTabBtnTextActive, isDark ? styles.textDark : styles.textLight]}>
+                      Join Links
                     </Text>
                     <View style={[styles.trackerTabBadge, trackerSection === 'links' && styles.trackerTabBadgeActive]}>
-                      <Text style={[styles.trackerTabBadgeText, trackerSection === 'links' && styles.trackerTabBadgeTextActive]}>
-                        {(trackerLinks || []).length || 4}
-                      </Text>
+                      <Text style={[styles.trackerTabBadgeText, trackerSection === 'links' && styles.trackerTabBadgeTextActive]}>{(trackerLinks || []).length || 4}</Text>
                     </View>
                   </Pressable>
 
@@ -1030,19 +641,9 @@ export const TelegramScreen: React.FC = () => {
                       setTrackerSection('joins');
                     }}
                   >
-                    <Ionicons
-                      name="analytics-outline"
-                      size={15}
-                      color={trackerSection === 'joins' ? '#0284C7' : isDark ? '#94A3B8' : '#64748B'}
-                    />
-                    <Text
-                      style={[
-                        styles.trackerTabBtnText,
-                        trackerSection === 'joins' && styles.trackerTabBtnTextActive,
-                        isDark ? styles.textDark : styles.textLight,
-                      ]}
-                    >
-                      Channel Join
+                    <Ionicons name="analytics-outline" size={14} color={trackerSection === 'joins' ? '#0284C7' : isDark ? '#94A3B8' : '#64748B'} />
+                    <Text style={[styles.trackerTabBtnText, trackerSection === 'joins' && styles.trackerTabBtnTextActive, isDark ? styles.textDark : styles.textLight]}>
+                      Analytics
                     </Text>
                   </Pressable>
                 </View>
@@ -1366,7 +967,7 @@ export const TelegramScreen: React.FC = () => {
                         onPress={() => setActiveModal('tracker')}
                       >
                         <Ionicons name="add" size={16} color="#FFFFFF" />
-                        <Text style={styles.actionBtnPrimaryText}>+ Create Link</Text>
+                        <Text style={styles.actionBtnPrimaryText}>Create Link</Text>
                       </Pressable>
                     </View>
 
@@ -1456,11 +1057,15 @@ export const TelegramScreen: React.FC = () => {
 
                     <View style={styles.headerBtnGroup}>
                       <Pressable
-                        style={[styles.refreshHeaderBtn, isRefetching && { opacity: 0.6 }]}
+                        style={[
+                          styles.refreshHeaderBtn,
+                          isDark ? styles.refreshHeaderBtnDark : styles.refreshHeaderBtnLight,
+                          isRefetching && { opacity: 0.6 },
+                        ]}
                         onPress={handleRefreshAll}
                         disabled={isRefetching}
                       >
-                        <Ionicons name="refresh-outline" size={13} color={isDark ? '#94A3B8' : '#475569'} />
+                        <Ionicons name="refresh-outline" size={14} color={isDark ? '#94A3B8' : '#475569'} />
                         <Text style={[styles.refreshHeaderBtnText, isDark ? styles.textDark : styles.textLight]}>
                           Refresh Data
                         </Text>
@@ -1470,94 +1075,148 @@ export const TelegramScreen: React.FC = () => {
                         style={styles.connectHeaderBtn}
                         onPress={() => setActiveModal('tracker')}
                       >
-                        <Ionicons name="add" size={14} color="#FFFFFF" />
-                        <Text style={styles.connectHeaderBtnText}>+ Connect Bot</Text>
+                        <Ionicons name="add" size={15} color="#FFFFFF" />
+                        <Text style={styles.connectHeaderBtnText}>Connect Bot</Text>
                       </Pressable>
                     </View>
                   </View>
 
-                  {/* 6 Real Interactive KPI Metric Cards */}
-                  <View style={[styles.metricsGrid, isDark ? styles.borderDark : styles.borderLight]}>
-                    <Pressable style={({ pressed }) => [styles.metricItem, pressed && styles.metricItemPressed]} onPress={() => handleTabChange('bots')}>
-                      <View style={styles.metricHeaderRow}>
-                        <Text style={styles.metricLabel}>TRACKED BOTS</Text>
-                        <Ionicons name="cloud-outline" size={13} color="#0284C7" />
+                  {/* 6 Real Interactive KPI Metric Cards (2x3 Compact Grid) */}
+                  <View style={[styles.hubMetricsGrid, isDark ? styles.borderDark : styles.borderLight]}>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.hubMetricCard,
+                        isDark ? styles.hubMetricCardDark : styles.hubMetricCardLight,
+                        pressed && styles.hubMetricCardPressed,
+                      ]}
+                      onPress={() => handleTabChange('bots')}
+                    >
+                      <View style={styles.hubMetricHeaderRow}>
+                        <Text style={styles.hubMetricLabel} numberOfLines={1}>TRACKED BOTS</Text>
+                        <View style={[styles.hubMetricIconWrap, { backgroundColor: 'rgba(2, 132, 199, 0.12)' }]}>
+                          <Ionicons name="hardware-chip-outline" size={13} color="#0284C7" />
+                        </View>
                       </View>
-                      <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
+                      <Text style={[styles.hubMetricValue, isDark ? styles.textDark : styles.textLight]}>
                         {summary?.trackedBotsCount ?? botsList.length}
                       </Text>
-                      <View style={styles.metricFooterRow}>
-                        <Text style={styles.metricSub}>Connected bots</Text>
+                      <View style={styles.hubMetricFooterRow}>
+                        <Text style={styles.hubMetricSub} numberOfLines={1}>Connected bots</Text>
                         <Ionicons name="chevron-forward" size={11} color="#0284C7" />
                       </View>
                     </Pressable>
 
-                    <Pressable style={({ pressed }) => [styles.metricItem, pressed && styles.metricItemPressed]} onPress={() => handleTabChange('bots')}>
-                      <View style={styles.metricHeaderRow}>
-                        <Text style={styles.metricLabel}>CHANNELS</Text>
-                        <Ionicons name="share-social-outline" size={13} color="#10B981" />
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.hubMetricCard,
+                        isDark ? styles.hubMetricCardDark : styles.hubMetricCardLight,
+                        pressed && styles.hubMetricCardPressed,
+                      ]}
+                      onPress={() => handleTabChange('bots')}
+                    >
+                      <View style={styles.hubMetricHeaderRow}>
+                        <Text style={styles.hubMetricLabel} numberOfLines={1}>CHANNELS</Text>
+                        <View style={[styles.hubMetricIconWrap, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
+                          <Ionicons name="megaphone-outline" size={13} color="#10B981" />
+                        </View>
                       </View>
-                      <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
+                      <Text style={[styles.hubMetricValue, isDark ? styles.textDark : styles.textLight]}>
                         {summary?.channelsCount ?? (chats || []).length}
                       </Text>
-                      <View style={styles.metricFooterRow}>
-                        <Text style={styles.metricSub}>Mapped channels</Text>
+                      <View style={styles.hubMetricFooterRow}>
+                        <Text style={styles.hubMetricSub} numberOfLines={1}>Mapped channels</Text>
                         <Ionicons name="chevron-forward" size={11} color="#10B981" />
                       </View>
                     </Pressable>
 
-                    <Pressable style={({ pressed }) => [styles.metricItem, pressed && styles.metricItemPressed]} onPress={() => handleTabChange('bots')}>
-                      <View style={styles.metricHeaderRow}>
-                        <Text style={styles.metricLabel}>DEEP LINKS</Text>
-                        <Ionicons name="link-outline" size={13} color="#0284C7" />
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.hubMetricCard,
+                        isDark ? styles.hubMetricCardDark : styles.hubMetricCardLight,
+                        pressed && styles.hubMetricCardPressed,
+                      ]}
+                      onPress={() => handleTabChange('bots')}
+                    >
+                      <View style={styles.hubMetricHeaderRow}>
+                        <Text style={styles.hubMetricLabel} numberOfLines={1}>DEEP LINKS</Text>
+                        <View style={[styles.hubMetricIconWrap, { backgroundColor: 'rgba(6, 182, 212, 0.12)' }]}>
+                          <Ionicons name="link-outline" size={13} color="#06B6D4" />
+                        </View>
                       </View>
-                      <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
-                        {summary?.deepLinksCount ?? 15}
+                      <Text style={[styles.hubMetricValue, isDark ? styles.textDark : styles.textLight]}>
+                        {summary?.deepLinksCount ?? 0}
                       </Text>
-                      <View style={styles.metricFooterRow}>
-                        <Text style={styles.metricSub}>Tracked join links</Text>
-                        <Ionicons name="chevron-forward" size={11} color="#0284C7" />
+                      <View style={styles.hubMetricFooterRow}>
+                        <Text style={styles.hubMetricSub} numberOfLines={1}>Tracked join links</Text>
+                        <Ionicons name="chevron-forward" size={11} color="#06B6D4" />
                       </View>
                     </Pressable>
 
-                    <Pressable style={({ pressed }) => [styles.metricItem, pressed && styles.metricItemPressed]} onPress={() => handleTabChange('automations')}>
-                      <View style={styles.metricHeaderRow}>
-                        <Text style={styles.metricLabel}>FORWARDS</Text>
-                        <Ionicons name="git-compare-outline" size={13} color="#8B5CF6" />
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.hubMetricCard,
+                        isDark ? styles.hubMetricCardDark : styles.hubMetricCardLight,
+                        pressed && styles.hubMetricCardPressed,
+                      ]}
+                      onPress={() => handleTabChange('automations')}
+                    >
+                      <View style={styles.hubMetricHeaderRow}>
+                        <Text style={styles.hubMetricLabel} numberOfLines={1}>FORWARDS</Text>
+                        <View style={[styles.hubMetricIconWrap, { backgroundColor: 'rgba(139, 92, 246, 0.12)' }]}>
+                          <Ionicons name="git-compare-outline" size={13} color="#8B5CF6" />
+                        </View>
                       </View>
-                      <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
+                      <Text style={[styles.hubMetricValue, isDark ? styles.textDark : styles.textLight]}>
                         {(forwardRules || []).length}
                       </Text>
-                      <View style={styles.metricFooterRow}>
-                        <Text style={styles.metricSub}>Active rules</Text>
+                      <View style={styles.hubMetricFooterRow}>
+                        <Text style={styles.hubMetricSub} numberOfLines={1}>Active rules</Text>
                         <Ionicons name="chevron-forward" size={11} color="#8B5CF6" />
                       </View>
                     </Pressable>
 
-                    <Pressable style={({ pressed }) => [styles.metricItem, pressed && styles.metricItemPressed]} onPress={() => handleTabChange('sub_manager')}>
-                      <View style={styles.metricHeaderRow}>
-                        <Text style={styles.metricLabel}>TELESUB PAGES</Text>
-                        <Ionicons name="wallet-outline" size={13} color="#EC4899" />
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.hubMetricCard,
+                        isDark ? styles.hubMetricCardDark : styles.hubMetricCardLight,
+                        pressed && styles.hubMetricCardPressed,
+                      ]}
+                      onPress={() => handleTabChange('sub_manager')}
+                    >
+                      <View style={styles.hubMetricHeaderRow}>
+                        <Text style={styles.hubMetricLabel} numberOfLines={1}>TELESUB PAGES</Text>
+                        <View style={[styles.hubMetricIconWrap, { backgroundColor: 'rgba(236, 72, 153, 0.12)' }]}>
+                          <Ionicons name="wallet-outline" size={13} color="#EC4899" />
+                        </View>
                       </View>
-                      <Text style={[styles.metricValue, isDark ? styles.textDark : styles.textLight]}>
+                      <Text style={[styles.hubMetricValue, isDark ? styles.textDark : styles.textLight]}>
                         {summary?.teleSubPagesCount ?? (subPlans || []).length}
                       </Text>
-                      <View style={styles.metricFooterRow}>
-                        <Text style={styles.metricSub}>Monetized pages</Text>
+                      <View style={styles.hubMetricFooterRow}>
+                        <Text style={styles.hubMetricSub} numberOfLines={1}>Monetized pages</Text>
                         <Ionicons name="chevron-forward" size={11} color="#EC4899" />
                       </View>
                     </Pressable>
 
-                    <Pressable style={({ pressed }) => [styles.metricItem, pressed && styles.metricItemPressed]} onPress={() => handleTabChange('sub_manager')}>
-                      <View style={styles.metricHeaderRow}>
-                        <Text style={styles.metricLabel}>REVENUE</Text>
-                        <Ionicons name="card-outline" size={13} color="#F59E0B" />
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.hubMetricCard,
+                        isDark ? styles.hubMetricCardDark : styles.hubMetricCardLight,
+                        pressed && styles.hubMetricCardPressed,
+                      ]}
+                      onPress={() => handleTabChange('sub_manager')}
+                    >
+                      <View style={styles.hubMetricHeaderRow}>
+                        <Text style={styles.hubMetricLabel} numberOfLines={1}>REVENUE</Text>
+                        <View style={[styles.hubMetricIconWrap, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
+                          <Ionicons name="cash-outline" size={13} color="#F59E0B" />
+                        </View>
                       </View>
-                      <Text style={[styles.metricValue, { color: '#0284C7' }]}>
+                      <Text style={[styles.hubMetricValue, { color: '#0284C7' }]}>
                         ₹{(summary?.revenue ?? 0).toLocaleString()}
                       </Text>
-                      <View style={styles.metricFooterRow}>
-                        <Text style={styles.metricSub}>Total collected</Text>
+                      <View style={styles.hubMetricFooterRow}>
+                        <Text style={styles.hubMetricSub} numberOfLines={1}>Total collected</Text>
                         <Ionicons name="chevron-forward" size={11} color="#F59E0B" />
                       </View>
                     </Pressable>
@@ -1664,9 +1323,13 @@ export const TelegramScreen: React.FC = () => {
                   </View>
                 </View>
 
-                {/* 5 KPI METRIC CARDS ROW */}
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.afKpiScroll}>
-                  <View style={[styles.afKpiCard, isDark ? styles.cardDark : styles.cardLight]}>
+                {/* 5 KPI METRIC CARDS - 2x2 GRID (tap to open section) */}
+                <View style={styles.afKpiGrid}>
+                  <Pressable
+                    style={[styles.afKpiCard, isDark ? styles.cardDark : styles.cardLight,
+                      afSection === 'mappings' && styles.afKpiCardActive]}
+                    onPress={() => { setAfSection('mappings'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                  >
                     <View style={[styles.afKpiIconCircle, { backgroundColor: 'rgba(2, 132, 199, 0.12)' }]}>
                       <Ionicons name="arrow-redo" size={14} color="#0284C7" />
                     </View>
@@ -1674,33 +1337,50 @@ export const TelegramScreen: React.FC = () => {
                       {(forwardRules || []).length}
                     </Text>
                     <Text style={styles.afKpiSub}>Active Mappings</Text>
-                  </View>
+                  </Pressable>
 
-                  <View style={[styles.afKpiCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <Pressable
+                    style={[styles.afKpiCard, isDark ? styles.cardDark : styles.cardLight,
+                      afSection === 'filters' && styles.afKpiCardActive]}
+                    onPress={() => { setAfSection('filters'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                  >
                     <View style={[styles.afKpiIconCircle, { backgroundColor: 'rgba(139, 92, 246, 0.12)' }]}>
                       <Ionicons name="filter-outline" size={14} color="#8B5CF6" />
                     </View>
                     <Text style={[styles.afKpiValue, isDark ? styles.textDark : styles.textLight]}>0</Text>
                     <Text style={styles.afKpiSub}>Text Filters</Text>
-                  </View>
+                  </Pressable>
 
-                  <View style={[styles.afKpiCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <Pressable
+                    style={[styles.afKpiCard, isDark ? styles.cardDark : styles.cardLight,
+                      afSection === 'blocked' && styles.afKpiCardActive]}
+                    onPress={() => { setAfSection('blocked'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                  >
                     <View style={[styles.afKpiIconCircle, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]}>
                       <Ionicons name="shield-outline" size={14} color="#EF4444" />
                     </View>
                     <Text style={[styles.afKpiValue, isDark ? styles.textDark : styles.textLight]}>0</Text>
                     <Text style={styles.afKpiSub}>Blocked Words</Text>
-                  </View>
+                  </Pressable>
 
-                  <View style={[styles.afKpiCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <Pressable
+                    style={[styles.afKpiCard, isDark ? styles.cardDark : styles.cardLight,
+                      afSection === 'delays' && styles.afKpiCardActive]}
+                    onPress={() => { setAfSection('delays'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                  >
                     <View style={[styles.afKpiIconCircle, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
                       <Ionicons name="time-outline" size={14} color="#F59E0B" />
                     </View>
                     <Text style={[styles.afKpiValue, isDark ? styles.textDark : styles.textLight]}>0</Text>
-                    <Text style={styles.afKpiSub}>Delay (seconds)</Text>
-                  </View>
+                    <Text style={styles.afKpiSub}>Delay (sec)</Text>
+                  </Pressable>
 
-                  <View style={[styles.afKpiCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <Pressable
+                    style={[styles.afKpiCard, isDark ? styles.cardDark : styles.cardLight,
+                      afSection === 'headers' && styles.afKpiCardActive,
+                      { flexGrow: 1, width: '100%' }]}
+                    onPress={() => { setAfSection('headers'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                  >
                     <View style={[styles.afKpiIconCircle, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
                       <Ionicons name="text-outline" size={14} color="#10B981" />
                     </View>
@@ -1708,40 +1388,8 @@ export const TelegramScreen: React.FC = () => {
                       None
                     </Text>
                     <Text style={styles.afKpiSub}>Text Actions</Text>
-                  </View>
-                </ScrollView>
-
-                {/* Sub-Section Navigation Pills for AutoForward */}
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
-                  {[
-                    { key: 'mappings', label: `Mappings (${(forwardRules || []).length})`, icon: 'git-compare-outline' },
-                    { key: 'filters', label: 'Word Filters', icon: 'filter-outline' },
-                    { key: 'blocked', label: 'Blocked Words', icon: 'shield-outline' },
-                    { key: 'delays', label: 'Delay & Throttle', icon: 'time-outline' },
-                    { key: 'headers', label: 'Prefix & Suffix', icon: 'text-outline' },
-                  ].map((sub) => {
-                    const isSelected = afSection === sub.key;
-                    return (
-                      <Pressable
-                        key={sub.key}
-                        style={[
-                          styles.catPill,
-                          isDark ? styles.pillDark : styles.pillLight,
-                          isSelected && styles.catPillSelected,
-                        ]}
-                        onPress={() => {
-                          if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          setAfSection(sub.key as any);
-                        }}
-                      >
-                        <Ionicons name={sub.icon as any} size={13} color={isSelected ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'} />
-                        <Text style={[styles.catPillText, isDark ? styles.textDark : styles.textLight, isSelected && styles.catPillTextSelected]}>
-                          {sub.label}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
+                  </Pressable>
+                </View>
 
                 {/* Quick Add Rule Button */}
                 <View style={{ marginVertical: 12 }}>
@@ -1750,7 +1398,7 @@ export const TelegramScreen: React.FC = () => {
                     onPress={() => setActiveModal('autoforward')}
                   >
                     <Ionicons name="add" size={16} color="#FFFFFF" />
-                    <Text style={styles.actionBtnPrimaryText}>+ Configure New Forwarding Rule</Text>
+                    <Text style={styles.actionBtnPrimaryText}>Configure New Forwarding Rule</Text>
                   </Pressable>
                 </View>
 
@@ -1772,10 +1420,7 @@ export const TelegramScreen: React.FC = () => {
                     </View>
 
                     <View style={styles.afMappingsList}>
-                      {((forwardRules || []).length > 0 ? (forwardRules || []) : [
-                        { id: 'mock-1', source_chat_title: 'PRIVATE VIP SIGNALS (PREMIUM)', target_chat_title: 'TRADING GURU SEBI REGISTERED' },
-                        { id: 'mock-2', source_chat_title: 'CRYPTO ALPHA LEAKS', target_chat_title: 'ZERO TO HERO ( TRADING )' },
-                      ]).map((rule, idx) => (
+                      {(forwardRules || []).map((rule, idx) => (
                         <View
                           key={`af_rule_${rule.id || idx}`}
                           style={[styles.afMappingRow, isDark ? styles.afMappingRowDark : styles.afMappingRowLight]}
@@ -2436,7 +2081,7 @@ export const TelegramScreen: React.FC = () => {
                           onPress={() => setActiveModal('sub_manager')}
                         >
                           <Ionicons name="add" size={13} color="#0284C7" />
-                          <Text style={[styles.webSmallActionBtnText, isDark ? styles.textDark : styles.textLight]}>+ Add ID Manually</Text>
+                          <Text style={[styles.webSmallActionBtnText, isDark ? styles.textDark : styles.textLight]}>Add ID Manually</Text>
                         </Pressable>
                       </View>
                     </View>
@@ -2598,7 +2243,7 @@ export const TelegramScreen: React.FC = () => {
                           onPress={() => setActiveModal('sub_manager')}
                         >
                           <Ionicons name="add" size={15} color="#FFFFFF" />
-                          <Text style={styles.newPageBtnSolidText}>+ New Page</Text>
+                          <Text style={styles.newPageBtnSolidText}>New Page</Text>
                         </Pressable>
                       </View>
                     </View>
@@ -2777,600 +2422,6 @@ export const TelegramScreen: React.FC = () => {
                 )}
               </>
             )}
-
-            {/* TAB 4: BROADCASTS & OUTREACH */}
-            {activeTab === 'broadcasts' && (
-              <>
-                {/* 4 Broadcast KPI Metric Cards */}
-                <View style={[styles.kpiGrid, { marginBottom: 12 }]}>
-                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={[styles.kpiIconWrap, { backgroundColor: 'rgba(2, 132, 199, 0.12)' }]}>
-                      <Ionicons name="megaphone" size={16} color="#0284C7" />
-                    </View>
-                    <Text style={[styles.kpiNumber, isDark ? styles.textDark : styles.textLight]}>18</Text>
-                    <Text style={styles.kpiLabel}>Broadcasts Sent</Text>
-                    <Text style={styles.kpiHint}>All time campaigns</Text>
-                  </View>
-
-                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={[styles.kpiIconWrap, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
-                      <Ionicons name="people" size={16} color="#10B981" />
-                    </View>
-                    <Text style={[styles.kpiNumber, isDark ? styles.textDark : styles.textLight]}>48.5K</Text>
-                    <Text style={styles.kpiLabel}>Audience Reached</Text>
-                    <Text style={styles.kpiHint}>Total impressions</Text>
-                  </View>
-
-                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={[styles.kpiIconWrap, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
-                      <Ionicons name="checkmark-done-circle" size={16} color="#F59E0B" />
-                    </View>
-                    <Text style={[styles.kpiNumber, isDark ? styles.textDark : styles.textLight]}>99.4%</Text>
-                    <Text style={styles.kpiLabel}>Delivery Rate</Text>
-                    <Text style={styles.kpiHint}>Zero spam drops</Text>
-                  </View>
-
-                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={[styles.kpiIconWrap, { backgroundColor: 'rgba(139, 92, 246, 0.12)' }]}>
-                      <Ionicons name="finger-print" size={16} color="#8B5CF6" />
-                    </View>
-                    <Text style={[styles.kpiNumber, isDark ? styles.textDark : styles.textLight]}>14.2%</Text>
-                    <Text style={styles.kpiLabel}>Button CTR</Text>
-                    <Text style={styles.kpiHint}>Interactive clicks</Text>
-                  </View>
-                </View>
-
-                {/* Create Broadcast Action Banner */}
-                <Pressable
-                  style={[styles.broadcastBanner, isDark ? styles.cardDark : styles.cardLight]}
-                  onPress={() => setActiveModal('broadcast')}
-                >
-                  <View style={styles.broadcastBannerIcon}>
-                    <Ionicons name="paper-plane" size={24} color="#0284C7" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.broadcastBannerTitle, isDark ? styles.textDark : styles.textLight]}>
-                      Compose Instant Broadcast
-                    </Text>
-                    <Text style={styles.broadcastBannerDesc}>
-                      Blast rich announcements with CTA buttons to your Telegram audience
-                    </Text>
-                  </View>
-                  <Ionicons name="arrow-forward-circle" size={28} color="#0284C7" />
-                </Pressable>
-
-                <View style={styles.sectionHeaderRow}>
-                  <View>
-                    <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight, { marginBottom: 2 }]}>
-                      Recent Broadcast Campaigns
-                    </Text>
-                    <Text style={styles.sectionSub}>Historical performance & click telemetry</Text>
-                  </View>
-                </View>
-
-                {/* 3 Rich Campaign History Cards */}
-                {DEFAULT_BROADCAST_HISTORY.map((bc) => {
-                  const isCopied = copiedBroadcastId === bc.id;
-                  return (
-                    <View key={bc.id} style={[styles.bcCard, isDark ? styles.cardDark : styles.cardLight]}>
-                      <View style={styles.bcHeader}>
-                        <View style={styles.bcTargetBadge}>
-                          <Ionicons name="radio" size={12} color="#0284C7" />
-                          <Text style={styles.bcTargetBadgeText}>{bc.target_channel}</Text>
-                        </View>
-                        <Text style={styles.bcTimeText}>{bc.sent_time}</Text>
-                      </View>
-
-                      <Text style={[styles.bcTitle, isDark ? styles.textDark : styles.textLight]}>{bc.title}</Text>
-
-                      <View style={styles.bcMsgBox}>
-                        <Text style={styles.bcMsgText}>{bc.message}</Text>
-                      </View>
-
-                      <View style={styles.bcBtnRow}>
-                        {bc.buttons.map((btn, bidx) => (
-                          <Pressable
-                            key={bidx}
-                            style={styles.bcInlineBtn}
-                            onPress={() => handleCopyBroadcastLink(btn.url, bc.id)}
-                          >
-                            <Ionicons name="open-outline" size={13} color="#FFFFFF" />
-                            <Text style={styles.bcInlineBtnText}>{btn.text}</Text>
-                          </Pressable>
-                        ))}
-                      </View>
-
-                      <View style={styles.bcFooterStats}>
-                        <Text style={styles.bcStatText}>👥 {bc.recipients.toLocaleString()} Delivered</Text>
-                        <Text style={[styles.bcStatText, { color: '#10B981', fontWeight: '700' }]}>
-                          🖱️ {bc.clicks.toLocaleString()} Clicks ({(bc.clicks / bc.recipients * 100).toFixed(1)}%)
-                        </Text>
-                      </View>
-                    </View>
-                  );
-                })}
-              </>
-            )}
-
-            {/* TAB 5: REACTIONS & AUDIENCE ENGAGEMENT */}
-            {activeTab === 'reactions' && (
-              <>
-                {/* 4 KPI Cards for Reactions */}
-                <View style={[styles.kpiGrid, { marginBottom: 12 }]}>
-                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={[styles.kpiIconWrap, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
-                      <Ionicons name="flash" size={16} color="#F59E0B" />
-                    </View>
-                    <Text style={[styles.kpiNumber, { color: '#F59E0B' }]}>Active</Text>
-                    <Text style={styles.kpiLabel}>Auto-Reactions</Text>
-                    <Text style={styles.kpiHint}>Instant post trigger</Text>
-                  </View>
-
-                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={[styles.kpiIconWrap, { backgroundColor: 'rgba(2, 132, 199, 0.12)' }]}>
-                      <Ionicons name="eye" size={16} color="#0284C7" />
-                    </View>
-                    <Text style={[styles.kpiNumber, { color: '#0284C7' }]}>2.5K</Text>
-                    <Text style={styles.kpiLabel}>Views / Post</Text>
-                    <Text style={styles.kpiHint}>Immediate delivery</Text>
-                  </View>
-
-                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={[styles.kpiIconWrap, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
-                      <Ionicons name="shield-checkmark" size={16} color="#10B981" />
-                    </View>
-                    <Text style={[styles.kpiNumber, { color: '#10B981' }]}>365D</Text>
-                    <Text style={styles.kpiLabel}>Auto-Refill</Text>
-                    <Text style={styles.kpiHint}>100% member retention</Text>
-                  </View>
-
-                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={[styles.kpiIconWrap, { backgroundColor: 'rgba(139, 92, 246, 0.12)' }]}>
-                      <Ionicons name="layers" size={16} color="#8B5CF6" />
-                    </View>
-                    <Text style={[styles.kpiNumber, { color: '#8B5CF6' }]}>2</Text>
-                    <Text style={styles.kpiLabel}>Active Channels</Text>
-                    <Text style={styles.kpiHint}>Boosted & monitored</Text>
-                  </View>
-                </View>
-
-                <Pressable
-                  style={[styles.broadcastBanner, isDark ? styles.cardDark : styles.cardLight]}
-                  onPress={() => setActiveModal('reactions')}
-                >
-                  <View style={[styles.broadcastBannerIcon, { backgroundColor: 'rgba(245,158,11,0.12)' }]}>
-                    <Ionicons name="flash" size={24} color="#F59E0B" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.broadcastBannerTitle, isDark ? styles.textDark : styles.textLight]}>
-                      Configure Auto Reactions & Boosts
-                    </Text>
-                    <Text style={styles.broadcastBannerDesc}>
-                      Set up instant emoji reactions, post views, and member retention boosts
-                    </Text>
-                  </View>
-                  <Ionicons name="arrow-forward-circle" size={28} color="#F59E0B" />
-                </Pressable>
-
-                <View style={styles.sectionHeaderRow}>
-                  <View>
-                    <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight, { marginBottom: 2 }]}>
-                      Boosted Channel Automations
-                    </Text>
-                    <Text style={styles.sectionSub}>Live automatic reaction engines</Text>
-                  </View>
-                  <Pressable
-                    style={[styles.actionBtnPrimary, { backgroundColor: '#F59E0B' }]}
-                    onPress={() => setActiveModal('reactions')}
-                  >
-                    <Ionicons name="add" size={16} color="#FFFFFF" />
-                    <Text style={styles.actionBtnPrimaryText}>Add Channel</Text>
-                  </Pressable>
-                </View>
-
-                {/* 2 Boosted Channel Cards */}
-                {DEFAULT_REACTION_CHANNELS.map((rc) => (
-                  <View key={rc.id} style={[styles.rcCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={styles.rcHeader}>
-                      <Text style={[styles.rcChanTitle, isDark ? styles.textDark : styles.textLight]}>
-                        {rc.name}
-                      </Text>
-                      <View style={styles.rcActivePill}>
-                        <Text style={styles.rcActivePillText}>{rc.status}</Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.rcEmojiWrap}>
-                      {rc.emojis.map((em, idx) => (
-                        <View key={idx} style={styles.rcEmojiBadge}>
-                          <Text style={styles.rcEmojiText}>{em}</Text>
-                        </View>
-                      ))}
-                    </View>
-
-                    <View style={styles.rcStatsRow}>
-                      <Text style={styles.rcStatVal}>👁️ {rc.autoViews}</Text>
-                      <Text style={[styles.rcStatVal, { color: '#10B981' }]}>🛡️ {rc.refillDays}</Text>
-                      <Text style={styles.rcStatVal}>🚀 {rc.postsBoosted} Posts</Text>
-                    </View>
-                  </View>
-                ))}
-
-                {/* 4 Quick Highlight Service Cards */}
-                <View style={[styles.metricsGrid, { borderTopWidth: 0, paddingTop: 0, marginTop: 8, marginBottom: 16 }]}>
-                  <View style={[styles.metricItem, isDark ? styles.cardDark : styles.cardLight, { padding: 12, borderRadius: 12, borderWidth: 1 }]}>
-                    <Text style={styles.metricLabel}>CUSTOM REACTIONS</Text>
-                    <Text style={[styles.metricValue, { color: '#F59E0B' }]}>₹14 / 1k</Text>
-                    <Text style={styles.metricSub}>❤️ 👍 🔥 👏 🚀 🥰</Text>
-                  </View>
-                  <View style={[styles.metricItem, isDark ? styles.cardDark : styles.cardLight, { padding: 12, borderRadius: 12, borderWidth: 1 }]}>
-                    <Text style={styles.metricLabel}>AUTO VIEWS</Text>
-                    <Text style={[styles.metricValue, { color: '#0284C7' }]}>₹4.8 / 1k</Text>
-                    <Text style={styles.metricSub}>Immediate post delivery</Text>
-                  </View>
-                  <View style={[styles.metricItem, isDark ? styles.cardDark : styles.cardLight, { padding: 12, borderRadius: 12, borderWidth: 1 }]}>
-                    <Text style={styles.metricLabel}>MEMBERS 30D</Text>
-                    <Text style={[styles.metricValue, { color: '#10B981' }]}>₹80 / 1k</Text>
-                    <Text style={styles.metricSub}>30-Day auto-refill</Text>
-                  </View>
-                  <View style={[styles.metricItem, isDark ? styles.cardDark : styles.cardLight, { padding: 12, borderRadius: 12, borderWidth: 1 }]}>
-                    <Text style={styles.metricLabel}>MEMBERS 365D</Text>
-                    <Text style={[styles.metricValue, { color: '#8B5CF6' }]}>₹250 / 1k</Text>
-                    <Text style={styles.metricSub}>1-Year persistent refill</Text>
-                  </View>
-                </View>
-              </>
-            )}
-
-            {/* TAB 6: AI CHATBOT AUTOMATION */}
-            {activeTab === 'chatbot' && (
-              <>
-                {/* 4 ChatBot KPI Cards */}
-                <View style={[styles.kpiGrid, { marginBottom: 12 }]}>
-                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={[styles.kpiIconWrap, { backgroundColor: 'rgba(2, 132, 199, 0.12)' }]}>
-                      <Ionicons name="chatbubbles" size={16} color="#0284C7" />
-                    </View>
-                    <Text style={[styles.kpiNumber, isDark ? styles.textDark : styles.textLight]}>2</Text>
-                    <Text style={styles.kpiLabel}>Active AI Agents</Text>
-                    <Text style={styles.kpiHint}>24/7 online</Text>
-                  </View>
-
-                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={[styles.kpiIconWrap, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
-                      <Ionicons name="checkmark-done" size={16} color="#10B981" />
-                    </View>
-                    <Text style={[styles.kpiNumber, isDark ? styles.textDark : styles.textLight]}>1,428</Text>
-                    <Text style={styles.kpiLabel}>Queries Handled</Text>
-                    <Text style={styles.kpiHint}>Automated responses</Text>
-                  </View>
-
-                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={[styles.kpiIconWrap, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
-                      <Ionicons name="ribbon" size={16} color="#F59E0B" />
-                    </View>
-                    <Text style={[styles.kpiNumber, isDark ? styles.textDark : styles.textLight]}>94.8%</Text>
-                    <Text style={styles.kpiLabel}>Resolution Rate</Text>
-                    <Text style={styles.kpiHint}>No human intervention</Text>
-                  </View>
-
-                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={[styles.kpiIconWrap, { backgroundColor: 'rgba(139, 92, 246, 0.12)' }]}>
-                      <Ionicons name="speedometer" size={16} color="#8B5CF6" />
-                    </View>
-                    <Text style={[styles.kpiNumber, isDark ? styles.textDark : styles.textLight]}>1.2s</Text>
-                    <Text style={styles.kpiLabel}>Avg Response</Text>
-                    <Text style={styles.kpiHint}>Ultra low latency</Text>
-                  </View>
-                </View>
-
-                <Pressable
-                  style={[styles.broadcastBanner, isDark ? styles.cardDark : styles.cardLight]}
-                  onPress={() => setActiveModal('chatbot')}
-                >
-                  <View style={[styles.broadcastBannerIcon, { backgroundColor: 'rgba(14,165,233,0.15)' }]}>
-                    <Ionicons name="chatbubbles" size={24} color="#0284C7" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.broadcastBannerTitle, isDark ? styles.textDark : styles.textLight]}>
-                      AI ChatBot Automation
-                    </Text>
-                    <Text style={styles.broadcastBannerDesc}>
-                      Multi-provider AI customer support agent (OpenAI, Gemini, Claude, Groq)
-                    </Text>
-                  </View>
-                  <Ionicons name="arrow-forward-circle" size={28} color="#0284C7" />
-                </Pressable>
-
-                <View style={styles.sectionHeaderRow}>
-                  <View>
-                    <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight, { marginBottom: 2 }]}>
-                      Connected AI Assistants
-                    </Text>
-                    <Text style={styles.sectionSub}>Automated customer replies & knowledge base</Text>
-                  </View>
-                  <Pressable
-                    style={[styles.actionBtnPrimary, { backgroundColor: '#0284C7' }]}
-                    onPress={() => setActiveModal('chatbot')}
-                  >
-                    <Ionicons name="add" size={16} color="#FFFFFF" />
-                    <Text style={styles.actionBtnPrimaryText}>Connect Bot</Text>
-                  </Pressable>
-                </View>
-
-                {/* 2 Connected AI Assistant Cards */}
-                {DEFAULT_AI_ASSISTANTS.map((ai) => (
-                  <View key={ai.id} style={[styles.aiCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={styles.aiHeader}>
-                      <Text style={[styles.aiName, isDark ? styles.textDark : styles.textLight]}>
-                        {ai.name}
-                      </Text>
-                      <View style={styles.aiModelBadge}>
-                        <Text style={styles.aiModelText}>{ai.model}</Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.aiPromptBox}>
-                      <Text style={styles.aiPromptText}>"{ai.promptPreview}"</Text>
-                    </View>
-
-                    <View style={styles.aiMetricsRow}>
-                      <View style={styles.aiMetricItem}>
-                        <Ionicons name="document-text-outline" size={14} color="#64748B" />
-                        <Text style={styles.aiMetricText}>{ai.knowledgeDocs} Docs indexed</Text>
-                      </View>
-                      <View style={styles.aiMetricItem}>
-                        <Ionicons name="checkmark-circle-outline" size={14} color="#10B981" />
-                        <Text style={[styles.aiMetricText, { color: '#10B981', fontWeight: '700' }]}>
-                          {ai.queriesResolved} Resolved
-                        </Text>
-                      </View>
-                      <View style={styles.aiMetricItem}>
-                        <Ionicons name="radio-outline" size={14} color="#0284C7" />
-                        <Text style={styles.aiMetricText}>{ai.channel}</Text>
-                      </View>
-                    </View>
-
-                    <Pressable
-                      style={[styles.actionBtnPrimary, { marginTop: 8 }]}
-                      onPress={() => setActiveModal('chatbot')}
-                    >
-                      <Ionicons name="settings-outline" size={15} color="#FFFFFF" />
-                      <Text style={styles.actionBtnPrimaryText}>Configure Knowledge Base</Text>
-                    </Pressable>
-                  </View>
-                ))}
-              </>
-            )}
-
-            {/* TAB 7: AUTO-APPROVE JOIN REQUESTS */}
-            {activeTab === 'auto_approve' && (
-              <>
-                {/* 4 Auto-Approve KPI Cards */}
-                <View style={[styles.kpiGrid, { marginBottom: 12 }]}>
-                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={[styles.kpiIconWrap, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
-                      <Ionicons name="shield-checkmark" size={16} color="#10B981" />
-                    </View>
-                    <Text style={[styles.kpiNumber, isDark ? styles.textDark : styles.textLight]}>142</Text>
-                    <Text style={styles.kpiLabel}>Approved Today</Text>
-                    <Text style={styles.kpiHint}>Instant accept</Text>
-                  </View>
-
-                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={[styles.kpiIconWrap, { backgroundColor: 'rgba(2, 132, 199, 0.12)' }]}>
-                      <Ionicons name="people" size={16} color="#0284C7" />
-                    </View>
-                    <Text style={[styles.kpiNumber, isDark ? styles.textDark : styles.textLight]}>4,890</Text>
-                    <Text style={styles.kpiLabel}>Total Accepted</Text>
-                    <Text style={styles.kpiHint}>All time approvals</Text>
-                  </View>
-
-                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={[styles.kpiIconWrap, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
-                      <Ionicons name="flash" size={16} color="#F59E0B" />
-                    </View>
-                    <Text style={[styles.kpiNumber, isDark ? styles.textDark : styles.textLight]}>0.0s</Text>
-                    <Text style={styles.kpiLabel}>Approval Delay</Text>
-                    <Text style={styles.kpiHint}>Zero latency daemon</Text>
-                  </View>
-
-                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={[styles.kpiIconWrap, { backgroundColor: 'rgba(139, 92, 246, 0.12)' }]}>
-                      <Ionicons name="mail-unread" size={16} color="#8B5CF6" />
-                    </View>
-                    <Text style={[styles.kpiNumber, isDark ? styles.textDark : styles.textLight]}>4,890</Text>
-                    <Text style={styles.kpiLabel}>Welcome DMs</Text>
-                    <Text style={styles.kpiHint}>Sent automatically</Text>
-                  </View>
-                </View>
-
-                <Pressable
-                  style={[styles.broadcastBanner, isDark ? styles.cardDark : styles.cardLight]}
-                  onPress={() => setActiveModal('auto_approve')}
-                >
-                  <View style={[styles.broadcastBannerIcon, { backgroundColor: 'rgba(16,185,129,0.15)' }]}>
-                    <Ionicons name="shield-checkmark" size={24} color="#10B981" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.broadcastBannerTitle, isDark ? styles.textDark : styles.textLight]}>
-                      Auto-Approve Join Requests
-                    </Text>
-                    <Text style={styles.broadcastBannerDesc}>
-                      Instantly accept private channel & group join requests 24/7 with zero delay
-                    </Text>
-                  </View>
-                  <Ionicons name="arrow-forward-circle" size={28} color="#10B981" />
-                </Pressable>
-
-                <View style={styles.sectionHeaderRow}>
-                  <View>
-                    <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight, { marginBottom: 2 }]}>
-                      Channel Automation Engine
-                    </Text>
-                    <Text style={styles.sectionSub}>Instant approvals and welcome triggers</Text>
-                  </View>
-                  <Pressable
-                    style={[styles.actionBtnPrimary, { backgroundColor: '#10B981' }]}
-                    onPress={() => setActiveModal('auto_approve')}
-                  >
-                    <Ionicons name="flash" size={16} color="#FFFFFF" />
-                    <Text style={styles.actionBtnPrimaryText}>Configure</Text>
-                  </Pressable>
-                </View>
-
-                {/* 2 Auto-Approve Channel Cards */}
-                {DEFAULT_AUTO_APPROVE_CHANNELS.map((aa) => (
-                  <View key={aa.id} style={[styles.aaCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={styles.aaHeader}>
-                      <Text style={[styles.aaChanName, isDark ? styles.textDark : styles.textLight]}>
-                        {aa.name}
-                      </Text>
-                      <View style={styles.aaBadge}>
-                        <Text style={styles.aaBadgeText}>Active 24/7</Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.aaTemplateBox}>
-                      <Text style={styles.aaTemplateLabel}>AUTOMATED WELCOME DM TEMPLATE:</Text>
-                      <Text style={styles.aaTemplateText}>{aa.welcomeTemplate}</Text>
-                    </View>
-
-                    <View style={styles.rcStatsRow}>
-                      <Text style={styles.rcStatVal}>⚡ Approved Today: {aa.approvedToday}</Text>
-                      <Text style={[styles.rcStatVal, { color: '#10B981' }]}>👥 All-Time: {aa.totalApproved}</Text>
-                      <Text style={styles.rcStatVal}>🔗 Webhook: {aa.webhookStatus}</Text>
-                    </View>
-
-                    <Pressable
-                      style={[styles.actionBtnPrimary, { marginTop: 10, backgroundColor: '#10B981' }]}
-                      onPress={() => setActiveModal('auto_approve')}
-                    >
-                      <Ionicons name="settings-outline" size={15} color="#FFFFFF" />
-                      <Text style={styles.actionBtnPrimaryText}>Edit Welcome DM & Channel</Text>
-                    </Pressable>
-                  </View>
-                ))}
-              </>
-            )}
-
-            {/* TAB 8: REPORT BOT & CHANNEL ANALYTICS */}
-            {activeTab === 'report_bot' && (
-              <>
-                {/* 4 Report Bot KPI Cards */}
-                <View style={[styles.kpiGrid, { marginBottom: 12 }]}>
-                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={[styles.kpiIconWrap, { backgroundColor: 'rgba(139, 92, 246, 0.12)' }]}>
-                      <Ionicons name="analytics" size={16} color="#8B5CF6" />
-                    </View>
-                    <Text style={[styles.kpiNumber, isDark ? styles.textDark : styles.textLight]}>4</Text>
-                    <Text style={styles.kpiLabel}>Tracked Channels</Text>
-                    <Text style={styles.kpiHint}>Telemetry active</Text>
-                  </View>
-
-                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={[styles.kpiIconWrap, { backgroundColor: 'rgba(2, 132, 199, 0.12)' }]}>
-                      <Ionicons name="time" size={16} color="#0284C7" />
-                    </View>
-                    <Text style={[styles.kpiNumber, isDark ? styles.textDark : styles.textLight]}>09:00 AM</Text>
-                    <Text style={styles.kpiLabel}>Daily Schedule</Text>
-                    <Text style={styles.kpiHint}>Automated delivery</Text>
-                  </View>
-
-                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={[styles.kpiIconWrap, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
-                      <Ionicons name="image" size={16} color="#10B981" />
-                    </View>
-                    <Text style={[styles.kpiNumber, isDark ? styles.textDark : styles.textLight]}>Active</Text>
-                    <Text style={styles.kpiLabel}>Brand Watermark</Text>
-                    <Text style={styles.kpiHint}>Custom logo on PDF</Text>
-                  </View>
-
-                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={[styles.kpiIconWrap, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
-                      <Ionicons name="document-text" size={16} color="#F59E0B" />
-                    </View>
-                    <Text style={[styles.kpiNumber, isDark ? styles.textDark : styles.textLight]}>PDF+XLS</Text>
-                    <Text style={styles.kpiLabel}>Export Format</Text>
-                    <Text style={styles.kpiHint}>Multi-format logs</Text>
-                  </View>
-                </View>
-
-                <Pressable
-                  style={[styles.broadcastBanner, isDark ? styles.cardDark : styles.cardLight]}
-                  onPress={() => setActiveModal('report_bot')}
-                >
-                  <View style={[styles.broadcastBannerIcon, { backgroundColor: 'rgba(139,92,246,0.15)' }]}>
-                    <Ionicons name="analytics" size={24} color="#8B5CF6" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.broadcastBannerTitle, isDark ? styles.textDark : styles.textLight]}>
-                      Channel Analytics & Report Bot
-                    </Text>
-                    <Text style={styles.broadcastBannerDesc}>
-                      Custom brand watermarks, automated growth logs, and subscriber analytics
-                    </Text>
-                  </View>
-                  <Ionicons name="arrow-forward-circle" size={28} color="#8B5CF6" />
-                </Pressable>
-
-                <View style={styles.sectionHeaderRow}>
-                  <View>
-                    <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight, { marginBottom: 2 }]}>
-                      Generated Growth Reports
-                    </Text>
-                    <Text style={styles.sectionSub}>Scheduled PDF audits & subscriber telemetry</Text>
-                  </View>
-                  <Pressable
-                    style={[styles.actionBtnPrimary, { backgroundColor: '#8B5CF6' }]}
-                    onPress={() => setActiveModal('report_bot')}
-                  >
-                    <Ionicons name="download-outline" size={16} color="#FFFFFF" />
-                    <Text style={styles.actionBtnPrimaryText}>Generate Now</Text>
-                  </Pressable>
-                </View>
-
-                {/* 3 Downloadable Report Cards */}
-                {DEFAULT_REPORT_LOGS.map((rep) => (
-                  <View key={rep.id} style={[styles.repCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={styles.repHeader}>
-                      <Text style={[styles.repTitle, isDark ? styles.textDark : styles.textLight]}>
-                        {rep.title}
-                      </Text>
-                      <View style={styles.repFormatBadge}>
-                        <Text style={styles.repFormatText}>{rep.format}</Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.repDetailsRow}>
-                      <Text style={styles.repDetailText}>📅 {rep.date}</Text>
-                      <Text style={styles.repDetailText}>📦 {rep.size}</Text>
-                      <Text style={styles.repDetailText}>📊 {rep.channels} Channels</Text>
-                    </View>
-
-                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-                      <Pressable
-                        style={[styles.actionBtnPrimary, { flex: 1, backgroundColor: '#8B5CF6' }]}
-                        onPress={() => setActiveModal('report_bot')}
-                      >
-                        <Ionicons name="download-outline" size={14} color="#FFFFFF" />
-                        <Text style={styles.actionBtnPrimaryText}>Download Report</Text>
-                      </Pressable>
-
-                      <Pressable
-                        style={[styles.copyBtn, { flex: 1 }]}
-                        onPress={() => {
-                          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                        }}
-                      >
-                        <Ionicons name="share-social-outline" size={14} color="#0284C7" />
-                        <Text style={styles.copyBtnText}>Share PDF</Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                ))}
-              </>
-            )}
           </>
         )}
       </ScrollView>
@@ -3457,7 +2508,7 @@ export const TelegramScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 16, paddingBottom: 130 },
+  content: { padding: 16, paddingBottom: 160 },
   tabBarWrapper: {
     borderBottomWidth: 1,
   },
@@ -3502,13 +2553,12 @@ const styles = StyleSheet.create({
   commandCenterCard: {
     borderRadius: 16,
     borderWidth: 1,
-    padding: 16,
+    padding: 14,
     marginBottom: 14,
   },
   commandHeader: {
     flexDirection: 'column',
-    gap: 12,
-    marginBottom: 14,
+    gap: 10,
   },
   sessionPillRow: {
     flexDirection: 'row',
@@ -3519,21 +2569,29 @@ const styles = StyleSheet.create({
   headerBtnGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
+    marginTop: 2,
   },
   refreshHeaderBtn: {
+    flex: 1,
+    height: 38,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(148, 163, 184, 0.1)',
+    justifyContent: 'center',
+    gap: 6,
     borderWidth: 1,
+    borderRadius: 10,
+  },
+  refreshHeaderBtnLight: {
+    backgroundColor: '#F8FAFC',
     borderColor: '#CBD5E1',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
+  },
+  refreshHeaderBtnDark: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   refreshHeaderBtnText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   sessionDot: {
@@ -3562,18 +2620,92 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   connectHeaderBtn: {
+    flex: 1,
+    height: 38,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    justifyContent: 'center',
+    gap: 6,
     backgroundColor: '#0284C7',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8,
+    borderRadius: 10,
+    shadowColor: '#0284C7',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 2,
   },
   connectHeaderBtnText: {
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '700',
+  },
+  hubMetricsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 8,
+    borderTopWidth: 1,
+    paddingTop: 12,
+    marginTop: 4,
+  },
+  hubMetricCard: {
+    width: '48.5%',
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'space-between',
+    minHeight: 88,
+  },
+  hubMetricCardDark: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderColor: 'rgba(255, 255, 255, 0.07)',
+  },
+  hubMetricCardLight: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#E2E8F0',
+  },
+  hubMetricCardPressed: {
+    opacity: 0.75,
+    backgroundColor: 'rgba(2, 132, 199, 0.08)',
+    borderColor: '#0284C7',
+  },
+  hubMetricHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  hubMetricLabel: {
+    color: '#64748B',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    flex: 1,
+  },
+  hubMetricIconWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hubMetricValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+    marginVertical: 2,
+  },
+  hubMetricFooterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 2,
+  },
+  hubMetricSub: {
+    fontSize: 10,
+    color: '#94A3B8',
+    fontWeight: '500',
+    flex: 1,
   },
   metricsGrid: {
     flexDirection: 'row',
@@ -3644,6 +2776,12 @@ const styles = StyleSheet.create({
   categoryScroll: {
     gap: 8,
     marginTop: 8,
+  },
+  afPillsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 14,
   },
   catPill: {
     flexDirection: 'row',
@@ -4135,12 +3273,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   afControlHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     flex: 1,
+    minWidth: 160,
   },
   afHeroIconCircle: {
     width: 38,
@@ -4169,6 +3310,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    flexWrap: 'wrap',
   },
   afGhostBtn: {
     flexDirection: 'row',
@@ -4204,8 +3346,14 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 16,
   },
+  afKpiGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 16,
+  },
   afKpiCard: {
-    width: 120,
+    width: '47%',
     padding: 12,
     borderRadius: 14,
     borderWidth: 1,
@@ -4221,6 +3369,10 @@ const styles = StyleSheet.create({
   afKpiValue: {
     fontSize: 20,
     fontWeight: '800',
+  },
+  afKpiCardActive: {
+    borderColor: '#0284C7',
+    borderWidth: 2,
   },
   afKpiSub: {
     fontSize: 10,
@@ -4283,6 +3435,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     borderWidth: 1,
+    gap: 6,
   },
   afMappingRowLight: {
     backgroundColor: 'rgba(248, 250, 252, 0.9)',
@@ -4297,6 +3450,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     flex: 1,
+    minWidth: 60,
   },
   afMappingArrowCircle: {
     width: 22,
@@ -4312,11 +3466,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   afTargetBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
-    maxWidth: '50%',
+    maxWidth: '48%',
+    flexShrink: 1,
   },
   afTargetBadgeLight: {
     backgroundColor: '#FFFFFF',
@@ -4366,22 +3521,63 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   // GAP Tracker Styles
+  trackerHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 12,
+  },
+  trackerBadgeGreen: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  trackerBadgeDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#10B981',
+    marginRight: 3,
+  },
+  trackerBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  trackerConsoleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#0284C7',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  trackerConsoleBtnText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
   trackerTabBar: {
     flexDirection: 'row',
-    padding: 6,
+    padding: 4,
     borderRadius: 12,
-    gap: 6,
+    gap: 2,
     marginBottom: 12,
   },
   trackerTabBtn: {
     flex: 1,
+    minWidth: 80,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 9,
+    paddingVertical: 8,
     paddingHorizontal: 6,
     borderRadius: 8,
-    gap: 5,
+    gap: 4,
   },
   trackerTabBtnActiveLight: {
     backgroundColor: '#E0F2FE',
@@ -4420,8 +3616,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   kpiCard: {
-    width: '48.5%',
-    flexGrow: 1,
+    width: '47%',
+    flexGrow: 0,
+    flexShrink: 0,
     padding: 14,
     borderRadius: 14,
     borderWidth: 1,
@@ -4459,26 +3656,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
     marginBottom: 14,
   },
   matrixHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flex: 1,
+    minWidth: 150,
   },
   matrixTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
+    flexShrink: 1,
   },
   periodBadge: {
     backgroundColor: 'rgba(2, 132, 199, 0.1)',
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 20,
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
   },
   periodBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '700',
     color: '#0284C7',
   },
   chanCard: {
@@ -4499,17 +3703,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 6,
     marginBottom: 8,
   },
   chanName: {
     fontSize: 13,
     fontWeight: '700',
+    flex: 1,
+    minWidth: 100,
   },
   periodJoinsPill: {
     backgroundColor: 'rgba(16, 185, 129, 0.1)',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
+    alignSelf: 'flex-start',
   },
   periodJoinsPillText: {
     fontSize: 10,
