@@ -12,20 +12,12 @@ async function inspectWhatsAppTables() {
   const { data: convSample, error: convErr } = await supabase
     .from('w_conversations')
     .select('*')
-    .limit(2);
-  console.log('w_conversations sample:', convSample, convErr?.message);
-
-  const { data: msgSample, error: msgErr } = await supabase
+  console.log('Cleaning up test message...');
+  await supabase
     .from('w_messages')
-    .select('*')
-    .limit(2);
-  console.log('w_messages sample:', msgSample, msgErr?.message);
-
-  const { data: cntSample, error: cntErr } = await supabase
-    .from('w_contacts')
-    .select('*')
-    .limit(2);
-  console.log('w_contacts sample:', cntSample, cntErr?.message);
+    .delete()
+    .eq('id', 'b9eca865-9937-4d51-807d-3371e42bb999');
+  console.log('Deleted test message.');
 }
 
 inspectWhatsAppTables();

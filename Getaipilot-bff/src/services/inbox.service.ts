@@ -68,7 +68,19 @@ export class InboxService {
     user: JWTPayload
   ): Promise<{ conversation: NormalizedConversation | null; messages: NormalizedMessage[] }> {
     const allConvs = await this.getConversations(user);
-    const conversation = allConvs.find((c) => c.id === conversationId) || null;
+    let conversation = allConvs.find((c) => c.id === conversationId) || null;
+
+    if (!conversation && conversationId.startsWith('conv_')) {
+      const contactId = conversationId.replace('conv_', '');
+      const { data: conv } = await WhatsAppAdapter.supabase
+        .from('w_conversations')
+        .select('id')
+        .eq('contact_id', contactId)
+        .maybeSingle();
+      if (conv) {
+        conversation = allConvs.find((c) => c.id === conv.id) || null;
+      }
+    }
 
     let messages: NormalizedMessage[] = [];
 

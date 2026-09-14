@@ -14,7 +14,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BroadcastCard } from '../components';
 import { useWhatsAppBroadcasts } from '../hooks/useWhatsAppBroadcasts';
 import { WhatsAppBroadcast } from '../types';
-import { CreateBroadcastScreen } from './CreateBroadcastScreen';
 import { WhatsAppBroadcastDetailScreen } from './WhatsAppBroadcastDetailScreen';
 
 interface WhatsAppBroadcastsScreenProps {
@@ -27,23 +26,10 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
 
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedBroadcast, setSelectedBroadcast] = useState<WhatsAppBroadcast | null>(null);
-  const [showCreateScreen, setShowCreateScreen] = useState(false);
 
   const { data, isLoading, refetch, isRefetching } = useWhatsAppBroadcasts({
     status: selectedStatus !== 'all' ? selectedStatus : undefined,
   });
-
-  if (showCreateScreen) {
-    return (
-      <CreateBroadcastScreen
-        onBack={() => setShowCreateScreen(false)}
-        onCreated={() => {
-          setShowCreateScreen(false);
-          refetch();
-        }}
-      />
-    );
-  }
 
   if (selectedBroadcast) {
     return (
@@ -73,12 +59,9 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
           <View style={styles.titleContainer}>
             <Text style={[styles.title, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Broadcast Campaigns</Text>
             <Text style={[styles.subtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-              High-Scale WhatsApp Outreach
+              WhatsApp Outreach Directory
             </Text>
           </View>
-          <Pressable style={styles.newButton} onPress={() => setShowCreateScreen(true)}>
-            <Text style={styles.newButtonText}>+ New</Text>
-          </Pressable>
         </View>
 
         {/* Filter Pills */}

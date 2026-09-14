@@ -11,37 +11,65 @@ interface ConversationCardProps {
   onPress: () => void;
 }
 
+const formatMessageTime = (dateStr?: string) => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '';
+
+  const now = new Date();
+  const isToday =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+
+  if (isToday) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday =
+    date.getDate() === yesterday.getDate() &&
+    date.getMonth() === yesterday.getMonth() &&
+    date.getFullYear() === yesterday.getFullYear();
+
+  if (isYesterday) return 'Yesterday';
+
+  return date.toLocaleDateString([], { day: 'numeric', month: 'short' });
+};
+
 export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation, onPress }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const time = new Date(conversation.last_message.created_at).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const time = formatMessageTime(conversation.last_message.created_at);
 
   // Calculate 24-hour Meta messaging window status
   const windowStatus = useMemo(() => {
     if (conversation.channel !== 'whatsapp') return null;
 
-    const lastMsgTime = conversation.latest_customer_message_at
-      ? new Date(conversation.latest_customer_message_at).getTime()
-      : new Date(conversation.last_message.created_at).getTime();
+    const customerTimeStr = conversation.latest_customer_message_at;
+    if (!customerTimeStr) {
+      return { expired: true, text: 'Closed' };
+    }
 
+    const lastMsgTime = new Date(customerTimeStr).getTime();
     if (isNaN(lastMsgTime) || lastMsgTime <= 0) {
       return { expired: true, text: 'Closed' };
     }
 
-    const diff = CUSTOMER_SERVICE_WINDOW_MS - (Date.now() - lastMsgTime);
+    const elapsed = Date.now() - lastMsgTime;
+    const diff = CUSTOMER_SERVICE_WINDOW_MS - elapsed;
     if (diff <= 0) {
       return { expired: true, text: 'Closed' };
     }
 
-    const hours = Math.floor(diff / (60 * 60 * 1000));
-    const mins = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000));
+    const totalMinutes = Math.floor(diff / (60 * 1000));
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
     return {
       expired: false,
-      text: hours > 0 ? `${hours}h` : `${mins}m`,
+      text: hours > 0 ? `${hours}h ${mins}m left` : `${mins}m left`,
     };
   }, [conversation]);
 
@@ -100,7 +128,7 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation
                   { color: windowStatus.expired ? '#dc2626' : '#15803d' },
                 ]}
               >
-                24h: {windowStatus.text}
+                {windowStatus.expired ? '24h Closed' : `24h: ${windowStatus.text}`}
               </Text>
             </View>
           )}
