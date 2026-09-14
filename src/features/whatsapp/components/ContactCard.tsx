@@ -4,21 +4,25 @@ import { WhatsAppContact } from '../types';
 
 interface ContactCardProps {
   contact: WhatsAppContact;
-  onOpenCRM?: (contact: WhatsAppContact) => void;
   onOpenChat?: (contact: WhatsAppContact) => void;
 }
 
 export const ContactCard: React.FC<ContactCardProps> = ({
   contact,
-  onOpenCRM,
   onOpenChat,
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const hasCrmLead = !!contact.crm_lead_id;
 
   return (
-    <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+    <Pressable
+      style={({ pressed }) => [
+        styles.card,
+        isDark ? styles.cardDark : styles.cardLight,
+        pressed && styles.cardPressed,
+      ]}
+      onPress={() => onOpenChat && onOpenChat(contact)}
+    >
       <View style={styles.headerRow}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
@@ -34,12 +38,9 @@ export const ContactCard: React.FC<ContactCardProps> = ({
         </View>
 
         {onOpenChat ? (
-          <Pressable
-            style={[styles.chatButton, isDark ? styles.chatButtonDark : styles.chatButtonLight]}
-            onPress={() => onOpenChat(contact)}
-          >
+          <View style={[styles.chatButton, isDark ? styles.chatButtonDark : styles.chatButtonLight]}>
             <Text style={styles.chatButtonText}>Chat 💬</Text>
-          </Pressable>
+          </View>
         ) : null}
       </View>
 
@@ -53,23 +54,7 @@ export const ContactCard: React.FC<ContactCardProps> = ({
           ))}
         </View>
       ) : null}
-
-      {/* CRM Federation Status */}
-      <View style={[styles.footerRow, isDark ? styles.borderDark : styles.borderLight]}>
-        {hasCrmLead ? (
-          <View style={styles.crmLinkedBadge}>
-            <Text style={styles.crmLinkedText}>✓ CRM Deal Attached</Text>
-          </View>
-        ) : (
-          <Pressable
-            style={styles.crmLinkButton}
-            onPress={() => onOpenCRM && onOpenCRM(contact)}
-          >
-            <Text style={styles.crmLinkButtonText}>+ Create CRM Lead</Text>
-          </Pressable>
-        )}
-      </View>
-    </View>
+    </Pressable>
   );
 };
 
@@ -79,6 +64,10 @@ const styles = StyleSheet.create({
     padding: 14,
     borderWidth: 1,
     marginBottom: 10,
+  },
+  cardPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.99 }],
   },
   cardDark: {
     backgroundColor: '#0f172a',
@@ -96,7 +85,6 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
   },
   avatar: {
     width: 40,
@@ -136,7 +124,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f1f5f9',
   },
   chatButtonText: {
-    color: '#6366f1',
+    color: '#25d366',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -144,7 +132,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-    marginBottom: 10,
+    marginTop: 8,
   },
   tagBadge: {
     paddingHorizontal: 8,
@@ -163,42 +151,5 @@ const styles = StyleSheet.create({
   tagText: {
     fontSize: 11,
     fontWeight: '600',
-  },
-  footerRow: {
-    borderTopWidth: 1,
-    paddingTop: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  borderDark: {
-    borderTopColor: '#1e293b',
-  },
-  borderLight: {
-    borderTopColor: '#e2e8f0',
-  },
-  crmLinkedBadge: {
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  crmLinkedText: {
-    color: '#10b981',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  crmLinkButton: {
-    backgroundColor: 'rgba(99, 102, 241, 0.12)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#6366f1',
-  },
-  crmLinkButtonText: {
-    color: '#6366f1',
-    fontSize: 11,
-    fontWeight: '700',
   },
 });

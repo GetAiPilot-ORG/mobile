@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 
 interface ProductActionCardProps {
   title: string;
@@ -20,10 +20,16 @@ export const ProductActionCard: React.FC<ProductActionCardProps> = ({
   accentColor = '#3b82f6',
 }) => {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      style={({ pressed }) => [
+        styles.card,
+        isDark ? styles.cardDark : styles.cardLight,
+        pressed && styles.cardPressed,
+      ]}
       onPress={() => router.push(route as any)}
     >
       <View style={styles.topRow}>
@@ -36,8 +42,8 @@ export const ProductActionCard: React.FC<ProductActionCardProps> = ({
           </View>
         ) : null}
       </View>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.description} numberOfLines={2}>
+      <Text style={[styles.title, { color: isDark ? '#f8fafc' : '#0f172a' }]}>{title}</Text>
+      <Text style={[styles.description, { color: isDark ? '#94a3b8' : '#64748b' }]} numberOfLines={2}>
         {description}
       </Text>
     </Pressable>
@@ -46,12 +52,23 @@ export const ProductActionCard: React.FC<ProductActionCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#0f172a',
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#1e293b',
     marginBottom: 12,
+  },
+  cardDark: {
+    backgroundColor: '#0f172a',
+    borderColor: '#1e293b',
+  },
+  cardLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
   cardPressed: {
     opacity: 0.8,
@@ -84,13 +101,11 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   title: {
-    color: '#f8fafc',
     fontSize: 16,
     fontWeight: '700',
     marginBottom: 4,
   },
   description: {
-    color: '#94a3b8',
     fontSize: 13,
     lineHeight: 18,
   },

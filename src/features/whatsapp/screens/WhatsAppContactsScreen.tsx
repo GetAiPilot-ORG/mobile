@@ -1,4 +1,3 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -6,6 +5,7 @@ import {
   Modal,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -14,8 +14,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { crmApi } from '../../crm/api/crm.api';
-import { ContactCard } from '../components';
+import { useAuthStore } from '../../../core/store/authStore';
+import { inboxApi } from '../../inbox/api/inboxApi';
+import { ConversationScreen } from '../../inbox/screens/ConversationScreen';
+import { NormalizedConversation } from '../../inbox/types';
+import { ContactCard } from '../components/ContactCard';
 import { useWhatsAppContacts } from '../hooks/useWhatsAppContacts';
 import { WhatsAppContact } from '../types';
 
@@ -28,45 +31,65 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
   onBack,
   onOpenChat,
 }) => {
-  const queryClient = useQueryClient();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const user = useAuthStore((s) => s.user);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | undefined>(undefined);
-
-  // CRM Lead Convert Modal
-  const [selectedContactForCRM, setSelectedContactForCRM] = useState<WhatsAppContact | null>(null);
-  const [dealValue, setDealValue] = useState('35000');
-  const [leadCreatedSuccess, setLeadCreatedSuccess] = useState(false);
+  const [activeConversation, setActiveConversation] = useState<NormalizedConversation | null>(null);
 
   const { data, isLoading, refetch, isRefetching } = useWhatsAppContacts({
     search: searchQuery || undefined,
     tag: selectedTag,
   });
 
-  const createCrmLeadMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedContactForCRM) return;
-      return await crmApi.createLead({
-        name: selectedContactForCRM.name || selectedContactForCRM.phone,
-        phone: selectedContactForCRM.phone,
-        value: parseFloat(dealValue) || 35000,
-        source: 'WHATSAPP',
-        status: 'open',
-      });
-    },
-    onSuccess: () => {
-      setLeadCreatedSuccess(true);
-      queryClient.invalidateQueries({ queryKey: ['whatsapp_contacts'] });
-      queryClient.invalidateQueries({ queryKey: ['crm_leads'] });
-      queryClient.invalidateQueries({ queryKey: ['unified_dashboard'] });
-      setTimeout(() => {
-        setSelectedContactForCRM(null);
-        setLeadCreatedSuccess(false);
-      }, 1500);
-    },
-  });
+  const handleOpenChat = async (contact: WhatsAppContact) => {
+    if (onOpenChat) {
+      onOpenChat(contact);
+      return;
+    }
+    try {
+      const res = await inboxApi.startConversation(contact.id);
+      const conv: NormalizedConversation = {
+        id: res.id,
+        organization_id: user?.organizationId || '',
+        contact: {
+          name: contact.name || contact.phone,
+          handle_or_phone: contact.phone || '',
+        },
+        channel: 'whatsapp',
+        last_message: {
+          content: 'Conversation started',
+          created_at: new Date().toISOString(),
+          direction: 'inbound',
+        },
+        unread_count: 0,
+        status: 'active',
+        bot_enabled: true,
+      };
+      setActiveConversation(conv);
+    } catch {
+      const conv: NormalizedConversation = {
+        id: `conv_${contact.id}`,
+        organization_id: user?.organizationId || '',
+        contact: {
+          name: contact.name || contact.phone,
+          handle_or_phone: contact.phone || '',
+        },
+        channel: 'whatsapp',
+        last_message: {
+          content: 'Conversation started',
+          created_at: new Date().toISOString(),
+          direction: 'inbound',
+        },
+        unread_count: 0,
+        status: 'active',
+        bot_enabled: true,
+      };
+      setActiveConversation(conv);
+    }
+  };
 
   const tags = ['All', 'VIP', 'Enterprise', 'Lead', 'Retail', 'High-Value', 'Agency', 'Creator'];
 
@@ -88,7 +111,7 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
           <View>
             <Text style={[styles.title, { color: isDark ? '#f8fafc' : '#0f172a' }]}>WhatsApp Contacts</Text>
             <Text style={[styles.subtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-              Audience & CRM Federation
+              Audience & Customer Directory
             </Text>
           </View>
         </View>
@@ -105,36 +128,38 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
         </View>
 
         {/* Tag Filters */}
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={tags}
-          keyExtractor={(item) => item}
-          contentContainerStyle={styles.tagList}
-          renderItem={({ item }) => {
-            const isSelected = item === 'All' ? !selectedTag : selectedTag === item;
-            return (
-              <Pressable
-                style={[
-                  styles.tagChip,
-                  isDark ? styles.tagChipDark : styles.tagChipLight,
-                  isSelected && styles.tagChipActive,
-                ]}
-                onPress={() => setSelectedTag(item === 'All' ? undefined : item)}
-              >
-                <Text
+        <View style={styles.tagWrapper}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.tagList}
+          >
+            {tags.map((item) => {
+              const isSelected = item === 'All' ? !selectedTag : selectedTag === item;
+              return (
+                <Pressable
+                  key={item}
                   style={[
-                    styles.tagChipText,
-                    { color: isDark ? '#94a3b8' : '#64748b' },
-                    isSelected && styles.tagChipTextActive,
+                    styles.tagChip,
+                    isDark ? styles.tagChipDark : styles.tagChipLight,
+                    isSelected && styles.tagChipActive,
                   ]}
+                  onPress={() => setSelectedTag(item === 'All' ? undefined : item)}
                 >
-                  {item}
-                </Text>
-              </Pressable>
-            );
-          }}
-        />
+                  <Text
+                    style={[
+                      styles.tagChipText,
+                      { color: isSelected ? '#020617' : isDark ? '#94a3b8' : '#64748b' },
+                      isSelected && styles.tagChipTextActive,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
 
         {/* Contacts List */}
         {isLoading && !data ? (
@@ -146,13 +171,13 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
           </View>
         ) : (
           <FlatList
+            style={styles.contactsFlatList}
             data={contacts}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <ContactCard
                 contact={item}
-                onOpenCRM={(c) => setSelectedContactForCRM(c)}
-                onOpenChat={onOpenChat}
+                onOpenChat={handleOpenChat}
               />
             )}
             contentContainerStyle={styles.listContent}
@@ -169,85 +194,19 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
           />
         )}
 
-        {/* Convert to CRM Lead Modal */}
+        {/* Fullscreen WhatsApp Conversation Modal */}
         <Modal
-          visible={!!selectedContactForCRM}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setSelectedContactForCRM(null)}
+          visible={!!activeConversation}
+          animationType="slide"
+          presentationStyle="fullScreen"
+          onRequestClose={() => setActiveConversation(null)}
         >
-          <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, isDark ? styles.modalContentDark : styles.modalContentLight]}>
-              <Text style={[styles.modalTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                Convert to CRM Deal
-              </Text>
-              <Text style={[styles.modalSubtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-                Create a high-value sales lead from this WhatsApp contact.
-              </Text>
-
-              {leadCreatedSuccess ? (
-                <View style={styles.successBox}>
-                  <Text style={styles.successIcon}>✓</Text>
-                  <Text style={styles.successText}>CRM Lead Created & Linked!</Text>
-                </View>
-              ) : (
-                <View style={styles.formGroup}>
-                  <Text style={[styles.inputLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
-                    Customer Name
-                  </Text>
-                  <View style={[styles.readOnlyInput, isDark ? styles.inputBgDark : styles.inputBgLight]}>
-                    <Text style={[styles.readOnlyText, { color: isDark ? '#e2e8f0' : '#0f172a' }]}>
-                      {selectedContactForCRM?.name || 'Contact'}
-                    </Text>
-                  </View>
-
-                  <Text style={[styles.inputLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
-                    Phone Number
-                  </Text>
-                  <View style={[styles.readOnlyInput, isDark ? styles.inputBgDark : styles.inputBgLight]}>
-                    <Text style={[styles.readOnlyText, { color: isDark ? '#e2e8f0' : '#0f172a' }]}>
-                      {selectedContactForCRM?.phone}
-                    </Text>
-                  </View>
-
-                  <Text style={[styles.inputLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
-                    Estimated Deal Value (₹)
-                  </Text>
-                  <TextInput
-                    style={[styles.modalInput, isDark ? styles.inputBgDark : styles.inputBgLight, { color: isDark ? '#f8fafc' : '#0f172a' }]}
-                    placeholder="e.g. 50000"
-                    placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
-                    keyboardType="numeric"
-                    value={dealValue}
-                    onChangeText={setDealValue}
-                  />
-
-                  <View style={styles.modalActions}>
-                    <Pressable
-                      style={[styles.cancelButton, isDark ? styles.cancelButtonDark : styles.cancelButtonLight]}
-                      onPress={() => setSelectedContactForCRM(null)}
-                    >
-                      <Text style={[styles.cancelButtonText, { color: isDark ? '#94a3b8' : '#64748b' }]}>Cancel</Text>
-                    </Pressable>
-                    <Pressable
-                      style={[
-                        styles.confirmButton,
-                        createCrmLeadMutation.isPending && styles.confirmButtonDisabled,
-                      ]}
-                      disabled={createCrmLeadMutation.isPending}
-                      onPress={() => createCrmLeadMutation.mutate()}
-                    >
-                      {createCrmLeadMutation.isPending ? (
-                        <ActivityIndicator size="small" color="#ffffff" />
-                      ) : (
-                        <Text style={styles.confirmButtonText}>Create CRM Lead</Text>
-                      )}
-                    </Pressable>
-                  </View>
-                </View>
-              )}
-            </View>
-          </View>
+          {activeConversation && (
+            <ConversationScreen
+              conversation={activeConversation}
+              onBack={() => setActiveConversation(null)}
+            />
+          )}
         </Modal>
       </View>
     </SafeAreaView>
@@ -319,16 +278,29 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
     color: '#0f172a',
   },
+  tagWrapper: {
+    height: 44,
+    minHeight: 44,
+    maxHeight: 44,
+    flexShrink: 0,
+    flexGrow: 0,
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
   tagList: {
     paddingHorizontal: 16,
-    paddingBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
   tagChip: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 6,
+    height: 32,
     borderRadius: 8,
     borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tagChipDark: {
     backgroundColor: '#0f172a',
@@ -343,12 +315,18 @@ const styles = StyleSheet.create({
     borderColor: '#25d366',
   },
   tagChipText: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '600',
+    lineHeight: 16,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   tagChipTextActive: {
     color: '#020617',
     fontWeight: '800',
+  },
+  contactsFlatList: {
+    flex: 1,
   },
   listContent: {
     padding: 16,
@@ -370,117 +348,4 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    borderRadius: 16,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
-    borderWidth: 1,
-  },
-  modalContentDark: {
-    backgroundColor: '#0b1329',
-    borderColor: '#1e293b',
-  },
-  modalContentLight: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  modalSubtitle: {
-    fontSize: 13,
-    marginBottom: 18,
-  },
-  formGroup: {
-    gap: 12,
-  },
-  inputLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  readOnlyInput: {
-    borderRadius: 10,
-    padding: 12,
-    borderWidth: 1,
-  },
-  inputBgDark: {
-    backgroundColor: '#020617',
-    borderColor: '#1e293b',
-  },
-  inputBgLight: {
-    backgroundColor: '#f8fafc',
-    borderColor: '#e2e8f0',
-  },
-  readOnlyText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  modalInput: {
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 14,
-    borderWidth: 1,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 10,
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  cancelButtonDark: {
-    backgroundColor: '#1e293b',
-  },
-  cancelButtonLight: {
-    backgroundColor: '#f1f5f9',
-  },
-  cancelButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  confirmButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: '#25d366',
-    alignItems: 'center',
-  },
-  confirmButtonDisabled: {
-    opacity: 0.6,
-  },
-  confirmButtonText: {
-    color: '#020617',
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  successBox: {
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  successIcon: {
-    fontSize: 36,
-    color: '#10b981',
-    marginBottom: 10,
-  },
-  successText: {
-    color: '#10b981',
-    fontSize: 15,
-    fontWeight: '700',
-  },
 });
-

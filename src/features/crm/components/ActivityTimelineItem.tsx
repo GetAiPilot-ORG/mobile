@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityType, CRMActivity } from '../types';
 
@@ -22,6 +22,9 @@ const TYPE_CONFIG: Partial<Record<ActivityType, { icon: keyof typeof Ionicons.gl
 };
 
 export const ActivityTimelineItem: React.FC<ActivityTimelineItemProps> = ({ activity, isLast }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const typeCfg = TYPE_CONFIG[activity.type] || {
     icon: 'document-text' as const,
     color: '#F59E0B',
@@ -48,20 +51,20 @@ export const ActivityTimelineItem: React.FC<ActivityTimelineItemProps> = ({ acti
         <View style={[styles.iconCircle, { backgroundColor: typeCfg.bg }]}>
           <Ionicons name={typeCfg.icon} size={15} color={typeCfg.color} />
         </View>
-        {!isLast ? <View style={styles.verticalLine} /> : null}
+        {!isLast ? <View style={[styles.verticalLine, { backgroundColor: isDark ? '#262A34' : '#E2E8F0' }]} /> : null}
       </View>
 
       {/* Content card */}
-      <View style={styles.content}>
+      <View style={[styles.content, isDark ? styles.contentDark : styles.contentLight]}>
         <View style={styles.header}>
-          <Text style={styles.subject} numberOfLines={1}>
+          <Text style={[styles.subject, { color: isDark ? '#FFFFFF' : '#0F172A' }]} numberOfLines={1}>
             {activity.subject || activity.title || 'Activity Event'}
           </Text>
-          <Text style={styles.timestamp}>{formatDate(activity.created_at)}</Text>
+          <Text style={[styles.timestamp, { color: isDark ? '#6B7280' : '#94A3B8' }]}>{formatDate(activity.created_at)}</Text>
         </View>
 
         {activity.description ? (
-          <Text style={styles.description} numberOfLines={3}>
+          <Text style={[styles.description, { color: isDark ? '#9CA3AF' : '#64748B' }]} numberOfLines={3}>
             {activity.description}
           </Text>
         ) : null}
@@ -70,17 +73,17 @@ export const ActivityTimelineItem: React.FC<ActivityTimelineItemProps> = ({ acti
         {activity.contact || activity.deal ? (
           <View style={styles.tagRow}>
             {activity.contact ? (
-              <View style={styles.tag}>
-                <Ionicons name="person-outline" size={10} color="#9CA3AF" />
-                <Text style={styles.tagText}>
+              <View style={[styles.tag, { backgroundColor: isDark ? '#222630' : '#F1F5F9' }]}>
+                <Ionicons name="person-outline" size={10} color={isDark ? '#9CA3AF' : '#64748B'} />
+                <Text style={[styles.tagText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
                   {`${activity.contact.first_name || ''} ${activity.contact.last_name || ''}`.trim()}
                 </Text>
               </View>
             ) : null}
             {activity.deal ? (
-              <View style={styles.tag}>
-                <Ionicons name="briefcase-outline" size={10} color="#9CA3AF" />
-                <Text style={styles.tagText}>{activity.deal.title}</Text>
+              <View style={[styles.tag, { backgroundColor: isDark ? '#222630' : '#F1F5F9' }]}>
+                <Ionicons name="briefcase-outline" size={10} color={isDark ? '#9CA3AF' : '#64748B'} />
+                <Text style={[styles.tagText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>{activity.deal.title}</Text>
               </View>
             ) : null}
           </View>
@@ -111,17 +114,27 @@ const styles = StyleSheet.create({
   verticalLine: {
     width: 2,
     flex: 1,
-    backgroundColor: '#262A34',
     marginVertical: 4,
   },
   content: {
     flex: 1,
-    backgroundColor: '#181A20',
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#262A34',
     marginBottom: 8,
+  },
+  contentDark: {
+    backgroundColor: '#181A20',
+    borderColor: '#262A34',
+  },
+  contentLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
   },
   header: {
     flexDirection: 'row',
@@ -130,18 +143,15 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   subject: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
     flex: 1,
     marginRight: 8,
   },
   timestamp: {
-    color: '#6B7280',
     fontSize: 11,
   },
   description: {
-    color: '#9CA3AF',
     fontSize: 12,
     lineHeight: 18,
     marginTop: 2,
@@ -156,13 +166,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#222630',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
   tagText: {
-    color: '#9CA3AF',
     fontSize: 10,
   },
 });

@@ -6,12 +6,11 @@ import {
   ScrollView,
   Pressable,
   Alert,
-  Dimensions,
+  useColorScheme,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
-import { colors } from '../../src/theme/colors';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 
 const TIERS = [
@@ -44,7 +43,7 @@ const TIERS = [
     monthlyPrice: 5999,
     annualPrice: 4799,
     badge: 'Enterprise Choice',
-    badgeColor: '#00F5D4',
+    badgeColor: '#00D2B4',
     features: [
       { text: 'Unlimited Telegram Channel Forwarders & Bots', highlight: true },
       { text: 'WhatsApp Mass Broadcasts & Webhook Triggers', highlight: true },
@@ -85,7 +84,10 @@ const TIERS = [
 ];
 
 export default function PlansPricingScreen() {
-  const { planLabel, isActive } = usePlatformSubscription();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  const { planLabel } = usePlatformSubscription();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
   const [selectedTier, setSelectedTier] = useState<string>('pro');
 
@@ -117,33 +119,82 @@ export default function PlansPricingScreen() {
   };
 
   return (
-    <AppScreen safeArea={false} backgroundColor="#000000">
+    <AppScreen safeArea={false} backgroundColor={isDark ? '#000000' : '#F8FAFC'}>
       <AppTopBar title="Plans & Quotas" subtitle="Enterprise Subscriptions & Scaling" showBack={true} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Active Status Glass Banner */}
-        <View style={styles.statusBanner}>
-          <View style={styles.statusGlow} />
+        <View
+          style={[
+            styles.statusBanner,
+            {
+              backgroundColor: isDark ? '#071612' : '#ECFDF5',
+              borderColor: isDark ? '#10B98144' : '#A7F3D0',
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.statusGlow,
+              { backgroundColor: isDark ? '#10B98118' : 'rgba(16, 185, 129, 0.08)' },
+            ]}
+          />
           <View style={styles.statusHeader}>
-            <View style={styles.activePill}>
+            <View
+              style={[
+                styles.activePill,
+                { backgroundColor: isDark ? '#10B98122' : '#D1FAE5' },
+              ]}
+            >
               <View style={styles.activeDot} />
               <Text style={styles.activePillText}>ACTIVE SUBSCRIPTION</Text>
             </View>
-            <Text style={styles.planStatusDate}>Renews 1st of next month</Text>
+            <Text style={[styles.planStatusDate, { color: isDark ? '#9CA3AF' : '#059669' }]}>
+              Renews 1st of next month
+            </Text>
           </View>
-          <Text style={styles.statusPlanName}>{planLabel || 'GAP Pro Max (Active)'}</Text>
-          <Text style={styles.statusPlanDesc}>
+          <Text style={[styles.statusPlanName, { color: isDark ? '#FFFFFF' : '#065F46' }]}>
+            {planLabel || 'GAP Pro Max (Active)'}
+          </Text>
+          <Text style={[styles.statusPlanDesc, { color: isDark ? '#D1D5DB' : '#047857' }]}>
             All 5 automation engines & 10 growth utilities operating at unrestricted speed.
           </Text>
         </View>
 
         {/* Billing Cycle Toggle */}
-        <View style={styles.toggleContainer}>
+        <View
+          style={[
+            styles.toggleContainer,
+            {
+              backgroundColor: isDark ? '#12151A' : '#E2E8F0',
+              borderColor: isDark ? '#1F242F' : '#CBD5E1',
+            },
+          ]}
+        >
           <Pressable
-            style={[styles.toggleBtn, billingCycle === 'annual' && styles.toggleBtnActive]}
+            style={[
+              styles.toggleBtn,
+              billingCycle === 'annual' && {
+                backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: isDark ? 0 : 0.08,
+                shadowRadius: 2,
+                elevation: 1,
+              },
+            ]}
             onPress={() => handleCycleChange('annual')}
           >
-            <Text style={[styles.toggleBtnText, billingCycle === 'annual' && styles.toggleBtnTextActive]}>
+            <Text
+              style={[
+                styles.toggleBtnText,
+                { color: isDark ? '#9CA3AF' : '#64748B' },
+                billingCycle === 'annual' && {
+                  color: isDark ? '#FFFFFF' : '#0F172A',
+                  fontWeight: '700',
+                },
+              ]}
+            >
               Annual (Save 20%)
             </Text>
             <View style={styles.saveBadge}>
@@ -151,10 +202,29 @@ export default function PlansPricingScreen() {
             </View>
           </Pressable>
           <Pressable
-            style={[styles.toggleBtn, billingCycle === 'monthly' && styles.toggleBtnActive]}
+            style={[
+              styles.toggleBtn,
+              billingCycle === 'monthly' && {
+                backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: isDark ? 0 : 0.08,
+                shadowRadius: 2,
+                elevation: 1,
+              },
+            ]}
             onPress={() => handleCycleChange('monthly')}
           >
-            <Text style={[styles.toggleBtnText, billingCycle === 'monthly' && styles.toggleBtnTextActive]}>
+            <Text
+              style={[
+                styles.toggleBtnText,
+                { color: isDark ? '#9CA3AF' : '#64748B' },
+                billingCycle === 'monthly' && {
+                  color: isDark ? '#FFFFFF' : '#0F172A',
+                  fontWeight: '700',
+                },
+              ]}
+            >
               Monthly
             </Text>
           </Pressable>
@@ -171,17 +241,44 @@ export default function PlansPricingScreen() {
                 key={tier.id}
                 style={[
                   styles.tierCard,
-                  isCurrent && styles.tierCardActive,
+                  {
+                    backgroundColor: isDark
+                      ? isCurrent
+                        ? '#0F161A'
+                        : '#0D1117'
+                      : isCurrent
+                      ? '#F0FDF4'
+                      : '#FFFFFF',
+                    borderColor: isCurrent
+                      ? isDark
+                        ? '#10B98188'
+                        : '#10B981'
+                      : isDark
+                      ? '#1F242F'
+                      : '#E2E8F0',
+                  },
                 ]}
                 onPress={() => handleSelectTier(tier.id)}
               >
                 {/* Header */}
                 <View style={styles.tierTopRow}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.tierTitle}>{tier.name}</Text>
-                    <Text style={styles.tierSubtitle}>{tier.subtitle}</Text>
+                    <Text style={[styles.tierTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                      {tier.name}
+                    </Text>
+                    <Text style={[styles.tierSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+                      {tier.subtitle}
+                    </Text>
                   </View>
-                  <View style={[styles.badgePill, { backgroundColor: `${tier.badgeColor}22`, borderColor: `${tier.badgeColor}55` }]}>
+                  <View
+                    style={[
+                      styles.badgePill,
+                      {
+                        backgroundColor: `${tier.badgeColor}22`,
+                        borderColor: `${tier.badgeColor}55`,
+                      },
+                    ]}
+                  >
                     <Text style={[styles.badgeText, { color: tier.badgeColor }]}>{tier.badge}</Text>
                   </View>
                 </View>
@@ -191,8 +288,12 @@ export default function PlansPricingScreen() {
                   {price !== null ? (
                     <>
                       <Text style={styles.priceCurrency}>₹</Text>
-                      <Text style={styles.priceValue}>{price.toLocaleString()}</Text>
-                      <Text style={styles.pricePeriod}>/ month</Text>
+                      <Text style={[styles.priceValue, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                        {price.toLocaleString()}
+                      </Text>
+                      <Text style={[styles.pricePeriod, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+                        / month
+                      </Text>
                     </>
                   ) : (
                     <Text style={styles.customPriceText}>Custom SLA Quote</Text>
@@ -200,25 +301,77 @@ export default function PlansPricingScreen() {
                 </View>
 
                 {/* Quota Strip */}
-                <View style={styles.quotaStrip}>
+                <View
+                  style={[
+                    styles.quotaStrip,
+                    {
+                      backgroundColor: isDark ? '#161B22' : '#F8FAFC',
+                      borderColor: isDark ? '#21262D' : '#E2E8F0',
+                      borderWidth: 1,
+                    },
+                  ]}
+                >
                   {tier.quotas.map((q, idx) => (
                     <View key={idx} style={styles.quotaBox}>
-                      <Text style={styles.quotaVal}>{q.value}</Text>
-                      <Text style={styles.quotaLbl}>{q.label}</Text>
+                      <Text style={[styles.quotaVal, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                        {q.value}
+                      </Text>
+                      <Text style={[styles.quotaLbl, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+                        {q.label}
+                      </Text>
                     </View>
                   ))}
                 </View>
 
-                <View style={styles.tierDivider} />
+                <View
+                  style={[
+                    styles.tierDivider,
+                    { backgroundColor: isDark ? '#21262D' : '#E2E8F0' },
+                  ]}
+                />
 
                 {/* Features List */}
                 <View style={styles.featuresList}>
                   {tier.features.map((feat, fIdx) => (
                     <View key={fIdx} style={styles.featureItem}>
-                      <View style={[styles.checkCircle, feat.highlight && styles.checkCircleHighlight]}>
-                        <Text style={[styles.checkIcon, feat.highlight && styles.checkIconHighlight]}>✓</Text>
+                      <View
+                        style={[
+                          styles.checkCircle,
+                          {
+                            backgroundColor: feat.highlight
+                              ? isDark
+                                ? '#10B98125'
+                                : '#D1FAE5'
+                              : isDark
+                              ? '#1F242F'
+                              : '#F1F5F9',
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.checkIcon,
+                            { color: feat.highlight ? '#10B981' : isDark ? '#9CA3AF' : '#64748B' },
+                          ]}
+                        >
+                          ✓
+                        </Text>
                       </View>
-                      <Text style={[styles.featureText, feat.highlight && styles.featureTextHighlight]}>
+                      <Text
+                        style={[
+                          styles.featureText,
+                          {
+                            color: feat.highlight
+                              ? isDark
+                                ? '#F3F4F6'
+                                : '#0F172A'
+                              : isDark
+                              ? '#9CA3AF'
+                              : '#64748B',
+                            fontWeight: feat.highlight ? '600' : '400',
+                          },
+                        ]}
+                      >
                         {feat.text}
                       </Text>
                     </View>
@@ -229,11 +382,24 @@ export default function PlansPricingScreen() {
                 <Pressable
                   style={[
                     styles.upgradeBtn,
-                    isCurrent ? styles.upgradeBtnPrimary : styles.upgradeBtnOutline,
+                    isCurrent
+                      ? styles.upgradeBtnPrimary
+                      : [
+                          styles.upgradeBtnOutline,
+                          {
+                            borderColor: isDark ? '#374151' : '#CBD5E1',
+                            backgroundColor: isDark ? 'transparent' : '#FFFFFF',
+                          },
+                        ],
                   ]}
                   onPress={() => handleUpgrade(tier.name)}
                 >
-                  <Text style={[styles.upgradeBtnText, !isCurrent && styles.upgradeBtnTextOutline]}>
+                  <Text
+                    style={[
+                      styles.upgradeBtnText,
+                      !isCurrent && { color: isDark ? '#FFFFFF' : '#0F172A' },
+                    ]}
+                  >
                     {tier.id === 'custom' ? 'Talk to Enterprise Team →' : `Upgrade to ${tier.name} →`}
                   </Text>
                 </Pressable>
@@ -243,11 +409,21 @@ export default function PlansPricingScreen() {
         </View>
 
         {/* Security & Guarantee Note */}
-        <View style={styles.guaranteeBox}>
+        <View
+          style={[
+            styles.guaranteeBox,
+            {
+              backgroundColor: isDark ? '#0D1117' : '#FFFFFF',
+              borderColor: isDark ? '#1F242F' : '#E2E8F0',
+            },
+          ]}
+        >
           <Text style={styles.guaranteeIcon}>🛡️</Text>
           <View style={{ flex: 1 }}>
-            <Text style={styles.guaranteeTitle}>Bank-Grade 256-Bit SSL Encryption</Text>
-            <Text style={styles.guaranteeSub}>
+            <Text style={[styles.guaranteeTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+              Bank-Grade 256-Bit SSL Encryption
+            </Text>
+            <Text style={[styles.guaranteeSub, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
               Cancel or adjust quotas anytime. Enterprise invoices include GST compliance and instant billing receipt downloads.
             </Text>
           </View>
@@ -263,12 +439,10 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   statusBanner: {
-    backgroundColor: '#071612',
     borderRadius: 22,
     padding: 20,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#10B98144',
     position: 'relative',
     overflow: 'hidden',
   },
@@ -279,7 +453,6 @@ const styles = StyleSheet.create({
     width: 140,
     height: 140,
     borderRadius: 70,
-    backgroundColor: '#10B98118',
   },
   statusHeader: {
     flexDirection: 'row',
@@ -291,7 +464,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#10B98122',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 99,
@@ -310,28 +482,23 @@ const styles = StyleSheet.create({
   },
   planStatusDate: {
     fontSize: 11,
-    color: '#9CA3AF',
   },
   statusPlanName: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#FFFFFF',
     letterSpacing: -0.3,
   },
   statusPlanDesc: {
     fontSize: 13,
-    color: '#D1D5DB',
     marginTop: 6,
     lineHeight: 18,
   },
   toggleContainer: {
     flexDirection: 'row',
-    backgroundColor: '#12151A',
     borderRadius: 14,
     padding: 4,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#1F242F',
   },
   toggleBtn: {
     flex: 1,
@@ -342,17 +509,9 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     gap: 6,
   },
-  toggleBtnActive: {
-    backgroundColor: '#1F2937',
-  },
   toggleBtnText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#9CA3AF',
-  },
-  toggleBtnTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
   },
   saveBadge: {
     backgroundColor: '#10B98122',
@@ -369,15 +528,9 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   tierCard: {
-    backgroundColor: '#0D1117',
     borderRadius: 22,
     padding: 20,
     borderWidth: 1,
-    borderColor: '#1F242F',
-  },
-  tierCardActive: {
-    borderColor: '#10B98188',
-    backgroundColor: '#0F161A',
   },
   tierTopRow: {
     flexDirection: 'row',
@@ -388,12 +541,10 @@ const styles = StyleSheet.create({
   tierTitle: {
     fontSize: 19,
     fontWeight: '900',
-    color: '#FFFFFF',
     letterSpacing: -0.2,
   },
   tierSubtitle: {
     fontSize: 12,
-    color: '#9CA3AF',
     marginTop: 3,
     lineHeight: 16,
   },
@@ -423,22 +574,19 @@ const styles = StyleSheet.create({
   priceValue: {
     fontSize: 32,
     fontWeight: '900',
-    color: '#FFFFFF',
     letterSpacing: -0.5,
   },
   pricePeriod: {
     fontSize: 13,
-    color: '#9CA3AF',
     marginLeft: 6,
   },
   customPriceText: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#A78BFA',
+    color: '#8B5CF6',
   },
   quotaStrip: {
     flexDirection: 'row',
-    backgroundColor: '#161B22',
     borderRadius: 12,
     padding: 10,
     marginBottom: 16,
@@ -451,16 +599,13 @@ const styles = StyleSheet.create({
   quotaVal: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#FFFFFF',
   },
   quotaLbl: {
     fontSize: 9.5,
-    color: '#9CA3AF',
     marginTop: 2,
   },
   tierDivider: {
     height: 1,
-    backgroundColor: '#21262D',
     marginBottom: 16,
   },
   featuresList: {
@@ -476,30 +621,17 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#1F242F',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  checkCircleHighlight: {
-    backgroundColor: '#10B98125',
   },
   checkIcon: {
     fontSize: 11,
     fontWeight: '900',
-    color: '#9CA3AF',
-  },
-  checkIconHighlight: {
-    color: '#10B981',
   },
   featureText: {
     fontSize: 13,
-    color: '#9CA3AF',
     flex: 1,
     lineHeight: 18,
-  },
-  featureTextHighlight: {
-    color: '#F3F4F6',
-    fontWeight: '600',
   },
   upgradeBtn: {
     paddingVertical: 14,
@@ -511,28 +643,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#10B981',
   },
   upgradeBtnOutline: {
-    backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#374151',
   },
   upgradeBtnText: {
     color: '#000000',
     fontSize: 14,
     fontWeight: '800',
   },
-  upgradeBtnTextOutline: {
-    color: '#FFFFFF',
-  },
   guaranteeBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    backgroundColor: '#0D1117',
     borderRadius: 18,
     padding: 16,
     marginTop: 24,
     borderWidth: 1,
-    borderColor: '#1F242F',
   },
   guaranteeIcon: {
     fontSize: 26,
@@ -540,11 +665,9 @@ const styles = StyleSheet.create({
   guaranteeTitle: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#FFFFFF',
   },
   guaranteeSub: {
     fontSize: 11.5,
-    color: '#9CA3AF',
     marginTop: 3,
     lineHeight: 16,
   },

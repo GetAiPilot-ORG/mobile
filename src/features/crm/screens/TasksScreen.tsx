@@ -8,6 +8,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
+  useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,6 +26,9 @@ const TIMEFRAME_TABS: Array<{ key: 'all' | 'today' | 'upcoming' | 'overdue' | 'c
 ];
 
 export const TasksScreen: React.FC = () => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [selectedTimeframe, setSelectedTimeframe] = useState<'all' | 'today' | 'upcoming' | 'overdue' | 'completed'>('today');
   const [showAddTask, setShowAddTask] = useState(false);
 
@@ -48,12 +52,12 @@ export const TasksScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>Tasks & Follow-ups</Text>
-          <Text style={styles.subtitle}>Daily schedule, reminders & client action items</Text>
+          <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Tasks & Follow-ups</Text>
+          <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Daily schedule, reminders & client action items</Text>
         </View>
 
         <Pressable
@@ -73,10 +77,20 @@ export const TasksScreen: React.FC = () => {
           return (
             <Pressable
               key={tab.key}
-              style={[styles.tabChip, isSelected && styles.tabChipSelected]}
+              style={[
+                styles.tabChip,
+                { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+                isSelected && (isDark ? styles.tabChipSelectedDark : styles.tabChipSelectedLight),
+              ]}
               onPress={() => setSelectedTimeframe(tab.key)}
             >
-              <Text style={[styles.tabText, isSelected && styles.tabTextSelected]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: isDark ? '#9CA3AF' : '#64748B' },
+                  isSelected && styles.tabTextSelected,
+                ]}
+              >
                 {tab.label}
               </Text>
             </Pressable>
@@ -88,13 +102,13 @@ export const TasksScreen: React.FC = () => {
       {isLoading && !tasks ? (
         <View style={styles.loaderBox}>
           <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={styles.loaderText}>Loading tasks...</Text>
+          <Text style={[styles.loaderText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Loading tasks...</Text>
         </View>
       ) : tasks.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="checkbox-outline" size={48} color="#4B5563" />
-          <Text style={styles.emptyTitle}>No {selectedTimeframe} tasks</Text>
-          <Text style={styles.emptySubtitle}>
+          <Ionicons name="checkbox-outline" size={48} color={isDark ? '#4B5563' : '#CBD5E1'} />
+          <Text style={[styles.emptyTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>No {selectedTimeframe} tasks</Text>
+          <Text style={[styles.emptySubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
             {selectedTimeframe === 'completed'
               ? 'No completed tasks recorded yet.'
               : 'You have no open tasks in this view. Great job keeping up!'}
@@ -143,7 +157,6 @@ export const TasksScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0F1015',
   },
   header: {
     flexDirection: 'row',
@@ -153,13 +166,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   title: {
-    color: '#FFFFFF',
     fontSize: 20,
     fontWeight: '700',
     letterSpacing: -0.3,
   },
   subtitle: {
-    color: '#9CA3AF',
     fontSize: 12,
     marginTop: 2,
   },
@@ -188,22 +199,23 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#181A20',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#262A34',
   },
-  tabChipSelected: {
+  tabChipSelectedDark: {
     backgroundColor: 'rgba(59, 130, 246, 0.15)',
     borderColor: '#3B82F6',
   },
+  tabChipSelectedLight: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#3B82F6',
+  },
   tabText: {
-    color: '#9CA3AF',
     fontSize: 11,
     fontWeight: '500',
   },
   tabTextSelected: {
-    color: '#60A5FA',
+    color: '#3B82F6',
     fontWeight: '700',
   },
   listContent: {
@@ -216,7 +228,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loaderText: {
-    color: '#9CA3AF',
     fontSize: 13,
     marginTop: 12,
   },
@@ -227,13 +238,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   emptyTitle: {
-    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
     marginTop: 12,
   },
   emptySubtitle: {
-    color: '#9CA3AF',
     fontSize: 13,
     textAlign: 'center',
     marginTop: 6,

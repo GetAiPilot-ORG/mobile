@@ -21,7 +21,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="products"
         options={{
-          title: 'Products',
+          href: null, // Hidden from bottom bar
         }}
       />
       <Tabs.Screen
@@ -39,7 +39,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="activity"
         options={{
-          href: null, // Hidden from bottom bar (accessible via Home Automation Fleet card)
+          title: 'Activity',
         }}
       />
       <Tabs.Screen

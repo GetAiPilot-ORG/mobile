@@ -7,6 +7,7 @@ import {
   Pressable,
   RefreshControl,
   ActivityIndicator,
+  useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,6 +33,9 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
   onNavigateTab,
   onSelectLead,
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const { data: dashboard, isLoading, isRefetching, refetch } = useCrmDashboard();
 
   const createLead = useCreateLead();
@@ -50,7 +54,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
   const pipelineSummary = dashboard?.pipelineSummary || [];
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.contentContainer}
@@ -67,8 +71,8 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
         {/* Top Header */}
         <View style={styles.headerRow}>
           <View>
-            <Text style={styles.headerTitle}>CRM Workspace</Text>
-            <Text style={styles.headerSubtitle}>Daily sales pipeline & customer actions</Text>
+            <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>CRM Workspace</Text>
+            <Text style={[styles.headerSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Daily sales pipeline & customer actions</Text>
           </View>
 
           <View style={styles.quickActionRow}>
@@ -81,12 +85,12 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
               <Text style={styles.primaryActionText}>Lead</Text>
             </Pressable>
             <Pressable
-              style={styles.secondaryActionBtn}
+              style={[styles.secondaryActionBtn, isDark ? styles.secondaryActionBtnDark : styles.secondaryActionBtnLight]}
               onPress={() => setShowAddTask(true)}
               hitSlop={6}
             >
-              <Ionicons name="checkbox-outline" size={15} color="#D1D5DB" />
-              <Text style={styles.secondaryActionText}>Task</Text>
+              <Ionicons name="checkbox-outline" size={15} color={isDark ? '#D1D5DB' : '#334155'} />
+              <Text style={[styles.secondaryActionText, { color: isDark ? '#D1D5DB' : '#334155' }]}>Task</Text>
             </Pressable>
           </View>
         </View>
@@ -94,7 +98,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
         {isLoading && !dashboard ? (
           <View style={styles.loaderBox}>
             <ActivityIndicator size="large" color="#3B82F6" />
-            <Text style={styles.loaderText}>Loading live CRM metrics...</Text>
+            <Text style={[styles.loaderText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Loading live CRM metrics...</Text>
           </View>
         ) : (
           <>
@@ -106,7 +110,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                   value={stats?.totalLeads ?? 0}
                   sub={`+${stats?.newContactsThisMonth ?? 0} this mo`}
                   icon="people"
-                  gradientColors={['#1E293B', '#0F172A']}
+                  gradientColors={isDark ? ['#1E293B', '#0F172A'] : ['#2563EB', '#1D4ED8']}
                   onPress={() => onNavigateTab?.('leads')}
                 />
                 <CrmStatCard
@@ -114,7 +118,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                   value={stats?.openDeals ?? 0}
                   sub={`₹${Number(stats?.totalDealValue || 0).toLocaleString()}`}
                   icon="briefcase"
-                  gradientColors={['#1E1B4B', '#0F172A']}
+                  gradientColors={isDark ? ['#1E1B4B', '#0F172A'] : ['#7C3AED', '#6D28D9']}
                   onPress={() => onNavigateTab?.('pipeline')}
                 />
               </View>
@@ -125,7 +129,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                   value={stats?.tasksDueToday ?? 0}
                   sub={stats?.overdueTasks ? `${stats.overdueTasks} overdue` : 'Up to date'}
                   icon="checkbox"
-                  gradientColors={['#1C1917', '#0F172A']}
+                  gradientColors={isDark ? ['#1C1917', '#0F172A'] : ['#D97706', '#B45309']}
                   onPress={() => onNavigateTab?.('tasks')}
                 />
                 <CrmStatCard
@@ -133,7 +137,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                   value={stats?.wonDealsThisMonth ?? 0}
                   sub={`₹${Number(stats?.wonDealValueThisMonth || 0).toLocaleString()}`}
                   icon="trophy"
-                  gradientColors={['#064E3B', '#0F172A']}
+                  gradientColors={isDark ? ['#064E3B', '#0F172A'] : ['#059669', '#047857']}
                   onPress={() => onNavigateTab?.('pipeline')}
                 />
               </View>
@@ -142,13 +146,13 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
             {/* Pipeline Stage Distribution Overview */}
             <View style={styles.sectionBlock}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Pipeline Distribution</Text>
+                <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Pipeline Distribution</Text>
                 <Pressable onPress={() => onNavigateTab?.('pipeline')}>
                   <Text style={styles.sectionLink}>View All Deals</Text>
                 </Pressable>
               </View>
 
-              <View style={styles.pipelineBar}>
+              <View style={[styles.pipelineBar, { backgroundColor: isDark ? '#262A34' : '#E2E8F0' }]}>
                 {pipelineSummary.map((p) => {
                   const total = pipelineSummary.reduce((acc, curr) => acc + curr.count, 0) || 1;
                   const widthPct = Math.max((p.count / total) * 100, p.count > 0 ? 8 : 0);
@@ -164,10 +168,10 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
 
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.stageScroll}>
                 {pipelineSummary.map((p) => (
-                  <View key={p.stage} style={styles.stagePill}>
+                  <View key={p.stage} style={[styles.stagePill, isDark ? styles.stagePillDark : styles.stagePillLight]}>
                     <View style={[styles.stageDot, { backgroundColor: p.color }]} />
-                    <Text style={styles.stageName}>{p.label}</Text>
-                    <Text style={styles.stageCount}>{p.count}</Text>
+                    <Text style={[styles.stageName, { color: isDark ? '#9CA3AF' : '#64748B' }]}>{p.label}</Text>
+                    <Text style={[styles.stageCount, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>{p.count}</Text>
                   </View>
                 ))}
               </ScrollView>
@@ -178,7 +182,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
               <View style={styles.sectionHeader}>
                 <View style={styles.sectionTitleRow}>
                   <Ionicons name="checkbox-outline" size={16} color="#3B82F6" />
-                  <Text style={styles.sectionTitle}>Tasks Requiring Attention</Text>
+                  <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Tasks Requiring Attention</Text>
                 </View>
                 <Pressable onPress={() => onNavigateTab?.('tasks')}>
                   <Text style={styles.sectionLink}>See All</Text>
@@ -186,11 +190,11 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
               </View>
 
               {upcomingTasks.length === 0 ? (
-                <View style={styles.emptyCard}>
+                <View style={[styles.emptyCard, isDark ? styles.cardDark : styles.cardLight]}>
                   <Ionicons name="checkmark-circle-outline" size={32} color="#10B981" />
-                  <Text style={styles.emptyTitle}>All caught up!</Text>
-                  <Text style={styles.emptySubtitle}>No pending tasks or follow-ups scheduled for today.</Text>
-                  <Pressable style={styles.emptyBtn} onPress={() => setShowAddTask(true)}>
+                  <Text style={[styles.emptyTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>All caught up!</Text>
+                  <Text style={[styles.emptySubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>No pending tasks or follow-ups scheduled for today.</Text>
+                  <Pressable style={[styles.emptyBtn, isDark ? styles.emptyBtnDark : styles.emptyBtnLight]} onPress={() => setShowAddTask(true)}>
                     <Text style={styles.emptyBtnText}>+ Create Task</Text>
                   </Pressable>
                 </View>
@@ -200,34 +204,35 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                     key={t.id}
                     task={t}
                     onToggle={(done) => toggleTask.mutate({ id: t.id, done })}
+                    onPress={() => onNavigateTab?.('tasks')}
                   />
                 ))
               )}
             </View>
 
-            {/* Recent Leads */}
+            {/* Recent Leads Activity Section */}
             <View style={styles.sectionBlock}>
               <View style={styles.sectionHeader}>
                 <View style={styles.sectionTitleRow}>
-                  <Ionicons name="person-add-outline" size={16} color="#3B82F6" />
-                  <Text style={styles.sectionTitle}>Recent Leads</Text>
+                  <Ionicons name="people-outline" size={16} color="#3B82F6" />
+                  <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Recent Leads Added</Text>
                 </View>
                 <Pressable onPress={() => onNavigateTab?.('leads')}>
-                  <Text style={styles.sectionLink}>View All Leads</Text>
+                  <Text style={styles.sectionLink}>View Directory</Text>
                 </Pressable>
               </View>
 
               {recentLeads.length === 0 ? (
-                <View style={styles.emptyCard}>
+                <View style={[styles.emptyCard, isDark ? styles.cardDark : styles.cardLight]}>
                   <Ionicons name="people-outline" size={32} color="#6B7280" />
-                  <Text style={styles.emptyTitle}>No leads yet</Text>
-                  <Text style={styles.emptySubtitle}>Add your first lead to begin tracking qualifications.</Text>
-                  <Pressable style={styles.emptyBtn} onPress={() => setShowAddLead(true)}>
-                    <Text style={styles.emptyBtnText}>+ Add First Lead</Text>
+                  <Text style={[styles.emptyTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>No leads yet</Text>
+                  <Text style={[styles.emptySubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Add your first prospect or link WhatsApp contacts to build pipeline.</Text>
+                  <Pressable style={[styles.emptyBtn, isDark ? styles.emptyBtnDark : styles.emptyBtnLight]} onPress={() => setShowAddLead(true)}>
+                    <Text style={styles.emptyBtnText}>+ Add New Lead</Text>
                   </Pressable>
                 </View>
               ) : (
-                recentLeads.map((l) => (
+                recentLeads.slice(0, 4).map((l) => (
                   <LeadCard
                     key={l.id}
                     lead={l}
@@ -237,28 +242,36 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
               )}
             </View>
 
-            {/* Recent Activity Stream */}
-            {recentActivities.length > 0 ? (
-              <View style={styles.sectionBlock}>
-                <View style={styles.sectionHeader}>
-                  <View style={styles.sectionTitleRow}>
-                    <Ionicons name="time-outline" size={16} color="#3B82F6" />
-                    <Text style={styles.sectionTitle}>Recent CRM Activity</Text>
-                  </View>
-                  <Pressable onPress={() => onNavigateTab?.('more')}>
-                    <Text style={styles.sectionLink}>Full Stream</Text>
-                  </Pressable>
+            {/* Recent Activities Feed */}
+            <View style={styles.sectionBlock}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionTitleRow}>
+                  <Ionicons name="pulse-outline" size={16} color="#3B82F6" />
+                  <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Live Customer Touchpoints</Text>
                 </View>
-
-                {recentActivities.map((act, index) => (
-                  <ActivityTimelineItem
-                    key={act.id}
-                    activity={act}
-                    isLast={index === recentActivities.length - 1}
-                  />
-                ))}
+                <Pressable onPress={() => onNavigateTab?.('activities')}>
+                  <Text style={styles.sectionLink}>Full History</Text>
+                </Pressable>
               </View>
-            ) : null}
+
+              {recentActivities.length === 0 ? (
+                <View style={[styles.emptyCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <Ionicons name="time-outline" size={32} color="#6B7280" />
+                  <Text style={[styles.emptyTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>No logged activities</Text>
+                  <Text style={[styles.emptySubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Logged calls, meeting notes & messages will stream here.</Text>
+                </View>
+              ) : (
+                <View style={[styles.activitiesCard, isDark ? styles.activitiesCardDark : styles.activitiesCardLight]}>
+                  {recentActivities.slice(0, 5).map((act, index) => (
+                    <ActivityTimelineItem
+                      key={act.id}
+                      activity={act}
+                      isLast={index === Math.min(recentActivities.length, 5) - 1}
+                    />
+                  ))}
+                </View>
+              )}
+            </View>
           </>
         )}
       </ScrollView>
@@ -267,8 +280,9 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
       <CreateLeadModal
         visible={showAddLead}
         onClose={() => setShowAddLead(false)}
-        onSubmit={async (lead) => {
-          await createLead.mutateAsync(lead);
+        onSubmit={async (data) => {
+          await createLead.mutateAsync(data);
+          setShowAddLead(false);
         }}
         isLoading={createLead.isPending}
       />
@@ -276,8 +290,9 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
       <CreateDealModal
         visible={showAddDeal}
         onClose={() => setShowAddDeal(false)}
-        onSubmit={async (deal) => {
-          await createDeal.mutateAsync(deal);
+        onSubmit={async (data) => {
+          await createDeal.mutateAsync(data);
+          setShowAddDeal(false);
         }}
         isLoading={createDeal.isPending}
       />
@@ -285,8 +300,9 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
       <CreateTaskModal
         visible={showAddTask}
         onClose={() => setShowAddTask(false)}
-        onSubmit={async (task) => {
-          await createTask.mutateAsync(task);
+        onSubmit={async (data) => {
+          await createTask.mutateAsync(data);
+          setShowAddTask(false);
         }}
         isLoading={createTask.isPending}
       />
@@ -297,14 +313,13 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0F1015',
   },
   scrollView: {
     flex: 1,
   },
   contentContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 40,
+    paddingBottom: 130,
   },
   headerRow: {
     flexDirection: 'row',
@@ -315,12 +330,10 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#FFFFFF',
     letterSpacing: -0.4,
   },
   headerSubtitle: {
     fontSize: 12,
-    color: '#9CA3AF',
     marginTop: 2,
   },
   quickActionRow: {
@@ -346,13 +359,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#262A34',
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 10,
+    borderWidth: 1,
+  },
+  secondaryActionBtnDark: {
+    backgroundColor: '#262A34',
+    borderColor: '#334155',
+  },
+  secondaryActionBtnLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#CBD5E1',
   },
   secondaryActionText: {
-    color: '#D1D5DB',
     fontSize: 13,
     fontWeight: '500',
   },
@@ -362,7 +382,6 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   loaderText: {
-    color: '#9CA3AF',
     fontSize: 13,
     marginTop: 12,
   },
@@ -389,7 +408,6 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   sectionTitle: {
-    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: -0.2,
@@ -403,7 +421,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#262A34',
     overflow: 'hidden',
     marginBottom: 10,
   },
@@ -417,13 +434,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#181A20',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
     marginRight: 8,
     borderWidth: 1,
+  },
+  stagePillDark: {
+    backgroundColor: '#181A20',
     borderColor: '#262A34',
+  },
+  stagePillLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
   },
   stageDot: {
     width: 6,
@@ -431,32 +459,39 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   stageName: {
-    color: '#9CA3AF',
     fontSize: 11,
   },
   stageCount: {
-    color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '700',
   },
-  emptyCard: {
+  cardDark: {
     backgroundColor: '#181A20',
+    borderColor: '#262A34',
+  },
+  cardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  emptyCard: {
     borderRadius: 16,
     padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#262A34',
     borderStyle: 'dashed',
   },
   emptyTitle: {
-    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '600',
     marginTop: 8,
   },
   emptySubtitle: {
-    color: '#9CA3AF',
     fontSize: 12,
     textAlign: 'center',
     marginTop: 4,
@@ -464,14 +499,39 @@ const styles = StyleSheet.create({
     maxWidth: 240,
   },
   emptyBtn: {
-    backgroundColor: '#262A34',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8,
   },
+  emptyBtnDark: {
+    backgroundColor: '#262A34',
+  },
+  emptyBtnLight: {
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
   emptyBtnText: {
-    color: '#60A5FA',
+    color: '#3B82F6',
     fontSize: 13,
     fontWeight: '600',
+  },
+  activitiesCard: {
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+  },
+  activitiesCardDark: {
+    backgroundColor: '#181A20',
+    borderColor: '#262A34',
+  },
+  activitiesCardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
 });

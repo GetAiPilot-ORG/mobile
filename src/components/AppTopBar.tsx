@@ -1,3 +1,11 @@
+import React from 'react';
+import { View, Text, StyleSheet, Pressable, Platform, useColorScheme } from 'react-native';
+import { Image } from 'expo-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import { colors } from '../theme/colors';
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -14,7 +22,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const brandLogo = require("../../assets/images/logo.jpg");
 
-interface AppTopBarProps {
+export interface AppTopBarProps {
   title?: string;
   subtitle?: string;
   showBack?: boolean;
@@ -25,7 +33,7 @@ interface AppTopBarProps {
 export const AppTopBar: React.FC<AppTopBarProps> = ({
   title,
   subtitle,
-  showBack = false,
+  showBack,
   rightElement,
   onBackPress,
 }) => {
@@ -45,6 +53,9 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
   //   }
   // };
 
+  // Auto-detect: Show back button on all sub-pages with title unless explicitly disabled
+  const shouldShowBack = showBack !== undefined ? showBack : !!title;
+
   const handleBack = () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -60,39 +71,43 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
       console.log("Going back");
       router.back();
     } else {
-      router.replace("/");
-      console.log("No back history, navigating to home");
+      router.replace('/(tabs)');
     }
   };
 
-  const topPadding = Math.max(insets.top, 12);
+  const topPadding = Math.max(insets.top, 10);
 
   return (
     <View
       style={[
         styles.container,
-        { paddingTop: topPadding, height: 54 + topPadding },
-        isDark && styles.containerDark,
+        { paddingTop: topPadding, minHeight: 52 + topPadding },
+        isDark ? styles.containerDark : styles.containerLight,
       ]}
     >
       <View style={styles.leftSection}>
-        {showBack && (
+        {shouldShowBack && (
           <Pressable
-            style={[styles.backButton, isDark && styles.backButtonDark]}
+            style={({ pressed }) => [
+              styles.backButton,
+              isDark ? styles.backButtonDark : styles.backButtonLight,
+              pressed && styles.backButtonPressed,
+            ]}
             onPress={handleBack}
-            hitSlop={10}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
           >
-            <Text style={[styles.backText, isDark && styles.backTextDark]}>
-              ‹
-            </Text>
+            <Ionicons
+              name="chevron-back"
+              size={22}
+              color={isDark ? '#FFFFFF' : '#007AFF'}
+            />
           </Pressable>
         )}
         <View style={styles.titleWrapper}>
           {title ? (
-            <Text
-              style={[styles.title, isDark && styles.titleDark]}
-              numberOfLines={1}
-            >
+            <Text style={[styles.title, isDark ? styles.titleDark : styles.titleLight]} numberOfLines={1}>
               {title}
             </Text>
           ) : (
@@ -104,16 +119,11 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
                   contentFit="cover"
                 />
               </View>
-              <Text style={[styles.brandText, isDark && styles.brandTextDark]}>
-                GetAiPilot
-              </Text>
+              <Text style={[styles.brandText, isDark ? styles.brandTextDark : styles.brandTextLight]}>GetAiPilot</Text>
             </View>
           )}
           {subtitle && (
-            <Text
-              style={[styles.subtitle, isDark && styles.subtitleDark]}
-              numberOfLines={1}
-            >
+            <Text style={[styles.subtitle, isDark ? styles.subtitleDark : styles.subtitleLight]} numberOfLines={1}>
               {subtitle}
             </Text>
           )}
@@ -131,14 +141,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingBottom: 8,
-    backgroundColor: "#FFFFFF",
+    paddingBottom: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#E5E7EB",
+  },
+  containerLight: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
   },
   containerDark: {
-    backgroundColor: "#000000",
-    borderBottomColor: "#2C2C2E",
+    backgroundColor: 'rgba(18, 18, 20, 0.95)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
   leftSection: {
     flexDirection: "row",
@@ -146,35 +158,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: "#F2F4F7",
-    justifyContent: "center",
-    alignItems: "center",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 10,
   },
+  backButtonLight: {
+    backgroundColor: 'rgba(0, 122, 255, 0.08)',
+  },
   backButtonDark: {
-    backgroundColor: "#1C1C1E",
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
-  backText: {
-    fontSize: 26,
-    fontWeight: "600",
-    color: "#0084FF",
-    lineHeight: 28,
-    marginTop: -2,
-  },
-  backTextDark: {
-    color: "#3B82F6",
+  backButtonPressed: {
+    opacity: 0.6,
+    transform: [{ scale: 0.95 }],
   },
   titleWrapper: {
     flex: 1,
+    justifyContent: 'center',
   },
   title: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#000000",
+    fontSize: 17,
+    fontWeight: '700',
     letterSpacing: -0.4,
+  },
+  titleLight: {
+    color: '#000000',
   },
   titleDark: {
     color: "#FFFFFF",
@@ -183,6 +194,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#6B7280",
     marginTop: 1,
+    letterSpacing: -0.2,
+  },
+  subtitleLight: {
+    color: '#6B7280',
   },
   subtitleDark: {
     color: "#9CA3AF",
@@ -207,6 +222,9 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#000000",
     letterSpacing: -0.5,
+  },
+  brandTextLight: {
+    color: '#000000',
   },
   brandTextDark: {
     color: "#FFFFFF",

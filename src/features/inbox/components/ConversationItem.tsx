@@ -8,14 +8,38 @@ interface ConversationItemProps {
   onPress: () => void;
 }
 
+const formatMessageTime = (dateStr?: string) => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '';
+
+  const now = new Date();
+  const isToday =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+
+  if (isToday) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday =
+    date.getDate() === yesterday.getDate() &&
+    date.getMonth() === yesterday.getMonth() &&
+    date.getFullYear() === yesterday.getFullYear();
+
+  if (isYesterday) return 'Yesterday';
+
+  return date.toLocaleDateString([], { day: 'numeric', month: 'short' });
+};
+
 export const ConversationItem: React.FC<ConversationItemProps> = ({ conversation, onPress }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const time = new Date(conversation.last_message.created_at).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const time = formatMessageTime(conversation.last_message.created_at);
 
   return (
     <Pressable

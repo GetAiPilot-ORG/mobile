@@ -95,19 +95,9 @@ export const WhatsAppTemplatesScreen: React.FC<WhatsAppTemplatesScreenProps> = (
             <View style={{ flex: 1 }}>
               <Text style={[styles.title, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Message Templates</Text>
               <Text style={[styles.subtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-                Manage your WhatsApp message templates
+                Browse approved WhatsApp message templates
               </Text>
             </View>
-
-            <Pressable
-              style={styles.newTemplateBtn}
-              onPress={() => {
-                router.push('/products/whatsapp/create-broadcast' as any);
-              }}
-            >
-              <Ionicons name="add" size={16} color="#020617" style={{ marginRight: 2 }} />
-              <Text style={styles.newTemplateBtnText}>New</Text>
-            </Pressable>
           </View>
         </View>
 
@@ -249,17 +239,7 @@ export const WhatsAppTemplatesScreen: React.FC<WhatsAppTemplatesScreenProps> = (
           <FlatList
             data={filteredTemplates}
             keyExtractor={(item) => item.id || item.name}
-            renderItem={({ item }) => (
-              <TemplateCard
-                template={item}
-                onSelect={() => {
-                  router.push({
-                    pathname: '/products/whatsapp/create-broadcast',
-                    params: { templateName: item.name },
-                  });
-                }}
-              />
-            )}
+            renderItem={({ item }) => <TemplateCard template={item} />}
             contentContainerStyle={styles.listContent}
             refreshControl={
               <RefreshControl
@@ -277,7 +257,7 @@ export const WhatsAppTemplatesScreen: React.FC<WhatsAppTemplatesScreenProps> = (
                 <Text style={[styles.emptyText, { color: isDark ? '#64748b' : '#94a3b8' }]}>
                   {searchQuery || activeCategory !== 'ALL' || activeStatus !== 'ALL'
                     ? 'No templates match your active filters. Try clearing filters or search query.'
-                    : 'Create and submit your first WhatsApp message template to Meta for approval.'}
+                    : 'No WhatsApp message templates available for this account.'}
                 </Text>
               </View>
             }
@@ -414,6 +394,8 @@ const styles = StyleSheet.create({
   },
   categoryScroll: {
     gap: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingBottom: 10,
   },
   categoryTab: {
@@ -421,6 +403,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 7,
     borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   categoryTabDark: {
     backgroundColor: '#020617',

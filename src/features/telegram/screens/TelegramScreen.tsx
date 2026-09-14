@@ -33,51 +33,49 @@ import {
   ReportBotModal,
   SubManagerModal,
   TelegramLoginModal,
-  ToolCard,
-  TrackerModal,
-} from "../components";
-import { TelegramToolKey } from "../types";
+  DashboardAnalyticsCharts,
+} from '../components';
 
-type TelegramCategory = "all" | "automation" | "monetization" | "growth";
+type TelegramCategory = 'all' | 'automation' | 'monetization' | 'growth';
 type TelegramTab =
-  | "hub"
-  | "automations"
-  | "bots"
-  | "sub_manager"
-  | "broadcasts"
-  | "reactions"
-  | "chatbot"
-  | "auto_approve"
-  | "report_bot";
+  | 'hub'
+  | 'automations'
+  | 'bots'
+  | 'sub_manager'
+  | 'broadcasts'
+  | 'reactions'
+  | 'chatbot'
+  | 'auto_approve'
+  | 'report_bot';
 
 const TELEGRAM_TABS: ProductTabItem[] = [
   {
-    key: "hub",
-    label: "Overview",
-    activeIcon: "grid",
-    inactiveIcon: "grid-outline",
-    description: "Master KPI command center & all 8 tools",
+    key: 'hub',
+    label: 'Overview',
+    activeIcon: 'grid',
+    inactiveIcon: 'grid-outline',
+    description: 'Master KPI command center & all 8 tools',
   },
   {
-    key: "automations",
-    label: "AutoForward",
-    activeIcon: "git-compare",
-    inactiveIcon: "git-compare-outline",
-    description: "Channel-to-channel message routing & word filters",
+    key: 'automations',
+    label: 'AutoForward',
+    activeIcon: 'git-compare',
+    inactiveIcon: 'git-compare-outline',
+    description: 'Channel-to-channel message routing & word filters',
   },
   {
-    key: "bots",
-    label: "GAP Tracker",
-    activeIcon: "logo-android",
-    inactiveIcon: "logo-android",
-    description: "Channel join tracking bots, UTM campaigns & analytics",
+    key: 'bots',
+    label: 'GAP Tracker',
+    activeIcon: 'logo-android',
+    inactiveIcon: 'logo-android',
+    description: 'Channel join tracking bots, UTM campaigns & analytics',
   },
   {
-    key: "sub_manager",
-    label: "TeleSub",
-    activeIcon: "card",
-    inactiveIcon: "card-outline",
-    description: "VIP subscription monetization, tiers & paywalls",
+    key: 'sub_manager',
+    label: 'TeleSub',
+    activeIcon: 'card',
+    inactiveIcon: 'card-outline',
+    description: 'VIP subscription monetization, tiers & paywalls',
   },
   {
     key: "broadcasts",
@@ -113,6 +111,27 @@ const TELEGRAM_TABS: ProductTabItem[] = [
     activeIcon: "analytics",
     inactiveIcon: "analytics-outline",
     description: "Channel analytics, subscriber growth & tracking logs",
+  },
+  {
+    key: 'chatbot',
+    label: 'AI ChatBot',
+    activeIcon: 'chatbubbles',
+    inactiveIcon: 'chatbubbles-outline',
+    description: 'AI automated replies, knowledge base & support flows',
+  },
+  {
+    key: 'auto_approve',
+    label: 'Auto-Approve',
+    activeIcon: 'shield-checkmark',
+    inactiveIcon: 'shield-checkmark-outline',
+    description: 'Instant accept for private channel join requests',
+  },
+  {
+    key: 'report_bot',
+    label: 'Report Bot',
+    activeIcon: 'analytics',
+    inactiveIcon: 'analytics-outline',
+    description: 'Channel analytics, subscriber growth & tracking logs',
   },
 ];
 
@@ -271,36 +290,36 @@ export const TelegramScreen: React.FC = () => {
 
   const openToolModal = (key: TelegramToolKey) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (key === "autoforward") {
-      handleTabChange("automations");
+    if (key === 'autoforward') {
+      handleTabChange('automations');
       return;
     }
-    if (key === "sub_manager") {
-      handleTabChange("sub_manager");
+    if (key === 'sub_manager') {
+      handleTabChange('sub_manager');
       return;
     }
-    if (key === "tracker") {
-      handleTabChange("bots");
+    if (key === 'tracker') {
+      handleTabChange('bots');
       return;
     }
-    if (key === "broadcast") {
-      handleTabChange("broadcasts");
+    if (key === 'broadcast') {
+      handleTabChange('broadcasts');
       return;
     }
-    if (key === "reactions") {
-      handleTabChange("reactions");
+    if (key === 'reactions') {
+      handleTabChange('reactions');
       return;
     }
-    if (key === "chatbot") {
-      handleTabChange("chatbot");
+    if (key === 'chatbot') {
+      handleTabChange('chatbot');
       return;
     }
-    if (key === "auto_approve") {
-      handleTabChange("auto_approve");
+    if (key === 'auto_approve') {
+      handleTabChange('auto_approve');
       return;
     }
-    if (key === "report_bot") {
-      handleTabChange("report_bot");
+    if (key === 'report_bot') {
+      handleTabChange('report_bot');
       return;
     }
     setActiveModal(key);
@@ -458,9 +477,7 @@ export const TelegramScreen: React.FC = () => {
                     onPress={() => setActiveModal("tracker")}
                   >
                     <Ionicons name="add" size={15} color="#FFFFFF" />
-                    <Text style={styles.actionBtnPrimaryText}>
-                      Connect New Bot
-                    </Text>
+                    <Text style={styles.actionBtnPrimaryText}>Connect New Bot</Text>
                   </Pressable>
                   <Pressable
                     style={[
@@ -2468,6 +2485,168 @@ export const TelegramScreen: React.FC = () => {
                     <Text style={styles.actionBtnPrimaryText}>
                       Open Report Bot Console
                     </Text>
+                  </Pressable>
+                </View>
+              </>
+            )}
+
+            {/* TAB 6: AI CHATBOT AUTOMATION */}
+            {activeTab === 'chatbot' && (
+              <>
+                <Pressable
+                  style={[styles.broadcastBanner, isDark ? styles.cardDark : styles.cardLight]}
+                  onPress={() => setActiveModal('chatbot')}
+                >
+                  <View style={[styles.broadcastBannerIcon, { backgroundColor: 'rgba(14,165,233,0.15)' }]}>
+                    <Ionicons name="chatbubbles" size={24} color="#0284C7" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.broadcastBannerTitle, isDark ? styles.textDark : styles.textLight]}>
+                      AI ChatBot Automation
+                    </Text>
+                    <Text style={styles.broadcastBannerDesc}>
+                      Multi-provider AI customer support agent (OpenAI, Gemini, Claude, Groq)
+                    </Text>
+                  </View>
+                  <Ionicons name="arrow-forward-circle" size={28} color="#0284C7" />
+                </Pressable>
+
+                <View style={styles.sectionHeaderRow}>
+                  <View>
+                    <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight, { marginBottom: 2 }]}>
+                      Connected AI Assistants
+                    </Text>
+                    <Text style={styles.sectionSub}>Automated customer replies & knowledge base</Text>
+                  </View>
+                  <Pressable
+                    style={[styles.actionBtnPrimary, { backgroundColor: '#0284C7' }]}
+                    onPress={() => setActiveModal('chatbot')}
+                  >
+                    <Ionicons name="add" size={16} color="#FFFFFF" />
+                    <Text style={styles.actionBtnPrimaryText}>Connect Bot</Text>
+                  </Pressable>
+                </View>
+
+                <View style={[styles.emptyCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <Ionicons name="chatbubbles-outline" size={36} color="#0284C7" style={{ marginBottom: 8 }} />
+                  <Text style={[styles.emptyTitle, isDark ? styles.textDark : styles.textLight]}>AI Support Assistant Console</Text>
+                  <Text style={styles.emptySubtitle}>
+                    Deploy intelligent AI chatbots to reply to DMs, answer community queries, and qualify inbound leads 24/7.
+                  </Text>
+                  <Pressable
+                    style={[styles.actionBtnPrimary, { marginTop: 12 }]}
+                    onPress={() => setActiveModal('chatbot')}
+                  >
+                    <Ionicons name="settings-outline" size={16} color="#FFFFFF" />
+                    <Text style={styles.actionBtnPrimaryText}>Open ChatBot Console</Text>
+                  </Pressable>
+                </View>
+              </>
+            )}
+
+            {/* TAB 7: AUTO-APPROVE JOIN REQUESTS */}
+            {activeTab === 'auto_approve' && (
+              <>
+                <Pressable
+                  style={[styles.broadcastBanner, isDark ? styles.cardDark : styles.cardLight]}
+                  onPress={() => setActiveModal('auto_approve')}
+                >
+                  <View style={[styles.broadcastBannerIcon, { backgroundColor: 'rgba(16,185,129,0.15)' }]}>
+                    <Ionicons name="shield-checkmark" size={24} color="#10B981" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.broadcastBannerTitle, isDark ? styles.textDark : styles.textLight]}>
+                      Auto-Approve Join Requests
+                    </Text>
+                    <Text style={styles.broadcastBannerDesc}>
+                      Instantly accept private channel & group join requests 24/7 with zero delay
+                    </Text>
+                  </View>
+                  <Ionicons name="arrow-forward-circle" size={28} color="#10B981" />
+                </Pressable>
+
+                <View style={styles.sectionHeaderRow}>
+                  <View>
+                    <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight, { marginBottom: 2 }]}>
+                      Channel Automation Engine
+                    </Text>
+                    <Text style={styles.sectionSub}>Instant approvals and welcome triggers</Text>
+                  </View>
+                  <Pressable
+                    style={[styles.actionBtnPrimary, { backgroundColor: '#10B981' }]}
+                    onPress={() => setActiveModal('auto_approve')}
+                  >
+                    <Ionicons name="flash" size={16} color="#FFFFFF" />
+                    <Text style={styles.actionBtnPrimaryText}>Configure</Text>
+                  </Pressable>
+                </View>
+
+                <View style={[styles.emptyCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <Ionicons name="shield-checkmark-outline" size={36} color="#10B981" style={{ marginBottom: 8 }} />
+                  <Text style={[styles.emptyTitle, isDark ? styles.textDark : styles.textLight]}>24/7 Zero-Delay Approvals</Text>
+                  <Text style={styles.emptySubtitle}>
+                    Never lose a subscriber to invite link approval queues. Accept users automatically and send personalized welcome DMs.
+                  </Text>
+                  <Pressable
+                    style={[styles.actionBtnPrimary, { marginTop: 12, backgroundColor: '#10B981' }]}
+                    onPress={() => setActiveModal('auto_approve')}
+                  >
+                    <Ionicons name="options-outline" size={16} color="#FFFFFF" />
+                    <Text style={styles.actionBtnPrimaryText}>Open Auto-Approve Settings</Text>
+                  </Pressable>
+                </View>
+              </>
+            )}
+
+            {/* TAB 8: REPORT BOT & CHANNEL ANALYTICS */}
+            {activeTab === 'report_bot' && (
+              <>
+                <Pressable
+                  style={[styles.broadcastBanner, isDark ? styles.cardDark : styles.cardLight]}
+                  onPress={() => setActiveModal('report_bot')}
+                >
+                  <View style={[styles.broadcastBannerIcon, { backgroundColor: 'rgba(139,92,246,0.15)' }]}>
+                    <Ionicons name="analytics" size={24} color="#8B5CF6" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.broadcastBannerTitle, isDark ? styles.textDark : styles.textLight]}>
+                      Channel Analytics & Report Bot
+                    </Text>
+                    <Text style={styles.broadcastBannerDesc}>
+                      Custom brand watermarks, automated growth logs, and subscriber analytics
+                    </Text>
+                  </View>
+                  <Ionicons name="arrow-forward-circle" size={28} color="#8B5CF6" />
+                </Pressable>
+
+                <View style={styles.sectionHeaderRow}>
+                  <View>
+                    <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight, { marginBottom: 2 }]}>
+                      Channel Telemetry & Branding
+                    </Text>
+                    <Text style={styles.sectionSub}>Custom profile logos & scheduled PDF reports</Text>
+                  </View>
+                  <Pressable
+                    style={[styles.actionBtnPrimary, { backgroundColor: '#8B5CF6' }]}
+                    onPress={() => setActiveModal('report_bot')}
+                  >
+                    <Ionicons name="pie-chart" size={16} color="#FFFFFF" />
+                    <Text style={styles.actionBtnPrimaryText}>View Reports</Text>
+                  </Pressable>
+                </View>
+
+                <View style={[styles.emptyCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <Ionicons name="analytics-outline" size={36} color="#8B5CF6" style={{ marginBottom: 8 }} />
+                  <Text style={[styles.emptyTitle, isDark ? styles.textDark : styles.textLight]}>Report Bot & Growth Logs</Text>
+                  <Text style={styles.emptySubtitle}>
+                    Generate branded daily performance reports and track membership velocity across all your Telegram assets.
+                  </Text>
+                  <Pressable
+                    style={[styles.actionBtnPrimary, { marginTop: 12, backgroundColor: '#8B5CF6' }]}
+                    onPress={() => setActiveModal('report_bot')}
+                  >
+                    <Ionicons name="document-text-outline" size={16} color="#FFFFFF" />
+                    <Text style={styles.actionBtnPrimaryText}>Open Report Bot Console</Text>
                   </Pressable>
                 </View>
               </>
