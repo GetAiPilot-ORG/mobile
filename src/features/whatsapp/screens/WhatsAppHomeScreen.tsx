@@ -24,13 +24,12 @@ import { useWhatsAppUsage } from '../hooks/useWhatsAppUsage';
 import { WhatsAppBroadcastsScreen } from './WhatsAppBroadcastsScreen';
 import { WhatsAppContactsScreen } from './WhatsAppContactsScreen';
 import { WhatsAppTemplatesScreen } from './WhatsAppTemplatesScreen';
-import { CreateBroadcastScreen } from './CreateBroadcastScreen';
 import {
   ProductFloatingBottomBar,
   ProductTabItem,
 } from '../../../components/ProductFloatingBottomBar';
 
-type WhatsAppTab = 'home' | 'broadcasts' | 'contacts' | 'templates' | 'create';
+type WhatsAppTab = 'home' | 'broadcasts' | 'contacts' | 'templates';
 
 const WHATSAPP_TABS: ProductTabItem[] = [
   {
@@ -57,19 +56,13 @@ const WHATSAPP_TABS: ProductTabItem[] = [
     activeIcon: 'document-text',
     inactiveIcon: 'document-text-outline',
   },
-  {
-    key: 'create',
-    label: 'New Send',
-    activeIcon: 'add-circle',
-    inactiveIcon: 'add-circle-outline',
-  },
 ];
 
 export const WhatsAppHomeScreen: React.FC = () => {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const [activeTab, setActiveTab] = useState<'home' | 'contacts' | 'templates' | 'broadcasts'>('home');
+  const [activeTab, setActiveTab] = useState<WhatsAppTab>('home');
 
   const {
     data: status,
@@ -105,12 +98,6 @@ export const WhatsAppHomeScreen: React.FC = () => {
       {activeTab === 'contacts' && <WhatsAppContactsScreen onBack={() => setActiveTab('home')} />}
       {activeTab === 'templates' && <WhatsAppTemplatesScreen onBack={() => setActiveTab('home')} />}
       {activeTab === 'broadcasts' && <WhatsAppBroadcastsScreen onBack={() => setActiveTab('home')} />}
-      {activeTab === 'create' && (
-        <CreateBroadcastScreen
-          onBack={() => setActiveTab('home')}
-          onCreated={() => setActiveTab('broadcasts')}
-        />
-      )}
 
       {activeTab === 'home' && (
         <SafeAreaView style={styles.safeArea}>
