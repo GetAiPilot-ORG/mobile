@@ -1,8 +1,11 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Image } from 'expo-image';
-import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { AppScreen } from "@/components/AppScreen";
+import { NetworkStatusScreen } from "@/components/StatusScreen";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import NetInfo from "@react-native-community/netinfo";
+import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
@@ -14,33 +17,38 @@ import {
   Text,
   TextInput,
   TouchableWithoutFeedback,
+  useColorScheme,
   View,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuthStore } from '../../src/core/store/authStore';
-import { supabase } from '../../src/lib/supabase';
-import { isValidEmail } from '../../src/lib/validators';
-import { colors } from '../../src/theme/colors';
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { HomeSkeleton } from "../../src/components/skeletonScreen/HomeSkeletonScreen";
+import { useAuthStore } from "../../src/core/store/authStore";
+import { supabase } from "../../src/lib/supabase";
+import { isValidEmail } from "../../src/lib/validators";
 
-const REMEMBER_ME_KEY = '@gap_remember_me';
-const SAVE_LOGIN_KEY = '@gap_saved_identifier';
-const brandLogo = require('../../assets/images/icon.png');
+const REMEMBER_ME_KEY = "@gap_remember_me";
+const SAVE_LOGIN_KEY = "@gap_saved_identifier";
+const brandLogo = require("../../assets/images/icon.png");
 
 export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const isDark = true;
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const login = useAuthStore((s) => s.login);
-  const [authMode, setAuthMode] = useState<'password' | 'otp'>('password');
+  const [authMode, setAuthMode] = useState<"password" | "otp">("password");
 
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
   const [saveLoginInfo, setSaveLoginInfo] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(
-    null
-  );
+  const [feedback, setFeedback] = useState<{
+    type: "error" | "success";
+    message: string;
+  } | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
+  const [networkChecked, setNetworkChecked] = useState(false);
 
   // Load saved login info on mount
   useEffect(() => {
@@ -48,20 +56,50 @@ export default function LoginScreen() {
       try {
         const savedEnabled = await AsyncStorage.getItem(REMEMBER_ME_KEY);
         if (savedEnabled !== null) {
-          setSaveLoginInfo(savedEnabled === 'true');
+          setSaveLoginInfo(savedEnabled === "true");
         }
-        if (savedEnabled !== 'false') {
+        if (savedEnabled !== "false") {
           const savedEmail = await AsyncStorage.getItem(SAVE_LOGIN_KEY);
           if (savedEmail) {
             setIdentifier(savedEmail);
           }
         }
-      } catch { }
+      } catch {}
     })();
   }, []);
 
-  const triggerHaptic = (style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Light) => {
-    if (Platform.OS !== 'web') {
+  useEffect(() => {
+    const checkInitialConnection = async () => {
+      const state = await NetInfo.fetch();
+
+      const online =
+        state.isConnected === true && state.isInternetReachable !== false;
+
+      setIsOnline(online);
+      setNetworkChecked(true);
+    };
+
+    checkInitialConnection();
+
+    let wasOnline = true;
+
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      const online =
+        state.isConnected === true && state.isInternetReachable !== false;
+
+      setIsOnline(online);
+      setNetworkChecked(true);
+
+      wasOnline = online;
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const triggerHaptic = (
+    style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Light,
+  ) => {
+    if (Platform.OS !== "web") {
       Haptics.impactAsync(style);
     }
   };
@@ -70,13 +108,14 @@ export default function LoginScreen() {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
     const nextState = !saveLoginInfo;
     setSaveLoginInfo(nextState);
-    AsyncStorage.setItem(REMEMBER_ME_KEY, String(nextState)).catch(() => { });
+    AsyncStorage.setItem(REMEMBER_ME_KEY, String(nextState)).catch(() => {});
     if (!nextState) {
-      AsyncStorage.removeItem(SAVE_LOGIN_KEY).catch(() => { });
+      AsyncStorage.removeItem(SAVE_LOGIN_KEY).catch(() => {});
     }
   };
 
-  const isFormValid = identifier.trim().length > 0 && (authMode === 'otp' || password.length > 0);
+  const isFormValid =
+    identifier.trim().length > 0 && (authMode === "otp" || password.length > 0);
 
   const handleLogin = async () => {
     Keyboard.dismiss();
@@ -85,14 +124,17 @@ export default function LoginScreen() {
 
     if (!cleanIdentifier) {
       triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
-      setFeedback({ type: 'error', message: 'Please enter your phone number or email.' });
+      setFeedback({
+        type: "error",
+        message: "Please enter your phone number or email.",
+      });
       return;
     }
 
-    if (authMode === 'password') {
+    if (authMode === "password") {
       if (!password) {
         triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
-        setFeedback({ type: 'error', message: 'Please enter your password.' });
+        setFeedback({ type: "error", message: "Please enter your password." });
         return;
       }
 
@@ -101,12 +143,13 @@ export default function LoginScreen() {
 
       try {
         await login(cleanIdentifier, password);
-        router.replace('/(tabs)');
+        router.replace("/(tabs)");
       } catch (err: any) {
         triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
         setFeedback({
-          type: 'error',
-          message: err.message || 'Incorrect email or password. Please try again.',
+          type: "error",
+          message:
+            err.message || "Incorrect email or password. Please try again.",
         });
       } finally {
         setLoading(false);
@@ -115,7 +158,10 @@ export default function LoginScreen() {
       // Magic Link / OTP Mode
       if (!isValidEmail(cleanIdentifier)) {
         triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
-        setFeedback({ type: 'error', message: 'Please enter a valid email address for Magic Link.' });
+        setFeedback({
+          type: "error",
+          message: "Please enter a valid email address for Magic Link.",
+        });
         return;
       }
 
@@ -126,42 +172,75 @@ export default function LoginScreen() {
         const { error } = await supabase.auth.signInWithOtp({
           email: cleanIdentifier,
           options: {
-            emailRedirectTo: 'getaipilot://auth/callback',
+            emailRedirectTo: "getaipilot://auth/callback",
           },
         });
 
         if (error) throw error;
         setFeedback({
-          type: 'success',
-          message: 'Magic login link sent to your inbox! Check your email to sign in.',
+          type: "success",
+          message:
+            "Magic login link sent to your inbox! Check your email to sign in.",
         });
       } catch (err: any) {
         triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
-        setFeedback({ type: 'error', message: err.message || 'Failed to send magic link.' });
+        setFeedback({
+          type: "error",
+          message: err.message || "Failed to send magic link.",
+        });
       } finally {
         setLoading(false);
       }
     }
   };
 
+  if (!networkChecked) {
+    return (
+      <AppScreen safeArea={true}>
+        <HomeSkeleton />
+      </AppScreen>
+    );
+  }
+
+  if (!isOnline) {
+    return (
+      <AppScreen safeArea={false}>
+        <NetworkStatusScreen
+          onRetry={async () => {
+            const state = await NetInfo.fetch();
+
+            const online =
+              state.isConnected === true && state.isInternetReachable !== false;
+
+            setIsOnline(online);
+          }}
+        />
+      </AppScreen>
+    );
+  }
   return (
     <View style={[styles.container, isDark && styles.containerDark]}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
-        enabled={Platform.OS === 'ios'}
+        enabled={Platform.OS === "ios"}
       >
         <ScrollView
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingTop: Math.max(insets.top + 16, 44), paddingBottom: Math.max(insets.bottom + 24, 32) },
+            {
+              paddingTop: Math.max(insets.top + 16, 44),
+              paddingBottom: Math.max(insets.bottom + 24, 32),
+            },
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           {/* Top Brand Logo Section */}
           <View style={styles.logoSection}>
-            <View style={[styles.logoWrapper, isDark && styles.logoWrapperDark]}>
+            <View
+              style={[styles.logoWrapper, isDark && styles.logoWrapperDark]}
+            >
               <Image
                 source={brandLogo}
                 style={styles.logoImage}
@@ -173,7 +252,7 @@ export default function LoginScreen() {
 
           {/* Heading */}
           <Text style={[styles.heading, isDark && styles.headingDark]}>
-            Log in with your phone{'\n'}number or account
+            Log in with your phone{"\n"}number or account
           </Text>
 
           {/* Inline Feedback Banner */}
@@ -181,13 +260,17 @@ export default function LoginScreen() {
             <View
               style={[
                 styles.feedbackBanner,
-                feedback.type === 'error' ? styles.feedbackBannerError : styles.feedbackBannerSuccess,
+                feedback.type === "error"
+                  ? styles.feedbackBannerError
+                  : styles.feedbackBannerSuccess,
               ]}
             >
               <Text
                 style={[
                   styles.feedbackBannerText,
-                  feedback.type === 'error' ? styles.feedbackErrorText : styles.feedbackSuccessText,
+                  feedback.type === "error"
+                    ? styles.feedbackErrorText
+                    : styles.feedbackSuccessText,
                 ]}
               >
                 {feedback.message}
@@ -202,7 +285,7 @@ export default function LoginScreen() {
               <TextInput
                 style={[styles.nativeInput, isDark && styles.nativeInputDark]}
                 placeholder="Phone number or email"
-                placeholderTextColor={isDark ? '#636366' : '#8E8E93'}
+                placeholderTextColor={isDark ? "#636366" : "#8E8E93"}
                 value={identifier}
                 onChangeText={setIdentifier}
                 autoCapitalize="none"
@@ -212,7 +295,7 @@ export default function LoginScreen() {
               />
               {identifier.length > 0 && (
                 <Pressable
-                  onPress={() => setIdentifier('')}
+                  onPress={() => setIdentifier("")}
                   hitSlop={10}
                   style={styles.clearBtn}
                 >
@@ -222,17 +305,26 @@ export default function LoginScreen() {
             </View>
 
             {/* Hairline Divider */}
-            {authMode === 'password' && (
-              <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
+            {authMode === "password" && (
+              <View
+                style={[
+                  styles.hairlineDivider,
+                  isDark && styles.hairlineDividerDark,
+                ]}
+              />
             )}
 
             {/* Field 2: Password */}
-            {authMode === 'password' && (
+            {authMode === "password" && (
               <View style={styles.inputRow}>
                 <TextInput
-                  style={[styles.nativeInput, { flex: 1 }, isDark && styles.nativeInputDark]}
+                  style={[
+                    styles.nativeInput,
+                    { flex: 1 },
+                    isDark && styles.nativeInputDark,
+                  ]}
                   placeholder="Password"
-                  placeholderTextColor={isDark ? '#636366' : '#8E8E93'}
+                  placeholderTextColor={isDark ? "#636366" : "#8E8E93"}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -246,8 +338,13 @@ export default function LoginScreen() {
                     hitSlop={8}
                     style={styles.eyeBtn}
                   >
-                    <Text style={[styles.eyeBtnText, isDark && styles.eyeBtnTextDark]}>
-                      {showPassword ? 'Hide' : 'Show'}
+                    <Text
+                      style={[
+                        styles.eyeBtnText,
+                        isDark && styles.eyeBtnTextDark,
+                      ]}
+                    >
+                      {showPassword ? "Hide" : "Show"}
                     </Text>
                   </Pressable>
                 )}
@@ -270,7 +367,9 @@ export default function LoginScreen() {
             >
               {saveLoginInfo && <Text style={styles.checkmarkIcon}>✓</Text>}
             </View>
-            <Text style={[styles.saveLoginText, isDark && styles.saveLoginTextDark]}>
+            <Text
+              style={[styles.saveLoginText, isDark && styles.saveLoginTextDark]}
+            >
               Save login info
             </Text>
           </Pressable>
@@ -301,13 +400,21 @@ export default function LoginScreen() {
 
           {/* Secondary Action Button ("Create new account") */}
           <Pressable
-            style={[styles.secondaryButton, isDark && styles.secondaryButtonDark]}
+            style={[
+              styles.secondaryButton,
+              isDark && styles.secondaryButtonDark,
+            ]}
             onPress={() => {
               triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-              router.push('/(auth)/signup' as any);
+              router.push("/(auth)/signup" as any);
             }}
           >
-            <Text style={[styles.secondaryButtonText, isDark && styles.secondaryButtonTextDark]}>
+            <Text
+              style={[
+                styles.secondaryButtonText,
+                isDark && styles.secondaryButtonTextDark,
+              ]}
+            >
               Create new account
             </Text>
           </Pressable>
@@ -317,7 +424,7 @@ export default function LoginScreen() {
             <Pressable
               onPress={() => {
                 triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-                router.push('/(auth)/forgot-password' as any);
+                router.push("/(auth)/forgot-password" as any);
               }}
               hitSlop={8}
             >
@@ -329,15 +436,20 @@ export default function LoginScreen() {
               style={styles.otpToggleBtn}
               onPress={() => {
                 triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-                setAuthMode(authMode === 'password' ? 'otp' : 'password');
+                setAuthMode(authMode === "password" ? "otp" : "password");
                 setFeedback(null);
               }}
               hitSlop={8}
             >
-              <Text style={[styles.otpToggleText, isDark && styles.otpToggleTextDark]}>
-                {authMode === 'password'
-                  ? 'Sign in with Magic Link / OTP'
-                  : 'Sign in with Password'}
+              <Text
+                style={[
+                  styles.otpToggleText,
+                  isDark && styles.otpToggleTextDark,
+                ]}
+              >
+                {authMode === "password"
+                  ? "Sign in with Magic Link / OTP"
+                  : "Sign in with Password"}
               </Text>
             </Pressable>
           </View>
@@ -350,57 +462,57 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   containerDark: {
-    backgroundColor: '#000000',
+    backgroundColor: "#000000",
   },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    justifyContent: 'center',
-    alignItems: 'stretch',
+    justifyContent: "center",
+    alignItems: "stretch",
     maxWidth: 500,
-    width: '100%',
-    alignSelf: 'center',
+    width: "100%",
+    alignSelf: "center",
   },
   logoSection: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 24,
   },
   logoWrapper: {
     width: 92,
     height: 92,
     borderRadius: 46,
-    overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#3B82F6',
+    overflow: "hidden",
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#3B82F6",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 6,
   },
   logoWrapperDark: {
-    backgroundColor: '#1C1C1E',
-    shadowColor: '#8B5CF6',
+    backgroundColor: "#1C1C1E",
+    shadowColor: "#8B5CF6",
     shadowOpacity: 0.4,
   },
   logoImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
     borderRadius: 46,
   },
   heading: {
     fontSize: 24,
-    fontWeight: '800',
-    color: '#000000',
-    textAlign: 'center',
+    fontWeight: "800",
+    color: "#000000",
+    textAlign: "center",
     lineHeight: 31,
     letterSpacing: -0.6,
     marginBottom: 28,
   },
   headingDark: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   feedbackBanner: {
     paddingVertical: 10,
@@ -409,70 +521,70 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   feedbackBannerError: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: "#FEE2E2",
   },
   feedbackBannerSuccess: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: "#DCFCE7",
   },
   feedbackBannerText: {
     fontSize: 13,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
     lineHeight: 18,
   },
   feedbackErrorText: {
-    color: '#DC2626',
+    color: "#DC2626",
   },
   feedbackSuccessText: {
-    color: '#16A34A',
+    color: "#16A34A",
   },
   inputGroup: {
-    backgroundColor: '#F2F4F7',
+    backgroundColor: "#F2F4F7",
     borderRadius: 16,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: 16,
   },
   inputGroupDark: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: "#1C1C1E",
   },
   inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     minHeight: 52,
   },
   nativeInput: {
     flex: 1,
     fontSize: 16,
-    fontWeight: '400',
-    color: '#000000',
+    fontWeight: "400",
+    color: "#000000",
     paddingVertical: 14,
-    ...(Platform.OS === 'web' ? { outlineStyle: 'none' as any } : {}),
+    ...(Platform.OS === "web" ? { outlineStyle: "none" as any } : {}),
   },
   nativeInputDark: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   hairlineDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: "#E5E7EB",
     marginLeft: 16,
   },
   hairlineDividerDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: "#2C2C2E",
   },
   clearBtn: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#D1D5DB',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#D1D5DB",
+    justifyContent: "center",
+    alignItems: "center",
     marginLeft: 8,
   },
   clearBtnText: {
     fontSize: 10,
-    color: '#4B5563',
-    fontWeight: '800',
+    color: "#4B5563",
+    fontWeight: "800",
   },
   eyeBtn: {
     paddingHorizontal: 8,
@@ -480,15 +592,15 @@ const styles = StyleSheet.create({
   },
   eyeBtnText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#6B7280',
+    fontWeight: "600",
+    color: "#6B7280",
   },
   eyeBtnTextDark: {
-    color: '#9CA3AF',
+    color: "#9CA3AF",
   },
   saveLoginRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 20,
     gap: 10,
   },
@@ -497,86 +609,86 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 6,
     borderWidth: 1.8,
-    borderColor: '#9CA3AF',
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderColor: "#9CA3AF",
+    backgroundColor: "transparent",
+    justifyContent: "center",
+    alignItems: "center",
   },
   checkboxDark: {
-    borderColor: '#4B5563',
+    borderColor: "#4B5563",
   },
   checkboxActive: {
-    backgroundColor: '#0084FF',
-    borderColor: '#0084FF',
+    backgroundColor: "#0084FF",
+    borderColor: "#0084FF",
   },
   checkmarkIcon: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 12,
-    fontWeight: '900',
+    fontWeight: "900",
   },
   saveLoginText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#4B5563',
+    fontWeight: "500",
+    color: "#4B5563",
   },
   saveLoginTextDark: {
-    color: '#9CA3AF',
+    color: "#9CA3AF",
   },
   primaryButton: {
-    backgroundColor: '#0084FF',
+    backgroundColor: "#0084FF",
     paddingVertical: 15,
     borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 12,
-    shadowColor: '#0084FF',
+    shadowColor: "#0084FF",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 3,
   },
   primaryButtonDisabled: {
-    backgroundColor: '#F2F4F7',
+    backgroundColor: "#F2F4F7",
     shadowOpacity: 0,
     elevation: 0,
   },
   primaryButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: -0.2,
   },
   primaryButtonTextDisabled: {
-    color: '#9CA3AF',
+    color: "#9CA3AF",
   },
   secondaryButton: {
-    backgroundColor: '#F2F4F7',
+    backgroundColor: "#F2F4F7",
     paddingVertical: 15,
     borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 24,
   },
   secondaryButtonDark: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: "#1C1C1E",
   },
   secondaryButtonText: {
-    color: '#000000',
+    color: "#000000",
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: -0.2,
   },
   secondaryButtonTextDark: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   footerSection: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: 14,
   },
   forgotPasswordLink: {
-    color: '#0084FF',
+    color: "#0084FF",
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
     letterSpacing: -0.2,
   },
   otpToggleBtn: {
@@ -585,10 +697,10 @@ const styles = StyleSheet.create({
   },
   otpToggleText: {
     fontSize: 13,
-    color: '#6B7280',
-    fontWeight: '500',
+    color: "#6B7280",
+    fontWeight: "500",
   },
   otpToggleTextDark: {
-    color: '#9CA3AF',
+    color: "#9CA3AF",
   },
 });

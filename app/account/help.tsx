@@ -8,11 +8,11 @@ import {
   Pressable,
   Alert,
   Linking,
+  useColorScheme,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
-import { colors } from '../../src/theme/colors';
 
 interface FaqItem {
   category: 'general' | 'whatsapp' | 'telegram' | 'voice' | 'security';
@@ -57,6 +57,9 @@ const CATEGORIES = [
 ];
 
 export default function HelpCenterScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [ticketSubject, setTicketSubject] = useState('');
@@ -64,9 +67,10 @@ export default function HelpCenterScreen() {
   const [ticketMessage, setTicketMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const filteredFaqs = selectedCategory === 'all'
-    ? FAQS
-    : FAQS.filter(f => f.category === selectedCategory);
+  const filteredFaqs =
+    selectedCategory === 'all'
+      ? FAQS
+      : FAQS.filter((f) => f.category === selectedCategory);
 
   const handleCategorySelect = (key: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -81,7 +85,9 @@ export default function HelpCenterScreen() {
 
   const handleOpenWhatsApp = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Linking.openURL('https://wa.me/919876543210?text=Hello%20GetAIPilot%20Support%20Team%2C%20I%20need%20assistance.');
+    Linking.openURL(
+      'https://wa.me/919876543210?text=Hello%20GetAIPilot%20Support%20Team%2C%20I%20need%20assistance.'
+    );
   };
 
   const handleOpenEmail = () => {
@@ -116,39 +122,95 @@ export default function HelpCenterScreen() {
   };
 
   return (
-    <AppScreen safeArea={false} backgroundColor="#000000">
+    <AppScreen safeArea={false} backgroundColor={isDark ? '#000000' : '#F8FAFC'}>
       <AppTopBar title="Help & Support" subtitle="Documentation, FAQs & Dedicated Engineering" showBack={true} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Quick Connect Inset Group */}
         <View style={styles.quickContactContainer}>
-          <Text style={styles.sectionHeader}>INSTANT CONNECT</Text>
+          <Text style={[styles.sectionHeader, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+            INSTANT CONNECT
+          </Text>
 
           <View style={styles.contactRow}>
-            <Pressable style={styles.contactCardWhatsApp} onPress={handleOpenWhatsApp}>
-              <View style={styles.contactIconCircleWhatsApp}>
+            <Pressable
+              style={[
+                styles.contactCardWhatsApp,
+                {
+                  backgroundColor: isDark ? '#052E16' : '#ECFDF5',
+                  borderColor: isDark ? '#10B98144' : '#A7F3D0',
+                },
+              ]}
+              onPress={handleOpenWhatsApp}
+            >
+              <View
+                style={[
+                  styles.contactIconCircleWhatsApp,
+                  { backgroundColor: isDark ? '#10B98122' : '#D1FAE5' },
+                ]}
+              >
                 <Text style={styles.contactIcon}>💬</Text>
               </View>
-              <Text style={styles.contactCardTitle}>WhatsApp Priority</Text>
-              <Text style={styles.contactCardSub}>24/7 Live Concierge</Text>
+              <Text style={[styles.contactCardTitle, { color: isDark ? '#FFFFFF' : '#065F46' }]}>
+                WhatsApp Priority
+              </Text>
+              <Text style={[styles.contactCardSub, { color: isDark ? '#9CA3AF' : '#047857' }]}>
+                24/7 Live Concierge
+              </Text>
             </Pressable>
 
-            <Pressable style={styles.contactCardEmail} onPress={handleOpenEmail}>
-              <View style={styles.contactIconCircleEmail}>
+            <Pressable
+              style={[
+                styles.contactCardEmail,
+                {
+                  backgroundColor: isDark ? '#0F172A' : '#EFF6FF',
+                  borderColor: isDark ? '#38BDF844' : '#BFDBFE',
+                },
+              ]}
+              onPress={handleOpenEmail}
+            >
+              <View
+                style={[
+                  styles.contactIconCircleEmail,
+                  { backgroundColor: isDark ? '#38BDF822' : '#DBEAFE' },
+                ]}
+              >
                 <Text style={styles.contactIcon}>✉️</Text>
               </View>
-              <Text style={styles.contactCardTitle}>Email Support</Text>
-              <Text style={styles.contactCardSub}>support@getaipilot.in</Text>
+              <Text style={[styles.contactCardTitle, { color: isDark ? '#FFFFFF' : '#1E40AF' }]}>
+                Email Support
+              </Text>
+              <Text style={[styles.contactCardSub, { color: isDark ? '#9CA3AF' : '#3B82F6' }]}>
+                support@getaipilot.in
+              </Text>
             </Pressable>
           </View>
 
-          <Pressable style={styles.docsBanner} onPress={handleOpenDocs}>
-            <View style={styles.docsIconCircle}>
+          <Pressable
+            style={[
+              styles.docsBanner,
+              {
+                backgroundColor: isDark ? '#0D1117' : '#FFFFFF',
+                borderColor: isDark ? '#1F242F' : '#E2E8F0',
+              },
+            ]}
+            onPress={handleOpenDocs}
+          >
+            <View
+              style={[
+                styles.docsIconCircle,
+                { backgroundColor: isDark ? '#8B5CF622' : '#EDE9FE' },
+              ]}
+            >
               <Text style={styles.docsIcon}>📖</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.docsTitle}>GetAIPilot Architecture & API Docs</Text>
-              <Text style={styles.docsSub}>Explore guides, REST APIs, Webhook schemas and samples</Text>
+              <Text style={[styles.docsTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                GetAIPilot Architecture & API Docs
+              </Text>
+              <Text style={[styles.docsSub, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+                Explore guides, REST APIs, Webhook schemas and samples
+              </Text>
             </View>
             <Text style={styles.chevron}>→</Text>
           </Pressable>
@@ -156,23 +218,50 @@ export default function HelpCenterScreen() {
 
         {/* FAQs Section */}
         <View style={styles.faqSection}>
-          <Text style={styles.sectionHeader}>KNOWLEDGE BASE</Text>
+          <Text style={[styles.sectionHeader, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+            KNOWLEDGE BASE
+          </Text>
 
           {/* Category Chips */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryScroll}
+          >
             {CATEGORIES.map((cat) => (
               <Pressable
                 key={cat.key}
                 style={[
                   styles.categoryChip,
-                  selectedCategory === cat.key && styles.categoryChipActive,
+                  {
+                    backgroundColor:
+                      selectedCategory === cat.key
+                        ? '#10B981'
+                        : isDark
+                        ? '#12151A'
+                        : '#FFFFFF',
+                    borderColor:
+                      selectedCategory === cat.key
+                        ? '#10B981'
+                        : isDark
+                        ? '#1F242F'
+                        : '#CBD5E1',
+                  },
                 ]}
                 onPress={() => handleCategorySelect(cat.key)}
               >
                 <Text
                   style={[
                     styles.categoryChipText,
-                    selectedCategory === cat.key && styles.categoryChipTextActive,
+                    {
+                      color:
+                        selectedCategory === cat.key
+                          ? '#000000'
+                          : isDark
+                          ? '#9CA3AF'
+                          : '#64748B',
+                      fontWeight: selectedCategory === cat.key ? '800' : '600',
+                    },
                   ]}
                 >
                   {cat.label}
@@ -188,18 +277,58 @@ export default function HelpCenterScreen() {
               return (
                 <Pressable
                   key={idx}
-                  style={[styles.faqCard, isExpanded && styles.faqCardExpanded]}
+                  style={[
+                    styles.faqCard,
+                    {
+                      backgroundColor: isExpanded
+                        ? isDark
+                          ? '#0B1416'
+                          : '#F0FDF4'
+                        : isDark
+                        ? '#0D1117'
+                        : '#FFFFFF',
+                      borderColor: isExpanded
+                        ? isDark
+                          ? '#10B98166'
+                          : '#10B981'
+                        : isDark
+                        ? '#1F242F'
+                        : '#E2E8F0',
+                    },
+                  ]}
                   onPress={() => handleToggleFaq(idx)}
                 >
                   <View style={styles.faqHeaderRow}>
-                    <Text style={styles.faqQuestion}>{faq.q}</Text>
-                    <View style={[styles.faqToggleIconBox, isExpanded && styles.faqToggleIconBoxExpanded]}>
+                    <Text style={[styles.faqQuestion, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                      {faq.q}
+                    </Text>
+                    <View
+                      style={[
+                        styles.faqToggleIconBox,
+                        {
+                          backgroundColor: isExpanded
+                            ? isDark
+                              ? '#10B98133'
+                              : '#D1FAE5'
+                            : isDark
+                            ? '#161B22'
+                            : '#F1F5F9',
+                        },
+                      ]}
+                    >
                       <Text style={styles.faqToggleSymbol}>{isExpanded ? '−' : '+'}</Text>
                     </View>
                   </View>
                   {isExpanded && (
-                    <View style={styles.faqAnswerBox}>
-                      <Text style={styles.faqAnswerText}>{faq.a}</Text>
+                    <View
+                      style={[
+                        styles.faqAnswerBox,
+                        { borderTopColor: isDark ? '#21262D' : '#E2E8F0' },
+                      ]}
+                    >
+                      <Text style={[styles.faqAnswerText, { color: isDark ? '#D1D5DB' : '#334155' }]}>
+                        {faq.a}
+                      </Text>
                     </View>
                   )}
                 </Pressable>
@@ -210,41 +339,103 @@ export default function HelpCenterScreen() {
 
         {/* Create Support Ticket */}
         <View style={styles.ticketSection}>
-          <Text style={styles.sectionHeader}>SUBMIT AN ENGINEERING TICKET</Text>
+          <Text style={[styles.sectionHeader, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+            SUBMIT AN ENGINEERING TICKET
+          </Text>
 
-          <View style={styles.ticketCard}>
-            <Text style={styles.inputLabel}>Issue Topic</Text>
+          <View
+            style={[
+              styles.ticketCard,
+              {
+                backgroundColor: isDark ? '#0D1117' : '#FFFFFF',
+                borderColor: isDark ? '#1F242F' : '#E2E8F0',
+              },
+            ]}
+          >
+            <Text style={[styles.inputLabel, { color: isDark ? '#D1D5DB' : '#334155' }]}>
+              Issue Topic
+            </Text>
             <View style={styles.topicRow}>
-              {['Technical Issue', 'Billing / Plan', 'Feature Request'].map((topic) => (
-                <Pressable
-                  key={topic}
-                  style={[styles.topicChip, ticketCategory === topic && styles.topicChipActive]}
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    setTicketCategory(topic);
-                  }}
-                >
-                  <Text style={[styles.topicChipText, ticketCategory === topic && styles.topicChipTextActive]}>
-                    {topic}
-                  </Text>
-                </Pressable>
-              ))}
+              {['Technical Issue', 'Billing / Plan', 'Feature Request'].map((topic) => {
+                const isSelected = ticketCategory === topic;
+                return (
+                  <Pressable
+                    key={topic}
+                    style={[
+                      styles.topicChip,
+                      {
+                        backgroundColor: isSelected
+                          ? isDark
+                            ? '#10B98122'
+                            : '#D1FAE5'
+                          : isDark
+                          ? '#161B22'
+                          : '#F8FAFC',
+                        borderColor: isSelected
+                          ? '#10B981'
+                          : isDark
+                          ? '#21262D'
+                          : '#CBD5E1',
+                      },
+                    ]}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setTicketCategory(topic);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.topicChipText,
+                        {
+                          color: isSelected
+                            ? '#10B981'
+                            : isDark
+                            ? '#9CA3AF'
+                            : '#64748B',
+                          fontWeight: isSelected ? '700' : '600',
+                        },
+                      ]}
+                    >
+                      {topic}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </View>
 
-            <Text style={styles.inputLabel}>Subject / Headline</Text>
+            <Text style={[styles.inputLabel, { color: isDark ? '#D1D5DB' : '#334155' }]}>
+              Subject / Headline
+            </Text>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: isDark ? '#161B22' : '#F8FAFC',
+                  borderColor: isDark ? '#21262D' : '#CBD5E1',
+                  color: isDark ? '#FFFFFF' : '#0F172A',
+                },
+              ]}
               placeholder="e.g. Webhook delivery failure on WhatsApp trigger"
-              placeholderTextColor="#6B7280"
+              placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
               value={ticketSubject}
               onChangeText={setTicketSubject}
             />
 
-            <Text style={styles.inputLabel}>Details & Error Messages</Text>
+            <Text style={[styles.inputLabel, { color: isDark ? '#D1D5DB' : '#334155' }]}>
+              Details & Error Messages
+            </Text>
             <TextInput
-              style={[styles.input, styles.textArea]}
+              style={[
+                styles.input,
+                styles.textArea,
+                {
+                  backgroundColor: isDark ? '#161B22' : '#F8FAFC',
+                  borderColor: isDark ? '#21262D' : '#CBD5E1',
+                  color: isDark ? '#FFFFFF' : '#0F172A',
+                },
+              ]}
               placeholder="Describe what occurred, payload details, or steps to reproduce..."
-              placeholderTextColor="#6B7280"
+              placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
               value={ticketMessage}
               onChangeText={setTicketMessage}
               multiline
@@ -274,7 +465,6 @@ const styles = StyleSheet.create({
   sectionHeader: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#9CA3AF',
     letterSpacing: 0.8,
     marginBottom: 10,
     textTransform: 'uppercase',
@@ -289,17 +479,13 @@ const styles = StyleSheet.create({
   },
   contactCardWhatsApp: {
     flex: 1,
-    backgroundColor: '#052E16',
     borderWidth: 1,
-    borderColor: '#10B98144',
     borderRadius: 20,
     padding: 16,
   },
   contactCardEmail: {
     flex: 1,
-    backgroundColor: '#0F172A',
     borderWidth: 1,
-    borderColor: '#38BDF844',
     borderRadius: 20,
     padding: 16,
   },
@@ -307,7 +493,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#10B98122',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
@@ -316,7 +501,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#38BDF822',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
@@ -327,19 +511,15 @@ const styles = StyleSheet.create({
   contactCardTitle: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#FFFFFF',
     marginBottom: 2,
   },
   contactCardSub: {
     fontSize: 11,
-    color: '#9CA3AF',
   },
   docsBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0D1117',
     borderWidth: 1,
-    borderColor: '#1F242F',
     borderRadius: 18,
     padding: 14,
     gap: 12,
@@ -348,7 +528,6 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 10,
-    backgroundColor: '#8B5CF622',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -358,11 +537,9 @@ const styles = StyleSheet.create({
   docsTitle: {
     fontSize: 13.5,
     fontWeight: '800',
-    color: '#FFFFFF',
   },
   docsSub: {
     fontSize: 11,
-    color: '#9CA3AF',
     marginTop: 2,
   },
   chevron: {
@@ -378,39 +555,22 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   categoryChip: {
-    backgroundColor: '#12151A',
     borderWidth: 1,
-    borderColor: '#1F242F',
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 99,
   },
-  categoryChipActive: {
-    backgroundColor: '#10B981',
-    borderColor: '#10B981',
-  },
   categoryChipText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#9CA3AF',
-  },
-  categoryChipTextActive: {
-    color: '#000000',
-    fontWeight: '800',
   },
   faqList: {
     gap: 10,
   },
   faqCard: {
-    backgroundColor: '#0D1117',
     borderWidth: 1,
-    borderColor: '#1F242F',
     borderRadius: 16,
     padding: 16,
-  },
-  faqCardExpanded: {
-    borderColor: '#10B98166',
-    backgroundColor: '#0B1416',
   },
   faqHeaderRow: {
     flexDirection: 'row',
@@ -421,7 +581,6 @@ const styles = StyleSheet.create({
   faqQuestion: {
     fontSize: 13.5,
     fontWeight: '700',
-    color: '#FFFFFF',
     flex: 1,
     lineHeight: 18,
   },
@@ -429,12 +588,8 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: '#161B22',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  faqToggleIconBoxExpanded: {
-    backgroundColor: '#10B98133',
   },
   faqToggleSymbol: {
     fontSize: 15,
@@ -445,27 +600,22 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#21262D',
   },
   faqAnswerText: {
     fontSize: 12.5,
-    color: '#D1D5DB',
     lineHeight: 18,
   },
   ticketSection: {
     marginBottom: 20,
   },
   ticketCard: {
-    backgroundColor: '#0D1117',
     borderWidth: 1,
-    borderColor: '#1F242F',
     borderRadius: 20,
     padding: 18,
   },
   inputLabel: {
     fontSize: 11.5,
     fontWeight: '700',
-    color: '#D1D5DB',
     marginBottom: 8,
   },
   topicRow: {
@@ -475,35 +625,21 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   topicChip: {
-    backgroundColor: '#161B22',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#21262D',
-  },
-  topicChipActive: {
-    borderColor: '#10B981',
-    backgroundColor: '#10B98122',
   },
   topicChipText: {
     fontSize: 11.5,
-    color: '#9CA3AF',
     fontWeight: '600',
   },
-  topicChipTextActive: {
-    color: '#10B981',
-    fontWeight: '700',
-  },
   input: {
-    backgroundColor: '#161B22',
     borderWidth: 1,
-    borderColor: '#21262D',
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 13,
-    color: '#FFFFFF',
     marginBottom: 16,
   },
   textArea: {

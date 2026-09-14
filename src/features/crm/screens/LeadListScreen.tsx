@@ -8,6 +8,7 @@ import {
   Pressable,
   RefreshControl,
   ActivityIndicator,
+  useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -31,6 +32,9 @@ const STATUS_TABS: Array<{ key: string; label: string }> = [
 ];
 
 export const LeadListScreen: React.FC<LeadListScreenProps> = ({ onSelectLead, onBack }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
@@ -48,23 +52,29 @@ export const LeadListScreen: React.FC<LeadListScreenProps> = ({ onSelectLead, on
   const totalCount = data?.total_count || leads.length;
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           {onBack ? (
-            <Pressable style={styles.backBtn} onPress={onBack} hitSlop={8}>
-              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+            <Pressable
+              style={[styles.backBtn, { backgroundColor: isDark ? '#1E2028' : '#F1F5F9' }]}
+              onPress={onBack}
+              hitSlop={8}
+            >
+              <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
             </Pressable>
           ) : null}
           <View>
             <View style={styles.titleRow}>
-              <Text style={styles.title}>Leads & Contacts</Text>
-              <View style={styles.countBadge}>
+              <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Leads & Contacts</Text>
+              <View style={[styles.countBadge, { backgroundColor: isDark ? '#262A34' : '#E2E8F0' }]}>
                 <Text style={styles.countText}>{totalCount}</Text>
               </View>
             </View>
-            <Text style={styles.subtitle}>Prospects & customer directory</Text>
+            <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+              Prospects & customer directory
+            </Text>
           </View>
         </View>
 
@@ -80,31 +90,35 @@ export const LeadListScreen: React.FC<LeadListScreenProps> = ({ onSelectLead, on
 
       {/* Search Bar & Filter Button */}
       <View style={styles.searchRow}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={16} color="#9CA3AF" />
+        <View style={[styles.searchBar, { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' }]}>
+          <Ionicons name="search" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: isDark ? '#FFFFFF' : '#0F172A' }]}
             placeholder="Search by name, company, email..."
-            placeholderTextColor="#6B7280"
+            placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
             value={search}
             onChangeText={setSearch}
             clearButtonMode="while-editing"
           />
           {search ? (
             <Pressable onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={16} color="#9CA3AF" />
+              <Ionicons name="close-circle" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
             </Pressable>
           ) : null}
         </View>
 
         <Pressable
-          style={[styles.filterBtn, (statusFilter !== 'all' || assigneeFilter !== 'all') && styles.filterBtnActive]}
+          style={[
+            styles.filterBtn,
+            { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+            (statusFilter !== 'all' || assigneeFilter !== 'all') && styles.filterBtnActive,
+          ]}
           onPress={() => setShowFilterSheet(true)}
         >
           <Ionicons
             name="options-outline"
             size={18}
-            color={statusFilter !== 'all' || assigneeFilter !== 'all' ? '#3B82F6' : '#9CA3AF'}
+            color={statusFilter !== 'all' || assigneeFilter !== 'all' ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B'}
           />
         </Pressable>
       </View>
@@ -116,10 +130,20 @@ export const LeadListScreen: React.FC<LeadListScreenProps> = ({ onSelectLead, on
           return (
             <Pressable
               key={tab.key}
-              style={[styles.tabChip, isSelected && styles.tabChipSelected]}
+              style={[
+                styles.tabChip,
+                { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+                isSelected && (isDark ? styles.tabChipSelectedDark : styles.tabChipSelectedLight),
+              ]}
               onPress={() => setStatusFilter(tab.key)}
             >
-              <Text style={[styles.tabText, isSelected && styles.tabTextSelected]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: isDark ? '#9CA3AF' : '#64748B' },
+                  isSelected && styles.tabTextSelected,
+                ]}
+              >
                 {tab.label}
               </Text>
             </Pressable>
@@ -131,13 +155,13 @@ export const LeadListScreen: React.FC<LeadListScreenProps> = ({ onSelectLead, on
       {isLoading && !data ? (
         <View style={styles.loaderBox}>
           <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={styles.loaderText}>Loading leads...</Text>
+          <Text style={[styles.loaderText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Loading leads...</Text>
         </View>
       ) : leads.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="people-outline" size={48} color="#4B5563" />
-          <Text style={styles.emptyTitle}>No matching records</Text>
-          <Text style={styles.emptySubtitle}>
+          <Ionicons name="people-outline" size={48} color={isDark ? '#4B5563' : '#CBD5E1'} />
+          <Text style={[styles.emptyTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>No matching records</Text>
+          <Text style={[styles.emptySubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
             {search
               ? `No contacts found matching "${search}"`
               : 'Add your first lead to start building your sales pipeline.'}
@@ -309,17 +333,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#262A34',
   },
-  tabChipSelected: {
+  tabChipSelectedDark: {
     backgroundColor: 'rgba(59, 130, 246, 0.2)',
     borderColor: '#3B82F6',
   },
+  tabChipSelectedLight: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#3B82F6',
+  },
   tabText: {
-    color: '#9CA3AF',
     fontSize: 12,
     fontWeight: '500',
   },
   tabTextSelected: {
-    color: '#60A5FA',
+    color: '#3B82F6',
     fontWeight: '700',
   },
   listContent: {
@@ -332,7 +359,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loaderText: {
-    color: '#9CA3AF',
     fontSize: 13,
     marginTop: 12,
   },
@@ -343,13 +369,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   emptyTitle: {
-    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
     marginTop: 12,
   },
   emptySubtitle: {
-    color: '#9CA3AF',
     fontSize: 13,
     textAlign: 'center',
     marginTop: 6,

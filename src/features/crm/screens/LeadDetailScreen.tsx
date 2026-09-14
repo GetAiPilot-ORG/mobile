@@ -9,6 +9,7 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,16 +31,19 @@ interface LeadDetailScreenProps {
 }
 
 const STATUS_CONFIG: Partial<Record<ContactStatus, { label: string; bg: string; text: string; dot: string }>> = {
-  lead: { label: 'New Lead', bg: 'rgba(59, 130, 246, 0.15)', text: '#60A5FA', dot: '#3B82F6' },
-  prospect: { label: 'Prospect', bg: 'rgba(245, 158, 11, 0.15)', text: '#FBBF24', dot: '#F59E0B' },
-  customer: { label: 'Customer', bg: 'rgba(16, 185, 129, 0.15)', text: '#34D399', dot: '#10B981' },
-  churned: { label: 'Churned', bg: 'rgba(239, 68, 68, 0.15)', text: '#F87171', dot: '#EF4444' },
-  open: { label: 'Open', bg: 'rgba(59, 130, 246, 0.15)', text: '#60A5FA', dot: '#3B82F6' },
-  active: { label: 'Active', bg: 'rgba(16, 185, 129, 0.15)', text: '#34D399', dot: '#10B981' },
-  archived: { label: 'Archived', bg: 'rgba(156, 163, 175, 0.15)', text: '#9CA3AF', dot: '#6B7280' },
+  lead: { label: 'New Lead', bg: 'rgba(59, 130, 246, 0.15)', text: '#3B82F6', dot: '#3B82F6' },
+  prospect: { label: 'Prospect', bg: 'rgba(245, 158, 11, 0.15)', text: '#D97706', dot: '#F59E0B' },
+  customer: { label: 'Customer', bg: 'rgba(16, 185, 129, 0.15)', text: '#059669', dot: '#10B981' },
+  churned: { label: 'Churned', bg: 'rgba(239, 68, 68, 0.15)', text: '#DC2626', dot: '#EF4444' },
+  open: { label: 'Open', bg: 'rgba(59, 130, 246, 0.15)', text: '#3B82F6', dot: '#3B82F6' },
+  active: { label: 'Active', bg: 'rgba(16, 185, 129, 0.15)', text: '#059669', dot: '#10B981' },
+  archived: { label: 'Archived', bg: 'rgba(156, 163, 175, 0.15)', text: '#6B7280', dot: '#6B7280' },
 };
 
 export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBack }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const { data: lead, isLoading, refetch } = useLead(leadId);
   const updateLead = useUpdateLead();
   const deleteLead = useDeleteLead();
@@ -102,35 +106,43 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
 
   if (isLoading || !lead) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]}>
         <View style={styles.loaderBox}>
           <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={styles.loaderText}>Loading contact details...</Text>
+          <Text style={[styles.loaderText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Loading contact details...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
       {/* Top Header */}
-      <View style={styles.header}>
-        <Pressable style={styles.iconBtn} onPress={onBack} hitSlop={8}>
-          <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+      <View style={[styles.header, { borderBottomColor: isDark ? '#1E2028' : '#E2E8F0' }]}>
+        <Pressable
+          style={[styles.iconBtn, { backgroundColor: isDark ? '#181A20' : '#F1F5F9' }]}
+          onPress={onBack}
+          hitSlop={8}
+        >
+          <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
         </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1}>
+        <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]} numberOfLines={1}>
           {lead.name || `${lead.first_name} ${lead.last_name}`}
         </Text>
-        <Pressable style={styles.iconBtn} onPress={handleDelete} hitSlop={8}>
+        <Pressable
+          style={[styles.iconBtn, { backgroundColor: isDark ? '#181A20' : '#F1F5F9' }]}
+          onPress={handleDelete}
+          hitSlop={8}
+        >
           <Ionicons name="trash-outline" size={18} color="#EF4444" />
         </Pressable>
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Profile Card */}
-        <View style={styles.profileCard}>
+        <View style={[styles.profileCard, isDark ? styles.cardDark : styles.cardLight]}>
           <View style={styles.profileRow}>
-            <View style={styles.avatar}>
+            <View style={[styles.avatar, { backgroundColor: isDark ? '#262A34' : '#E2E8F0' }]}>
               <Text style={styles.avatarText}>
                 {(lead.first_name?.[0] || 'L').toUpperCase()}
                 {(lead.last_name?.[0] || '').toUpperCase()}
@@ -138,11 +150,11 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
             </View>
 
             <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>
+              <Text style={[styles.profileName, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
                 {lead.name || `${lead.first_name} ${lead.last_name}`}
               </Text>
               {lead.company || lead.job_title ? (
-                <Text style={styles.profileCompany}>
+                <Text style={[styles.profileCompany, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
                   {[lead.job_title, lead.company].filter(Boolean).join(' • ')}
                 </Text>
               ) : null}
@@ -154,19 +166,23 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
                   const cfg = STATUS_CONFIG[s] || {
                     label: s,
                     bg: 'rgba(59, 130, 246, 0.15)',
-                    text: '#60A5FA',
+                    text: '#3B82F6',
                     dot: '#3B82F6',
                   };
                   return (
                     <Pressable
                       key={s}
-                      style={[styles.statusTab, isCurrent && { backgroundColor: cfg.bg, borderColor: cfg.dot }]}
+                      style={[
+                        styles.statusTab,
+                        { backgroundColor: isDark ? '#121316' : '#F8FAFC', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+                        isCurrent && { backgroundColor: cfg.bg, borderColor: cfg.dot },
+                      ]}
                       onPress={() => handleStatusChange(s)}
                     >
                       <Text
                         style={[
                           styles.statusTabText,
-                          isCurrent ? { color: cfg.text, fontWeight: '700' } : { color: '#6B7280' },
+                          isCurrent ? { color: cfg.text, fontWeight: '700' } : { color: isDark ? '#6B7280' : '#94A3B8' },
                         ]}
                       >
                         {cfg.label}
@@ -179,14 +195,14 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
           </View>
 
           {/* Quick Action Toolbar */}
-          <View style={styles.actionToolbar}>
+          <View style={[styles.actionToolbar, { borderTopColor: isDark ? '#222630' : '#F1F5F9' }]}>
             <Pressable
               style={[styles.toolBtn, !lead.phone && styles.toolBtnDisabled]}
               onPress={handleCall}
               disabled={!lead.phone}
             >
-              <Ionicons name="call" size={16} color={lead.phone ? '#10B981' : '#4B5563'} />
-              <Text style={[styles.toolBtnText, !lead.phone && styles.toolBtnTextDisabled]}>Call</Text>
+              <Ionicons name="call" size={16} color={lead.phone ? '#10B981' : isDark ? '#4B5563' : '#CBD5E1'} />
+              <Text style={[styles.toolBtnText, { color: isDark ? '#D1D5DB' : '#334155' }, !lead.phone && styles.toolBtnTextDisabled]}>Call</Text>
             </Pressable>
 
             <Pressable
@@ -194,29 +210,29 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
               onPress={handleEmail}
               disabled={!lead.email}
             >
-              <Ionicons name="mail" size={16} color={lead.email ? '#3B82F6' : '#4B5563'} />
-              <Text style={[styles.toolBtnText, !lead.email && styles.toolBtnTextDisabled]}>Email</Text>
+              <Ionicons name="mail" size={16} color={lead.email ? '#3B82F6' : isDark ? '#4B5563' : '#CBD5E1'} />
+              <Text style={[styles.toolBtnText, { color: isDark ? '#D1D5DB' : '#334155' }, !lead.email && styles.toolBtnTextDisabled]}>Email</Text>
             </Pressable>
 
             <Pressable style={styles.toolBtn} onPress={() => setShowAddTask(true)}>
               <Ionicons name="checkbox-outline" size={16} color="#F59E0B" />
-              <Text style={styles.toolBtnText}>+ Task</Text>
+              <Text style={[styles.toolBtnText, { color: isDark ? '#D1D5DB' : '#334155' }]}>+ Task</Text>
             </Pressable>
 
             <Pressable style={styles.toolBtn} onPress={() => setShowAddDeal(true)}>
               <Ionicons name="briefcase-outline" size={16} color="#8B5CF6" />
-              <Text style={styles.toolBtnText}>+ Deal</Text>
+              <Text style={[styles.toolBtnText, { color: isDark ? '#D1D5DB' : '#334155' }]}>+ Deal</Text>
             </Pressable>
 
             <Pressable style={styles.toolBtn} onPress={() => setShowLogActivity(true)}>
               <Ionicons name="add-circle-outline" size={16} color="#EC4899" />
-              <Text style={styles.toolBtnText}>Log</Text>
+              <Text style={[styles.toolBtnText, { color: isDark ? '#D1D5DB' : '#334155' }]}>Log</Text>
             </Pressable>
           </View>
         </View>
 
         {/* Navigation Tabs */}
-        <View style={styles.tabNav}>
+        <View style={[styles.tabNav, { borderBottomColor: isDark ? '#1E2028' : '#E2E8F0' }]}>
           {[
             { key: 'overview', label: 'Overview', count: null },
             { key: 'deals', label: 'Deals', count: deals.length },
@@ -230,7 +246,13 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
                 style={[styles.navTabItem, isSelected && styles.navTabItemSelected]}
                 onPress={() => setActiveTab(tab.key as any)}
               >
-                <Text style={[styles.navTabText, isSelected && styles.navTabTextSelected]}>
+                <Text
+                  style={[
+                    styles.navTabText,
+                    { color: isDark ? '#9CA3AF' : '#64748B' },
+                    isSelected && (isDark ? styles.navTabTextSelectedDark : styles.navTabTextSelectedLight),
+                  ]}
+                >
                   {tab.label} {tab.count !== null ? `(${tab.count})` : ''}
                 </Text>
               </Pressable>
@@ -243,46 +265,46 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
           {activeTab === 'overview' && (
             <View style={styles.overviewContainer}>
               {/* Contact Details Card */}
-              <View style={styles.infoCard}>
-                <Text style={styles.infoCardTitle}>Contact Information</Text>
+              <View style={[styles.infoCard, isDark ? styles.cardDark : styles.cardLight]}>
+                <Text style={[styles.infoCardTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Contact Information</Text>
 
                 <View style={styles.infoRow}>
-                  <Ionicons name="call-outline" size={16} color="#9CA3AF" />
+                  <Ionicons name="call-outline" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
                   <View style={styles.infoCol}>
-                    <Text style={styles.infoLabel}>Phone</Text>
-                    <Text style={styles.infoValue}>{lead.phone || 'Not provided'}</Text>
+                    <Text style={[styles.infoLabel, { color: isDark ? '#6B7280' : '#94A3B8' }]}>Phone</Text>
+                    <Text style={[styles.infoValue, { color: isDark ? '#E5E7EB' : '#1E293B' }]}>{lead.phone || 'Not provided'}</Text>
                   </View>
                 </View>
 
                 <View style={styles.infoRow}>
-                  <Ionicons name="mail-outline" size={16} color="#9CA3AF" />
+                  <Ionicons name="mail-outline" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
                   <View style={styles.infoCol}>
-                    <Text style={styles.infoLabel}>Email</Text>
-                    <Text style={styles.infoValue}>{lead.email || 'Not provided'}</Text>
+                    <Text style={[styles.infoLabel, { color: isDark ? '#6B7280' : '#94A3B8' }]}>Email</Text>
+                    <Text style={[styles.infoValue, { color: isDark ? '#E5E7EB' : '#1E293B' }]}>{lead.email || 'Not provided'}</Text>
                   </View>
                 </View>
 
                 <View style={styles.infoRow}>
-                  <Ionicons name="business-outline" size={16} color="#9CA3AF" />
+                  <Ionicons name="business-outline" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
                   <View style={styles.infoCol}>
-                    <Text style={styles.infoLabel}>Company</Text>
-                    <Text style={styles.infoValue}>{lead.company || 'Not provided'}</Text>
+                    <Text style={[styles.infoLabel, { color: isDark ? '#6B7280' : '#94A3B8' }]}>Company</Text>
+                    <Text style={[styles.infoValue, { color: isDark ? '#E5E7EB' : '#1E293B' }]}>{lead.company || 'Not provided'}</Text>
                   </View>
                 </View>
 
                 <View style={styles.infoRow}>
-                  <Ionicons name="person-circle-outline" size={16} color="#9CA3AF" />
+                  <Ionicons name="person-circle-outline" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
                   <View style={styles.infoCol}>
-                    <Text style={styles.infoLabel}>Assigned Representative</Text>
-                    <Text style={styles.infoValue}>{lead.assignee?.name || 'Unassigned'}</Text>
+                    <Text style={[styles.infoLabel, { color: isDark ? '#6B7280' : '#94A3B8' }]}>Assigned Representative</Text>
+                    <Text style={[styles.infoValue, { color: isDark ? '#E5E7EB' : '#1E293B' }]}>{lead.assignee?.name || 'Unassigned'}</Text>
                   </View>
                 </View>
               </View>
 
               {/* Notes Card */}
-              <View style={styles.infoCard}>
-                <Text style={styles.infoCardTitle}>Notes & Context</Text>
-                <Text style={styles.notesText}>
+              <View style={[styles.infoCard, isDark ? styles.cardDark : styles.cardLight]}>
+                <Text style={[styles.infoCardTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Notes & Context</Text>
+                <Text style={[styles.notesText, { color: isDark ? '#D1D5DB' : '#334155' }]}>
                   {lead.notes || 'No general notes logged for this contact.'}
                 </Text>
               </View>
@@ -292,16 +314,19 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
           {activeTab === 'deals' && (
             <View>
               <View style={styles.subHeader}>
-                <Text style={styles.subHeaderTitle}>Linked Deals</Text>
-                <Pressable style={styles.subHeaderBtn} onPress={() => setShowAddDeal(true)}>
+                <Text style={[styles.subHeaderTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Linked Deals</Text>
+                <Pressable
+                  style={[styles.subHeaderBtn, { backgroundColor: isDark ? '#262A34' : '#EFF6FF' }]}
+                  onPress={() => setShowAddDeal(true)}
+                >
                   <Text style={styles.subHeaderBtnText}>+ New Deal</Text>
                 </Pressable>
               </View>
 
               {deals.length === 0 ? (
-                <View style={styles.emptyTabCard}>
-                  <Ionicons name="briefcase-outline" size={32} color="#6B7280" />
-                  <Text style={styles.emptyTabText}>No deals associated with this contact yet.</Text>
+                <View style={[styles.emptyTabCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <Ionicons name="briefcase-outline" size={32} color={isDark ? '#6B7280' : '#94A3B8'} />
+                  <Text style={[styles.emptyTabText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>No deals associated with this contact yet.</Text>
                 </View>
               ) : (
                 deals.map((d) => (
@@ -314,16 +339,19 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
           {activeTab === 'tasks' && (
             <View>
               <View style={styles.subHeader}>
-                <Text style={styles.subHeaderTitle}>Pending Follow-ups & Tasks</Text>
-                <Pressable style={styles.subHeaderBtn} onPress={() => setShowAddTask(true)}>
+                <Text style={[styles.subHeaderTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Pending Follow-ups & Tasks</Text>
+                <Pressable
+                  style={[styles.subHeaderBtn, { backgroundColor: isDark ? '#262A34' : '#EFF6FF' }]}
+                  onPress={() => setShowAddTask(true)}
+                >
                   <Text style={styles.subHeaderBtnText}>+ New Task</Text>
                 </Pressable>
               </View>
 
               {tasks.length === 0 ? (
-                <View style={styles.emptyTabCard}>
-                  <Ionicons name="checkbox-outline" size={32} color="#6B7280" />
-                  <Text style={styles.emptyTabText}>No open tasks for this contact.</Text>
+                <View style={[styles.emptyTabCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <Ionicons name="checkbox-outline" size={32} color={isDark ? '#6B7280' : '#94A3B8'} />
+                  <Text style={[styles.emptyTabText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>No open tasks for this contact.</Text>
                 </View>
               ) : (
                 tasks.map((t) => (
@@ -340,11 +368,11 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
           {activeTab === 'timeline' && (
             <View>
               {/* Quick Note Input Bar */}
-              <View style={styles.quickNoteBar}>
+              <View style={[styles.quickNoteBar, { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' }]}>
                 <TextInput
-                  style={styles.quickNoteInput}
+                  style={[styles.quickNoteInput, { color: isDark ? '#FFFFFF' : '#0F172A' }]}
                   placeholder="Add a quick note or update..."
-                  placeholderTextColor="#6B7280"
+                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                   value={quickNote}
                   onChangeText={setQuickNote}
                 />
@@ -358,9 +386,9 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
               </View>
 
               {activities.length === 0 ? (
-                <View style={styles.emptyTabCard}>
-                  <Ionicons name="time-outline" size={32} color="#6B7280" />
-                  <Text style={styles.emptyTabText}>No activity history logged yet.</Text>
+                <View style={[styles.emptyTabCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <Ionicons name="time-outline" size={32} color={isDark ? '#6B7280' : '#94A3B8'} />
+                  <Text style={[styles.emptyTabText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>No activity history logged yet.</Text>
                 </View>
               ) : (
                 activities.map((act, idx) => (
@@ -416,7 +444,6 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0F1015',
   },
   header: {
     flexDirection: 'row',
@@ -425,10 +452,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E2028',
   },
   headerTitle: {
-    color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '700',
     flex: 1,
@@ -438,18 +463,28 @@ const styles = StyleSheet.create({
   iconBtn: {
     padding: 8,
     borderRadius: 8,
-    backgroundColor: '#181A20',
   },
   scroll: {
     flex: 1,
   },
   profileCard: {
-    backgroundColor: '#181A20',
     margin: 16,
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
+  },
+  cardDark: {
+    backgroundColor: '#181A20',
     borderColor: '#262A34',
+  },
+  cardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
   profileRow: {
     flexDirection: 'row',
@@ -459,7 +494,6 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 16,
-    backgroundColor: '#262A34',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 14,
@@ -473,13 +507,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   profileName: {
-    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
     letterSpacing: -0.3,
   },
   profileCompany: {
-    color: '#9CA3AF',
     fontSize: 13,
     marginTop: 2,
     marginBottom: 8,
@@ -493,9 +525,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
-    backgroundColor: '#121316',
     borderWidth: 1,
-    borderColor: '#262A34',
   },
   statusTabText: {
     fontSize: 11,
@@ -505,7 +535,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#222630',
   },
   toolBtn: {
     flex: 1,
@@ -518,7 +547,6 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   toolBtnText: {
-    color: '#D1D5DB',
     fontSize: 11,
     fontWeight: '600',
   },
@@ -529,7 +557,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E2028',
     marginBottom: 16,
   },
   navTabItem: {
@@ -542,12 +569,15 @@ const styles = StyleSheet.create({
     borderBottomColor: '#3B82F6',
   },
   navTabText: {
-    color: '#9CA3AF',
     fontSize: 14,
     fontWeight: '500',
   },
-  navTabTextSelected: {
+  navTabTextSelectedDark: {
     color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  navTabTextSelectedLight: {
+    color: '#0F172A',
     fontWeight: '700',
   },
   tabContent: {
@@ -558,14 +588,11 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   infoCard: {
-    backgroundColor: '#181A20',
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#262A34',
   },
   infoCardTitle: {
-    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
     marginBottom: 14,
@@ -580,17 +607,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   infoLabel: {
-    color: '#6B7280',
     fontSize: 11,
   },
   infoValue: {
-    color: '#E5E7EB',
     fontSize: 14,
     fontWeight: '500',
     marginTop: 2,
   },
   notesText: {
-    color: '#D1D5DB',
     fontSize: 13,
     lineHeight: 20,
   },
@@ -601,33 +625,28 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   subHeaderTitle: {
-    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
   },
   subHeaderBtn: {
-    backgroundColor: '#262A34',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
   },
   subHeaderBtnText: {
-    color: '#60A5FA',
+    color: '#3B82F6',
     fontSize: 12,
     fontWeight: '600',
   },
   emptyTabCard: {
-    backgroundColor: '#181A20',
     borderRadius: 14,
     padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#262A34',
     borderStyle: 'dashed',
   },
   emptyTabText: {
-    color: '#9CA3AF',
     fontSize: 13,
     marginTop: 8,
     textAlign: 'center',
@@ -636,16 +655,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#181A20',
     borderRadius: 12,
     padding: 8,
     borderWidth: 1,
-    borderColor: '#262A34',
     marginBottom: 16,
   },
   quickNoteInput: {
     flex: 1,
-    color: '#FFFFFF',
     fontSize: 13,
     paddingHorizontal: 8,
   },
@@ -663,7 +679,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loaderText: {
-    color: '#9CA3AF',
     fontSize: 13,
     marginTop: 12,
   },

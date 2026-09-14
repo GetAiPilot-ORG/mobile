@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CRMContact, ContactStatus } from '../types';
@@ -34,6 +35,9 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
   onSubmit,
   isLoading,
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -96,15 +100,19 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.modalOverlay}
       >
-        <View style={styles.modalContent}>
+        <View style={[styles.modalContent, isDark ? styles.modalContentDark : styles.modalContentLight]}>
           {/* Header */}
           <View style={styles.header}>
             <View>
-              <Text style={styles.headerTitle}>Add New Lead</Text>
-              <Text style={styles.headerSubtitle}>Capture contact and qualification details</Text>
+              <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Add New Lead</Text>
+              <Text style={[styles.headerSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Capture contact and qualification details</Text>
             </View>
-            <Pressable style={styles.closeBtn} onPress={handleClose} hitSlop={8}>
-              <Ionicons name="close" size={20} color="#9CA3AF" />
+            <Pressable
+              style={[styles.closeBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              onPress={handleClose}
+              hitSlop={8}
+            >
+              <Ionicons name="close" size={20} color={isDark ? '#9CA3AF' : '#64748B'} />
             </Pressable>
           </View>
 
@@ -119,21 +127,21 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
             {/* Name Row */}
             <View style={styles.row}>
               <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                <Text style={styles.label}>First Name *</Text>
+                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>First Name *</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                   placeholder="e.g. John"
-                  placeholderTextColor="#6B7280"
+                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                   value={firstName}
                   onChangeText={setFirstName}
                 />
               </View>
               <View style={[styles.inputGroup, { flex: 1 }]}>
-                <Text style={styles.label}>Last Name</Text>
+                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Last Name</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                   placeholder="e.g. Doe"
-                  placeholderTextColor="#6B7280"
+                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                   value={lastName}
                   onChangeText={setLastName}
                 />
@@ -142,11 +150,11 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
 
             {/* Contact Row */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Phone Number</Text>
+              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Phone Number</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                 placeholder="+1 (555) 000-0000"
-                placeholderTextColor="#6B7280"
+                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                 keyboardType="phone-pad"
                 value={phone}
                 onChangeText={setPhone}
@@ -154,11 +162,11 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email Address</Text>
+              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Email Address</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                 placeholder="john@example.com"
-                placeholderTextColor="#6B7280"
+                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
@@ -169,21 +177,21 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
             {/* Company & Role */}
             <View style={styles.row}>
               <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                <Text style={styles.label}>Company</Text>
+                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Company</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                   placeholder="Acme Corp"
-                  placeholderTextColor="#6B7280"
+                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                   value={company}
                   onChangeText={setCompany}
                 />
               </View>
               <View style={[styles.inputGroup, { flex: 1 }]}>
-                <Text style={styles.label}>Job Title</Text>
+                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Job Title</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                   placeholder="VP Sales"
-                  placeholderTextColor="#6B7280"
+                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                   value={jobTitle}
                   onChangeText={setJobTitle}
                 />
@@ -192,17 +200,22 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
 
             {/* Status Selector */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Status</Text>
+              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Status</Text>
               <View style={styles.statusRow}>
                 {STATUS_OPTIONS.map((opt) => (
                   <Pressable
                     key={opt.key}
-                    style={[styles.statusOption, status === opt.key && styles.statusOptionSelected]}
+                    style={[
+                      styles.statusOption,
+                      { backgroundColor: isDark ? '#222630' : '#F1F5F9' },
+                      status === opt.key && (isDark ? styles.statusOptionSelectedDark : styles.statusOptionSelectedLight),
+                    ]}
                     onPress={() => setStatus(opt.key)}
                   >
                     <Text
                       style={[
                         styles.statusOptionText,
+                        { color: isDark ? '#9CA3AF' : '#64748B' },
                         status === opt.key && styles.statusOptionTextSelected,
                       ]}
                     >
@@ -216,14 +229,22 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
             {/* Assignee Selector */}
             {members && members.length > 0 ? (
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Assign to Team Member</Text>
+                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Assign to Team Member</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.memberScroll}>
                   <Pressable
-                    style={[styles.memberChip, assignedTo === '' && styles.memberChipSelected]}
+                    style={[
+                      styles.memberChip,
+                      { backgroundColor: isDark ? '#222630' : '#F1F5F9' },
+                      assignedTo === '' && (isDark ? styles.memberChipSelectedDark : styles.memberChipSelectedLight),
+                    ]}
                     onPress={() => setAssignedTo('')}
                   >
                     <Text
-                      style={[styles.memberChipText, assignedTo === '' && styles.memberChipTextSelected]}
+                      style={[
+                        styles.memberChipText,
+                        { color: isDark ? '#9CA3AF' : '#64748B' },
+                        assignedTo === '' && styles.memberChipTextSelected,
+                      ]}
                     >
                       Unassigned
                     </Text>
@@ -231,12 +252,17 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
                   {members.map((m) => (
                     <Pressable
                       key={m.id}
-                      style={[styles.memberChip, assignedTo === m.id && styles.memberChipSelected]}
+                      style={[
+                        styles.memberChip,
+                        { backgroundColor: isDark ? '#222630' : '#F1F5F9' },
+                        assignedTo === m.id && (isDark ? styles.memberChipSelectedDark : styles.memberChipSelectedLight),
+                      ]}
                       onPress={() => setAssignedTo(m.id)}
                     >
                       <Text
                         style={[
                           styles.memberChipText,
+                          { color: isDark ? '#9CA3AF' : '#64748B' },
                           assignedTo === m.id && styles.memberChipTextSelected,
                         ]}
                       >
@@ -250,11 +276,11 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
 
             {/* Initial Notes */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Initial Notes / Source</Text>
+              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Initial Notes / Source</Text>
               <TextInput
-                style={[styles.input, styles.textArea]}
+                style={[styles.input, isDark ? styles.inputDark : styles.inputLight, styles.textArea]}
                 placeholder="How did this lead contact us? Any specific requirements..."
-                placeholderTextColor="#6B7280"
+                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                 multiline
                 numberOfLines={3}
                 value={notes}
@@ -265,8 +291,12 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
 
           {/* Footer Actions */}
           <View style={styles.modalFooter}>
-            <Pressable style={styles.cancelBtn} onPress={handleClose} disabled={isLoading}>
-              <Text style={styles.cancelBtnText}>Cancel</Text>
+            <Pressable
+              style={[styles.cancelBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              onPress={handleClose}
+              disabled={isLoading}
+            >
+              <Text style={[styles.cancelBtnText, { color: isDark ? '#D1D5DB' : '#475569' }]}>Cancel</Text>
             </Pressable>
             <Pressable style={styles.submitBtn} onPress={handleSubmit} disabled={isLoading}>
               {isLoading ? (
@@ -285,11 +315,10 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#181A20',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
@@ -297,7 +326,19 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 36 : 24,
     maxHeight: '88%',
     borderWidth: 1,
+  },
+  modalContentDark: {
+    backgroundColor: '#181A20',
     borderColor: '#262A34',
+  },
+  modalContentLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 8,
   },
   header: {
     flexDirection: 'row',
@@ -306,20 +347,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   headerTitle: {
-    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
     letterSpacing: -0.3,
   },
   headerSubtitle: {
-    color: '#9CA3AF',
     fontSize: 12,
     marginTop: 2,
   },
   closeBtn: {
     padding: 6,
     borderRadius: 8,
-    backgroundColor: '#262A34',
   },
   errorBox: {
     flexDirection: 'row',
@@ -345,20 +383,26 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   label: {
-    color: '#D1D5DB',
     fontSize: 12,
     fontWeight: '600',
     marginBottom: 6,
   },
   input: {
-    backgroundColor: '#121316',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#262A34',
     paddingHorizontal: 12,
     paddingVertical: 10,
-    color: '#FFFFFF',
     fontSize: 14,
+  },
+  inputDark: {
+    backgroundColor: '#121316',
+    borderColor: '#262A34',
+    color: '#FFFFFF',
+  },
+  inputLight: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#E2E8F0',
+    color: '#0F172A',
   },
   textArea: {
     minHeight: 70,
@@ -372,47 +416,51 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#222630',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'transparent',
   },
-  statusOptionSelected: {
+  statusOptionSelectedDark: {
     backgroundColor: 'rgba(59, 130, 246, 0.2)',
     borderColor: '#3B82F6',
   },
+  statusOptionSelectedLight: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#3B82F6',
+  },
   statusOptionText: {
-    color: '#9CA3AF',
     fontSize: 12,
     fontWeight: '600',
   },
   statusOptionTextSelected: {
-    color: '#60A5FA',
+    color: '#3B82F6',
+    fontWeight: '700',
   },
   memberScroll: {
     flexDirection: 'row',
-    gap: 8,
   },
   memberChip: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#222630',
     marginRight: 8,
     borderWidth: 1,
     borderColor: 'transparent',
   },
-  memberChipSelected: {
+  memberChipSelectedDark: {
     backgroundColor: 'rgba(59, 130, 246, 0.2)',
     borderColor: '#3B82F6',
   },
+  memberChipSelectedLight: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#3B82F6',
+  },
   memberChipText: {
-    color: '#9CA3AF',
     fontSize: 12,
     fontWeight: '500',
   },
   memberChipTextSelected: {
-    color: '#60A5FA',
+    color: '#3B82F6',
     fontWeight: '600',
   },
   modalFooter: {
@@ -423,12 +471,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#262A34',
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelBtnText: {
-    color: '#D1D5DB',
     fontSize: 14,
     fontWeight: '600',
   },

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useColorScheme, View } from 'react-native';
 import { CRMHomeScreen } from '../../../src/features/crm/screens/CRMHomeScreen';
 import { LeadListScreen } from '../../../src/features/crm/screens/LeadListScreen';
 import { LeadDetailScreen } from '../../../src/features/crm/screens/LeadDetailScreen';
@@ -64,6 +64,8 @@ const CRM_TABS: ProductTabItem[] = [
 ];
 
 export default function CRMIndexRoute() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const [activeTab, setActiveTab] = useState<CRMTab>('home');
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
@@ -78,7 +80,7 @@ export default function CRMIndexRoute() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]}>
       <View style={styles.screenContainer}>
         {activeTab === 'home' && (
           <CRMHomeScreen
@@ -137,7 +139,6 @@ export default function CRMIndexRoute() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F1015',
   },
   screenContainer: {
     flex: 1,

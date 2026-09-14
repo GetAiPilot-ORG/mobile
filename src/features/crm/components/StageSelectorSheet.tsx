@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, Modal, Pressable } from 'react-native';
+import { StyleSheet, Text, View, Modal, Pressable, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { DealStage } from '../types';
 
@@ -25,15 +25,33 @@ export const StageSelectorSheet: React.FC<StageSelectorSheetProps> = ({
   onSelectStage,
   onClose,
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <View style={styles.sheetContent}>
-          <View style={styles.dragHandle} />
+      <Pressable
+        style={[styles.backdrop, { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0.5)' }]}
+        onPress={onClose}
+      >
+        <View
+          style={[
+            styles.sheetContent,
+            {
+              backgroundColor: isDark ? '#181A20' : '#FFFFFF',
+              borderColor: isDark ? '#262A34' : '#E2E8F0',
+            },
+          ]}
+        >
+          <View style={[styles.dragHandle, { backgroundColor: isDark ? '#374151' : '#CBD5E1' }]} />
           <View style={styles.header}>
-            <Text style={styles.title}>Update Pipeline Stage</Text>
-            <Pressable style={styles.closeBtn} onPress={onClose} hitSlop={8}>
-              <Ionicons name="close" size={20} color="#9CA3AF" />
+            <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Update Pipeline Stage</Text>
+            <Pressable
+              style={[styles.closeBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              onPress={onClose}
+              hitSlop={8}
+            >
+              <Ionicons name="close" size={20} color={isDark ? '#9CA3AF' : '#64748B'} />
             </Pressable>
           </View>
 
@@ -43,7 +61,15 @@ export const StageSelectorSheet: React.FC<StageSelectorSheetProps> = ({
               return (
                 <Pressable
                   key={s.key}
-                  style={[styles.stageItem, isSelected && styles.stageItemSelected]}
+                  style={[
+                    styles.stageItem,
+                    {
+                      backgroundColor: isSelected
+                        ? isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.08)'
+                        : isDark ? '#121316' : '#F8FAFC',
+                      borderColor: isSelected ? '#3B82F6' : isDark ? '#262A34' : '#E2E8F0',
+                    },
+                  ]}
                   onPress={() => {
                     onSelectStage(s.key);
                     onClose();
@@ -51,10 +77,18 @@ export const StageSelectorSheet: React.FC<StageSelectorSheetProps> = ({
                 >
                   <View style={[styles.colorDot, { backgroundColor: s.color }]} />
                   <View style={styles.stageInfo}>
-                    <Text style={[styles.stageLabel, isSelected && { color: s.color, fontWeight: '700' }]}>
+                    <Text
+                      style={[
+                        styles.stageLabel,
+                        {
+                          color: isSelected ? s.color : isDark ? '#FFFFFF' : '#0F172A',
+                          fontWeight: isSelected ? '700' : '600',
+                        },
+                      ]}
+                    >
                       {s.label}
                     </Text>
-                    <Text style={styles.stageDesc}>{s.desc}</Text>
+                    <Text style={[styles.stageDesc, { color: isDark ? '#9CA3AF' : '#64748B' }]}>{s.desc}</Text>
                   </View>
                   {isSelected ? <Ionicons name="checkmark-circle" size={20} color={s.color} /> : null}
                 </Pressable>

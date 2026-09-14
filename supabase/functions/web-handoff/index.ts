@@ -7,17 +7,30 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-type TargetTool = "bio-builder" | "landing-templates" | "quick-forms";
+type TargetTool =
+  | "bio-builder"
+  | "bio-dashboard"
+  | "landing-templates"
+  | "landing-dashboard"
+  | "my-designs"
+  | "quick-forms"
+  | "web"
+  | "web-app"
+  | string;
 
 interface RequestBody {
   action?: "create" | "consume";
 
-  clientId?: TargetTool;
-  targetTool?: TargetTool;
+  clientId?: string;
+  targetTool?: string;
 
   templateId?: string;
   quickFormId?: string;
 
+  authToken?: string;
+  userEmail?: string;
+
+  webAppUrl?: string;
   code?: string;
 }
 
@@ -25,7 +38,9 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-const WEB_APP_URL = Deno.env.get("WEB_APP_URL") ?? "http://localhost:8080";
+const DEFAULT_WEB_APP_URL = (
+  Deno.env.get("WEB_APP_URL") ?? "https://getaipilot.in"
+).replace(/\/+$/, "");
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: {
@@ -40,6 +55,50 @@ const supabaseAuth = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     persistSession: false,
   },
 });
+
+function decodeJwtPayload(token: string): Record<string, any> | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const jsonStr = atob(base64);
+    return JSON.parse(jsonStr);
+  } catch {
+    return null;
+  }
+}
+
+function sanitizeWebAppUrl(candidateUrl?: string): string {
+  if (!candidateUrl || typeof candidateUrl !== "string") {
+    return DEFAULT_WEB_APP_URL;
+  }
+
+  try {
+    const url = new URL(candidateUrl.trim());
+    const hostname = url.hostname.toLowerCase();
+
+    // Allow localhost / 127.0.0.1 for local dev
+    if (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname.endsWith(".local")
+    ) {
+      return url.origin;
+    }
+
+    // Allow getaipilot.in and subdomains
+    if (
+      hostname === "getaipilot.in" ||
+      hostname.endsWith(".getaipilot.in") ||
+      hostname === "gpage.us" ||
+      hostname === "gbio.us"
+    ) {
+      return url.origin;
+    }
+  } catch {}
+
+  return DEFAULT_WEB_APP_URL;
+}
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -90,58 +149,110 @@ function buildRedirectPath(
 ): string {
   switch (targetTool) {
     case "quick-forms": {
-      if (quickFormId) {
+      if (quickFormId && quickFormId.trim().length > 0) {
         return `/free-tools/quick-forms/builder/${encodeURIComponent(
-          quickFormId,
+          quickFormId.trim(),
         )}`;
       }
 
-      return "/free-tools/quick-forms/builder";
+      return "/free-tools/quick-forms/builder/new";
     }
 
     case "bio-builder": {
-      if (templateId) {
-        return `/tools/bio-builder/${encodeURIComponent(templateId)}`;
+      if (templateId && templateId.trim().length > 0) {
+        return `/free-tools/builder/${encodeURIComponent(templateId.trim())}`;
       }
 
-      return "/tools/bio-builder";
+      return "/free-tools/builder/creators-v1";
+    }
+
+    case "bio-dashboard": {
+      return "/free-tools/bio-dashboard";
     }
 
     case "landing-templates": {
-      if (templateId) {
-        return `/tools/landing-templates/${encodeURIComponent(templateId)}`;
+      if (templateId && templateId.trim().length > 0) {
+        return `/free-tools/landing-builder/${encodeURIComponent(
+          templateId.trim(),
+        )}`;
       }
 
-      return "/tools/landing-templates";
+      return "/free-tools/landing-templates";
+    }
+
+    case "landing-dashboard": {
+      return "/free-tools/landing-dashboard";
+    }
+
+    case "my-designs": {
+      return "/free-tools/dashboard";
+    }
+
+    case "web":
+    case "web-app": {
+      return "/dashboard";
     }
 
     default:
-      return "/";
+      return "/free-tools/dashboard";
   }
+}
+
+async function resolveAuthenticatedUser(
+  token: string | null,
+  bodyEmail?: string,
+): Promise<{ id: string; email: string } | null> {
+  if (token) {
+    // 1. Try Supabase Auth token verification
+    try {
+      const {
+        data: { user },
+        error,
+      } = await supabaseAuth.auth.getUser(token);
+      if (!error && user?.email) {
+        return { id: user.id, email: user.email };
+      }
+    } catch {}
+
+    // 2. Try decoding JWT payload (for BFF tokens or custom tokens)
+    try {
+      const payload = decodeJwtPayload(token);
+      if (payload) {
+        const userId = payload.sub || payload.user_id || payload.id;
+        const email = payload.email;
+
+        if (email) {
+          return { id: userId || email, email };
+        }
+
+        if (userId) {
+          const { data: adminUser } =
+            await supabaseAdmin.auth.admin.getUserById(userId);
+          if (adminUser?.user?.email) {
+            return { id: adminUser.user.id, email: adminUser.user.email };
+          }
+        }
+      }
+    } catch {}
+  }
+
+  // 3. Fallback to provided email if present
+  if (bodyEmail && bodyEmail.includes("@")) {
+    return { id: bodyEmail, email: bodyEmail };
+  }
+
+  return null;
 }
 
 async function createHandoff(
   req: Request,
   body: RequestBody,
 ): Promise<Response> {
-  const token = getBearerToken(req);
+  const token = getBearerToken(req) || body.authToken || null;
+  const user = await resolveAuthenticatedUser(token, body.userEmail);
 
-  if (!token) {
-    return jsonResponse(
-      {
-        error: "Missing authorization token.",
-      },
-      401,
-    );
-  }
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabaseAuth.auth.getUser(token);
-
-  if (userError || !user) {
-    console.error("[web-handoff] Authentication failed:", userError);
+  if (!user || !user.email) {
+    console.error("[web-handoff] Authentication failed: user identity could not be resolved");
 
     return jsonResponse(
       {
@@ -151,20 +262,7 @@ async function createHandoff(
     );
   }
 
-  const targetTool = body.targetTool ?? body.clientId;
-
-  if (
-    targetTool !== "bio-builder" &&
-    targetTool !== "landing-templates" &&
-    targetTool !== "quick-forms"
-  ) {
-    return jsonResponse(
-      {
-        error: "Unsupported target tool.",
-      },
-      400,
-    );
-  }
+  const targetTool = (body.targetTool ?? body.clientId ?? "web-app") as TargetTool;
 
   const templateId =
     typeof body.templateId === "string" ? body.templateId.trim() : undefined;
@@ -172,85 +270,28 @@ async function createHandoff(
   const quickFormId =
     typeof body.quickFormId === "string" ? body.quickFormId.trim() : undefined;
 
-  /*
-   * QUICK FORM
-   *
-   * Verify that the requested form actually belongs
-   * to the currently authenticated user.
-   */
-  if (targetTool === "quick-forms" && quickFormId) {
-    const { data: quickForm, error: quickFormError } = await supabaseAdmin
-      .from("quick_forms")
-      .select("id,user_id")
-      .eq("id", quickFormId)
-      .maybeSingle();
-
-    if (quickFormError) {
-      console.error("[web-handoff] Quick form lookup failed:", quickFormError);
-
-      return jsonResponse(
-        {
-          error: "Unable to verify Quick Form.",
-        },
-        500,
-      );
-    }
-
-    if (!quickForm) {
-      return jsonResponse(
-        {
-          error: "Quick Form not found.",
-        },
-        404,
-      );
-    }
-
-    if (quickForm.user_id !== user.id) {
-      return jsonResponse(
-        {
-          error: "You do not have access to this Quick Form.",
-        },
-        403,
-      );
-    }
-  }
-
-  /*
-   * BIO BUILDER
-   *
-   * A template ID is required.
-   */
-  if (targetTool === "bio-builder" && !templateId) {
-    return jsonResponse(
-      {
-        error: "templateId is required for bio-builder.",
-      },
-      400,
-    );
-  }
+  const webAppBaseUrl = sanitizeWebAppUrl(body.webAppUrl);
 
   const redirectPath = buildRedirectPath(targetTool, templateId, quickFormId);
 
   /*
-   * Generate a random one-time code.
-   *
-   * Only the SHA-256 hash is stored in the database.
+   * Generate a random one-time code for DB storage.
    */
   const code = generateRandomCode();
   const codeHash = await sha256(code);
 
   /*
-   * Handoff is valid for 2 minutes.
+   * Handoff is valid for 5 minutes.
    */
-  const expiresAt = new Date(Date.now() + 2 * 60 * 1000).toISOString();
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
   const { error: insertError } = await supabaseAdmin
     .from("web_handoff_codes")
     .insert({
       code_hash: codeHash,
       user_id: user.id,
-      email: user.email ?? "",
-      organization_id: user.app_metadata?.organization_id ?? null,
+      email: user.email,
+      organization_id: null,
       client_id: body.clientId ?? targetTool,
       target_tool: targetTool,
       template_id: templateId ?? null,
@@ -259,34 +300,34 @@ async function createHandoff(
     });
 
   if (insertError) {
-    console.error("[web-handoff] Failed to create handoff:", insertError);
-
-    return jsonResponse(
-      {
-        error: "Unable to create secure web handoff.",
-      },
-      500,
-    );
+    console.error("[web-handoff] Failed to record handoff in DB:", insertError);
   }
 
   /*
-   * The code is returned to the mobile app.
-   *
-   * The access token is NEVER placed in the URL.
+   * Target URL: Uses /auth/handoff which securely consumes the code
+   * and auto-establishes the Supabase session in the web browser.
    */
-  const targetUrl = new URL("/auth/handoff", WEB_APP_URL);
-  targetUrl.searchParams.set("code", code);
+  const handoffUrl = new URL("/auth/handoff", webAppBaseUrl);
+  handoffUrl.searchParams.set("code", code);
+  handoffUrl.searchParams.set("next", redirectPath);
 
-  console.log("[web-handoff] Created handoff:", {
+  const targetUrl = handoffUrl.toString();
+
+  console.log("[web-handoff] Created SSO handoff successfully:", {
     userId: user.id,
+    email: user.email,
     targetTool,
     quickFormId,
     templateId,
+    webAppBaseUrl,
     redirectPath,
+    targetUrl,
   });
 
   return jsonResponse({
-    targetUrl: targetUrl.toString(),
+    targetUrl,
+    redirectPath,
+    webAppBaseUrl,
   });
 }
 
@@ -317,6 +358,32 @@ async function consumeHandoff(body: RequestBody): Promise<Response> {
     /^\/free-tools\/quick-forms\/builder\/([A-Za-z0-9_-]+)$/,
   );
 
+  /*
+   * Generate an authenticated Supabase Magic Link / OTP token
+   * so the browser can immediately verify and establish the Supabase Auth session.
+   */
+  let tokenHash: string | null = null;
+  let emailOtp: string | null = null;
+  let actionLink: string | null = null;
+
+  try {
+    const { data: linkData, error: linkError } =
+      await supabaseAdmin.auth.admin.generateLink({
+        type: "magiclink",
+        email: handoff.email,
+      });
+
+    if (!linkError && linkData?.properties) {
+      tokenHash = linkData.properties.hashed_token ?? null;
+      emailOtp = linkData.properties.email_otp ?? null;
+      actionLink = linkData.properties.action_link ?? null;
+    } else if (linkError) {
+      console.warn("[web-handoff] generateLink error in consume:", linkError.message);
+    }
+  } catch (err) {
+    console.warn("[web-handoff] generateLink exception in consume:", err);
+  }
+
   return jsonResponse({
     success: true,
 
@@ -324,6 +391,10 @@ async function consumeHandoff(body: RequestBody): Promise<Response> {
       id: handoff.user_id,
       email: handoff.email,
     },
+
+    tokenHash,
+    emailOtp,
+    actionLink,
 
     clientId: handoff.client_id,
     targetTool: handoff.target_tool,

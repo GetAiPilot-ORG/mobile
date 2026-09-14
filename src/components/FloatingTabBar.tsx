@@ -27,11 +27,6 @@ const TAB_CONFIG: Record<string, TabItemConfig> = {
     activeIcon: 'home',
     inactiveIcon: 'home-outline',
   },
-  products: {
-    label: 'Products',
-    activeIcon: 'flash',
-    inactiveIcon: 'flash-outline',
-  },
   inbox: {
     label: 'Inbox',
     activeIcon: 'chatbubbles',
@@ -64,11 +59,11 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   // Bottom floating offset based on safe area
   const bottomOffset = Math.max(insets.bottom + 6, 20);
 
-  // Filter visible routes
+  // Filter visible routes: strictly the 4 main tabs (Home, Inbox, Tools, Activity)
   const visibleRoutes = state.routes.filter((route: any) => {
     const descriptor = descriptors[route.key];
     const options = descriptor ? descriptor.options : {};
-    return options.href !== null && !!TAB_CONFIG[route.name];
+    return options.href !== null && !!TAB_CONFIG[route.name] && route.name !== 'products';
   });
 
   const currentRouteName = state.routes[state.index]?.name;

@@ -35,334 +35,35 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const [activeTab, setActiveTab] = useState<TrackerTab>('connect');
+  const [activeTab, setActiveTab] = useState<TrackerTab>('joins');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Exactly 7 connected bots matching web screenshot from tg.getaipilot.in
-  const DEFAULT_BOTS: TelegramTrackerBot[] = [
-    {
-      id: 'bot-1',
-      bot_name: 'Trading Guru India',
-      bot_username: 'tradingguruindia_bot',
-      status: 'ACTIVE',
-      channel_id: '1506044308',
-      channel_name: 'TRADING GURU SEBI REGISTERED',
-      channel_icon_url: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=150&auto=format&fit=crop&q=80',
-      bot_icon_url: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=150&auto=format&fit=crop&q=80',
-      created_at: '2026-03-18T11:54:37.033+00:00',
-    },
-    {
-      id: 'bot-2',
-      bot_name: 'ZERO TO HERO ( TRADING )',
-      bot_username: 'zero_to_hero_tradbot',
-      status: 'ACTIVE',
-      channel_id: '2268545703',
-      channel_name: 'ZERO TO HERO ( TRADING )',
-      channel_icon_url: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=150&auto=format&fit=crop&q=80',
-      bot_icon_url: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=150&auto=format&fit=crop&q=80',
-      created_at: '2026-04-03T09:29:46.912+00:00',
-    },
-    {
-      id: 'bot-3',
-      bot_name: 'testMBbot',
-      bot_username: 'testestmb_bot',
-      status: 'ACTIVE',
-      channel_id: null,
-      channel_name: null,
-      channel_icon_url: null,
-      bot_icon_url: null,
-      created_at: '2026-04-07T09:49:00.203605+00:00',
-    },
-    {
-      id: 'bot-4',
-      bot_name: 'Trade with Mohit Agrawal',
-      bot_username: 'Tradewith_MohitAgrawal_bot',
-      status: 'ACTIVE',
-      channel_id: null,
-      channel_name: null,
-      channel_icon_url: null,
-      bot_icon_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      created_at: '2026-03-30T06:39:31.037+00:00',
-    },
-    {
-      id: 'bot-5',
-      bot_name: 'gjgjg',
-      bot_username: 'jgjngutg_bot',
-      status: 'ACTIVE',
-      channel_id: null,
-      channel_name: null,
-      channel_icon_url: null,
-      bot_icon_url: null,
-      created_at: '2026-05-21T07:07:52.851377+00:00',
-    },
-    {
-      id: 'bot-6',
-      bot_name: 'testing',
-      bot_username: 'ghknig_bot',
-      status: 'ACTIVE',
-      channel_id: null,
-      channel_name: null,
-      channel_icon_url: null,
-      bot_icon_url: null,
-      created_at: '2026-05-21T09:32:54.10851+00:00',
-    },
-    {
-      id: 'bot-7',
-      bot_name: 'GAP SEBI Report Bot',
-      bot_username: 'ResearchReport233_bot',
-      status: 'ACTIVE',
-      channel_id: '-1002439531055',
-      channel_name: 'TEST BOT CHANNEL',
-      channel_icon_url: null,
-      bot_icon_url: null,
-      created_at: '2026-08-07T06:14:38.718706+00:00',
-    },
-  ];
-
-  const DEFAULT_LINKS: TelegramTrackerLink[] = [
-    {
-      id: 'bab7d8c7-bc9b-4aa5-9c89-af80ebf27a38',
-      title: 'Premuimchannel',
-      bot_username: 'GapAutoPilotBot',
-      channel_name: 'Subs Manager',
-      source_type: 'Direct Link',
-      bot_starts: 35,
-      joined: 24,
-      conversion_rate: 68,
-      deep_link_url: 'https://t.me/GapAutoPilotBot?start=premuimchannel',
-      created_at: '2026-08-22T10:39:28.137421+00:00',
-    },
-    {
-      id: '63785fbc-03ce-44a0-87e3-c98202f12be8',
-      title: 'hello',
-      bot_username: 'GapAutoPilotBot',
-      channel_name: 'New new gameX',
-      source_type: 'Direct Link',
-      bot_starts: 12,
-      joined: 8,
-      conversion_rate: 66,
-      deep_link_url: 'https://t.me/GapAutoPilotBot?start=hello',
-      created_at: '2026-04-30T12:00:02.743535+00:00',
-    },
-    {
-      id: '76ffaf4d-290d-47fb-9501-0dbb42319dc0',
-      title: 'testing',
-      bot_username: 'GapAutoPilotBot',
-      channel_name: 'New new gameX',
-      source_type: 'Auto-Fetched from Telegram',
-      bot_starts: 5,
-      joined: 3,
-      conversion_rate: 60,
-      deep_link_url: 'https://t.me/GapAutoPilotBot?start=testing',
-      created_at: '2026-08-18T10:04:28.338061+00:00',
-    },
-    {
-      id: '74bccf6a-720e-4c9e-abd1-2603bee2e9cf',
-      title: 'oj3o4htioi4',
-      bot_username: 'GapAutoPilotBot',
-      channel_name: 'New new gameX',
-      source_type: 'Auto-Fetched from Telegram',
-      bot_starts: 435,
-      joined: 157,
-      conversion_rate: 36,
-      deep_link_url: 'https://t.me/GapAutoPilotBot?start=oj3o4htioi4',
-      created_at: '2026-08-19T16:19:51.863098+00:00',
-    },
-  ];
-
-  const DEFAULT_DASHBOARD: TelegramTrackerDashboardData = {
+  const EMPTY_DASHBOARD: TelegramTrackerDashboardData = {
     kpis: {
-      totalJoins: 193,
+      totalJoins: 0,
       todaysJoins: 0,
       thisMonthJoins: 0,
-      botStarts: 498,
-      pendingJoins: 297,
-      conversionRate: 39,
+      botStarts: 0,
+      pendingJoins: 0,
+      conversionRate: 0,
     },
     period: {
-      startDate: 'Sep 04, 2026',
-      endDate: 'Sep 11, 2026',
+      startDate: '',
+      endDate: '',
       periodJoins: 0,
-      totalTracked: 114050,
-      allTimeActive: 153,
+      totalTracked: 0,
+      allTimeActive: 0,
     },
-    channels: [
-      {
-        channel_id: 'chan-1',
-        channel_name: 'Unknown Channel',
-        total_links: 11,
-        period_joins: 0,
-        joined: 0,
-        left: 0,
-        all_active: 0,
-        links: [
-          { id: 'l1', title: 'Auto Join Request Link', joins: 0 },
-          { id: 'l2', title: 'Auto Join Request Link', joins: 0 },
-          { id: 'l3', title: 'Primary Channel Link', joins: 0 },
-          { id: 'l4', title: 'asdf', joins: 0 },
-        ],
-      },
-      {
-        channel_id: 'chan-2',
-        channel_name: 'testing',
-        total_links: 1,
-        period_joins: 0,
-        joined: 0,
-        left: 0,
-        all_active: 0,
-        links: [{ id: 'l5', title: 'MBU', joins: 0 }],
-      },
-      {
-        channel_id: 'chan-3',
-        channel_name: 'ZERO TO HERO ( TRADING )',
-        total_links: 1,
-        period_joins: 0,
-        joined: 157,
-        left: 4,
-        all_active: 153,
-        links: [{ id: 'l6', title: 'zero to hero 03/04/2026', joins: 157 }],
-      },
-      {
-        channel_id: 'chan-4',
-        channel_name: 'TRADING GURU SEBI REGISTERED',
-        total_links: 1,
-        period_joins: 0,
-        joined: 42,
-        left: 2,
-        all_active: 40,
-        links: [{ id: 'l7', title: 'Trading Guru', joins: 42 }],
-      },
-    ],
-    newUsers: [
-      {
-        id: 'u-1',
-        telegram_user_id: '1061985331',
-        name: 'Ritesh',
-        channel_name: 'Trading Guru',
-        bot_username: 'tradingguru02_bot',
-        time_ago: '5min ago',
-        status: 'Bot Start',
-        created_at: new Date(Date.now() - 5 * 60000).toISOString(),
-      },
-      {
-        id: 'u-2',
-        telegram_user_id: '6492128140',
-        name: '145118',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '5min ago',
-        status: 'Active',
-        created_at: new Date(Date.now() - 5 * 60000).toISOString(),
-      },
-      {
-        id: 'u-3',
-        telegram_user_id: '6492128140',
-        name: 'Natha',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '5min ago',
-        status: 'Leave',
-        created_at: new Date(Date.now() - 5 * 60000).toISOString(),
-      },
-      {
-        id: 'u-4',
-        telegram_user_id: '5389658253',
-        name: 'Mariyappan',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '7min ago',
-        status: 'Active',
-        created_at: new Date(Date.now() - 7 * 60000).toISOString(),
-      },
-      {
-        id: 'u-5',
-        telegram_user_id: '5275608620',
-        name: 'kanmani',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '7min ago',
-        status: 'Leave',
-        created_at: new Date(Date.now() - 7 * 60000).toISOString(),
-      },
-      {
-        id: 'u-6',
-        telegram_user_id: '7081700680',
-        name: 'beer a',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '7min ago',
-        status: 'Pending',
-        created_at: new Date(Date.now() - 7 * 60000).toISOString(),
-      },
-      {
-        id: 'u-7',
-        telegram_user_id: '13717278243',
-        name: 'Ali',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '8min ago',
-        status: 'Leave',
-        created_at: new Date(Date.now() - 8 * 60000).toISOString(),
-      },
-      {
-        id: 'u-8',
-        telegram_user_id: '984084400',
-        name: 'Anand',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '8min ago',
-        status: 'Active',
-        created_at: new Date(Date.now() - 8 * 60000).toISOString(),
-      },
-      {
-        id: 'u-9',
-        telegram_user_id: '7421258654',
-        name: 'Shanthayya',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '8min ago',
-        status: 'Bot Start',
-        created_at: new Date(Date.now() - 8 * 60000).toISOString(),
-      },
-      {
-        id: 'u-10',
-        telegram_user_id: '7683948764',
-        name: 'Anand G D',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '8min ago',
-        status: 'Active',
-        created_at: new Date(Date.now() - 8 * 60000).toISOString(),
-      },
-      {
-        id: 'u-11',
-        telegram_user_id: '1592653589',
-        name: 'Jothi',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '9min ago',
-        status: 'Active',
-        created_at: new Date(Date.now() - 9 * 60000).toISOString(),
-      },
-      {
-        id: 'u-12',
-        telegram_user_id: '890333712',
-        name: 'pradee',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '9min ago',
-        status: 'Leave',
-        created_at: new Date(Date.now() - 9 * 60000).toISOString(),
-      },
-    ],
-    totalUsersCount: 498,
+    channels: [],
+    newUsers: [],
+    totalUsersCount: 0,
   };
 
-  // Data states initialized with instant live dataset
-  const [bots, setBots] = useState<TelegramTrackerBot[]>(DEFAULT_BOTS);
-  const [links, setLinks] = useState<TelegramTrackerLink[]>(DEFAULT_LINKS);
-  const [dashboard, setDashboard] = useState<TelegramTrackerDashboardData>(DEFAULT_DASHBOARD);
+  // Clean empty state (no dummy datasets)
+  const [bots, setBots] = useState<TelegramTrackerBot[]>([]);
+  const [links, setLinks] = useState<TelegramTrackerLink[]>([]);
+  const [dashboard, setDashboard] = useState<TelegramTrackerDashboardData>(EMPTY_DASHBOARD);
 
   // Connect Bot Modal states
   const [showConnectModal, setShowConnectModal] = useState(false);
@@ -374,7 +75,7 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
   // Create Join Link Modal states
   const [showCreateLinkModal, setShowCreateLinkModal] = useState(false);
   const [linkTitleInput, setLinkTitleInput] = useState('');
-  const [selectedBotUsername, setSelectedBotUsername] = useState('tradingguru02_bot');
+  const [selectedBotUsername, setSelectedBotUsername] = useState('');
   const [channelNameInput, setChannelNameInput] = useState('');
   const [campaignSourceInput, setCampaignSourceInput] = useState('');
   const [creatingLink, setCreatingLink] = useState(false);
@@ -395,17 +96,20 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
       if (botsRes.status === 'fulfilled' && botsRes.value) {
         const val: any = botsRes.value;
         const bList = Array.isArray(val) ? val : val?.data;
-        if (Array.isArray(bList) && bList.length > 0) {
+        if (Array.isArray(bList)) {
           setBots(bList);
+          if (!selectedBotUsername && bList.length > 0) {
+            setSelectedBotUsername(bList[0].bot_username);
+          }
         }
       }
 
       if (linksRes.status === 'fulfilled' && linksRes.value) {
         const val: any = linksRes.value;
         const lList = Array.isArray(val) ? val : val?.data;
-        if (Array.isArray(lList) && lList.length > 0) {
+        if (Array.isArray(lList)) {
           setLinks(lList);
-          if (!selectedBotUsername) setSelectedBotUsername(lList[0].bot_username);
+          if (!selectedBotUsername && lList.length > 0) setSelectedBotUsername(lList[0].bot_username);
         }
       }
 
@@ -492,8 +196,8 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const res: any = await telegramApi.createTrackerLink({
         title: linkTitleInput.trim(),
-        botUsername: selectedBotUsername || (bots[0]?.bot_username || 'tradingguru02_bot'),
-        channelName: channelNameInput.trim() || (bots[0]?.channel_name || 'Trading Community'),
+        botUsername: selectedBotUsername || (bots[0]?.bot_username || 'tracker_bot'),
+        channelName: channelNameInput.trim() || (bots[0]?.channel_name || 'Channel'),
         campaignSource: campaignSourceInput.trim() || 'Direct Link',
       });
 
@@ -501,17 +205,18 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
       if (newLink) {
         setLinks([newLink, ...links]);
       } else {
+        const botUser = selectedBotUsername || bots[0]?.bot_username || 'tracker_bot';
         setLinks([
           {
             id: `link_${Date.now()}`,
             title: linkTitleInput.trim(),
-            bot_username: selectedBotUsername || 'tradingguru02_bot',
-            channel_name: channelNameInput.trim() || 'Trading Community',
+            bot_username: botUser,
+            channel_name: channelNameInput.trim() || bots[0]?.channel_name || 'Channel',
             source_type: campaignSourceInput.trim() || 'Direct Link',
             bot_starts: 0,
             joined: 0,
             conversion_rate: 0,
-            deep_link_url: `https://t.me/${selectedBotUsername}?start=c_${linkTitleInput.toLowerCase().replace(/\s+/g, '_')}`,
+            deep_link_url: `https://t.me/${botUser}?start=c_${linkTitleInput.toLowerCase().replace(/\s+/g, '_')}`,
             created_at: new Date().toISOString(),
           },
           ...links,
@@ -1717,22 +1422,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
     marginBottom: 14,
   },
   matrixHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flex: 1,
+    minWidth: 150,
   },
   matrixTitle: {
     fontSize: 14,
     fontWeight: '700',
+    flexShrink: 1,
   },
   periodBadge: {
     backgroundColor: '#EFF6FF',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
   },
   periodBadgeText: {
     fontSize: 10,
@@ -1758,18 +1470,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 6,
     marginBottom: 8,
   },
   chanName: {
     fontSize: 13,
     fontWeight: '700',
     flex: 1,
+    minWidth: 100,
   },
   periodJoinsPill: {
     backgroundColor: '#ECFDF5',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
+    alignSelf: 'flex-start',
   },
   periodJoinsPillText: {
     fontSize: 10,

@@ -7,6 +7,7 @@ import {
   Pressable,
   RefreshControl,
   ActivityIndicator,
+  useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,6 +25,9 @@ const ACTIVITY_FILTER_TABS: Array<{ key: string; label: string }> = [
 ];
 
 export const ActivitiesScreen: React.FC = () => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [selectedType, setSelectedType] = useState<string>('all');
   const [showLogModal, setShowLogModal] = useState(false);
 
@@ -34,12 +38,12 @@ export const ActivitiesScreen: React.FC = () => {
   const createActivity = useCreateActivity();
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>Activity Stream</Text>
-          <Text style={styles.subtitle}>Full chronological history of client touchpoints</Text>
+          <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Activity Stream</Text>
+          <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Full chronological history of client touchpoints</Text>
         </View>
 
         <Pressable
@@ -59,10 +63,20 @@ export const ActivitiesScreen: React.FC = () => {
           return (
             <Pressable
               key={tab.key}
-              style={[styles.tabChip, isSelected && styles.tabChipSelected]}
+              style={[
+                styles.tabChip,
+                { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+                isSelected && (isDark ? styles.tabChipSelectedDark : styles.tabChipSelectedLight),
+              ]}
               onPress={() => setSelectedType(tab.key)}
             >
-              <Text style={[styles.tabText, isSelected && styles.tabTextSelected]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: isDark ? '#9CA3AF' : '#64748B' },
+                  isSelected && styles.tabTextSelected,
+                ]}
+              >
                 {tab.label}
               </Text>
             </Pressable>
@@ -74,13 +88,13 @@ export const ActivitiesScreen: React.FC = () => {
       {isLoading && !activities ? (
         <View style={styles.loaderBox}>
           <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={styles.loaderText}>Loading activity history...</Text>
+          <Text style={[styles.loaderText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Loading activity history...</Text>
         </View>
       ) : activities.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="time-outline" size={48} color="#4B5563" />
-          <Text style={styles.emptyTitle}>No events recorded</Text>
-          <Text style={styles.emptySubtitle}>
+          <Ionicons name="time-outline" size={48} color={isDark ? '#4B5563' : '#CBD5E1'} />
+          <Text style={[styles.emptyTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>No events recorded</Text>
+          <Text style={[styles.emptySubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
             {selectedType !== 'all'
               ? `No ${selectedType} activities logged yet.`
               : 'Log calls, meetings, notes, and emails to build a unified timeline.'}
@@ -128,7 +142,6 @@ export const ActivitiesScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0F1015',
   },
   header: {
     flexDirection: 'row',
@@ -138,13 +151,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   title: {
-    color: '#FFFFFF',
     fontSize: 20,
     fontWeight: '700',
     letterSpacing: -0.3,
   },
   subtitle: {
-    color: '#9CA3AF',
     fontSize: 12,
     marginTop: 2,
   },
@@ -173,21 +184,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: '#181A20',
     borderWidth: 1,
-    borderColor: '#262A34',
   },
-  tabChipSelected: {
+  tabChipSelectedDark: {
     backgroundColor: 'rgba(59, 130, 246, 0.2)',
     borderColor: '#3B82F6',
   },
+  tabChipSelectedLight: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#3B82F6',
+  },
   tabText: {
-    color: '#9CA3AF',
     fontSize: 12,
     fontWeight: '500',
   },
   tabTextSelected: {
-    color: '#60A5FA',
+    color: '#3B82F6',
     fontWeight: '700',
   },
   listContent: {
@@ -201,7 +213,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loaderText: {
-    color: '#9CA3AF',
     fontSize: 13,
     marginTop: 12,
   },
@@ -212,13 +223,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   emptyTitle: {
-    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
     marginTop: 12,
   },
   emptySubtitle: {
-    color: '#9CA3AF',
     fontSize: 13,
     textAlign: 'center',
     marginTop: 6,
