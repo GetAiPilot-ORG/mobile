@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AppScreen } from '../../src/components/AppScreen';
+import { AppTopBar } from '../../src/components/AppTopBar';
 import { colors } from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
 import { radius } from '../../src/theme/radius';
@@ -63,10 +64,8 @@ export default function CustomizeAppScreen() {
           const parsed = JSON.parse(saved);
           setShortcuts(parsed);
         }
-        const savedCompact = await AsyncStorage.getItem('@gap_compact_view');
-        if (savedCompact !== null) setCompactView(savedCompact === 'true');
-      } catch (err) {
-        console.error('Error loading customization preferences:', err);
+      } catch {
+        // ignore
       }
     }
     loadPreferences();
@@ -77,24 +76,19 @@ export default function CustomizeAppScreen() {
     setShortcuts(updated);
     try {
       await AsyncStorage.setItem(PREF_STORAGE_KEY, JSON.stringify(updated));
-    } catch (err) {
-      console.error('Error saving shortcut toggle:', err);
+    } catch {
+      // ignore
     }
   };
 
-  const handleToggleCompact = async (val: boolean) => {
-    setCompactView(val);
-    try {
-      await AsyncStorage.setItem('@gap_compact_view', String(val));
-    } catch (err) {
-      console.error('Error saving compact view pref:', err);
-    }
+  const handleToggleCompact = (value: boolean) => {
+    setCompactView(value);
   };
 
-  const handleReset = async () => {
+  const handleReset = () => {
     Alert.alert(
-      'Reset Customizations',
-      'Restore all dashboard shortcuts and display settings to default?',
+      'Reset Shortcuts',
+      'Reset all dashboard shortcut preferences to defaults?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -102,14 +96,7 @@ export default function CustomizeAppScreen() {
           style: 'destructive',
           onPress: async () => {
             setShortcuts(DEFAULT_SHORTCUTS);
-            setCompactView(false);
-            try {
-              await AsyncStorage.removeItem(PREF_STORAGE_KEY);
-              await AsyncStorage.removeItem('@gap_compact_view');
-              Alert.alert('Restored', 'Default shortcut preferences restored.');
-            } catch (err) {
-              console.error('Error resetting preferences:', err);
-            }
+            await AsyncStorage.removeItem(PREF_STORAGE_KEY);
           },
         },
       ]
