@@ -33,8 +33,11 @@ export interface DeviceLoginSession {
   appVersion: string | null;
   signedInAt: string;
   lastSeenAt: string;
+  isOnline: boolean;
   isCurrent: boolean;
 }
+
+const DEVICE_ONLINE_WINDOW_MS = 2 * 60 * 1000;
 
 export class HubAdapter {
   // Public Client (for user sign-in & password validation)
@@ -217,8 +220,28 @@ export class HubAdapter {
       appVersion: session.app_version,
       signedInAt: session.signed_in_at,
       lastSeenAt: session.last_seen_at,
+      isOnline: Date.now() - new Date(session.last_seen_at).getTime() <= DEVICE_ONLINE_WINDOW_MS,
       isCurrent: session.session_id === currentSessionId,
     }));
+  }
+
+  /** Records an active app heartbeat for one tracked device session. */
+  public static async touchDeviceSession(userId: string, sessionId?: string): Promise<boolean> {
+    if (!sessionId) return false;
+
+    const now = new Date().toISOString();
+    const { data, error } = await this.adminClient
+      .from('auth_device_sessions')
+      .update({ last_seen_at: now, updated_at: now })
+      .eq('user_id', userId)
+      .eq('session_id', sessionId)
+      .is('signed_out_at', null)
+      .gt('expires_at', now)
+      .select('id')
+      .maybeSingle();
+
+    if (error) throw error;
+    return Boolean(data);
   }
 
   /** Checks whether a tracked BFF session can still access the API. */

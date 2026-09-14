@@ -39,6 +39,7 @@ interface DeviceSession {
   appVersion: string | null;
   signedInAt: string;
   lastSeenAt: string;
+  isOnline: boolean;
   isCurrent: boolean;
 }
 
@@ -137,6 +138,7 @@ export default function AccountScreen() {
     isEnrolled: false,
   });
   const [isUpdatingBiometrics, setIsUpdatingBiometrics] = useState(false);
+  const [signingOutDeviceId, setSigningOutDeviceId] = useState<string | null>(null);
 
   // Load Biometric settings
   useEffect(() => {
@@ -465,6 +467,32 @@ export default function AccountScreen() {
     const date = new Date(device.lastSeenAt);
     if (Number.isNaN(date.getTime())) return 'Recently signed in';
     return `Signed in ${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+  };
+
+  const handleSignOutOtherDevice = (device: DeviceSession) => {
+    Alert.alert(
+      'Sign Out Device',
+      `Sign out ${device.deviceName}? It will need to sign in again to use GetAiPilot.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            setSigningOutDeviceId(device.sessionId);
+            try {
+              await apiClient.delete(`/mobile/v1/auth/device-sessions/${encodeURIComponent(device.sessionId)}`);
+              await refetchDeviceSessions();
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } catch (error: any) {
+              Alert.alert('Could Not Sign Out Device', error.message || 'Please try again.');
+            } finally {
+              setSigningOutDeviceId(null);
+            }
+          },
+        },
+      ]
+    );
   };
 
   // Sign Out Handler
@@ -1035,10 +1063,28 @@ export default function AccountScreen() {
                         {device.deviceName}
                       </Text>
                       <Text style={[styles.actionSubtitle, isDark && styles.actionSubtitleDark]} numberOfLines={1}>
-                        {[device.platform, device.osVersion, formatDeviceLastSeen(device)].filter(Boolean).join(' • ')}
+                        {[device.platform, device.osVersion, device.isOnline ? 'Online' : 'Offline', formatDeviceLastSeen(device)].filter(Boolean).join(' • ')}
                       </Text>
                     </View>
-                    {device.isCurrent && <View style={styles.currentDeviceTag}><Text style={styles.currentDeviceTagText}>This device</Text></View>}
+                    {device.isCurrent ? (
+                      <View style={styles.currentDeviceTag}>
+                        <Text style={styles.currentDeviceTagText}>This device</Text>
+                      </View>
+                    ) : (
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Sign out ${device.deviceName}`}
+                        style={[styles.deviceSignOutButton, isDark && styles.deviceSignOutButtonDark]}
+                        onPress={() => handleSignOutOtherDevice(device)}
+                        disabled={signingOutDeviceId === device.sessionId}
+                      >
+                        {signingOutDeviceId === device.sessionId ? (
+                          <ActivityIndicator size="small" color="#EF4444" />
+                        ) : (
+                          <Text style={styles.deviceSignOutText}>Sign out</Text>
+                        )}
+                      </Pressable>
+                    )}
                   </View>
                 ))
               ) : (
@@ -2190,6 +2236,25 @@ const styles = StyleSheet.create({
   currentDeviceTagText: {
     color: '#10B981',
     fontSize: 10,
+    fontWeight: '800',
+  },
+  deviceSignOutButton: {
+    minWidth: 66,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.42)',
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    marginLeft: 8,
+  },
+  deviceSignOutButtonDark: {
+    backgroundColor: 'rgba(239, 68, 68, 0.14)',
+  },
+  deviceSignOutText: {
+    color: '#EF4444',
+    fontSize: 11,
     fontWeight: '800',
   },
   microBadge: {

@@ -242,6 +242,15 @@ export async function authRoutes(fastify: FastifyInstance) {
     return reply.send({ activeDeviceCount: devices.length, devices });
   });
 
+  // POST /mobile/v1/auth/device-sessions/heartbeat
+  // The mobile client sends this while foregrounded. A device is considered
+  // online for two minutes after its last successful heartbeat.
+  fastify.post('/device-sessions/heartbeat', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const tracked = await HubAdapter.touchDeviceSession(user.user_id, user.session_id);
+    return reply.send({ tracked });
+  });
+
   // DELETE /mobile/v1/auth/device-sessions/:sessionId
   // A user can only sign out another session that belongs to their own account.
   fastify.delete('/device-sessions/:sessionId', { preHandler: [authenticateToken] }, async (request, reply) => {
