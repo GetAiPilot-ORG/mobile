@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityType, CRMActivity } from '../types';
@@ -39,6 +40,9 @@ export const LogActivityModal: React.FC<LogActivityModalProps> = ({
   defaultDealId,
   isLoading,
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [type, setType] = useState<ActivityType>('note');
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
@@ -78,17 +82,31 @@ export const LogActivityModal: React.FC<LogActivityModalProps> = ({
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.modalOverlay}
+        style={[styles.modalOverlay, { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0.5)' }]}
       >
-        <View style={styles.modalContent}>
+        <View
+          style={[
+            styles.modalContent,
+            {
+              backgroundColor: isDark ? '#181A20' : '#FFFFFF',
+              borderColor: isDark ? '#262A34' : '#E2E8F0',
+            },
+          ]}
+        >
           {/* Header */}
           <View style={styles.header}>
             <View>
-              <Text style={styles.headerTitle}>Log Activity</Text>
-              <Text style={styles.headerSubtitle}>Record a call, meeting, note or email</Text>
+              <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Log Activity</Text>
+              <Text style={[styles.headerSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+                Record a call, meeting, note or email
+              </Text>
             </View>
-            <Pressable style={styles.closeBtn} onPress={handleClose} hitSlop={8}>
-              <Ionicons name="close" size={20} color="#9CA3AF" />
+            <Pressable
+              style={[styles.closeBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              onPress={handleClose}
+              hitSlop={8}
+            >
+              <Ionicons name="close" size={20} color={isDark ? '#9CA3AF' : '#64748B'} />
             </Pressable>
           </View>
 
@@ -102,39 +120,60 @@ export const LogActivityModal: React.FC<LogActivityModalProps> = ({
           <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
             {/* Type selector */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Activity Type</Text>
+              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Activity Type</Text>
               <View style={styles.typeRow}>
-                {ACTIVITY_TYPES.map((t) => (
-                  <Pressable
-                    key={t.key}
-                    style={[styles.typeOption, type === t.key && styles.typeOptionSelected]}
-                    onPress={() => setType(t.key)}
-                  >
-                    <Ionicons
-                      name={t.icon}
-                      size={18}
-                      color={type === t.key ? t.color : '#9CA3AF'}
-                    />
-                    <Text
+                {ACTIVITY_TYPES.map((t) => {
+                  const isSelected = type === t.key;
+                  return (
+                    <Pressable
+                      key={t.key}
                       style={[
-                        styles.typeText,
-                        type === t.key && { color: t.color, fontWeight: '700' },
+                        styles.typeOption,
+                        {
+                          backgroundColor: isSelected
+                            ? isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(59, 130, 246, 0.12)'
+                            : isDark ? '#222630' : '#F1F5F9',
+                          borderColor: isSelected ? '#3B82F6' : 'transparent',
+                        },
                       ]}
+                      onPress={() => setType(t.key)}
                     >
-                      {t.label}
-                    </Text>
-                  </Pressable>
-                ))}
+                      <Ionicons
+                        name={t.icon}
+                        size={18}
+                        color={isSelected ? t.color : isDark ? '#9CA3AF' : '#64748B'}
+                      />
+                      <Text
+                        style={[
+                          styles.typeText,
+                          {
+                            color: isSelected ? t.color : isDark ? '#9CA3AF' : '#64748B',
+                            fontWeight: isSelected ? '700' : '600',
+                          },
+                        ]}
+                      >
+                        {t.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </View>
             </View>
 
             {/* Subject */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Subject / Summary *</Text>
+              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Subject / Summary *</Text>
               <TextInput
-                style={styles.input}
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: isDark ? '#121316' : '#F8FAFC',
+                    borderColor: isDark ? '#262A34' : '#CBD5E1',
+                    color: isDark ? '#FFFFFF' : '#0F172A',
+                  },
+                ]}
                 placeholder="e.g. Discussed pricing proposal & contract terms"
-                placeholderTextColor="#6B7280"
+                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                 value={subject}
                 onChangeText={setSubject}
               />
@@ -142,11 +181,19 @@ export const LogActivityModal: React.FC<LogActivityModalProps> = ({
 
             {/* Description / Content */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Details & Outcome</Text>
+              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Details & Outcome</Text>
               <TextInput
-                style={[styles.input, styles.textArea]}
+                style={[
+                  styles.input,
+                  styles.textArea,
+                  {
+                    backgroundColor: isDark ? '#121316' : '#F8FAFC',
+                    borderColor: isDark ? '#262A34' : '#CBD5E1',
+                    color: isDark ? '#FFFFFF' : '#0F172A',
+                  },
+                ]}
                 placeholder="Client agreed on annual billing, requested updated quote by Friday..."
-                placeholderTextColor="#6B7280"
+                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                 multiline
                 numberOfLines={4}
                 value={description}
@@ -157,8 +204,12 @@ export const LogActivityModal: React.FC<LogActivityModalProps> = ({
 
           {/* Footer Actions */}
           <View style={styles.modalFooter}>
-            <Pressable style={styles.cancelBtn} onPress={handleClose} disabled={isLoading}>
-              <Text style={styles.cancelBtnText}>Cancel</Text>
+            <Pressable
+              style={[styles.cancelBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              onPress={handleClose}
+              disabled={isLoading}
+            >
+              <Text style={[styles.cancelBtnText, { color: isDark ? '#D1D5DB' : '#475569' }]}>Cancel</Text>
             </Pressable>
             <Pressable style={styles.submitBtn} onPress={handleSubmit} disabled={isLoading}>
               {isLoading ? (

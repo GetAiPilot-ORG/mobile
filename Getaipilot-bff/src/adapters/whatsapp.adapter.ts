@@ -38,7 +38,7 @@ export interface UserSessionContext {
 }
 
 export class WhatsAppAdapter {
-  private static supabase = createClient(
+  public static supabase = createClient(
     env.SUPABASE_URL,
     env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY,
     {
@@ -1157,10 +1157,21 @@ export class WhatsAppAdapter {
 
   public static async getMessages(conversationId: string): Promise<NormalizedMessage[]> {
     try {
+      let realConvId = conversationId;
+      if (conversationId.startsWith('conv_')) {
+        const contactId = conversationId.replace('conv_', '');
+        const { data: conv } = await this.supabase
+          .from('w_conversations')
+          .select('id')
+          .eq('contact_id', contactId)
+          .maybeSingle();
+        if (conv) realConvId = conv.id;
+      }
+
       const { data: msgs, error } = await this.supabase
         .from('w_messages')
         .select('*')
-        .eq('conversation_id', conversationId)
+        .eq('conversation_id', realConvId)
         .order('created_at', { ascending: true })
         .limit(100);
 
@@ -1197,7 +1208,7 @@ export class WhatsAppAdapter {
           });
         }
 
-        const isNote = m.is_internal_note || m.type === 'note';
+        const isNote = m.is_internal_note === true || m.type === 'note';
         const isBot = m.is_bot_reply || m.sender_type === 'bot' || m.sender_type === 'ai_agent';
 
         const senderType: 'contact' | 'agent' | 'bot' | 'system' = isNote
@@ -1217,7 +1228,7 @@ export class WhatsAppAdapter {
 
         return {
           id: m.id,
-          conversation_id: conversationId,
+          conversation_id: realConvId,
           channel: 'whatsapp',
           direction: m.direction === 'inbound' ? 'inbound' : 'outbound',
           content: textContent || (isNote ? 'Internal Note' : 'Message'),
@@ -1270,6 +1281,28 @@ export class WhatsAppAdapter {
     let contactPhone: string | null = null;
     let phoneNumberId: string | null = null;
     let encryptedToken: string | null = null;
+    let realConvId = conversationId;
+
+    if (conversationId.startsWith('conv_')) {
+      const cId = conversationId.replace('conv_', '');
+      contactId = cId;
+      try {
+        const { data: existing } = await this.supabase
+          .from('w_conversations')
+          .select('id, organization_id, wa_account_id')
+          .eq('contact_id', cId)
+          .maybeSingle();
+
+        if (existing) {
+          realConvId = existing.id;
+          if (!orgId) orgId = existing.organization_id;
+          if (!waAccountId) waAccountId = existing.wa_account_id;
+        } else if (orgId) {
+          const created = await this.getOrCreateConversation(orgId, cId);
+          if (created) realConvId = created.id;
+        }
+      } catch (_) {}
+    }
 
     try {
       const { data: conv } = await this.supabase
@@ -1282,7 +1315,7 @@ export class WhatsAppAdapter {
           contact:w_contacts(id, wa_id, phone, name),
           account:w_wa_accounts(id, phone_number_id, display_phone_number, access_token_encrypted)
         `)
-        .eq('id', conversationId)
+        .eq('id', realConvId)
         .maybeSingle();
 
       if (conv) {
@@ -1424,19 +1457,19 @@ export class WhatsAppAdapter {
     }
 
     const insertPayload: any = {
-      conversation_id: conversationId,
+      conversation_id: realConvId,
       organization_id: orgId || null,
       contact_id: contactId || null,
       wa_message_id: wa_message_id || null,
       direction: 'outbound',
-      type: isNote ? 'note' : msgType,
+      type: isTemplate ? 'template' : isNote ? 'text' : msgType,
       text_body: content,
       content: isTemplate
         ? options?.template
         : { text: content, ...(rawSendMeta ? { raw_send: rawSendMeta } : {}) },
       is_internal_note: isNote,
       status: 'sent',
-      sender_type: isNote ? null : 'human_agent',
+      sender_type: 'human_agent',
       sender_user_id: options?.sender_user_id || null,
       automation_source: 'manual',
     };
@@ -1465,14 +1498,14 @@ export class WhatsAppAdapter {
           last_message_at: createdAt,
           last_human_message_id: insertedId || null,
         })
-        .eq('id', conversationId);
+        .eq('id', realConvId);
     } catch (e: any) {
       console.error('[WhatsAppAdapter] Error inserting message to DB:', e?.message || e);
     }
 
     return {
       id: insertedId || `wa_msg_${Date.now()}`,
-      conversation_id: conversationId,
+      conversation_id: realConvId,
       channel: 'whatsapp',
       direction: 'outbound',
       content,
@@ -1485,7 +1518,7 @@ export class WhatsAppAdapter {
         type: 'agent',
       },
       sender_user_id: options?.sender_user_id || undefined,
-      sender_type: isNote ? undefined : 'human_agent',
+      sender_type: 'human_agent',
       is_internal_note: isNote,
       is_bot_reply: false,
       status: 'sent',

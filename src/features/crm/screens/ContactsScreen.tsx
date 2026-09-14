@@ -8,6 +8,7 @@ import {
   Pressable,
   RefreshControl,
   ActivityIndicator,
+  useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +21,9 @@ interface ContactsScreenProps {
 }
 
 export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onSelectContact }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [search, setSearch] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
 
@@ -31,12 +35,12 @@ export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onSelectContact 
   const contacts = data?.contacts || [];
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>All Contacts</Text>
-          <Text style={styles.subtitle}>Complete customer and partner phonebook</Text>
+          <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>All Contacts</Text>
+          <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Complete customer and partner phonebook</Text>
         </View>
 
         <Pressable style={styles.addBtn} onPress={() => setShowAddModal(true)} hitSlop={8}>
@@ -46,18 +50,18 @@ export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onSelectContact 
       </View>
 
       {/* Search */}
-      <View style={styles.searchBar}>
-        <Ionicons name="search" size={16} color="#9CA3AF" />
+      <View style={[styles.searchBar, { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' }]}>
+        <Ionicons name="search" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, { color: isDark ? '#FFFFFF' : '#0F172A' }]}
           placeholder="Search all contacts & companies..."
-          placeholderTextColor="#6B7280"
+          placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
           value={search}
           onChangeText={setSearch}
         />
         {search ? (
           <Pressable onPress={() => setSearch('')}>
-            <Ionicons name="close-circle" size={16} color="#9CA3AF" />
+            <Ionicons name="close-circle" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
           </Pressable>
         ) : null}
       </View>
@@ -66,13 +70,13 @@ export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onSelectContact 
       {isLoading && !data ? (
         <View style={styles.loaderBox}>
           <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={styles.loaderText}>Loading contacts...</Text>
+          <Text style={[styles.loaderText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Loading contacts...</Text>
         </View>
       ) : contacts.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="people-outline" size={48} color="#4B5563" />
-          <Text style={styles.emptyTitle}>No contacts found</Text>
-          <Text style={styles.emptySubtitle}>
+          <Ionicons name="people-outline" size={48} color={isDark ? '#4B5563' : '#CBD5E1'} />
+          <Text style={[styles.emptyTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>No contacts found</Text>
+          <Text style={[styles.emptySubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
             {search ? `No records matching "${search}"` : 'Your contact book is currently empty.'}
           </Text>
         </View>
@@ -112,7 +116,6 @@ export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onSelectContact 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0F1015',
   },
   header: {
     flexDirection: 'row',
@@ -122,13 +125,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   title: {
-    color: '#FFFFFF',
     fontSize: 20,
     fontWeight: '700',
     letterSpacing: -0.3,
   },
   subtitle: {
-    color: '#9CA3AF',
     fontSize: 12,
     marginTop: 2,
   },
@@ -150,18 +151,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#181A20',
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 8,
     marginHorizontal: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#262A34',
   },
   searchInput: {
     flex: 1,
-    color: '#FFFFFF',
     fontSize: 14,
   },
   listContent: {
@@ -174,7 +172,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loaderText: {
-    color: '#9CA3AF',
     fontSize: 13,
     marginTop: 12,
   },
@@ -185,13 +182,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   emptyTitle: {
-    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
     marginTop: 12,
   },
   emptySubtitle: {
-    color: '#9CA3AF',
     fontSize: 13,
     textAlign: 'center',
     marginTop: 6,

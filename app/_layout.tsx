@@ -1,5 +1,7 @@
+import 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Slot, useRouter, useSegments } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -90,18 +92,40 @@ function SplashOverlay() {
 
 export default function RootLayout() {
   return (
-    <GlobalErrorBoundary>
-      <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <AuthRouteGuard />
-            {/* Slot is ALWAYS mounted to keep Expo Router's navigation tree stable */}
-            <Slot />
-            <SplashOverlay />
-          </AuthProvider>
-        </QueryClientProvider>
-      </SafeAreaProvider>
-    </GlobalErrorBoundary>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <GlobalErrorBoundary>
+        <SafeAreaProvider>
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+              <AuthRouteGuard />
+              {/* Native Stack for iOS screen transitions & gesture-driven back navigations */}
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  gestureEnabled: true,
+                  fullScreenGestureEnabled: true,
+                  gestureDirection: 'horizontal',
+                  animation: 'default',
+                  animationDuration: 250,
+                }}
+              >
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="account/plans"
+                  options={{
+                    headerShown: false,
+                    presentation: 'modal',
+                    gestureEnabled: true,
+                  }}
+                />
+              </Stack>
+              <SplashOverlay />
+            </AuthProvider>
+          </QueryClientProvider>
+        </SafeAreaProvider>
+      </GlobalErrorBoundary>
+    </GestureHandlerRootView>
   );
 }
 

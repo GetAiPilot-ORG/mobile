@@ -8,6 +8,7 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
+  useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,16 +19,19 @@ import { StageSelectorSheet } from '../components/StageSelectorSheet';
 import { CRMDeal, DealStage } from '../types';
 
 const STAGE_CONFIGS: Array<{ key: string; label: string; color: string }> = [
-  { key: 'all', label: 'All Stages', color: '#9CA3AF' },
-  { key: 'lead', label: 'Lead', color: '#9CA3AF' },
-  { key: 'qualified', label: 'Qualified', color: '#60A5FA' },
-  { key: 'proposal', label: 'Proposal', color: '#FBBF24' },
-  { key: 'negotiation', label: 'Negotiation', color: '#A78BFA' },
-  { key: 'closed_won', label: 'Closed Won', color: '#34D399' },
-  { key: 'closed_lost', label: 'Closed Lost', color: '#F87171' },
+  { key: 'all', label: 'All Stages', color: '#6B7280' },
+  { key: 'lead', label: 'Lead', color: '#6B7280' },
+  { key: 'qualified', label: 'Qualified', color: '#3B82F6' },
+  { key: 'proposal', label: 'Proposal', color: '#D97706' },
+  { key: 'negotiation', label: 'Negotiation', color: '#8B5CF6' },
+  { key: 'closed_won', label: 'Closed Won', color: '#10B981' },
+  { key: 'closed_lost', label: 'Closed Lost', color: '#EF4444' },
 ];
 
 export const PipelineScreen: React.FC = () => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [selectedStage, setSelectedStage] = useState<string>('all');
   const [showAddDeal, setShowAddDeal] = useState(false);
   const [selectedDealForStage, setSelectedDealForStage] = useState<CRMDeal | null>(null);
@@ -46,12 +50,12 @@ export const PipelineScreen: React.FC = () => {
     .reduce((sum, d) => sum + (Number(d.value) || 0), 0);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>Pipeline & Deals</Text>
-          <Text style={styles.subtitle}>Track revenue, stages & win rates</Text>
+          <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Pipeline & Deals</Text>
+          <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Track revenue, stages & win rates</Text>
         </View>
 
         <Pressable
@@ -65,15 +69,15 @@ export const PipelineScreen: React.FC = () => {
       </View>
 
       {/* Summary KPI Banner */}
-      <View style={styles.kpiBanner}>
+      <View style={[styles.kpiBanner, { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' }]}>
         <View style={styles.kpiCol}>
-          <Text style={styles.kpiLabel}>Pipeline Value</Text>
-          <Text style={styles.kpiValue}>₹{totalValue.toLocaleString()}</Text>
+          <Text style={[styles.kpiLabel, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Pipeline Value</Text>
+          <Text style={[styles.kpiValue, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>₹{totalValue.toLocaleString()}</Text>
         </View>
-        <View style={styles.kpiDivider} />
+        <View style={[styles.kpiDivider, { backgroundColor: isDark ? '#262A34' : '#E2E8F0' }]} />
         <View style={styles.kpiCol}>
-          <Text style={styles.kpiLabel}>Total Deals</Text>
-          <Text style={styles.kpiValue}>{deals.length}</Text>
+          <Text style={[styles.kpiLabel, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Total Deals</Text>
+          <Text style={[styles.kpiValue, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>{deals.length}</Text>
         </View>
       </View>
 
@@ -89,13 +93,17 @@ export const PipelineScreen: React.FC = () => {
           return (
             <Pressable
               key={s.key}
-              style={[styles.stageChip, isSelected && styles.stageChipSelected]}
+              style={[
+                styles.stageChip,
+                { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+                isSelected && (isDark ? styles.stageChipSelectedDark : styles.stageChipSelectedLight),
+              ]}
               onPress={() => setSelectedStage(s.key)}
             >
               {s.key !== 'all' ? (
                 <View style={[styles.stageDot, { backgroundColor: s.color }]} />
               ) : null}
-              <Text style={[styles.stageText, isSelected && { color: s.color, fontWeight: '700' }]}>
+              <Text style={[styles.stageText, { color: isDark ? '#9CA3AF' : '#64748B' }, isSelected && { color: s.color, fontWeight: '700' }]}>
                 {s.label}
               </Text>
             </Pressable>
@@ -107,13 +115,13 @@ export const PipelineScreen: React.FC = () => {
       {isLoading && !deals ? (
         <View style={styles.loaderBox}>
           <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={styles.loaderText}>Loading deals...</Text>
+          <Text style={[styles.loaderText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Loading deals...</Text>
         </View>
       ) : deals.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="briefcase-outline" size={48} color="#4B5563" />
-          <Text style={styles.emptyTitle}>No deals in this stage</Text>
-          <Text style={styles.emptySubtitle}>
+          <Ionicons name="briefcase-outline" size={48} color={isDark ? '#4B5563' : '#CBD5E1'} />
+          <Text style={[styles.emptyTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>No deals in this stage</Text>
+          <Text style={[styles.emptySubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
             {selectedStage !== 'all'
               ? `No deals currently in the ${selectedStage} stage.`
               : 'Add your first sales deal to populate the pipeline.'}
@@ -260,8 +268,12 @@ const styles = StyleSheet.create({
     borderColor: '#262A34',
     gap: 6,
   },
-  stageChipSelected: {
+  stageChipSelectedDark: {
     backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    borderColor: '#3B82F6',
+  },
+  stageChipSelectedLight: {
+    backgroundColor: '#EFF6FF',
     borderColor: '#3B82F6',
   },
   stageDot: {
@@ -270,7 +282,6 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   stageText: {
-    color: '#9CA3AF',
     fontSize: 12,
     fontWeight: '500',
   },
@@ -284,7 +295,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loaderText: {
-    color: '#9CA3AF',
     fontSize: 13,
     marginTop: 12,
   },
@@ -295,13 +305,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   emptyTitle: {
-    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
     marginTop: 12,
   },
   emptySubtitle: {
-    color: '#9CA3AF',
     fontSize: 13,
     textAlign: 'center',
     marginTop: 6,

@@ -133,7 +133,7 @@ export default function ConnectedPlatformsPage() {
 
   return (
     <AppScreen safeArea={false}>
-      <AppTopBar title="Ecosystem Activity" subtitle="Real-time Workspace Telemetry" showBack={true} />
+      <AppTopBar title="Ecosystem Activity" subtitle="Real-time Workspace Telemetry" showBack={false} />
 
       <ScrollView
         style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}

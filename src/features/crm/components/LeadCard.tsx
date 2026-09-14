@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, Pressable, Linking } from 'react-native';
+import { StyleSheet, Text, View, Pressable, Linking, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CRMContact, ContactStatus } from '../types';
 
@@ -11,20 +11,23 @@ interface LeadCardProps {
 }
 
 const STATUS_CONFIG: Partial<Record<ContactStatus, { label: string; bg: string; text: string; dot: string }>> = {
-  lead: { label: 'New Lead', bg: 'rgba(59, 130, 246, 0.15)', text: '#60A5FA', dot: '#3B82F6' },
-  prospect: { label: 'Prospect', bg: 'rgba(245, 158, 11, 0.15)', text: '#FBBF24', dot: '#F59E0B' },
-  customer: { label: 'Customer', bg: 'rgba(16, 185, 129, 0.15)', text: '#34D399', dot: '#10B981' },
-  churned: { label: 'Churned', bg: 'rgba(239, 68, 68, 0.15)', text: '#F87171', dot: '#EF4444' },
-  open: { label: 'Open', bg: 'rgba(59, 130, 246, 0.15)', text: '#60A5FA', dot: '#3B82F6' },
-  active: { label: 'Active', bg: 'rgba(16, 185, 129, 0.15)', text: '#34D399', dot: '#10B981' },
-  archived: { label: 'Archived', bg: 'rgba(156, 163, 175, 0.15)', text: '#9CA3AF', dot: '#6B7280' },
+  lead: { label: 'New Lead', bg: 'rgba(59, 130, 246, 0.15)', text: '#3B82F6', dot: '#3B82F6' },
+  prospect: { label: 'Prospect', bg: 'rgba(245, 158, 11, 0.15)', text: '#D97706', dot: '#F59E0B' },
+  customer: { label: 'Customer', bg: 'rgba(16, 185, 129, 0.15)', text: '#059669', dot: '#10B981' },
+  churned: { label: 'Churned', bg: 'rgba(239, 68, 68, 0.15)', text: '#DC2626', dot: '#EF4444' },
+  open: { label: 'Open', bg: 'rgba(59, 130, 246, 0.15)', text: '#3B82F6', dot: '#3B82F6' },
+  active: { label: 'Active', bg: 'rgba(16, 185, 129, 0.15)', text: '#059669', dot: '#10B981' },
+  archived: { label: 'Archived', bg: 'rgba(156, 163, 175, 0.15)', text: '#6B7280', dot: '#6B7280' },
 };
 
 export const LeadCard: React.FC<LeadCardProps> = ({ lead, onPress, onQuickCall, onQuickEmail }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const statusCfg = STATUS_CONFIG[lead.status] || {
     label: lead.status || 'Lead',
     bg: 'rgba(59, 130, 246, 0.15)',
-    text: '#60A5FA',
+    text: '#3B82F6',
     dot: '#3B82F6',
   };
 
@@ -46,23 +49,27 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onPress, onQuickCall, 
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      style={({ pressed }) => [
+        styles.card,
+        isDark ? styles.cardDark : styles.cardLight,
+        pressed && (isDark ? styles.cardPressedDark : styles.cardPressedLight),
+      ]}
       onPress={onPress}
     >
       <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
+        <View style={[styles.avatar, { backgroundColor: isDark ? '#2B303C' : '#E2E8F0' }]}>
+          <Text style={[styles.avatarText, { color: isDark ? '#F3F4F6' : '#1E293B' }]}>
             {(lead.first_name?.[0] || 'L').toUpperCase()}
             {(lead.last_name?.[0] || '').toUpperCase()}
           </Text>
         </View>
 
         <View style={styles.nameBlock}>
-          <Text style={styles.name} numberOfLines={1}>
+          <Text style={[styles.name, { color: isDark ? '#FFFFFF' : '#0F172A' }]} numberOfLines={1}>
             {lead.name || `${lead.first_name || ''} ${lead.last_name || ''}`.trim() || 'Unnamed Lead'}
           </Text>
           {lead.company || lead.job_title ? (
-            <Text style={styles.company} numberOfLines={1}>
+            <Text style={[styles.company, { color: isDark ? '#9CA3AF' : '#64748B' }]} numberOfLines={1}>
               {[lead.job_title, lead.company].filter(Boolean).join(' • ')}
             </Text>
           ) : null}
@@ -75,11 +82,11 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onPress, onQuickCall, 
       </View>
 
       {/* Meta Row */}
-      <View style={styles.metaRow}>
+      <View style={[styles.metaRow, { borderTopColor: isDark ? '#222630' : '#F1F5F9' }]}>
         {lead.phone ? (
           <View style={styles.metaItem}>
-            <Ionicons name="call-outline" size={13} color="#9CA3AF" />
-            <Text style={styles.metaText} numberOfLines={1}>
+            <Ionicons name="call-outline" size={13} color={isDark ? '#9CA3AF' : '#64748B'} />
+            <Text style={[styles.metaText, { color: isDark ? '#9CA3AF' : '#64748B' }]} numberOfLines={1}>
               {lead.phone}
             </Text>
           </View>
@@ -87,8 +94,8 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onPress, onQuickCall, 
 
         {lead.email ? (
           <View style={styles.metaItem}>
-            <Ionicons name="mail-outline" size={13} color="#9CA3AF" />
-            <Text style={styles.metaText} numberOfLines={1}>
+            <Ionicons name="mail-outline" size={13} color={isDark ? '#9CA3AF' : '#64748B'} />
+            <Text style={[styles.metaText, { color: isDark ? '#9CA3AF' : '#64748B' }]} numberOfLines={1}>
               {lead.email}
             </Text>
           </View>
@@ -96,27 +103,35 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onPress, onQuickCall, 
       </View>
 
       {/* Footer: Assignee & Action Buttons */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { borderTopColor: isDark ? '#222630' : '#F1F5F9' }]}>
         <View style={styles.assigneeBlock}>
-          <Ionicons name="person-circle-outline" size={16} color="#9CA3AF" />
-          <Text style={styles.assigneeText} numberOfLines={1}>
+          <Ionicons name="person-circle-outline" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
+          <Text style={[styles.assigneeText, { color: isDark ? '#9CA3AF' : '#64748B' }]} numberOfLines={1}>
             {lead.assignee?.name || 'Unassigned'}
           </Text>
         </View>
 
         <View style={styles.actionButtons}>
           {lead.phone ? (
-            <Pressable style={styles.actionBtn} onPress={handleCall} hitSlop={8}>
+            <Pressable
+              style={[styles.actionBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              onPress={handleCall}
+              hitSlop={8}
+            >
               <Ionicons name="call" size={14} color="#10B981" />
             </Pressable>
           ) : null}
           {lead.email ? (
-            <Pressable style={styles.actionBtn} onPress={handleEmail} hitSlop={8}>
+            <Pressable
+              style={[styles.actionBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              onPress={handleEmail}
+              hitSlop={8}
+            >
               <Ionicons name="mail" size={14} color="#3B82F6" />
             </Pressable>
           ) : null}
           <View style={styles.chevron}>
-            <Ionicons name="chevron-forward" size={16} color="#6B7280" />
+            <Ionicons name="chevron-forward" size={16} color={isDark ? '#6B7280' : '#94A3B8'} />
           </View>
         </View>
       </View>
@@ -126,11 +141,13 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onPress, onQuickCall, 
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#181A20',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
+  },
+  cardDark: {
+    backgroundColor: '#181A20',
     borderColor: '#262A34',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -138,8 +155,21 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
-  cardPressed: {
+  cardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  cardPressedDark: {
     backgroundColor: '#20232B',
+    borderColor: '#3B82F6',
+  },
+  cardPressedLight: {
+    backgroundColor: '#F8FAFC',
     borderColor: '#3B82F6',
   },
   header: {
@@ -151,13 +181,11 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#2B303C',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   avatarText: {
-    color: '#F3F4F6',
     fontSize: 14,
     fontWeight: '700',
   },
@@ -166,13 +194,11 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   name: {
-    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
     letterSpacing: -0.2,
   },
   company: {
-    color: '#9CA3AF',
     fontSize: 12,
     marginTop: 2,
   },
@@ -199,7 +225,6 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 6,
     borderTopWidth: 1,
-    borderTopColor: '#222630',
   },
   metaItem: {
     flexDirection: 'row',
@@ -207,7 +232,6 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   metaText: {
-    color: '#9CA3AF',
     fontSize: 12,
   },
   footer: {
@@ -216,7 +240,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#222630',
   },
   assigneeBlock: {
     flexDirection: 'row',
@@ -225,7 +248,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   assigneeText: {
-    color: '#9CA3AF',
     fontSize: 12,
   },
   actionButtons: {
@@ -237,7 +259,6 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 8,
-    backgroundColor: '#262A34',
     alignItems: 'center',
     justifyContent: 'center',
   },

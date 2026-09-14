@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CRMTask, TaskPriority } from '../types';
@@ -40,6 +41,9 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   defaultDealId,
   isLoading,
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<TaskPriority>('medium');
@@ -91,17 +95,31 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.modalOverlay}
+        style={[styles.modalOverlay, { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0.5)' }]}
       >
-        <View style={styles.modalContent}>
+        <View
+          style={[
+            styles.modalContent,
+            {
+              backgroundColor: isDark ? '#181A20' : '#FFFFFF',
+              borderColor: isDark ? '#262A34' : '#E2E8F0',
+            },
+          ]}
+        >
           {/* Header */}
           <View style={styles.header}>
             <View>
-              <Text style={styles.headerTitle}>Create Task</Text>
-              <Text style={styles.headerSubtitle}>Set follow-ups and action items</Text>
+              <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Create Task</Text>
+              <Text style={[styles.headerSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+                Set follow-ups and action items
+              </Text>
             </View>
-            <Pressable style={styles.closeBtn} onPress={handleClose} hitSlop={8}>
-              <Ionicons name="close" size={20} color="#9CA3AF" />
+            <Pressable
+              style={[styles.closeBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              onPress={handleClose}
+              hitSlop={8}
+            >
+              <Ionicons name="close" size={20} color={isDark ? '#9CA3AF' : '#64748B'} />
             </Pressable>
           </View>
 
@@ -115,11 +133,18 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
             {/* Title */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Task Title *</Text>
+              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Task Title *</Text>
               <TextInput
-                style={styles.input}
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: isDark ? '#121316' : '#F8FAFC',
+                    borderColor: isDark ? '#262A34' : '#CBD5E1',
+                    color: isDark ? '#FFFFFF' : '#0F172A',
+                  },
+                ]}
                 placeholder="e.g. Follow up on demo feedback"
-                placeholderTextColor="#6B7280"
+                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                 value={title}
                 onChangeText={setTitle}
               />
@@ -127,37 +152,55 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 
             {/* Priority */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Priority</Text>
+              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Priority</Text>
               <View style={styles.priorityRow}>
-                {PRIORITIES.map((p) => (
-                  <Pressable
-                    key={p.key}
-                    style={[
-                      styles.priorityOption,
-                      priority === p.key && styles.priorityOptionSelected,
-                    ]}
-                    onPress={() => setPriority(p.key)}
-                  >
-                    <Text
+                {PRIORITIES.map((p) => {
+                  const isSelected = priority === p.key;
+                  return (
+                    <Pressable
+                      key={p.key}
                       style={[
-                        styles.priorityOptionText,
-                        priority === p.key && { color: p.color, fontWeight: '700' },
+                        styles.priorityOption,
+                        {
+                          backgroundColor: isSelected
+                            ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
+                            : isDark ? '#222630' : '#F1F5F9',
+                          borderColor: isSelected ? '#3B82F6' : 'transparent',
+                        },
                       ]}
+                      onPress={() => setPriority(p.key)}
                     >
-                      {p.label}
-                    </Text>
-                  </Pressable>
-                ))}
+                      <Text
+                        style={[
+                          styles.priorityOptionText,
+                          {
+                            color: isSelected ? p.color : isDark ? '#9CA3AF' : '#64748B',
+                            fontWeight: isSelected ? '700' : '600',
+                          },
+                        ]}
+                      >
+                        {p.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </View>
             </View>
 
             {/* Due Date */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Due Date (YYYY-MM-DD)</Text>
+              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Due Date (YYYY-MM-DD)</Text>
               <TextInput
-                style={styles.input}
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: isDark ? '#121316' : '#F8FAFC',
+                    borderColor: isDark ? '#262A34' : '#CBD5E1',
+                    color: isDark ? '#FFFFFF' : '#0F172A',
+                  },
+                ]}
                 placeholder={new Date().toISOString().split('T')[0]}
-                placeholderTextColor="#6B7280"
+                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                 value={dueDate}
                 onChangeText={setDueDate}
               />
@@ -166,29 +209,62 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             {/* Link Contact */}
             {contactsData?.contacts && contactsData.contacts.length > 0 ? (
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Link Contact / Lead</Text>
+                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Link Contact / Lead</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
                   <Pressable
-                    style={[styles.chip, contactId === '' && styles.chipSelected]}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: contactId === ''
+                          ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
+                          : isDark ? '#222630' : '#F1F5F9',
+                        borderColor: contactId === '' ? '#3B82F6' : 'transparent',
+                      },
+                    ]}
                     onPress={() => setContactId('')}
                   >
-                    <Text style={[styles.chipText, contactId === '' && styles.chipTextSelected]}>
+                    <Text
+                      style={[
+                        styles.chipText,
+                        {
+                          color: contactId === '' ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B',
+                          fontWeight: contactId === '' ? '600' : '500',
+                        },
+                      ]}
+                    >
                       None
                     </Text>
                   </Pressable>
-                  {contactsData.contacts.map((c) => (
-                    <Pressable
-                      key={c.id}
-                      style={[styles.chip, contactId === c.id && styles.chipSelected]}
-                      onPress={() => setContactId(c.id)}
-                    >
-                      <Text
-                        style={[styles.chipText, contactId === c.id && styles.chipTextSelected]}
+                  {contactsData.contacts.map((c) => {
+                    const isSelected = contactId === c.id;
+                    return (
+                      <Pressable
+                        key={c.id}
+                        style={[
+                          styles.chip,
+                          {
+                            backgroundColor: isSelected
+                              ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
+                              : isDark ? '#222630' : '#F1F5F9',
+                            borderColor: isSelected ? '#3B82F6' : 'transparent',
+                          },
+                        ]}
+                        onPress={() => setContactId(c.id)}
                       >
-                        {c.name || `${c.first_name} ${c.last_name}`}
-                      </Text>
-                    </Pressable>
-                  ))}
+                        <Text
+                          style={[
+                            styles.chipText,
+                            {
+                              color: isSelected ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B',
+                              fontWeight: isSelected ? '600' : '500',
+                            },
+                          ]}
+                        >
+                          {c.name || `${c.first_name} ${c.last_name}`}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
                 </ScrollView>
               </View>
             ) : null}
@@ -196,40 +272,81 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             {/* Assignee */}
             {members && members.length > 0 ? (
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Assign to</Text>
+                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Assign to</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
                   <Pressable
-                    style={[styles.chip, assignedTo === '' && styles.chipSelected]}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: assignedTo === ''
+                          ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
+                          : isDark ? '#222630' : '#F1F5F9',
+                        borderColor: assignedTo === '' ? '#3B82F6' : 'transparent',
+                      },
+                    ]}
                     onPress={() => setAssignedTo('')}
                   >
-                    <Text style={[styles.chipText, assignedTo === '' && styles.chipTextSelected]}>
+                    <Text
+                      style={[
+                        styles.chipText,
+                        {
+                          color: assignedTo === '' ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B',
+                          fontWeight: assignedTo === '' ? '600' : '500',
+                        },
+                      ]}
+                    >
                       Myself
                     </Text>
                   </Pressable>
-                  {members.map((m) => (
-                    <Pressable
-                      key={m.id}
-                      style={[styles.chip, assignedTo === m.id && styles.chipSelected]}
-                      onPress={() => setAssignedTo(m.id)}
-                    >
-                      <Text
-                        style={[styles.chipText, assignedTo === m.id && styles.chipTextSelected]}
+                  {members.map((m) => {
+                    const isSelected = assignedTo === m.id;
+                    return (
+                      <Pressable
+                        key={m.id}
+                        style={[
+                          styles.chip,
+                          {
+                            backgroundColor: isSelected
+                              ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
+                              : isDark ? '#222630' : '#F1F5F9',
+                            borderColor: isSelected ? '#3B82F6' : 'transparent',
+                          },
+                        ]}
+                        onPress={() => setAssignedTo(m.id)}
                       >
-                        {m.name}
-                      </Text>
-                    </Pressable>
-                  ))}
+                        <Text
+                          style={[
+                            styles.chipText,
+                            {
+                              color: isSelected ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B',
+                              fontWeight: isSelected ? '600' : '500',
+                            },
+                          ]}
+                        >
+                          {m.name}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
                 </ScrollView>
               </View>
             ) : null}
 
             {/* Description */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Description & Notes</Text>
+              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Description & Notes</Text>
               <TextInput
-                style={[styles.input, styles.textArea]}
+                style={[
+                  styles.input,
+                  styles.textArea,
+                  {
+                    backgroundColor: isDark ? '#121316' : '#F8FAFC',
+                    borderColor: isDark ? '#262A34' : '#CBD5E1',
+                    color: isDark ? '#FFFFFF' : '#0F172A',
+                  },
+                ]}
                 placeholder="Details of what needs to be discussed or prepared..."
-                placeholderTextColor="#6B7280"
+                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                 multiline
                 numberOfLines={3}
                 value={description}
@@ -240,8 +357,12 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 
           {/* Footer Actions */}
           <View style={styles.modalFooter}>
-            <Pressable style={styles.cancelBtn} onPress={handleClose} disabled={isLoading}>
-              <Text style={styles.cancelBtnText}>Cancel</Text>
+            <Pressable
+              style={[styles.cancelBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              onPress={handleClose}
+              disabled={isLoading}
+            >
+              <Text style={[styles.cancelBtnText, { color: isDark ? '#D1D5DB' : '#475569' }]}>Cancel</Text>
             </Pressable>
             <Pressable style={styles.submitBtn} onPress={handleSubmit} disabled={isLoading}>
               {isLoading ? (
