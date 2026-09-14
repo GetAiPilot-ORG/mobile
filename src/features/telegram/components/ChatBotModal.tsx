@@ -275,7 +275,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
               }}
             >
               <Ionicons name="add" size={16} color="#FFFFFF" />
-              <Text style={styles.connectMainBtnText}>+ Connect Telegram Bot</Text>
+              <Text style={styles.connectMainBtnText}>Connect Telegram Bot</Text>
             </Pressable>
           </View>
 
