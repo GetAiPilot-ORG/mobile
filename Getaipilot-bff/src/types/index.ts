@@ -2,6 +2,7 @@ export type UserRole = 'Owner' | 'Admin' | 'Manager' | 'Agent';
 
 export interface JWTPayload {
   session_id?: string;
+  device_session?: boolean;
   user_id: string;
   email: string;
   organization_id: string;
@@ -465,5 +466,4 @@ export interface TelegramOtpPayload {
 export interface TelegramPasswordPayload {
   password: string;
 }
-
 

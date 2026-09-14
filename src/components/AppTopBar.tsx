@@ -6,8 +6,21 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { colors } from '../theme/colors';
+import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
+import { useRouter } from "expo-router";
+import React from "react";
+import {
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  useColorScheme,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const brandLogo = require('../../assets/images/logo.jpg');
+const brandLogo = require("../../assets/images/logo.jpg");
 
 export interface AppTopBarProps {
   title?: string;
@@ -27,18 +40,35 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
+
+  // const handleBack = () => {
+  //   if (Platform.OS !== 'web') {
+  //     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  //   }
+  //   if (onBackPress) {
+  //     onBackPress();
+  //   } else if (router.canGoBack()) {
+  //     router.back();
+  //   }
+  // };
 
   // Auto-detect: Show back button on all sub-pages with title unless explicitly disabled
   const shouldShowBack = showBack !== undefined ? showBack : !!title;
 
   const handleBack = () => {
-    if (Platform.OS !== 'web') {
+    if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+
     if (onBackPress) {
       onBackPress();
-    } else if (router.canGoBack()) {
+      console.log("Custom back handler executed");
+      return;
+    }
+
+    if (router.canGoBack()) {
+      console.log("Going back");
       router.back();
     } else {
       router.replace('/(tabs)');
@@ -83,7 +113,11 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
           ) : (
             <View style={styles.brandRow}>
               <View style={styles.logoWrapper}>
-                <Image source={brandLogo} style={styles.logoImage} contentFit="cover" />
+                <Image
+                  source={brandLogo}
+                  style={styles.logoImage}
+                  contentFit="cover"
+                />
               </View>
               <Text style={[styles.brandText, isDark ? styles.brandTextDark : styles.brandTextLight]}>GetAiPilot</Text>
             </View>
@@ -103,9 +137,9 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingBottom: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -119,8 +153,8 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
   leftSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   backButton: {
@@ -154,10 +188,11 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   titleDark: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   subtitle: {
     fontSize: 12,
+    color: "#6B7280",
     marginTop: 1,
     letterSpacing: -0.2,
   },
@@ -165,36 +200,37 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   subtitleDark: {
-    color: '#9CA3AF',
+    color: "#9CA3AF",
   },
   brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   logoWrapper: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   logoImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   brandText: {
     fontSize: 19,
-    fontWeight: '800',
+    fontWeight: "800",
+    color: "#000000",
     letterSpacing: -0.5,
   },
   brandTextLight: {
     color: '#000000',
   },
   brandTextDark: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   rightSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
 });

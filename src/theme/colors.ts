@@ -80,3 +80,103 @@ export const colors = {
     crmSoft: 'rgba(245, 158, 11, 0.12)',
   },
 };
+
+
+
+
+export const getColors = (isDark: boolean) => ({
+  // Core Brand Tokens
+  primary: '#0084FF',
+  primaryHover: '#0070D8',
+  primaryForeground: '#FFFFFF',
+  primaryMuted: isDark ? '#0B2942' : '#EBF5FF',
+
+  // Accents & Highlights
+  accent: '#0084FF',
+  accentForeground: '#FFFFFF',
+  accentSoft: isDark
+    ? 'rgba(0, 132, 255, 0.18)'
+    : 'rgba(0, 132, 255, 0.12)',
+
+  // Surfaces & Layout
+  background: isDark ? '#000000' : '#F8F9FA',
+  canvas: isDark ? '#000000' : '#F8F9FA',
+
+  surface: isDark ? '#1C1C1E' : '#FFFFFF',
+  surfaceGrouped: isDark ? '#1C1C1E' : '#F2F4F7',
+  surfaceElevated: isDark ? '#1C1C1E' : '#FFFFFF',
+
+  foreground: isDark ? '#FFFFFF' : '#000000',
+
+  // Cards & Modals
+  card: isDark ? '#1C1C1E' : '#FFFFFF',
+  cardBorder: isDark ? '#2C2C2E' : '#E5E7EB',
+
+  cardShell: isDark ? '#1C1C1E' : '#F2F4F7',
+  cardShellBorder: isDark ? '#2C2C2E' : '#E5E7EB',
+
+  cardForeground: isDark ? '#FFFFFF' : '#000000',
+
+  border: isDark ? '#2C2C2E' : '#E5E7EB',
+
+  // Functional Colors
+  destructive: '#DC2626',
+  destructiveForeground: '#FFFFFF',
+  destructiveSoft: isDark
+    ? 'rgba(220, 38, 38, 0.18)'
+    : 'rgba(220, 38, 38, 0.1)',
+
+  success: '#16A34A',
+  successForeground: '#FFFFFF',
+  successSoft: isDark
+    ? 'rgba(22, 163, 74, 0.18)'
+    : 'rgba(22, 163, 74, 0.12)',
+
+  warning: '#F59E0B',
+  warningForeground: '#FFFFFF',
+  warningSoft: isDark
+    ? 'rgba(245, 158, 11, 0.18)'
+    : 'rgba(245, 158, 11, 0.12)',
+
+  muted: isDark ? '#1C1C1E' : '#F2F4F7',
+
+  mutedForeground: isDark ? '#98989D' : '#6B7280',
+
+  secondary: isDark ? '#1C1C1E' : '#F2F4F7',
+  secondaryForeground: isDark ? '#FFFFFF' : '#000000',
+
+  // Product Hub Specific Accents
+  products: {
+    whatsapp: '#25D366',
+    whatsappDark: '#075E54',
+    whatsappSoft: isDark
+      ? 'rgba(37, 211, 102, 0.18)'
+      : 'rgba(37, 211, 102, 0.12)',
+
+    telegram: '#229ED9',
+    telegramDark: '#0088CC',
+    telegramSoft: isDark
+      ? 'rgba(34, 158, 217, 0.18)'
+      : 'rgba(34, 158, 217, 0.12)',
+
+    voice: '#8B5CF6',
+    voiceDark: '#6D28D9',
+    voiceSoft: isDark
+      ? 'rgba(139, 92, 246, 0.18)'
+      : 'rgba(139, 92, 246, 0.12)',
+
+    social: '#E1306C',
+    socialDark: '#C13584',
+    socialSoft: isDark
+      ? 'rgba(225, 48, 108, 0.18)'
+      : 'rgba(225, 48, 108, 0.12)',
+
+    crm: '#F59E0B',
+    crmDark: '#B45309',
+    crmSoft: isDark
+      ? 'rgba(245, 158, 11, 0.18)'
+      : 'rgba(245, 158, 11, 0.12)',
+  },
+});
+
+export type AppColors = ReturnType<typeof getColors>;

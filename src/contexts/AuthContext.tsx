@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useEffect, useMemo } from 'react';
+import NetInfo from '@react-native-community/netinfo';
+import { AppState } from 'react-native';
 import { AuthStatus, useAuthStore, User as BFFUser } from '../core/store/authStore';
+import { apiClient } from '../core/api/client';
 
 export interface UserProfile {
   id: string;
@@ -53,6 +56,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     loadSession();
   }, []);
+
+  // Presence is based on the active app's successful BFF heartbeats. A device
+  // without a heartbeat for two minutes appears Offline in the device list.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    let hasInternet = true;
+    const sendHeartbeat = () => {
+      if (hasInternet && AppState.currentState === 'active') {
+        apiClient.post('/mobile/v1/auth/device-sessions/heartbeat', {}).catch(() => {});
+      }
+    };
+
+    sendHeartbeat();
+    const interval = setInterval(sendHeartbeat, 60_000);
+    const unsubscribeNetwork = NetInfo.addEventListener((networkState) => {
+      hasInternet = networkState.isConnected !== false && networkState.isInternetReachable !== false;
+      if (hasInternet) sendHeartbeat();
+    });
+    const appStateSubscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') sendHeartbeat();
+    });
+
+    return () => {
+      clearInterval(interval);
+      unsubscribeNetwork();
+      appStateSubscription.remove();
+    };
+  }, [isAuthenticated]);
 
   const userWithMeta: BFFUser | null = useMemo(() => {
     if (!user) return null;
@@ -116,4 +148,3 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   );
 }
-

@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { HubAdapter } from '../adapters/hub.adapter.js';
+import { DeviceLoginInput, HubAdapter } from '../adapters/hub.adapter.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
 import { PermissionService } from '../services/permission.service.js';
 import { TenantService } from '../services/tenant.service.js';
@@ -14,6 +14,14 @@ export async function authRoutes(fastify: FastifyInstance) {
     const loginSchema = z.object({
       email: z.string().email(),
       password: z.string().min(1),
+      device: z.object({
+        installationId: z.string().min(8).max(160),
+        platform: z.enum(['ios', 'android', 'web']),
+        deviceName: z.string().min(1).max(160),
+        deviceType: z.enum(['phone', 'tablet', 'desktop', 'tv', 'unknown']).optional(),
+        osVersion: z.string().max(80).optional(),
+        appVersion: z.string().max(80).optional(),
+      }).optional(),
     });
 
     const parseResult = loginSchema.safeParse(request.body);
@@ -76,13 +84,36 @@ export async function authRoutes(fastify: FastifyInstance) {
       permissions,
       subscription_tier: profile.subscriptionTier,
       session_id: sessionId,
+      device_session: Boolean(parseResult.data.device),
     };
 
     const accessToken = fastify.jwt.sign(tokenPayload, { expiresIn: '7d' });
     const refreshToken = fastify.jwt.sign(
-      { user_id: authUser.id, email: authUser.email || email, session_id: sessionId },
+      {
+        user_id: authUser.id,
+        email: authUser.email || email,
+        session_id: sessionId,
+        device_session: Boolean(parseResult.data.device),
+      },
       { expiresIn: '30d' }
     );
+
+    if (parseResult.data.device) {
+      try {
+        await HubAdapter.registerDeviceSession(
+          authUser.id,
+          sessionId,
+          parseResult.data.device as DeviceLoginInput
+        );
+      } catch (error: any) {
+        request.log.error(error, 'Unable to record device login');
+        return reply.status(500).send({
+          statusCode: 500,
+          error: 'DeviceSessionTrackingFailed',
+          message: 'Could not record this device login. Please try again.',
+        });
+      }
+    }
 
     return reply.send({
       accessToken,
@@ -119,7 +150,22 @@ export async function authRoutes(fastify: FastifyInstance) {
     const { refreshToken } = parseResult.data;
 
     try {
-      const decoded = fastify.jwt.verify<{ user_id: string; email?: string; session_id?: string }>(refreshToken);
+      const decoded = fastify.jwt.verify<{
+        user_id: string;
+        email?: string;
+        session_id?: string;
+        device_session?: boolean;
+      }>(refreshToken);
+      if (decoded.device_session) {
+        const isActive = await HubAdapter.isDeviceSessionActive(decoded.user_id, decoded.session_id);
+        if (!isActive) {
+          return reply.status(401).send({
+            statusCode: 401,
+            error: 'SessionRevoked',
+            message: 'This device has been signed out. Please sign in again.',
+          });
+        }
+      }
       const profile = await HubAdapter.getUserProfile(decoded.user_id, decoded.email);
       const role: UserRole = profile.role;
       const permissions = PermissionService.getPermissionsForRole(role, profile.subscriptionTier);
@@ -139,6 +185,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         permissions,
         subscription_tier: profile.subscriptionTier,
         session_id: sessionId,
+        device_session: Boolean(decoded.device_session),
       };
 
       const accessToken = fastify.jwt.sign(tokenPayload, { expiresIn: '7d' });
@@ -186,11 +233,59 @@ export async function authRoutes(fastify: FastifyInstance) {
     });
   });
 
+  // GET /mobile/v1/auth/device-sessions
+  // The BFF owns this endpoint because auth.sessions and service-role access
+  // must never be exposed to the Expo client.
+  fastify.get('/device-sessions', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const devices = await HubAdapter.getActiveDeviceSessions(user.user_id, user.session_id);
+    return reply.send({ activeDeviceCount: devices.length, devices });
+  });
+
+  // POST /mobile/v1/auth/device-sessions/heartbeat
+  // The mobile client sends this while foregrounded. A device is considered
+  // online for two minutes after its last successful heartbeat.
+  fastify.post('/device-sessions/heartbeat', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const tracked = await HubAdapter.touchDeviceSession(user.user_id, user.session_id);
+    return reply.send({ tracked });
+  });
+
+  // DELETE /mobile/v1/auth/device-sessions/:sessionId
+  // A user can only sign out another session that belongs to their own account.
+  fastify.delete('/device-sessions/:sessionId', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const params = z.object({ sessionId: z.string().min(1).max(100) }).safeParse(request.params);
+    if (!params.success) {
+      return reply.status(400).send({ statusCode: 400, error: 'BadRequest', message: 'Invalid session ID' });
+    }
+
+    const user = request.user as JWTPayload;
+    if (params.data.sessionId === user.session_id) {
+      return reply.status(400).send({
+        statusCode: 400,
+        error: 'CurrentDevice',
+        message: 'Use the normal sign out action for this device.',
+      });
+    }
+
+    const signedOut = await HubAdapter.signOutDeviceSession(user.user_id, params.data.sessionId);
+    if (!signedOut) {
+      return reply.status(404).send({ statusCode: 404, error: 'NotFound', message: 'Active device session not found' });
+    }
+
+    UpstreamSessionService.clearSession(params.data.sessionId);
+    return reply.send({ success: true });
+  });
+
   // POST /mobile/v1/auth/logout
   fastify.post('/logout', { preHandler: [authenticateToken] }, async (request, reply) => {
     const user = request.user as JWTPayload | undefined;
     if (user) {
-      UpstreamSessionService.clearSession(user.session_id, user.user_id);
+      try {
+        await HubAdapter.signOutDeviceSession(user.user_id, user.session_id);
+      } finally {
+        UpstreamSessionService.clearSession(user.session_id, user.user_id);
+      }
     }
     return reply.send({ success: true, message: 'Session terminated successfully' });
   });
