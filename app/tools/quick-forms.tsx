@@ -1,4 +1,4 @@
-import { FileText, Inbox, Pencil, Plus, Trash2 } from "lucide-react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -42,23 +42,20 @@ export default function SimpleQuickFormsScreen() {
   const loadForms = useCallback(async () => {
     try {
       const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      if (userError) {
-        throw userError;
-      }
-
-      if (!user) {
+      if (!session?.user) {
         setForms([]);
+        setLoading(false);
+        setRefreshing(false);
         return;
       }
 
       const { data, error } = await supabase
         .from("quick_forms")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", session.user.id)
         .order("updated_at", {
           ascending: false,
         });
@@ -188,7 +185,7 @@ export default function SimpleQuickFormsScreen() {
           <View
             style={[styles.iconContainer, isDark && styles.iconContainerDark]}
           >
-            <FileText size={22} color={isDark ? "#FFFFFF" : "#0A84FF"} />
+            <Ionicons name="document-text-outline" size={22} color={isDark ? "#FFFFFF" : "#0A84FF"} />
           </View>
 
           <View style={styles.titleContainer}>
@@ -230,7 +227,7 @@ export default function SimpleQuickFormsScreen() {
               isDeleting && styles.disabledButton,
             ]}
           >
-            <Pencil size={17} color={isDark ? "#FFFFFF" : "#111827"} />
+            <Ionicons name="pencil-outline" size={17} color={isDark ? "#FFFFFF" : "#111827"} />
 
             <Text
               style={[
@@ -251,7 +248,7 @@ export default function SimpleQuickFormsScreen() {
               <ActivityIndicator size="small" color="#DC2626" />
             ) : (
               <>
-                <Trash2 size={17} color="#DC2626" />
+                <Ionicons name="trash-outline" size={17} color="#DC2626" />
 
                 <Text style={styles.deleteText}>Delete</Text>
               </>
@@ -293,7 +290,7 @@ export default function SimpleQuickFormsScreen() {
         {forms.length === 0 ? (
           <View style={styles.emptyContainer}>
             <View style={[styles.emptyIcon, isDark && styles.emptyIconDark]}>
-              <Inbox size={38} color={isDark ? "#FFFFFF" : "#0A84FF"} />
+              <Ionicons name="file-tray-outline" size={38} color={isDark ? "#FFFFFF" : "#0A84FF"} />
             </View>
 
             <Text style={[styles.emptyTitle, isDark && styles.emptyTitleDark]}>
@@ -314,7 +311,7 @@ export default function SimpleQuickFormsScreen() {
               onPress={() => void handleCreate()}
               style={styles.createButton}
             >
-              <Plus size={20} color="#FFFFFF" />
+              <Ionicons name="add" size={20} color="#FFFFFF" />
 
               <Text style={styles.createButtonText}>Create Form</Text>
             </Pressable>
@@ -332,7 +329,7 @@ export default function SimpleQuickFormsScreen() {
                 onPress={() => void handleCreate()}
                 style={styles.smallCreateButton}
               >
-                <Plus size={18} color="#FFFFFF" />
+                <Ionicons name="add" size={18} color="#FFFFFF" />
 
                 <Text style={styles.smallCreateText}>Create</Text>
               </Pressable>

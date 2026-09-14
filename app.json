@@ -48,7 +48,9 @@
         {
           "faceIDPermission": "Allow GetAIPilot to use Face ID for fast and secure authentication."
         }
-      ]
+      ],
+      "expo-image",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

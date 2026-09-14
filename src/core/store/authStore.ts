@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { supabase } from "../../lib/supabase";
 import { apiClient } from "../api/client";
 import { authStorage } from "../storage/authStorage";
+import { getDeviceLoginInfo } from "../../lib/device-session";
 
 export interface User {
   id: string;
@@ -70,11 +71,13 @@ export const useAuthStore = create<AuthState>((set, get) => {
         });
         if (supabaseAuth.error) throw supabaseAuth.error;
 
+        const device = await getDeviceLoginInfo();
         const data = await apiClient.post(
           "/mobile/v1/auth/login",
           {
             email,
             password: password || "Password123!",
+            device,
           },
           { skipAuth: true },
         );
@@ -98,6 +101,9 @@ export const useAuthStore = create<AuthState>((set, get) => {
       try {
         await apiClient.post("/mobile/v1/auth/logout", {}).catch(() => {});
       } finally {
+        // This removes the Supabase session from this installation only. It
+        // must not sign the user out of their other logged-in devices.
+        await supabase.auth.signOut({ scope: "local" }).catch(() => {});
         await authStorage.clear();
         set({
           user: null,

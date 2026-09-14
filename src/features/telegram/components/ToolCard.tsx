@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, useColorScheme } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { TelegramHubTool } from '../types';
@@ -9,67 +10,56 @@ interface ToolCardProps {
   onPress: () => void;
 }
 
-const BADGE_THEMES: Record<string, { bg: string; text: string; iconColor: string; iconBg: string }> = {
-  ENGAGEMENT: {
-    bg: 'rgba(139, 92, 246, 0.12)',
-    text: '#8B5CF6',
-    iconColor: '#8B5CF6',
-    iconBg: 'rgba(139, 92, 246, 0.1)',
+interface ToolVisualConfig {
+  gradient: readonly [string, string];
+  icon: keyof typeof Ionicons.glyphMap;
+}
+
+const TOOL_VISUAL_MAP: Record<string, ToolVisualConfig> = {
+  reactions: {
+    gradient: ['#8B5CF6', '#6366F1'],
+    icon: 'sparkles',
   },
-  POPULAR: {
-    bg: 'rgba(2, 132, 199, 0.12)',
-    text: '#0284C7',
-    iconColor: '#0284C7',
-    iconBg: 'rgba(2, 132, 199, 0.1)',
+  tracker: {
+    gradient: ['#0284C7', '#0369A1'],
+    icon: 'share-social',
   },
-  SEBI: {
-    bg: 'rgba(16, 185, 129, 0.12)',
-    text: '#059669',
-    iconColor: '#059669',
-    iconBg: 'rgba(16, 185, 129, 0.1)',
+  autoforward: {
+    gradient: ['#0EA5E9', '#0284C7'],
+    icon: 'paper-plane',
   },
-  AUTOMATION: {
-    bg: 'rgba(2, 132, 199, 0.12)',
-    text: '#0284C7',
-    iconColor: '#0284C7',
-    iconBg: 'rgba(2, 132, 199, 0.1)',
+  sub_manager: {
+    gradient: ['#F43F5E', '#DB2777'],
+    icon: 'wallet',
   },
-  MONETIZE: {
-    bg: 'rgba(168, 85, 247, 0.12)',
-    text: '#A855F7',
-    iconColor: '#A855F7',
-    iconBg: 'rgba(168, 85, 247, 0.1)',
+  report_bot: {
+    gradient: ['#10B981', '#047857'],
+    icon: 'shield-checkmark',
   },
-  'SMART GATE': {
-    bg: 'rgba(16, 185, 129, 0.12)',
-    text: '#059669',
-    iconColor: '#059669',
-    iconBg: 'rgba(16, 185, 129, 0.1)',
+  broadcast: {
+    gradient: ['#F59E0B', '#D97706'],
+    icon: 'megaphone',
   },
-  'AI DRIVEN': {
-    bg: 'rgba(239, 68, 68, 0.12)',
-    text: '#EF4444',
-    iconColor: '#EF4444',
-    iconBg: 'rgba(239, 68, 68, 0.1)',
+  auto_approve: {
+    gradient: ['#14B8A6', '#0F766E'],
+    icon: 'checkmark-circle',
   },
-  BROADCAST: {
-    bg: 'rgba(245, 158, 11, 0.12)',
-    text: '#D97706',
-    iconColor: '#D97706',
-    iconBg: 'rgba(245, 158, 11, 0.1)',
+  chatbot: {
+    gradient: ['#6366F1', '#4F46E5'],
+    icon: 'hardware-chip',
   },
+};
+
+const DEFAULT_VISUAL: ToolVisualConfig = {
+  gradient: ['#0284C7', '#0369A1'],
+  icon: 'apps',
 };
 
 export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const badgeTheme = (tool.badge && BADGE_THEMES[tool.badge]) || {
-    bg: 'rgba(2, 132, 199, 0.12)',
-    text: '#0284C7',
-    iconColor: '#0284C7',
-    iconBg: 'rgba(2, 132, 199, 0.1)',
-  };
+  const visual = TOOL_VISUAL_MAP[tool.key] || DEFAULT_VISUAL;
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -78,42 +68,56 @@ export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
 
   return (
     <Pressable
-      style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}
+      style={({ pressed }) => [
+        styles.card,
+        isDark ? styles.cardDark : styles.cardLight,
+        pressed && styles.cardPressed,
+      ]}
       onPress={handlePress}
     >
-      <View style={styles.topRow}>
-        <View style={[styles.iconBox, { backgroundColor: badgeTheme.iconBg }]}>
-          <Ionicons name={(tool.icon as any) || 'hardware-chip-outline'} size={18} color={badgeTheme.iconColor} />
-        </View>
-        {tool.badge && (
-          <View style={[styles.badge, { backgroundColor: badgeTheme.bg }]}>
-            <Text style={[styles.badgeText, { color: badgeTheme.text }]}>{tool.badge}</Text>
-          </View>
-        )}
+      {/* Left: Rich Gradient App Icon */}
+      <LinearGradient
+        colors={visual.gradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.iconContainer}
+      >
+        <Ionicons name={visual.icon} size={22} color="#FFFFFF" />
+      </LinearGradient>
+
+      {/* Middle: Title & Description */}
+      <View style={styles.infoCol}>
+        <Text
+          style={[styles.title, isDark ? styles.textDark : styles.textLight]}
+          numberOfLines={1}
+        >
+          {tool.title}
+        </Text>
+        <Text style={styles.description} numberOfLines={2}>
+          {tool.description}
+        </Text>
       </View>
 
-      <Text style={[styles.title, isDark ? styles.textDark : styles.textLight]}>{tool.title}</Text>
-
-      <Text style={styles.description} numberOfLines={3}>
-        {tool.description}
-      </Text>
-
-      <View style={[styles.footer, isDark ? styles.footerDark : styles.footerLight]}>
-        <View style={styles.actionRow}>
-          <Text style={styles.actionText}>Launch Module</Text>
-          <Ionicons name="arrow-forward-outline" size={13} color="#0284C7" />
-        </View>
-      </View>
+      {/* Right: Sleek Chevron Arrow */}
+      <Ionicons
+        name="chevron-forward"
+        size={18}
+        color={isDark ? '#475569' : '#94A3B8'}
+      />
     </Pressable>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 16,
     borderWidth: 1,
+    marginBottom: 10,
+    gap: 12,
   },
   cardLight: {
     backgroundColor: '#FFFFFF',
@@ -128,59 +132,41 @@ const styles = StyleSheet.create({
     backgroundColor: '#161B26',
     borderColor: '#262C36',
   },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+  cardPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.99 }],
   },
-  iconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+  iconContainer: {
+    width: 46,
+    height: 46,
+    borderRadius: 13,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
+  infoCol: {
+    flex: 1,
+    justifyContent: 'center',
   },
   title: {
     fontSize: 15,
     fontWeight: '700',
-    marginBottom: 6,
+    letterSpacing: -0.2,
+    marginBottom: 2,
   },
-  textLight: { color: '#0F172A' },
-  textDark: { color: '#F8FAFC' },
+  textLight: {
+    color: '#0F172A',
+  },
+  textDark: {
+    color: '#F8FAFC',
+  },
   description: {
-    color: '#64748B',
+    color: '#94A3B8',
     fontSize: 12,
-    lineHeight: 17,
-    marginBottom: 14,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    paddingTop: 10,
-    borderTopWidth: 1,
-  },
-  footerLight: { borderTopColor: '#F1F5F9' },
-  footerDark: { borderTopColor: '#262C36' },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  actionText: {
-    color: '#0284C7',
-    fontSize: 12,
-    fontWeight: '700',
+    lineHeight: 16,
   },
 });
