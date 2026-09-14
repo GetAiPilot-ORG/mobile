@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../../core/store/authStore';
@@ -43,7 +44,16 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const handleBack = onBack || (() => router.back());
+  const handleBack = onBack || (() => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/inbox' as any);
+    }
+  });
   const queryClient = useQueryClient();
   const [inputText, setInputText] = useState<string>('');
   const [isInternalNote, setIsInternalNote] = useState<boolean>(false);
@@ -359,8 +369,12 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
         {/* Top Header Bar */}
         <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
           <View style={styles.headerTopRow}>
-            <Pressable style={styles.backBtn} onPress={handleBack} hitSlop={10}>
-              <Ionicons name="arrow-back" size={22} color={isDark ? '#e9edef' : '#0f172a'} />
+            <Pressable style={styles.backBtn} onPress={handleBack} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+              <Ionicons
+                name={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'}
+                size={Platform.OS === 'ios' ? 24 : 22}
+                color={isDark ? '#e9edef' : '#0f172a'}
+              />
             </Pressable>
 
             {/* Avatar & Contact Info Clickable to Drawer */}

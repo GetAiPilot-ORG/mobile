@@ -207,6 +207,7 @@ export default function FreeToolsScreen() {
       <AppTopBar
         title="Free Tools Hub"
         subtitle="Complete Utility Inventory (10 Tools)"
+        showBack={false}
       />
 
       <ScrollView
