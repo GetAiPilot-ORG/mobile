@@ -1,4 +1,7 @@
-import React, { useState, useRef } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as Haptics from "expo-haptics";
+import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -18,25 +21,23 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 
-import { AppScreen } from '../../../components/AppScreen';
-import { AppTopBar } from '../../../components/AppTopBar';
+import { AppScreen } from "../../../components/AppScreen";
+import { AppTopBar } from "../../../components/AppTopBar";
 import {
   ProductFloatingBottomBar,
   ProductTabItem,
-} from '../../../components/ProductFloatingBottomBar';
-import { telegramApi } from '../api/telegramApi';
-import { TelegramToolKey, TelegramHubTool } from '../types';
+} from "../../../components/ProductFloatingBottomBar";
+import { telegramApi } from "../api/telegramApi";
 import {
-  HubProgressCard,
-  ToolCard,
-  AutoforwardModal,
-  SubManagerModal,
-  TrackerModal,
-  ReportBotModal,
-  BroadcastModal,
   AutoApproveModal,
+  AutoforwardModal,
+  BroadcastModal,
   ChatBotModal,
+  DashboardAnalyticsCharts,
+  HubProgressCard,
   ReactionsModal,
+  ReportBotModal,
+  SubManagerModal,
   TelegramLoginModal,
   DashboardAnalyticsCharts,
 } from '../components';
@@ -80,18 +81,23 @@ const TELEGRAM_TABS: ProductTabItem[] = [
 ];
 
 const CATEGORIES: { key: TelegramCategory; label: string; icon: string }[] = [
-  { key: 'all', label: 'All 8 Tools', icon: 'grid-outline' },
-  { key: 'automation', label: 'Automation & Routing', icon: 'git-compare-outline' },
-  { key: 'monetization', label: 'Monetization & VIP', icon: 'card-outline' },
-  { key: 'growth', label: 'Audience Growth', icon: 'trending-up-outline' },
+  { key: "all", label: "All 8 Tools", icon: "grid-outline" },
+  {
+    key: "automation",
+    label: "Automation & Routing",
+    icon: "git-compare-outline",
+  },
+  { key: "monetization", label: "Monetization & VIP", icon: "card-outline" },
+  { key: "growth", label: "Audience Growth", icon: "trending-up-outline" },
 ];
 
 export const TelegramScreen: React.FC = () => {
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
 
-  const [activeTab, setActiveTab] = useState<TelegramTab>('hub');
-  const [selectedCategory, setSelectedCategory] = useState<TelegramCategory>('all');
+  const [activeTab, setActiveTab] = useState<TelegramTab>("hub");
+  const [selectedCategory, setSelectedCategory] =
+    useState<TelegramCategory>("all");
   const [activeModal, setActiveModal] = useState<TelegramToolKey | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
@@ -118,13 +124,18 @@ export const TelegramScreen: React.FC = () => {
 
   const queryClient = useQueryClient();
 
-  const { data: summary, isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ['telegram_summary'],
+  const {
+    data: summary,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useQuery({
+    queryKey: ["telegram_summary"],
     queryFn: telegramApi.getSummary,
   });
 
   const { data: trackerBots, refetch: refetchBots } = useQuery({
-    queryKey: ['telegram_tracker_bots'],
+    queryKey: ["telegram_tracker_bots"],
     queryFn: telegramApi.getTrackerBots,
   });
 
@@ -139,22 +150,22 @@ export const TelegramScreen: React.FC = () => {
   });
 
   const { data: sessionStatus, refetch: refetchSession } = useQuery({
-    queryKey: ['telegram_session_status'],
+    queryKey: ["telegram_session_status"],
     queryFn: telegramApi.getSessionStatus,
   });
 
   const { data: chats, refetch: refetchChats } = useQuery({
-    queryKey: ['telegram_chats'],
+    queryKey: ["telegram_chats"],
     queryFn: telegramApi.getChats,
   });
 
   const { data: forwardRules, refetch: refetchRules } = useQuery({
-    queryKey: ['telegram_forward_rules'],
+    queryKey: ["telegram_forward_rules"],
     queryFn: telegramApi.getForwardRules,
   });
 
   const { data: subPlans, refetch: refetchPlans } = useQuery({
-    queryKey: ['telegram_sub_plans'],
+    queryKey: ["telegram_sub_plans"],
     queryFn: telegramApi.getSubPlans,
   });
 
@@ -162,42 +173,47 @@ export const TelegramScreen: React.FC = () => {
     mutationFn: telegramApi.syncChats,
     onSuccess: () => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      queryClient.invalidateQueries({ queryKey: ['telegram_chats'] });
-      queryClient.invalidateQueries({ queryKey: ['telegram_summary'] });
+      queryClient.invalidateQueries({ queryKey: ["telegram_chats"] });
+      queryClient.invalidateQueries({ queryKey: ["telegram_summary"] });
     },
   });
 
-  const { mutateAsync: sendBroadcast, isPending: isBroadcasting } = useMutation({
-    mutationFn: telegramApi.sendBroadcast,
-    onSuccess: () => {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      queryClient.invalidateQueries({ queryKey: ['telegram_summary'] });
+  const { mutateAsync: sendBroadcast, isPending: isBroadcasting } = useMutation(
+    {
+      mutationFn: telegramApi.sendBroadcast,
+      onSuccess: () => {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        queryClient.invalidateQueries({ queryKey: ["telegram_summary"] });
+      },
     },
-  });
+  );
 
-  const { mutateAsync: createForwardRule, isPending: isSavingRule } = useMutation({
-    mutationFn: telegramApi.createForwardRule,
-    onSuccess: () => {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      queryClient.invalidateQueries({ queryKey: ['telegram_forward_rules'] });
-      queryClient.invalidateQueries({ queryKey: ['telegram_summary'] });
-    },
-  });
+  const { mutateAsync: createForwardRule, isPending: isSavingRule } =
+    useMutation({
+      mutationFn: telegramApi.createForwardRule,
+      onSuccess: () => {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        queryClient.invalidateQueries({ queryKey: ["telegram_forward_rules"] });
+        queryClient.invalidateQueries({ queryKey: ["telegram_summary"] });
+      },
+    });
 
-  const { mutateAsync: createSubPlan, isPending: isCreatingPlan } = useMutation({
-    mutationFn: telegramApi.createSubPlan,
-    onSuccess: () => {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      queryClient.invalidateQueries({ queryKey: ['telegram_sub_plans'] });
-      queryClient.invalidateQueries({ queryKey: ['telegram_summary'] });
+  const { mutateAsync: createSubPlan, isPending: isCreatingPlan } = useMutation(
+    {
+      mutationFn: telegramApi.createSubPlan,
+      onSuccess: () => {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        queryClient.invalidateQueries({ queryKey: ["telegram_sub_plans"] });
+        queryClient.invalidateQueries({ queryKey: ["telegram_summary"] });
+      },
     },
-  });
+  );
 
   const { mutateAsync: toggleAutoApprove } = useMutation({
     mutationFn: telegramApi.toggleAutoApprove,
     onSuccess: () => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      queryClient.invalidateQueries({ queryKey: ['telegram_summary'] });
+      queryClient.invalidateQueries({ queryKey: ["telegram_summary"] });
     },
   });
 
@@ -205,7 +221,7 @@ export const TelegramScreen: React.FC = () => {
     mutationFn: telegramApi.updateReactions,
     onSuccess: () => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      queryClient.invalidateQueries({ queryKey: ['telegram_summary'] });
+      queryClient.invalidateQueries({ queryKey: ["telegram_summary"] });
     },
   });
 
@@ -223,7 +239,7 @@ export const TelegramScreen: React.FC = () => {
   };
 
   const handleTabChange = (tab: TelegramTab) => {
-    if (Platform.OS !== 'web') {
+    if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setActiveTab(tab);
@@ -231,7 +247,7 @@ export const TelegramScreen: React.FC = () => {
   };
 
   const handleCategoryChange = (cat: TelegramCategory) => {
-    if (Platform.OS !== 'web') {
+    if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setSelectedCategory(cat);
@@ -261,15 +277,19 @@ export const TelegramScreen: React.FC = () => {
 
   // Filter tools by category
   const filteredTools = (hub.tools || []).filter((tool) => {
-    if (selectedCategory === 'all') return true;
-    if (selectedCategory === 'automation') {
-      return ['autoforward', 'auto_approve', 'chatbot', 'reactions'].includes(tool.key);
+    if (selectedCategory === "all") return true;
+    if (selectedCategory === "automation") {
+      return ["autoforward", "auto_approve", "chatbot", "reactions"].includes(
+        tool.key,
+      );
     }
-    if (selectedCategory === 'monetization') {
-      return ['sub_manager', 'report_bot'].includes(tool.key);
+    if (selectedCategory === "monetization") {
+      return ["sub_manager", "report_bot"].includes(tool.key);
     }
-    if (selectedCategory === 'growth') {
-      return ['broadcast', 'tracker', 'auto_approve', 'reactions'].includes(tool.key);
+    if (selectedCategory === "growth") {
+      return ["broadcast", "tracker", "auto_approve", "reactions"].includes(
+        tool.key,
+      );
     }
     return true;
   });
@@ -557,15 +577,23 @@ export const TelegramScreen: React.FC = () => {
         style={styles.container}
         contentContainerStyle={styles.content}
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={handleRefreshAll} tintColor="#0284C7" />
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={handleRefreshAll}
+            tintColor="#0284C7"
+          />
         }
       >
         {isLoading ? (
-          <ActivityIndicator size="large" color="#0284C7" style={{ marginTop: 40 }} />
+          <ActivityIndicator
+            size="large"
+            color="#0284C7"
+            style={{ marginTop: 40 }}
+          />
         ) : (
           <>
             {/* TAB 0: GAP TRACKER & BOTS */}
-            {activeTab === 'bots' && (
+            {activeTab === "bots" && (
               <>
                 <View style={styles.trackerHeader}>
                   <View style={{ flex: 1, minWidth: 0 }}>
@@ -1039,19 +1067,28 @@ export const TelegramScreen: React.FC = () => {
             )}
 
             {/* TAB 1: OVERVIEW / MASTER COMMAND CENTER & 8-TOOL HUB */}
-            {activeTab === 'hub' && (
+            {activeTab === "hub" && (
               <>
                 {/* HERO: TELEGRAM MASTER DASHBOARD (6 KPI CARDS) */}
-                <View style={[styles.commandCenterCard, isDark ? styles.cardDark : styles.cardLight]}>
+                <View
+                  style={[
+                    styles.commandCenterCard,
+                    isDark ? styles.cardDark : styles.cardLight,
+                  ]}
+                >
                   {/* Header with DB Synced Badge & Actions */}
                   <View style={styles.commandHeader}>
                     <View style={styles.sessionPillRow}>
                       <View style={styles.syncedBadge}>
                         <View style={styles.sessionDotGreen} />
-                        <Text style={styles.syncedBadgeText}>Database Synced</Text>
+                        <Text style={styles.syncedBadgeText}>
+                          Database Synced
+                        </Text>
                       </View>
                       <View style={styles.botCountBadge}>
-                        <Text style={styles.botCountBadgeText}>{botsList.length} Bots Connected</Text>
+                        <Text style={styles.botCountBadgeText}>
+                          {botsList.length} Bots Connected
+                        </Text>
                       </View>
                     </View>
 
@@ -1073,7 +1110,7 @@ export const TelegramScreen: React.FC = () => {
 
                       <Pressable
                         style={styles.connectHeaderBtn}
-                        onPress={() => setActiveModal('tracker')}
+                        onPress={() => setActiveModal("tracker")}
                       >
                         <Ionicons name="add" size={15} color="#FFFFFF" />
                         <Text style={styles.connectHeaderBtnText}>Connect Bot</Text>
@@ -1235,7 +1272,12 @@ export const TelegramScreen: React.FC = () => {
 
                 {/* Category Filter Pills */}
                 <View style={styles.categorySection}>
-                  <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight]}>
+                  <Text
+                    style={[
+                      styles.sectionTitle,
+                      isDark ? styles.textDark : styles.textLight,
+                    ]}
+                  >
                     Platform Integration Tools ({filteredTools.length}/8)
                   </Text>
                   <ScrollView
@@ -1258,7 +1300,13 @@ export const TelegramScreen: React.FC = () => {
                           <Ionicons
                             name={cat.icon as any}
                             size={13}
-                            color={isSelected ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
+                            color={
+                              isSelected
+                                ? "#FFFFFF"
+                                : isDark
+                                  ? "#94A3B8"
+                                  : "#64748B"
+                            }
                           />
                           <Text
                             style={[
@@ -1287,22 +1335,34 @@ export const TelegramScreen: React.FC = () => {
             )}
 
             {/* TAB 2: AUTOFORWARD ENGINE */}
-            {activeTab === 'automations' && (
+            {activeTab === "automations" && (
               <>
                 {/* HERO CARD: AUTOFORWARD CONTROL */}
-                <View style={[styles.afControlCard, isDark ? styles.cardDark : styles.cardLight]}>
+                <View
+                  style={[
+                    styles.afControlCard,
+                    isDark ? styles.cardDark : styles.cardLight,
+                  ]}
+                >
                   <View style={styles.afControlHeader}>
                     <View style={styles.afControlHeaderLeft}>
                       <View style={styles.afHeroIconCircle}>
                         <Ionicons name="flash" size={20} color="#0284C7" />
                       </View>
                       <View>
-                        <Text style={[styles.afHeroTitle, isDark ? styles.textDark : styles.textLight]}>
+                        <Text
+                          style={[
+                            styles.afHeroTitle,
+                            isDark ? styles.textDark : styles.textLight,
+                          ]}
+                        >
                           AutoForward Control
                         </Text>
                         <View style={styles.afSystemActiveRow}>
                           <View style={styles.sessionDotGreen} />
-                          <Text style={styles.afSystemActiveText}>System Active</Text>
+                          <Text style={styles.afSystemActiveText}>
+                            System Active
+                          </Text>
                         </View>
                       </View>
                     </View>
@@ -1312,11 +1372,18 @@ export const TelegramScreen: React.FC = () => {
                       <Pressable
                         style={styles.afOpenBotBtn}
                         onPress={() => {
-                          if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                          Linking.openURL('https://t.me/Gapautoforwardingbot');
+                          if (Platform.OS !== "web")
+                            Haptics.notificationAsync(
+                              Haptics.NotificationFeedbackType.Success,
+                            );
+                          Linking.openURL("https://t.me/Gapautoforwardingbot");
                         }}
                       >
-                        <Ionicons name="logo-android" size={15} color="#FFFFFF" />
+                        <Ionicons
+                          name="logo-android"
+                          size={15}
+                          color="#FFFFFF"
+                        />
                         <Text style={styles.afOpenBotBtnText}>Open Bot</Text>
                       </Pressable>
                     </View>
@@ -1333,7 +1400,12 @@ export const TelegramScreen: React.FC = () => {
                     <View style={[styles.afKpiIconCircle, { backgroundColor: 'rgba(2, 132, 199, 0.12)' }]}>
                       <Ionicons name="arrow-redo" size={14} color="#0284C7" />
                     </View>
-                    <Text style={[styles.afKpiValue, isDark ? styles.textDark : styles.textLight]}>
+                    <Text
+                      style={[
+                        styles.afKpiValue,
+                        isDark ? styles.textDark : styles.textLight,
+                      ]}
+                    >
                       {(forwardRules || []).length}
                     </Text>
                     <Text style={styles.afKpiSub}>Active Mappings</Text>
@@ -1347,7 +1419,14 @@ export const TelegramScreen: React.FC = () => {
                     <View style={[styles.afKpiIconCircle, { backgroundColor: 'rgba(139, 92, 246, 0.12)' }]}>
                       <Ionicons name="filter-outline" size={14} color="#8B5CF6" />
                     </View>
-                    <Text style={[styles.afKpiValue, isDark ? styles.textDark : styles.textLight]}>0</Text>
+                    <Text
+                      style={[
+                        styles.afKpiValue,
+                        isDark ? styles.textDark : styles.textLight,
+                      ]}
+                    >
+                      0
+                    </Text>
                     <Text style={styles.afKpiSub}>Text Filters</Text>
                   </Pressable>
 
@@ -1359,7 +1438,14 @@ export const TelegramScreen: React.FC = () => {
                     <View style={[styles.afKpiIconCircle, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]}>
                       <Ionicons name="shield-outline" size={14} color="#EF4444" />
                     </View>
-                    <Text style={[styles.afKpiValue, isDark ? styles.textDark : styles.textLight]}>0</Text>
+                    <Text
+                      style={[
+                        styles.afKpiValue,
+                        isDark ? styles.textDark : styles.textLight,
+                      ]}
+                    >
+                      0
+                    </Text>
                     <Text style={styles.afKpiSub}>Blocked Words</Text>
                   </Pressable>
 
@@ -1384,7 +1470,13 @@ export const TelegramScreen: React.FC = () => {
                     <View style={[styles.afKpiIconCircle, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
                       <Ionicons name="text-outline" size={14} color="#10B981" />
                     </View>
-                    <Text style={[styles.afKpiValue, isDark ? styles.textDark : styles.textLight, { fontSize: 16 }]}>
+                    <Text
+                      style={[
+                        styles.afKpiValue,
+                        isDark ? styles.textDark : styles.textLight,
+                        { fontSize: 16 },
+                      ]}
+                    >
                       None
                     </Text>
                     <Text style={styles.afKpiSub}>Text Actions</Text>
@@ -1395,7 +1487,7 @@ export const TelegramScreen: React.FC = () => {
                 <View style={{ marginVertical: 12 }}>
                   <Pressable
                     style={styles.actionBtnPrimary}
-                    onPress={() => setActiveModal('autoforward')}
+                    onPress={() => setActiveModal("autoforward")}
                   >
                     <Ionicons name="add" size={16} color="#FFFFFF" />
                     <Text style={styles.actionBtnPrimaryText}>Configure New Forwarding Rule</Text>
@@ -1403,14 +1495,24 @@ export const TelegramScreen: React.FC = () => {
                 </View>
 
                 {/* SUB-SECTION: MAPPINGS */}
-                {afSection === 'mappings' && (
-                  <View style={[styles.afSectionCard, isDark ? styles.cardDark : styles.cardLight]}>
+                {afSection === "mappings" && (
+                  <View
+                    style={[
+                      styles.afSectionCard,
+                      isDark ? styles.cardDark : styles.cardLight,
+                    ]}
+                  >
                     <View style={styles.afSectionHeader}>
                       <View style={styles.afSectionIconCircle}>
                         <Ionicons name="arrow-redo" size={14} color="#0284C7" />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={[styles.afSectionTitle, isDark ? styles.textDark : styles.textLight]}>
+                        <Text
+                          style={[
+                            styles.afSectionTitle,
+                            isDark ? styles.textDark : styles.textLight,
+                          ]}
+                        >
                           Active Routing Rules
                         </Text>
                         <Text style={styles.afSectionSubtitle}>
@@ -1451,14 +1553,33 @@ export const TelegramScreen: React.FC = () => {
                 )}
 
                 {/* SUB-SECTION: FILTERS */}
-                {afSection === 'filters' && (
-                  <View style={[styles.afSectionCard, isDark ? styles.cardDark : styles.cardLight]}>
+                {afSection === "filters" && (
+                  <View
+                    style={[
+                      styles.afSectionCard,
+                      isDark ? styles.cardDark : styles.cardLight,
+                    ]}
+                  >
                     <View style={styles.afSectionHeader}>
-                      <View style={[styles.afSectionIconCircle, { backgroundColor: 'rgba(139, 92, 246, 0.12)' }]}>
-                        <Ionicons name="filter-outline" size={14} color="#8B5CF6" />
+                      <View
+                        style={[
+                          styles.afSectionIconCircle,
+                          { backgroundColor: "rgba(139, 92, 246, 0.12)" },
+                        ]}
+                      >
+                        <Ionicons
+                          name="filter-outline"
+                          size={14}
+                          color="#8B5CF6"
+                        />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={[styles.afSectionTitle, isDark ? styles.textDark : styles.textLight]}>
+                        <Text
+                          style={[
+                            styles.afSectionTitle,
+                            isDark ? styles.textDark : styles.textLight,
+                          ]}
+                        >
                           Word Filters & Text Replacements
                         </Text>
                         <Text style={styles.afSectionSubtitle}>Automatic link and username replacement rules</Text>
@@ -1487,11 +1608,25 @@ export const TelegramScreen: React.FC = () => {
                 )}
 
                 {/* SUB-SECTION: BLOCKED */}
-                {afSection === 'blocked' && (
-                  <View style={[styles.afSectionCard, isDark ? styles.cardDark : styles.cardLight]}>
+                {afSection === "blocked" && (
+                  <View
+                    style={[
+                      styles.afSectionCard,
+                      isDark ? styles.cardDark : styles.cardLight,
+                    ]}
+                  >
                     <View style={styles.afSectionHeader}>
-                      <View style={[styles.afSectionIconCircle, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]}>
-                        <Ionicons name="shield-outline" size={14} color="#EF4444" />
+                      <View
+                        style={[
+                          styles.afSectionIconCircle,
+                          { backgroundColor: "rgba(239, 68, 68, 0.12)" },
+                        ]}
+                      >
+                        <Ionicons
+                          name="shield-outline"
+                          size={14}
+                          color="#EF4444"
+                        />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.afSectionTitle, isDark ? styles.textDark : styles.textLight]}>
@@ -1518,14 +1653,33 @@ export const TelegramScreen: React.FC = () => {
                 )}
 
                 {/* SUB-SECTION: DELAY */}
-                {afSection === 'delays' && (
-                  <View style={[styles.afSectionCard, isDark ? styles.cardDark : styles.cardLight]}>
+                {afSection === "delays" && (
+                  <View
+                    style={[
+                      styles.afSectionCard,
+                      isDark ? styles.cardDark : styles.cardLight,
+                    ]}
+                  >
                     <View style={styles.afSectionHeader}>
-                      <View style={[styles.afSectionIconCircle, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
-                        <Ionicons name="time-outline" size={14} color="#F59E0B" />
+                      <View
+                        style={[
+                          styles.afSectionIconCircle,
+                          { backgroundColor: "rgba(245, 158, 11, 0.12)" },
+                        ]}
+                      >
+                        <Ionicons
+                          name="time-outline"
+                          size={14}
+                          color="#F59E0B"
+                        />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={[styles.afSectionTitle, isDark ? styles.textDark : styles.textLight]}>
+                        <Text
+                          style={[
+                            styles.afSectionTitle,
+                            isDark ? styles.textDark : styles.textLight,
+                          ]}
+                        >
                           Forwarding Delay Interval
                         </Text>
                         <Text style={styles.afSectionSubtitle}>Prevent Telegram rate-limiting & simulate natural typing</Text>
@@ -1564,14 +1718,33 @@ export const TelegramScreen: React.FC = () => {
                 )}
 
                 {/* SUB-SECTION: HEADERS */}
-                {afSection === 'headers' && (
-                  <View style={[styles.afSectionCard, isDark ? styles.cardDark : styles.cardLight]}>
+                {afSection === "headers" && (
+                  <View
+                    style={[
+                      styles.afSectionCard,
+                      isDark ? styles.cardDark : styles.cardLight,
+                    ]}
+                  >
                     <View style={styles.afSectionHeader}>
-                      <View style={[styles.afSectionIconCircle, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
-                        <Ionicons name="text-outline" size={14} color="#10B981" />
+                      <View
+                        style={[
+                          styles.afSectionIconCircle,
+                          { backgroundColor: "rgba(16, 185, 129, 0.12)" },
+                        ]}
+                      >
+                        <Ionicons
+                          name="text-outline"
+                          size={14}
+                          color="#10B981"
+                        />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={[styles.afSectionTitle, isDark ? styles.textDark : styles.textLight]}>
+                        <Text
+                          style={[
+                            styles.afSectionTitle,
+                            isDark ? styles.textDark : styles.textLight,
+                          ]}
+                        >
                           Prefix & Suffix Headers
                         </Text>
                         <Text style={styles.afSectionSubtitle}>Brand your forwarded messages with custom headers & signatures</Text>
@@ -1600,7 +1773,7 @@ export const TelegramScreen: React.FC = () => {
             )}
 
             {/* TAB 3: TELESUB MONETIZATION & VIP TIERS */}
-            {activeTab === 'sub_manager' && (
+            {activeTab === "sub_manager" && (
               <>
                 {/* Header & Status Badges */}
                 <View style={[styles.telesubCard, isDark ? styles.cardDark : styles.cardLight, { padding: 18 }]}>
@@ -1628,7 +1801,7 @@ export const TelegramScreen: React.FC = () => {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <Pressable
                       style={styles.actionBtnPrimary}
-                      onPress={() => setActiveModal('sub_manager')}
+                      onPress={() => setActiveModal("sub_manager")}
                     >
                       <Ionicons name="add" size={16} color="#FFFFFF" />
                       <Text style={styles.actionBtnPrimaryText}>New Subscription Page</Text>
@@ -1763,7 +1936,11 @@ export const TelegramScreen: React.FC = () => {
                 </View>
 
                 {/* Sub-Section Navigation Pills for TeleSub */}
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.categoryScroll}
+                >
                   {[
                     { key: 'overview', label: 'Overview Cockpit', icon: 'speedometer-outline' },
                     { key: 'revenue', label: `Total Sales & Revenue (₹${TELESUB_WEB_STATS.totalRevenue})`, icon: 'cash-outline' },
@@ -1781,12 +1958,31 @@ export const TelegramScreen: React.FC = () => {
                           isSelected && styles.catPillSelected,
                         ]}
                         onPress={() => {
-                          if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          if (Platform.OS !== "web")
+                            Haptics.impactAsync(
+                              Haptics.ImpactFeedbackStyle.Light,
+                            );
                           setSubSection(sub.key as any);
                         }}
                       >
-                        <Ionicons name={sub.icon as any} size={13} color={isSelected ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'} />
-                        <Text style={[styles.catPillText, isDark ? styles.textDark : styles.textLight, isSelected && styles.catPillTextSelected]}>
+                        <Ionicons
+                          name={sub.icon as any}
+                          size={13}
+                          color={
+                            isSelected
+                              ? "#FFFFFF"
+                              : isDark
+                                ? "#94A3B8"
+                                : "#64748B"
+                          }
+                        />
+                        <Text
+                          style={[
+                            styles.catPillText,
+                            isDark ? styles.textDark : styles.textLight,
+                            isSelected && styles.catPillTextSelected,
+                          ]}
+                        >
                           {sub.label}
                         </Text>
                       </Pressable>
@@ -2428,7 +2624,7 @@ export const TelegramScreen: React.FC = () => {
 
       {/* Interactive Modals for all 8 Tools */}
       <AutoforwardModal
-        visible={activeModal === 'autoforward'}
+        visible={activeModal === "autoforward"}
         onClose={() => setActiveModal(null)}
         onSubmit={createForwardRule}
         isLoading={isSavingRule}
@@ -2448,7 +2644,7 @@ export const TelegramScreen: React.FC = () => {
       />
 
       <SubManagerModal
-        visible={activeModal === 'sub_manager'}
+        visible={activeModal === "sub_manager"}
         onClose={() => setActiveModal(null)}
         onSubmit={createSubPlan}
         isLoading={isCreatingPlan}
@@ -2456,17 +2652,17 @@ export const TelegramScreen: React.FC = () => {
       />
 
       <TrackerModal
-        visible={activeModal === 'tracker'}
+        visible={activeModal === "tracker"}
         onClose={() => setActiveModal(null)}
       />
 
       <ReportBotModal
-        visible={activeModal === 'report_bot'}
+        visible={activeModal === "report_bot"}
         onClose={() => setActiveModal(null)}
       />
 
       <BroadcastModal
-        visible={activeModal === 'broadcast'}
+        visible={activeModal === "broadcast"}
         onClose={() => setActiveModal(null)}
         onSubmit={sendBroadcast}
         isLoading={isBroadcasting}
@@ -2474,20 +2670,23 @@ export const TelegramScreen: React.FC = () => {
       />
 
       <AutoApproveModal
-        visible={activeModal === 'auto_approve'}
+        visible={activeModal === "auto_approve"}
         onClose={() => setActiveModal(null)}
         onToggle={async (enabled) => {
-          await toggleAutoApprove({ enabled, channelId: '@my_private_channel' });
+          await toggleAutoApprove({
+            enabled,
+            channelId: "@my_private_channel",
+          });
         }}
       />
 
       <ChatBotModal
-        visible={activeModal === 'chatbot'}
+        visible={activeModal === "chatbot"}
         onClose={() => setActiveModal(null)}
       />
 
       <ReactionsModal
-        visible={activeModal === 'reactions'}
+        visible={activeModal === "reactions"}
         onClose={() => setActiveModal(null)}
         onUpdate={async (emojis, speed) => {
           await updateReactions({ emojis, speed });
@@ -2512,16 +2711,16 @@ const styles = StyleSheet.create({
   tabBarWrapper: {
     borderBottomWidth: 1,
   },
-  borderLight: { borderBottomColor: '#E2E8F0', borderTopColor: '#E2E8F0' },
-  borderDark: { borderBottomColor: '#262C36', borderTopColor: '#262C36' },
+  borderLight: { borderBottomColor: "#E2E8F0", borderTopColor: "#E2E8F0" },
+  borderDark: { borderBottomColor: "#262C36", borderTopColor: "#262C36" },
   tabScroll: {
     paddingHorizontal: 12,
     paddingVertical: 10,
     gap: 8,
   },
   tabButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -2529,26 +2728,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   tabButtonLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E2E8F0",
   },
   tabButtonDark: {
-    backgroundColor: '#161B26',
-    borderColor: '#262C36',
+    backgroundColor: "#161B26",
+    borderColor: "#262C36",
   },
   tabButtonActive: {
-    backgroundColor: '#0284C7',
-    borderColor: '#0284C7',
+    backgroundColor: "#0284C7",
+    borderColor: "#0284C7",
   },
   tabButtonText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
-  tabButtonTextLight: { color: '#64748B' },
-  tabButtonTextDark: { color: '#94A3B8' },
+  tabButtonTextLight: { color: "#64748B" },
+  tabButtonTextDark: { color: "#94A3B8" },
   tabButtonTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: "#FFFFFF",
+    fontWeight: "700",
   },
   commandCenterCard: {
     borderRadius: 16,
@@ -2561,10 +2760,10 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   sessionPillRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   headerBtnGroup: {
     flexDirection: 'row',
@@ -2599,25 +2798,35 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
   },
-  sessionDotGreen: { backgroundColor: '#10B981', width: 7, height: 7, borderRadius: 3.5 },
-  sessionDotYellow: { backgroundColor: '#F59E0B', width: 7, height: 7, borderRadius: 3.5 },
+  sessionDotGreen: {
+    backgroundColor: "#10B981",
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+  },
+  sessionDotYellow: {
+    backgroundColor: "#F59E0B",
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+  },
   sessionStatusText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   syncHeaderBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
-    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+    backgroundColor: "rgba(2, 132, 199, 0.1)",
     paddingHorizontal: 8,
     paddingVertical: 5,
     borderRadius: 6,
   },
   syncHeaderBtnText: {
-    color: '#0284C7',
+    color: "#0284C7",
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   connectHeaderBtn: {
     flex: 1,
@@ -2635,9 +2844,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   connectHeaderBtnText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   hubMetricsGrid: {
     flexDirection: 'row',
@@ -2708,49 +2917,49 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   metricsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     borderTopWidth: 1,
     paddingTop: 12,
     rowGap: 12,
   },
   metricItem: {
-    width: '50%',
+    width: "50%",
     paddingRight: 8,
     paddingVertical: 4,
     borderRadius: 8,
   },
   metricItemPressed: {
     opacity: 0.7,
-    backgroundColor: 'rgba(2, 132, 199, 0.08)',
+    backgroundColor: "rgba(2, 132, 199, 0.08)",
   },
   metricHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingRight: 4,
   },
   metricFooterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingRight: 4,
     marginTop: 2,
   },
   metricLabel: {
-    color: '#64748B',
+    color: "#64748B",
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: 0.5,
   },
   metricValue: {
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: "800",
     marginTop: 2,
   },
   metricSub: {
     fontSize: 10,
-    color: '#94A3B8',
+    color: "#94A3B8",
   },
   quickLaunchScroll: {
     paddingVertical: 6,
@@ -2758,8 +2967,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   quickLaunchPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -2768,7 +2977,7 @@ const styles = StyleSheet.create({
   },
   quickLaunchText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   categorySection: {
     marginBottom: 12,
@@ -2784,57 +2993,57 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   catPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
   },
-  pillLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  pillDark: { backgroundColor: '#161B26', borderColor: '#262C36' },
+  pillLight: { backgroundColor: "#FFFFFF", borderColor: "#E2E8F0" },
+  pillDark: { backgroundColor: "#161B26", borderColor: "#262C36" },
   catPillSelected: {
-    backgroundColor: '#0284C7',
-    borderColor: '#0284C7',
+    backgroundColor: "#0284C7",
+    borderColor: "#0284C7",
   },
   catPillText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   catPillTextSelected: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: "#FFFFFF",
+    fontWeight: "700",
   },
   sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 8,
   },
   sectionSub: {
     fontSize: 12,
-    color: '#64748B',
+    color: "#64748B",
   },
-  textLight: { color: '#0F172A' },
-  textDark: { color: '#F8FAFC' },
+  textLight: { color: "#0F172A" },
+  textDark: { color: "#F8FAFC" },
   cardLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    shadowColor: '#000000',
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E2E8F0",
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 4,
     elevation: 2,
   },
   cardDark: {
-    backgroundColor: '#161B26',
-    borderColor: '#262C36',
+    backgroundColor: "#161B26",
+    borderColor: "#262C36",
   },
   telesubCard: {
     borderRadius: 14,
@@ -2843,51 +3052,65 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   revenueRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
-  revenueLabel: { color: '#64748B', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
-  revenueVal: { color: '#0284C7', fontSize: 24, fontWeight: '800', marginTop: 4 },
+  revenueLabel: {
+    color: "#64748B",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  revenueVal: {
+    color: "#0284C7",
+    fontSize: 24,
+    fontWeight: "800",
+    marginTop: 4,
+  },
   actionBtnPrimary: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
-    backgroundColor: '#0284C7',
+    backgroundColor: "#0284C7",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
   },
-  actionBtnPrimaryText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
+  actionBtnPrimaryText: { color: "#FFFFFF", fontSize: 12, fontWeight: "700" },
   planCard: {
     padding: 14,
     borderRadius: 12,
     borderWidth: 1,
     marginBottom: 10,
   },
-  planHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  planTitle: { fontSize: 14, fontWeight: '700' },
-  planPrice: { color: '#0284C7', fontSize: 14, fontWeight: '800' },
-  planSubtitle: { color: '#64748B', fontSize: 12, marginTop: 4 },
+  planHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  planTitle: { fontSize: 14, fontWeight: "700" },
+  planPrice: { color: "#0284C7", fontSize: 14, fontWeight: "800" },
+  planSubtitle: { color: "#64748B", fontSize: 12, marginTop: 4 },
   planFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginTop: 10,
     paddingTop: 8,
     borderTopWidth: 1,
   },
-  planSubs: { color: '#64748B', fontSize: 11, fontWeight: '600' },
+  planSubs: { color: "#64748B", fontSize: 11, fontWeight: "600" },
   copyBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
-    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+    backgroundColor: "rgba(2, 132, 199, 0.1)",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
   },
-  copyBtnText: { color: '#0284C7', fontSize: 11, fontWeight: '700' },
+  copyBtnText: { color: "#0284C7", fontSize: 11, fontWeight: "700" },
   ruleCard: {
     padding: 14,
     borderRadius: 14,
@@ -2895,14 +3118,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   ruleHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 10,
   },
   ruleTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     flex: 1,
   },
@@ -2910,45 +3133,45 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#10B981',
+    backgroundColor: "#10B981",
   },
   ruleName: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
     flex: 1,
   },
   delayBadge: {
-    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+    backgroundColor: "rgba(2, 132, 199, 0.1)",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
   },
   delayBadgeText: {
-    color: '#0284C7',
+    color: "#0284C7",
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   routeBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(148, 163, 184, 0.08)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(148, 163, 184, 0.08)",
     padding: 10,
     borderRadius: 10,
     marginBottom: 10,
   },
   routeEndpoint: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     flex: 1,
   },
   routeText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   keywordsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 6,
   },
   kwTag: {
@@ -2958,17 +3181,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   kwTagLight: {
-    backgroundColor: '#F1F5F9',
-    borderColor: '#E2E8F0',
+    backgroundColor: "#F1F5F9",
+    borderColor: "#E2E8F0",
   },
   kwTagDark: {
-    backgroundColor: '#0F172A',
-    borderColor: '#334155',
+    backgroundColor: "#0F172A",
+    borderColor: "#334155",
   },
   kwTagText: {
     fontSize: 11,
-    color: '#0284C7',
-    fontWeight: '600',
+    color: "#0284C7",
+    fontWeight: "600",
   },
   autoCard: {
     padding: 14,
@@ -2976,20 +3199,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 10,
   },
-  autoRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  autoRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   autoIconBox: {
     width: 36,
     height: 36,
     borderRadius: 8,
-    backgroundColor: 'rgba(2, 132, 199, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(2, 132, 199, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  autoTitle: { fontSize: 14, fontWeight: '700' },
-  autoDesc: { color: '#64748B', fontSize: 12, marginTop: 2 },
+  autoTitle: { fontSize: 14, fontWeight: "700" },
+  autoDesc: { color: "#64748B", fontSize: 12, marginTop: 2 },
   broadcastBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 16,
     borderRadius: 14,
     borderWidth: 1,
@@ -3000,60 +3223,64 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: 'rgba(2, 132, 199, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(2, 132, 199, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  broadcastBannerTitle: { fontSize: 15, fontWeight: '700' },
-  broadcastBannerDesc: { color: '#64748B', fontSize: 12, marginTop: 2 },
+  broadcastBannerTitle: { fontSize: 15, fontWeight: "700" },
+  broadcastBannerDesc: { color: "#64748B", fontSize: 12, marginTop: 2 },
   historyCard: {
     padding: 14,
     borderRadius: 12,
     borderWidth: 1,
     marginBottom: 10,
   },
-  historyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  historyTitle: { fontSize: 13, fontWeight: '700' },
-  historyTime: { color: '#64748B', fontSize: 11 },
-  historyDesc: { color: '#64748B', fontSize: 12, marginTop: 4 },
+  historyHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  historyTitle: { fontSize: 13, fontWeight: "700" },
+  historyTime: { color: "#64748B", fontSize: 11 },
+  historyDesc: { color: "#64748B", fontSize: 12, marginTop: 4 },
   emptyCard: {
     padding: 24,
     borderRadius: 14,
     borderWidth: 1,
-    alignItems: 'center',
-    textAlign: 'center',
+    alignItems: "center",
+    textAlign: "center",
     marginBottom: 16,
   },
   emptyTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 6,
-    textAlign: 'center',
+    textAlign: "center",
   },
   emptySubtitle: {
     fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
+    color: "#64748B",
+    textAlign: "center",
     lineHeight: 18,
     maxWidth: 300,
   },
   syncedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    backgroundColor: "rgba(16, 185, 129, 0.12)",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
   },
-  syncedBadgeText: { color: '#059669', fontSize: 11, fontWeight: '700' },
+  syncedBadgeText: { color: "#059669", fontSize: 11, fontWeight: "700" },
   botCountBadge: {
-    backgroundColor: 'rgba(2, 132, 199, 0.12)',
+    backgroundColor: "rgba(2, 132, 199, 0.12)",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
   },
-  botCountBadgeText: { color: '#0284C7', fontSize: 11, fontWeight: '700' },
+  botCountBadgeText: { color: "#0284C7", fontSize: 11, fontWeight: "700" },
   botCard: {
     padding: 14,
     borderRadius: 14,
@@ -3061,58 +3288,68 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   botCardTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
   },
   botAvatar: {
     width: 38,
     height: 38,
     borderRadius: 10,
-    backgroundColor: '#0284C7',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#0284C7",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  botAvatarText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
-  botTitle: { fontSize: 14, fontWeight: '700', flex: 1 },
-  botUsername: { color: '#0284C7', fontSize: 12, marginTop: 1, fontWeight: '600' },
+  botAvatarText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
+  botTitle: { fontSize: 14, fontWeight: "700", flex: 1 },
+  botUsername: {
+    color: "#0284C7",
+    fontSize: 12,
+    marginTop: 1,
+    fontWeight: "600",
+  },
   activePill: {
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    backgroundColor: "rgba(16, 185, 129, 0.12)",
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
-  activePillText: { color: '#059669', fontSize: 9, fontWeight: '800' },
+  activePillText: { color: "#059669", fontSize: 9, fontWeight: "800" },
   createLinkBtn: {
-    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+    backgroundColor: "rgba(2, 132, 199, 0.1)",
     borderWidth: 1,
-    borderColor: '#0284C7',
+    borderColor: "#0284C7",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
   },
-  createLinkBtnText: { color: '#0284C7', fontSize: 11, fontWeight: '700' },
+  createLinkBtnText: { color: "#0284C7", fontSize: 11, fontWeight: "700" },
   mappedChannelsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     marginTop: 10,
     paddingTop: 8,
     borderTopWidth: 1,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
-  mappedLabel: { color: '#94A3B8', fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
+  mappedLabel: {
+    color: "#94A3B8",
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
   channelTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    backgroundColor: "rgba(16, 185, 129, 0.1)",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
   },
-  channelTagText: { color: '#059669', fontSize: 11, fontWeight: '600' },
-  noChannelsText: { color: '#94A3B8', fontSize: 11, fontStyle: 'italic' },
+  channelTagText: { color: "#059669", fontSize: 11, fontWeight: "600" },
+  noChannelsText: { color: "#94A3B8", fontSize: 11, fontStyle: "italic" },
   // Autoforwarding Pipeline Styles
   pipelineHeroCard: {
     padding: 16,
@@ -3121,14 +3358,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   pipelineHeroHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 12,
   },
   pipelineHeroLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
     flex: 1,
   },
@@ -3136,129 +3373,129 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 10,
-    backgroundColor: 'rgba(2, 132, 199, 0.12)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(2, 132, 199, 0.12)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   pipelineHeroTitle: {
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   pipelineHeroSub: {
     fontSize: 11,
-    color: '#64748B',
+    color: "#64748B",
     marginTop: 2,
   },
   pipelineStatusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 5,
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    backgroundColor: "rgba(16, 185, 129, 0.1)",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
   },
   pipelineStatusText: {
-    color: '#059669',
+    color: "#059669",
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   flowDiagramBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: 10,
     borderRadius: 10,
     marginBottom: 12,
   },
-  flowDiagramDark: { backgroundColor: 'rgba(15, 23, 42, 0.6)' },
-  flowDiagramLight: { backgroundColor: 'rgba(241, 245, 249, 0.8)' },
+  flowDiagramDark: { backgroundColor: "rgba(15, 23, 42, 0.6)" },
+  flowDiagramLight: { backgroundColor: "rgba(241, 245, 249, 0.8)" },
   flowNode: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   flowNodeText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: '#64748B',
+    fontWeight: "700",
+    color: "#64748B",
   },
   flowArrowBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   flowFilterTag: {
     fontSize: 9,
-    fontWeight: '800',
-    color: '#0284C7',
-    backgroundColor: 'rgba(2, 132, 199, 0.12)',
+    fontWeight: "800",
+    color: "#0284C7",
+    backgroundColor: "rgba(2, 132, 199, 0.12)",
     paddingHorizontal: 5,
     paddingVertical: 2,
     borderRadius: 4,
   },
   stationActionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   emptyIconCircle: {
     width: 54,
     height: 54,
     borderRadius: 27,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 10,
   },
   ruleEditBtn: {
     width: 26,
     height: 26,
     borderRadius: 6,
-    backgroundColor: 'rgba(148, 163, 184, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(148, 163, 184, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   routeBoxDark: {
-    backgroundColor: 'rgba(15, 23, 42, 0.5)',
-    borderColor: 'rgba(51, 65, 85, 0.6)',
+    backgroundColor: "rgba(15, 23, 42, 0.5)",
+    borderColor: "rgba(51, 65, 85, 0.6)",
   },
   routeBoxLight: {
-    backgroundColor: 'rgba(248, 250, 252, 0.9)',
-    borderColor: '#E2E8F0',
+    backgroundColor: "rgba(248, 250, 252, 0.9)",
+    borderColor: "#E2E8F0",
   },
   routeDotIcon: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   routeLabelSmall: {
     fontSize: 8,
-    fontWeight: '800',
-    color: '#94A3B8',
+    fontWeight: "800",
+    color: "#94A3B8",
     letterSpacing: 0.5,
   },
   routeConnector: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 6,
   },
   routeConnectorLine: {
     width: 14,
     height: 1.5,
-    backgroundColor: '#0284C7',
+    backgroundColor: "#0284C7",
   },
   keywordsSection: {
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(148, 163, 184, 0.12)',
+    borderTopColor: "rgba(148, 163, 184, 0.12)",
   },
   keywordsSectionLabel: {
     fontSize: 9,
-    fontWeight: '800',
-    color: '#94A3B8',
+    fontWeight: "800",
+    color: "#94A3B8",
     letterSpacing: 0.5,
     marginBottom: 4,
   },
@@ -3277,8 +3514,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   afControlHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
     flex: 1,
     minWidth: 160,
@@ -3287,60 +3524,66 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 10,
-    backgroundColor: 'rgba(2, 132, 199, 0.12)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(2, 132, 199, 0.12)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   afHeroTitle: {
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   afSystemActiveRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 5,
     marginTop: 2,
   },
   afSystemActiveText: {
-    color: '#64748B',
+    color: "#64748B",
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   afHeaderActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     flexWrap: 'wrap',
   },
   afGhostBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 7,
     borderRadius: 8,
     borderWidth: 1,
   },
-  afGhostBtnLight: { backgroundColor: 'rgba(241, 245, 249, 0.9)', borderColor: '#CBD5E1' },
-  afGhostBtnDark: { backgroundColor: 'rgba(30, 41, 59, 0.7)', borderColor: '#334155' },
-  afGhostBtnText: { fontSize: 11, fontWeight: '700' },
+  afGhostBtnLight: {
+    backgroundColor: "rgba(241, 245, 249, 0.9)",
+    borderColor: "#CBD5E1",
+  },
+  afGhostBtnDark: {
+    backgroundColor: "rgba(30, 41, 59, 0.7)",
+    borderColor: "#334155",
+  },
+  afGhostBtnText: { fontSize: 11, fontWeight: "700" },
   afIconBtn: {
     padding: 7,
     borderRadius: 8,
     borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   afOpenBotBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 5,
-    backgroundColor: '#0284C7',
+    backgroundColor: "#0284C7",
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 8,
   },
-  afOpenBotBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
+  afOpenBotBtnText: { color: "#FFFFFF", fontSize: 12, fontWeight: "700" },
   afKpiScroll: {
     paddingVertical: 4,
     gap: 10,
@@ -3362,13 +3605,13 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 8,
   },
   afKpiValue: {
     fontSize: 20,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   afKpiCardActive: {
     borderColor: '#0284C7',
@@ -3376,9 +3619,9 @@ const styles = StyleSheet.create({
   },
   afKpiSub: {
     fontSize: 10,
-    color: '#64748B',
+    color: "#64748B",
     marginTop: 2,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   afSectionsStack: {
     gap: 14,
@@ -3390,8 +3633,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   afSectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
     marginBottom: 14,
   },
@@ -3399,55 +3642,55 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: 'rgba(2, 132, 199, 0.12)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(2, 132, 199, 0.12)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   afSectionTitle: {
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   afSectionSubtitle: {
     fontSize: 11,
-    color: '#64748B',
+    color: "#64748B",
     marginTop: 1,
   },
   afEmptyBox: {
     padding: 20,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
-  afEmptyBoxLight: { backgroundColor: 'rgba(241, 245, 249, 0.6)' },
-  afEmptyBoxDark: { backgroundColor: 'rgba(15, 23, 42, 0.4)' },
+  afEmptyBoxLight: { backgroundColor: "rgba(241, 245, 249, 0.6)" },
+  afEmptyBoxDark: { backgroundColor: "rgba(15, 23, 42, 0.4)" },
   afEmptyText: {
     fontSize: 12,
-    color: '#94A3B8',
-    fontWeight: '600',
+    color: "#94A3B8",
+    fontWeight: "600",
   },
   afMappingsList: {
     gap: 10,
   },
   afMappingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: 12,
     borderRadius: 12,
     borderWidth: 1,
     gap: 6,
   },
   afMappingRowLight: {
-    backgroundColor: 'rgba(248, 250, 252, 0.9)',
-    borderColor: '#E2E8F0',
+    backgroundColor: "rgba(248, 250, 252, 0.9)",
+    borderColor: "#E2E8F0",
   },
   afMappingRowDark: {
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
-    borderColor: '#334155',
+    backgroundColor: "rgba(15, 23, 42, 0.6)",
+    borderColor: "#334155",
   },
   afMappingLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     flex: 1,
     minWidth: 60,
@@ -3456,13 +3699,13 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: 'rgba(2, 132, 199, 0.12)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(2, 132, 199, 0.12)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   afSourceChannelName: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
     flex: 1,
   },
   afTargetBadge: {
@@ -3474,31 +3717,31 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   afTargetBadgeLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#CBD5E1',
+    backgroundColor: "#FFFFFF",
+    borderColor: "#CBD5E1",
   },
   afTargetBadgeDark: {
-    backgroundColor: 'rgba(30, 41, 59, 0.8)',
-    borderColor: '#475569',
+    backgroundColor: "rgba(30, 41, 59, 0.8)",
+    borderColor: "#475569",
   },
   afTargetBadgeText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   afDelayBigBox: {
     paddingVertical: 24,
     borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   afDelayBigNumber: {
     fontSize: 32,
-    fontWeight: '900',
+    fontWeight: "900",
   },
   afDelayBigLabel: {
     fontSize: 12,
-    color: '#64748B',
-    fontWeight: '700',
+    color: "#64748B",
+    fontWeight: "700",
     marginTop: 2,
   },
   afPrefixSuffixStack: {
@@ -3506,8 +3749,8 @@ const styles = StyleSheet.create({
   },
   afInputLabelSmall: {
     fontSize: 9,
-    fontWeight: '800',
-    color: '#94A3B8',
+    fontWeight: "800",
+    color: "#94A3B8",
     letterSpacing: 0.5,
     marginBottom: 4,
   },
@@ -3517,8 +3760,8 @@ const styles = StyleSheet.create({
   },
   afInputDisplayText: {
     fontSize: 12,
-    color: '#94A3B8',
-    fontStyle: 'italic',
+    color: "#94A3B8",
+    fontStyle: "italic",
   },
   // GAP Tracker Styles
   trackerHeader: {
