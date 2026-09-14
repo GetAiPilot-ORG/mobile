@@ -30,32 +30,43 @@ export const HubProgressCard: React.FC<HubProgressCardProps> = ({
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <View style={styles.iconBox}>
-            <Ionicons name="apps" size={20} color="#0284C7" />
+            <Ionicons name="apps" size={18} color="#0284C7" />
           </View>
-          <View>
-            <Text style={[styles.title, isDark ? styles.textDark : styles.textLight]}>
+          <View style={styles.titleTextWrap}>
+            <Text style={[styles.title, isDark ? styles.textDark : styles.textLight]} numberOfLines={1}>
               Connected Platforms Hub
             </Text>
-            <Text style={styles.subtitle}>All 8 platform modules configured</Text>
+            <Text style={styles.subtitle} numberOfLines={1}>
+              {completed}/{total} platform modules configured
+            </Text>
           </View>
         </View>
         <Pressable
           style={[styles.refreshBtn, isRefreshing && styles.refreshBtnDisabled]}
           onPress={handleRefresh}
           disabled={isRefreshing}
+          hitSlop={6}
         >
-          <Ionicons name="refresh" size={14} color="#0284C7" />
-          <Text style={styles.refreshText}>{isRefreshing ? 'Checking...' : 'Refresh Status'}</Text>
+          <Ionicons name="refresh" size={12} color="#0284C7" />
+          <Text style={styles.refreshText}>{isRefreshing ? 'Checking...' : 'Refresh'}</Text>
         </Pressable>
       </View>
 
       <View style={styles.progressContainer}>
         <View style={styles.progressHeader}>
           <Text style={styles.progressLabel}>SETUP PROGRESS</Text>
-          <Text style={styles.progressVal}>{completed}/{total} Completed ({percentage}%)</Text>
+          <Text style={[styles.progressVal, percentage === 100 && { color: '#10B981' }]}>
+            {completed}/{total} Completed ({percentage}%)
+          </Text>
         </View>
         <View style={[styles.progressBarBg, isDark ? styles.progressBarBgDark : styles.progressBarBgLight]}>
-          <View style={[styles.progressBarFill, { width: `${percentage}%` }]} />
+          <View
+            style={[
+              styles.progressBarFill,
+              { width: `${percentage}%` },
+              percentage === 100 && { backgroundColor: '#10B981' },
+            ]}
+          />
         </View>
       </View>
     </View>
@@ -65,8 +76,8 @@ export const HubProgressCard: React.FC<HubProgressCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    padding: 14,
+    marginBottom: 14,
     borderWidth: 1,
   },
   cardLight: {
@@ -86,12 +97,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
+    gap: 8,
+    marginBottom: 12,
   },
   titleRow: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    minWidth: 0,
   },
   iconBox: {
     width: 36,
@@ -100,39 +114,46 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(2, 132, 199, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
+    flexShrink: 0,
+  },
+  titleTextWrap: {
+    flex: 1,
+    minWidth: 0,
   },
   title: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
+    letterSpacing: -0.2,
   },
   textLight: { color: '#0F172A' },
   textDark: { color: '#F8FAFC' },
   subtitle: {
     color: '#64748B',
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 11,
+    marginTop: 1,
   },
   refreshBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     backgroundColor: 'rgba(2, 132, 199, 0.08)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: 'rgba(2, 132, 199, 0.2)',
+    flexShrink: 0,
   },
   refreshBtnDisabled: {
     opacity: 0.6,
   },
   refreshText: {
     color: '#0284C7',
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
   },
   progressContainer: {
-    marginTop: 4,
+    marginTop: 2,
   },
   progressHeader: {
     flexDirection: 'row',
@@ -142,13 +163,13 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     color: '#64748B',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
   progressVal: {
     color: '#0284C7',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
   },
   progressBarBg: {

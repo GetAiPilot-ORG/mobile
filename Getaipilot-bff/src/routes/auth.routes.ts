@@ -233,48 +233,52 @@ export async function authRoutes(fastify: FastifyInstance) {
     });
   });
 
-  // GET /mobile/v1/auth/device-sessions
-  // The BFF owns this endpoint because auth.sessions and service-role access
-  // must never be exposed to the Expo client.
-  fastify.get('/device-sessions', { preHandler: [authenticateToken] }, async (request, reply) => {
+  // POST /mobile/v1/auth/sso-url - Generate authentic SSO URL for Web App
+  fastify.post('/sso-url', { preHandler: [authenticateToken] }, async (request, reply) => {
     const user = request.user as JWTPayload;
-    const devices = await HubAdapter.getActiveDeviceSessions(user.user_id, user.session_id);
-    return reply.send({ activeDeviceCount: devices.length, devices });
-  });
+    const body = (request.body || {}) as { redirectPath?: string; webAppUrl?: string };
+    const redirectPath = body.redirectPath && body.redirectPath.startsWith('/') ? body.redirectPath : '/free-tools/dashboard';
+    const rawWebAppUrl = (body.webAppUrl || 'https://getaipilot.in').replace(/\/+$/, '');
 
-  // POST /mobile/v1/auth/device-sessions/heartbeat
-  // The mobile client sends this while foregrounded. A device is considered
-  // online for two minutes after its last successful heartbeat.
-  fastify.post('/device-sessions/heartbeat', { preHandler: [authenticateToken] }, async (request, reply) => {
-    const user = request.user as JWTPayload;
-    const tracked = await HubAdapter.touchDeviceSession(user.user_id, user.session_id);
-    return reply.send({ tracked });
-  });
+    // 1. Check if we have an active upstream Supabase session
+    const upstreamSession = UpstreamSessionService.getSession(user.session_id, user.user_id);
+    if (upstreamSession?.accessToken && upstreamSession?.refreshToken) {
+      const ssoUrl = `${rawWebAppUrl}/auth/callback?next=${encodeURIComponent(
+        redirectPath
+      )}#access_token=${encodeURIComponent(
+        upstreamSession.accessToken
+      )}&refresh_token=${encodeURIComponent(
+        upstreamSession.refreshToken
+      )}&token_type=bearer`;
 
-  // DELETE /mobile/v1/auth/device-sessions/:sessionId
-  // A user can only sign out another session that belongs to their own account.
-  fastify.delete('/device-sessions/:sessionId', { preHandler: [authenticateToken] }, async (request, reply) => {
-    const params = z.object({ sessionId: z.string().min(1).max(100) }).safeParse(request.params);
-    if (!params.success) {
-      return reply.status(400).send({ statusCode: 400, error: 'BadRequest', message: 'Invalid session ID' });
-    }
-
-    const user = request.user as JWTPayload;
-    if (params.data.sessionId === user.session_id) {
-      return reply.status(400).send({
-        statusCode: 400,
-        error: 'CurrentDevice',
-        message: 'Use the normal sign out action for this device.',
+      return reply.send({
+        success: true,
+        ssoUrl,
       });
     }
 
-    const signedOut = await HubAdapter.signOutDeviceSession(user.user_id, params.data.sessionId);
-    if (!signedOut) {
-      return reply.status(404).send({ statusCode: 404, error: 'NotFound', message: 'Active device session not found' });
+    // 2. Generate magiclink token_hash via Supabase Admin
+    try {
+      const { data, error } = await HubAdapter.generateMagicLink(user.email);
+      if (data?.properties?.hashed_token) {
+        const ssoUrl = `${rawWebAppUrl}/auth/callback?next=${encodeURIComponent(
+          redirectPath
+        )}&token_hash=${encodeURIComponent(data.properties.hashed_token)}&type=email`;
+
+        return reply.send({
+          success: true,
+          ssoUrl,
+        });
+      }
+    } catch (e: any) {
+      request.log.warn(e, '[SSO_URL_GENERATE_ERROR]');
     }
 
-    UpstreamSessionService.clearSession(params.data.sessionId);
-    return reply.send({ success: true });
+    // 3. Fallback to direct web URL
+    return reply.send({
+      success: true,
+      ssoUrl: `${rawWebAppUrl}${redirectPath}`,
+    });
   });
 
   // POST /mobile/v1/auth/logout
