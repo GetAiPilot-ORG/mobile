@@ -406,9 +406,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   internalNoteTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
+    fontSize: 11.5,
+    fontWeight: '600',
   },
   internalNoteContent: {
     fontSize: 13,

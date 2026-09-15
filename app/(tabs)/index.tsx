@@ -329,21 +329,7 @@ export default function HomeScreen() {
   return (
     <AppScreen safeArea={false}>
       {/* Top Header */}
-      <AppTopBar
-        rightElement={
-          <Pressable
-            style={styles.avatarBtn}
-            onPress={() => {
-              triggerHaptic();
-              router.push("/(tabs)/account" as any);
-            }}
-          >
-            <Text style={styles.avatarBtnText}>
-              {displayName.charAt(0).toUpperCase()}
-            </Text>
-          </Pressable>
-        }
-      />
+      <AppTopBar />
 
       <ScrollView
         style={[

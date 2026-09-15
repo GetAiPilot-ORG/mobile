@@ -1,11 +1,16 @@
 import React from 'react';
 import { StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+
+export type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 interface WhatsAppMetricCardProps {
   label: string;
   value: string | number;
   subtext?: string;
   icon?: string;
+  ioniconsName?: IoniconsName;
+  iconColor?: string;
   trend?: string;
 }
 
@@ -14,6 +19,8 @@ export const WhatsAppMetricCard: React.FC<WhatsAppMetricCardProps> = ({
   value,
   subtext,
   icon,
+  ioniconsName,
+  iconColor = '#22C55E',
   trend,
 }) => {
   const colorScheme = useColorScheme();
@@ -21,12 +28,33 @@ export const WhatsAppMetricCard: React.FC<WhatsAppMetricCardProps> = ({
 
   return (
     <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+      {/* Top row with Label & Icon badge */}
       <View style={styles.topRow}>
-        <Text style={[styles.label, { color: isDark ? '#94a3b8' : '#64748b' }]}>{label}</Text>
-        {icon ? <Text style={styles.icon}>{icon}</Text> : null}
+        <Text style={[styles.label, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+          {label}
+        </Text>
+        <View style={[styles.iconCircle, { backgroundColor: `${iconColor}15` }]}>
+          {ioniconsName ? (
+            <Ionicons name={ioniconsName} size={15} color={iconColor} />
+          ) : (
+            <Text style={styles.emojiIcon}>{icon || '📊'}</Text>
+          )}
+        </View>
       </View>
-      <Text style={[styles.value, { color: isDark ? '#f8fafc' : '#0f172a' }]}>{value}</Text>
-      {subtext ? <Text style={[styles.subtext, { color: isDark ? '#64748b' : '#94a3b8' }]}>{subtext}</Text> : null}
+
+      {/* Value */}
+      <Text style={[styles.value, isDark ? styles.textLight : styles.textDark]}>
+        {value}
+      </Text>
+
+      {/* Subtext */}
+      {subtext ? (
+        <Text style={[styles.subtext, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+          {subtext}
+        </Text>
+      ) : null}
+
+      {/* Optional Trend */}
       {trend ? <Text style={styles.trend}>{trend}</Text> : null}
     </View>
   );
@@ -34,52 +62,73 @@ export const WhatsAppMetricCard: React.FC<WhatsAppMetricCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 14,
     flex: 1,
-    minWidth: '45%',
+    minWidth: '47%',
     borderWidth: 1,
-    marginBottom: 10,
   },
   cardDark: {
-    backgroundColor: '#0f172a',
-    borderColor: '#1e293b',
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
   },
   cardLight: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
     elevation: 2,
   },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   label: {
     fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
+    fontWeight: '500',
+    letterSpacing: -0.1,
   },
-  icon: {
-    fontSize: 16,
+  iconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emojiIcon: {
+    fontSize: 14,
   },
   value: {
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: '700',
+    letterSpacing: -0.3,
     marginBottom: 2,
   },
   subtext: {
-    fontSize: 11,
+    fontSize: 12,
+    fontWeight: '400',
   },
   trend: {
-    color: '#10b981',
+    color: '#34C759',
     fontSize: 11,
-    fontWeight: '700',
-    marginTop: 2,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  textLight: {
+    color: '#FFFFFF',
+  },
+  textDark: {
+    color: '#000000',
+  },
+  textSecondaryDark: {
+    color: '#8E8E93',
+  },
+  textSecondaryLight: {
+    color: '#6B7280',
   },
 });
+

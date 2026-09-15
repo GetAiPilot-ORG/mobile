@@ -245,9 +245,8 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: '#D1D5DB',
     fontSize: 13,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    fontWeight: '600',
+    letterSpacing: -0.1,
     marginTop: 12,
     marginBottom: 8,
   },

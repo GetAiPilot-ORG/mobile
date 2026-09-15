@@ -258,9 +258,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   priorityText: {
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
+    fontSize: 10.5,
+    fontWeight: '600',
   },
   footer: {
     flexDirection: 'row',

@@ -29,24 +29,24 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
 
   let bg = colors.accentSoft;
   let textColor = colors.accent;
-  let displayLabel = label || status.toUpperCase();
+  let displayLabel = label || (status ? status.charAt(0).toUpperCase() + status.slice(1).toLowerCase() : 'Active');
 
   if (norm.includes('maint') || norm === 'maintenance') {
     bg = colors.destructiveSoft;
     textColor = colors.destructive;
-    displayLabel = label || 'MAINTENANCE';
+    displayLabel = label || 'Maintenance';
   } else if (norm.includes('oper') || norm === 'active' || norm === 'verified') {
     bg = colors.accentSoft;
     textColor = '#16B882';
-    displayLabel = label || 'OPERATIONAL';
+    displayLabel = label || 'Operational';
   } else if (norm.includes('degrad') || norm === 'warning' || norm === 'trial') {
     bg = colors.warningSoft;
     textColor = colors.warning;
-    displayLabel = label || 'DEGRADED';
+    displayLabel = label || 'Degraded';
   } else if (norm.includes('out') || norm === 'expired') {
     bg = colors.destructiveSoft;
     textColor = colors.destructive;
-    displayLabel = label || 'OUTAGE';
+    displayLabel = label || 'Outage';
   }
 
   return (
@@ -92,12 +92,11 @@ const styles = StyleSheet.create({
     marginRight: 5,
   },
   text: {
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
+    fontSize: 11.5,
+    fontWeight: '600',
+    letterSpacing: -0.1,
   },
   textSm: {
-    fontSize: 9.5,
+    fontSize: 10,
   },
 });

@@ -61,11 +61,10 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   label: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 12.5,
+    fontWeight: '500',
     color: colors.mutedForeground,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: -0.1,
   },
   icon: {
     fontSize: 14,
@@ -77,7 +76,7 @@ const styles = StyleSheet.create({
   },
   value: {
     fontSize: 22,
-    fontWeight: '900',
+    fontWeight: '700',
     color: colors.foreground,
     letterSpacing: -0.5,
   },
@@ -87,8 +86,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   badgeText: {
-    fontSize: 10,
-    fontWeight: '800',
+    fontSize: 10.5,
+    fontWeight: '600',
   },
   subtext: {
     fontSize: 11,

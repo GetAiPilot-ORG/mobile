@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import React, { useRef, useState } from "react";
 import {
@@ -15,11 +16,7 @@ import {
   TextInput,
   View,
   useColorScheme,
-} from 'react-native';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import * as Clipboard from 'expo-clipboard';
+} from "react-native";
 
 import { AppScreen } from "../../../components/AppScreen";
 import { AppTopBar } from "../../../components/AppTopBar";

@@ -1,5 +1,8 @@
 import React from 'react';
-import { StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { StyleSheet, Text, useColorScheme, View, Pressable, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import * as Clipboard from 'expo-clipboard';
 import { WhatsAppConnection } from '../types';
 
 interface ConnectionStatusCardProps {
@@ -15,41 +18,85 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
   const isDark = colorScheme === 'dark';
 
   const isConnected = connection?.connected ?? true;
-  const ratingColor =
-    connection?.quality_rating === 'GREEN'
-      ? '#10b981'
-      : connection?.quality_rating === 'YELLOW'
-      ? '#f59e0b'
-      : '#ef4444';
+
+  const rawLimit = connection?.messaging_limit;
+  const formattedLimit = rawLimit && rawLimit !== 'null'
+    ? rawLimit.replace('TIER_', '') + ' msgs'
+    : '10K msgs';
+
+  const handleCopyPhone = async () => {
+    if (connection?.phone_number) {
+      await Clipboard.setStringAsync(connection.phone_number);
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    }
+  };
 
   return (
     <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
-      <View style={styles.headerRow}>
-        <View style={styles.badgeContainer}>
-          <View style={[styles.statusDot, { backgroundColor: isConnected ? '#10b981' : '#ef4444' }]} />
-          <Text style={styles.statusText}>{isConnected ? 'Meta Cloud Connected' : 'Disconnected'}</Text>
+      {/* Profile & Connection Info Header */}
+      <View style={styles.mainRow}>
+        {/* iOS Avatar with Live Connection Dot */}
+        <View style={styles.avatarWrapper}>
+          <View style={[styles.avatar, isDark ? styles.avatarDark : styles.avatarLight]}>
+            <Ionicons name="logo-whatsapp" size={24} color="#22C55E" />
+          </View>
+          {/* Live Online / Connected Indicator Ring */}
+          <View
+            style={[
+              styles.statusRing,
+              isDark ? styles.statusRingDark : styles.statusRingLight,
+              { backgroundColor: isConnected ? '#22C55E' : '#EF4444' },
+            ]}
+          />
         </View>
 
-        <View style={[styles.qualityBadge, { borderColor: ratingColor }]}>
-          <Text style={[styles.qualityText, { color: ratingColor }]}>
-            Quality: {connection?.quality_rating || 'GREEN'}
+        {/* Business Details */}
+        <View style={styles.infoCol}>
+          <View style={styles.nameRow}>
+            <Text style={[styles.displayName, isDark ? styles.textLight : styles.textDark]} numberOfLines={1}>
+              {connection?.display_name || 'Get Ai Pilot'}
+            </Text>
+            <Ionicons name="checkmark-circle" size={15} color="#0084FF" />
+          </View>
+
+          <View style={styles.subMetaRow}>
+            <Pressable style={styles.phonePressable} onPress={handleCopyPhone} hitSlop={6}>
+              <Text style={[styles.phoneNumber, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+                {connection?.phone_number || '+91 74045 62984'}
+              </Text>
+              <Ionicons
+                name="copy-outline"
+                size={11.5}
+                color={isDark ? '#64748B' : '#94A3B8'}
+              />
+            </Pressable>
+
+            <Text style={[styles.dotSeparator, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>•</Text>
+
+            <Text style={[styles.statusCaption, { color: isConnected ? '#22C55E' : '#EF4444' }]}>
+              {isConnected ? 'Connected' : 'Offline'}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Subtle Bottom SLA Info Row */}
+      <View style={[styles.footerRow, isDark ? styles.footerBorderDark : styles.footerBorderLight]}>
+        <View style={styles.tierInfo}>
+          <Ionicons name="speedometer-outline" size={13} color={isDark ? '#64748B' : '#94A3B8'} />
+          <Text style={[styles.limitLabel, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+            Tier Limit:{' '}
+            <Text style={[styles.limitValue, isDark ? styles.textLight : styles.textDark]}>
+              {formattedLimit} / 24h
+            </Text>
           </Text>
         </View>
-      </View>
 
-      <View style={styles.infoRow}>
-        <Text style={[styles.displayName, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-          {connection?.display_name || 'GetAiPilot Verified Business'}
-        </Text>
-        <Text style={[styles.phoneNumber, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-          {connection?.phone_number || '+91 98765 43210'}
-        </Text>
-      </View>
-
-      <View style={[styles.footerRow, { borderTopColor: isDark ? '#1e293b' : '#e2e8f0' }]}>
-        <Text style={styles.limitLabel}>
-          Tier Limit: <Text style={[styles.limitValue, { color: isDark ? '#cbd5e1' : '#334155' }]}>{connection?.messaging_limit || 'TIER_10K'} / 24h</Text>
-        </Text>
+        <View style={styles.metaLiveTag}>
+          <Text style={styles.metaLiveText}>Cloud API v20.0</Text>
+        </View>
       </View>
     </View>
   );
@@ -60,77 +107,147 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   cardDark: {
-    backgroundColor: '#0f172a',
-    borderColor: '#1e293b',
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
   },
   cardLight: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
   },
-  headerRow: {
+  mainRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
   },
-  badgeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+  avatarWrapper: {
+    position: 'relative',
+    marginRight: 12,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
     borderRadius: 12,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  statusText: {
-    color: '#10b981',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  qualityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 1,
   },
-  qualityText: {
-    fontSize: 11,
-    fontWeight: '700',
+  avatarDark: {
+    backgroundColor: 'rgba(34, 197, 94, 0.12)',
+    borderColor: 'rgba(34, 197, 94, 0.25)',
   },
-  infoRow: {
-    marginBottom: 10,
+  avatarLight: {
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    borderColor: 'rgba(34, 197, 94, 0.2)',
+  },
+  statusRing: {
+    position: 'absolute',
+    bottom: -1,
+    right: -1,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+  },
+  statusRingDark: {
+    borderColor: '#1C1C1E',
+  },
+  statusRingLight: {
+    borderColor: '#FFFFFF',
+  },
+  infoCol: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 3,
   },
   displayName: {
     fontSize: 17,
-    fontWeight: '800',
-    marginBottom: 2,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  subMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  phonePressable: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   phoneNumber: {
-    fontSize: 14,
-    fontFamily: 'monospace',
+    fontSize: 13,
+    fontWeight: '500',
+    letterSpacing: 0.1,
+  },
+  dotSeparator: {
+    fontSize: 11,
+  },
+  statusCaption: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: -0.1,
   },
   footerRow: {
-    borderTopWidth: 1,
-    paddingTop: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 10,
+  },
+  footerBorderDark: {
+    borderTopColor: '#2C2C2E',
+  },
+  footerBorderLight: {
+    borderTopColor: '#E5E7EB',
+  },
+  tierInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   limitLabel: {
-    color: '#64748b',
     fontSize: 12,
   },
   limitValue: {
-    fontWeight: '700',
+    fontWeight: '600',
+  },
+  metaLiveTag: {
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  metaLiveText: {
+    color: '#818CF8',
+    fontSize: 10.5,
+    fontWeight: '600',
+    letterSpacing: 0.1,
+  },
+  textLight: {
+    color: '#FFFFFF',
+  },
+  textDark: {
+    color: '#000000',
+  },
+  textSecondaryDark: {
+    color: '#8E8E93',
+  },
+  textSecondaryLight: {
+    color: '#6B7280',
   },
 });
+
+

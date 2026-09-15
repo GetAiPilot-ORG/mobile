@@ -42,7 +42,7 @@ export const BroadcastCard: React.FC<BroadcastCardProps> = ({ broadcast, onPress
 
         <View style={[styles.statusBadge, { borderColor: statusColor, backgroundColor: `${statusColor}1A` }]}>
           <Text style={[styles.statusText, { color: statusColor }]}>
-            {broadcast.status.toUpperCase()}
+            {broadcast.status.charAt(0).toUpperCase() + broadcast.status.slice(1).toLowerCase()}
           </Text>
         </View>
       </View>
@@ -139,8 +139,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   statusText: {
-    fontSize: 10,
-    fontWeight: '800',
+    fontSize: 11,
+    fontWeight: '600',
   },
   metricsRow: {
     flexDirection: 'row',
@@ -162,14 +162,13 @@ const styles = StyleSheet.create({
   },
   metricLabel: {
     color: '#64748b',
-    fontSize: 10,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '500',
     marginBottom: 2,
-    textTransform: 'uppercase',
   },
   metricValue: {
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '600',
   },
   footerRow: {
     flexDirection: 'row',
