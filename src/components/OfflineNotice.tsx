@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import {
   View,
   Text,
+  StyleSheet,
   Pressable,
   Animated,
   ActivityIndicator,
@@ -97,51 +98,82 @@ export function OfflineNotice() {
 
   return (
     <View
-      className="absolute left-4 right-4 z-50 items-center pointer-events-box-none"
-      style={{ top: Math.max(insets.top + 6, 12) }}
-      pointerEvents="box-none"
+      style={[
+        styles.overlayContainer,
+        {
+          top: Math.max(insets.top + 6, 12),
+          pointerEvents: "box-none" as any,
+        },
+      ]}
     >
       <Animated.View
-        className={`w-full max-w-[460px] rounded-2xl py-2.5 px-3.5 border shadow-lg ${
+        style={[
+          styles.banner,
           isReconnected
             ? isDark
-              ? "bg-[#102518]/95 border-emerald-500/35"
-              : "bg-emerald-50/95 border-emerald-500/30"
+              ? styles.reconnectedDark
+              : styles.reconnectedLight
             : isDark
-            ? "bg-[#181A1F]/95 border-red-500/35"
-            : "bg-white/95 border-red-500/25"
-        }`}
-        style={{ opacity, transform: [{ translateY }] }}
+            ? styles.offlineDark
+            : styles.offlineLight,
+          {
+            opacity,
+            transform: [{ translateY }],
+          },
+        ]}
       >
         {isReconnected ? (
           // Back Online UI
-          <View className="flex-row items-center">
-            <View className="w-8 h-8 rounded-full justify-center items-center mr-2.5 bg-emerald-500/15">
+          <View style={styles.contentRow}>
+            <View style={[styles.iconWrap, styles.iconWrapSuccess]}>
               <Ionicons name="checkmark-circle" size={18} color="#30D158" />
             </View>
-            <View className="flex-1 justify-center">
-              <Text className={`text-xs font-semibold tracking-tight ${isDark ? "text-gray-200" : "text-gray-900"}`}>
+            <View style={styles.textWrap}>
+              <Text
+                style={[
+                  styles.titleText,
+                  { color: isDark ? "#E5E7EB" : "#111827" },
+                ]}
+              >
                 Back Online
               </Text>
-              <Text className={`text-[11px] mt-0.5 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+              <Text
+                style={[
+                  styles.subText,
+                  { color: isDark ? "#9CA3AF" : "#6B7280" },
+                ]}
+              >
                 Internet connection restored
               </Text>
             </View>
           </View>
         ) : (
           // Device Offline UI
-          <View className="flex-row items-center">
+          <View style={styles.contentRow}>
             <Animated.View
-              className="w-8 h-8 rounded-full justify-center items-center mr-2.5 bg-red-500/15"
-              style={{ transform: [{ scale: pulseAnim }] }}
+              style={[
+                styles.iconWrap,
+                styles.iconWrapOffline,
+                { transform: [{ scale: pulseAnim }] },
+              ]}
             >
               <Ionicons name="cloud-offline-outline" size={18} color="#FF453A" />
             </Animated.View>
-            <View className="flex-1 justify-center">
-              <Text className={`text-xs font-semibold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>
+            <View style={styles.textWrap}>
+              <Text
+                style={[
+                  styles.titleText,
+                  { color: isDark ? "#FFFFFF" : "#111827" },
+                ]}
+              >
                 You're Offline
               </Text>
-              <Text className={`text-[11px] mt-0.5 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+              <Text
+                style={[
+                  styles.subText,
+                  { color: isDark ? "#9CA3AF" : "#6B7280" },
+                ]}
+              >
                 Check Wi-Fi or mobile data
               </Text>
             </View>
@@ -149,22 +181,32 @@ export function OfflineNotice() {
             <Pressable
               onPress={handleRetry}
               disabled={isChecking}
-              className={`px-3 py-1.5 rounded-xl justify-center items-center ml-2 border ${
-                isDark ? "bg-white/10 border-white/15" : "bg-black/5 border-black/10"
-              }`}
+              style={({ pressed }) => [
+                styles.retryButton,
+                isDark ? styles.retryBtnDark : styles.retryBtnLight,
+                pressed && styles.retryBtnPressed,
+              ]}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               {isChecking ? (
-                <ActivityIndicator size="small" color={isDark ? "#FFFFFF" : "#111827"} />
+                <ActivityIndicator
+                  size="small"
+                  color={isDark ? "#FFFFFF" : "#111827"}
+                />
               ) : (
-                <View className="flex-row items-center">
+                <View style={styles.retryInner}>
                   <Ionicons
                     name="refresh-outline"
                     size={14}
                     color={isDark ? "#FFFFFF" : "#111827"}
-                    className="mr-1"
+                    style={{ marginRight: 4 }}
                   />
-                  <Text className={`text-xs font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+                  <Text
+                    style={[
+                      styles.retryText,
+                      { color: isDark ? "#FFFFFF" : "#111827" },
+                    ]}
+                  >
                     Retry
                   </Text>
                 </View>
@@ -176,3 +218,113 @@ export function OfflineNotice() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  overlayContainer: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    zIndex: 9999,
+    alignItems: "center",
+  },
+  banner: {
+    width: "100%",
+    maxWidth: 460,
+    borderRadius: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000000",
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.18,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
+      },
+      web: {
+        boxShadow: "0px 6px 16px rgba(0, 0, 0, 0.18)",
+      } as any,
+      default: {},
+    }),
+  },
+  offlineDark: {
+    backgroundColor: "rgba(28, 28, 30, 0.96)",
+    borderColor: "rgba(255, 69, 58, 0.35)",
+  },
+  offlineLight: {
+    backgroundColor: "rgba(255, 255, 255, 0.98)",
+    borderColor: "rgba(255, 59, 48, 0.25)",
+  },
+  reconnectedDark: {
+    backgroundColor: "rgba(16, 37, 24, 0.96)",
+    borderColor: "rgba(48, 209, 88, 0.35)",
+  },
+  reconnectedLight: {
+    backgroundColor: "rgba(240, 253, 244, 0.98)",
+    borderColor: "rgba(34, 197, 94, 0.3)",
+  },
+  contentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  iconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+  },
+  iconWrapOffline: {
+    backgroundColor: "rgba(255, 69, 58, 0.14)",
+  },
+  iconWrapSuccess: {
+    backgroundColor: "rgba(48, 209, 88, 0.14)",
+  },
+  textWrap: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  titleText: {
+    fontSize: 13,
+    fontWeight: "600",
+    letterSpacing: -0.2,
+  },
+  subText: {
+    fontSize: 11,
+    marginTop: 1,
+  },
+  retryButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 8,
+  },
+  retryBtnDark: {
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.15)",
+  },
+  retryBtnLight: {
+    backgroundColor: "rgba(0, 0, 0, 0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.08)",
+  },
+  retryBtnPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.96 }],
+  },
+  retryInner: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  retryText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+});

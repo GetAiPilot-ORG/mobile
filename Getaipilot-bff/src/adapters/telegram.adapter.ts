@@ -336,22 +336,13 @@ export class TelegramAdapter {
 
     const tools: TelegramHubTool[] = [
       {
-        key: 'autoforward',
-        title: 'GAP Autoforwarding',
-        description: 'Mirror and auto-forward messages across public and private Telegram channels automatically.',
+        key: 'reactions',
+        title: 'GAP Reactions',
+        description: 'Boost your post engagement with automated Telegram reaction emoji delivery.',
         isCompleted: true,
         statusText: 'Setup complete',
-        badge: 'AUTOMATION',
-        icon: 'git-compare-outline',
-      },
-      {
-        key: 'sub_manager',
-        title: 'GAP Sub Manager',
-        description: 'Manage gated subscription landing pages and process recurring community payments.',
-        isCompleted: planCount > 0 || lpCount > 0,
-        statusText: planCount > 0 ? `${planCount} Active Tiers` : 'Setup complete',
-        badge: 'MONETIZE',
-        icon: 'card-outline',
+        badge: 'ENGAGEMENT',
+        icon: 'sparkles-outline',
       },
       {
         key: 'tracker',
@@ -368,21 +359,30 @@ export class TelegramAdapter {
         description: 'Turn Telegram trading calls and chart screenshots into branded SEBI research report PDFs.',
         isCompleted: true,
         statusText: 'Setup complete',
-        badge: 'NEW',
+        badge: 'SEBI',
         icon: 'document-text-outline',
       },
       {
-        key: 'broadcast',
-        title: 'Broadcast Msg',
-        description: 'Send high-converting instant announcements and mass broadcasts to all your bot subscribers.',
+        key: 'autoforward',
+        title: 'GAP Autoforwarding',
+        description: 'Mirror and auto-forward messages across public and private Telegram channels automatically.',
         isCompleted: true,
         statusText: 'Setup complete',
-        badge: 'NEW',
-        icon: 'megaphone-outline',
+        badge: 'AUTOMATION',
+        icon: 'git-compare-outline',
+      },
+      {
+        key: 'sub_manager',
+        title: 'Sub Manager',
+        description: 'Manage gated subscription landing pages and process recurring community payments.',
+        isCompleted: planCount > 0 || lpCount > 0,
+        statusText: planCount > 0 ? `${planCount} Active Tiers` : 'Setup complete',
+        badge: 'MONETIZE',
+        icon: 'card-outline',
       },
       {
         key: 'auto_approve',
-        title: 'GAP Auto Approve',
+        title: 'Auto-Approve Bot',
         description: 'Instantly and automatically accept new group or channel join requests 24/7.',
         isCompleted: true,
         statusText: 'Setup complete',
@@ -391,7 +391,7 @@ export class TelegramAdapter {
       },
       {
         key: 'chatbot',
-        title: 'Chat Bot Automation',
+        title: 'AI Chat Bot',
         description: 'Deploy intelligent ChatGPT-powered Telegram bots to handle user support & sales queries.',
         isCompleted: true,
         statusText: 'Setup complete',
@@ -399,13 +399,13 @@ export class TelegramAdapter {
         icon: 'chatbubble-ellipses-outline',
       },
       {
-        key: 'reactions',
-        title: 'GAP Reactions',
-        description: 'Boost your post engagement with automated Telegram reaction emoji delivery.',
+        key: 'broadcast',
+        title: 'Broadcast Msg',
+        description: 'Send high-converting instant announcements and mass broadcasts to all your bot subscribers.',
         isCompleted: true,
         statusText: 'Setup complete',
-        badge: 'ENGAGEMENT',
-        icon: 'sparkles-outline',
+        badge: 'BROADCAST',
+        icon: 'megaphone-outline',
       },
     ];
 
@@ -529,19 +529,6 @@ export class TelegramAdapter {
       const profile = profileRes.data;
       const communities = communitiesRes.data || [];
 
-      const reportsList = [
-        {
-          id: 'rep_1',
-          title: 'NIFTY 24000 CE - Intraday Option Call',
-          callType: 'BUY',
-          entry: 'Rs 150',
-          target: 'Rs 200',
-          stopLoss: 'Rs 120',
-          createdAt: new Date(Date.now() - 2 * 3600000).toISOString(),
-          pdfUrl: 'https://tg.getaipilot.in/sample-report.pdf',
-        },
-      ];
-
       return {
         botName: bot?.bot_name || 'GAP SEBI Report Bot',
         botUsername: bot?.bot_username ? (bot.bot_username.startsWith('@') ? bot.bot_username : `@${bot.bot_username}`) : '@ResearchReport233_bot',
@@ -549,7 +536,7 @@ export class TelegramAdapter {
         telegramUserId: profile?.telegram_user_id || 8891953778,
         dmConnected: true,
         channelsCount: communities.length,
-        reportsCount: reportsList.length,
+        reportsCount: 0,
         brandProfile: {
           advisoryFirm: profile?.business_name || 'No Brand',
           researchAnalyst: profile?.full_name || 'SEBI',
@@ -568,7 +555,18 @@ export class TelegramAdapter {
           name: c.title || 'SEBI Research Channel',
           is_active: c.is_active ?? true,
         })),
-        reports: reportsList,
+        reports: [
+          {
+            id: 'rep_1',
+            title: 'NIFTY 24000 CE - Intraday Option Call',
+            callType: 'BUY',
+            entry: 'Rs 150',
+            target: 'Rs 200',
+            stopLoss: 'Rs 120',
+            createdAt: new Date(Date.now() - 2 * 3600000).toISOString(),
+            pdfUrl: 'https://tg.getaipilot.in/sample-report.pdf',
+          },
+        ],
       };
     } catch (err) {
       console.warn('[TG REPORT BOT ERROR]', err);

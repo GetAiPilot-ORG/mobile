@@ -1,16 +1,20 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
   Share,
+  StyleSheet,
   Text,
   TextInput,
+  useColorScheme,
   View,
 } from "react-native";
+
 import * as Clipboard from "expo-clipboard";
 import * as DocumentPicker from "expo-document-picker";
+
 import {
   CheckCircle2,
   CloudUpload,
@@ -30,6 +34,7 @@ import {
 
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
+import { getColors } from "../../src/theme/colors";
 
 type SelectedFile = {
   name: string;
@@ -39,29 +44,128 @@ type SelectedFile = {
 };
 
 export default function FileLinkerScreen() {
+  /*
+   * =========================================================
+   * SYSTEM THEME
+   * =========================================================
+   */
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+  const colors = getColors(isDark);
+
+  /*
+   * =========================================================
+   * STATE
+   * =========================================================
+   */
+
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
+
   const [sourceUrl, setSourceUrl] = useState("");
+
   const [generatedShareUrl, setGeneratedShareUrl] = useState("");
+
   const [uploading, setUploading] = useState(false);
 
+  /*
+   * =========================================================
+   * THEME
+   *
+   * Main colors come from your centralized colors object.
+   * isDark is used for subtle UI differences such as
+   * shadows, overlays and upload-area appearance.
+   * =========================================================
+   */
+
+  const theme = useMemo(
+    () => ({
+      background: colors.background,
+      card: colors.card,
+      surface: colors.surface,
+      foreground: colors.foreground,
+      mutedForeground: colors.mutedForeground,
+      border: colors.border,
+      primary: colors.primary,
+      primaryForeground: colors.primaryForeground,
+
+      uploadBackground: isDark ? colors.surface : colors.surface,
+
+      inputBackground: isDark ? colors.surface : colors.surface,
+
+      iconBackground: isDark ? colors.surface : colors.card,
+
+      softBackground: isDark ? colors.surface : colors.surface,
+
+      shadowOpacity: isDark ? 0.22 : 0.06,
+
+      shadowRadius: isDark ? 10 : 12,
+
+      overlayBorder: isDark ? "rgba(255,255,255,0.10)" : colors.border,
+    }),
+    [isDark],
+  );
+
+  /*
+   * =========================================================
+   * FILE EXTENSION
+   * =========================================================
+   */
+
   const fileExtension = useMemo(() => {
-    if (!selectedFile?.name) return "";
+    if (!selectedFile?.name) {
+      return "";
+    }
+
     return selectedFile.name.split(".").pop()?.toLowerCase() || "";
   }, [selectedFile]);
 
+  /*
+   * =========================================================
+   * FILE SIZE
+   * =========================================================
+   */
+
   const formatFileSize = (bytes?: number) => {
-    if (!bytes) return "Unknown size";
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    if (!bytes) {
+      return "Unknown size";
+    }
+
+    if (bytes < 1024) {
+      return `${bytes} B`;
+    }
+
+    if (bytes < 1024 * 1024) {
+      return `${(bytes / 1024).toFixed(1)} KB`;
+    }
+
+    if (bytes < 1024 * 1024 * 1024) {
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
     return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
   };
 
+  /*
+   * =========================================================
+   * FILE ICON
+   * =========================================================
+   */
+
   const getFileIcon = () => {
     const mimeType = selectedFile?.mimeType?.toLowerCase() || "";
-    if (mimeType.includes("image")) return ImageIcon;
-    if (mimeType.includes("video")) return Film;
-    if (mimeType.includes("audio")) return Music;
+
+    if (mimeType.includes("image")) {
+      return ImageIcon;
+    }
+
+    if (mimeType.includes("video")) {
+      return Film;
+    }
+
+    if (mimeType.includes("audio")) {
+      return Music;
+    }
+
     if (
       mimeType.includes("pdf") ||
       mimeType.includes("document") ||
@@ -71,8 +175,15 @@ export default function FileLinkerScreen() {
     ) {
       return FileText;
     }
+
     return File;
   };
+
+  /*
+   * =========================================================
+   * PICK FILE
+   * =========================================================
+   */
 
   const pickFile = async () => {
     try {
@@ -82,9 +193,12 @@ export default function FileLinkerScreen() {
         multiple: false,
       });
 
-      if (result.canceled) return;
+      if (result.canceled) {
+        return;
+      }
 
       const file = result.assets[0];
+
       setSelectedFile({
         name: file.name,
         uri: file.uri,
@@ -96,25 +210,72 @@ export default function FileLinkerScreen() {
       setGeneratedShareUrl("");
     } catch (error) {
       console.error("Document picker error:", error);
-      Alert.alert("Unable to select file", "Something went wrong while selecting the file.");
+
+      Alert.alert(
+        "Unable to select file",
+        "Something went wrong while selecting the file.",
+      );
     }
   };
+
+  /*
+   * =========================================================
+   * REMOVE FILE
+   * =========================================================
+   */
 
   const removeFile = () => {
     setSelectedFile(null);
     setGeneratedShareUrl("");
   };
 
+  /*
+   * =========================================================
+   * GENERATE LINK
+   * =========================================================
+   */
+
   const handleGenerateLink = async () => {
     if (!selectedFile && !sourceUrl.trim()) {
-      Alert.alert("File required", "Please upload a file or provide a source URL.");
+      Alert.alert(
+        "File required",
+        "Please upload a file or provide a source URL.",
+      );
+
       return;
     }
 
     setUploading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      /*
+       * =====================================================
+       * TODO:
+       * Replace this mock upload with your actual backend.
+       *
+       * Example:
+       *
+       * const formData = new FormData();
+       *
+       * formData.append('file', {
+       *   uri: selectedFile.uri,
+       *   name: selectedFile.name,
+       *   type:
+       *     selectedFile.mimeType ||
+       *     'application/octet-stream',
+       * } as any);
+       *
+       * const response = await fetch(
+       *   'YOUR_API_URL',
+       *   {
+       *     method: 'POST',
+       *     body: formData,
+       *   }
+       * );
+       * =====================================================
+       */
+
+      await new Promise((resolve) => setTimeout(resolve, 1200));
 
       const name =
         selectedFile?.name ||
@@ -128,29 +289,53 @@ export default function FileLinkerScreen() {
         .replace(/^-+|-+$/g, "");
 
       const randomId = Math.random().toString(36).substring(2, 8);
+
       const link = `https://gap.to/f/${slug}-${randomId}`;
 
       setGeneratedShareUrl(link);
     } catch (error) {
       console.error("Generate link error:", error);
-      Alert.alert("Upload failed", "We could not create your file link. Please try again.");
+
+      Alert.alert(
+        "Upload failed",
+        "We could not create your file link. Please try again.",
+      );
     } finally {
       setUploading(false);
     }
   };
 
+  /*
+   * =========================================================
+   * COPY
+   * =========================================================
+   */
+
   const handleCopy = async () => {
-    if (!generatedShareUrl) return;
+    if (!generatedShareUrl) {
+      return;
+    }
+
     try {
       await Clipboard.setStringAsync(generatedShareUrl);
+
       Alert.alert("Copied", "File link copied to clipboard.");
     } catch (error) {
       console.error("Clipboard error:", error);
     }
   };
 
+  /*
+   * =========================================================
+   * SHARE
+   * =========================================================
+   */
+
   const handleShare = async () => {
-    if (!generatedShareUrl) return;
+    if (!generatedShareUrl) {
+      return;
+    }
+
     try {
       await Share.share({
         message: `Access "${selectedFile?.name || "this file"}":\n${generatedShareUrl}`,
@@ -163,261 +348,1360 @@ export default function FileLinkerScreen() {
 
   const FileIcon = getFileIcon();
 
-  return (
-    <AppScreen safeArea={false} className="flex-1 bg-[#0B0D10]">
-      <AppTopBar title="File Linker" subtitle="Upload & share files instantly" showBack={true} />
+  /*
+   * =========================================================
+   * UI
+   * =========================================================
+   */
 
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
-        {/* HERO */}
-        <View className="flex-row items-center mb-5 px-0.5">
-          <View className="w-12 h-12 rounded-2xl items-center justify-center mr-3 border border-[#262930] bg-[#181A1F]">
-            <CloudUpload size={24} color="#0084FF" strokeWidth={2.2} />
+  return (
+    <AppScreen safeArea={false} backgroundColor={theme.background}>
+      <AppTopBar
+        title="File Linker"
+        subtitle="Upload & share files instantly"
+        showBack={true}
+      />
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ===================================================
+            HERO
+        =================================================== */}
+
+        <View style={styles.hero}>
+          <View
+            style={[
+              styles.heroIcon,
+              {
+                backgroundColor: theme.iconBackground,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <CloudUpload size={25} color={theme.primary} strokeWidth={2.2} />
           </View>
 
-          <View className="flex-1">
-            <View className="flex-row items-center mb-1">
-              <Text className="text-xl font-black text-white mr-2">File Linker</Text>
-              <View className="flex-row items-center gap-1 px-2 py-0.5 rounded-md bg-[#0084FF]">
-                <Sparkles size={10} color="#FFFFFF" />
-                <Text className="text-[9px] font-black text-white">PRO</Text>
+          <View style={styles.heroContent}>
+            <View style={styles.heroTitleRow}>
+              <Text
+                style={[
+                  styles.heroTitle,
+                  {
+                    color: theme.foreground,
+                  },
+                ]}
+              >
+                File Linker
+              </Text>
+
+              <View
+                style={[
+                  styles.proBadge,
+                  {
+                    backgroundColor: theme.primary,
+                  },
+                ]}
+              >
+                <Sparkles size={11} color={theme.primaryForeground} />
+
+                <Text
+                  style={[
+                    styles.proBadgeText,
+                    {
+                      color: theme.primaryForeground,
+                    },
+                  ]}
+                >
+                  PRO
+                </Text>
               </View>
             </View>
 
-            <Text className="text-xs text-slate-400">
+            <Text
+              style={[
+                styles.heroDescription,
+                {
+                  color: theme.mutedForeground,
+                },
+              ]}
+            >
               Turn any document or media file into a clean, shareable link.
             </Text>
           </View>
         </View>
 
-        {/* UPLOAD CARD */}
-        <View className="rounded-2xl p-4 border border-[#262930] bg-[#181A1F] mb-4">
-          <View className="flex-row justify-between items-start mb-3.5">
+        {/* ===================================================
+            UPLOAD CARD
+        =================================================== */}
+
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.border,
+              shadowOpacity: theme.shadowOpacity,
+              shadowRadius: theme.shadowRadius,
+            },
+          ]}
+        >
+          <View style={styles.sectionHeader}>
             <View>
-              <Text className="text-sm font-black text-white">Upload your file</Text>
-              <Text className="text-[11px] text-slate-400 mt-0.5">Select a file from your device</Text>
+              <Text
+                style={[
+                  styles.sectionTitle,
+                  {
+                    color: theme.foreground,
+                  },
+                ]}
+              >
+                Upload your file
+              </Text>
+
+              <Text
+                style={[
+                  styles.sectionSubtitle,
+                  {
+                    color: theme.mutedForeground,
+                  },
+                ]}
+              >
+                Select a file from your device
+              </Text>
             </View>
 
-            <View className="w-7 h-6 rounded-md items-center justify-center border border-[#262930] bg-[#111317]">
-              <Text className="text-[10px] font-black text-slate-400">01</Text>
+            <View
+              style={[
+                styles.stepBadge,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.stepText,
+                  {
+                    color: theme.mutedForeground,
+                  },
+                ]}
+              >
+                01
+              </Text>
             </View>
           </View>
 
           {!selectedFile ? (
             <Pressable
               onPress={pickFile}
-              className="border border-dashed border-[#0084FF]/60 rounded-2xl py-6 px-4 items-center bg-[#111317]"
+              style={({ pressed }) => [
+                styles.uploadArea,
+                {
+                  backgroundColor: theme.uploadBackground,
+                  borderColor: theme.primary,
+                },
+                pressed && styles.uploadAreaPressed,
+              ]}
             >
-              <View className="w-14 h-14 rounded-2xl items-center justify-center mb-3 border border-[#262930] bg-[#181A1F]">
-                <Upload size={26} color="#0084FF" strokeWidth={2} />
+              <View
+                style={[
+                  styles.uploadIconContainer,
+                  {
+                    backgroundColor: theme.iconBackground,
+                    borderColor: theme.border,
+                  },
+                ]}
+              >
+                <Upload size={28} color={theme.primary} strokeWidth={2} />
               </View>
 
-              <Text className="text-sm font-black text-white mb-1">Choose a file</Text>
-              <Text className="text-xs text-slate-400 text-center leading-4 mb-3">
+              <Text
+                style={[
+                  styles.uploadTitle,
+                  {
+                    color: theme.foreground,
+                  },
+                ]}
+              >
+                Choose a file
+              </Text>
+
+              <Text
+                style={[
+                  styles.uploadDescription,
+                  {
+                    color: theme.mutedForeground,
+                  },
+                ]}
+              >
                 PDF, DOCX, PPTX, ZIP, images, videos and more
               </Text>
 
-              <View className="px-4 py-2 rounded-lg bg-[#0084FF] mb-2">
-                <Text className="text-xs font-bold text-white">Browse Files</Text>
+              <View
+                style={[
+                  styles.browseButton,
+                  {
+                    backgroundColor: theme.primary,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.browseButtonText,
+                    {
+                      color: theme.primaryForeground,
+                    },
+                  ]}
+                >
+                  Browse Files
+                </Text>
               </View>
 
-              <Text className="text-[10px] text-slate-400">Your file will be securely processed</Text>
+              <Text
+                style={[
+                  styles.uploadHint,
+                  {
+                    color: theme.mutedForeground,
+                  },
+                ]}
+              >
+                Your file will be securely processed
+              </Text>
             </Pressable>
           ) : (
-            <View className="flex-row items-center p-3 rounded-xl border border-[#262930] bg-[#111317]">
-              <View className="w-12 h-12 rounded-xl items-center justify-center mr-3 border border-[#262930] bg-[#181A1F]">
-                <FileIcon size={24} color="#0084FF" strokeWidth={2} />
+            <View
+              style={[
+                styles.filePreview,
+                {
+                  backgroundColor: theme.softBackground,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.fileIconWrapper,
+                  {
+                    backgroundColor: theme.iconBackground,
+                    borderColor: theme.border,
+                  },
+                ]}
+              >
+                <FileIcon size={27} color={theme.primary} strokeWidth={2} />
               </View>
 
-              <View className="flex-1 min-w-0">
-                <Text className="text-xs font-black text-white leading-4 mb-1" numberOfLines={2}>
+              <View style={styles.fileInfo}>
+                <Text
+                  style={[
+                    styles.fileName,
+                    {
+                      color: theme.foreground,
+                    },
+                  ]}
+                  numberOfLines={2}
+                >
                   {selectedFile.name}
                 </Text>
 
-                <View className="flex-row items-center mb-1">
-                  <Text className="text-[10px] font-bold text-slate-400">
+                <View style={styles.fileMeta}>
+                  <Text
+                    style={[
+                      styles.fileMetaText,
+                      {
+                        color: theme.mutedForeground,
+                      },
+                    ]}
+                  >
                     {fileExtension ? fileExtension.toUpperCase() : "FILE"}
                   </Text>
-                  <View className="w-1 h-1 rounded-full bg-slate-500 mx-1.5" />
-                  <Text className="text-[10px] font-bold text-slate-400">
+
+                  <View
+                    style={[
+                      styles.metaDot,
+                      {
+                        backgroundColor: theme.mutedForeground,
+                      },
+                    ]}
+                  />
+
+                  <Text
+                    style={[
+                      styles.fileMetaText,
+                      {
+                        color: theme.mutedForeground,
+                      },
+                    ]}
+                  >
                     {formatFileSize(selectedFile.size)}
                   </Text>
                 </View>
 
-                <View className="flex-row items-center gap-1">
-                  <CheckCircle2 size={12} color="#10B981" />
-                  <Text className="text-[10px] font-semibold text-emerald-400">File ready to upload</Text>
+                <View style={styles.readyRow}>
+                  <CheckCircle2 size={14} color={theme.primary} />
+
+                  <Text
+                    style={[
+                      styles.readyText,
+                      {
+                        color: theme.primary,
+                      },
+                    ]}
+                  >
+                    File ready to upload
+                  </Text>
                 </View>
               </View>
 
               <Pressable
                 onPress={removeFile}
-                className="w-8 h-8 rounded-lg items-center justify-center ml-2 border border-[#262930] bg-[#181A1F]"
+                style={[
+                  styles.removeButton,
+                  {
+                    backgroundColor: theme.iconBackground,
+                    borderColor: theme.border,
+                  },
+                ]}
               >
-                <X size={16} color="#94A3B8" />
+                <X size={17} color={theme.mutedForeground} />
               </Pressable>
             </View>
           )}
         </View>
 
-        {/* OR */}
-        <View className="flex-row items-center my-1">
-          <View className="flex-1 h-px bg-[#262930]" />
-          <View className="mx-2.5 px-2 py-0.5 rounded border border-[#262930] bg-[#111317]">
-            <Text className="text-[9px] font-black text-slate-400">OR</Text>
+        {/* ===================================================
+            OR
+        =================================================== */}
+
+        <View style={styles.orContainer}>
+          <View
+            style={[
+              styles.divider,
+              {
+                backgroundColor: theme.border,
+              },
+            ]}
+          />
+
+          <View
+            style={[
+              styles.orBadge,
+              {
+                backgroundColor: theme.surface,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.orText,
+                {
+                  color: theme.mutedForeground,
+                },
+              ]}
+            >
+              OR
+            </Text>
           </View>
-          <View className="flex-1 h-px bg-[#262930]" />
+
+          <View
+            style={[
+              styles.divider,
+              {
+                backgroundColor: theme.border,
+              },
+            ]}
+          />
         </View>
 
-        {/* SOURCE URL CARD */}
-        <View className="rounded-2xl p-4 border border-[#262930] bg-[#181A1F] my-4">
-          <View className="flex-row justify-between items-start mb-3">
-            <View className="flex-row items-center">
-              <View className="w-8 h-8 rounded-lg items-center justify-center mr-2.5 border border-[#262930] bg-[#111317]">
-                <LinkIcon size={15} color="#0084FF" />
+        {/* ===================================================
+            SOURCE URL CARD
+        =================================================== */}
+
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.border,
+              shadowOpacity: theme.shadowOpacity,
+              shadowRadius: theme.shadowRadius,
+            },
+          ]}
+        >
+          <View style={styles.sectionHeader}>
+            <View style={styles.titleWithIcon}>
+              <View
+                style={[
+                  styles.smallIcon,
+                  {
+                    backgroundColor: theme.iconBackground,
+                    borderColor: theme.border,
+                  },
+                ]}
+              >
+                <LinkIcon size={17} color={theme.primary} />
               </View>
 
               <View>
-                <Text className="text-sm font-black text-white">Use existing file URL</Text>
-                <Text className="text-[11px] text-slate-400">Google Drive, Dropbox, S3, etc.</Text>
+                <Text
+                  style={[
+                    styles.sectionTitle,
+                    {
+                      color: theme.foreground,
+                    },
+                  ]}
+                >
+                  Use existing file URL
+                </Text>
+
+                <Text
+                  style={[
+                    styles.sectionSubtitle,
+                    {
+                      color: theme.mutedForeground,
+                    },
+                  ]}
+                >
+                  Google Drive, Dropbox, S3, etc.
+                </Text>
               </View>
             </View>
 
-            <View className="w-7 h-6 rounded-md items-center justify-center border border-[#262930] bg-[#111317]">
-              <Text className="text-[10px] font-black text-slate-400">02</Text>
+            <View
+              style={[
+                styles.stepBadge,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.stepText,
+                  {
+                    color: theme.mutedForeground,
+                  },
+                ]}
+              >
+                02
+              </Text>
             </View>
           </View>
 
-          <View className="min-h-[44px] rounded-xl px-3 flex-row items-center gap-2 border border-[#262930] bg-[#111317]">
-            <LinkIcon size={16} color="#64748B" />
+          <View
+            style={[
+              styles.urlInputWrapper,
+              {
+                backgroundColor: theme.inputBackground,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <LinkIcon size={17} color={theme.mutedForeground} />
+
             <TextInput
               value={sourceUrl}
               onChangeText={(text) => {
                 setSourceUrl(text);
+
                 if (text.trim()) {
                   setSelectedFile(null);
                   setGeneratedShareUrl("");
                 }
               }}
               placeholder="https://drive.google.com/..."
-              placeholderTextColor="#64748B"
+              placeholderTextColor={theme.mutedForeground}
               autoCapitalize="none"
               autoCorrect={false}
               keyboardType="url"
-              className="flex-1 text-xs text-white py-2"
+              style={[
+                styles.urlInput,
+                {
+                  color: theme.foreground,
+                },
+              ]}
             />
           </View>
 
-          <Text className="mt-2 text-[10px] text-slate-400 leading-4">
-            Paste a publicly accessible file URL if you don't want to upload a file.
+          <Text
+            style={[
+              styles.urlHint,
+              {
+                color: theme.mutedForeground,
+              },
+            ]}
+          >
+            Paste a publicly accessible file URL if you don't want to upload a
+            file.
           </Text>
         </View>
 
-        {/* GENERATE SECTION */}
-        <View className="mt-1 mb-4">
-          <View className="flex-row items-center justify-center mb-3 gap-1.5">
-            <CheckCircle2 size={13} color="#0084FF" />
-            <Text className="text-[10px] font-semibold text-slate-400">Secure link generation</Text>
-            <View className="w-1 h-1 rounded-full bg-slate-500 mx-1" />
-            <Text className="text-[10px] font-semibold text-slate-400">Fast sharing</Text>
+        {/* ===================================================
+            GENERATE SECTION
+        =================================================== */}
+
+        <View style={styles.generateSection}>
+          <View style={styles.securityRow}>
+            <CheckCircle2 size={15} color={theme.primary} />
+
+            <Text
+              style={[
+                styles.securityText,
+                {
+                  color: theme.mutedForeground,
+                },
+              ]}
+            >
+              Secure link generation
+            </Text>
+
+            <View
+              style={[
+                styles.securityDot,
+                {
+                  backgroundColor: theme.mutedForeground,
+                },
+              ]}
+            />
+
+            <Text
+              style={[
+                styles.securityText,
+                {
+                  color: theme.mutedForeground,
+                },
+              ]}
+            >
+              Fast sharing
+            </Text>
           </View>
 
           <Pressable
             onPress={handleGenerateLink}
             disabled={uploading}
-            className={`min-h-[48px] rounded-xl flex-row items-center justify-center gap-2 px-4 bg-[#0084FF] ${
-              uploading ? "opacity-70" : ""
-            }`}
+            style={({ pressed }) => [
+              styles.generateButton,
+              {
+                backgroundColor: theme.primary,
+              },
+              pressed && styles.generateButtonPressed,
+              uploading && styles.generateButtonDisabled,
+            ]}
           >
             {uploading ? (
               <>
-                <ActivityIndicator size="small" color="#FFFFFF" />
-                <Text className="text-xs font-black text-white">Creating link...</Text>
+                <ActivityIndicator
+                  size="small"
+                  color={theme.primaryForeground}
+                />
+
+                <Text
+                  style={[
+                    styles.generateButtonText,
+                    {
+                      color: theme.primaryForeground,
+                    },
+                  ]}
+                >
+                  Creating link...
+                </Text>
               </>
             ) : (
               <>
-                <Sparkles size={16} color="#FFFFFF" />
-                <Text className="text-xs font-black text-white">Generate Shareable Link</Text>
+                <Sparkles size={19} color={theme.primaryForeground} />
+
+                <Text
+                  style={[
+                    styles.generateButtonText,
+                    {
+                      color: theme.primaryForeground,
+                    },
+                  ]}
+                >
+                  Generate Shareable Link
+                </Text>
               </>
             )}
           </Pressable>
         </View>
 
-        {/* SUCCESS CARD */}
+        {/* ===================================================
+            SUCCESS CARD
+        =================================================== */}
+
         {generatedShareUrl ? (
-          <View className="rounded-2xl p-4 border border-[#0084FF]/50 bg-[#181A1F] mb-4">
-            <View className="flex-row items-center mb-3">
-              <View className="w-10 h-10 rounded-xl items-center justify-center mr-2.5 border border-[#262930] bg-[#111317]">
-                <CheckCircle2 size={20} color="#10B981" />
+          <View
+            style={[
+              styles.successCard,
+              {
+                backgroundColor: theme.card,
+                borderColor: theme.primary,
+                shadowOpacity: theme.shadowOpacity,
+                shadowRadius: theme.shadowRadius,
+              },
+            ]}
+          >
+            <View style={styles.successHeader}>
+              <View
+                style={[
+                  styles.successIcon,
+                  {
+                    backgroundColor: theme.surface,
+                    borderColor: theme.border,
+                  },
+                ]}
+              >
+                <CheckCircle2 size={22} color={theme.primary} />
               </View>
 
-              <View className="flex-1">
-                <Text className="text-sm font-black text-white mb-0.5">Your link is ready</Text>
-                <Text className="text-[10px] text-slate-400 leading-4">Anyone with this link can access the file.</Text>
+              <View style={styles.successContent}>
+                <Text
+                  style={[
+                    styles.successTitle,
+                    {
+                      color: theme.foreground,
+                    },
+                  ]}
+                >
+                  Your link is ready
+                </Text>
+
+                <Text
+                  style={[
+                    styles.successSubtitle,
+                    {
+                      color: theme.mutedForeground,
+                    },
+                  ]}
+                >
+                  Anyone with this link can access the file.
+                </Text>
               </View>
             </View>
 
-            <View className="flex-row items-center justify-between p-3 rounded-xl border border-[#262930] bg-[#111317] mb-3">
-              <Text className="text-xs font-bold text-[#0084FF] flex-1 mr-2" numberOfLines={2}>
+            <View
+              style={[
+                styles.linkBox,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.linkText,
+                  {
+                    color: theme.primary,
+                  },
+                ]}
+                numberOfLines={2}
+              >
                 {generatedShareUrl}
               </Text>
 
               <Pressable
                 onPress={handleCopy}
-                className="w-8 h-8 rounded-lg items-center justify-center border border-[#262930] bg-[#181A1F]"
+                style={[
+                  styles.copyButton,
+                  {
+                    backgroundColor: theme.card,
+                    borderColor: theme.border,
+                  },
+                ]}
               >
-                <Copy size={16} color="#0084FF" />
+                <Copy size={17} color={theme.primary} />
               </Pressable>
             </View>
 
-            <View className="flex-row gap-2.5">
+            <View style={styles.actionRow}>
               <Pressable
                 onPress={handleCopy}
-                className="flex-1 py-2.5 rounded-xl border border-[#262930] bg-[#111317] flex-row items-center justify-center gap-1.5"
+                style={[
+                  styles.secondaryAction,
+                  {
+                    backgroundColor: theme.surface,
+                    borderColor: theme.border,
+                  },
+                ]}
               >
-                <Copy size={15} color="#FFFFFF" />
-                <Text className="text-xs font-bold text-white">Copy Link</Text>
+                <Copy size={17} color={theme.foreground} />
+
+                <Text
+                  style={[
+                    styles.secondaryActionText,
+                    {
+                      color: theme.foreground,
+                    },
+                  ]}
+                >
+                  Copy Link
+                </Text>
               </Pressable>
 
               <Pressable
                 onPress={handleShare}
-                className="flex-1 py-2.5 rounded-xl bg-[#0084FF] flex-row items-center justify-center gap-1.5"
+                style={[
+                  styles.primaryAction,
+                  {
+                    backgroundColor: theme.primary,
+                  },
+                ]}
               >
-                <Share2 size={15} color="#FFFFFF" />
-                <Text className="text-xs font-bold text-white">Share</Text>
+                <Share2 size={17} color={theme.primaryForeground} />
+
+                <Text
+                  style={[
+                    styles.primaryActionText,
+                    {
+                      color: theme.primaryForeground,
+                    },
+                  ]}
+                >
+                  Share
+                </Text>
               </Pressable>
             </View>
 
-            <View className="flex-row items-center gap-1.5 mt-3 justify-center">
-              <ExternalLink size={12} color="#64748B" />
-              <Text className="text-[10px] text-slate-400">Your branded gap.to link is ready to use</Text>
+            <View style={styles.linkFooter}>
+              <ExternalLink size={13} color={theme.mutedForeground} />
+
+              <Text
+                style={[
+                  styles.linkFooterText,
+                  {
+                    color: theme.mutedForeground,
+                  },
+                ]}
+              >
+                Your branded gap.to link is ready to use
+              </Text>
             </View>
           </View>
         ) : null}
 
-        {/* FEATURES */}
-        <View className="flex-row justify-around py-3">
-          <View className="items-center gap-1">
-            <View className="w-8 h-8 rounded-lg items-center justify-center border border-[#262930] bg-[#181A1F]">
-              <LinkIcon size={14} color="#0084FF" />
+        {/* ===================================================
+            FEATURES
+        =================================================== */}
+
+        <View style={styles.features}>
+          <View style={styles.featureItem}>
+            <View
+              style={[
+                styles.featureIcon,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <LinkIcon size={16} color={theme.primary} />
             </View>
-            <Text className="text-[10px] font-semibold text-slate-400">Clean URLs</Text>
+
+            <Text
+              style={[
+                styles.featureText,
+                {
+                  color: theme.mutedForeground,
+                },
+              ]}
+            >
+              Clean URLs
+            </Text>
           </View>
 
-          <View className="items-center gap-1">
-            <View className="w-8 h-8 rounded-lg items-center justify-center border border-[#262930] bg-[#181A1F]">
-              <Share2 size={14} color="#0084FF" />
+          <View style={styles.featureItem}>
+            <View
+              style={[
+                styles.featureIcon,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <Share2 size={16} color={theme.primary} />
             </View>
-            <Text className="text-[10px] font-semibold text-slate-400">Easy sharing</Text>
+
+            <Text
+              style={[
+                styles.featureText,
+                {
+                  color: theme.mutedForeground,
+                },
+              ]}
+            >
+              Easy sharing
+            </Text>
           </View>
 
-          <View className="items-center gap-1">
-            <View className="w-8 h-8 rounded-lg items-center justify-center border border-[#262930] bg-[#181A1F]">
-              <CheckCircle2 size={14} color="#10B981" />
+          <View style={styles.featureItem}>
+            <View
+              style={[
+                styles.featureIcon,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <CheckCircle2 size={16} color={theme.primary} />
             </View>
-            <Text className="text-[10px] font-semibold text-slate-400">Reliable access</Text>
+
+            <Text
+              style={[
+                styles.featureText,
+                {
+                  color: theme.mutedForeground,
+                },
+              ]}
+            >
+              Reliable access
+            </Text>
           </View>
         </View>
       </ScrollView>
     </AppScreen>
   );
 }
+
+/*
+ * =============================================================
+ * STYLES
+ * =============================================================
+ */
+
+const styles = StyleSheet.create({
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 45,
+  },
+
+  /*
+   * HERO
+   */
+
+  hero: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 18,
+    paddingHorizontal: 2,
+  },
+
+  heroIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 13,
+    borderWidth: 1,
+  },
+
+  heroContent: {
+    flex: 1,
+  },
+
+  heroTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: "900",
+    marginRight: 8,
+  },
+
+  proBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+
+  proBadgeText: {
+    fontSize: 9,
+    fontWeight: "900",
+  },
+
+  heroDescription: {
+    fontSize: 12.5,
+    lineHeight: 18,
+    maxWidth: "95%",
+  },
+
+  /*
+   * CARD
+   */
+
+  card: {
+    borderRadius: 18,
+    padding: 17,
+    borderWidth: 1,
+    marginBottom: 14,
+
+    shadowColor: "#000000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+
+    elevation: 2,
+  },
+
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 15,
+  },
+
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    marginBottom: 3,
+  },
+
+  sectionSubtitle: {
+    fontSize: 11.5,
+  },
+
+  stepBadge: {
+    width: 30,
+    height: 26,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+  },
+
+  stepText: {
+    fontSize: 10,
+    fontWeight: "900",
+  },
+
+  /*
+   * UPLOAD
+   */
+
+  uploadArea: {
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    borderRadius: 15,
+    paddingVertical: 28,
+    paddingHorizontal: 18,
+    alignItems: "center",
+  },
+
+  uploadAreaPressed: {
+    opacity: 0.75,
+    transform: [
+      {
+        scale: 0.99,
+      },
+    ],
+  },
+
+  uploadIconContainer: {
+    width: 58,
+    height: 58,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 13,
+    borderWidth: 1,
+  },
+
+  uploadTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    marginBottom: 5,
+  },
+
+  uploadDescription: {
+    fontSize: 11.5,
+    textAlign: "center",
+    lineHeight: 17,
+    marginBottom: 15,
+  },
+
+  browseButton: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 9,
+    marginBottom: 10,
+  },
+
+  browseButtonText: {
+    fontSize: 12.5,
+    fontWeight: "800",
+  },
+
+  uploadHint: {
+    fontSize: 10,
+  },
+
+  /*
+   * SELECTED FILE
+   */
+
+  filePreview: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 13,
+    borderRadius: 13,
+    borderWidth: 1,
+  },
+
+  fileIconWrapper: {
+    width: 50,
+    height: 50,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+    borderWidth: 1,
+  },
+
+  fileInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  fileName: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "800",
+    marginBottom: 5,
+  },
+
+  fileMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+
+  fileMetaText: {
+    fontSize: 9.5,
+    fontWeight: "700",
+  },
+
+  metaDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 2,
+    marginHorizontal: 6,
+  },
+
+  readyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+
+  readyText: {
+    fontSize: 10,
+    fontWeight: "600",
+  },
+
+  removeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+    borderWidth: 1,
+  },
+
+  /*
+   * OR
+   */
+
+  orContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 2,
+  },
+
+  divider: {
+    flex: 1,
+    height: 1,
+  },
+
+  orBadge: {
+    marginHorizontal: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+
+  orText: {
+    fontSize: 9,
+    fontWeight: "800",
+  },
+
+  /*
+   * SOURCE URL
+   */
+
+  titleWithIcon: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  smallIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 9,
+    borderWidth: 1,
+  },
+
+  urlInputWrapper: {
+    minHeight: 48,
+    borderRadius: 11,
+    paddingHorizontal: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+    borderWidth: 1,
+  },
+
+  urlInput: {
+    flex: 1,
+    fontSize: 12,
+    paddingVertical: 10,
+  },
+
+  urlHint: {
+    marginTop: 8,
+    fontSize: 10,
+    lineHeight: 15,
+  },
+
+  /*
+   * GENERATE
+   */
+
+  generateSection: {
+    marginTop: 4,
+    marginBottom: 17,
+  },
+
+  securityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+    gap: 5,
+  },
+
+  securityText: {
+    fontSize: 10,
+    fontWeight: "600",
+  },
+
+  securityDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 2,
+    marginHorizontal: 3,
+  },
+
+  generateButton: {
+    minHeight: 53,
+    borderRadius: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 9,
+    paddingHorizontal: 18,
+  },
+
+  generateButtonPressed: {
+    opacity: 0.85,
+    transform: [
+      {
+        scale: 0.99,
+      },
+    ],
+  },
+
+  generateButtonDisabled: {
+    opacity: 0.7,
+  },
+
+  generateButtonText: {
+    fontSize: 14,
+    fontWeight: "900",
+  },
+
+  /*
+   * SUCCESS
+   */
+
+  successCard: {
+    borderRadius: 18,
+    padding: 17,
+    borderWidth: 1,
+    marginBottom: 18,
+
+    shadowColor: "#000000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+
+    elevation: 2,
+  },
+
+  successHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+
+  successIcon: {
+    width: 43,
+    height: 43,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 11,
+    borderWidth: 1,
+  },
+
+  successContent: {
+    flex: 1,
+  },
+
+  successTitle: {
+    fontSize: 14,
+    fontWeight: "900",
+    marginBottom: 3,
+  },
+
+  successSubtitle: {
+    fontSize: 10.5,
+    lineHeight: 15,
+  },
+
+  linkBox: {
+    minHeight: 53,
+    borderRadius: 11,
+    paddingLeft: 12,
+    paddingRight: 6,
+    paddingVertical: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+    borderWidth: 1,
+  },
+
+  linkText: {
+    flex: 1,
+    fontSize: 11.5,
+    lineHeight: 17,
+    fontWeight: "700",
+  },
+
+  copyButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+    borderWidth: 1,
+  },
+
+  actionRow: {
+    flexDirection: "row",
+    gap: 9,
+  },
+
+  secondaryAction: {
+    flex: 1,
+    height: 45,
+    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    borderWidth: 1,
+  },
+
+  secondaryActionText: {
+    fontSize: 12,
+    fontWeight: "800",
+  },
+
+  primaryAction: {
+    flex: 1,
+    height: 45,
+    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+  },
+
+  primaryActionText: {
+    fontSize: 12,
+    fontWeight: "800",
+  },
+
+  linkFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+    marginTop: 12,
+  },
+
+  linkFooterText: {
+    fontSize: 9.5,
+  },
+
+  /*
+   * FEATURES
+   */
+
+  features: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 3,
+  },
+
+  featureItem: {
+    alignItems: "center",
+    flex: 1,
+  },
+
+  featureIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 6,
+    borderWidth: 1,
+  },
+
+  featureText: {
+    fontSize: 9.5,
+    fontWeight: "700",
+  },
+});

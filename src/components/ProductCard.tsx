@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, Image, useColorScheme } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Image, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -14,7 +14,6 @@ interface ProductCardProps {
   actionText?: string;
   onPress: () => void;
   onActionPress?: () => void;
-  className?: string;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -24,7 +23,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   logoImage,
   themeColor = '#0070F3',
   onPress,
-  className,
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -36,35 +34,30 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   return (
     <Pressable
-      className={`rounded-[18px] p-3.5 mb-3 border ${
-        isDark ? "bg-[#181A1F] border-[#262930]" : "bg-white border-gray-200 shadow-sm"
-      } ${className || ''}`}
-      style={({ pressed }) => pressed ? { opacity: 0.8, transform: [{ scale: 0.99 }] } : undefined}
+      style={({ pressed }) => [
+        styles.card,
+        isDark ? styles.cardDark : styles.cardLight,
+        pressed && { opacity: 0.8, transform: [{ scale: 0.99 }] },
+      ]}
       onPress={handlePress}
     >
-      <View className="flex-row items-center">
+      <View style={styles.contentRow}>
         {/* App Squircle Logo */}
         {logoImage ? (
-          <Image source={logoImage} className="w-12 h-12 rounded-xl mr-3" resizeMode="contain" />
+          <Image source={logoImage} style={styles.logoImage} resizeMode="contain" />
         ) : (
-          <View
-            className="w-12 h-12 rounded-xl justify-center items-center mr-3"
-            style={{ backgroundColor: `${themeColor}22` }}
-          >
-            <Text className="text-xl">{icon || '⚡'}</Text>
+          <View style={[styles.iconFallback, { backgroundColor: `${themeColor}22` }]}>
+            <Text style={styles.iconText}>{icon || '⚡'}</Text>
           </View>
         )}
 
         {/* Title & Description */}
-        <View className="flex-1 mr-2">
-          <Text
-            className={`text-base font-bold tracking-tight mb-0.5 ${isDark ? "text-white" : "text-black"}`}
-            numberOfLines={1}
-          >
+        <View style={styles.titleInfo}>
+          <Text style={[styles.name, isDark ? styles.nameDark : styles.nameLight]} numberOfLines={1}>
             {name}
           </Text>
           <Text
-            className={`text-xs leading-4 ${isDark ? "text-slate-400" : "text-slate-500"}`}
+            style={[styles.description, isDark ? styles.descriptionDark : styles.descriptionLight]}
             numberOfLines={2}
           >
             {description}
@@ -72,8 +65,80 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </View>
 
         {/* Apple iOS Chevron */}
-        <Ionicons name="chevron-forward" size={18} color="#8E8E93" className="ml-1" />
+        <Ionicons name="chevron-forward" size={18} color="#8E8E93" style={styles.chevron} />
       </View>
     </Pressable>
   );
 };
+
+const styles = StyleSheet.create({
+  card: {
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  cardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  cardDark: {
+    backgroundColor: '#161B22',
+    borderColor: '#262C36',
+  },
+  contentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logoImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    marginRight: 12,
+  },
+  iconFallback: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  iconText: {
+    fontSize: 22,
+  },
+  titleInfo: {
+    flex: 1,
+    marginRight: 8,
+  },
+  name: {
+    fontSize: 15.5,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+    marginBottom: 3,
+  },
+  nameLight: {
+    color: '#000000',
+  },
+  nameDark: {
+    color: '#FFFFFF',
+  },
+  description: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  descriptionLight: {
+    color: '#6B7280',
+  },
+  descriptionDark: {
+    color: '#8E8E93',
+  },
+  chevron: {
+    marginLeft: 4,
+  },
+});

@@ -5,8 +5,10 @@ import {
   Text,
   TextInput,
   Pressable,
+  StyleSheet,
   ActivityIndicator,
   ScrollView,
+  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -26,6 +28,9 @@ export const TelegramBroadcastModal: React.FC<TelegramBroadcastModalProps> = ({
   onSubmit,
   isLoading,
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [selectedChannelId, setSelectedChannelId] = useState<string>(
     channels[0]?.chat_id ? String(channels[0].chat_id) : ''
   );
@@ -65,43 +70,43 @@ export const TelegramBroadcastModal: React.FC<TelegramBroadcastModalProps> = ({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View className="flex-1 bg-black/70 justify-end">
-        <View className="rounded-t-3xl p-5 max-h-[80%] bg-[#181A1F] border-t border-[#262930]">
+      <View style={styles.overlay}>
+        <View style={[styles.modalCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
           {/* Header */}
-          <View className="flex-row justify-between items-center mb-4">
-            <View className="flex-row items-center gap-2.5">
-              <View className="w-9 h-9 rounded-full items-center justify-center bg-[#0084FF]/15">
-                <Ionicons name="megaphone" size={20} color="#0084FF" />
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <View style={[styles.iconWrap, { backgroundColor: 'rgba(14, 165, 233, 0.15)' }]}>
+                <Ionicons name="megaphone" size={20} color="#0ea5e9" />
               </View>
-              <Text className="text-base font-extrabold text-white">
+              <Text style={[styles.title, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
                 New Telegram Broadcast
               </Text>
             </View>
-            <Pressable onPress={onClose} className="p-1 active:opacity-70">
-              <Ionicons name="close" size={20} color="#94a3b8" />
+            <Pressable onPress={onClose} style={styles.closeBtn}>
+              <Ionicons name="close" size={20} color={isDark ? '#94a3b8' : '#64748b'} />
             </Pressable>
           </View>
 
           {error && (
-            <View className="flex-row items-center gap-2 bg-rose-500/10 p-2.5 rounded-lg mb-3 border border-rose-500/20">
+            <View style={styles.errorBox}>
               <Ionicons name="alert-circle" size={16} color="#ef4444" />
-              <Text className="text-rose-400 text-xs flex-1">{error}</Text>
+              <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
 
-          <ScrollView className="mb-5" showsVerticalScrollIndicator={false}>
+          <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false}>
             {/* Target Channel Picker */}
-            <Text className="text-xs font-bold text-white mb-2">
+            <Text style={[styles.label, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
               Target Channel / Group
             </Text>
             {channels.length === 0 ? (
-              <View className="p-3 rounded-lg bg-rose-500/10 mb-2.5 border border-rose-500/20">
-                <Text className="text-xs text-rose-400">
+              <View style={styles.emptyChannelsBox}>
+                <Text style={styles.emptyChannelsText}>
                   No channels synced. Please sync your channels in the Channels tab.
                 </Text>
               </View>
             ) : (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row mb-2.5">
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.channelsRow}>
                 {channels.map((ch: any) => {
                   const chId = String(ch.chat_id || ch.id);
                   const isSelected = selectedChannelId === chId;
@@ -109,21 +114,28 @@ export const TelegramBroadcastModal: React.FC<TelegramBroadcastModalProps> = ({
                     <Pressable
                       key={chId}
                       onPress={() => setSelectedChannelId(chId)}
-                      className={`flex-row items-center gap-1.5 px-3 py-2 rounded-xl border mr-2 ${
-                        isSelected
-                          ? 'bg-[#0084FF] border-[#0084FF]'
-                          : 'bg-[#111317] border-[#262930]'
-                      }`}
+                      style={[
+                        styles.channelChip,
+                        {
+                          backgroundColor: isSelected
+                            ? '#0ea5e9'
+                            : isDark
+                            ? '#1e293b'
+                            : '#f1f5f9',
+                          borderColor: isSelected ? '#0ea5e9' : isDark ? '#334155' : '#e2e8f0',
+                        },
+                      ]}
                     >
                       <Ionicons
                         name={ch.chat_type === 'group' ? 'people' : 'megaphone'}
                         size={14}
-                        color={isSelected ? '#ffffff' : '#94a3b8'}
+                        color={isSelected ? '#ffffff' : isDark ? '#94a3b8' : '#64748b'}
                       />
                       <Text
-                        className={`text-xs font-bold ${
-                          isSelected ? 'text-white' : 'text-slate-300'
-                        }`}
+                        style={[
+                          styles.channelChipText,
+                          { color: isSelected ? '#ffffff' : isDark ? '#f8fafc' : '#0f172a' },
+                        ]}
                       >
                         {ch.chat_title || ch.title || 'Channel'}
                       </Text>
@@ -134,46 +146,60 @@ export const TelegramBroadcastModal: React.FC<TelegramBroadcastModalProps> = ({
             )}
 
             {/* Message Body */}
-            <Text className="text-xs font-bold text-white mb-2 mt-3">
+            <Text style={[styles.label, { color: isDark ? '#f8fafc' : '#0f172a', marginTop: 14 }]}>
               Broadcast Message
             </Text>
             <TextInput
               value={text}
               onChangeText={setText}
               placeholder="Type your message or announcement..."
-              placeholderTextColor="#64748B"
+              placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
               multiline
               numberOfLines={4}
-              className="border border-[#262930] rounded-xl p-3 text-sm min-h-[90px] bg-[#111317] text-white"
-              style={{ textAlignVertical: 'top' }}
+              style={[
+                styles.textArea,
+                {
+                  backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                  color: isDark ? '#f8fafc' : '#0f172a',
+                  borderColor: isDark ? '#334155' : '#e2e8f0',
+                },
+              ]}
             />
 
             {/* Optional Media URL */}
-            <Text className="text-xs font-bold text-white mb-2 mt-3">
+            <Text style={[styles.label, { color: isDark ? '#f8fafc' : '#0f172a', marginTop: 14 }]}>
               Media URL (Optional Image/Video)
             </Text>
             <TextInput
               value={mediaUrl}
               onChangeText={setMediaUrl}
               placeholder="https://example.com/image.jpg"
-              placeholderTextColor="#64748B"
+              placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
               keyboardType="url"
-              className="border border-[#262930] rounded-xl px-3.5 py-2.5 text-sm mb-4 bg-[#111317] text-white"
+              style={[
+                styles.input,
+                {
+                  backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                  color: isDark ? '#f8fafc' : '#0f172a',
+                  borderColor: isDark ? '#334155' : '#e2e8f0',
+                },
+              ]}
             />
 
             <Pressable
               onPress={handleSubmit}
               disabled={isLoading || channels.length === 0}
-              className={`bg-[#0084FF] flex-row items-center justify-center gap-2 py-3.5 rounded-xl mt-2 mb-4 active:opacity-90 ${
-                isLoading || channels.length === 0 ? 'opacity-60' : ''
-              }`}
+              style={[
+                styles.submitBtn,
+                (isLoading || channels.length === 0) && { opacity: 0.6 },
+              ]}
             >
               {isLoading ? (
                 <ActivityIndicator size="small" color="#ffffff" />
               ) : (
                 <>
                   <Ionicons name="send" size={16} color="#ffffff" />
-                  <Text className="text-white text-sm font-extrabold">Queue Broadcast</Text>
+                  <Text style={styles.submitBtnText}>Queue Broadcast</Text>
                 </>
               )}
             </Pressable>
@@ -184,3 +210,123 @@ export const TelegramBroadcastModal: React.FC<TelegramBroadcastModalProps> = ({
   );
 };
 
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  iconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  closeBtn: {
+    padding: 4,
+  },
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  errorText: {
+    color: '#ef4444',
+    fontSize: 12,
+    flex: 1,
+  },
+  scrollBody: {
+    paddingBottom: 20,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  channelsRow: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  channelChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginRight: 8,
+  },
+  channelChipText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  emptyChannelsBox: {
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    marginBottom: 10,
+  },
+  emptyChannelsText: {
+    fontSize: 12,
+    color: '#ef4444',
+  },
+  textArea: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 14,
+    minHeight: 90,
+    textAlignVertical: 'top',
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+    marginBottom: 18,
+  },
+  submitBtn: {
+    backgroundColor: '#0ea5e9',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  submitBtnText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+});

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  StyleSheet,
   Text,
   View,
   Modal,
@@ -9,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CRMContact, ContactStatus } from '../types';
@@ -33,6 +35,9 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
   onSubmit,
   isLoading,
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -93,50 +98,50 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1 bg-black/70 justify-end"
+        style={styles.modalOverlay}
       >
-        <View className="bg-[#181A1F] border-t border-[#262930] rounded-t-3xl px-5 pt-5 pb-8 max-h-[88%]">
+        <View style={[styles.modalContent, isDark ? styles.modalContentDark : styles.modalContentLight]}>
           {/* Header */}
-          <View className="flex-row items-center justify-between mb-4">
+          <View style={styles.header}>
             <View>
-              <Text className="text-lg font-bold text-white">Add New Lead</Text>
-              <Text className="text-xs text-slate-400 mt-0.5">Capture contact and qualification details</Text>
+              <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Add New Lead</Text>
+              <Text style={[styles.headerSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Capture contact and qualification details</Text>
             </View>
             <Pressable
-              className="w-8 h-8 rounded-full bg-[#262930] items-center justify-center"
+              style={[styles.closeBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
               onPress={handleClose}
               hitSlop={8}
             >
-              <Ionicons name="close" size={18} color="#94A3B8" />
+              <Ionicons name="close" size={20} color={isDark ? '#9CA3AF' : '#64748B'} />
             </Pressable>
           </View>
 
           {errorMessage ? (
-            <View className="flex-row items-center gap-2 bg-rose-500/15 border border-rose-500/30 p-2.5 rounded-xl mb-3">
+            <View style={styles.errorBox}>
               <Ionicons name="alert-circle" size={16} color="#EF4444" />
-              <Text className="text-xs text-rose-400 flex-1">{errorMessage}</Text>
+              <Text style={styles.errorText}>{errorMessage}</Text>
             </View>
           ) : null}
 
-          <ScrollView className="mb-4" showsVerticalScrollIndicator={false}>
+          <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
             {/* Name Row */}
-            <View className="flex-row gap-2 mb-3">
-              <View className="flex-1">
-                <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">First Name *</Text>
+            <View style={styles.row}>
+              <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>First Name *</Text>
                 <TextInput
-                  className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2.5 text-xs text-white"
+                  style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                   placeholder="e.g. John"
-                  placeholderTextColor="#64748B"
+                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                   value={firstName}
                   onChangeText={setFirstName}
                 />
               </View>
-              <View className="flex-1">
-                <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Last Name</Text>
+              <View style={[styles.inputGroup, { flex: 1 }]}>
+                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Last Name</Text>
                 <TextInput
-                  className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2.5 text-xs text-white"
+                  style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                   placeholder="e.g. Doe"
-                  placeholderTextColor="#64748B"
+                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                   value={lastName}
                   onChangeText={setLastName}
                 />
@@ -144,24 +149,24 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
             </View>
 
             {/* Contact Row */}
-            <View className="mb-3">
-              <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Phone Number</Text>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Phone Number</Text>
               <TextInput
-                className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2.5 text-xs text-white"
+                style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                 placeholder="+1 (555) 000-0000"
-                placeholderTextColor="#64748B"
+                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                 keyboardType="phone-pad"
                 value={phone}
                 onChangeText={setPhone}
               />
             </View>
 
-            <View className="mb-3">
-              <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Email Address</Text>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Email Address</Text>
               <TextInput
-                className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2.5 text-xs text-white"
+                style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                 placeholder="john@example.com"
-                placeholderTextColor="#64748B"
+                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
@@ -170,23 +175,23 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
             </View>
 
             {/* Company & Role */}
-            <View className="flex-row gap-2 mb-3">
-              <View className="flex-1">
-                <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Company</Text>
+            <View style={styles.row}>
+              <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Company</Text>
                 <TextInput
-                  className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2.5 text-xs text-white"
+                  style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                   placeholder="Acme Corp"
-                  placeholderTextColor="#64748B"
+                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                   value={company}
                   onChangeText={setCompany}
                 />
               </View>
-              <View className="flex-1">
-                <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Job Title</Text>
+              <View style={[styles.inputGroup, { flex: 1 }]}>
+                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Job Title</Text>
                 <TextInput
-                  className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2.5 text-xs text-white"
+                  style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                   placeholder="VP Sales"
-                  placeholderTextColor="#64748B"
+                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                   value={jobTitle}
                   onChangeText={setJobTitle}
                 />
@@ -194,23 +199,25 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
             </View>
 
             {/* Status Selector */}
-            <View className="mb-3">
-              <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Status</Text>
-              <View className="flex-row gap-2">
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Status</Text>
+              <View style={styles.statusRow}>
                 {STATUS_OPTIONS.map((opt) => (
                   <Pressable
                     key={opt.key}
-                    className={`flex-1 py-2 rounded-xl items-center border ${
-                      status === opt.key
-                        ? 'bg-[#0084FF]/20 border-[#0084FF]'
-                        : 'bg-[#111317] border-[#262930] active:bg-[#262930]'
-                    }`}
+                    style={[
+                      styles.statusOption,
+                      { backgroundColor: isDark ? '#222630' : '#F1F5F9' },
+                      status === opt.key && (isDark ? styles.statusOptionSelectedDark : styles.statusOptionSelectedLight),
+                    ]}
                     onPress={() => setStatus(opt.key)}
                   >
                     <Text
-                      className={`text-xs ${
-                        status === opt.key ? 'text-[#0084FF] font-bold' : 'text-slate-400 font-semibold'
-                      }`}
+                      style={[
+                        styles.statusOptionText,
+                        { color: isDark ? '#9CA3AF' : '#64748B' },
+                        status === opt.key && styles.statusOptionTextSelected,
+                      ]}
                     >
                       {opt.label}
                     </Text>
@@ -221,21 +228,23 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
 
             {/* Assignee Selector */}
             {members && members.length > 0 ? (
-              <View className="mb-3">
-                <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Assign to Team Member</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2">
+              <View style={styles.inputGroup}>
+                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Assign to Team Member</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.memberScroll}>
                   <Pressable
-                    className={`px-3 py-2 rounded-xl border ${
-                      assignedTo === ''
-                        ? 'bg-[#0084FF]/20 border-[#0084FF]'
-                        : 'bg-[#111317] border-[#262930] active:bg-[#262930]'
-                    }`}
+                    style={[
+                      styles.memberChip,
+                      { backgroundColor: isDark ? '#222630' : '#F1F5F9' },
+                      assignedTo === '' && (isDark ? styles.memberChipSelectedDark : styles.memberChipSelectedLight),
+                    ]}
                     onPress={() => setAssignedTo('')}
                   >
                     <Text
-                      className={`text-xs ${
-                        assignedTo === '' ? 'text-[#0084FF] font-bold' : 'text-slate-400'
-                      }`}
+                      style={[
+                        styles.memberChipText,
+                        { color: isDark ? '#9CA3AF' : '#64748B' },
+                        assignedTo === '' && styles.memberChipTextSelected,
+                      ]}
                     >
                       Unassigned
                     </Text>
@@ -243,17 +252,19 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
                   {members.map((m) => (
                     <Pressable
                       key={m.id}
-                      className={`px-3 py-2 rounded-xl border ${
-                        assignedTo === m.id
-                          ? 'bg-[#0084FF]/20 border-[#0084FF]'
-                          : 'bg-[#111317] border-[#262930] active:bg-[#262930]'
-                      }`}
+                      style={[
+                        styles.memberChip,
+                        { backgroundColor: isDark ? '#222630' : '#F1F5F9' },
+                        assignedTo === m.id && (isDark ? styles.memberChipSelectedDark : styles.memberChipSelectedLight),
+                      ]}
                       onPress={() => setAssignedTo(m.id)}
                     >
                       <Text
-                        className={`text-xs ${
-                          assignedTo === m.id ? 'text-[#0084FF] font-bold' : 'text-slate-400'
-                        }`}
+                        style={[
+                          styles.memberChipText,
+                          { color: isDark ? '#9CA3AF' : '#64748B' },
+                          assignedTo === m.id && styles.memberChipTextSelected,
+                        ]}
                       >
                         {m.name || m.email}
                       </Text>
@@ -264,15 +275,14 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
             ) : null}
 
             {/* Initial Notes */}
-            <View className="mb-2">
-              <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Initial Notes / Source</Text>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Initial Notes / Source</Text>
               <TextInput
-                className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2.5 text-xs text-white min-h-[70px]"
+                style={[styles.input, isDark ? styles.inputDark : styles.inputLight, styles.textArea]}
                 placeholder="How did this lead contact us? Any specific requirements..."
-                placeholderTextColor="#64748B"
+                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                 multiline
                 numberOfLines={3}
-                textAlignVertical="top"
                 value={notes}
                 onChangeText={setNotes}
               />
@@ -280,23 +290,19 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
           </ScrollView>
 
           {/* Footer Actions */}
-          <View className="flex-row gap-3">
+          <View style={styles.modalFooter}>
             <Pressable
-              className="flex-1 py-3 rounded-xl bg-[#262930] items-center justify-center active:bg-[#333742]"
+              style={[styles.cancelBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
               onPress={handleClose}
               disabled={isLoading}
             >
-              <Text className="text-xs font-bold text-slate-300">Cancel</Text>
+              <Text style={[styles.cancelBtnText, { color: isDark ? '#D1D5DB' : '#475569' }]}>Cancel</Text>
             </Pressable>
-            <Pressable
-              className="flex-2 py-3 rounded-xl bg-[#0084FF] items-center justify-center active:opacity-80"
-              onPress={handleSubmit}
-              disabled={isLoading}
-            >
+            <Pressable style={styles.submitBtn} onPress={handleSubmit} disabled={isLoading}>
               {isLoading ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Text className="text-xs font-bold text-white">Create Lead</Text>
+                <Text style={styles.submitBtnText}>Create Lead</Text>
               )}
             </Pressable>
           </View>
@@ -305,3 +311,184 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: Platform.OS === 'ios' ? 36 : 24,
+    maxHeight: '88%',
+    borderWidth: 1,
+  },
+  modalContentDark: {
+    backgroundColor: '#181A20',
+    borderColor: '#262A34',
+  },
+  modalContentLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  closeBtn: {
+    padding: 6,
+    borderRadius: 8,
+  },
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 12,
+    flex: 1,
+  },
+  formScroll: {
+    marginBottom: 16,
+  },
+  row: {
+    flexDirection: 'row',
+  },
+  inputGroup: {
+    marginBottom: 14,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  input: {
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+  },
+  inputDark: {
+    backgroundColor: '#121316',
+    borderColor: '#262A34',
+    color: '#FFFFFF',
+  },
+  inputLight: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#E2E8F0',
+    color: '#0F172A',
+  },
+  textArea: {
+    minHeight: 70,
+    textAlignVertical: 'top',
+  },
+  statusRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  statusOption: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  statusOptionSelectedDark: {
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    borderColor: '#3B82F6',
+  },
+  statusOptionSelectedLight: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#3B82F6',
+  },
+  statusOptionText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  statusOptionTextSelected: {
+    color: '#3B82F6',
+    fontWeight: '700',
+  },
+  memberScroll: {
+    flexDirection: 'row',
+  },
+  memberChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  memberChipSelectedDark: {
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    borderColor: '#3B82F6',
+  },
+  memberChipSelectedLight: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#3B82F6',
+  },
+  memberChipText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  memberChipTextSelected: {
+    color: '#3B82F6',
+    fontWeight: '600',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  cancelBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  submitBtn: {
+    flex: 2,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#3B82F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  submitBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+});

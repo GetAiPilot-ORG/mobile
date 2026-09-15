@@ -1,14 +1,16 @@
-import React, { useCallback, useEffect, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
   Pressable,
   RefreshControl,
+  StyleSheet,
   Text,
   View,
+  useColorScheme,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 
 import { openAuthenticatedTemplate } from "@/lib/template-deep-link";
 import { AppScreen } from "../../src/components/AppScreen";
@@ -30,6 +32,9 @@ interface QuickForm {
 }
 
 export default function SimpleQuickFormsScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   const [forms, setForms] = useState<QuickForm[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -84,6 +89,8 @@ export default function SimpleQuickFormsScreen() {
   };
 
   const handleRedirect = async (form: QuickForm) => {
+    console.log("[QuickForms] Opening form:", form.id);
+
     await openAuthenticatedTemplate({
       targetTool: "quick-forms",
       quickFormId: form.id,
@@ -91,6 +98,8 @@ export default function SimpleQuickFormsScreen() {
   };
 
   const handleCreate = async () => {
+    console.log("[QuickForms] Creating new form");
+
     await openAuthenticatedTemplate({
       targetTool: "quick-forms",
     });
@@ -172,58 +181,77 @@ export default function SimpleQuickFormsScreen() {
     const isDeleting = deletingId === item.id;
 
     return (
-      <View className="rounded-2xl border border-[#262930] bg-[#181A1F] p-4 mb-3">
-        <View className="flex-row items-center">
-          <View className="w-11 h-11 rounded-xl bg-[#0084FF]/20 items-center justify-center">
-            <Ionicons name="document-text-outline" size={22} color="#0084FF" />
+      <View style={[styles.card, isDark && styles.cardDark]}>
+        <View style={styles.cardHeader}>
+          <View
+            style={[styles.iconContainer, isDark && styles.iconContainerDark]}
+          >
+            <Ionicons name="document-text-outline" size={22} color={isDark ? "#FFFFFF" : "#0A84FF"} />
           </View>
 
-          <View className="flex-1 ml-3 mr-2">
-            <Text numberOfLines={1} className="text-sm font-extrabold text-white">
+          <View style={styles.titleContainer}>
+            <Text
+              numberOfLines={1}
+              style={[styles.formTitle, isDark && styles.formTitleDark]}
+            >
               {getFormTitle(item)}
             </Text>
 
-            <Text className="text-[11px] text-slate-400 mt-0.5">
+            <Text
+              style={[styles.updatedText, isDark && styles.updatedTextDark]}
+            >
               Updated {formatDate(item.updated_at)}
             </Text>
           </View>
 
           {item.status ? (
-            <View className="px-2 py-1 rounded-full bg-emerald-500/20">
-              <Text className="text-[10px] font-bold text-emerald-400 capitalize">{String(item.status)}</Text>
+            <View style={styles.statusBadge}>
+              <Text style={styles.statusText}>{String(item.status)}</Text>
             </View>
           ) : null}
         </View>
 
-        <Text numberOfLines={2} className="text-xs text-slate-400 mt-3 leading-4">
+        <Text
+          numberOfLines={2}
+          style={[styles.description, isDark && styles.descriptionDark]}
+        >
           {getFormDescription(item)}
         </Text>
 
-        <View className="flex-row mt-4 gap-2.5">
+        <View style={styles.actions}>
           <Pressable
             disabled={isDeleting}
             onPress={() => handleRedirect(item)}
-            className={`flex-1 min-h-[40px] rounded-xl border border-[#262930] bg-[#111317] flex-row items-center justify-center gap-1.5 ${
-              isDeleting ? "opacity-50" : ""
-            }`}
+            style={[
+              styles.editButton,
+              isDark && styles.editButtonDark,
+              isDeleting && styles.disabledButton,
+            ]}
           >
-            <Ionicons name="pencil-outline" size={16} color="#FFFFFF" />
-            <Text className="text-xs font-bold text-white">Edit</Text>
+            <Ionicons name="pencil-outline" size={17} color={isDark ? "#FFFFFF" : "#111827"} />
+
+            <Text
+              style={[
+                styles.editButtonText,
+                isDark && styles.editButtonTextDark,
+              ]}
+            >
+              Edit
+            </Text>
           </Pressable>
 
           <Pressable
             disabled={isDeleting}
             onPress={() => handleDelete(item)}
-            className={`flex-1 min-h-[40px] rounded-xl border border-red-500/30 bg-red-500/10 flex-row items-center justify-center gap-1.5 ${
-              isDeleting ? "opacity-50" : ""
-            }`}
+            style={[styles.deleteButton, isDeleting && styles.disabledButton]}
           >
             {isDeleting ? (
-              <ActivityIndicator size="small" color="#EF4444" />
+              <ActivityIndicator size="small" color="#DC2626" />
             ) : (
               <>
-                <Ionicons name="trash-outline" size={16} color="#EF4444" />
-                <Text className="text-xs font-bold text-red-400">Delete</Text>
+                <Ionicons name="trash-outline" size={17} color="#DC2626" />
+
+                <Text style={styles.deleteText}>Delete</Text>
               </>
             )}
           </Pressable>
@@ -234,7 +262,7 @@ export default function SimpleQuickFormsScreen() {
 
   if (loading) {
     return (
-      <AppScreen safeArea={false} className="flex-1 bg-[#0B0D10]">
+      <AppScreen safeArea={false}>
         <AppTopBar title="QuickForms" subtitle="Manage your forms" />
         <QuickFormsSkeleton />
       </AppScreen>
@@ -242,7 +270,7 @@ export default function SimpleQuickFormsScreen() {
   }
 
   return (
-    <AppScreen safeArea={false} className="flex-1 bg-[#0B0D10]">
+    <AppScreen safeArea={false}>
       <AppTopBar
         title="QuickForms"
         subtitle={
@@ -252,38 +280,52 @@ export default function SimpleQuickFormsScreen() {
         }
       />
 
-      <View className="flex-1 px-4">
+      <View style={styles.container}>
         {forms.length === 0 ? (
-          <View className="flex-1 items-center justify-center px-6 pb-20">
-            <View className="w-16 h-16 rounded-full items-center justify-center bg-[#0084FF]/20 mb-5">
-              <Ionicons name="file-tray-outline" size={32} color="#0084FF" />
+          <View style={styles.emptyContainer}>
+            <View style={[styles.emptyIcon, isDark && styles.emptyIconDark]}>
+              <Ionicons name="file-tray-outline" size={38} color={isDark ? "#FFFFFF" : "#0A84FF"} />
             </View>
 
-            <Text className="text-xl font-black text-white">No forms yet</Text>
+            <Text style={[styles.emptyTitle, isDark && styles.emptyTitleDark]}>
+              No forms yet
+            </Text>
 
-            <Text className="mt-2 text-xs text-slate-400 text-center leading-5 max-w-[320px]">
-              Create your first form to collect customer information, surveys, consultations, or leads.
+            <Text
+              style={[
+                styles.emptyDescription,
+                isDark && styles.emptyDescriptionDark,
+              ]}
+            >
+              Create your first form to collect customer information, surveys,
+              consultations, or leads.
             </Text>
 
             <Pressable
               onPress={() => void handleCreate()}
-              className="mt-6 min-h-[48px] px-5 rounded-xl bg-[#0084FF] flex-row items-center justify-center gap-2"
+              style={styles.createButton}
             >
               <Ionicons name="add" size={20} color="#FFFFFF" />
-              <Text className="text-xs font-extrabold text-white">Create Form</Text>
+
+              <Text style={styles.createButtonText}>Create Form</Text>
             </Pressable>
           </View>
         ) : (
           <>
-            <View className="flex-row items-center justify-between py-4">
-              <Text className="text-base font-black text-white">Your Forms</Text>
+            <View style={styles.topActions}>
+              <Text
+                style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}
+              >
+                Your Forms
+              </Text>
 
               <Pressable
                 onPress={() => void handleCreate()}
-                className="min-h-[36px] px-3.5 rounded-xl bg-[#0084FF] flex-row items-center gap-1.5"
+                style={styles.smallCreateButton}
               >
-                <Ionicons name="add" size={16} color="#FFFFFF" />
-                <Text className="text-xs font-bold text-white">Create</Text>
+                <Ionicons name="add" size={18} color="#FFFFFF" />
+
+                <Text style={styles.smallCreateText}>Create</Text>
               </Pressable>
             </View>
 
@@ -292,12 +334,11 @@ export default function SimpleQuickFormsScreen() {
               keyExtractor={(item) => item.id}
               renderItem={renderForm}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 100 }}
+              contentContainerStyle={styles.listContent}
               refreshControl={
                 <RefreshControl
                   refreshing={refreshing}
                   onRefresh={handleRefresh}
-                  tintColor="#0084FF"
                 />
               }
             />
@@ -307,3 +348,264 @@ export default function SimpleQuickFormsScreen() {
     </AppScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+
+  loadingText: {
+    fontSize: 14,
+    color: "#6B7280",
+  },
+
+  loadingTextDark: {
+    color: "#8E8E93",
+  },
+
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    paddingBottom: 80,
+  },
+
+  emptyIcon: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EAF3FF",
+    marginBottom: 20,
+  },
+
+  emptyIconDark: {
+    backgroundColor: "#1C2A3A",
+  },
+
+  emptyTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#111827",
+  },
+
+  emptyTitleDark: {
+    color: "#FFFFFF",
+  },
+
+  emptyDescription: {
+    marginTop: 10,
+    fontSize: 14,
+    lineHeight: 21,
+    color: "#6B7280",
+    textAlign: "center",
+    maxWidth: 360,
+  },
+
+  emptyDescriptionDark: {
+    color: "#8E8E93",
+  },
+
+  createButton: {
+    marginTop: 24,
+    minHeight: 50,
+    paddingHorizontal: 22,
+    borderRadius: 14,
+    backgroundColor: "#0A84FF",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+
+  createButtonText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+
+  topActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 16,
+  },
+
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#111827",
+  },
+
+  sectionTitleDark: {
+    color: "#FFFFFF",
+  },
+
+  smallCreateButton: {
+    minHeight: 40,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: "#0A84FF",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+
+  smallCreateText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+
+  listContent: {
+    paddingBottom: 120,
+  },
+
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    padding: 16,
+    marginBottom: 12,
+  },
+
+  cardDark: {
+    backgroundColor: "#1C1C1E",
+    borderColor: "#2C2C2E",
+  },
+
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  iconContainer: {
+    width: 46,
+    height: 46,
+    borderRadius: 13,
+    backgroundColor: "#EAF3FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  iconContainerDark: {
+    backgroundColor: "#263A4D",
+  },
+
+  titleContainer: {
+    flex: 1,
+    marginLeft: 12,
+    marginRight: 8,
+  },
+
+  formTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#111827",
+  },
+
+  formTitleDark: {
+    color: "#FFFFFF",
+  },
+
+  updatedText: {
+    marginTop: 4,
+    fontSize: 12,
+    color: "#9CA3AF",
+  },
+
+  updatedTextDark: {
+    color: "#8E8E93",
+  },
+
+  statusBadge: {
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 20,
+    backgroundColor: "#E8F8EE",
+  },
+
+  statusText: {
+    color: "#15803D",
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "capitalize",
+  },
+
+  description: {
+    marginTop: 14,
+    fontSize: 13,
+    lineHeight: 19,
+    color: "#6B7280",
+  },
+
+  descriptionDark: {
+    color: "#8E8E93",
+  },
+
+  actions: {
+    flexDirection: "row",
+    marginTop: 16,
+    gap: 10,
+  },
+
+  editButton: {
+    flex: 1,
+    minHeight: 42,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+  },
+
+  editButtonDark: {
+    borderColor: "#3A3A3C",
+  },
+
+  editButtonText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#111827",
+  },
+
+  editButtonTextDark: {
+    color: "#FFFFFF",
+  },
+
+  deleteButton: {
+    flex: 1,
+    minHeight: 42,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    backgroundColor: "#FEF2F2",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+  },
+
+  deleteText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#DC2626",
+  },
+
+  disabledButton: {
+    opacity: 0.5,
+  },
+});

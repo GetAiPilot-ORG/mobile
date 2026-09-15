@@ -1,12 +1,12 @@
 import React from 'react';
-import { View, TextInput, Pressable, Text, useColorScheme } from 'react-native';
+import { View, TextInput, StyleSheet, Pressable, Text, useColorScheme } from 'react-native';
+import { colors } from '../theme/colors';
 
 interface SearchInputProps {
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
   onClear?: () => void;
-  className?: string;
 }
 
 export const SearchInput: React.FC<SearchInputProps> = ({
@@ -14,20 +14,15 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   onChangeText,
   placeholder = 'Search...',
   onClear,
-  className,
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
   return (
-    <View
-      className={`flex-row items-center border rounded-xl px-3 h-11 mb-3.5 ${
-        isDark ? "bg-[#181A1F] border-[#262930]" : "bg-white border-gray-200"
-      } ${className || ''}`}
-    >
-      <Text className="text-sm mr-2">🔍</Text>
+    <View style={[styles.container, isDark && styles.containerDark]}>
+      <Text style={styles.searchIcon}>🔍</Text>
       <TextInput
-        className={`flex-1 text-sm py-0 ${isDark ? "text-white" : "text-black"}`}
+        style={[styles.input, isDark && styles.inputDark]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
@@ -37,18 +32,66 @@ export const SearchInput: React.FC<SearchInputProps> = ({
       />
       {value.length > 0 && (
         <Pressable
-          className={`w-5 h-5 rounded-full justify-center items-center ${
-            isDark ? "bg-[#262930]" : "bg-slate-100"
-          }`}
+          style={[styles.clearBtn, isDark && styles.clearBtnDark]}
           onPress={() => {
             onChangeText('');
             if (onClear) onClear();
           }}
           hitSlop={8}
         >
-          <Text className={`text-[11px] font-bold ${isDark ? "text-slate-400" : "text-slate-500"}`}>✕</Text>
+          <Text style={[styles.clearText, isDark && styles.clearTextDark]}>✕</Text>
         </Pressable>
       )}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
+    marginBottom: 14,
+  },
+  containerDark: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
+  },
+  searchIcon: {
+    fontSize: 14,
+    marginRight: 8,
+  },
+  input: {
+    flex: 1,
+    fontSize: 14,
+    color: '#000000',
+    paddingVertical: 0,
+  },
+  inputDark: {
+    color: '#FFFFFF',
+  },
+  clearBtn: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#F2F4F7',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  clearBtnDark: {
+    backgroundColor: '#2C2C2E',
+  },
+  clearText: {
+    fontSize: 11,
+    color: '#6B7280',
+    fontWeight: 'bold',
+  },
+  clearTextDark: {
+    color: '#8E8E93',
+  },
+});

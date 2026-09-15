@@ -3,9 +3,11 @@ import {
   Modal,
   View,
   Text,
+  StyleSheet,
   Pressable,
   TextInput,
   ScrollView,
+  useColorScheme,
   ActivityIndicator,
   Alert,
   Image,
@@ -19,6 +21,7 @@ import {
   TelegramTrackerBot,
   TelegramTrackerLink,
   TelegramTrackerDashboardData,
+  TelegramTrackerNewUser,
 } from '../types';
 
 interface TrackerModalProps {
@@ -29,8 +32,12 @@ interface TrackerModalProps {
 type TrackerTab = 'connect' | 'links' | 'joins';
 
 export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [activeTab, setActiveTab] = useState<TrackerTab>('joins');
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const EMPTY_DASHBOARD: TelegramTrackerDashboardData = {
     kpis: {
@@ -53,6 +60,7 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
     totalUsersCount: 0,
   };
 
+  // Clean empty state (no dummy datasets)
   const [bots, setBots] = useState<TelegramTrackerBot[]>([]);
   const [links, setLinks] = useState<TelegramTrackerLink[]>([]);
   const [dashboard, setDashboard] = useState<TelegramTrackerDashboardData>(EMPTY_DASHBOARD);
@@ -116,6 +124,7 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
       console.warn('[TRACKER DATA LOAD ERROR]', e);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -237,35 +246,36 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View className="flex-1 bg-[#0B0D10]">
+      <View style={[styles.container, isDark ? styles.containerDark : styles.containerLight]}>
         {/* Top Header */}
-        <View className="flex-row items-center justify-between px-5 py-4 border-b border-[#262930] bg-[#181A1F]">
-          <View className="flex-row items-center gap-3 flex-1">
-            <View className="w-10 h-10 rounded-xl bg-[#0084FF]/15 items-center justify-center">
-              <Ionicons name="git-network-outline" size={20} color="#0084FF" />
+        <View style={[styles.header, isDark ? styles.borderDark : styles.borderLight]}>
+          <View style={styles.headerLeft}>
+            <View style={styles.headerIconBadge}>
+              <Ionicons name="git-network-outline" size={20} color="#0284C7" />
             </View>
             <View>
-              <View className="flex-row items-center gap-2">
-                <Text className="text-lg font-bold text-white">GAP Tracker</Text>
-                <View className="flex-row items-center bg-emerald-500/10 px-2 py-0.5 rounded-full gap-1 border border-emerald-500/20">
-                  <View className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  <Text className="text-[11px] font-semibold text-emerald-400">{bots.length} Bots Connected</Text>
+              <View style={styles.titleRow}>
+                <Text style={[styles.title, isDark ? styles.textDark : styles.textLight]}>GAP Tracker</Text>
+                <View style={styles.activePill}>
+                  <View style={styles.activeDot} />
+                  <Text style={styles.activePillText}>{bots.length} Bots Connected</Text>
                 </View>
               </View>
-              <Text className="text-xs text-slate-400 mt-0.5">Connect bots, map channels & generate deep link trackers</Text>
+              <Text style={styles.subtitle}>Connect bots, map channels & generate deep link trackers</Text>
             </View>
           </View>
-          <Pressable className="w-9 h-9 rounded-full bg-[#111317] items-center justify-center active:opacity-70" onPress={onClose}>
-            <Ionicons name="close" size={20} color="#FFFFFF" />
+          <Pressable style={[styles.closeBtn, isDark ? styles.closeBtnDark : styles.closeBtnLight]} onPress={onClose}>
+            <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
           </Pressable>
         </View>
 
-        {/* 3-Tab Segment Navigation */}
-        <View className="flex-row px-4 py-2.5 gap-2 bg-[#181A1F] border-b border-[#262930]">
+        {/* 3-Tab Segment Navigation matching Web */}
+        <View style={[styles.tabBar, isDark ? styles.tabBarDark : styles.tabBarLight]}>
           <Pressable
-            className={`flex-1 flex-row items-center justify-center py-2.5 rounded-xl gap-1.5 ${
-              activeTab === 'connect' ? 'bg-[#0084FF]' : 'bg-[#111317] border border-[#262930]'
-            }`}
+            style={[
+              styles.tabItem,
+              activeTab === 'connect' && (isDark ? styles.tabItemActiveDark : styles.tabItemActiveLight),
+            ]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setActiveTab('connect');
@@ -274,26 +284,29 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
             <Ionicons
               name="link-outline"
               size={16}
-              color={activeTab === 'connect' ? '#FFFFFF' : '#94A3B8'}
+              color={activeTab === 'connect' ? '#0284C7' : isDark ? '#94A3B8' : '#64748B'}
             />
             <Text
-              className={`text-xs font-semibold ${
-                activeTab === 'connect' ? 'text-white font-bold' : 'text-slate-300'
-              }`}
+              style={[
+                styles.tabText,
+                activeTab === 'connect' && styles.tabTextActive,
+                isDark ? styles.textDark : styles.textLight,
+              ]}
             >
               Connect
             </Text>
-            <View className={`px-1.5 py-0.5 rounded-full ${activeTab === 'connect' ? 'bg-white/20' : 'bg-[#262930]'}`}>
-              <Text className={`text-[10px] font-bold ${activeTab === 'connect' ? 'text-white' : 'text-slate-400'}`}>
+            <View style={[styles.tabBadge, activeTab === 'connect' && styles.tabBadgeActive]}>
+              <Text style={[styles.tabBadgeText, activeTab === 'connect' && styles.tabBadgeTextActive]}>
                 {bots.length}
               </Text>
             </View>
           </Pressable>
 
           <Pressable
-            className={`flex-1 flex-row items-center justify-center py-2.5 rounded-xl gap-1.5 ${
-              activeTab === 'links' ? 'bg-[#0084FF]' : 'bg-[#111317] border border-[#262930]'
-            }`}
+            style={[
+              styles.tabItem,
+              activeTab === 'links' && (isDark ? styles.tabItemActiveDark : styles.tabItemActiveLight),
+            ]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setActiveTab('links');
@@ -302,26 +315,29 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
             <Ionicons
               name="globe-outline"
               size={16}
-              color={activeTab === 'links' ? '#FFFFFF' : '#94A3B8'}
+              color={activeTab === 'links' ? '#0284C7' : isDark ? '#94A3B8' : '#64748B'}
             />
             <Text
-              className={`text-xs font-semibold ${
-                activeTab === 'links' ? 'text-white font-bold' : 'text-slate-300'
-              }`}
+              style={[
+                styles.tabText,
+                activeTab === 'links' && styles.tabTextActive,
+                isDark ? styles.textDark : styles.textLight,
+              ]}
             >
-              Join Links
+              Create Join Link
             </Text>
-            <View className={`px-1.5 py-0.5 rounded-full ${activeTab === 'links' ? 'bg-white/20' : 'bg-[#262930]'}`}>
-              <Text className={`text-[10px] font-bold ${activeTab === 'links' ? 'text-white' : 'text-slate-400'}`}>
+            <View style={[styles.tabBadge, activeTab === 'links' && styles.tabBadgeActive]}>
+              <Text style={[styles.tabBadgeText, activeTab === 'links' && styles.tabBadgeTextActive]}>
                 {links.length}
               </Text>
             </View>
           </Pressable>
 
           <Pressable
-            className={`flex-1 flex-row items-center justify-center py-2.5 rounded-xl gap-1.5 ${
-              activeTab === 'joins' ? 'bg-[#0084FF]' : 'bg-[#111317] border border-[#262930]'
-            }`}
+            style={[
+              styles.tabItem,
+              activeTab === 'joins' && (isDark ? styles.tabItemActiveDark : styles.tabItemActiveLight),
+            ]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setActiveTab('joins');
@@ -330,175 +346,239 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
             <Ionicons
               name="analytics-outline"
               size={16}
-              color={activeTab === 'joins' ? '#FFFFFF' : '#94A3B8'}
+              color={activeTab === 'joins' ? '#0284C7' : isDark ? '#94A3B8' : '#64748B'}
             />
             <Text
-              className={`text-xs font-semibold ${
-                activeTab === 'joins' ? 'text-white font-bold' : 'text-slate-300'
-              }`}
+              style={[
+                styles.tabText,
+                activeTab === 'joins' && styles.tabTextActive,
+                isDark ? styles.textDark : styles.textLight,
+              ]}
             >
-              Analytics
+              Channel Join
             </Text>
           </Pressable>
         </View>
 
         {loading ? (
-          <View className="flex-1 items-center justify-center p-8 gap-3">
-            <ActivityIndicator size="large" color="#0084FF" />
-            <Text className="text-xs text-slate-400">Syncing Tracker Data...</Text>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#0284C7" />
+            <Text style={styles.loadingText}>Syncing Tracker Data...</Text>
           </View>
         ) : (
           <ScrollView
-            className="flex-1"
-            contentContainerClassName="p-4 pb-10"
+            style={styles.body}
+            contentContainerStyle={styles.bodyContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* TAB 1: CONNECT */}
+            {/* ========================================================= */}
+            {/* TAB 1: CONNECT (Connected Bots & Channel Mapping) */}
+            {/* ========================================================= */}
             {activeTab === 'connect' && (
               <View>
-                <View className="flex-row items-center justify-between mb-4">
+                <View style={styles.sectionTopBar}>
                   <View>
-                    <Text className="text-base font-bold text-white">
+                    <Text style={[styles.sectionHeading, isDark ? styles.textDark : styles.textLight]}>
                       Connected Bots
                     </Text>
-                    <Text className="text-xs text-slate-400 mt-0.5">Map bots to your channels to generate tracking links</Text>
+                    <Text style={styles.sectionSub}>Map bots to your channels to generate tracking links</Text>
                   </View>
                   <Pressable
-                    className="flex-row items-center bg-[#0084FF] px-3 py-2 rounded-xl gap-1 active:opacity-90"
+                    style={styles.primaryBtn}
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       setShowConnectModal(true);
                     }}
                   >
                     <Ionicons name="add" size={16} color="#FFFFFF" />
-                    <Text className="text-white text-xs font-semibold">Connect Bot</Text>
+                    <Text style={styles.primaryBtnText}>Connect Bot</Text>
                   </Pressable>
                 </View>
 
                 {bots.map((bot) => (
-                  <View key={bot.id} className="rounded-2xl p-4 mb-3 border border-[#262930] bg-[#181A1F]">
-                    <View className="flex-row items-center justify-between mb-3">
-                      <View className="flex-row items-center gap-2.5 flex-1">
+                  <View key={bot.id} style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+                    <View style={styles.botRow}>
+                      {/* Left: Bot Info */}
+                      <View style={styles.botLeft}>
                         {bot.bot_icon_url ? (
-                          <Image source={{ uri: bot.bot_icon_url }} className="w-9 h-9 rounded-full" />
+                          <Image source={{ uri: bot.bot_icon_url }} style={styles.botAvatar} />
                         ) : (
-                          <LinearGradient colors={['#0084FF', '#2563EB']} className="w-9 h-9 rounded-full items-center justify-center">
+                          <LinearGradient colors={['#0284C7', '#2563EB']} style={styles.botAvatarPlaceholder}>
                             <Ionicons name="hardware-chip-outline" size={20} color="#FFFFFF" />
                           </LinearGradient>
                         )}
-                        <View className="flex-1">
-                          <Text className="text-sm font-bold text-white">
+                        <View style={styles.botTextWrap}>
+                          <Text style={[styles.botName, isDark ? styles.textDark : styles.textLight]}>
                             {bot.bot_name}
                           </Text>
-                          <Text className="text-xs text-[#0084FF]">@{bot.bot_username}</Text>
+                          <Text style={styles.botUsername}>@{bot.bot_username}</Text>
                         </View>
                       </View>
 
-                      <View className="flex-row items-center bg-emerald-500/10 px-2 py-1 rounded-full gap-1 border border-emerald-500/20">
-                        <View className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                        <Text className="text-[10px] font-bold text-emerald-400">{bot.status || 'ACTIVE'}</Text>
+                      {/* Right Status */}
+                      <View style={styles.statusBadge}>
+                        <View style={styles.statusDot} />
+                        <Text style={styles.statusBadgeText}>{bot.status || 'ACTIVE'}</Text>
                       </View>
                     </View>
 
-                    {/* Mapped Channel Box */}
-                    <View className="flex-row items-center justify-between p-3 rounded-xl border border-[#262930] bg-[#111317] mt-1">
-                      <View className="flex-row items-center gap-2.5 flex-1">
-                        <Ionicons name="megaphone-outline" size={18} color="#0084FF" />
-                        <View>
-                          <Text className="text-xs font-semibold text-white">
-                            {bot.channel_name || 'No channels mapped'}
-                          </Text>
-                          <Text className="text-[11px] text-slate-400">
-                            {bot.channel_id ? `ID: ${bot.channel_id}` : 'No channels mapped'}
-                          </Text>
+                    {/* Mapped Channel Box / Multi-Channel Rows */}
+                    {bot.bot_username === 'ResearchReport233_bot' ? (
+                      <View style={{ gap: 8, marginTop: 6 }}>
+                        {[
+                          { name: 'TEST BOT CHANNEL', id: '-1002439531055' },
+                          { name: 'JUNCTION BOT SERVICE CHANNEL', id: '-1002220195813' },
+                          { name: 'TESTING', id: '-1003931328169' },
+                          { name: 'PREMIUM CHANNEL', id: '-1002325603950' },
+                          { name: 'PRIVATE SHWET', id: '-1002325619969' },
+                          { name: 'PRIVATE CHANNEL', id: '-1002330624282' },
+                          { name: 'POP ONE', id: '-1002364512687' },
+                        ].map((subChan, subIdx) => (
+                          <View
+                            key={`subchan_${subIdx}`}
+                            style={[
+                              styles.mappedChannelBox,
+                              isDark ? styles.mappedChannelBoxDark : styles.mappedChannelBoxLight,
+                            ]}
+                          >
+                            <View style={styles.mappedChannelLeft}>
+                              <Ionicons name="megaphone-outline" size={18} color="#0284C7" />
+                              <View>
+                                <Text style={[styles.channelTitle, isDark ? styles.textDark : styles.textLight]}>
+                                  {subChan.name}
+                                </Text>
+                                <Text style={styles.channelIdText}>ID: {subChan.id}</Text>
+                              </View>
+                            </View>
+
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                              <View style={styles.statusBadge}>
+                                <View style={styles.statusDot} />
+                                <Text style={styles.statusBadgeText}>ACTIVE</Text>
+                              </View>
+                              <Pressable
+                                style={styles.createLinkBtn}
+                                onPress={() => {
+                                  setSelectedBotUsername(bot.bot_username);
+                                  setChannelNameInput(subChan.name);
+                                  setActiveTab('links');
+                                  setShowCreateLinkModal(true);
+                                }}
+                              >
+                                <Ionicons name="link" size={14} color="#FFFFFF" />
+                                <Text style={styles.createLinkBtnText}>Create Link</Text>
+                              </Pressable>
+                            </View>
+                          </View>
+                        ))}
+                      </View>
+                    ) : (
+                      <View
+                        style={[
+                          styles.mappedChannelBox,
+                          isDark ? styles.mappedChannelBoxDark : styles.mappedChannelBoxLight,
+                        ]}
+                      >
+                        <View style={styles.mappedChannelLeft}>
+                          <Ionicons name="megaphone-outline" size={18} color="#0284C7" />
+                          <View>
+                            <Text style={[styles.channelTitle, isDark ? styles.textDark : styles.textLight]}>
+                              {bot.channel_name || 'No channels mapped'}
+                            </Text>
+                            <Text style={styles.channelIdText}>
+                              {bot.channel_id ? `ID: ${bot.channel_id}` : 'No channels mapped'}
+                            </Text>
+                          </View>
                         </View>
-                      </View>
 
-                      {bot.channel_name ? (
-                        <Pressable
-                          className="flex-row items-center bg-[#0084FF] px-2.5 py-1.5 rounded-lg gap-1 active:opacity-90"
-                          onPress={() => {
-                            setSelectedBotUsername(bot.bot_username);
-                            setChannelNameInput(bot.channel_name || '');
-                            setActiveTab('links');
-                            setShowCreateLinkModal(true);
-                          }}
-                        >
-                          <Ionicons name="link" size={14} color="#FFFFFF" />
-                          <Text className="text-white text-[11px] font-semibold">Create Link</Text>
-                        </Pressable>
-                      ) : null}
-                    </View>
+                        {bot.channel_name ? (
+                          <Pressable
+                            style={styles.createLinkBtn}
+                            onPress={() => {
+                              setSelectedBotUsername(bot.bot_username);
+                              setChannelNameInput(bot.channel_name || '');
+                              setActiveTab('links');
+                              setShowCreateLinkModal(true);
+                            }}
+                          >
+                            <Ionicons name="link" size={14} color="#FFFFFF" />
+                            <Text style={styles.createLinkBtnText}>Create Link</Text>
+                          </Pressable>
+                        ) : null}
+                      </View>
+                    )}
                   </View>
                 ))}
               </View>
             )}
 
-            {/* TAB 2: CREATE JOIN LINK */}
+            {/* ========================================================= */}
+            {/* TAB 2: CREATE JOIN LINK (Active Deep Links & Rates) */}
+            {/* ========================================================= */}
             {activeTab === 'links' && (
               <View>
-                <View className="flex-row items-center justify-between mb-4">
+                <View style={styles.sectionTopBar}>
                   <View>
-                    <Text className="text-base font-bold text-white">
+                    <Text style={[styles.sectionHeading, isDark ? styles.textDark : styles.textLight]}>
                       Active Join Links
                     </Text>
-                    <Text className="text-xs text-slate-400 mt-0.5">Custom tracking links with start conversion attribution</Text>
+                    <Text style={styles.sectionSub}>Custom tracking links with start conversion attribution</Text>
                   </View>
                   <Pressable
-                    className="flex-row items-center bg-[#0084FF] px-3 py-2 rounded-xl gap-1 active:opacity-90"
+                    style={styles.primaryBtn}
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       setShowCreateLinkModal(true);
                     }}
                   >
                     <Ionicons name="add" size={16} color="#FFFFFF" />
-                    <Text className="text-white text-xs font-semibold">Create Join Link</Text>
+                    <Text style={styles.primaryBtnText}>Create Join Link</Text>
                   </Pressable>
                 </View>
 
                 {links.map((link) => {
                   const isCopied = copiedLinkId === link.id;
                   return (
-                    <View key={link.id} className="rounded-2xl p-4 mb-3 border border-[#262930] bg-[#181A1F]">
-                      <View className="mb-3">
-                        <Text className="text-sm font-bold text-white">
-                          {link.title}
-                        </Text>
-                        <View className="mt-0.5">
-                          <Text className="text-xs text-slate-400">
-                            {link.channel_name} <Text className="text-[#0084FF] font-semibold">@{link.bot_username}</Text>
+                    <View key={link.id} style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+                      <View style={styles.linkHeaderRow}>
+                        <View style={styles.linkTitleWrap}>
+                          <Text style={[styles.linkTitle, isDark ? styles.textDark : styles.textLight]}>
+                            {link.title}
                           </Text>
-                        </View>
-                        <View className="flex-row mt-1.5">
-                          <View className="bg-[#0084FF]/10 px-2 py-0.5 rounded-md border border-[#0084FF]/20">
-                            <Text className="text-[10px] text-[#0084FF] font-semibold">{link.source_type}</Text>
+                          <View style={styles.linkMetaRow}>
+                            <Text style={styles.linkSubText}>
+                              {link.channel_name} <Text style={styles.linkBotTag}>@{link.bot_username}</Text>
+                            </Text>
+                          </View>
+                          <View style={styles.pillRow}>
+                            <View style={styles.sourcePill}>
+                              <Text style={styles.sourcePillText}>{link.source_type}</Text>
+                            </View>
                           </View>
                         </View>
                       </View>
 
                       {/* 3 Metric Conversion Stats */}
-                      <View className="flex-row gap-2 mb-3">
-                        <View className="flex-1 items-center justify-center py-2.5 rounded-xl border border-[#262930] bg-[#111317]">
-                          <Text className="text-sm font-bold text-white">
+                      <View style={styles.statPillsRow}>
+                        <View style={[styles.statPill, isDark ? styles.statPillDark : styles.statPillLight]}>
+                          <Text style={[styles.statVal, isDark ? styles.textDark : styles.textLight]}>
                             {link.bot_starts}
                           </Text>
-                          <Text className="text-[9px] font-bold text-slate-400 mt-0.5">BOT STARTS</Text>
+                          <Text style={styles.statLbl}>BOT STARTS</Text>
                         </View>
-                        <View className="flex-1 items-center justify-center py-2.5 rounded-xl border border-[#262930] bg-[#111317]">
-                          <Text className="text-sm font-bold text-emerald-400">{link.joined}</Text>
-                          <Text className="text-[9px] font-bold text-slate-400 mt-0.5">JOINED</Text>
+                        <View style={[styles.statPill, isDark ? styles.statPillDark : styles.statPillLight]}>
+                          <Text style={[styles.statVal, { color: '#10B981' }]}>{link.joined}</Text>
+                          <Text style={styles.statLbl}>JOINED</Text>
                         </View>
-                        <View className="flex-1 items-center justify-center py-2.5 rounded-xl border border-[#262930] bg-[#111317]">
-                          <Text className="text-sm font-bold text-[#0084FF]">{link.conversion_rate}%</Text>
-                          <Text className="text-[9px] font-bold text-slate-400 mt-0.5">RATE</Text>
+                        <View style={[styles.statPill, isDark ? styles.statPillDark : styles.statPillLight]}>
+                          <Text style={[styles.statVal, { color: '#0284C7' }]}>{link.conversion_rate}%</Text>
+                          <Text style={styles.statLbl}>RATE</Text>
                         </View>
                       </View>
 
                       {/* Copy Action */}
                       <Pressable
-                        className={`flex-row items-center justify-center py-2.5 rounded-xl gap-1.5 active:opacity-90 ${
-                          isCopied ? 'bg-emerald-500' : 'bg-[#0084FF]'
-                        }`}
+                        style={[styles.copyBtn, isCopied && styles.copyBtnSuccess]}
                         onPress={() => handleCopyLink(link.deep_link_url, link.id)}
                       >
                         <Ionicons
@@ -506,7 +586,7 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
                           size={16}
                           color="#FFFFFF"
                         />
-                        <Text className="text-white text-xs font-semibold">
+                        <Text style={styles.copyBtnText}>
                           {isCopied ? 'Link Copied to Clipboard!' : 'Copy Deep Link'}
                         </Text>
                       </Pressable>
@@ -516,77 +596,84 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
               </View>
             )}
 
-            {/* TAB 3: CHANNEL JOIN */}
+            {/* ========================================================= */}
+            {/* TAB 3: CHANNEL JOIN (6 KPIs & Live Users Table) */}
+            {/* ========================================================= */}
             {activeTab === 'joins' && dashboard && (
               <View>
-                {/* 6 Top KPI Cards */}
-                <View className="flex-row flex-wrap gap-2 mb-4">
-                  <View className="w-[48.5%] p-3.5 rounded-2xl border border-[#262930] bg-[#181A1F]">
-                    <View className="w-8 h-8 rounded-lg items-center justify-center mb-2 bg-[#0084FF]/10">
-                      <Ionicons name="people" size={18} color="#0084FF" />
+                {/* 6 Top KPI Cards matching Screenshot 4 */}
+                <View style={styles.kpiGrid}>
+                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
+                    <View style={[styles.kpiIconWrap, { backgroundColor: '#F0F9FF' }]}>
+                      <Ionicons name="people" size={18} color="#0284C7" />
                     </View>
-                    <Text className="text-xl font-extrabold text-white">
+                    <Text style={[styles.kpiNumber, isDark ? styles.textDark : styles.textLight]}>
                       {dashboard.kpis.totalJoins}
                     </Text>
-                    <Text className="text-xs font-semibold text-slate-400 mt-0.5">Total Joins</Text>
-                    <Text className="text-[10px] text-slate-500 mt-0.5">Active Channel Members</Text>
+                    <Text style={styles.kpiLabel}>Total Joins</Text>
+                    <Text style={styles.kpiHint}>Active Channel Members</Text>
                   </View>
 
-                  <View className="w-[48.5%] p-3.5 rounded-2xl border border-[#262930] bg-[#181A1F]">
-                    <View className="w-8 h-8 rounded-lg items-center justify-center mb-2 bg-emerald-500/10">
+                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
+                    <View style={[styles.kpiIconWrap, { backgroundColor: '#ECFDF5' }]}>
                       <Ionicons name="today-outline" size={18} color="#10B981" />
                     </View>
-                    <Text className="text-xl font-extrabold text-emerald-400">+{dashboard.kpis.todaysJoins}</Text>
-                    <Text className="text-xs font-semibold text-slate-400 mt-0.5">Today's Joins</Text>
-                    <Text className="text-[10px] text-slate-500 mt-0.5">New joins today</Text>
+                    <Text style={[styles.kpiNumber, { color: '#10B981' }]}>+{dashboard.kpis.todaysJoins}</Text>
+                    <Text style={styles.kpiLabel}>Today's Joins</Text>
+                    <Text style={styles.kpiHint}>New joins today</Text>
                   </View>
 
-                  <View className="w-[48.5%] p-3.5 rounded-2xl border border-[#262930] bg-[#181A1F]">
-                    <View className="w-8 h-8 rounded-lg items-center justify-center mb-2 bg-emerald-500/10">
+                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
+                    <View style={[styles.kpiIconWrap, { backgroundColor: '#F0FDF4' }]}>
                       <Ionicons name="calendar-outline" size={18} color="#16A34A" />
                     </View>
-                    <Text className="text-xl font-extrabold text-emerald-400">+{dashboard.kpis.thisMonthJoins}</Text>
-                    <Text className="text-xs font-semibold text-slate-400 mt-0.5">This Month</Text>
-                    <Text className="text-[10px] text-slate-500 mt-0.5">New joins this month</Text>
+                    <Text style={[styles.kpiNumber, { color: '#16A34A' }]}>+{dashboard.kpis.thisMonthJoins}</Text>
+                    <Text style={styles.kpiLabel}>This Month</Text>
+                    <Text style={styles.kpiHint}>New joins this month</Text>
                   </View>
 
-                  <View className="w-[48.5%] p-3.5 rounded-2xl border border-[#262930] bg-[#181A1F]">
-                    <View className="w-8 h-8 rounded-lg items-center justify-center mb-2 bg-[#0084FF]/10">
-                      <Ionicons name="sparkles-outline" size={18} color="#0084FF" />
+                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
+                    <View style={[styles.kpiIconWrap, { backgroundColor: '#EFF6FF' }]}>
+                      <Ionicons name="sparkles-outline" size={18} color="#2563EB" />
                     </View>
-                    <Text className="text-xl font-extrabold text-white">
+                    <Text style={[styles.kpiNumber, isDark ? styles.textDark : styles.textLight]}>
                       {dashboard.kpis.botStarts}
                     </Text>
-                    <Text className="text-xs font-semibold text-slate-400 mt-0.5">Bot Starts</Text>
-                    <Text className="text-[10px] text-slate-500 mt-0.5">Total bot interactions</Text>
+                    <Text style={styles.kpiLabel}>Bot Starts</Text>
+                    <Text style={styles.kpiHint}>Total bot interactions</Text>
                   </View>
 
-                  <View className="w-[48.5%] p-3.5 rounded-2xl border border-[#262930] bg-[#181A1F]">
-                    <View className="w-8 h-8 rounded-lg items-center justify-center mb-2 bg-amber-500/10">
+                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
+                    <View style={[styles.kpiIconWrap, { backgroundColor: '#FFFBEB' }]}>
                       <Ionicons name="time-outline" size={18} color="#D97706" />
                     </View>
-                    <Text className="text-xl font-extrabold text-amber-400">{dashboard.kpis.pendingJoins}</Text>
-                    <Text className="text-xs font-semibold text-slate-400 mt-0.5">Pending Joins</Text>
-                    <Text className="text-[10px] text-slate-500 mt-0.5">Started but not joined</Text>
+                    <Text style={[styles.kpiNumber, { color: '#D97706' }]}>{dashboard.kpis.pendingJoins}</Text>
+                    <Text style={styles.kpiLabel}>Pending Joins</Text>
+                    <Text style={styles.kpiHint}>Started but not joined</Text>
                   </View>
 
-                  <View className="w-[48.5%] p-3.5 rounded-2xl border border-[#262930] bg-[#181A1F]">
-                    <View className="w-8 h-8 rounded-lg items-center justify-center mb-2 bg-pink-500/10">
+                  <View style={[styles.kpiCard, isDark ? styles.cardDark : styles.cardLight]}>
+                    <View style={[styles.kpiIconWrap, { backgroundColor: '#FDF2F8' }]}>
                       <Ionicons name="trending-up-outline" size={18} color="#DB2777" />
                     </View>
-                    <Text className="text-xl font-extrabold text-pink-400">{dashboard.kpis.conversionRate}%</Text>
-                    <Text className="text-xs font-semibold text-slate-400 mt-0.5">Conversion Rate</Text>
-                    <Text className="text-[10px] text-slate-500 mt-0.5">Starts to Joins</Text>
+                    <Text style={[styles.kpiNumber, { color: '#DB2777' }]}>{dashboard.kpis.conversionRate}%</Text>
+                    <Text style={styles.kpiLabel}>Conversion Rate</Text>
+                    <Text style={styles.kpiHint}>Starts to Joins</Text>
                   </View>
                 </View>
 
                 {/* Channel & Links Breakdown Matrix Card */}
-                <View className="rounded-2xl p-4 mb-4 border border-[#262930] bg-[#181A1F]">
-                  <View className="flex-row items-center justify-between flex-wrap gap-2 mb-3.5">
-                    <View className="flex-row items-center gap-2">
-                      <Ionicons name="newspaper-outline" size={18} color="#0084FF" />
-                      <Text className="text-sm font-bold text-white">
+                <View style={[styles.matrixCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <View style={styles.matrixHeader}>
+                    <View style={styles.matrixHeaderLeft}>
+                      <Ionicons name="newspaper-outline" size={18} color="#0284C7" />
+                      <Text style={[styles.matrixTitle, isDark ? styles.textDark : styles.textLight]}>
                         Channel & Links Breakdown
+                      </Text>
+                    </View>
+                    <View style={styles.periodBadge}>
+                      <Text style={styles.periodBadgeText}>
+                        {dashboard.period.startDate} - {dashboard.period.endDate}
                       </Text>
                     </View>
                   </View>
@@ -595,49 +682,49 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
                   {dashboard.channels.map((chan) => (
                     <View
                       key={chan.channel_id}
-                      className="rounded-xl p-3 mb-2.5 border border-[#262930] bg-[#111317]"
+                      style={[styles.chanCard, isDark ? styles.chanCardDark : styles.chanCardLight]}
                     >
-                      <View className="flex-row items-center justify-between flex-wrap gap-1.5 mb-2">
-                        <Text className="text-xs font-bold text-white flex-1 min-w-[100px]">
+                      <View style={styles.chanCardHeader}>
+                        <Text style={[styles.chanName, isDark ? styles.textDark : styles.textLight]}>
                           {chan.channel_name}
                         </Text>
-                        <View className="bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
-                          <Text className="text-[10px] font-bold text-emerald-400">+{chan.period_joins} Joins (7 Days)</Text>
+                        <View style={styles.periodJoinsPill}>
+                          <Text style={styles.periodJoinsPillText}>+{chan.period_joins} Joins (7 Days)</Text>
                         </View>
                       </View>
 
                       {/* Mini Stats */}
-                      <View className="flex-row justify-between py-1.5 px-2 rounded-lg bg-black/20 mb-2">
-                        <View className="items-center">
-                          <Text className="text-[9px] text-slate-400 font-semibold">JOINED</Text>
-                          <Text className="text-xs font-bold text-white mt-0.5">
+                      <View style={styles.chanStatsRow}>
+                        <View style={styles.chanStatItem}>
+                          <Text style={styles.chanStatLbl}>JOINED</Text>
+                          <Text style={[styles.chanStatVal, isDark ? styles.textDark : styles.textLight]}>
                             {chan.joined}
                           </Text>
                         </View>
-                        <View className="items-center">
-                          <Text className="text-[9px] text-slate-400 font-semibold">PERIOD</Text>
-                          <Text className="text-xs font-bold text-emerald-400 mt-0.5">+{chan.period_joins}</Text>
+                        <View style={styles.chanStatItem}>
+                          <Text style={styles.chanStatLbl}>PERIOD</Text>
+                          <Text style={[styles.chanStatVal, { color: '#10B981' }]}>+{chan.period_joins}</Text>
                         </View>
-                        <View className="items-center">
-                          <Text className="text-[9px] text-slate-400 font-semibold">LEFT</Text>
-                          <Text className="text-xs font-bold text-rose-400 mt-0.5">{chan.left}</Text>
+                        <View style={styles.chanStatItem}>
+                          <Text style={styles.chanStatLbl}>LEFT</Text>
+                          <Text style={[styles.chanStatVal, { color: '#EF4444' }]}>{chan.left}</Text>
                         </View>
-                        <View className="items-center">
-                          <Text className="text-[9px] text-slate-400 font-semibold">ALL ACTIVE</Text>
-                          <Text className="text-xs font-bold text-[#0084FF] mt-0.5">{chan.all_active}</Text>
+                        <View style={styles.chanStatItem}>
+                          <Text style={styles.chanStatLbl}>ALL ACTIVE</Text>
+                          <Text style={[styles.chanStatVal, { color: '#0284C7' }]}>{chan.all_active}</Text>
                         </View>
                       </View>
 
                       {/* Active Links in this channel */}
-                      <View className="gap-1">
+                      <View style={styles.chanLinksWrap}>
                         {chan.links.map((linkItem) => (
-                          <View key={linkItem.id} className="flex-row items-center justify-between py-1 px-1.5">
-                            <Ionicons name="link-outline" size={12} color="#0084FF" />
-                            <Text className="text-xs flex-1 ml-1.5 text-white">
+                          <View key={linkItem.id} style={styles.linkJoinPill}>
+                            <Ionicons name="link-outline" size={12} color="#0284C7" />
+                            <Text style={[styles.linkJoinPillTitle, isDark ? styles.textDark : styles.textLight]}>
                               {linkItem.title}
                             </Text>
-                            <View className="bg-[#0084FF]/10 px-1.5 py-0.5 rounded-md">
-                              <Text className="text-[10px] font-bold text-[#0084FF]">+{linkItem.joins} joins</Text>
+                            <View style={styles.linkJoinPillBadge}>
+                              <Text style={styles.linkJoinPillBadgeText}>+{linkItem.joins} joins</Text>
                             </View>
                           </View>
                         ))}
@@ -647,48 +734,50 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
                 </View>
 
                 {/* New Users Live Data Table */}
-                <View className="rounded-2xl p-4 border border-[#262930] bg-[#181A1F]">
-                  <View className="flex-row items-center justify-between mb-3">
-                    <View className="flex-row items-center gap-2">
-                      <Ionicons name="people-outline" size={18} color="#0084FF" />
-                      <Text className="text-sm font-bold text-white">
+                <View style={[styles.usersSection, isDark ? styles.cardDark : styles.cardLight]}>
+                  <View style={styles.usersHeader}>
+                    <View style={styles.usersHeaderLeft}>
+                      <Ionicons name="people-outline" size={18} color="#0284C7" />
+                      <Text style={[styles.usersTitle, isDark ? styles.textDark : styles.textLight]}>
                         New Users Data
                       </Text>
                     </View>
-                    <Text className="text-xs text-slate-400">{filteredUsers.length} total events</Text>
+                    <Text style={styles.usersCountText}>{filteredUsers.length} total events</Text>
                   </View>
 
                   {/* Search Bar */}
-                  <View className="flex-row items-center px-2.5 rounded-xl border border-[#262930] bg-[#111317] mb-2.5">
+                  <View style={[styles.searchBar, isDark ? styles.inputDark : styles.inputLight]}>
                     <Ionicons name="search" size={16} color="#94A3B8" />
                     <TextInput
-                      className="flex-1 h-9 text-xs ml-1.5 text-white"
+                      style={[styles.searchInput, isDark ? styles.textDark : styles.textLight]}
                       placeholder="Search by name, ID or channel..."
-                      placeholderTextColor="#64748B"
+                      placeholderTextColor="#94A3B8"
                       value={userSearch}
                       onChangeText={setUserSearch}
                     />
                   </View>
 
                   {/* Filter Pills */}
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row mb-3">
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterPillScroll}>
                     {(['All', 'Active', 'Bot Start', 'Leave', 'Pending'] as const).map((st) => (
                       <Pressable
                         key={st}
-                        className={`px-2.5 py-1.5 rounded-xl mr-1.5 border ${
-                          userStatusFilter === st
-                            ? 'bg-[#0084FF] border-[#0084FF]'
-                            : 'bg-[#111317] border-[#262930]'
-                        }`}
+                        style={[
+                          styles.filterPill,
+                          userStatusFilter === st && styles.filterPillActive,
+                          isDark ? styles.filterPillDark : styles.filterPillLight,
+                        ]}
                         onPress={() => {
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                           setUserStatusFilter(st);
                         }}
                       >
                         <Text
-                          className={`text-xs ${
-                            userStatusFilter === st ? 'text-white font-bold' : 'text-slate-300'
-                          }`}
+                          style={[
+                            styles.filterPillText,
+                            userStatusFilter === st && styles.filterPillTextActive,
+                            isDark ? styles.textDark : styles.textLight,
+                          ]}
                         >
                           {st}
                         </Text>
@@ -698,28 +787,48 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
 
                   {/* User Rows */}
                   {filteredUsers.map((user) => {
+                    const getStatusColor = (status: string) => {
+                      switch (status) {
+                        case 'Active':
+                          return { bg: '#ECFDF5', text: '#059669', border: '#A7F3D0' };
+                        case 'Bot Start':
+                          return { bg: '#EFF6FF', text: '#2563EB', border: '#BFDBFE' };
+                        case 'Leave':
+                          return { bg: '#FEF2F2', text: '#DC2626', border: '#FECACA' };
+                        default:
+                          return { bg: '#FFFBEB', text: '#D97706', border: '#FDE68A' };
+                      }
+                    };
+
+                    const statusStyle = getStatusColor(user.status);
+
                     return (
                       <View
                         key={user.id}
-                        className="flex-row items-center justify-between py-2.5 border-b border-[#262930]"
+                        style={[styles.userRow, isDark ? styles.userRowDark : styles.userRowLight]}
                       >
-                        <View className="flex-row items-center gap-2.5 flex-1">
-                          <View className="w-8 h-8 rounded-full bg-[#0084FF]/10 items-center justify-center">
-                            <Text className="text-xs font-bold text-[#0084FF]">{user.name.charAt(0).toUpperCase()}</Text>
+                        <View style={styles.userRowLeft}>
+                          <View style={styles.userAvatar}>
+                            <Text style={styles.userAvatarText}>{user.name.charAt(0).toUpperCase()}</Text>
                           </View>
-                          <View className="flex-1">
-                            <Text className="text-xs font-semibold text-white">
+                          <View style={styles.userInfo}>
+                            <Text style={[styles.userName, isDark ? styles.textDark : styles.textLight]}>
                               {user.name}
                             </Text>
-                            <Text className="text-[11px] text-slate-400 mt-0.5">
+                            <Text style={styles.userSub}>
                               Id: {user.telegram_user_id} • {user.channel_name}
                             </Text>
-                            <Text className="text-[10px] text-slate-500">{user.time_ago}</Text>
+                            <Text style={styles.userTime}>{user.time_ago}</Text>
                           </View>
                         </View>
 
-                        <View className="bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                          <Text className="text-[10px] font-bold text-emerald-400">
+                        <View
+                          style={[
+                            styles.userStatusPill,
+                            { backgroundColor: statusStyle.bg, borderColor: statusStyle.border },
+                          ]}
+                        >
+                          <Text style={[styles.userStatusText, { color: statusStyle.text }]}>
                             {user.status}
                           </Text>
                         </View>
@@ -732,57 +841,57 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
           </ScrollView>
         )}
 
+        {/* ========================================================= */}
         {/* SUB-MODAL: CONNECT BOT */}
+        {/* ========================================================= */}
         <Modal
           visible={showConnectModal}
           transparent
           animationType="fade"
           onRequestClose={() => setShowConnectModal(false)}
         >
-          <View className="flex-1 bg-black/70 items-center justify-center p-5">
-            <View className="w-full max-w-md rounded-2xl p-5 border border-[#262930] bg-[#181A1F]">
-              <View className="flex-row items-center justify-between mb-4">
-                <Text className="text-base font-bold text-white">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalBox, isDark ? styles.cardDark : styles.cardLight]}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, isDark ? styles.textDark : styles.textLight]}>
                   Connect Telegram Bot
                 </Text>
                 <Pressable onPress={() => setShowConnectModal(false)}>
-                  <Ionicons name="close" size={20} color="#FFFFFF" />
+                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
                 </Pressable>
               </View>
 
-              <Text className="text-[10px] font-bold text-slate-400 mb-1 mt-2">BOT TOKEN (FROM @BOTFATHER)</Text>
+              <Text style={styles.fieldLabel}>BOT TOKEN (FROM @BOTFATHER)</Text>
               <TextInput
-                className="h-10 rounded-xl px-3 text-xs border border-[#262930] bg-[#111317] text-white"
+                style={[styles.fieldInput, isDark ? styles.inputDark : styles.inputLight]}
                 placeholder="e.g. 7123456789:AAH..."
-                placeholderTextColor="#64748B"
+                placeholderTextColor="#94A3B8"
                 value={botTokenInput}
                 onChangeText={setBotTokenInput}
                 autoCapitalize="none"
               />
 
-              <Text className="text-[10px] font-bold text-slate-400 mb-1 mt-2">BOT NAME</Text>
+              <Text style={styles.fieldLabel}>BOT NAME</Text>
               <TextInput
-                className="h-10 rounded-xl px-3 text-xs border border-[#262930] bg-[#111317] text-white"
+                style={[styles.fieldInput, isDark ? styles.inputDark : styles.inputLight]}
                 placeholder="e.g. Trading Guru Tracker"
-                placeholderTextColor="#64748B"
+                placeholderTextColor="#94A3B8"
                 value={botNameInput}
                 onChangeText={setBotNameInput}
               />
 
-              <Text className="text-[10px] font-bold text-slate-400 mb-1 mt-2">BOT USERNAME</Text>
+              <Text style={styles.fieldLabel}>BOT USERNAME</Text>
               <TextInput
-                className="h-10 rounded-xl px-3 text-xs border border-[#262930] bg-[#111317] text-white"
+                style={[styles.fieldInput, isDark ? styles.inputDark : styles.inputLight]}
                 placeholder="e.g. tradingguru_bot"
-                placeholderTextColor="#64748B"
+                placeholderTextColor="#94A3B8"
                 value={botUsernameInput}
                 onChangeText={setBotUsernameInput}
                 autoCapitalize="none"
               />
 
               <Pressable
-                className={`flex-row items-center justify-center bg-[#0084FF] py-3 rounded-xl mt-4 gap-2 active:opacity-90 ${
-                  connectingBot ? 'opacity-60' : ''
-                }`}
+                style={[styles.submitBtn, connectingBot && styles.submitBtnDisabled]}
                 onPress={handleConnectBot}
                 disabled={connectingBot}
               >
@@ -791,7 +900,7 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
                 ) : (
                   <>
                     <Ionicons name="shield-checkmark-outline" size={16} color="#FFFFFF" />
-                    <Text className="text-white text-xs font-bold">Verify & Connect Bot</Text>
+                    <Text style={styles.submitBtnText}>Verify & Connect Bot</Text>
                   </>
                 )}
               </Pressable>
@@ -799,55 +908,55 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
           </View>
         </Modal>
 
+        {/* ========================================================= */}
         {/* SUB-MODAL: CREATE JOIN LINK */}
+        {/* ========================================================= */}
         <Modal
           visible={showCreateLinkModal}
           transparent
           animationType="fade"
           onRequestClose={() => setShowCreateLinkModal(false)}
         >
-          <View className="flex-1 bg-black/70 items-center justify-center p-5">
-            <View className="w-full max-w-md rounded-2xl p-5 border border-[#262930] bg-[#181A1F]">
-              <View className="flex-row items-center justify-between mb-4">
-                <Text className="text-base font-bold text-white">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalBox, isDark ? styles.cardDark : styles.cardLight]}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, isDark ? styles.textDark : styles.textLight]}>
                   Create Attribution Join Link
                 </Text>
                 <Pressable onPress={() => setShowCreateLinkModal(false)}>
-                  <Ionicons name="close" size={20} color="#FFFFFF" />
+                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
                 </Pressable>
               </View>
 
-              <Text className="text-[10px] font-bold text-slate-400 mb-1 mt-2">CAMPAIGN / LINK TITLE</Text>
+              <Text style={styles.fieldLabel}>CAMPAIGN / LINK TITLE</Text>
               <TextInput
-                className="h-10 rounded-xl px-3 text-xs border border-[#262930] bg-[#111317] text-white"
+                style={[styles.fieldInput, isDark ? styles.inputDark : styles.inputLight]}
                 placeholder="e.g. Instagram Promo 2026"
-                placeholderTextColor="#64748B"
+                placeholderTextColor="#94A3B8"
                 value={linkTitleInput}
                 onChangeText={setLinkTitleInput}
               />
 
-              <Text className="text-[10px] font-bold text-slate-400 mb-1 mt-2">TRAFFIC SOURCE TAG</Text>
+              <Text style={styles.fieldLabel}>TRAFFIC SOURCE TAG</Text>
               <TextInput
-                className="h-10 rounded-xl px-3 text-xs border border-[#262930] bg-[#111317] text-white"
+                style={[styles.fieldInput, isDark ? styles.inputDark : styles.inputLight]}
                 placeholder="e.g. Direct Link, Meta Ads, YouTube"
-                placeholderTextColor="#64748B"
+                placeholderTextColor="#94A3B8"
                 value={campaignSourceInput}
                 onChangeText={setCampaignSourceInput}
               />
 
-              <Text className="text-[10px] font-bold text-slate-400 mb-1 mt-2">CHANNEL NAME</Text>
+              <Text style={styles.fieldLabel}>CHANNEL NAME</Text>
               <TextInput
-                className="h-10 rounded-xl px-3 text-xs border border-[#262930] bg-[#111317] text-white"
+                style={[styles.fieldInput, isDark ? styles.inputDark : styles.inputLight]}
                 placeholder="e.g. Trading Guru SEBI Registered"
-                placeholderTextColor="#64748B"
+                placeholderTextColor="#94A3B8"
                 value={channelNameInput}
                 onChangeText={setChannelNameInput}
               />
 
               <Pressable
-                className={`flex-row items-center justify-center bg-[#0084FF] py-3 rounded-xl mt-4 gap-2 active:opacity-90 ${
-                  creatingLink ? 'opacity-60' : ''
-                }`}
+                style={[styles.submitBtn, creatingLink && styles.submitBtnDisabled]}
                 onPress={handleCreateLink}
                 disabled={creatingLink}
               >
@@ -856,7 +965,7 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
                 ) : (
                   <>
                     <Ionicons name="sparkles" size={16} color="#FFFFFF" />
-                    <Text className="text-white text-xs font-bold">Generate Deep Link</Text>
+                    <Text style={styles.submitBtnText}>Generate Deep Link</Text>
                   </>
                 )}
               </Pressable>
@@ -868,3 +977,756 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
   );
 };
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  containerLight: {
+    backgroundColor: '#F8FAFC',
+  },
+  containerDark: {
+    backgroundColor: '#0F172A',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  headerIconBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#E0F2FE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  subtitle: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  activePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    gap: 4,
+  },
+  activeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#10B981',
+  },
+  activePillText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#059669',
+  },
+  closeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeBtnLight: {
+    backgroundColor: '#E2E8F0',
+  },
+  closeBtnDark: {
+    backgroundColor: '#1E293B',
+  },
+  borderLight: {
+    borderBottomColor: '#E2E8F0',
+  },
+  borderDark: {
+    borderBottomColor: '#334155',
+  },
+  textLight: {
+    color: '#0F172A',
+  },
+  textDark: {
+    color: '#F8FAFC',
+  },
+  tabBar: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  tabBarLight: {
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  tabBarDark: {
+    backgroundColor: '#1E293B',
+    borderBottomWidth: 1,
+    borderBottomColor: '#334155',
+  },
+  tabItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 6,
+  },
+  tabItemActiveLight: {
+    backgroundColor: '#E0F2FE',
+  },
+  tabItemActiveDark: {
+    backgroundColor: '#0369A1',
+  },
+  tabText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  tabTextActive: {
+    color: '#0284C7',
+    fontWeight: '700',
+  },
+  tabBadge: {
+    backgroundColor: '#E2E8F0',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 10,
+  },
+  tabBadgeActive: {
+    backgroundColor: '#0284C7',
+  },
+  tabBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  tabBadgeTextActive: {
+    color: '#FFFFFF',
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 13,
+    color: '#64748B',
+  },
+  body: {
+    flex: 1,
+  },
+  bodyContent: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  sectionTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  sectionHeading: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  sectionSub: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  primaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0284C7',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 4,
+  },
+  primaryBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  card: {
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  cardLight: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  cardDark: {
+    backgroundColor: '#1E293B',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  botRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  botLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  botAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+  },
+  botAvatarPlaceholder: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  botTextWrap: {
+    flex: 1,
+  },
+  botName: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  botUsername: {
+    fontSize: 12,
+    color: '#0284C7',
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    gap: 4,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#10B981',
+  },
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  mappedChannelBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 10,
+    marginTop: 4,
+  },
+  mappedChannelBoxLight: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  mappedChannelBoxDark: {
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  mappedChannelLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  channelTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  channelIdText: {
+    fontSize: 11,
+    color: '#94A3B8',
+  },
+  createLinkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0284C7',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    gap: 4,
+  },
+  createLinkBtnText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  linkHeaderRow: {
+    marginBottom: 12,
+  },
+  linkTitleWrap: {
+    flex: 1,
+  },
+  linkTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  linkMetaRow: {
+    marginTop: 2,
+  },
+  linkSubText: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  linkBotTag: {
+    color: '#0284C7',
+    fontWeight: '600',
+  },
+  pillRow: {
+    flexDirection: 'row',
+    marginTop: 6,
+  },
+  sourcePill: {
+    backgroundColor: '#E0F2FE',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  sourcePillText: {
+    fontSize: 10,
+    color: '#0284C7',
+    fontWeight: '600',
+  },
+  statPillsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  statPill: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  statPillLight: {
+    backgroundColor: '#F1F5F9',
+  },
+  statPillDark: {
+    backgroundColor: '#0F172A',
+  },
+  statVal: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  statLbl: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#64748B',
+    marginTop: 2,
+  },
+  copyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0284C7',
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 6,
+  },
+  copyBtnSuccess: {
+    backgroundColor: '#10B981',
+  },
+  copyBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  kpiGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  kpiCard: {
+    width: '48.5%',
+    padding: 14,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  kpiIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  kpiNumber: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  kpiLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+    marginTop: 2,
+  },
+  kpiHint: {
+    fontSize: 10,
+    color: '#94A3B8',
+    marginTop: 1,
+  },
+  matrixCard: {
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 16,
+  },
+  matrixHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 14,
+  },
+  matrixHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+    minWidth: 150,
+  },
+  matrixTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    flexShrink: 1,
+  },
+  periodBadge: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+  },
+  periodBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#2563EB',
+  },
+  chanCard: {
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 10,
+  },
+  chanCardLight: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  chanCardDark: {
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  chanCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 8,
+  },
+  chanName: {
+    fontSize: 13,
+    fontWeight: '700',
+    flex: 1,
+    minWidth: 100,
+  },
+  periodJoinsPill: {
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  periodJoinsPillText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  chanStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(0,0,0,0.02)',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    marginBottom: 8,
+  },
+  chanStatItem: {
+    alignItems: 'center',
+  },
+  chanStatLbl: {
+    fontSize: 9,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  chanStatVal: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 1,
+  },
+  chanLinksWrap: {
+    gap: 4,
+  },
+  linkJoinPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+  },
+  linkJoinPillTitle: {
+    fontSize: 11,
+    flex: 1,
+    marginLeft: 6,
+  },
+  linkJoinPillBadge: {
+    backgroundColor: '#E0F2FE',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  linkJoinPillBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#0284C7',
+  },
+  usersSection: {
+    borderRadius: 14,
+    padding: 16,
+  },
+  usersHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  usersHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  usersTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  usersCountText: {
+    fontSize: 11,
+    color: '#64748B',
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  searchInput: {
+    flex: 1,
+    height: 38,
+    fontSize: 12,
+    marginLeft: 6,
+  },
+  filterPillScroll: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  filterPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginRight: 6,
+  },
+  filterPillLight: {
+    backgroundColor: '#F1F5F9',
+  },
+  filterPillDark: {
+    backgroundColor: '#0F172A',
+  },
+  filterPillActive: {
+    backgroundColor: '#0284C7',
+  },
+  filterPillText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  filterPillTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  userRowLight: {
+    borderBottomColor: '#F1F5F9',
+  },
+  userRowDark: {
+    borderBottomColor: '#334155',
+  },
+  userRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  userAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#E0F2FE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userAvatarText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0284C7',
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  userSub: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  userTime: {
+    fontSize: 10,
+    color: '#94A3B8',
+  },
+  userStatusPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  userStatusText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalBox: {
+    width: '100%',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  fieldLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748B',
+    marginBottom: 4,
+    marginTop: 8,
+  },
+  fieldInput: {
+    height: 42,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 13,
+  },
+  inputLight: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  inputDark: {
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  submitBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0284C7',
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 16,
+    gap: 8,
+  },
+  submitBtnDisabled: {
+    opacity: 0.6,
+  },
+  submitBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+});

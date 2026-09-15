@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { colors } from '../theme/colors';
 
 interface Props {
   children: React.ReactNode;
@@ -22,6 +23,7 @@ export class GlobalErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    // You could also log the error to an error reporting service
     console.error("Uncaught error:", error, errorInfo);
   }
 
@@ -32,22 +34,19 @@ export class GlobalErrorBoundary extends React.Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <SafeAreaView className="flex-1 bg-[#111827] p-5">
-          <View className="flex-1 justify-center items-center p-6">
-            <Text className="text-xl font-bold text-red-500 mb-2">Error Caught by Boundary</Text>
-            <Text className="text-base text-red-400 text-center mb-3">
+        <SafeAreaView style={[styles.container, { backgroundColor: '#111827', padding: 20 }]}>
+          <View style={styles.content}>
+            <Text style={[styles.title, { color: '#ef4444' }]}>Error Caught by Boundary</Text>
+            <Text style={[styles.description, { color: '#f87171', fontSize: 16, marginBottom: 12 }]}>
               {this.state.error?.name}: {this.state.error?.message || "An unexpected error occurred."}
             </Text>
             {this.state.error?.stack && (
-              <Text className="text-[11px] text-gray-400 font-mono max-h-[250px]">
+              <Text style={{ color: '#9ca3af', fontSize: 11, fontFamily: 'monospace', maxHeight: 250 }}>
                 {this.state.error.stack}
               </Text>
             )}
-            <Pressable
-              className="bg-[#0284C7] px-6 py-3 rounded-lg mt-5"
-              onPress={this.handleReset}
-            >
-              <Text className="text-white font-semibold">Try Again</Text>
+            <Pressable style={[styles.button, { marginTop: 20 }]} onPress={this.handleReset}>
+              <Text style={styles.buttonText}>Try Again</Text>
             </Pressable>
           </View>
         </SafeAreaView>
@@ -57,3 +56,38 @@ export class GlobalErrorBoundary extends React.Component<Props, State> {
     return this.props.children;
   }
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.foreground,
+    marginBottom: 8,
+  },
+  description: {
+    fontSize: 14,
+    color: colors.mutedForeground,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  button: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: colors.primaryForeground,
+    fontWeight: '600',
+  },
+});

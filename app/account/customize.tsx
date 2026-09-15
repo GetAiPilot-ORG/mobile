@@ -2,13 +2,19 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   ScrollView,
   Pressable,
   Switch,
   Alert,
+  useColorScheme,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AppScreen } from '../../src/components/AppScreen';
+import { AppTopBar } from '../../src/components/AppTopBar';
+import { colors } from '../../src/theme/colors';
+import { spacing } from '../../src/theme/spacing';
+import { radius } from '../../src/theme/radius';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface ShortcutConfig {
@@ -43,6 +49,8 @@ const PREF_STORAGE_KEY = '@gap_app_customize_shortcuts';
 
 export default function CustomizeAppScreen() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const [shortcuts, setShortcuts] = useState<ShortcutConfig[]>(DEFAULT_SHORTCUTS);
   const [compactView, setCompactView] = useState(false);
@@ -99,80 +107,127 @@ export default function CustomizeAppScreen() {
   const toolItems = shortcuts.filter((s) => s.category === 'tools');
 
   return (
-    <AppScreen safeArea={false} className="flex-1 bg-[#0B0D10]">
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+    <AppScreen safeArea={false} backgroundColor={isDark ? '#000000' : '#F8FAFC'}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View className="mb-6">
+        <View style={styles.header}>
           <Pressable
-            className="self-start py-1.5 px-3 rounded-lg border border-[#262930] bg-[#181A1F] mb-3"
+            style={[
+              styles.backButton,
+              {
+                backgroundColor: isDark ? '#1C1C1E' : '#F2F4F7',
+                borderColor: isDark ? '#2C2C2E' : '#E5E7EB',
+              },
+            ]}
             onPress={() => router.back()}
           >
-            <Text className="text-xs font-bold text-white">← Back</Text>
-          </Pressable>
-          <View>
-            <Text className="text-2xl font-black text-white">Customize App</Text>
-            <Text className="text-xs text-slate-400 mt-1 leading-4">
-              Personalize dashboard shortcuts, active modules, and layout preferences.
+            <Text style={[styles.backButtonText, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+              ← Back
             </Text>
+          </Pressable>
+          <View style={styles.titleRow}>
+            <View>
+              <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                Customize App
+              </Text>
+              <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+                Personalize dashboard shortcuts, active modules, and layout preferences.
+              </Text>
+            </View>
           </View>
         </View>
 
         {/* Display Settings Card */}
-        <View className="rounded-2xl px-4 py-2 border border-[#262930] bg-[#181A1F] mb-6">
-          <Text className="text-sm font-black text-white pt-2 pb-1">Layout & Display</Text>
-          <View className="flex-row items-center justify-between py-3 border-b border-[#262930]">
-            <View className="flex-1 pr-3">
-              <Text className="text-xs font-bold text-white">Compact Dashboard Mode</Text>
-              <Text className="text-[11px] text-slate-400 mt-0.5">
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+              borderColor: isDark ? '#2C2C2E' : '#E5E7EB',
+            },
+          ]}
+        >
+          <Text style={[styles.cardTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+            Layout & Display
+          </Text>
+          <View
+            style={[
+              styles.row,
+              { borderBottomColor: isDark ? '#2C2C2E' : '#E5E7EB' },
+            ]}
+          >
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={[styles.rowTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                Compact Dashboard Mode
+              </Text>
+              <Text style={[styles.rowSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
                 Use condensed product cards to view more items on screen
               </Text>
             </View>
             <Switch
               value={compactView}
               onValueChange={handleToggleCompact}
-              trackColor={{ false: '#262930', true: '#0084FF' }}
+              trackColor={{ false: isDark ? '#333' : '#CBD5E1', true: colors.primary }}
               thumbColor="#fff"
             />
           </View>
-          <View className="flex-row items-center justify-between py-3">
-            <View className="flex-1 pr-3">
-              <Text className="text-xs font-bold text-white">Haptic Touch Feedback</Text>
-              <Text className="text-[11px] text-slate-400 mt-0.5">
+          <View style={[styles.row, { borderBottomWidth: 0 }]}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={[styles.rowTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                Haptic Touch Feedback
+              </Text>
+              <Text style={[styles.rowSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
                 Vibrate device on quick tool launches and bot interactions
               </Text>
             </View>
             <Switch
               value={hapticFeedback}
               onValueChange={setHapticFeedback}
-              trackColor={{ false: '#262930', true: '#0084FF' }}
+              trackColor={{ false: isDark ? '#333' : '#CBD5E1', true: colors.primary }}
               thumbColor="#fff"
             />
           </View>
         </View>
 
         {/* Automation Hub Shortcuts */}
-        <View className="mb-6">
-          <Text className="text-sm font-black text-white mb-0.5">Automation Products Visibility</Text>
-          <Text className="text-xs text-slate-400 mb-3">
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+            Automation Products Visibility
+          </Text>
+          <Text style={[styles.sectionSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
             Toggled items appear on your Home Dashboard quick launcher.
           </Text>
 
-          <View className="rounded-2xl px-4 py-1 border border-[#262930] bg-[#181A1F]">
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                borderColor: isDark ? '#2C2C2E' : '#E5E7EB',
+              },
+            ]}
+          >
             {automationItems.map((item, idx) => (
               <View
                 key={item.id}
-                className={`flex-row items-center justify-between py-3 ${
-                  idx === automationItems.length - 1 ? '' : 'border-b border-[#262930]'
-                }`}
+                style={[
+                  styles.row,
+                  { borderBottomColor: isDark ? '#2C2C2E' : '#E5E7EB' },
+                  idx === automationItems.length - 1 && { borderBottomWidth: 0 },
+                ]}
               >
-                <View className="flex-1 pr-3">
-                  <Text className="text-xs font-bold text-white">{item.name}</Text>
-                  <Text className="text-[11px] text-slate-400 mt-0.5">{item.desc}</Text>
+                <View style={{ flex: 1, paddingRight: 12 }}>
+                  <Text style={[styles.rowTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                    {item.name}
+                  </Text>
+                  <Text style={[styles.rowSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+                    {item.desc}
+                  </Text>
                 </View>
                 <Switch
                   value={item.enabled}
                   onValueChange={() => handleToggleShortcut(item.id)}
-                  trackColor={{ false: '#262930', true: '#0084FF' }}
+                  trackColor={{ false: isDark ? '#333' : '#CBD5E1', true: colors.primary }}
                   thumbColor="#fff"
                 />
               </View>
@@ -181,28 +236,44 @@ export default function CustomizeAppScreen() {
         </View>
 
         {/* Free Tools Visibility */}
-        <View className="mb-6">
-          <Text className="text-sm font-black text-white mb-0.5">Free Tools Hub Visibility</Text>
-          <Text className="text-xs text-slate-400 mb-3">
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+            Free Tools Hub Visibility
+          </Text>
+          <Text style={[styles.sectionSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
             Control which tools are prioritized in your Tools shortcuts.
           </Text>
 
-          <View className="rounded-2xl px-4 py-1 border border-[#262930] bg-[#181A1F]">
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                borderColor: isDark ? '#2C2C2E' : '#E5E7EB',
+              },
+            ]}
+          >
             {toolItems.map((item, idx) => (
               <View
                 key={item.id}
-                className={`flex-row items-center justify-between py-3 ${
-                  idx === toolItems.length - 1 ? '' : 'border-b border-[#262930]'
-                }`}
+                style={[
+                  styles.row,
+                  { borderBottomColor: isDark ? '#2C2C2E' : '#E5E7EB' },
+                  idx === toolItems.length - 1 && { borderBottomWidth: 0 },
+                ]}
               >
-                <View className="flex-1 pr-3">
-                  <Text className="text-xs font-bold text-white">{item.name}</Text>
-                  <Text className="text-[11px] text-slate-400 mt-0.5">{item.desc}</Text>
+                <View style={{ flex: 1, paddingRight: 12 }}>
+                  <Text style={[styles.rowTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                    {item.name}
+                  </Text>
+                  <Text style={[styles.rowSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+                    {item.desc}
+                  </Text>
                 </View>
                 <Switch
                   value={item.enabled}
                   onValueChange={() => handleToggleShortcut(item.id)}
-                  trackColor={{ false: '#262930', true: '#0084FF' }}
+                  trackColor={{ false: isDark ? '#333' : '#CBD5E1', true: colors.primary }}
                   thumbColor="#fff"
                 />
               </View>
@@ -211,13 +282,101 @@ export default function CustomizeAppScreen() {
         </View>
 
         {/* Reset Defaults */}
-        <Pressable
-          className="rounded-xl py-3.5 items-center border border-red-500/30 bg-red-500/10"
-          onPress={handleReset}
-        >
-          <Text className="text-xs font-bold text-red-400">Restore Default Preferences</Text>
+        <Pressable style={styles.resetButton} onPress={handleReset}>
+          <Text style={styles.resetButtonText}>Restore Default Preferences</Text>
         </Pressable>
       </ScrollView>
     </AppScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  scrollContent: {
+    padding: spacing.lg,
+    paddingBottom: 40,
+  },
+  header: {
+    marginBottom: spacing.xl,
+  },
+  backButton: {
+    alignSelf: 'flex-start',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: radius.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+  },
+  backButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+  },
+  subtitle: {
+    fontSize: 13,
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  section: {
+    marginBottom: spacing.xl,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    marginBottom: spacing.md,
+  },
+  card: {
+    borderRadius: radius.xl,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    marginBottom: spacing.lg,
+  },
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xs,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+  },
+  rowTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  rowSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  resetButton: {
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.25)',
+    paddingVertical: 14,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    marginTop: spacing.md,
+  },
+  resetButtonText: {
+    color: colors.destructive,
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+});

@@ -2,16 +2,19 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   ScrollView,
   TextInput,
   Pressable,
   ActivityIndicator,
   Alert,
+  useColorScheme,
   Share,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
+import { colors } from '../../src/theme/colors';
 
 interface MetricCheck {
   title: string;
@@ -30,9 +33,9 @@ interface AuditResult {
     security: number;
   };
   vitals: {
-    fcp: string;
-    lcp: string;
-    ttfb: string;
+    fcp: string; // First Contentful Paint
+    lcp: string; // Largest Contentful Paint
+    ttfb: string; // Time to First Byte
     ssl: string;
   };
   checks: MetricCheck[];
@@ -46,10 +49,25 @@ const QUICK_TEST_DOMAINS = [
 ];
 
 export default function WebsiteAuditScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [domainUrl, setDomainUrl] = useState('https://getaipilot.in');
   const [isAuditing, setIsAuditing] = useState(false);
   const [scanStep, setScanStep] = useState('');
   const [results, setResults] = useState<AuditResult | null>(null);
+
+  // Dynamic Theme Mapping
+  const theme = {
+    bg: isDark ? colors.backgroundDark : colors.background,
+    card: isDark ? colors.surfaceDark : colors.card,
+    cardBorder: isDark ? colors.borderDark : colors.border,
+    text: isDark ? colors.foregroundDark : colors.foreground,
+    mutedText: colors.mutedForeground,
+    inputBg: isDark ? '#141416' : '#FFFFFF',
+    inputBorder: isDark ? '#2C2C2E' : colors.border,
+    primary: colors.primary, // GetAiPilot Electric Blue
+  };
 
   const calculateDynamicAudit = (targetUrl: string): AuditResult => {
     let clean = targetUrl.trim().toLowerCase();
@@ -148,45 +166,45 @@ export default function WebsiteAuditScreen() {
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 90) return '#10B981';
-    if (score >= 75) return '#F59E0B';
-    return '#EF4444';
+    if (score >= 90) return '#10B981'; // Green
+    if (score >= 75) return '#F59E0B'; // Yellow/Amber
+    return '#EF4444'; // Red
   };
 
   return (
-    <AppScreen safeArea={false} className="flex-1 bg-[#0B0D10]">
+    <AppScreen safeArea={false} backgroundColor={theme.bg}>
       <AppTopBar title="Website SEO & Speed" subtitle="Core Web Vitals Scanner" showBack={true} />
 
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Scanner Card */}
-        <View className="rounded-2xl p-4 border border-[#262930] bg-[#181A1F] mb-4">
-          <Text className="text-base font-black text-white mb-1">Technical Health Scanner</Text>
-          <Text className="text-xs text-slate-400 leading-4 mb-3.5">
+        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>Technical Health Scanner</Text>
+          <Text style={[styles.cardSubtitle, { color: theme.mutedText }]}>
             Evaluate load speed, mobile responsiveness, SSL security, and search engine readiness in real-time.
           </Text>
 
           {/* Quick-Test Domain Chips */}
-          <Text className="text-xs font-bold text-slate-300 mb-1.5">Quick Test Suggestions:</Text>
-          <View className="flex-row flex-wrap gap-1.5 mb-3">
+          <Text style={[styles.inputLabel, { color: theme.mutedText }]}>Quick Test Suggestions:</Text>
+          <View style={styles.quickChipsRow}>
             {QUICK_TEST_DOMAINS.map((domain, i) => (
               <Pressable
                 key={i}
-                className="px-2.5 py-1.5 rounded-lg border border-[#262930] bg-[#111317]"
+                style={[styles.quickChip, { backgroundColor: isDark ? '#141416' : '#F3F4F6', borderColor: theme.cardBorder }]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setDomainUrl(`https://${domain}`);
                 }}
               >
-                <Text className="text-xs text-slate-300 font-semibold">{domain}</Text>
+                <Text style={[styles.quickChipText, { color: theme.text }]}>{domain}</Text>
               </Pressable>
             ))}
           </View>
 
-          <Text className="text-xs font-bold text-slate-300 mb-1">Target Website URL</Text>
+          <Text style={[styles.inputLabel, { color: theme.mutedText, marginTop: 12 }]}>Target Website URL</Text>
           <TextInput
-            className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2.5 text-xs text-white mb-3.5"
+            style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
             placeholder="https://example.com"
-            placeholderTextColor="#64748B"
+            placeholderTextColor={theme.mutedText}
             value={domainUrl}
             onChangeText={setDomainUrl}
             autoCapitalize="none"
@@ -194,157 +212,151 @@ export default function WebsiteAuditScreen() {
           />
 
           <Pressable
-            className={`py-3.5 rounded-xl items-center bg-[#0084FF] ${isAuditing ? 'opacity-80' : ''}`}
+            style={[styles.auditBtn, { backgroundColor: theme.primary }, isAuditing && { opacity: 0.8 }]}
             onPress={handleRunAudit}
             disabled={isAuditing}
           >
             {isAuditing ? (
-              <View className="flex-row items-center gap-2">
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <ActivityIndicator color="#FFFFFF" size="small" />
-                <Text className="text-xs font-bold text-white">Analyzing Telemetry...</Text>
+                <Text style={styles.auditBtnText}>Analyzing Telemetry...</Text>
               </View>
             ) : (
-              <Text className="text-xs font-extrabold text-white">Run Technical Audit ⚡</Text>
+              <Text style={styles.auditBtnText}>Run Technical Audit ⚡</Text>
             )}
           </Pressable>
 
+          {/* Scanning Progress Telemetry */}
           {isAuditing && (
-            <View className="mt-3 p-2.5 rounded-lg border border-[#262930] bg-[#111317] items-center">
-              <Text className="text-xs font-bold text-[#0084FF]">⚙️ {scanStep}</Text>
+            <View style={[styles.scanStepBox, { backgroundColor: isDark ? '#141416' : '#F9FAFB', borderColor: theme.cardBorder }]}>
+              <Text style={[styles.scanStepText, { color: theme.primary }]}>⚙️ {scanStep}</Text>
             </View>
           )}
         </View>
 
-        {/* RESULTS SCORECARD */}
+        {/* ── AUDIT RESULTS SCORECARD ────────────────────────────────── */}
         {results && (
-          <View className="gap-4">
+          <View style={{ gap: 16 }}>
             {/* Overall Score Banner */}
-            <View className="flex-row items-center justify-between rounded-2xl p-4 border border-[#262930] bg-[#181A1F]">
-              <View className="flex-1 mr-3">
-                <Text className="text-sm font-black text-white" numberOfLines={1}>
+            <View style={[styles.heroScoreCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+              <View style={styles.heroScoreLeft}>
+                <Text style={[styles.heroTargetUrl, { color: theme.text }]} numberOfLines={1}>
                   {results.url}
                 </Text>
-                <Text className="text-[11px] text-slate-400 mt-0.5 mb-2">
+                <Text style={[styles.heroScanTime, { color: theme.mutedText }]}>
                   Lighthouse Audit • Verified Core Vitals
                 </Text>
 
-                <View className="self-start bg-emerald-500/20 px-2.5 py-1 rounded-md">
-                  <Text className="text-emerald-400 font-black text-xs">Grade {results.grade}</Text>
+                <View style={styles.heroGradeBadge}>
+                  <Text style={styles.heroGradeText}>Grade {results.grade}</Text>
                 </View>
               </View>
 
-              <View
-                className="w-18 h-18 rounded-full border-4 justify-center items-center bg-emerald-500/5 p-2"
-                style={{ borderColor: getScoreColor(results.overallScore) }}
-              >
-                <Text
-                  className="text-2xl font-black"
-                  style={{ color: getScoreColor(results.overallScore) }}
-                >
+              <View style={[styles.overallScoreCircle, { borderColor: getScoreColor(results.overallScore) }]}>
+                <Text style={[styles.overallScoreNumber, { color: getScoreColor(results.overallScore) }]}>
                   {results.overallScore}
                 </Text>
-                <Text className="text-[10px] font-bold text-slate-400 -mt-1">/100</Text>
+                <Text style={[styles.overallScoreMax, { color: theme.mutedText }]}>/100</Text>
               </View>
             </View>
 
             {/* 4 Core Pillars Grid */}
-            <View className="flex-row gap-2">
-              <View className="flex-1 rounded-xl p-3 items-center border border-[#262930] bg-[#181A1F]">
-                <Text className="text-lg mb-1">⚡</Text>
-                <Text
-                  className="text-base font-black mb-0.5"
-                  style={{ color: getScoreColor(results.metrics.performance) }}
-                >
+            <View style={styles.pillarsGrid}>
+              {/* Performance */}
+              <View style={[styles.pillarCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+                <Text style={styles.pillarIcon}>⚡</Text>
+                <Text style={[styles.pillarValue, { color: getScoreColor(results.metrics.performance) }]}>
                   {results.metrics.performance}%
                 </Text>
-                <Text className="text-[10px] font-bold text-white text-center">Speed</Text>
+                <Text style={[styles.pillarTitle, { color: theme.text }]}>Speed & Vitals</Text>
               </View>
 
-              <View className="flex-1 rounded-xl p-3 items-center border border-[#262930] bg-[#181A1F]">
-                <Text className="text-lg mb-1">🔍</Text>
-                <Text
-                  className="text-base font-black mb-0.5"
-                  style={{ color: getScoreColor(results.metrics.seo) }}
-                >
+              {/* SEO */}
+              <View style={[styles.pillarCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+                <Text style={styles.pillarIcon}>🔍</Text>
+                <Text style={[styles.pillarValue, { color: getScoreColor(results.metrics.seo) }]}>
                   {results.metrics.seo}%
                 </Text>
-                <Text className="text-[10px] font-bold text-white text-center">SEO</Text>
+                <Text style={[styles.pillarTitle, { color: theme.text }]}>SEO Ready</Text>
               </View>
 
-              <View className="flex-1 rounded-xl p-3 items-center border border-[#262930] bg-[#181A1F]">
-                <Text className="text-lg mb-1">📱</Text>
-                <Text
-                  className="text-base font-black mb-0.5"
-                  style={{ color: getScoreColor(results.metrics.mobile) }}
-                >
+              {/* Mobile */}
+              <View style={[styles.pillarCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+                <Text style={styles.pillarIcon}>📱</Text>
+                <Text style={[styles.pillarValue, { color: getScoreColor(results.metrics.mobile) }]}>
                   {results.metrics.mobile}%
                 </Text>
-                <Text className="text-[10px] font-bold text-white text-center">Mobile</Text>
+                <Text style={[styles.pillarTitle, { color: theme.text }]}>Mobile UX</Text>
               </View>
 
-              <View className="flex-1 rounded-xl p-3 items-center border border-[#262930] bg-[#181A1F]">
-                <Text className="text-lg mb-1">🛡️</Text>
-                <Text
-                  className="text-base font-black mb-0.5"
-                  style={{ color: getScoreColor(results.metrics.security) }}
-                >
+              {/* Security */}
+              <View style={[styles.pillarCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+                <Text style={styles.pillarIcon}>🛡️</Text>
+                <Text style={[styles.pillarValue, { color: getScoreColor(results.metrics.security) }]}>
                   {results.metrics.security}%
                 </Text>
-                <Text className="text-[10px] font-bold text-white text-center">Security</Text>
+                <Text style={[styles.pillarTitle, { color: theme.text }]}>SSL & Safety</Text>
               </View>
             </View>
 
-            {/* Core Web Vitals */}
-            <View className="rounded-2xl p-4 border border-[#262930] bg-[#181A1F]">
-              <Text className="text-sm font-black text-white mb-2">Core Web Vitals</Text>
-
-              <View className="flex-row justify-between items-center pt-2">
-                <View className="flex-1 items-center">
-                  <Text className="text-[10px] font-semibold text-slate-400 mb-1 text-center">First Paint (FCP)</Text>
-                  <Text className="text-sm font-black text-emerald-400">{results.vitals.fcp}</Text>
+            {/* Core Web Vitals Telemetry Row */}
+            <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+              <Text style={[styles.cardHeading, { color: theme.text }]}>Core Web Vitals</Text>
+              
+              <View style={styles.vitalsRow}>
+                <View style={styles.vitalItem}>
+                  <Text style={[styles.vitalLabel, { color: theme.mutedText }]}>First Paint (FCP)</Text>
+                  <Text style={[styles.vitalValue, { color: '#10B981' }]}>{results.vitals.fcp}</Text>
                 </View>
 
-                <View className="w-px h-7 bg-[#262930]" />
+                <View style={styles.vitalDivider} />
 
-                <View className="flex-1 items-center">
-                  <Text className="text-[10px] font-semibold text-slate-400 mb-1 text-center">Largest Paint (LCP)</Text>
-                  <Text className="text-sm font-black text-emerald-400">{results.vitals.lcp}</Text>
+                <View style={styles.vitalItem}>
+                  <Text style={[styles.vitalLabel, { color: theme.mutedText }]}>Largest Paint (LCP)</Text>
+                  <Text style={[styles.vitalValue, { color: '#10B981' }]}>{results.vitals.lcp}</Text>
                 </View>
 
-                <View className="w-px h-7 bg-[#262930]" />
+                <View style={styles.vitalDivider} />
 
-                <View className="flex-1 items-center">
-                  <Text className="text-[10px] font-semibold text-slate-400 mb-1 text-center">Server Latency</Text>
-                  <Text className="text-sm font-black text-[#0084FF]">{results.vitals.ttfb}</Text>
+                <View style={styles.vitalItem}>
+                  <Text style={[styles.vitalLabel, { color: theme.mutedText }]}>Server Latency</Text>
+                  <Text style={[styles.vitalValue, { color: theme.primary }]}>{results.vitals.ttfb}</Text>
                 </View>
               </View>
             </View>
 
             {/* Detailed Diagnostics Checklist */}
-            <View className="rounded-2xl p-4 border border-[#262930] bg-[#181A1F]">
-              <Text className="text-sm font-black text-white mb-3">
+            <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+              <Text style={[styles.cardHeading, { color: theme.text, marginBottom: 12 }]}>
                 Detailed Diagnostics ({results.checks.length})
               </Text>
 
-              <View className="gap-2.5">
+              <View style={{ gap: 10 }}>
                 {results.checks.map((chk, idx) => (
                   <View
                     key={idx}
-                    className="flex-row items-center p-3 rounded-xl border border-[#262930] bg-[#111317]"
+                    style={[
+                      styles.checkRow,
+                      {
+                        backgroundColor: isDark ? '#141416' : '#F9FAFB',
+                        borderColor: theme.cardBorder,
+                      },
+                    ]}
                   >
-                    <Text className="text-lg mr-2.5">
+                    <Text style={{ fontSize: 18, marginRight: 10 }}>
                       {chk.status === 'pass' ? '✅' : chk.status === 'warn' ? '⚠️' : '❌'}
                     </Text>
-                    <View className="flex-1">
-                      <Text className="text-xs font-bold text-white mb-0.5">{chk.title}</Text>
-                      <Text className="text-[11px] text-slate-400 leading-4">{chk.desc}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.checkTitle, { color: theme.text }]}>{chk.title}</Text>
+                      <Text style={[styles.checkDesc, { color: theme.mutedText }]}>{chk.desc}</Text>
                     </View>
                   </View>
                 ))}
               </View>
 
-              <Pressable className="mt-4 py-3 rounded-xl items-center bg-[#0084FF]" onPress={handleShareReport}>
-                <Text className="text-xs font-extrabold text-white">Share Audit Report 📤</Text>
+              {/* Share Report CTA Button */}
+              <Pressable style={[styles.shareReportBtn, { backgroundColor: theme.primary }]} onPress={handleShareReport}>
+                <Text style={styles.shareReportText}>Share Audit Report 📤</Text>
               </Pressable>
             </View>
           </View>
@@ -353,3 +365,209 @@ export default function WebsiteAuditScreen() {
     </AppScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 50,
+  },
+  card: {
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1,
+  },
+  cardTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  cardSubtitle: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 14,
+  },
+  cardHeading: {
+    fontSize: 15,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  quickChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 4,
+  },
+  quickChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  quickChipText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
+  input: {
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    fontSize: 14,
+    borderWidth: 1,
+    marginBottom: 14,
+  },
+  auditBtn: {
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  auditBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 14.5,
+  },
+  scanStepBox: {
+    marginTop: 12,
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  scanStepText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  heroScoreCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 18,
+    padding: 18,
+    borderWidth: 1,
+  },
+  heroScoreLeft: {
+    flex: 1,
+    marginRight: 14,
+  },
+  heroTargetUrl: {
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  heroScanTime: {
+    fontSize: 11.5,
+    marginBottom: 10,
+  },
+  heroGradeBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  heroGradeText: {
+    color: '#10B981',
+    fontWeight: '800',
+    fontSize: 12,
+  },
+  overallScoreCircle: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.05)',
+  },
+  overallScoreNumber: {
+    fontSize: 24,
+    fontWeight: '900',
+  },
+  overallScoreMax: {
+    fontSize: 10,
+    fontWeight: '700',
+    marginTop: -2,
+  },
+  pillarsGrid: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  pillarCard: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  pillarIcon: {
+    fontSize: 18,
+    marginBottom: 4,
+  },
+  pillarValue: {
+    fontSize: 16,
+    fontWeight: '900',
+    marginBottom: 2,
+  },
+  pillarTitle: {
+    fontSize: 10,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  vitalsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 8,
+  },
+  vitalItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  vitalDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: 'rgba(156, 163, 175, 0.2)',
+  },
+  vitalLabel: {
+    fontSize: 10.5,
+    fontWeight: '600',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  vitalValue: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  checkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  checkTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  checkDesc: {
+    fontSize: 11.5,
+    lineHeight: 15,
+  },
+  shareReportBtn: {
+    marginTop: 16,
+    paddingVertical: 13,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  shareReportText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 13.5,
+  },
+});

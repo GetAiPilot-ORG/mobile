@@ -1,8 +1,7 @@
-import '../global.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import 'react-native-gesture-handler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -90,7 +89,7 @@ function SplashOverlay() {
   }
 
   return (
-    <View className="absolute inset-0 z-[99999] bg-[#0B0D10]">
+    <View style={[StyleSheet.absoluteFill, styles.splashContainer]}>
       <LayoutSkeletonScreen />
     </View>
   );
@@ -98,7 +97,7 @@ function SplashOverlay() {
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView className="flex-1 bg-[#0B0D10]">
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <GlobalErrorBoundary>
         <SafeAreaProvider>
           <NetworkProvider>
@@ -144,4 +143,9 @@ export default function RootLayout() {
   );
 }
 
+const styles = StyleSheet.create({
+  splashContainer: {
+    zIndex: 99999,
+  },
+});
 

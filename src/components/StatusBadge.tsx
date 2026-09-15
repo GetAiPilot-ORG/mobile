@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { colors } from '../theme/colors';
 
 export type StatusVariant =
   | 'operational'
@@ -16,7 +17,6 @@ interface StatusBadgeProps {
   variant?: StatusVariant;
   label?: string;
   size?: 'sm' | 'md';
-  className?: string;
 }
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({
@@ -24,45 +24,79 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   variant,
   label,
   size = 'md',
-  className,
 }) => {
   const norm = (variant || status || 'active').toLowerCase();
 
-  let bg = 'bg-emerald-500/15';
-  let textColor = '#10B981';
+  let bg = colors.accentSoft;
+  let textColor = colors.accent;
   let displayLabel = label || (status ? status.charAt(0).toUpperCase() + status.slice(1).toLowerCase() : 'Active');
 
   if (norm.includes('maint') || norm === 'maintenance') {
-    bg = 'bg-red-500/15';
-    textColor = '#EF4444';
+    bg = colors.destructiveSoft;
+    textColor = colors.destructive;
     displayLabel = label || 'Maintenance';
   } else if (norm.includes('oper') || norm === 'active' || norm === 'verified') {
-    bg = 'bg-emerald-500/15';
-    textColor = '#10B981';
+    bg = colors.accentSoft;
+    textColor = '#16B882';
     displayLabel = label || 'Operational';
   } else if (norm.includes('degrad') || norm === 'warning' || norm === 'trial') {
-    bg = 'bg-amber-500/15';
-    textColor = '#F59E0B';
+    bg = colors.warningSoft;
+    textColor = colors.warning;
     displayLabel = label || 'Degraded';
   } else if (norm.includes('out') || norm === 'expired') {
-    bg = 'bg-red-500/15';
-    textColor = '#EF4444';
+    bg = colors.destructiveSoft;
+    textColor = colors.destructive;
     displayLabel = label || 'Outage';
   }
 
   return (
     <View
-      className={`flex-row items-center self-start ${bg} ${
-        size === 'sm' ? 'px-1.5 py-0.5 rounded' : 'px-2 py-1 rounded-md'
-      } ${className || ''}`}
+      style={[
+        styles.badge,
+        { backgroundColor: bg },
+        size === 'sm' && styles.badgeSm,
+      ]}
     >
-      <View className="w-1.5 h-1.5 rounded-full mr-1.5" style={{ backgroundColor: textColor }} />
+      <View style={[styles.dot, { backgroundColor: textColor }]} />
       <Text
-        className={`font-semibold tracking-tight ${size === 'sm' ? 'text-[10px]' : 'text-xs'}`}
-        style={{ color: textColor }}
+        style={[
+          styles.text,
+          { color: textColor },
+          size === 'sm' && styles.textSm,
+        ]}
       >
         {displayLabel}
       </Text>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  badgeSm: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 5,
+  },
+  text: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    letterSpacing: -0.1,
+  },
+  textSm: {
+    fontSize: 10,
+  },
+});

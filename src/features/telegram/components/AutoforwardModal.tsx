@@ -4,10 +4,12 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  StyleSheet,
   Switch,
   Text,
   TextInput,
   View,
+  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -30,6 +32,9 @@ export const AutoforwardModal: React.FC<AutoforwardModalProps> = ({
   chats = [],
   onRefreshChats,
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [selectedSourceChat, setSelectedSourceChat] = useState<TelegramChat | null>(null);
   const [selectedTargetChat, setSelectedTargetChat] = useState<TelegramChat | null>(null);
   const [customSource, setCustomSource] = useState('');
@@ -84,92 +89,91 @@ export const AutoforwardModal: React.FC<AutoforwardModalProps> = ({
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View className="flex-1 bg-[#0B0D10]">
+      <View style={[styles.container, isDark ? styles.containerDark : styles.containerLight]}>
         {/* Header */}
-        <View className="flex-row justify-between items-center px-4 py-3.5 border-b border-[#262930] bg-[#181A1F]">
-          <View className="flex-row items-center gap-3">
-            <View className="w-10 h-10 rounded-xl bg-[#0084FF]/10 items-center justify-center">
-              <Ionicons name="git-compare-outline" size={20} color="#0084FF" />
+        <View style={[styles.header, isDark ? styles.borderDark : styles.borderLight]}>
+          <View style={styles.headerTitleRow}>
+            <View style={[styles.iconBox, { backgroundColor: isDark ? 'rgba(2,132,199,0.2)' : 'rgba(2,132,199,0.1)' }]}>
+              <Ionicons name="git-compare-outline" size={22} color="#0284C7" />
             </View>
             <View>
-              <Text className="text-base font-bold text-white">GAP Autoforwarding</Text>
-              <Text className="text-xs text-slate-400">Real-time automated message routing engine</Text>
+              <Text style={[styles.title, isDark ? styles.textDark : styles.textLight]}>GAP Autoforwarding</Text>
+              <Text style={styles.subtitle}>Real-time automated message routing engine</Text>
             </View>
           </View>
-          <Pressable
-            className="w-8 h-8 rounded-full bg-[#262930] items-center justify-center"
-            onPress={onClose}
-            hitSlop={8}
-          >
-            <Ionicons name="close" size={18} color="#FFFFFF" />
+          <Pressable style={[styles.closeBtn, isDark ? styles.closeBtnDark : styles.closeBtnLight]} onPress={onClose}>
+            <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
           </Pressable>
         </View>
 
-        <ScrollView className="flex-1" contentContainerClassName="p-4 pb-10" showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
           {errorMessage && (
-            <View className="flex-row items-center gap-2 bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl mb-4">
+            <View style={styles.errorBanner}>
               <Ionicons name="alert-circle" size={16} color="#EF4444" />
-              <Text className="text-xs font-semibold text-rose-400 flex-1">{errorMessage}</Text>
+              <Text style={styles.errorText}>{errorMessage}</Text>
             </View>
           )}
 
           {/* SOURCE CHANNEL PICKER */}
-          <View className="mb-4">
-            <View className="flex-row justify-between items-center mb-1.5">
-              <Text className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">1. Source Channel / Group (From)</Text>
+          <View style={styles.field}>
+            <View style={styles.labelRow}>
+              <Text style={styles.label}>1. SOURCE CHANNEL / GROUP (FROM)</Text>
               {onRefreshChats && (
-                <Pressable onPress={onRefreshChats} hitSlop={8} className="flex-row items-center gap-1">
-                  <Ionicons name="sync-outline" size={11} color="#0084FF" />
-                  <Text className="text-[11px] font-bold text-[#0084FF]">Sync Chats</Text>
+                <Pressable onPress={onRefreshChats} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Ionicons name="sync-outline" size={12} color="#0284C7" />
+                  <Text style={{ fontSize: 11, color: '#0284C7', fontWeight: '600' }}>Sync Chats</Text>
                 </Pressable>
               )}
             </View>
 
             <Pressable
-              className="flex-row items-center justify-between bg-[#181A1F] border border-[#262930] rounded-xl px-3.5 py-3 active:bg-[#262930]"
+              style={[styles.pickerBtn, isDark ? styles.inputDark : styles.inputLight]}
               onPress={() => {
                 setShowSourcePicker(!showSourcePicker);
                 setShowTargetPicker(false);
               }}
             >
-              <View className="flex-row items-center gap-2 flex-1 mr-2">
-                <Ionicons name="radio-button-on" size={16} color="#0084FF" />
-                <Text className="text-xs font-bold text-white flex-1" numberOfLines={1}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+                <Ionicons name="radio-button-on" size={16} color="#0284C7" />
+                <Text style={[styles.pickerValue, isDark ? styles.textDark : styles.textLight]} numberOfLines={1}>
                   {selectedSourceChat ? selectedSourceChat.title : (customSource || 'Select a synced Telegram channel')}
                 </Text>
               </View>
-              <Ionicons name={showSourcePicker ? 'chevron-up' : 'chevron-down'} size={16} color="#94A3B8" />
+              <Ionicons name={showSourcePicker ? 'chevron-up' : 'chevron-down'} size={18} color="#94A3B8" />
             </Pressable>
 
             {showSourcePicker && (
-              <View className="bg-[#181A1F] border border-[#262930] rounded-xl mt-1.5 py-2">
-                <Text className="text-[10px] font-bold text-slate-400 px-3 py-1 tracking-wider uppercase">Your Synced Channels</Text>
+              <View style={[styles.dropdown, isDark ? styles.cardDark : styles.cardLight]}>
+                <Text style={styles.dropdownHeader}>YOUR SYNCED CHANNELS</Text>
                 {chats.length === 0 ? (
-                  <Text className="text-xs text-slate-400 px-3 py-2">No channels synced yet. Type a channel handle below.</Text>
+                  <Text style={styles.emptyText}>No channels synced yet. Type a channel name below.</Text>
                 ) : (
                   chats.map((c, idx) => (
                     <Pressable
                       key={`source_chat_${c.id || c.title || 'chat'}_${idx}`}
-                      className={`flex-row items-center justify-between px-3 py-2.5 ${selectedSourceChat?.id === c.id ? 'bg-[#0084FF]/20' : 'active:bg-[#262930]'}`}
+                      style={[
+                        styles.chatItem,
+                        selectedSourceChat?.id === c.id && { backgroundColor: isDark ? 'rgba(2,132,199,0.2)' : 'rgba(2,132,199,0.1)' },
+                      ]}
                       onPress={() => {
                         setSelectedSourceChat(c);
                         setShowSourcePicker(false);
                       }}
                     >
-                      <View className="flex-1">
-                        <Text className="text-xs font-bold text-white">{c.title}</Text>
-                        <Text className="text-[10px] text-slate-400">{c.type ? c.type.charAt(0).toUpperCase() + c.type.slice(1).toLowerCase() : ''} • {c.member_count || 0} members</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.chatTitle, isDark ? styles.textDark : styles.textLight]}>{c.title}</Text>
+                        <Text style={styles.chatMeta}>{c.type ? c.type.charAt(0).toUpperCase() + c.type.slice(1).toLowerCase() : ''} • {c.member_count || 0} members</Text>
                       </View>
-                      {selectedSourceChat?.id === c.id && <Ionicons name="checkmark" size={16} color="#0084FF" />}
+                      {selectedSourceChat?.id === c.id && <Ionicons name="checkmark" size={18} color="#0284C7" />}
                     </Pressable>
                   ))
                 )}
-                <View className="px-3 pt-2 mt-1 border-t border-[#262930]">
-                  <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Or Enter Custom Handle</Text>
+                <View style={{ paddingHorizontal: 12, paddingTop: 8, borderTopWidth: 1, borderTopColor: 'rgba(148,163,184,0.15)' }}>
+                  <Text style={styles.dropdownHeader}>Or enter custom handle</Text>
                   <TextInput
-                    className="bg-[#111317] border border-[#262930] rounded-lg px-3 py-2 text-xs text-white"
+                    style={[styles.customInput, isDark ? styles.inputDark : styles.inputLight]}
                     placeholder="@channel_or_link"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#94A3B8"
                     value={customSource}
                     onChangeText={(val) => {
                       setCustomSource(val);
@@ -182,53 +186,56 @@ export const AutoforwardModal: React.FC<AutoforwardModalProps> = ({
           </View>
 
           {/* TARGET CHANNEL PICKER */}
-          <View className="mb-4">
-            <Text className="text-[10px] font-bold text-slate-400 mb-1.5 tracking-wider uppercase">2. Target Channel / Group (Forward To)</Text>
+          <View style={styles.field}>
+            <Text style={styles.label}>2. TARGET CHANNEL / GROUP (FORWARD TO)</Text>
             <Pressable
-              className="flex-row items-center justify-between bg-[#181A1F] border border-[#262930] rounded-xl px-3.5 py-3 active:bg-[#262930]"
+              style={[styles.pickerBtn, isDark ? styles.inputDark : styles.inputLight]}
               onPress={() => {
                 setShowTargetPicker(!showTargetPicker);
                 setShowSourcePicker(false);
               }}
             >
-              <View className="flex-row items-center gap-2 flex-1 mr-2">
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
                 <Ionicons name="arrow-redo" size={16} color="#10B981" />
-                <Text className="text-xs font-bold text-white flex-1" numberOfLines={1}>
+                <Text style={[styles.pickerValue, isDark ? styles.textDark : styles.textLight]} numberOfLines={1}>
                   {selectedTargetChat ? selectedTargetChat.title : (customTarget || 'Select target destination channel')}
                 </Text>
               </View>
-              <Ionicons name={showTargetPicker ? 'chevron-up' : 'chevron-down'} size={16} color="#94A3B8" />
+              <Ionicons name={showTargetPicker ? 'chevron-up' : 'chevron-down'} size={18} color="#94A3B8" />
             </Pressable>
 
             {showTargetPicker && (
-              <View className="bg-[#181A1F] border border-[#262930] rounded-xl mt-1.5 py-2">
-                <Text className="text-[10px] font-bold text-slate-400 px-3 py-1 tracking-wider uppercase">Your Synced Channels</Text>
+              <View style={[styles.dropdown, isDark ? styles.cardDark : styles.cardLight]}>
+                <Text style={styles.dropdownHeader}>YOUR SYNCED CHANNELS</Text>
                 {chats.length === 0 ? (
-                  <Text className="text-xs text-slate-400 px-3 py-2">No channels synced yet. Type a target channel below.</Text>
+                  <Text style={styles.emptyText}>No channels synced yet. Type a target channel below.</Text>
                 ) : (
                   chats.map((c, idx) => (
                     <Pressable
                       key={`target_chat_${c.id || c.title || 'chat'}_${idx}`}
-                      className={`flex-row items-center justify-between px-3 py-2.5 ${selectedTargetChat?.id === c.id ? 'bg-emerald-500/20' : 'active:bg-[#262930]'}`}
+                      style={[
+                        styles.chatItem,
+                        selectedTargetChat?.id === c.id && { backgroundColor: isDark ? 'rgba(16,185,129,0.2)' : 'rgba(16,185,129,0.1)' },
+                      ]}
                       onPress={() => {
                         setSelectedTargetChat(c);
                         setShowTargetPicker(false);
                       }}
                     >
-                      <View className="flex-1">
-                        <Text className="text-xs font-bold text-white">{c.title}</Text>
-                        <Text className="text-[10px] text-slate-400">{c.type ? c.type.charAt(0).toUpperCase() + c.type.slice(1).toLowerCase() : ''} • {c.member_count || 0} members</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.chatTitle, isDark ? styles.textDark : styles.textLight]}>{c.title}</Text>
+                        <Text style={styles.chatMeta}>{c.type ? c.type.charAt(0).toUpperCase() + c.type.slice(1).toLowerCase() : ''} • {c.member_count || 0} members</Text>
                       </View>
-                      {selectedTargetChat?.id === c.id && <Ionicons name="checkmark" size={16} color="#10B981" />}
+                      {selectedTargetChat?.id === c.id && <Ionicons name="checkmark" size={18} color="#10B981" />}
                     </Pressable>
                   ))
                 )}
-                <View className="px-3 pt-2 mt-1 border-t border-[#262930]">
-                  <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Or Enter Custom Target</Text>
+                <View style={{ paddingHorizontal: 12, paddingTop: 8, borderTopWidth: 1, borderTopColor: 'rgba(148,163,184,0.15)' }}>
+                  <Text style={styles.dropdownHeader}>Or enter custom target</Text>
                   <TextInput
-                    className="bg-[#111317] border border-[#262930] rounded-lg px-3 py-2 text-xs text-white"
+                    style={[styles.customInput, isDark ? styles.inputDark : styles.inputLight]}
                     placeholder="@target_channel"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#94A3B8"
                     value={customTarget}
                     onChangeText={(val) => {
                       setCustomTarget(val);
@@ -241,46 +248,54 @@ export const AutoforwardModal: React.FC<AutoforwardModalProps> = ({
           </View>
 
           {/* KEYWORD WHITELIST */}
-          <View className="mb-4">
-            <Text className="text-[10px] font-bold text-slate-400 mb-1.5 tracking-wider uppercase">3. Keyword Whitelist (Required to match)</Text>
+          <View style={styles.field}>
+            <Text style={styles.label}>3. KEYWORD WHITELIST (REQUIRED TO MATCH)</Text>
             <TextInput
-              className="bg-[#181A1F] border border-[#262930] rounded-xl px-3.5 py-3 text-xs text-white"
+              style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
               placeholder="BUY, SELL, TARGET, STOPLOSS..."
-              placeholderTextColor="#64748B"
+              placeholderTextColor="#94A3B8"
               value={whitelistKeywords}
               onChangeText={setWhitelistKeywords}
             />
-            <Text className="text-[10px] text-slate-500 mt-1">Only messages containing at least one of these words will be forwarded.</Text>
+            <Text style={styles.hint}>Only messages containing at least one of these words will be forwarded.</Text>
           </View>
 
           {/* KEYWORD BLACKLIST */}
-          <View className="mb-4">
-            <Text className="text-[10px] font-bold text-slate-400 mb-1.5 tracking-wider uppercase">4. Keyword Blacklist (Skip message if found)</Text>
+          <View style={styles.field}>
+            <Text style={styles.label}>4. KEYWORD BLACKLIST (SKIP MESSAGE IF FOUND)</Text>
             <TextInput
-              className="bg-[#181A1F] border border-[#262930] rounded-xl px-3.5 py-3 text-xs text-white"
+              style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
               placeholder="SPAM, AD, JOIN, PROMO..."
-              placeholderTextColor="#64748B"
+              placeholderTextColor="#94A3B8"
               value={blacklistKeywords}
               onChangeText={setBlacklistKeywords}
             />
-            <Text className="text-[10px] text-slate-500 mt-1">Messages containing any blacklist words will be automatically ignored.</Text>
+            <Text style={styles.hint}>Messages containing any blacklist words will be automatically ignored.</Text>
           </View>
 
           {/* DELAY SETTINGS */}
-          <View className="mb-4">
-            <Text className="text-[10px] font-bold text-slate-400 mb-1.5 tracking-wider uppercase">5. Forwarding Delay</Text>
-            <View className="flex-row flex-wrap gap-2">
+          <View style={styles.field}>
+            <Text style={styles.label}>5. FORWARDING DELAY</Text>
+            <View style={styles.delayRow}>
               {delayOptions.map((sec) => (
                 <Pressable
                   key={sec}
-                  className={`px-3.5 py-2 rounded-xl border ${delaySec === sec ? 'bg-[#0084FF] border-[#0084FF]' : 'bg-[#181A1F] border-[#262930]'}`}
+                  style={[
+                    styles.delayPill,
+                    isDark ? styles.pillDark : styles.pillLight,
+                    delaySec === sec && styles.pillActive,
+                  ]}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setDelaySec(sec);
                   }}
                 >
                   <Text
-                    className={`text-xs font-bold ${delaySec === sec ? 'text-white' : 'text-slate-300'}`}
+                    style={[
+                      styles.delayText,
+                      isDark ? styles.textDark : styles.textLight,
+                      delaySec === sec && styles.delayTextActive,
+                    ]}
                   >
                     {sec === 0 ? 'Instant (0s)' : `${sec}s delay`}
                   </Text>
@@ -290,34 +305,34 @@ export const AutoforwardModal: React.FC<AutoforwardModalProps> = ({
           </View>
 
           {/* CUSTOM BRANDING SWITCH */}
-          <View className="flex-row items-center justify-between bg-[#181A1F] border border-[#262930] p-4 rounded-xl mb-4">
-            <View className="flex-1 mr-3">
-              <Text className="text-sm font-bold text-white">
+          <View style={[styles.switchRow, isDark ? styles.cardDark : styles.cardLight]}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.switchLabel, isDark ? styles.textDark : styles.textLight]}>
                 Add Header & Footer Branding
               </Text>
-              <Text className="text-xs text-slate-400 mt-0.5">Prepend header and append community links to forwarded posts</Text>
+              <Text style={styles.switchDesc}>Prepend header and append community links to forwarded posts</Text>
             </View>
             <Switch
               value={addBranding}
               onValueChange={setAddBranding}
-              trackColor={{ false: '#262930', true: '#0084FF' }}
+              trackColor={{ false: '#CBD5E1', true: '#0284C7' }}
             />
           </View>
 
           {addBranding && (
-            <View className="bg-[#181A1F] border border-[#262930] p-4 rounded-xl mb-4">
-              <View className="mb-3">
-                <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Header Text</Text>
+            <View style={styles.brandingBox}>
+              <View style={styles.field}>
+                <Text style={styles.label}>HEADER TEXT</Text>
                 <TextInput
-                  className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2 text-xs text-white"
+                  style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                   value={replaceHeader}
                   onChangeText={setReplaceHeader}
                 />
               </View>
-              <View>
-                <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Footer Link / CTA</Text>
+              <View style={styles.field}>
+                <Text style={styles.label}>FOOTER LINK / CTA</Text>
                 <TextInput
-                  className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2 text-xs text-white"
+                  style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                   value={replaceFooter}
                   onChangeText={setReplaceFooter}
                 />
@@ -327,18 +342,14 @@ export const AutoforwardModal: React.FC<AutoforwardModalProps> = ({
         </ScrollView>
 
         {/* Footer */}
-        <View className="p-4 border-t border-[#262930] bg-[#181A1F]">
-          <Pressable
-            className="bg-[#0084FF] flex-row justify-center items-center gap-2 py-3.5 rounded-xl active:opacity-80"
-            onPress={handleSave}
-            disabled={isLoading}
-          >
+        <View style={[styles.footer, isDark ? styles.borderDark : styles.borderLight]}>
+          <Pressable style={styles.submitBtn} onPress={handleSave} disabled={isLoading}>
             {isLoading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
               <>
                 <Ionicons name="flash-outline" size={18} color="#FFFFFF" />
-                <Text className="text-sm font-bold text-white">Save & Activate Forwarding Rule</Text>
+                <Text style={styles.submitText}>Save & Activate Forwarding Rule</Text>
               </>
             )}
           </Pressable>
@@ -347,3 +358,156 @@ export const AutoforwardModal: React.FC<AutoforwardModalProps> = ({
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  containerLight: { backgroundColor: '#F8FAFC' },
+  containerDark: { backgroundColor: '#0B0F19' },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+  },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  iconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  borderLight: { borderBottomColor: '#E2E8F0' },
+  borderDark: { borderBottomColor: '#27272A' },
+  title: { fontSize: 17, fontWeight: '700' },
+  textLight: { color: '#0F172A' },
+  textDark: { color: '#F8FAFC' },
+  subtitle: { color: '#64748B', fontSize: 12, marginTop: 2 },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeBtnLight: { backgroundColor: '#F1F5F9' },
+  closeBtnDark: { backgroundColor: '#27272A' },
+  body: { flex: 1 },
+  bodyContent: { padding: 16, paddingBottom: 32 },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.25)',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 16,
+  },
+  errorText: { color: '#EF4444', fontSize: 13, fontWeight: '600', flex: 1 },
+  field: { marginBottom: 16 },
+  labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  label: { color: '#64748B', fontSize: 11, fontWeight: '700', marginBottom: 6, letterSpacing: 0.5 },
+  pickerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+  },
+  pickerValue: { fontSize: 14, fontWeight: '600', flex: 1 },
+  dropdown: {
+    borderWidth: 1,
+    borderRadius: 12,
+    marginTop: 6,
+    paddingVertical: 8,
+  },
+  dropdownHeader: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#94A3B8',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    letterSpacing: 0.5,
+  },
+  emptyText: {
+    fontSize: 12,
+    color: '#94A3B8',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  chatItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  chatTitle: { fontSize: 14, fontWeight: '600' },
+  chatMeta: { fontSize: 11, color: '#64748B', marginTop: 2 },
+  customInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 13,
+    marginTop: 4,
+    marginBottom: 6,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 14,
+  },
+  inputLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    color: '#0F172A',
+  },
+  inputDark: {
+    backgroundColor: '#121212',
+    borderColor: '#27272A',
+    color: '#F8FAFC',
+  },
+  hint: { color: '#94A3B8', fontSize: 11, marginTop: 4 },
+  delayRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  delayPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  pillLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
+  pillDark: { backgroundColor: '#121212', borderColor: '#27272A' },
+  pillActive: { backgroundColor: '#0284C7', borderColor: '#0284C7' },
+  delayText: { fontSize: 12, fontWeight: '600' },
+  delayTextActive: { color: '#FFFFFF' },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
+  cardDark: { backgroundColor: '#121212', borderColor: '#27272A' },
+  switchLabel: { fontSize: 14, fontWeight: '600' },
+  switchDesc: { color: '#64748B', fontSize: 12, marginTop: 2 },
+  brandingBox: { marginBottom: 16 },
+  footer: { padding: 16, borderTopWidth: 1 },
+  submitBtn: {
+    backgroundColor: '#0284C7',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  submitText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+});

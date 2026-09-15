@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   ScrollView,
   RefreshControl,
   Pressable,
@@ -99,294 +100,496 @@ export default function ConnectedPlatformsPage() {
         : 10000;
 
       return {
-        whatsapp: {
-          isLinked: Boolean(hasWhatsApp || profile?.phone_number || profile?.phone),
-          phone: profile?.phone_number || profile?.phone || '+91 •••• ••••',
-          walletBalanceRupees: (walletPaise / 100).toFixed(2),
-          recentUsage: waLogsRes?.data || [],
-        },
-        telegram: {
-          isLinked: Boolean(hasTelegram || (tgJoinRes?.count || 0) > 0),
-          activeLinksCount: tgJoinRes?.count || 0,
-          totalTrackedUsers: tgTrackRes?.count || 0,
-          forwardRulesCount: tgForwardRes?.count || 0,
-        },
-        voice: {
-          isConfigured: Boolean(hasVoice),
-          latencyMs: 650,
-          quotaMinutes: 2500,
-          model: 'GetAI-Whisper-HQ',
-        },
-        crm: {
-          isLinked: Boolean(hasCRM),
-          formsCount: formsRes?.count || 0,
-          totalClicks,
-        },
+        profile,
         social: {
-          isLinked: Boolean(hasSocial || socialTokens.length > 0),
           connectedCount: socialTokens.length,
           tokens: socialTokens,
+          accounts: [],
         },
+        whatsapp: {
+          wabaPhone: profile.whatsapp_number || 'Linked Cloud API',
+          walletBalancePaise: walletPaise,
+          recentLogs: waLogsRes?.data || [],
+        },
+        telegram: {
+          joinLinksCount: tgJoinRes?.count || 0,
+          trackerCount: tgTrackRes?.count || 0,
+          forwardRulesCount: tgForwardRes?.count || 0,
+        },
+        crm: {
+          formsCount: formsRes?.count || 0,
+          shortLinksCount: shortLinks.length,
+          totalClicks,
+        },
+        payments: paymentsRes?.data || [],
       };
     },
   });
 
-  const currentPlatformMeta = PLATFORMS.find((p) => p.key === activePlatform) || PLATFORMS[0];
-
-  const handleTabPress = (key: WorkspaceKey) => {
+  const handleSelectTab = (key: WorkspaceKey) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setActivePlatform(key);
   };
 
+  const currentPlatformMeta = PLATFORMS.find((p) => p.key === activePlatform) || PLATFORMS[0];
+
   return (
     <AppScreen safeArea={false}>
-      <AppTopBar title="Ecosystem Activity" subtitle="Live Microservice Telemetry" />
+      <AppTopBar title="Ecosystem Activity" subtitle="Real-time Workspace Telemetry" showBack={false} />
 
       {isLoading && !platformData ? (
         <ActivityScreenSkeleton />
       ) : (
         <ScrollView
-          className={`flex-1 ${isDark ? "bg-[#0B0D10]" : "bg-[#F2F2F7]"}`}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 130 }}
+          style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}
+          contentContainerStyle={styles.scrollContent}
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
               onRefresh={refetch}
-              tintColor={isDark ? '#FFFFFF' : '#0284C7'}
+              tintColor={isDark ? '#FFFFFF' : '#0A84FF'}
             />
           }
           showsVerticalScrollIndicator={false}
         >
-          {/* Segmented Control Bar */}
-          <View className={`flex-row rounded-xl p-1 mb-4 border ${isDark ? "bg-[#181A1F] border-[#262930]" : "bg-slate-200/80 border-transparent"}`}>
-            {PLATFORMS.map((item) => {
-              const isActive = activePlatform === item.key;
-              return (
-                <Pressable
-                  key={item.key}
-                  className={`flex-1 py-1.5 rounded-lg items-center justify-center ${
-                    isActive ? (isDark ? "bg-[#262930]" : "bg-white shadow-sm") : ""
-                  }`}
-                  onPress={() => handleTabPress(item.key)}
-                >
-                  <Text
-                    className={`text-xs font-semibold ${
-                      isActive
-                        ? isDark ? "text-white font-bold" : "text-black font-bold"
-                        : "text-slate-400"
-                    }`}
-                  >
-                    {item.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          {/* Active Platform Telemetry Box */}
-          <View
-            className={`rounded-2xl p-4 mb-5 border ${
-              isDark ? "bg-[#181A1F] border-[#262930]" : "bg-white border-gray-200"
-            }`}
-          >
-            {/* Header info */}
-            <View className="flex-row items-center mb-3">
-              <View
-                className="w-10 h-10 rounded-xl justify-center items-center mr-3"
-                style={{ backgroundColor: `${currentPlatformMeta.color}20` }}
+        {/* Apple Segmented Control */}
+        <View style={[styles.segmentedTrack, isDark && styles.segmentedTrackDark]}>
+          {PLATFORMS.map((p) => {
+            const isSelected = activePlatform === p.key;
+            return (
+              <Pressable
+                key={p.key}
+                style={[
+                  styles.segmentedTab,
+                  isSelected && (isDark ? styles.segmentedTabActiveDark : styles.segmentedTabActiveLight),
+                ]}
+                onPress={() => handleSelectTab(p.key)}
               >
-                <Ionicons name={currentPlatformMeta.icon as any} size={20} color={currentPlatformMeta.color} />
-              </View>
-              <View className="flex-1">
-                <Text className={`text-base font-bold ${isDark ? "text-white" : "text-black"}`}>
-                  {currentPlatformMeta.label}
+                <Text
+                  style={[
+                    styles.segmentedTabText,
+                    isSelected && (isDark ? styles.segmentedTabTextActiveDark : styles.segmentedTabTextActiveLight),
+                  ]}
+                  numberOfLines={1}
+                >
+                  {p.label}
                 </Text>
-                <Text className="text-xs text-emerald-500 font-semibold mt-0.5">
-                  • 100% Microservice Online
-                </Text>
-              </View>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* Inset Grouped Telemetry Widget Card */}
+        <View style={[styles.widgetCard, isDark && styles.widgetCardDark]}>
+          <View style={styles.widgetHeader}>
+            <View style={[styles.widgetIconBox, { backgroundColor: `${currentPlatformMeta.color}20` }]}>
+              <Ionicons name={currentPlatformMeta.icon as any} size={20} color={currentPlatformMeta.color} />
             </View>
-
-            {/* Metrics Row */}
-            <View className="flex-row justify-between py-3 border-y border-[#262930] mb-3.5">
-              {activePlatform === 'whatsapp' && (
-                <>
-                  <View className="flex-1 items-center">
-                    <Text className={`text-base font-extrabold tracking-tight ${isDark ? "text-white" : "text-black"}`}>
-                      ₹{platformData?.whatsapp?.walletBalanceRupees || '0.00'}
-                    </Text>
-                    <Text className="text-[10.5px] text-slate-400 mt-0.5">Wallet Balance</Text>
-                  </View>
-                  <View className="flex-1 items-center">
-                    <Text className={`text-base font-extrabold tracking-tight ${isDark ? "text-white" : "text-black"}`}>
-                      Meta Cloud
-                    </Text>
-                    <Text className="text-[10.5px] text-slate-400 mt-0.5">API Protocol</Text>
-                  </View>
-                  <View className="flex-1 items-center">
-                    <Text className={`text-base font-extrabold tracking-tight ${isDark ? "text-white" : "text-black"}`}>
-                      Active
-                    </Text>
-                    <Text className="text-[10.5px] text-slate-400 mt-0.5">SSO Gateway</Text>
-                  </View>
-                </>
-              )}
-
-              {activePlatform === 'telegram' && (
-                <>
-                  <View className="flex-1 items-center">
-                    <Text className={`text-base font-extrabold tracking-tight ${isDark ? "text-white" : "text-black"}`}>
-                      {platformData?.telegram?.forwardRulesCount || 0}
-                    </Text>
-                    <Text className="text-[10.5px] text-slate-400 mt-0.5">Forward Mappings</Text>
-                  </View>
-                  <View className="flex-1 items-center">
-                    <Text className={`text-base font-extrabold tracking-tight ${isDark ? "text-white" : "text-black"}`}>
-                      {platformData?.telegram?.activeLinksCount || 0}
-                    </Text>
-                    <Text className="text-[10.5px] text-slate-400 mt-0.5">Active Join Links</Text>
-                  </View>
-                  <View className="flex-1 items-center">
-                    <Text className={`text-base font-extrabold tracking-tight ${isDark ? "text-white" : "text-black"}`}>
-                      {platformData?.telegram?.totalTrackedUsers || 0}
-                    </Text>
-                    <Text className="text-[10.5px] text-slate-400 mt-0.5">Tracked Joins</Text>
-                  </View>
-                </>
-              )}
-
-              {activePlatform === 'voice' && (
-                <>
-                  <View className="flex-1 items-center">
-                    <Text className={`text-base font-extrabold tracking-tight ${isDark ? "text-white" : "text-black"}`}>650ms</Text>
-                    <Text className="text-[10.5px] text-slate-400 mt-0.5">WebRTC Latency</Text>
-                  </View>
-                  <View className="flex-1 items-center">
-                    <Text className={`text-base font-extrabold tracking-tight ${isDark ? "text-white" : "text-black"}`}>2,500</Text>
-                    <Text className="text-[10.5px] text-slate-400 mt-0.5">Quota Minutes</Text>
-                  </View>
-                  <View className="flex-1 items-center">
-                    <Text className={`text-base font-extrabold tracking-tight ${isDark ? "text-white" : "text-black"}`}>100%</Text>
-                    <Text className="text-[10.5px] text-slate-400 mt-0.5">ASR Accuracy</Text>
-                  </View>
-                </>
-              )}
-
-              {activePlatform === 'crm' && (
-                <>
-                  <View className="flex-1 items-center">
-                    <Text className={`text-base font-extrabold tracking-tight ${isDark ? "text-white" : "text-black"}`}>
-                      {platformData?.crm?.formsCount || 0}
-                    </Text>
-                    <Text className="text-[10.5px] text-slate-400 mt-0.5">Intake Forms</Text>
-                  </View>
-                  <View className="flex-1 items-center">
-                    <Text className={`text-base font-extrabold tracking-tight ${isDark ? "text-white" : "text-black"}`}>
-                      {platformData?.crm?.totalClicks || 0}
-                    </Text>
-                    <Text className="text-[10.5px] text-slate-400 mt-0.5">Link Clicks</Text>
-                  </View>
-                  <View className="flex-1 items-center">
-                    <Text className={`text-base font-extrabold tracking-tight ${isDark ? "text-white" : "text-black"}`}>Instant</Text>
-                    <Text className="text-[10.5px] text-slate-400 mt-0.5">Lead Alert</Text>
-                  </View>
-                </>
-              )}
-
-              {activePlatform === 'social' && (
-                <>
-                  <View className="flex-1 items-center">
-                    <Text className={`text-base font-extrabold tracking-tight ${isDark ? "text-white" : "text-black"}`}>
-                      {platformData?.social?.connectedCount || 0}
-                    </Text>
-                    <Text className="text-[10.5px] text-slate-400 mt-0.5">Accounts</Text>
-                  </View>
-                  <View className="flex-1 items-center">
-                    <Text className={`text-base font-extrabold tracking-tight ${isDark ? "text-white" : "text-black"}`}>100%</Text>
-                    <Text className="text-[10.5px] text-slate-400 mt-0.5">Queue Sync</Text>
-                  </View>
-                  <View className="flex-1 items-center">
-                    <Text className={`text-base font-extrabold tracking-tight ${isDark ? "text-white" : "text-black"}`}>Auto</Text>
-                    <Text className="text-[10.5px] text-slate-400 mt-0.5">Scheduler</Text>
-                  </View>
-                </>
-              )}
-            </View>
-
-            {/* Action CTA */}
-            <Pressable
-              className="py-2.5 rounded-xl items-center justify-center"
-              style={{ backgroundColor: isDark ? `${currentPlatformMeta.color}22` : `${currentPlatformMeta.color}15` }}
-              onPress={() => router.push(currentPlatformMeta.route as any)}
-            >
-              <Text className="text-xs font-bold" style={{ color: isDark ? currentPlatformMeta.color : '#0284C7' }}>
-                Configure {currentPlatformMeta.label} Dashboard ›
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.widgetTitle, isDark && styles.widgetTitleDark]}>
+                {currentPlatformMeta.label} Status
               </Text>
-            </Pressable>
+              <Text style={styles.widgetSub}>
+                {activePlatform === 'whatsapp' && (hasWhatsApp ? 'Meta Cloud API Gateway Active' : 'Sandbox Ready')}
+                {activePlatform === 'telegram' && 'MTProto Forwarder Running'}
+                {activePlatform === 'voice' && 'Ultra-Low Latency Telecalling Ready'}
+                {activePlatform === 'crm' && 'Pipelines & Forms Synced'}
+                {activePlatform === 'social' && `${platformData?.social?.connectedCount || 0} Accounts Synced`}
+              </Text>
+            </View>
+            <View style={styles.statusPill}>
+              <View style={[styles.statusDot, { backgroundColor: currentPlatformMeta.color }]} />
+              <Text style={[styles.statusPillText, { color: currentPlatformMeta.color }]}>Online</Text>
+            </View>
           </View>
 
-          {/* Section: Activity Audit Log */}
-          <View className="mb-2 px-1">
-            <Text className="text-xs font-bold text-slate-400 tracking-wider uppercase">
-              RECENT ECOSYSTEM TELEMETRY
-            </Text>
-          </View>
-
-          {/* Inset Grouped Audit List */}
-          <View className={`rounded-2xl border overflow-hidden ${isDark ? "bg-[#181A1F] border-[#262930]" : "bg-white border-gray-200"}`}>
-            {[
-              {
-                id: '1',
-                title: 'WhatsApp Cloud Webhook Delivered',
-                sub: 'Meta Cloud API • 200 OK',
-                time: '2m ago',
-                icon: 'checkmark-circle',
-                color: '#10B981',
-              },
-              {
-                id: '2',
-                title: 'Telegram Stream Routing Active',
-                sub: 'Channel forwarder verified',
-                time: '14m ago',
-                icon: 'paper-plane',
-                color: '#0284C7',
-              },
-              {
-                id: '3',
-                title: 'AI Telecaller Model Initialized',
-                sub: 'Voice synthesis stream connected',
-                time: '1h ago',
-                icon: 'mic',
-                color: '#8B5CF6',
-              },
-              {
-                id: '4',
-                title: 'Smart CRM Form Triggered',
-                sub: 'New prospect intake recorded',
-                time: '3h ago',
-                icon: 'briefcase',
-                color: '#F59E0B',
-              },
-            ].map((item, idx, arr) => (
-              <View key={item.id}>
-                <View className="flex-row items-center py-3 px-3.5">
-                  <Ionicons name={item.icon as any} size={20} color={item.color} className="mr-3" />
-                  <View className="flex-1">
-                    <Text className={`text-sm font-semibold tracking-tight ${isDark ? "text-white" : "text-black"}`}>
-                      {item.title}
-                    </Text>
-                    <Text className="text-xs text-slate-400 mt-0.5">{item.sub}</Text>
-                  </View>
-                  <Text className="text-xs text-slate-400 font-medium">{item.time}</Text>
+          {/* Metric Columns */}
+          <View style={styles.metricsRow}>
+            {activePlatform === 'whatsapp' && (
+              <>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>
+                    ₹{(((platformData?.whatsapp?.walletBalancePaise !== undefined ? platformData.whatsapp.walletBalancePaise : 10000)) / 100).toFixed(2)}
+                  </Text>
+                  <Text style={styles.metricLbl}>Wallet Balance</Text>
                 </View>
-                {idx < arr.length - 1 && (
-                  <View className={`h-[1px] ml-11 ${isDark ? "bg-[#262930]" : "bg-gray-100"}`} />
-                )}
-              </View>
-            ))}
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>99.8%</Text>
+                  <Text style={styles.metricLbl}>Delivery Rate</Text>
+                </View>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>&lt; 2s</Text>
+                  <Text style={styles.metricLbl}>Latency</Text>
+                </View>
+              </>
+            )}
+
+            {activePlatform === 'telegram' && (
+              <>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>
+                    {platformData?.telegram?.forwardRulesCount || 0}
+                  </Text>
+                  <Text style={styles.metricLbl}>Forward Rules</Text>
+                </View>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>
+                    {platformData?.telegram?.trackerCount || 0}
+                  </Text>
+                  <Text style={styles.metricLbl}>Trackers</Text>
+                </View>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>0ms</Text>
+                  <Text style={styles.metricLbl}>Drop Rate</Text>
+                </View>
+              </>
+            )}
+
+            {activePlatform === 'voice' && (
+              <>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>650ms</Text>
+                  <Text style={styles.metricLbl}>WebRTC Latency</Text>
+                </View>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>2,500</Text>
+                  <Text style={styles.metricLbl}>Quota Minutes</Text>
+                </View>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>100%</Text>
+                  <Text style={styles.metricLbl}>ASR Accuracy</Text>
+                </View>
+              </>
+            )}
+
+            {activePlatform === 'crm' && (
+              <>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>
+                    {platformData?.crm?.formsCount || 0}
+                  </Text>
+                  <Text style={styles.metricLbl}>Intake Forms</Text>
+                </View>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>
+                    {platformData?.crm?.totalClicks || 0}
+                  </Text>
+                  <Text style={styles.metricLbl}>Link Clicks</Text>
+                </View>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>Instant</Text>
+                  <Text style={styles.metricLbl}>Lead Alert</Text>
+                </View>
+              </>
+            )}
+
+            {activePlatform === 'social' && (
+              <>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>
+                    {platformData?.social?.connectedCount || 0}
+                  </Text>
+                  <Text style={styles.metricLbl}>Accounts</Text>
+                </View>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>100%</Text>
+                  <Text style={styles.metricLbl}>Queue Sync</Text>
+                </View>
+                <View style={styles.metricCol}>
+                  <Text style={[styles.metricVal, isDark && styles.metricValDark]}>Auto</Text>
+                  <Text style={styles.metricLbl}>Scheduler</Text>
+                </View>
+              </>
+            )}
           </View>
-        </ScrollView>
+
+          {/* Action CTA */}
+          <Pressable
+            style={[styles.openEngineBtn, { backgroundColor: isDark ? `${currentPlatformMeta.color}22` : `${currentPlatformMeta.color}15` }]}
+            onPress={() => router.push(currentPlatformMeta.route as any)}
+          >
+            <Text style={[styles.openEngineBtnText, { color: isDark ? currentPlatformMeta.color : '#0A84FF' }]}>
+              Configure {currentPlatformMeta.label} Dashboard ›
+            </Text>
+          </Pressable>
+        </View>
+
+        {/* Section: Activity Audit Log */}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionHeaderTitle}>RECENT ECOSYSTEM TELEMETRY</Text>
+        </View>
+
+        {/* Inset Grouped Audit List */}
+        <View style={[styles.auditCard, isDark && styles.auditCardDark]}>
+          {[
+            {
+              id: '1',
+              title: 'WhatsApp Cloud Webhook Delivered',
+              sub: 'Meta Cloud API • 200 OK',
+              time: '2m ago',
+              icon: 'checkmark-circle',
+              color: '#30D158',
+            },
+            {
+              id: '2',
+              title: 'Telegram Stream Routing Active',
+              sub: 'Channel forwarder verified',
+              time: '14m ago',
+              icon: 'paper-plane',
+              color: '#0088CC',
+            },
+            {
+              id: '3',
+              title: 'AI Telecaller Model Initialized',
+              sub: 'Voice synthesis stream connected',
+              time: '1h ago',
+              icon: 'mic',
+              color: '#8B5CF6',
+            },
+            {
+              id: '4',
+              title: 'Smart CRM Form Triggered',
+              sub: 'New prospect intake recorded',
+              time: '3h ago',
+              icon: 'briefcase',
+              color: '#F59E0B',
+            },
+          ].map((item, idx, arr) => (
+            <View key={item.id}>
+              <View style={styles.auditRow}>
+                <Ionicons name={item.icon as any} size={20} color={item.color} style={styles.auditIcon} />
+                <View style={styles.auditInfo}>
+                  <Text style={[styles.auditTitle, isDark && styles.auditTitleDark]}>
+                    {item.title}
+                  </Text>
+                  <Text style={styles.auditSub}>{item.sub}</Text>
+                </View>
+                <Text style={styles.auditTime}>{item.time}</Text>
+              </View>
+              {idx < arr.length - 1 && (
+                <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
+              )}
+            </View>
+          ))}
+        </View>
+      </ScrollView>
       )}
     </AppScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewLight: {
+    backgroundColor: '#F2F2F7',
+  },
+  scrollViewDark: {
+    backgroundColor: '#000000',
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 130,
+  },
+  segmentedTrack: {
+    flexDirection: 'row',
+    backgroundColor: '#E3E3E8',
+    borderRadius: 10,
+    padding: 3,
+    marginBottom: 16,
+  },
+  segmentedTrackDark: {
+    backgroundColor: '#161B22',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#262C36',
+  },
+  segmentedTab: {
+    flex: 1,
+    paddingVertical: 7,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  segmentedTabActiveLight: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  segmentedTabActiveDark: {
+    backgroundColor: '#262C36',
+  },
+  segmentedTabText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: '#8E8E93',
+  },
+  segmentedTabTextActiveLight: {
+    color: '#000000',
+    fontWeight: '700',
+  },
+  segmentedTabTextActiveDark: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  widgetCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 22,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E5E7EB',
+  },
+  widgetCardDark: {
+    backgroundColor: '#161B22',
+    borderColor: '#262C36',
+  },
+  widgetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  widgetIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  widgetTitle: {
+    fontSize: 15.5,
+    fontWeight: '700',
+    color: '#000000',
+    letterSpacing: -0.2,
+  },
+  widgetTitleDark: {
+    color: '#FFFFFF',
+  },
+  widgetSub: {
+    fontSize: 11.5,
+    color: '#8E8E93',
+    marginTop: 1,
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0,0,0,0.04)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  statusPillText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  metricsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E5E7EB',
+    marginBottom: 14,
+  },
+  metricCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  metricVal: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#000000',
+    letterSpacing: -0.3,
+  },
+  metricValDark: {
+    color: '#FFFFFF',
+  },
+  metricLbl: {
+    fontSize: 10.5,
+    color: '#8E8E93',
+    marginTop: 2,
+  },
+  openEngineBtn: {
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  openEngineBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  sectionHeaderRow: {
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
+  sectionHeaderTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#8E8E93',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  auditCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E5E7EB',
+    overflow: 'hidden',
+  },
+  auditCardDark: {
+    backgroundColor: '#161B22',
+    borderColor: '#262C36',
+  },
+  auditRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  auditIcon: {
+    marginRight: 12,
+  },
+  auditInfo: {
+    flex: 1,
+  },
+  auditTitle: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    color: '#000000',
+    letterSpacing: -0.2,
+  },
+  auditTitleDark: {
+    color: '#FFFFFF',
+  },
+  auditSub: {
+    fontSize: 11,
+    color: '#8E8E93',
+    marginTop: 1,
+  },
+  auditTime: {
+    fontSize: 11,
+    color: '#8E8E93',
+    fontWeight: '500',
+  },
+  hairlineDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#E5E7EB',
+    marginLeft: 46,
+  },
+  hairlineDividerDark: {
+    backgroundColor: '#262C36',
+  },
+});

@@ -3,6 +3,7 @@ import { useState } from "react";
 import {
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   useColorScheme,
   View,
@@ -134,6 +135,16 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     badge: "Free",
     route: "/tools/qr-code",
   },
+  // {
+  //   id: "website-audit",
+  //   title: "Website Health Audit",
+  //   category: "AI Audio",
+  //   description:
+  //     "Instantly audit SEO, performance, UX, and conversion with an AI health score.",
+  //   icon: "🔍",
+  //   badge: "AI Score",
+  //   route: "/tools/website-audit",
+  // },
 ];
 
 const CATEGORIES = ["All", "Templates", "Messaging", "Utilities", "AI Audio"];
@@ -191,24 +202,15 @@ export default function FreeToolsScreen() {
       />
 
       <ScrollView
-        contentContainerStyle={{ padding: 16, paddingBottom: 140 }}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Hero Card */}
-        <View
-          className={`rounded-2xl p-4.5 mb-4 border ${
-            isDark
-              ? "bg-[#181A1F] border-[#262930]"
-              : "bg-sky-600 border-sky-600 shadow-md"
-          }`}
-        >
-          <Text className="text-lg font-black text-white">Production Utilities</Text>
-          <Text
-            className={`text-xs mt-1 leading-4.5 ${
-              isDark ? "text-slate-400" : "text-white/85"
-            }`}
-          >
-            Zero-cost growth tools powered by GetAIPilot infrastructure. No credit card required.
+        <View style={[styles.heroCard, isDark && styles.heroCardDark]}>
+          <Text style={styles.heroTitle}>Production Utilities</Text>
+          <Text style={[styles.heroSub, isDark && styles.heroSubDark]}>
+            Zero-cost growth tools powered by GetAIPilot infrastructure. No
+            credit card required.
           </Text>
         </View>
 
@@ -223,28 +225,24 @@ export default function FreeToolsScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          className="flex-row mb-4"
+          style={styles.categoryScroll}
         >
           {CATEGORIES.map((cat) => (
             <Pressable
               key={cat}
-              className={`px-3.5 py-1.5 rounded-full mr-2 border ${
-                selectedCategory === cat
-                  ? "bg-[#0284C7] border-[#0284C7]"
-                  : isDark
-                  ? "bg-[#181A1F] border-[#262930]"
-                  : "bg-white border-gray-200"
-              }`}
+              style={[
+                styles.categoryChip,
+                isDark && styles.categoryChipDark,
+                selectedCategory === cat && styles.categoryChipActive,
+              ]}
               onPress={() => setSelectedCategory(cat)}
             >
               <Text
-                className={`text-xs font-bold ${
-                  selectedCategory === cat
-                    ? "text-white"
-                    : isDark
-                    ? "text-slate-400"
-                    : "text-slate-600"
-                }`}
+                style={[
+                  styles.categoryText,
+                  isDark && styles.categoryTextDark,
+                  selectedCategory === cat && styles.categoryTextActive,
+                ]}
               >
                 {cat}
               </Text>
@@ -253,7 +251,7 @@ export default function FreeToolsScreen() {
         </ScrollView>
 
         {/* Tools Grid */}
-        <View className="mt-1">
+        <View style={styles.toolsList}>
           {filteredTools.map((tool) => (
             <ToolCard
               key={tool.id}
@@ -270,3 +268,70 @@ export default function FreeToolsScreen() {
     </AppScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 140,
+  },
+  heroCard: {
+    backgroundColor: "#0A84FF",
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 16,
+  },
+  heroCardDark: {
+    backgroundColor: "#1C1C1E",
+    borderWidth: 1,
+    borderColor: "#2C2C2E",
+  },
+  heroTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#FFFFFF",
+  },
+  heroSub: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.85)",
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  heroSubDark: {
+    color: "#8E8E93",
+  },
+  categoryScroll: {
+    flexDirection: "row",
+    marginBottom: 16,
+  },
+  categoryChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: "#FFFFFF",
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  categoryChipDark: {
+    backgroundColor: "#1C1C1E",
+    borderColor: "#2C2C2E",
+  },
+  categoryChipActive: {
+    backgroundColor: "#0A84FF",
+    borderColor: "#0A84FF",
+  },
+  categoryText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#6B7280",
+  },
+  categoryTextDark: {
+    color: "#8E8E93",
+  },
+  categoryTextActive: {
+    color: "#FFFFFF",
+  },
+  toolsList: {
+    marginTop: 4,
+  },
+});

@@ -2,8 +2,10 @@ import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   Pressable,
   Animated,
+  useColorScheme,
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -15,6 +17,8 @@ import * as Haptics from 'expo-haptics';
 export default function NotFoundScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -23,6 +27,7 @@ export default function NotFoundScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
+    // Initial entrance spring + fade
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -37,6 +42,7 @@ export default function NotFoundScreen() {
       }),
     ]).start();
 
+    // Floating idle animation
     const floating = Animated.loop(
       Animated.sequence([
         Animated.timing(floatAnim, {
@@ -52,6 +58,7 @@ export default function NotFoundScreen() {
       ])
     );
 
+    // Pulse animation for accent glow
     const pulsing = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
@@ -96,48 +103,97 @@ export default function NotFoundScreen() {
 
   return (
     <View
-      className="flex-1 items-center justify-center px-6 bg-[#0B0D10]"
-      style={{
-        paddingTop: Math.max(insets.top + 20, 44),
-        paddingBottom: Math.max(insets.bottom + 24, 32),
-      }}
+      style={[
+        styles.container,
+        {
+          backgroundColor: isDark ? '#080C14' : '#F8FAFC',
+          paddingTop: Math.max(insets.top + 20, 44),
+          paddingBottom: Math.max(insets.bottom + 24, 32),
+        },
+      ]}
     >
-      {/* Ambient glow */}
+      {/* Ambient background glow */}
       <Animated.View
         pointerEvents="none"
-        className="absolute w-80 h-80 rounded-full top-1/4 bg-blue-500/10"
-        style={{
-          transform: [{ scale: pulseAnim }],
-        }}
+        style={[
+          styles.glowCircle,
+          {
+            transform: [{ scale: pulseAnim }],
+            backgroundColor: isDark
+              ? 'rgba(10, 132, 255, 0.12)'
+              : 'rgba(0, 122, 255, 0.08)',
+          },
+        ]}
       />
 
       <Animated.View
-        className="w-full max-w-[400px] items-center"
-        style={{
-          opacity: fadeAnim,
-          transform: [{ scale: scaleAnim }],
-        }}
+        style={[
+          styles.contentWrapper,
+          {
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }],
+          },
+        ]}
       >
-        {/* Animated Badge */}
+        {/* Animated Badge / Illustration */}
         <Animated.View
-          className="mb-7"
-          style={{ transform: [{ translateY: floatAnim }] }}
+          style={[
+            styles.badgeContainer,
+            { transform: [{ translateY: floatAnim }] },
+          ]}
         >
           <LinearGradient
-            colors={['rgba(30, 41, 59, 0.8)', 'rgba(15, 23, 42, 0.95)']}
-            className="w-36 h-36 rounded-[36px] border border-white/10 items-center justify-center relative shadow-xl shadow-black/40"
+            colors={
+              isDark
+                ? ['rgba(30, 41, 59, 0.8)', 'rgba(15, 23, 42, 0.95)']
+                : ['rgba(255, 255, 255, 0.95)', 'rgba(241, 245, 249, 0.9)']
+            }
+            style={[
+              styles.badgeGradient,
+              {
+                borderColor: isDark
+                  ? 'rgba(255, 255, 255, 0.12)'
+                  : 'rgba(0, 0, 0, 0.08)',
+              },
+            ]}
           >
-            <View className="w-18 h-18 rounded-3xl items-center justify-center bg-blue-500/15 p-3">
+            <View
+              style={[
+                styles.iconWrap,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(10, 132, 255, 0.15)'
+                    : 'rgba(0, 122, 255, 0.12)',
+                },
+              ]}
+            >
               <Ionicons
                 name="compass-outline"
                 size={44}
-                color="#0A84FF"
+                color={isDark ? '#0A84FF' : '#007AFF'}
               />
             </View>
 
             {/* Glowing 404 Tag */}
-            <View className="absolute -bottom-2.5 px-3 py-1 rounded-xl border border-blue-500/40 bg-blue-500/20">
-              <Text className="text-xs font-black tracking-wider text-blue-400">
+            <View
+              style={[
+                styles.codePill,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(10, 132, 255, 0.2)'
+                    : 'rgba(0, 122, 255, 0.1)',
+                  borderColor: isDark
+                    ? 'rgba(10, 132, 255, 0.4)'
+                    : 'rgba(0, 122, 255, 0.3)',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.codeText,
+                  { color: isDark ? '#60A5FA' : '#007AFF' },
+                ]}
+              >
                 404
               </Text>
             </View>
@@ -145,27 +201,39 @@ export default function NotFoundScreen() {
         </Animated.View>
 
         {/* Text Header */}
-        <Text className="text-[26px] font-extrabold tracking-tight mb-2.5 text-center text-white">
+        <Text
+          style={[
+            styles.title,
+            { color: isDark ? '#FFFFFF' : '#0F172A' },
+          ]}
+        >
           Page Not Found
         </Text>
 
-        <Text className="text-[14.5px] leading-5 text-center max-w-[320px] mb-8 text-slate-400">
+        <Text
+          style={[
+            styles.description,
+            { color: isDark ? '#94A3B8' : '#64748B' },
+          ]}
+        >
           The screen or resource you're looking for doesn't exist, was moved, or
           is temporarily unavailable.
         </Text>
 
         {/* Action Buttons */}
-        <View className="w-full gap-3 items-center">
+        <View style={styles.actionsContainer}>
           <Pressable
             onPress={handleHome}
-            className="w-full h-[52px] rounded-2xl overflow-hidden shadow-md shadow-blue-500/25"
-            style={({ pressed }) => pressed ? { opacity: 0.85, transform: [{ scale: 0.985 }] } : undefined}
+            style={({ pressed }) => [
+              styles.primaryBtn,
+              pressed && styles.btnPressed,
+            ]}
           >
             <LinearGradient
               colors={['#0A84FF', '#0066CC']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              className="w-full h-full flex-row items-center justify-center"
+              style={styles.primaryBtnGradient}
             >
               <Ionicons
                 name="home"
@@ -173,29 +241,49 @@ export default function NotFoundScreen() {
                 color="#FFFFFF"
                 style={{ marginRight: 8 }}
               />
-              <Text className="text-white text-[15px] font-bold tracking-tight">Back to Home</Text>
+              <Text style={styles.primaryBtnText}>Back to Home</Text>
             </LinearGradient>
           </Pressable>
 
           <Pressable
             onPress={handleBack}
-            className="w-full h-12 rounded-2xl border border-[#262930] bg-[#181A1F] flex-row items-center justify-center"
-            style={({ pressed }) => pressed ? { opacity: 0.85, transform: [{ scale: 0.985 }] } : undefined}
+            style={({ pressed }) => [
+              styles.secondaryBtn,
+              {
+                backgroundColor: isDark
+                  ? 'rgba(255, 255, 255, 0.08)'
+                  : 'rgba(0, 0, 0, 0.04)',
+                borderColor: isDark
+                  ? 'rgba(255, 255, 255, 0.12)'
+                  : 'rgba(0, 0, 0, 0.08)',
+              },
+              pressed && styles.btnPressed,
+            ]}
           >
             <Ionicons
               name="arrow-back"
               size={18}
-              color="#E2E8F0"
+              color={isDark ? '#E2E8F0' : '#334155'}
               style={{ marginRight: 6 }}
             />
-            <Text className="text-[#E2E8F0] text-[14.5px] font-semibold tracking-tight">
+            <Text
+              style={[
+                styles.secondaryBtnText,
+                { color: isDark ? '#E2E8F0' : '#334155' },
+              ]}
+            >
               Go Back
             </Text>
           </Pressable>
         </View>
 
         {/* Sub-footer Note */}
-        <Text className="text-[11.5px] mt-7 tracking-tight text-slate-500">
+        <Text
+          style={[
+            styles.footerNote,
+            { color: isDark ? '#475569' : '#94A3B8' },
+          ]}
+        >
           GetAiPilot Workspace Navigation
         </Text>
       </Animated.View>
@@ -203,3 +291,146 @@ export default function NotFoundScreen() {
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  glowCircle: {
+    position: 'absolute',
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    top: '25%',
+  },
+  contentWrapper: {
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+  },
+  badgeContainer: {
+    marginBottom: 28,
+  },
+  badgeGradient: {
+    width: 140,
+    height: 140,
+    borderRadius: 36,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.15,
+        shadowRadius: 20,
+      },
+      android: {
+        elevation: 10,
+      },
+      web: {
+        boxShadow: '0 12px 28px rgba(0, 0, 0, 0.16)',
+      } as any,
+      default: {},
+    }),
+  },
+  iconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  codePill: {
+    position: 'absolute',
+    bottom: -10,
+    paddingHorizontal: 12,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  codeText: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: '800',
+    letterSpacing: -0.6,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  description: {
+    fontSize: 14.5,
+    lineHeight: 22,
+    textAlign: 'center',
+    maxWidth: 320,
+    marginBottom: 32,
+  },
+  actionsContainer: {
+    width: '100%',
+    gap: 12,
+    alignItems: 'center',
+  },
+  primaryBtn: {
+    width: '100%',
+    height: 52,
+    borderRadius: 16,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#0A84FF',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.28,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 6,
+      },
+      web: {
+        boxShadow: '0 6px 16px rgba(10, 132, 255, 0.28)',
+      } as any,
+      default: {},
+    }),
+  },
+  primaryBtnGradient: {
+    width: '100%',
+    height: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  secondaryBtn: {
+    width: '100%',
+    height: 48,
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryBtnText: {
+    fontSize: 14.5,
+    fontWeight: '600',
+    letterSpacing: -0.2,
+  },
+  btnPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.985 }],
+  },
+  footerNote: {
+    fontSize: 11.5,
+    marginTop: 28,
+    letterSpacing: -0.1,
+  },
+});

@@ -17,7 +17,6 @@ export interface SkeletonProps {
   borderRadius?: number;
   circle?: boolean;
   style?: StyleProp<ViewStyle>;
-  className?: string;
 }
 
 export default function Skeleton({
@@ -26,7 +25,6 @@ export default function Skeleton({
   borderRadius = 8,
   circle = false,
   style,
-  className,
 }: SkeletonProps) {
   const isDark = useColorScheme() === "dark";
   const [componentWidth, setComponentWidth] = useState<number>(300);
@@ -70,8 +68,8 @@ export default function Skeleton({
   return (
     <Animated.View
       onLayout={handleLayout}
-      className={`overflow-hidden ${className || ''}`}
       style={[
+        styles.skeleton,
         {
           width,
           height,
@@ -82,8 +80,8 @@ export default function Skeleton({
       ]}
     >
       <Animated.View
-        className="absolute -top-1/2 left-[10%] h-[200%]"
         style={[
+          styles.shimmer,
           {
             width: Math.max(sweepDistance * 0.5, 120),
             transform: [{ translateX }],
@@ -112,7 +110,6 @@ export function SkeletonText({
   height = 14,
   borderRadius = 4,
   style,
-  className,
 }: SkeletonProps) {
   return (
     <Skeleton
@@ -120,7 +117,6 @@ export function SkeletonText({
       height={height}
       borderRadius={borderRadius}
       style={style}
-      className={className}
     />
   );
 }
@@ -128,11 +124,9 @@ export function SkeletonText({
 export function SkeletonCircle({
   size = 40,
   style,
-  className,
 }: {
   size?: number;
   style?: StyleProp<ViewStyle>;
-  className?: string;
 }) {
   return (
     <Skeleton
@@ -140,7 +134,6 @@ export function SkeletonCircle({
       height={size}
       circle
       style={style}
-      className={className}
     />
   );
 }
@@ -148,19 +141,21 @@ export function SkeletonCircle({
 export function SkeletonCard({
   children,
   style,
-  className,
 }: {
   children?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
-  className?: string;
 }) {
   const isDark = useColorScheme() === "dark";
   return (
     <View
-      className={`rounded-2xl p-4 border mb-3 ${
-        isDark ? "bg-[#161B22] border-[#262C36]" : "bg-white border-gray-200"
-      } ${className || ''}`}
-      style={style}
+      style={[
+        styles.card,
+        {
+          backgroundColor: isDark ? "#161B22" : "#FFFFFF",
+          borderColor: isDark ? "#262C36" : "#E5E7EB",
+        },
+        style,
+      ]}
     >
       {children}
     </View>
@@ -170,15 +165,31 @@ export function SkeletonCard({
 export function SkeletonRow({
   children,
   style,
-  className,
 }: {
   children?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
-  className?: string;
 }) {
-  return (
-    <View className={`flex-row items-center ${className || ''}`} style={style}>
-      {children}
-    </View>
-  );
+  return <View style={[styles.row, style]}>{children}</View>;
 }
+
+const styles = StyleSheet.create({
+  skeleton: {
+    overflow: "hidden",
+  },
+  shimmer: {
+    position: "absolute",
+    height: "200%",
+    top: "-50%",
+    left: "10%",
+  },
+  card: {
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: 12,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+});

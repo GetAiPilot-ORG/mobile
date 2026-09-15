@@ -2,17 +2,20 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   ScrollView,
   TextInput,
   Pressable,
   Alert,
   Share,
   Linking,
+  useColorScheme,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
+import { colors } from '../../src/theme/colors';
 
 interface EventTemplate {
   title: string;
@@ -57,13 +60,30 @@ const EVENT_TEMPLATES: EventTemplate[] = [
 const PLATFORMS = ['Google Meet', 'Zoom', 'YouTube Live', 'In-Person'] as const;
 
 export default function EventLinksScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [eventName, setEventName] = useState('AI Automation Masterclass 2026');
   const [eventDate, setEventDate] = useState('Sept 15, 2026');
   const [eventTime, setEventTime] = useState('6:00 PM IST');
   const [meetingUrl, setMeetingUrl] = useState('https://meet.google.com/gap-demo-live');
   const [selectedPlatform, setSelectedPlatform] = useState<typeof PLATFORMS[number]>('Google Meet');
   const [description, setDescription] = useState('Join our live session to master Telegram, WhatsApp & Voice AI automation.');
+
   const [copied, setCopied] = useState(false);
+
+  // Dynamic Theme Mapping
+  const theme = {
+    bg: isDark ? colors.backgroundDark : colors.background,
+    card: isDark ? colors.surfaceDark : colors.card,
+    cardBorder: isDark ? colors.borderDark : colors.border,
+    text: isDark ? colors.foregroundDark : colors.foreground,
+    mutedText: colors.mutedForeground,
+    inputBg: isDark ? '#141416' : '#FFFFFF',
+    inputBorder: isDark ? '#2C2C2E' : colors.border,
+    primary: colors.primary, // GetAiPilot Electric Blue
+    primarySoft: colors.accentSoft,
+  };
 
   const handleApplyTemplate = (tmpl: EventTemplate) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -75,6 +95,7 @@ export default function EventLinksScreen() {
     Alert.alert('Template Loaded! ✨', `"${tmpl.title}" is ready.`);
   };
 
+  // Build Real 1-Click Google Calendar URL
   const getGoogleCalendarUrl = (): string => {
     const title = encodeURIComponent(eventName.trim());
     const details = encodeURIComponent(`${description}\n\nJoin Live: ${meetingUrl}`);
@@ -109,92 +130,100 @@ export default function EventLinksScreen() {
   };
 
   return (
-    <AppScreen safeArea={false} className="flex-1 bg-[#0B0D10]">
+    <AppScreen safeArea={false} backgroundColor={theme.bg}>
       <AppTopBar title="Event Links Studio" subtitle="1-Click Calendar & RSVP Invitations" showBack={true} />
 
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* 1-Tap Starter Templates */}
-        <View className="rounded-2xl p-4 mb-4 border border-[#262930] bg-[#181A1F]">
-          <Text className="text-sm font-black text-white mb-1">1-Tap Event Starters</Text>
-          <Text className="text-xs text-slate-400 mb-3 leading-4">
+        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>1-Tap Event Starters</Text>
+          <Text style={[styles.cardSubtitle, { color: theme.mutedText }]}>
             Pick a pre-configured template to build your calendar invitation in seconds.
           </Text>
 
-          <View className="gap-2">
+          <View style={{ gap: 8 }}>
             {EVENT_TEMPLATES.map((tmpl, idx) => (
               <Pressable
                 key={idx}
-                className="flex-row items-center p-3 rounded-xl border border-[#262930] bg-[#111317]"
+                style={[
+                  styles.templateCard,
+                  { backgroundColor: isDark ? '#141416' : '#F9FAFB', borderColor: theme.cardBorder },
+                ]}
                 onPress={() => handleApplyTemplate(tmpl)}
               >
-                <Text className="text-2xl">{tmpl.icon}</Text>
-                <View className="flex-1 ml-2.5">
-                  <Text className="text-xs font-black text-white">{tmpl.title}</Text>
-                  <Text className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                <Text style={{ fontSize: 24 }}>{tmpl.icon}</Text>
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                  <Text style={[styles.templateTitle, { color: theme.text }]}>{tmpl.title}</Text>
+                  <Text style={[styles.templateMeta, { color: theme.mutedText }]}>
                     {tmpl.category} • {tmpl.platform}
                   </Text>
                 </View>
-                <Text className="text-xs font-bold text-[#0084FF]">Use ➔</Text>
+                <Text style={{ color: theme.primary, fontSize: 12, fontWeight: '700' }}>Use ➔</Text>
               </Pressable>
             ))}
           </View>
         </View>
 
         {/* Event Configuration Form */}
-        <View className="rounded-2xl p-4 mb-4 border border-[#262930] bg-[#181A1F]">
-          <Text className="text-sm font-black text-white mb-2">Event Details</Text>
+        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>Event Details</Text>
 
-          <Text className="text-xs font-bold text-slate-300 mb-1">Event / Webinar Title *</Text>
+          <Text style={[styles.inputLabel, { color: theme.mutedText }]}>Event / Webinar Title *</Text>
           <TextInput
-            className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2 text-xs text-white mb-3"
+            style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
             value={eventName}
             onChangeText={setEventName}
             placeholder="e.g. Masterclass 2026"
-            placeholderTextColor="#64748B"
+            placeholderTextColor={theme.mutedText}
           />
 
-          <View className="flex-row gap-2.5 mb-3">
-            <View className="flex-1">
-              <Text className="text-xs font-bold text-slate-300 mb-1">Date</Text>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.inputLabel, { color: theme.mutedText }]}>Date</Text>
               <TextInput
-                className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2 text-xs text-white"
+                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
                 value={eventDate}
                 onChangeText={setEventDate}
                 placeholder="Sept 15, 2026"
-                placeholderTextColor="#64748B"
+                placeholderTextColor={theme.mutedText}
               />
             </View>
 
-            <View className="flex-1">
-              <Text className="text-xs font-bold text-slate-300 mb-1">Time / Duration</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.inputLabel, { color: theme.mutedText }]}>Time / Duration</Text>
               <TextInput
-                className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2 text-xs text-white"
+                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
                 value={eventTime}
                 onChangeText={setEventTime}
                 placeholder="6:00 PM IST"
-                placeholderTextColor="#64748B"
+                placeholderTextColor={theme.mutedText}
               />
             </View>
           </View>
 
           {/* Platform Selector Chips */}
-          <Text className="text-xs font-bold text-slate-300 mb-1.5">Event Platform:</Text>
-          <View className="flex-row flex-wrap gap-1.5 mb-3">
+          <Text style={[styles.inputLabel, { color: theme.mutedText, marginTop: 4 }]}>Event Platform:</Text>
+          <View style={styles.platformRow}>
             {PLATFORMS.map((plat) => (
               <Pressable
                 key={plat}
-                className={`px-3 py-1.5 rounded-lg border ${
-                  selectedPlatform === plat ? 'bg-[#0084FF] border-[#0084FF]' : 'bg-[#111317] border-[#262930]'
-                }`}
+                style={[
+                  styles.platformChip,
+                  {
+                    backgroundColor: selectedPlatform === plat ? theme.primary : isDark ? '#141416' : '#F3F4F6',
+                    borderColor: selectedPlatform === plat ? theme.primary : theme.cardBorder,
+                  },
+                ]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setSelectedPlatform(plat);
                 }}
               >
                 <Text
-                  className={`text-xs font-bold ${
-                    selectedPlatform === plat ? 'text-white' : 'text-slate-300'
-                  }`}
+                  style={[
+                    styles.platformChipText,
+                    { color: selectedPlatform === plat ? '#FFFFFF' : theme.text },
+                  ]}
                 >
                   {plat}
                 </Text>
@@ -202,81 +231,80 @@ export default function EventLinksScreen() {
             ))}
           </View>
 
-          <Text className="text-xs font-bold text-slate-300 mb-1">Meeting / Stream Link</Text>
+          <Text style={[styles.inputLabel, { color: theme.mutedText, marginTop: 12 }]}>Meeting / Stream Link</Text>
           <TextInput
-            className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2 text-xs text-white mb-3"
+            style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
             value={meetingUrl}
             onChangeText={setMeetingUrl}
             placeholder="https://meet.google.com/xyz"
-            placeholderTextColor="#64748B"
+            placeholderTextColor={theme.mutedText}
             autoCapitalize="none"
             keyboardType="url"
           />
 
-          <Text className="text-xs font-bold text-slate-300 mb-1">Short Description / Agenda</Text>
+          <Text style={[styles.inputLabel, { color: theme.mutedText }]}>Short Description / Agenda</Text>
           <TextInput
-            className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2 text-xs text-white h-16"
+            style={[styles.input, { height: 60, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
             value={description}
             onChangeText={setDescription}
             placeholder="Key talking points..."
-            placeholderTextColor="#64748B"
+            placeholderTextColor={theme.mutedText}
             multiline
-            textAlignVertical="top"
           />
         </View>
 
-        {/* LIVE VIP EVENT TICKET PASS */}
-        <View className="rounded-3xl p-5 border-2 border-[#0084FF] bg-[#181A1F] mb-4 shadow-xl">
-          <View className="flex-row justify-between items-center mb-2.5">
-            <View className="bg-[#0084FF]/20 px-2.5 py-1 rounded-md">
-              <Text className="text-[#0084FF] text-[10px] font-black tracking-wider">OFFICIAL EVENT PASS 🎟️</Text>
+        {/* ── LIVE VIP EVENT TICKET PASS PREVIEW ────────────────────────── */}
+        <View style={[styles.ticketCard, { backgroundColor: isDark ? '#000000' : '#FFFFFF', borderColor: theme.primary }]}>
+          <View style={styles.ticketHeader}>
+            <View style={styles.ticketBadge}>
+              <Text style={styles.ticketBadgeText}>OFFICIAL EVENT PASS 🎟️</Text>
             </View>
-            <Text className="text-xs font-extrabold text-[#0084FF]">{selectedPlatform}</Text>
+            <Text style={[styles.platformPill, { color: theme.primary }]}>{selectedPlatform}</Text>
           </View>
 
-          <Text className="text-lg font-black text-white mb-1">{eventName || 'Untitled Event'}</Text>
-          <Text className="text-xs text-slate-400 mb-3.5 leading-4" numberOfLines={2}>
+          <Text style={[styles.ticketTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>{eventName || 'Untitled Event'}</Text>
+          <Text style={[styles.ticketDesc, { color: theme.mutedText }]} numberOfLines={2}>
             {description}
           </Text>
 
           {/* Meta Grid */}
-          <View className="rounded-xl p-3 gap-2 bg-[#111317] border border-[#262930]">
-            <View>
-              <Text className="text-[9px] font-black uppercase text-slate-400 tracking-wider">DATE & TIME</Text>
-              <Text className="text-xs font-bold text-white mt-0.5">
+          <View style={[styles.ticketMetaBox, { backgroundColor: isDark ? '#141416' : '#F8F9FA' }]}>
+            <View style={styles.metaItem}>
+              <Text style={[styles.metaLabel, { color: theme.mutedText }]}>DATE & TIME</Text>
+              <Text style={[styles.metaValue, { color: isDark ? '#FFFFFF' : '#000000' }]}>
                 {eventDate} • {eventTime}
               </Text>
             </View>
 
-            <View>
-              <Text className="text-[9px] font-black uppercase text-slate-400 tracking-wider">ACCESS LINK</Text>
-              <Text className="text-xs font-bold text-[#0084FF] mt-0.5" numberOfLines={1}>
+            <View style={styles.metaItem}>
+              <Text style={[styles.metaLabel, { color: theme.mutedText }]}>ACCESS LINK</Text>
+              <Text style={[styles.metaValue, { color: theme.primary }]} numberOfLines={1}>
                 {meetingUrl || 'Link will be provided'}
               </Text>
             </View>
           </View>
 
-          {/* Action Buttons */}
-          <View className="gap-2 mt-4">
-            <Pressable className="py-3 rounded-xl items-center bg-[#0084FF]" onPress={handleOpenGoogleCalendar}>
-              <Text className="text-xs font-extrabold text-white">📅 Add to Google Calendar (1-Click)</Text>
+          {/* 1-Click Action Buttons */}
+          <View style={{ gap: 8, marginTop: 14 }}>
+            <Pressable style={[styles.gCalBtn, { backgroundColor: theme.primary }]} onPress={handleOpenGoogleCalendar}>
+              <Text style={styles.gCalBtnText}>📅 Add to Google Calendar (1-Click)</Text>
             </Pressable>
 
-            <View className="flex-row gap-2">
+            <View style={styles.actionRow}>
               <Pressable
-                className="flex-1 py-2.5 rounded-xl items-center border border-[#262930] bg-[#111317]"
+                style={[styles.subBtn, { backgroundColor: isDark ? '#1C1C1E' : '#E5E7EB' }]}
                 onPress={handleCopyInviteText}
               >
-                <Text className="text-xs font-bold text-white">
+                <Text style={[styles.subBtnText, { color: theme.text }]}>
                   {copied ? 'Copied! ✅' : 'Copy Invite 📋'}
                 </Text>
               </Pressable>
 
               <Pressable
-                className="flex-1 py-2.5 rounded-xl items-center bg-[#25D366]"
+                style={[styles.subBtn, { backgroundColor: colors.products.whatsapp }]}
                 onPress={handleShareInvite}
               >
-                <Text className="text-xs font-bold text-black">Share Pass 📤</Text>
+                <Text style={[styles.subBtnText, { color: '#FFFFFF' }]}>Share Pass 📤</Text>
               </Pressable>
             </View>
           </View>
@@ -285,3 +313,155 @@ export default function EventLinksScreen() {
     </AppScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 50,
+  },
+  card: {
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1,
+  },
+  cardTitle: {
+    fontSize: 16.5,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  cardSubtitle: {
+    fontSize: 12.5,
+    lineHeight: 18,
+    marginBottom: 14,
+  },
+  templateCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  templateTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  templateMeta: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 6,
+    marginTop: 6,
+  },
+  input: {
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 13.5,
+    borderWidth: 1,
+    marginBottom: 10,
+  },
+  platformRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 4,
+  },
+  platformChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  platformChipText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+  },
+  ticketCard: {
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 2,
+    marginBottom: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  ticketHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  ticketBadge: {
+    backgroundColor: 'rgba(0, 132, 255, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  ticketBadgeText: {
+    color: '#0084FF',
+    fontSize: 10.5,
+    fontWeight: '800',
+  },
+  platformPill: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  ticketTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    marginBottom: 4,
+  },
+  ticketDesc: {
+    fontSize: 12.5,
+    lineHeight: 17,
+    marginBottom: 14,
+  },
+  ticketMetaBox: {
+    padding: 12,
+    borderRadius: 12,
+    gap: 8,
+  },
+  metaItem: {
+    gap: 2,
+  },
+  metaLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  metaValue: {
+    fontSize: 12.5,
+    fontWeight: '700',
+  },
+  gCalBtn: {
+    paddingVertical: 13,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  gCalBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 13.5,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  subBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  subBtnText: {
+    fontSize: 12.5,
+    fontWeight: '800',
+  },
+});

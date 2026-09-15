@@ -4,8 +4,10 @@ import { Image } from 'expo-image';
 import { useRouter, usePathname } from 'expo-router';
 import { useAuthStore } from '../core/store/authStore';
 import React, { useEffect } from 'react';
-import { BackHandler, Platform, Pressable, Text, useColorScheme, View } from 'react-native';
+import { BackHandler, Platform, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const brandLogo = require("../../assets/images/logo.jpg");
 
 export interface AppTopBarProps {
   title?: string;
@@ -15,7 +17,6 @@ export interface AppTopBarProps {
   leftElement?: React.ReactNode;
   onBackPress?: () => void;
   parentRoute?: string;
-  className?: string;
 }
 
 /**
@@ -84,7 +85,6 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
   leftElement,
   onBackPress,
   parentRoute,
-  className,
 }) => {
   const router = useRouter();
   const pathname = usePathname();
@@ -143,18 +143,20 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
 
   return (
     <View
-      className={`flex-row items-center justify-between px-4 pb-3 border-b ${
-        isDark ? "bg-[#0B0D10] border-white/10" : "bg-white border-black/5"
-      } ${className || ''}`}
-      style={{ paddingTop: topPadding }}
+      style={[
+        styles.container,
+        { paddingTop: topPadding },
+        isDark ? styles.containerDark : styles.containerLight,
+      ]}
     >
-      <View className="flex-row items-center flex-1">
+      <View style={styles.leftSection}>
         {shouldShowBack ? (
           <Pressable
-            className={`w-10 h-10 rounded-full justify-center items-center mr-3 border ${
-              isDark ? "bg-[#181A1F] border-[#262930]" : "bg-white border-gray-200"
-            }`}
-            style={({ pressed }) => pressed ? { opacity: 0.7, transform: [{ scale: 0.94 }] } : undefined}
+            style={({ pressed }) => [
+              styles.backButton,
+              isDark ? styles.backButtonDark : styles.backButtonLight,
+              pressed && styles.backButtonPressed,
+            ]}
             onPress={handleBack}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
@@ -171,46 +173,179 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
         ) : !title ? (
           /* Profile Avatar Button on the Left for Home */
           <Pressable
-            className={`w-9.5 h-9.5 rounded-full justify-center items-center mr-3 border-1.5 ${
-              isDark ? "border-[#262930]" : "border-gray-200"
-            }`}
-            style={({ pressed }) => pressed ? { opacity: 0.75, transform: [{ scale: 0.94 }] } : undefined}
+            style={({ pressed }) => [
+              styles.profileBtn,
+              isDark ? styles.profileBtnDark : styles.profileBtnLight,
+              pressed && styles.profileBtnPressed,
+            ]}
             onPress={handleProfilePress}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Profile Account"
           >
             {avatarUrl ? (
-              <Image source={{ uri: avatarUrl }} className="w-full h-full rounded-full" contentFit="cover" />
+              <Image source={{ uri: avatarUrl }} style={styles.profileAvatarImg} contentFit="cover" />
             ) : (
-              <View className="w-full h-full rounded-full bg-[#0284C7] justify-center items-center">
-                <Text className="text-white text-base font-bold">{avatarInitial}</Text>
+              <View style={styles.profileAvatarCircle}>
+                <Text style={styles.profileAvatarText}>{avatarInitial}</Text>
               </View>
             )}
           </Pressable>
         ) : null}
 
-        <View className="flex-1 justify-center">
+        <View style={styles.titleWrapper}>
           {title ? (
-            <Text
-              className={`text-lg font-bold tracking-tight ${isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"}`}
-              numberOfLines={1}
-            >
+            <Text style={[styles.title, isDark ? styles.titleDark : styles.titleLight]} numberOfLines={1}>
               {title}
             </Text>
           ) : null}
           {subtitle && (
-            <Text
-              className={`text-xs mt-0.5 ${isDark ? "text-[#94A3B8]" : "text-[#64748B]"}`}
-              numberOfLines={1}
-            >
+            <Text style={[styles.subtitle, isDark ? styles.subtitleDark : styles.subtitleLight]} numberOfLines={1}>
               {subtitle}
             </Text>
           )}
         </View>
       </View>
 
-      {rightElement ? <View className="flex-row items-center gap-2">{rightElement}</View> : <View className="w-0 h-0" />}
+      {rightElement ? <View style={styles.rightSection}>{rightElement}</View> : <View style={styles.rightEmpty} />}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  containerLight: {
+    backgroundColor: '#FFFFFF',
+    borderBottomColor: 'rgba(0, 0, 0, 0.06)',
+  },
+  containerDark: {
+    backgroundColor: '#000000',
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  leftSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    borderWidth: 1,
+  },
+  backButtonLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  backButtonDark: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  backButtonPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.94 }],
+  },
+  profileBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    borderWidth: 1.5,
+  },
+  profileBtnLight: {
+    borderColor: '#E5E7EB',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  profileBtnDark: {
+    borderColor: '#2C2C2E',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  profileBtnPressed: {
+    opacity: 0.75,
+    transform: [{ scale: 0.94 }],
+  },
+  profileAvatarImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 18,
+  },
+  profileAvatarCircle: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 18,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  titleWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 19,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  titleLight: {
+    color: '#0F172A',
+  },
+  titleDark: {
+    color: "#F8FAFC",
+  },
+  subtitle: {
+    fontSize: 12,
+    marginTop: 1,
+    letterSpacing: -0.1,
+    fontWeight: '400',
+  },
+  subtitleLight: {
+    color: '#64748B',
+  },
+  subtitleDark: {
+    color: "#94A3B8",
+  },
+  rightSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  rightEmpty: {
+    width: 0,
+    height: 0,
+  },
+});

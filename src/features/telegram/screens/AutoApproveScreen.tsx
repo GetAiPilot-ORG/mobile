@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, Switch, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Switch, Text, View, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { TelegramToolKey } from '../types';
 import { StatCard } from '../components/ui/StatCard';
@@ -11,8 +11,12 @@ interface Props {
 }
 
 export const AutoApproveScreen: React.FC<Props> = ({ chats, summary, onOpenModal }) => {
+  const isDark = useColorScheme() === 'dark';
   const [globalEnabled, setGlobalEnabled] = useState(true);
   const [channelEnabled, setChannelEnabled] = useState<Record<string, boolean>>({});
+
+  const card = isDark ? styles.cardDark : styles.cardLight;
+  const txt = isDark ? styles.textDark : styles.textLight;
 
   const displayChats = chats?.length > 0 ? chats : [
     { id: 'ch-1', title: 'Trading Guru VIP', members: 420 },
@@ -23,24 +27,24 @@ export const AutoApproveScreen: React.FC<Props> = ({ chats, summary, onOpenModal
   return (
     <>
       {/* Hero */}
-      <View className="flex-row items-center gap-3 p-4 rounded-2xl bg-[#181A1F] border border-[#262930] mb-3.5">
-        <View className="w-12 h-12 rounded-xl bg-emerald-500/10 items-center justify-center">
+      <View style={[styles.hero, card]}>
+        <View style={[styles.heroIcon, { backgroundColor: 'rgba(16,185,129,0.12)' }]}>
           <Ionicons name="checkmark-done-circle" size={28} color="#10B981" />
         </View>
-        <View className="flex-1">
-          <Text className="text-lg font-bold text-white">Auto Approve</Text>
-          <Text className="text-xs text-slate-400 leading-4 mt-0.5">Instant approval of private channel join requests — zero manual work</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.heroTitle, txt]}>Auto Approve</Text>
+          <Text style={styles.heroSub}>Instant approval of private channel join requests — zero manual work</Text>
         </View>
         <Switch
           value={globalEnabled}
           onValueChange={setGlobalEnabled}
-          trackColor={{ false: '#334155', true: '#10B981' }}
+          trackColor={{ false: '#CBD5E1', true: '#10B981' }}
           thumbColor="#FFFFFF"
         />
       </View>
 
       {/* Stats */}
-      <View className="flex-row flex-wrap justify-between gap-y-2 mb-3.5">
+      <View style={[styles.statsRow, { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }]}>
         {[
           { label: 'CHANNELS', val: displayChats.length, color: '#0284C7', icon: 'megaphone-outline', bg: 'rgba(2,132,199,0.12)', hint: 'Target channels' },
           { label: 'APPROVED TODAY', val: summary?.autoApprovedToday ?? 0, color: '#10B981', icon: 'checkmark-circle-outline', bg: 'rgba(16,185,129,0.12)', hint: 'Approved' },
@@ -59,43 +63,43 @@ export const AutoApproveScreen: React.FC<Props> = ({ chats, summary, onOpenModal
       </View>
 
       {/* How it Works */}
-      <View className="p-3.5 rounded-2xl bg-[#181A1F] border border-[#262930] mb-3">
-        <Text className="text-sm font-bold text-white">How it Works</Text>
-        <View className="gap-2.5 mt-2.5">
+      <View style={[styles.sectionCard, card]}>
+        <Text style={[styles.sectionTitle, txt]}>How it Works</Text>
+        <View style={{ gap: 10, marginTop: 10 }}>
           {[
             { step: '1', text: 'User clicks join request on your private Telegram channel', color: '#0284C7' },
             { step: '2', text: 'GAP Auto Approve Bot detects the request in real-time', color: '#8B5CF6' },
             { step: '3', text: 'Request instantly approved — user enters channel automatically', color: '#10B981' },
           ].map((item) => (
-            <View key={item.step} className="flex-row items-start gap-2.5">
-              <View className="w-7 h-7 rounded-full items-center justify-center bg-[#111317] border border-[#262930]">
-                <Text className="text-xs font-black" style={{ color: item.color }}>{item.step}</Text>
+            <View key={item.step} style={styles.stepRow}>
+              <View style={[styles.stepCircle, { backgroundColor: `${item.color}20` }]}>
+                <Text style={[styles.stepNum, { color: item.color }]}>{item.step}</Text>
               </View>
-              <Text className="text-[13px] leading-5 flex-1 pt-1 text-slate-300">{item.text}</Text>
+              <Text style={[styles.stepText, txt]}>{item.text}</Text>
             </View>
           ))}
         </View>
       </View>
 
       {/* Channel Toggles */}
-      <View className="p-3.5 rounded-2xl bg-[#181A1F] border border-[#262930] mb-3">
-        <Text className="text-sm font-bold text-white">Channel Configuration</Text>
-        <View className="gap-2 mt-2.5">
+      <View style={[styles.sectionCard, card]}>
+        <Text style={[styles.sectionTitle, txt]}>Channel Configuration</Text>
+        <View style={{ gap: 8, marginTop: 10 }}>
           {displayChats.map((ch: any) => {
             const enabled = channelEnabled[ch.id] !== undefined ? channelEnabled[ch.id] : globalEnabled;
             return (
-              <View key={ch.id} className="flex-row items-center gap-2.5 p-2.5 rounded-xl bg-[#111317] border border-[#262930]">
-                <View className="w-8 h-8 rounded-full bg-[#0084FF] items-center justify-center">
-                  <Text className="text-white font-bold text-xs">{(ch.title || 'C').charAt(0).toUpperCase()}</Text>
+              <View key={ch.id} style={[styles.chanRow, isDark ? styles.chanRowDark : styles.chanRowLight]}>
+                <View style={styles.chanAvatar}>
+                  <Text style={styles.chanAvatarText}>{(ch.title || 'C').charAt(0).toUpperCase()}</Text>
                 </View>
-                <View className="flex-1">
-                  <Text className="text-[13px] font-bold text-white" numberOfLines={1}>{ch.title}</Text>
-                  <Text className="text-[10px] text-slate-400 mt-0.5">{enabled ? '🟢 Auto Approve Active' : '🔴 Manual Mode'}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.chanName, txt]} numberOfLines={1}>{ch.title}</Text>
+                  <Text style={styles.chanStatus}>{enabled ? '🟢 Auto Approve Active' : '🔴 Manual Mode'}</Text>
                 </View>
                 <Switch
                   value={enabled}
                   onValueChange={(val) => setChannelEnabled((prev) => ({ ...prev, [ch.id]: val }))}
-                  trackColor={{ false: '#334155', true: '#10B981' }}
+                  trackColor={{ false: '#CBD5E1', true: '#10B981' }}
                   thumbColor="#FFFFFF"
                 />
               </View>
@@ -105,10 +109,41 @@ export const AutoApproveScreen: React.FC<Props> = ({ chats, summary, onOpenModal
       </View>
 
       {/* Bot Setup CTA */}
-      <Pressable className="flex-row items-center justify-center gap-2 bg-emerald-600 rounded-xl py-3.5 active:opacity-80" onPress={() => onOpenModal('auto_approve')}>
+      <Pressable style={styles.primaryBtn} onPress={() => onOpenModal('auto_approve')}>
         <Ionicons name="settings-outline" size={16} color="#FFFFFF" />
-        <Text className="text-white text-sm font-bold">Configure Bot Settings</Text>
+        <Text style={styles.primaryBtnText}>Configure Bot Settings</Text>
       </Pressable>
     </>
   );
 };
+
+const styles = StyleSheet.create({
+  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
+  cardDark: { backgroundColor: '#121212', borderColor: '#27272A' },
+  textLight: { color: '#0F172A' },
+  textDark: { color: '#F8FAFC' },
+  hero: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 14 },
+  heroIcon: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  heroTitle: { fontSize: 18, fontWeight: '800' },
+  heroSub: { fontSize: 12, color: '#64748B', lineHeight: 17, marginTop: 2 },
+  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
+  statCard: { flex: 1, padding: 12, borderRadius: 14, borderWidth: 1, alignItems: 'center', gap: 4 },
+  statIconCircle: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  statVal: { fontSize: 22, fontWeight: '800' },
+  statLabel: { fontSize: 10, color: '#64748B', fontWeight: '600' },
+  sectionCard: { padding: 14, borderRadius: 16, borderWidth: 1, marginBottom: 12 },
+  sectionTitle: { fontSize: 14, fontWeight: '800' },
+  stepRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  stepCircle: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  stepNum: { fontSize: 13, fontWeight: '900' },
+  stepText: { fontSize: 13, lineHeight: 19, flex: 1, paddingTop: 4 },
+  chanRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 10 },
+  chanRowLight: { backgroundColor: '#F8FAFC' },
+  chanRowDark: { backgroundColor: 'rgba(255,255,255,0.04)' },
+  chanAvatar: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#0284C7', alignItems: 'center', justifyContent: 'center' },
+  chanAvatarText: { color: '#FFF', fontWeight: '800', fontSize: 13 },
+  chanName: { fontSize: 13, fontWeight: '700' },
+  chanStatus: { fontSize: 10, color: '#64748B', marginTop: 1 },
+  primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#10B981', borderRadius: 12, paddingVertical: 14 },
+  primaryBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+});

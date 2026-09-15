@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Pressable, useColorScheme } from 'react-native';
+import { View, Text, StyleSheet, Pressable, useColorScheme } from 'react-native';
+import { colors } from '../theme/colors';
 
 interface ToolCardProps {
   title: string;
@@ -8,7 +9,6 @@ interface ToolCardProps {
   icon: string;
   badge?: string;
   onPress: () => void;
-  className?: string;
 }
 
 export const ToolCard: React.FC<ToolCardProps> = ({
@@ -18,51 +18,118 @@ export const ToolCard: React.FC<ToolCardProps> = ({
   icon,
   badge,
   onPress,
-  className,
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
   return (
-    <Pressable
-      className={`rounded-2xl p-3.5 mb-3 border ${
-        isDark ? "bg-[#181A1F] border-[#262930]" : "bg-white border-gray-200 shadow-sm"
-      } ${className || ''}`}
-      onPress={onPress}
-    >
-      <View className="flex-row items-center mb-2">
+    <Pressable style={[styles.card, isDark && styles.cardDark]} onPress={onPress}>
+      <View style={styles.topRow}>
         <View
-          className={`w-10 h-10 rounded-xl justify-center items-center mr-3 ${
-            isDark ? "bg-sky-500/15" : "bg-blue-50"
-          }`}
+          style={[
+            styles.iconBox,
+            { backgroundColor: isDark ? 'rgba(10, 132, 255, 0.16)' : colors.accentSoft },
+          ]}
         >
-          <Text className="text-lg">{icon}</Text>
+          <Text style={styles.iconText}>{icon}</Text>
         </View>
-        <View className="flex-1">
-          <Text className="text-[11px] font-medium text-slate-400 tracking-tight">{category}</Text>
-          <Text
-            className={`text-[15px] font-extrabold mt-0.5 ${isDark ? "text-white" : "text-black"}`}
-            numberOfLines={1}
-          >
+        <View style={styles.headerInfo}>
+          <Text style={[styles.category, isDark && styles.categoryDark]}>{category}</Text>
+          <Text style={[styles.title, isDark && styles.titleDark]} numberOfLines={1}>
             {title}
           </Text>
         </View>
         {badge ? (
-          <View
-            className={`px-2 py-0.5 rounded-md ${
-              isDark ? "bg-[#262930]" : "bg-slate-100"
-            }`}
-          >
-            <Text className={`text-[10px] font-bold ${isDark ? "text-slate-400" : "text-slate-600"}`}>{badge}</Text>
+          <View style={[styles.badge, isDark && styles.badgeDark]}>
+            <Text style={[styles.badgeText, isDark && styles.badgeTextDark]}>{badge}</Text>
           </View>
         ) : null}
       </View>
-      <Text
-        className={`text-xs leading-4.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}
-        numberOfLines={2}
-      >
+      <Text style={[styles.desc, isDark && styles.descDark]} numberOfLines={2}>
         {description}
       </Text>
     </Pressable>
   );
 };
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  cardDark: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  iconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  iconText: {
+    fontSize: 18,
+  },
+  headerInfo: {
+    flex: 1,
+  },
+  category: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#8E8E93',
+    letterSpacing: -0.1,
+  },
+  categoryDark: {
+    color: '#8E8E93',
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#000000',
+    marginTop: 1,
+  },
+  titleDark: {
+    color: '#FFFFFF',
+  },
+  badge: {
+    backgroundColor: '#F2F4F7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  badgeDark: {
+    backgroundColor: '#2C2C2E',
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#6B7280',
+  },
+  badgeTextDark: {
+    color: '#8E8E93',
+  },
+  desc: {
+    fontSize: 12.5,
+    color: '#6B7280',
+    lineHeight: 17,
+  },
+  descDark: {
+    color: '#8E8E93',
+  },
+});

@@ -4,12 +4,14 @@ import {
   Text,
   TextInput,
   Pressable,
+  StyleSheet,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   TouchableWithoutFeedback,
   Keyboard,
+  useColorScheme,
 } from 'react-native';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
@@ -18,11 +20,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../src/lib/supabase';
 import { isValidEmail } from '../../src/lib/validators';
 
-const brandLogo = require('../../assets/images/logo.png');
+const brandLogo = require('../../assets/images/logo.jpg');
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -79,24 +83,22 @@ export default function ForgotPasswordScreen() {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1 bg-[#0B0D10]"
+        style={[styles.container, isDark && styles.containerDark]}
       >
         <ScrollView
-          className="flex-1"
-          contentContainerClassName="flex-grow px-6 justify-center max-w-[500px] w-full self-center"
-          contentContainerStyle={{
-            paddingTop: Math.max(insets.top + 16, 44),
-            paddingBottom: Math.max(insets.bottom + 24, 32),
-          }}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: Math.max(insets.top + 16, 44), paddingBottom: Math.max(insets.bottom + 24, 32) },
+          ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           {/* Top Brand Logo Section */}
-          <View className="items-center mb-6">
-            <View className="w-[92px] h-[92px] rounded-full overflow-hidden bg-[#181A1F] border border-[#262930] shadow-lg shadow-purple-500/20">
+          <View style={styles.logoSection}>
+            <View style={[styles.logoWrapper, isDark && styles.logoWrapperDark]}>
               <Image
                 source={brandLogo}
-                className="w-full h-full rounded-full"
+                style={styles.logoImage}
                 contentFit="cover"
                 transition={200}
               />
@@ -104,39 +106,39 @@ export default function ForgotPasswordScreen() {
           </View>
 
           {/* Heading */}
-          <Text className="text-2xl font-extrabold text-white text-center leading-8 tracking-tight mb-2">
+          <Text style={[styles.heading, isDark && styles.headingDark]}>
             Reset your account{'\n'}password
           </Text>
-          <Text className="text-sm text-slate-400 text-center leading-5 mb-6 px-3">
+          <Text style={[styles.subheading, isDark && styles.subheadingDark]}>
             Enter the email associated with your GetAiPilot account and we'll send you reset instructions.
           </Text>
 
           {/* Inline Feedback Banner */}
           {feedback && (
             <View
-              className={`py-2.5 px-3.5 rounded-xl mb-4.5 ${
-                feedback.type === 'error'
-                  ? 'bg-red-500/15 border border-red-500/30'
-                  : 'bg-emerald-500/15 border border-emerald-500/30'
-              }`}
+              style={[
+                styles.feedbackBanner,
+                feedback.type === 'error' ? styles.feedbackBannerError : styles.feedbackBannerSuccess,
+              ]}
             >
               <Text
-                className={`text-xs font-semibold text-center leading-5 ${
-                  feedback.type === 'error' ? 'text-red-400' : 'text-emerald-400'
-                }`}
+                style={[
+                  styles.feedbackBannerText,
+                  feedback.type === 'error' ? styles.feedbackErrorText : styles.feedbackSuccessText,
+                ]}
               >
                 {feedback.message}
               </Text>
             </View>
           )}
 
-          {/* Grouped Input Fields Card */}
-          <View className="bg-[#181A1F] border border-[#262930] rounded-2xl overflow-hidden mb-5">
-            <View className="flex-row items-center px-4 min-h-[52px]">
+          {/* Grouped iOS Input Fields Card */}
+          <View style={[styles.inputGroup, isDark && styles.inputGroupDark]}>
+            <View style={styles.inputRow}>
               <TextInput
-                className="flex-1 text-base font-normal text-white py-3.5"
+                style={[styles.nativeInput, isDark && styles.nativeInputDark]}
                 placeholder="Account email address"
-                placeholderTextColor="#636366"
+                placeholderTextColor={isDark ? '#636366' : '#8E8E93'}
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
@@ -149,21 +151,21 @@ export default function ForgotPasswordScreen() {
                 <Pressable
                   onPress={() => setEmail('')}
                   hitSlop={10}
-                  className="w-5 h-5 rounded-full bg-slate-700 justify-center items-center ml-2"
+                  style={styles.clearBtn}
                 >
-                  <Text className="text-[10px] text-slate-300 font-extrabold">✕</Text>
+                  <Text style={styles.clearBtnText}>✕</Text>
                 </Pressable>
               )}
             </View>
           </View>
 
-          {/* Primary Action Button */}
+          {/* Primary Action Button ("Send reset instructions") */}
           <Pressable
-            className={`py-4 rounded-full items-center justify-center mb-3 shadow-md shadow-blue-500/20 ${
-              !isFormValid
-                ? 'bg-[#181A1F] border border-[#262930]'
-                : 'bg-[#0084FF]'
-            } ${loading ? 'opacity-80' : ''}`}
+            style={[
+              styles.primaryButton,
+              !isFormValid && styles.primaryButtonDisabled,
+              loading && { opacity: 0.8 },
+            ]}
             onPress={handleReset}
             disabled={!isFormValid || loading}
           >
@@ -171,24 +173,25 @@ export default function ForgotPasswordScreen() {
               <ActivityIndicator color="#FFFFFF" />
             ) : (
               <Text
-                className={`text-base font-bold tracking-tight ${
-                  !isFormValid ? 'text-slate-500' : 'text-white'
-                }`}
+                style={[
+                  styles.primaryButtonText,
+                  !isFormValid && styles.primaryButtonTextDisabled,
+                ]}
               >
                 Send reset link
               </Text>
             )}
           </Pressable>
 
-          {/* Secondary Action Button */}
+          {/* Secondary Action Button ("Back to Log in") */}
           <Pressable
-            className="bg-[#181A1F] border border-[#262930] py-4 rounded-full items-center justify-center mb-6"
+            style={[styles.secondaryButton, isDark && styles.secondaryButtonDark]}
             onPress={() => {
               triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
               router.back();
             }}
           >
-            <Text className="text-white text-base font-bold tracking-tight">
+            <Text style={[styles.secondaryButtonText, isDark && styles.secondaryButtonTextDark]}>
               Back to Log in
             </Text>
           </Pressable>
@@ -198,3 +201,180 @@ export default function ForgotPasswordScreen() {
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  containerDark: {
+    backgroundColor: '#000000',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    justifyContent: 'center',
+    alignItems: 'stretch',
+    maxWidth: 500,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  logoSection: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  logoWrapper: {
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  logoWrapperDark: {
+    backgroundColor: '#1C1C1E',
+    shadowColor: '#8B5CF6',
+    shadowOpacity: 0.4,
+  },
+  logoImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 46,
+  },
+  heading: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#000000',
+    textAlign: 'center',
+    lineHeight: 31,
+    letterSpacing: -0.6,
+    marginBottom: 8,
+  },
+  headingDark: {
+    color: '#FFFFFF',
+  },
+  subheading: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+    paddingHorizontal: 12,
+  },
+  subheadingDark: {
+    color: '#9CA3AF',
+  },
+  feedbackBanner: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    marginBottom: 18,
+  },
+  feedbackBannerError: {
+    backgroundColor: '#FEE2E2',
+  },
+  feedbackBannerSuccess: {
+    backgroundColor: '#DCFCE7',
+  },
+  feedbackBannerText: {
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  feedbackErrorText: {
+    color: '#DC2626',
+  },
+  feedbackSuccessText: {
+    color: '#16A34A',
+  },
+  inputGroup: {
+    backgroundColor: '#F2F4F7',
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
+  inputGroupDark: {
+    backgroundColor: '#1C1C1E',
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    minHeight: 52,
+  },
+  nativeInput: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#000000',
+    paddingVertical: 14,
+  },
+  nativeInputDark: {
+    color: '#FFFFFF',
+  },
+  clearBtn: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#D1D5DB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  clearBtnText: {
+    fontSize: 10,
+    color: '#4B5563',
+    fontWeight: '800',
+  },
+  primaryButton: {
+    backgroundColor: '#0084FF',
+    paddingVertical: 15,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    shadowColor: '#0084FF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  primaryButtonDisabled: {
+    backgroundColor: '#F2F4F7',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  primaryButtonTextDisabled: {
+    color: '#9CA3AF',
+  },
+  secondaryButton: {
+    backgroundColor: '#F2F4F7',
+    paddingVertical: 15,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  secondaryButtonDark: {
+    backgroundColor: '#1C1C1E',
+  },
+  secondaryButtonText: {
+    color: '#000000',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  secondaryButtonTextDark: {
+    color: '#FFFFFF',
+  },
+});

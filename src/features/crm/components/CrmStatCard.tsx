@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View, Pressable } from 'react-native';
+import { StyleSheet, Text, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -24,7 +24,7 @@ export const CrmStatCard: React.FC<CrmStatCardProps> = ({
 }) => {
   return (
     <Pressable
-      className="flex-1 min-w-[140px] rounded-2xl overflow-hidden active:opacity-90 active:scale-95"
+      style={({ pressed }) => [styles.container, pressed && styles.pressed]}
       onPress={onPress}
       disabled={!onPress}
     >
@@ -32,28 +32,28 @@ export const CrmStatCard: React.FC<CrmStatCardProps> = ({
         colors={gradientColors}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        className="p-4 rounded-2xl border border-white/10"
+        style={styles.gradient}
       >
-        <View className="flex-row items-center justify-between mb-3">
-          <View className="w-8 h-8 rounded-xl bg-white/20 items-center justify-center">
+        <View style={styles.topRow}>
+          <View style={styles.iconCircle}>
             <Ionicons name={icon} size={18} color="#FFFFFF" />
           </View>
           {trend ? (
-            <View className="flex-row items-center gap-1 bg-emerald-500/20 px-1.5 py-0.5 rounded-md">
-              <Ionicons name="trending-up" size={11} color="#10B981" />
-              <Text className="text-[11px] font-bold text-emerald-400">{trend}</Text>
+            <View style={styles.trendBadge}>
+              <Ionicons name="trending-up" size={12} color="#10B981" />
+              <Text style={styles.trendText}>{trend}</Text>
             </View>
           ) : null}
         </View>
 
-        <Text className="text-2xl font-extrabold text-white tracking-tight" numberOfLines={1}>
+        <Text style={styles.value} numberOfLines={1}>
           {typeof value === 'number' ? value.toLocaleString() : value}
         </Text>
-        <Text className="text-xs font-semibold text-white/80 mt-1" numberOfLines={1}>
+        <Text style={styles.label} numberOfLines={1}>
           {label}
         </Text>
         {sub ? (
-          <Text className="text-[11px] text-white/60 mt-0.5" numberOfLines={1}>
+          <Text style={styles.sub} numberOfLines={1}>
             {sub}
           </Text>
         ) : null}
@@ -61,3 +61,72 @@ export const CrmStatCard: React.FC<CrmStatCardProps> = ({
     </Pressable>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    minWidth: 140,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  pressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
+  },
+  gradient: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  iconCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  trendBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  trendText: {
+    color: '#10B981',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  value: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.85)',
+    marginTop: 4,
+  },
+  sub: {
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.6)',
+    marginTop: 2,
+  },
+});

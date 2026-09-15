@@ -4,12 +4,14 @@ import {
   Text,
   TextInput,
   Pressable,
+  StyleSheet,
   ActivityIndicator,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  useColorScheme,
   Switch,
 } from 'react-native';
 import { Image } from 'expo-image';
@@ -22,7 +24,7 @@ import { supabase } from '../src/lib/supabase';
 import { useAuth } from '../src/contexts/AuthContext';
 import { BiometricService, BiometricSettings } from '../src/lib/biometrics';
 
-const brandLogo = require('../assets/images/logo.png');
+const brandLogo = require('../assets/images/logo.jpg');
 
 const CATEGORIES = [
   'Agency & Marketing',
@@ -40,6 +42,8 @@ const TEAM_SIZES = ['1-5', '6-15', '16-50', '50+'];
 export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const { user, refreshProfile } = useAuth();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -104,6 +108,8 @@ export default function OnboardingScreen() {
   const handleToggleBiometricInOnboarding = async (val: boolean) => {
     if (isUpdatingBiometrics) return;
     setIsUpdatingBiometrics(true);
+
+    // Optimistic UI state update
     setBiometricSettings((prev) => ({ ...prev, enabled: val }));
     triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
 
@@ -135,6 +141,7 @@ export default function OnboardingScreen() {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
+      // Save local preferences
       await AsyncStorage.setItem('@pref_push', notificationsEnabled ? 'true' : 'false');
       await AsyncStorage.setItem('@pref_haptics', hapticsEnabled ? 'true' : 'false');
 
@@ -169,141 +176,138 @@ export default function OnboardingScreen() {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1 bg-[#0B0D10]"
+        style={[styles.container, isDark && styles.containerDark]}
       >
         <ScrollView
-          className="flex-1"
-          contentContainerClassName="flex-grow px-6 justify-center max-w-[500px] w-full self-center"
-          contentContainerStyle={{
-            paddingTop: Math.max(insets.top + 16, 44),
-            paddingBottom: Math.max(insets.bottom + 24, 32),
-          }}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: Math.max(insets.top + 16, 44), paddingBottom: Math.max(insets.bottom + 24, 32) },
+          ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           {/* Top Brand Logo */}
-          <View className="items-center mb-5">
-            <View className="w-[92px] h-[92px] rounded-full overflow-hidden bg-[#181A1F] border border-[#262930] shadow-lg shadow-purple-500/20">
+          <View style={styles.logoSection}>
+            <View style={[styles.logoWrapper, isDark && styles.logoWrapperDark]}>
               <Image
                 source={brandLogo}
-                className="w-full h-full rounded-full"
+                style={styles.logoImage}
                 contentFit="cover"
                 transition={200}
               />
             </View>
           </View>
 
-          {/* Segmented Step Badge */}
-          <View className="items-center mb-3">
-            <View className="bg-[#181A1F] border border-[#262930] px-3.5 py-1.5 rounded-xl">
-              <Text className="text-xs font-bold text-blue-400 tracking-wider">
+          {/* iOS Segmented Step Badge */}
+          <View style={styles.stepBadgeContainer}>
+            <View style={[styles.stepBadge, isDark && styles.stepBadgeDark]}>
+              <Text style={[styles.stepBadgeText, isDark && styles.stepBadgeTextDark]}>
                 Step {step} of 3 • {step === 1 ? 'Account Type' : step === 2 ? 'Workspace Details' : 'Permissions & Security'}
               </Text>
             </View>
           </View>
 
           {/* Heading & Subtitle */}
-          <Text className="text-[26px] font-extrabold text-white text-center leading-8 tracking-tight mb-2">
+          <Text style={[styles.heading, isDark && styles.headingDark]}>
             {step === 1 ? 'Choose Account Type' : step === 2 ? 'Configure Workspace' : 'Permissions & Security'}
           </Text>
-          <Text className="text-sm text-slate-400 text-center leading-5 mb-6 px-3">
+          <Text style={[styles.subheading, isDark && styles.subheadingDark]}>
             {step === 1
               ? 'Tailor your AI workspace engines according to your needs'
               : step === 2
               ? 'Set up your default workspace profile and automation channels'
-              : 'Authorize security and real-time alerts for an optimal experience'}
+              : 'Authorize security and real-time alerts for an optimal iOS experience'}
           </Text>
 
-          {/* Error Banner */}
+          {/* Inline Error Banner */}
           {error && (
-            <View className="bg-red-500/15 border border-red-500/30 py-2.5 px-3.5 rounded-xl mb-4.5">
-              <Text className="text-red-400 text-xs font-semibold text-center leading-5">{error}</Text>
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorBannerText}>{error}</Text>
             </View>
           )}
 
           {step === 1 ? (
             /* STEP 1: Account Type Selection */
-            <View className="gap-3.5">
+            <View style={styles.stepOneContent}>
               {/* Option 1: Business / Agency */}
               <Pressable
-                className={`flex-row items-center rounded-2xl p-4 border-2 gap-3.5 ${
-                  accountType === 'business'
-                    ? 'bg-[#181A1F] border-blue-500'
-                    : 'bg-[#181A1F] border-transparent'
-                }`}
+                style={[
+                  styles.optionCard,
+                  accountType === 'business' && styles.optionCardActive,
+                  isDark && styles.optionCardDark,
+                  isDark && accountType === 'business' && styles.optionCardActiveDark,
+                ]}
                 onPress={() => handleSelectAccountType('business')}
               >
-                <View className="w-12 h-12 rounded-xl bg-[#262930] justify-center items-center">
-                  <Text className="text-2xl">🏢</Text>
+                <View style={[styles.optionIconBox, isDark && styles.optionIconBoxDark]}>
+                  <Text style={styles.optionIconEmoji}>🏢</Text>
                 </View>
-                <View className="flex-1">
-                  <Text className="text-base font-bold text-white mb-1">
+                <View style={styles.optionTextBox}>
+                  <Text style={[styles.optionTitle, isDark && styles.optionTitleDark]}>
                     Business / Agency
                   </Text>
-                  <Text className="text-xs text-slate-400 leading-4">
+                  <Text style={[styles.optionDesc, isDark && styles.optionDescDark]}>
                     For marketing teams, agencies, and businesses managing multiple automation channels
                   </Text>
                 </View>
                 <View
-                  className={`w-6 h-6 rounded-full border-2 justify-center items-center ${
-                    accountType === 'business'
-                      ? 'bg-blue-600 border-blue-600'
-                      : 'border-slate-600 bg-transparent'
-                  }`}
+                  style={[
+                    styles.radioCircle,
+                    accountType === 'business' && styles.radioCircleActive,
+                    isDark && styles.radioCircleDark,
+                  ]}
                 >
-                  {accountType === 'business' && <Text className="text-white text-xs font-black">✓</Text>}
+                  {accountType === 'business' && <Text style={styles.radioCheckmark}>✓</Text>}
                 </View>
               </Pressable>
 
               {/* Option 2: Creator / Individual */}
               <Pressable
-                className={`flex-row items-center rounded-2xl p-4 border-2 gap-3.5 ${
-                  accountType === 'personal'
-                    ? 'bg-[#181A1F] border-blue-500'
-                    : 'bg-[#181A1F] border-transparent'
-                }`}
+                style={[
+                  styles.optionCard,
+                  accountType === 'personal' && styles.optionCardActive,
+                  isDark && styles.optionCardDark,
+                  isDark && accountType === 'personal' && styles.optionCardActiveDark,
+                ]}
                 onPress={() => handleSelectAccountType('personal')}
               >
-                <View className="w-12 h-12 rounded-xl bg-[#262930] justify-center items-center">
-                  <Text className="text-2xl">👤</Text>
+                <View style={[styles.optionIconBox, isDark && styles.optionIconBoxDark]}>
+                  <Text style={styles.optionIconEmoji}>👤</Text>
                 </View>
-                <View className="flex-1">
-                  <Text className="text-base font-bold text-white mb-1">
+                <View style={styles.optionTextBox}>
+                  <Text style={[styles.optionTitle, isDark && styles.optionTitleDark]}>
                     Creator / Individual
                   </Text>
-                  <Text className="text-xs text-slate-400 leading-4">
+                  <Text style={[styles.optionDesc, isDark && styles.optionDescDark]}>
                     For solo founders, content creators, and community managers
                   </Text>
                 </View>
                 <View
-                  className={`w-6 h-6 rounded-full border-2 justify-center items-center ${
-                    accountType === 'personal'
-                      ? 'bg-blue-600 border-blue-600'
-                      : 'border-slate-600 bg-transparent'
-                  }`}
+                  style={[
+                    styles.radioCircle,
+                    accountType === 'personal' && styles.radioCircleActive,
+                    isDark && styles.radioCircleDark,
+                  ]}
                 >
-                  {accountType === 'personal' && <Text className="text-white text-xs font-black">✓</Text>}
+                  {accountType === 'personal' && <Text style={styles.radioCheckmark}>✓</Text>}
                 </View>
               </Pressable>
 
               {/* Primary Action Button */}
-              <Pressable
-                className="bg-blue-600 py-4 rounded-full items-center justify-center mt-2 shadow-md shadow-blue-500/20"
-                onPress={handleContinueToStep2}
-              >
-                <Text className="text-white text-base font-bold tracking-tight">Continue to Details →</Text>
+              <Pressable style={styles.primaryButton} onPress={handleContinueToStep2}>
+                <Text style={styles.primaryButtonText}>Continue to Details →</Text>
               </Pressable>
             </View>
           ) : step === 2 ? (
             /* STEP 2: Workspace Details */
-            <View className="gap-4">
+            <View style={styles.stepTwoContent}>
               {/* Grouped Profile Inputs Card */}
-              <View className="bg-[#181A1F] border border-[#262930] rounded-2xl overflow-hidden">
-                <View className="px-4 min-h-[52px] justify-center">
+              <View style={[styles.inputGroup, isDark && styles.inputGroupDark]}>
+                <View style={styles.inputRow}>
                   <TextInput
-                    className="text-base text-white py-3.5"
+                    style={[styles.nativeInput, isDark && styles.nativeInputDark]}
                     placeholder="Your Full Name"
-                    placeholderTextColor="#636366"
+                    placeholderTextColor={isDark ? '#636366' : '#8E8E93'}
                     value={fullName}
                     onChangeText={setFullName}
                     autoCapitalize="words"
@@ -312,11 +316,11 @@ export default function OnboardingScreen() {
                 </View>
 
                 {accountType === 'business' && (
-                  <View className="px-4 min-h-[52px] justify-center border-t border-[#262930]">
+                  <View style={[styles.inputRow, styles.inputRowBorder, isDark && styles.inputRowBorderDark]}>
                     <TextInput
-                      className="text-base text-white py-3.5"
+                      style={[styles.nativeInput, isDark && styles.nativeInputDark]}
                       placeholder="Business / Agency Name *"
-                      placeholderTextColor="#636366"
+                      placeholderTextColor={isDark ? '#636366' : '#8E8E93'}
                       value={businessName}
                       onChangeText={setBusinessName}
                       autoCapitalize="words"
@@ -325,11 +329,11 @@ export default function OnboardingScreen() {
                   </View>
                 )}
 
-                <View className="px-4 min-h-[52px] justify-center border-t border-[#262930]">
+                <View style={[styles.inputRow, styles.inputRowBorder, isDark && styles.inputRowBorderDark]}>
                   <TextInput
-                    className="text-base text-white py-3.5"
+                    style={[styles.nativeInput, isDark && styles.nativeInputDark]}
                     placeholder="Mobile / WhatsApp Number"
-                    placeholderTextColor="#636366"
+                    placeholderTextColor={isDark ? '#636366' : '#8E8E93'}
                     value={phone}
                     onChangeText={setPhone}
                     keyboardType="phone-pad"
@@ -339,33 +343,36 @@ export default function OnboardingScreen() {
               </View>
 
               {/* Category Selector */}
-              <Text className="text-xs font-bold text-slate-400 mt-1">
+              <Text style={[styles.sectionLabel, isDark && styles.sectionLabelDark]}>
                 Industry Category
               </Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerClassName="flex-row gap-2 py-0.5"
+                contentContainerStyle={styles.chipsContainer}
               >
                 {CATEGORIES.map((cat) => {
                   const isSelected = category === cat;
                   return (
                     <Pressable
                       key={cat}
-                      className={`px-3.5 py-2 rounded-full border ${
-                        isSelected
-                          ? 'bg-blue-500/20 border-blue-500'
-                          : 'bg-[#181A1F] border-[#262930]'
-                      }`}
+                      style={[
+                        styles.chip,
+                        isSelected && styles.chipActive,
+                        isDark && styles.chipDark,
+                        isDark && isSelected && styles.chipActiveDark,
+                      ]}
                       onPress={() => {
                         triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
                         setCategory(cat);
                       }}
                     >
                       <Text
-                        className={`text-xs font-semibold ${
-                          isSelected ? 'text-blue-400 font-bold' : 'text-slate-400'
-                        }`}
+                        style={[
+                          styles.chipText,
+                          isSelected && styles.chipTextActive,
+                          isDark && styles.chipTextDark,
+                        ]}
                       >
                         {cat}
                       </Text>
@@ -374,28 +381,32 @@ export default function OnboardingScreen() {
                 })}
               </ScrollView>
 
-              {/* Team Size Control */}
-              <Text className="text-xs font-bold text-slate-400 mt-1">
+              {/* Team Size Segmented Control */}
+              <Text style={[styles.sectionLabel, isDark && styles.sectionLabelDark]}>
                 Team Size
               </Text>
-              <View className="flex-row bg-[#181A1F] border border-[#262930] rounded-xl p-1">
+              <View style={[styles.segmentedControl, isDark && styles.segmentedControlDark]}>
                 {TEAM_SIZES.map((size) => {
                   const isSelected = teamSize === size;
                   return (
                     <Pressable
                       key={size}
-                      className={`flex-1 py-2.5 items-center rounded-lg ${
-                        isSelected ? 'bg-[#262930]' : ''
-                      }`}
+                      style={[
+                        styles.segmentButton,
+                        isSelected && styles.segmentButtonActive,
+                        isDark && isSelected && styles.segmentButtonActiveDark,
+                      ]}
                       onPress={() => {
                         triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
                         setTeamSize(size);
                       }}
                     >
                       <Text
-                        className={`text-xs font-semibold ${
-                          isSelected ? 'text-blue-400 font-bold' : 'text-slate-400'
-                        }`}
+                        style={[
+                          styles.segmentText,
+                          isSelected && styles.segmentTextActive,
+                          isDark && styles.segmentTextDark,
+                        ]}
                       >
                         {size}
                       </Text>
@@ -406,32 +417,32 @@ export default function OnboardingScreen() {
 
               {/* Continue to Step 3 Button */}
               <Pressable
-                className="bg-blue-600 py-4 rounded-full items-center justify-center mt-2 shadow-md shadow-blue-500/20"
+                style={styles.primaryButton}
                 onPress={handleContinueToStep3}
               >
-                <Text className="text-white text-base font-bold tracking-tight">Continue to Permissions & Security →</Text>
+                <Text style={styles.primaryButtonText}>Continue to Permissions & Security →</Text>
               </Pressable>
 
               {/* Back Button */}
               <Pressable
-                className="bg-[#181A1F] border border-[#262930] py-4 rounded-full items-center justify-center"
+                style={[styles.secondaryButton, isDark && styles.secondaryButtonDark]}
                 onPress={() => {
                   triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
                   setStep(1);
                 }}
               >
-                <Text className="text-white text-base font-bold tracking-tight">
+                <Text style={[styles.secondaryButtonText, isDark && styles.secondaryButtonTextDark]}>
                   ← Back to Step 1
                 </Text>
               </Pressable>
             </View>
           ) : (
             /* STEP 3: Permissions & Security Setup */
-            <View className="gap-4">
-              <View className="bg-[#181A1F] border border-[#262930] rounded-2xl overflow-hidden mb-5">
+            <View style={styles.stepTwoContent}>
+              <View style={[styles.permissionGroup, isDark && styles.permissionGroupDark]}>
                 {/* 1. Biometric / Face ID Card */}
-                <View className="flex-row items-center px-4 py-3.5">
-                  <View className="w-10 h-10 rounded-xl bg-emerald-500/15 items-center justify-center mr-3.5">
+                <View style={[styles.permissionRow, isDark && styles.permissionRowDark]}>
+                  <View style={[styles.permissionIconCircle, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
                     <Ionicons
                       name={
                         biometricSettings.biometricType === 'FACE_ID'
@@ -444,11 +455,11 @@ export default function OnboardingScreen() {
                       color="#10B981"
                     />
                   </View>
-                  <View className="flex-1 pr-2.5">
-                    <Text className="text-[15px] font-bold text-white mb-0.5">
+                  <View style={styles.permissionTextBox}>
+                    <Text style={[styles.permissionTitle, isDark && styles.permissionTitleDark]}>
                       {biometricSettings.biometricLabel} Lock
                     </Text>
-                    <Text className="text-xs text-slate-400 leading-4">
+                    <Text style={[styles.permissionDesc, isDark && styles.permissionDescDark]}>
                       1-tap fast biometric access & account data encryption
                     </Text>
                   </View>
@@ -456,21 +467,21 @@ export default function OnboardingScreen() {
                     value={biometricSettings.enabled}
                     onValueChange={handleToggleBiometricInOnboarding}
                     disabled={isUpdatingBiometrics}
-                    trackColor={{ false: '#3A3A3C', true: '#10B981' }}
+                    trackColor={{ false: isDark ? '#3A3A3C' : '#E5E7EB', true: '#10B981' }}
                     thumbColor="#FFFFFF"
                   />
                 </View>
 
                 {/* 2. Push Notifications Card */}
-                <View className="flex-row items-center px-4 py-3.5 border-t border-[#262930]">
-                  <View className="w-10 h-10 rounded-xl bg-blue-500/15 items-center justify-center mr-3.5">
+                <View style={[styles.permissionRow, styles.inputRowBorder, isDark && styles.inputRowBorderDark, isDark && styles.permissionRowDark]}>
+                  <View style={[styles.permissionIconCircle, { backgroundColor: 'rgba(10, 132, 255, 0.15)' }]}>
                     <Ionicons name="notifications-outline" size={22} color="#0A84FF" />
                   </View>
-                  <View className="flex-1 pr-2.5">
-                    <Text className="text-[15px] font-bold text-white mb-0.5">
+                  <View style={styles.permissionTextBox}>
+                    <Text style={[styles.permissionTitle, isDark && styles.permissionTitleDark]}>
                       Push Notifications
                     </Text>
-                    <Text className="text-xs text-slate-400 leading-4">
+                    <Text style={[styles.permissionDesc, isDark && styles.permissionDescDark]}>
                       Real-time alerts when leads arrive & automations run
                     </Text>
                   </View>
@@ -480,22 +491,22 @@ export default function OnboardingScreen() {
                       triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
                       setNotificationsEnabled(val);
                     }}
-                    trackColor={{ false: '#3A3A3C', true: '#0A84FF' }}
+                    trackColor={{ false: isDark ? '#3A3A3C' : '#E5E7EB', true: '#0A84FF' }}
                     thumbColor="#FFFFFF"
                   />
                 </View>
 
                 {/* 3. Sensory Haptics */}
-                <View className="flex-row items-center px-4 py-3.5 border-t border-[#262930]">
-                  <View className="w-10 h-10 rounded-xl bg-purple-500/15 items-center justify-center mr-3.5">
+                <View style={[styles.permissionRow, styles.inputRowBorder, isDark && styles.inputRowBorderDark, isDark && styles.permissionRowDark, { borderBottomWidth: 0 }]}>
+                  <View style={[styles.permissionIconCircle, { backgroundColor: 'rgba(139, 92, 246, 0.15)' }]}>
                     <Ionicons name="phone-portrait-outline" size={22} color="#8B5CF6" />
                   </View>
-                  <View className="flex-1 pr-2.5">
-                    <Text className="text-[15px] font-bold text-white mb-0.5">
+                  <View style={styles.permissionTextBox}>
+                    <Text style={[styles.permissionTitle, isDark && styles.permissionTitleDark]}>
                       Tactile Haptic Feedback
                     </Text>
-                    <Text className="text-xs text-slate-400 leading-4">
-                      Smooth tactile vibrations on actions & buttons
+                    <Text style={[styles.permissionDesc, isDark && styles.permissionDescDark]}>
+                      Smooth iOS tactile vibrations on actions & buttons
                     </Text>
                   </View>
                   <Switch
@@ -504,7 +515,7 @@ export default function OnboardingScreen() {
                       triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
                       setHapticsEnabled(val);
                     }}
-                    trackColor={{ false: '#3A3A3C', true: '#8B5CF6' }}
+                    trackColor={{ false: isDark ? '#3A3A3C' : '#E5E7EB', true: '#8B5CF6' }}
                     thumbColor="#FFFFFF"
                   />
                 </View>
@@ -512,26 +523,26 @@ export default function OnboardingScreen() {
 
               {/* Complete Setup Primary CTA */}
               <Pressable
-                className={`bg-blue-600 py-4 rounded-full items-center justify-center shadow-md shadow-blue-500/20 ${loading ? 'opacity-80' : ''}`}
+                style={[styles.primaryButton, loading && { opacity: 0.8 }]}
                 onPress={handleCompleteOnboarding}
                 disabled={loading}
               >
                 {loading ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text className="text-white text-base font-bold tracking-tight">Complete Setup & Enter Hub 🚀</Text>
+                  <Text style={styles.primaryButtonText}>Complete Setup & Enter Hub 🚀</Text>
                 )}
               </Pressable>
 
               {/* Back to Step 2 */}
               <Pressable
-                className="bg-[#181A1F] border border-[#262930] py-4 rounded-full items-center justify-center"
+                style={[styles.secondaryButton, isDark && styles.secondaryButtonDark]}
                 onPress={() => {
                   triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
                   setStep(2);
                 }}
               >
-                <Text className="text-white text-base font-bold tracking-tight">
+                <Text style={[styles.secondaryButtonText, isDark && styles.secondaryButtonTextDark]}>
                   ← Back to Step 2
                 </Text>
               </Pressable>
@@ -543,3 +554,411 @@ export default function OnboardingScreen() {
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  containerDark: {
+    backgroundColor: '#000000',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    justifyContent: 'center',
+    alignItems: 'stretch',
+    maxWidth: 500,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  logoSection: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  logoWrapper: {
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  logoWrapperDark: {
+    backgroundColor: '#1C1C1E',
+    shadowColor: '#8B5CF6',
+    shadowOpacity: 0.4,
+  },
+  logoImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 46,
+  },
+  stepBadgeContainer: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  stepBadge: {
+    backgroundColor: '#F2F4F7',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  stepBadgeDark: {
+    backgroundColor: '#1C1C1E',
+  },
+  stepBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0084FF',
+    letterSpacing: 0.2,
+  },
+  stepBadgeTextDark: {
+    color: '#3B82F6',
+  },
+  heading: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#000000',
+    textAlign: 'center',
+    lineHeight: 32,
+    letterSpacing: -0.6,
+    marginBottom: 8,
+  },
+  headingDark: {
+    color: '#FFFFFF',
+  },
+  subheading: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+    paddingHorizontal: 12,
+  },
+  subheadingDark: {
+    color: '#9CA3AF',
+  },
+  errorBanner: {
+    backgroundColor: '#FEE2E2',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    marginBottom: 18,
+  },
+  errorBannerText: {
+    color: '#DC2626',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  stepOneContent: {
+    gap: 14,
+  },
+  optionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F2F4F7',
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    gap: 14,
+  },
+  optionCardDark: {
+    backgroundColor: '#1C1C1E',
+  },
+  optionCardActive: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#0084FF',
+    shadowColor: '#0084FF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  optionCardActiveDark: {
+    backgroundColor: '#1E293B',
+    borderColor: '#3B82F6',
+  },
+  optionIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  optionIconBoxDark: {
+    backgroundColor: '#2C2C2E',
+  },
+  optionIconEmoji: {
+    fontSize: 24,
+  },
+  optionTextBox: {
+    flex: 1,
+  },
+  optionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#000000',
+    marginBottom: 4,
+  },
+  optionTitleDark: {
+    color: '#FFFFFF',
+  },
+  optionDesc: {
+    fontSize: 12.5,
+    color: '#6B7280',
+    lineHeight: 17,
+  },
+  optionDescDark: {
+    color: '#9CA3AF',
+  },
+  radioCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#9CA3AF',
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  radioCircleDark: {
+    borderColor: '#4B5563',
+  },
+  radioCircleActive: {
+    backgroundColor: '#0084FF',
+    borderColor: '#0084FF',
+  },
+  radioCheckmark: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  stepTwoContent: {
+    gap: 16,
+  },
+  inputGroup: {
+    backgroundColor: '#F2F4F7',
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  inputGroupDark: {
+    backgroundColor: '#1C1C1E',
+  },
+  inputRow: {
+    paddingHorizontal: 16,
+    minHeight: 52,
+    justifyContent: 'center',
+  },
+  nativeInput: {
+    fontSize: 16,
+    color: '#000000',
+    paddingVertical: 14,
+  },
+  nativeInputDark: {
+    color: '#FFFFFF',
+  },
+  hairlineDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#E5E7EB',
+    marginLeft: 16,
+  },
+  hairlineDividerDark: {
+    backgroundColor: '#2C2C2E',
+  },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#4B5563',
+    marginTop: 4,
+  },
+  sectionLabelDark: {
+    color: '#9CA3AF',
+  },
+  chipsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 2,
+  },
+  chip: {
+    backgroundColor: '#F2F4F7',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  chipDark: {
+    backgroundColor: '#1C1C1E',
+  },
+  chipActive: {
+    backgroundColor: '#EBF5FF',
+    borderColor: '#0084FF',
+  },
+  chipActiveDark: {
+    backgroundColor: '#1E293B',
+    borderColor: '#3B82F6',
+  },
+  chipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#4B5563',
+  },
+  chipTextDark: {
+    color: '#9CA3AF',
+  },
+  chipTextActive: {
+    color: '#0084FF',
+    fontWeight: '700',
+  },
+  segmentedControl: {
+    flexDirection: 'row',
+    backgroundColor: '#F2F4F7',
+    borderRadius: 14,
+    padding: 4,
+  },
+  segmentedControlDark: {
+    backgroundColor: '#1C1C1E',
+  },
+  segmentButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  segmentButtonActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  segmentButtonActiveDark: {
+    backgroundColor: '#2C2C2E',
+  },
+  segmentText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  segmentTextDark: {
+    color: '#9CA3AF',
+  },
+  segmentTextActive: {
+    color: '#0084FF',
+    fontWeight: '700',
+  },
+  primaryButton: {
+    backgroundColor: '#0084FF',
+    paddingVertical: 15,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    shadowColor: '#0084FF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  secondaryButton: {
+    backgroundColor: '#F2F4F7',
+    paddingVertical: 15,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryButtonDark: {
+    backgroundColor: '#1C1C1E',
+  },
+  secondaryButtonText: {
+    color: '#000000',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  secondaryButtonTextDark: {
+    color: '#FFFFFF',
+  },
+  inputRowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: '#F2F4F7',
+  },
+  inputRowBorderDark: {
+    borderTopColor: '#2C2C2E',
+  },
+  permissionGroup: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    overflow: 'hidden',
+    marginBottom: 20,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  permissionGroupDark: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
+  },
+  permissionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  permissionRowDark: {
+    backgroundColor: '#1C1C1E',
+  },
+  permissionIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  permissionTextBox: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  permissionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#000000',
+    marginBottom: 2,
+  },
+  permissionTitleDark: {
+    color: '#FFFFFF',
+  },
+  permissionDesc: {
+    fontSize: 12.5,
+    color: '#6B7280',
+    lineHeight: 17,
+  },
+  permissionDescDark: {
+    color: '#8E8E93',
+  },
+});

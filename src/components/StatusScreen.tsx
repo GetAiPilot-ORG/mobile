@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Animated,
   Pressable,
+  StyleSheet,
   Text,
   useColorScheme,
   View,
@@ -55,77 +56,109 @@ export function NetworkStatusScreen({ onRetry, isChecking = false }: NetworkStat
     pulseAnimation.start();
 
     return () => pulseAnimation.stop();
-  }, [opacity, pulse, scale]);
+  }, []);
 
   return (
     <View
-      className={`flex-1 justify-center items-center px-7 ${
-        isDark ? "bg-black" : "bg-[#F2F2F7]"
-      }`}
+      style={[
+        styles.container,
+        {
+          backgroundColor: isDark ? "#000000" : "#F2F2F7",
+        },
+      ]}
     >
       <Animated.View
-        className="w-full max-w-[420px] items-center"
-        style={{ opacity, transform: [{ scale }] }}
+        style={[
+          styles.content,
+          {
+            opacity,
+            transform: [{ scale }],
+          },
+        ]}
       >
         <Animated.View
-          className="w-[130px] h-[130px] rounded-full justify-center items-center mb-7.5 bg-red-500/10"
-          style={{ transform: [{ scale: pulse }] }}
+          style={[
+            styles.iconOuter,
+            {
+              transform: [{ scale: pulse }],
+              backgroundColor: isDark
+                ? "rgba(255,69,58,0.12)"
+                : "rgba(255,69,58,0.10)",
+            },
+          ]}
         >
-          <View className="w-24 h-24 rounded-full bg-red-500/15 justify-center items-center">
+          <View style={styles.iconInner}>
             <Ionicons name="cloud-offline-outline" size={52} color="#FF453A" />
           </View>
         </Animated.View>
 
         <Text
-          className={`text-3xl font-extrabold tracking-tight mb-2.5 ${
-            isDark ? "text-white" : "text-black"
-          }`}
+          style={[
+            styles.title,
+            {
+              color: isDark ? "#FFFFFF" : "#111111",
+            },
+          ]}
         >
           You're Offline
         </Text>
 
         <Text
-          className={`text-sm leading-5.5 text-center max-w-[330px] mb-7 ${
-            isDark ? "text-slate-400" : "text-slate-500"
-          }`}
+          style={[
+            styles.description,
+            {
+              color: isDark ? "#98989D" : "#6B7280",
+            },
+          ]}
         >
-          No internet connection detected. Check your Wi-Fi or mobile data and try again.
+          No internet connection detected. Check your Wi-Fi or mobile data and
+          try again.
         </Text>
 
         <View
-          className={`w-full min-h-[70px] rounded-2xl border px-3.5 flex-row items-center mb-4.5 ${
-            isDark ? "bg-[#181A1F] border-[#262930]" : "bg-white border-gray-200"
-          }`}
+          style={[
+            styles.statusCard,
+            {
+              backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+              borderColor: isDark ? "#2C2C2E" : "#E5E7EB",
+            },
+          ]}
         >
-          <View className="w-10.5 h-10.5 rounded-xl bg-red-500/12 justify-center items-center mr-3">
+          <View style={styles.statusIcon}>
             <Ionicons name="wifi-outline" size={20} color="#FF453A" />
           </View>
 
-          <View className="flex-1">
+          <View style={styles.statusText}>
             <Text
-              className={`text-sm font-bold mb-0.5 ${
-                isDark ? "text-white" : "text-black"
-              }`}
+              style={[
+                styles.statusTitle,
+                {
+                  color: isDark ? "#FFFFFF" : "#111111",
+                },
+              ]}
             >
               No Internet
             </Text>
 
             <Text
-              className={`text-xs ${
-                isDark ? "text-slate-400" : "text-slate-500"
-              }`}
+              style={[
+                styles.statusSubtitle,
+                {
+                  color: isDark ? "#98989D" : "#6B7280",
+                },
+              ]}
             >
               Waiting for connection...
             </Text>
           </View>
 
-          <View className="w-2.5 h-2.5 rounded-full bg-[#FF453A]" />
+          <View style={styles.dot} />
         </View>
 
         <Pressable
-          className="w-full h-12 rounded-2xl bg-[#0284C7] flex-row justify-center items-center gap-2"
           style={({ pressed }) => [
-            pressed && { opacity: 0.75, transform: [{ scale: 0.98 }] },
+            styles.retryButton,
+            pressed && styles.retryButtonPressed,
             isChecking && { opacity: 0.75 },
           ]}
           onPress={onRetry}
@@ -137,15 +170,18 @@ export function NetworkStatusScreen({ onRetry, isChecking = false }: NetworkStat
             <Ionicons name="refresh" size={18} color="#FFFFFF" />
           )}
 
-          <Text className="text-white text-sm font-bold">
+          <Text style={styles.retryText}>
             {isChecking ? "Checking Connection..." : "Try Again"}
           </Text>
         </Pressable>
 
         <Text
-          className={`text-xs mt-4.5 ${
-            isDark ? "text-slate-500" : "text-slate-400"
-          }`}
+          style={[
+            styles.footer,
+            {
+              color: isDark ? "#636366" : "#8E8E93",
+            },
+          ]}
         >
           GetAiPilot will reconnect automatically
         </Text>
@@ -153,3 +189,120 @@ export function NetworkStatusScreen({ onRetry, isChecking = false }: NetworkStat
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 28,
+  },
+
+  content: {
+    width: "100%",
+    maxWidth: 420,
+    alignItems: "center",
+  },
+
+  iconOuter: {
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 30,
+  },
+
+  iconInner: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: "rgba(255,69,58,0.12)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  title: {
+    fontSize: 28,
+    fontWeight: "800",
+    letterSpacing: -0.7,
+    marginBottom: 10,
+  },
+
+  description: {
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: "center",
+    maxWidth: 330,
+    marginBottom: 28,
+  },
+
+  statusCard: {
+    width: "100%",
+    minHeight: 70,
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 18,
+  },
+
+  statusIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    backgroundColor: "rgba(255,69,58,0.12)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+
+  statusText: {
+    flex: 1,
+  },
+
+  statusTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 3,
+  },
+
+  statusSubtitle: {
+    fontSize: 12,
+  },
+
+  dot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: "#FF453A",
+  },
+
+  retryButton: {
+    width: "100%",
+    height: 50,
+    borderRadius: 15,
+    backgroundColor: "#0A84FF",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+  },
+
+  retryButtonPressed: {
+    opacity: 0.75,
+    transform: [{ scale: 0.98 }],
+  },
+
+  retryText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+
+  footer: {
+    fontSize: 11.5,
+    marginTop: 18,
+  },
+});

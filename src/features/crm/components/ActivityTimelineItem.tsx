@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityType, CRMActivity } from '../types';
 
@@ -9,23 +9,26 @@ interface ActivityTimelineItemProps {
 }
 
 const TYPE_CONFIG: Partial<Record<ActivityType, { icon: keyof typeof Ionicons.glyphMap; color: string; bg: string }>> = {
-  call: { icon: 'call', color: '#10B981', bg: 'bg-emerald-500/20' },
-  email: { icon: 'mail', color: '#0084FF', bg: 'bg-[#0084FF]/20' },
-  meeting: { icon: 'calendar', color: '#8B5CF6', bg: 'bg-purple-500/20' },
-  note: { icon: 'document-text', color: '#F59E0B', bg: 'bg-amber-500/20' },
-  task: { icon: 'checkbox', color: '#6366F1', bg: 'bg-indigo-500/20' },
-  follow_up: { icon: 'alarm', color: '#EC4899', bg: 'bg-pink-500/20' },
-  message: { icon: 'chatbubbles', color: '#10B981', bg: 'bg-emerald-500/20' },
-  stage_change: { icon: 'swap-horizontal', color: '#F59E0B', bg: 'bg-amber-500/20' },
-  assignment: { icon: 'person', color: '#EC4899', bg: 'bg-pink-500/20' },
-  form_submission: { icon: 'newspaper', color: '#0EA5E9', bg: 'bg-sky-500/20' },
+  call: { icon: 'call', color: '#10B981', bg: 'rgba(16, 185, 129, 0.15)' },
+  email: { icon: 'mail', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.15)' },
+  meeting: { icon: 'calendar', color: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.15)' },
+  note: { icon: 'document-text', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.15)' },
+  task: { icon: 'checkbox', color: '#6366F1', bg: 'rgba(99, 102, 241, 0.15)' },
+  follow_up: { icon: 'alarm', color: '#EC4899', bg: 'rgba(236, 72, 153, 0.15)' },
+  message: { icon: 'chatbubbles', color: '#10B981', bg: 'rgba(16, 185, 129, 0.15)' },
+  stage_change: { icon: 'swap-horizontal', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.15)' },
+  assignment: { icon: 'person', color: '#EC4899', bg: 'rgba(236, 72, 153, 0.15)' },
+  form_submission: { icon: 'newspaper', color: '#0EA5E9', bg: 'rgba(14, 165, 233, 0.15)' },
 };
 
 export const ActivityTimelineItem: React.FC<ActivityTimelineItemProps> = ({ activity, isLast }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const typeCfg = TYPE_CONFIG[activity.type] || {
     icon: 'document-text' as const,
     color: '#F59E0B',
-    bg: 'bg-amber-500/20',
+    bg: 'rgba(245, 158, 11, 0.15)',
   };
 
   const formatDate = (dateStr?: string) => {
@@ -42,45 +45,45 @@ export const ActivityTimelineItem: React.FC<ActivityTimelineItemProps> = ({ acti
   };
 
   return (
-    <View className="flex-row mb-2">
+    <View style={styles.container}>
       {/* Timeline track + icon */}
-      <View className="items-center w-8 mr-2.5">
-        <View className={`w-8 h-8 rounded-full items-center justify-center z-10 ${typeCfg.bg}`}>
+      <View style={styles.timelineLeft}>
+        <View style={[styles.iconCircle, { backgroundColor: typeCfg.bg }]}>
           <Ionicons name={typeCfg.icon} size={15} color={typeCfg.color} />
         </View>
-        {!isLast ? <View className="w-0.5 flex-1 my-1 bg-[#262930]" /> : null}
+        {!isLast ? <View style={[styles.verticalLine, { backgroundColor: isDark ? '#262A34' : '#E2E8F0' }]} /> : null}
       </View>
 
       {/* Content card */}
-      <View className="flex-1 rounded-xl p-3 bg-[#181A1F] border border-[#262930] mb-2">
-        <View className="flex-row items-center justify-between mb-1">
-          <Text className="text-xs font-bold text-white flex-1 mr-2" numberOfLines={1}>
+      <View style={[styles.content, isDark ? styles.contentDark : styles.contentLight]}>
+        <View style={styles.header}>
+          <Text style={[styles.subject, { color: isDark ? '#FFFFFF' : '#0F172A' }]} numberOfLines={1}>
             {activity.subject || activity.title || 'Activity Event'}
           </Text>
-          <Text className="text-[11px] text-slate-400">{formatDate(activity.created_at)}</Text>
+          <Text style={[styles.timestamp, { color: isDark ? '#6B7280' : '#94A3B8' }]}>{formatDate(activity.created_at)}</Text>
         </View>
 
         {activity.description ? (
-          <Text className="text-xs text-slate-300 leading-relaxed mt-0.5" numberOfLines={3}>
+          <Text style={[styles.description, { color: isDark ? '#9CA3AF' : '#64748B' }]} numberOfLines={3}>
             {activity.description}
           </Text>
         ) : null}
 
         {/* Links */}
         {activity.contact || activity.deal ? (
-          <View className="flex-row flex-wrap gap-1.5 mt-2">
+          <View style={styles.tagRow}>
             {activity.contact ? (
-              <View className="flex-row items-center gap-1 bg-[#111317] border border-[#262930] px-1.5 py-0.5 rounded">
-                <Ionicons name="person-outline" size={10} color="#94A3B8" />
-                <Text className="text-[10px] text-slate-400">
+              <View style={[styles.tag, { backgroundColor: isDark ? '#222630' : '#F1F5F9' }]}>
+                <Ionicons name="person-outline" size={10} color={isDark ? '#9CA3AF' : '#64748B'} />
+                <Text style={[styles.tagText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
                   {`${activity.contact.first_name || ''} ${activity.contact.last_name || ''}`.trim()}
                 </Text>
               </View>
             ) : null}
             {activity.deal ? (
-              <View className="flex-row items-center gap-1 bg-[#111317] border border-[#262930] px-1.5 py-0.5 rounded">
-                <Ionicons name="briefcase-outline" size={10} color="#94A3B8" />
-                <Text className="text-[10px] text-slate-400">{activity.deal.title}</Text>
+              <View style={[styles.tag, { backgroundColor: isDark ? '#222630' : '#F1F5F9' }]}>
+                <Ionicons name="briefcase-outline" size={10} color={isDark ? '#9CA3AF' : '#64748B'} />
+                <Text style={[styles.tagText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>{activity.deal.title}</Text>
               </View>
             ) : null}
           </View>
@@ -89,3 +92,85 @@ export const ActivityTimelineItem: React.FC<ActivityTimelineItemProps> = ({ acti
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  timelineLeft: {
+    alignItems: 'center',
+    width: 32,
+    marginRight: 10,
+  },
+  iconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  verticalLine: {
+    width: 2,
+    flex: 1,
+    marginVertical: 4,
+  },
+  content: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  contentDark: {
+    backgroundColor: '#181A20',
+    borderColor: '#262A34',
+  },
+  contentLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  subject: {
+    fontSize: 14,
+    fontWeight: '600',
+    flex: 1,
+    marginRight: 8,
+  },
+  timestamp: {
+    fontSize: 11,
+  },
+  description: {
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 8,
+  },
+  tag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  tagText: {
+    fontSize: 10,
+  },
+});

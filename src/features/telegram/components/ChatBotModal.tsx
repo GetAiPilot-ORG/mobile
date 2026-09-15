@@ -6,9 +6,11 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   View,
+  useColorScheme,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,6 +24,8 @@ interface ChatBotModalProps {
 }
 
 export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const queryClient = useQueryClient();
 
   // Modals state
@@ -46,7 +50,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
   const [businessInfo, setBusinessInfo] = useState('');
 
   // Queries
-  const { data: chatbots, isLoading } = useQuery({
+  const { data: chatbots, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['telegram_chatbots'],
     queryFn: telegramApi.getChatbots,
     enabled: visible,
@@ -236,34 +240,34 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View className="flex-1 bg-[#0B0D10]">
+      <View style={[styles.container, isDark ? styles.containerDark : styles.containerLight]}>
         {/* Header */}
-        <View className="flex-row justify-between items-center px-4 py-3.5 border-b border-[#262930] bg-[#181A1F]">
-          <View className="flex-1">
-            <Text className="text-lg font-bold text-white">
+        <View style={[styles.header, isDark ? styles.borderDark : styles.borderLight]}>
+          <View style={styles.headerLeft}>
+            <Text style={[styles.title, isDark ? styles.textDark : styles.textLight]}>
               Chat Bot Automation
             </Text>
-            <Text className="text-xs text-slate-400 mt-0.5" numberOfLines={1}>
+            <Text style={styles.subtitle} numberOfLines={1}>
               Attach an AI Assistant to your Telegram Bot
             </Text>
           </View>
-          <Pressable className="w-8 h-8 rounded-full bg-[#111317] justify-center items-center active:opacity-70" onPress={onClose}>
-            <Ionicons name="close" size={20} color="#FFFFFF" />
+          <Pressable style={[styles.closeBtn, isDark ? styles.closeBtnDark : styles.closeBtnLight]} onPress={onClose}>
+            <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
           </Pressable>
         </View>
 
         <ScrollView
-          className="flex-1"
-          contentContainerClassName="p-4 gap-3.5 pb-10"
+          style={styles.scrollArea}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           {/* Header Action Banner */}
-          <View className="gap-2.5">
-            <Text className="text-xs text-slate-400 leading-5">
+          <View style={styles.topActionRow}>
+            <Text style={styles.headerDescription}>
               Map business details, upload documents, and link API keys to create automated support agents.
             </Text>
             <Pressable
-              className="flex-row items-center justify-center gap-1.5 bg-[#0084FF] py-3 rounded-xl active:opacity-90"
+              style={styles.connectMainBtn}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 resetForm();
@@ -271,82 +275,82 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
               }}
             >
               <Ionicons name="add" size={16} color="#FFFFFF" />
-              <Text className="text-white font-bold text-sm">Connect Telegram Bot</Text>
+              <Text style={styles.connectMainBtnText}>Connect Telegram Bot</Text>
             </Pressable>
           </View>
 
           {/* Connected Bot Cards List */}
           {isLoading ? (
-            <ActivityIndicator size="large" color="#0084FF" className="my-10" />
+            <ActivityIndicator size="large" color="#0284C7" style={{ marginVertical: 40 }} />
           ) : (chatbots || []).length === 0 ? (
-            <View className="p-7 rounded-2xl border border-[#262930] bg-[#181A1F] items-center gap-2 my-5">
+            <View style={[styles.emptyCard, isDark ? styles.cardDark : styles.cardLight]}>
               <Ionicons name="chatbubbles-outline" size={40} color="#94A3B8" />
-              <Text className="text-base font-bold text-white">
+              <Text style={[styles.emptyTitle, isDark ? styles.textDark : styles.textLight]}>
                 No AI Chatbots Connected
               </Text>
-              <Text className="text-xs text-slate-400 text-center leading-5">
+              <Text style={styles.emptySubtitle}>
                 Connect a Telegram bot and link your OpenAI key to start automated customer support.
               </Text>
               <Pressable
-                className="mt-2 bg-[#0084FF] px-4 py-2.5 rounded-xl active:opacity-90"
+                style={styles.emptyAddBtn}
                 onPress={() => setIsConnectOpen(true)}
               >
-                <Text className="text-white font-bold text-xs">+ Connect Telegram Bot</Text>
+                <Text style={styles.emptyAddBtnText}>+ Connect Telegram Bot</Text>
               </Pressable>
             </View>
           ) : (
-            <View className="gap-3.5">
+            <View style={styles.botCardsList}>
               {(chatbots || []).map((bot: ChatBotConfig) => {
                 const isListening = bot.status === 'active';
                 return (
                   <View
                     key={bot.id}
-                    className="p-4 rounded-2xl border border-[#262930] bg-[#181A1F] gap-3"
+                    style={[styles.botCard, isDark ? styles.cardDark : styles.cardLight]}
                   >
                     {/* Card Top: Avatar, Name, Username */}
-                    <View className="flex-row items-center gap-3">
-                      <View className="w-11 h-11 rounded-full bg-[#0084FF]/10 justify-center items-center">
-                        <Ionicons name="logo-android" size={24} color="#0084FF" />
+                    <View style={styles.botCardTop}>
+                      <View style={styles.avatarWrap}>
+                        <Ionicons name="logo-android" size={24} color="#0284C7" />
                       </View>
-                      <View className="flex-1">
-                        <Text className="text-base font-bold text-white">
+                      <View style={styles.botIdentityCol}>
+                        <Text style={[styles.botNameText, isDark ? styles.textDark : styles.textLight]}>
                           {bot.bot_name}
                         </Text>
-                        <Text className="text-xs text-slate-400 mt-0.5">
+                        <Text style={styles.botUsernameText}>
                           @{bot.bot_username.replace('@', '')}
                         </Text>
                       </View>
                     </View>
 
-                    {/* Metadata Rows */}
-                    <View className="gap-1.5">
-                      <View className="flex-row justify-between items-center px-3 py-2 rounded-xl border border-[#262930] bg-[#111317]">
-                        <View className="flex-row items-center gap-1.5">
+                    {/* Metadata Rows (1:1 with Web UI) */}
+                    <View style={styles.metaSection}>
+                      <View style={[styles.metaRow, isDark ? styles.metaRowDark : styles.metaRowLight]}>
+                        <View style={styles.metaLabelRow}>
                           <Ionicons name="person-outline" size={14} color="#64748B" />
-                          <Text className="text-xs text-slate-400 font-medium">Support Name</Text>
+                          <Text style={styles.metaLabel}>Support Name</Text>
                         </View>
-                        <Text className="text-xs font-semibold text-white">
+                        <Text style={[styles.metaValue, isDark ? styles.textDark : styles.textLight]}>
                           {bot.support_name || 'Ads Bot'}
                         </Text>
                       </View>
 
-                      <View className="flex-row justify-between items-center px-3 py-2 rounded-xl border border-[#262930] bg-[#111317]">
-                        <View className="flex-row items-center gap-1.5">
+                      <View style={[styles.metaRow, isDark ? styles.metaRowDark : styles.metaRowLight]}>
+                        <View style={styles.metaLabelRow}>
                           <Ionicons name="settings-outline" size={14} color="#64748B" />
-                          <Text className="text-xs text-slate-400 font-medium">Model API</Text>
+                          <Text style={styles.metaLabel}>Model API</Text>
                         </View>
-                        <Text className="text-xs font-semibold text-white">
+                        <Text style={[styles.metaValue, isDark ? styles.textDark : styles.textLight]}>
                           {bot.provider || 'OpenAI'}
                         </Text>
                       </View>
 
-                      <View className="flex-row justify-between items-center px-3 py-2 rounded-xl border border-[#262930] bg-[#111317]">
-                        <View className="flex-row items-center gap-1.5">
+                      <View style={[styles.metaRow, isDark ? styles.metaRowDark : styles.metaRowLight]}>
+                        <View style={styles.metaLabelRow}>
                           <Ionicons name="document-text-outline" size={14} color="#64748B" />
-                          <Text className="text-xs text-slate-400 font-medium">Knowledge Base</Text>
+                          <Text style={styles.metaLabel}>Knowledge Base</Text>
                         </View>
                         <Text
-                          className="text-xs font-bold text-[#0084FF] max-w-[150px]"
+                          style={[styles.metaValueHighlight]}
                           numberOfLines={1}
                         >
                           {bot.knowledge_base_name || 'Multimedia Kn...'}
@@ -355,62 +359,62 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                     </View>
 
                     {/* Status & Open Bot Link Row */}
-                    <View className="flex-row justify-between items-center py-0.5">
-                      <View className={`flex-row items-center gap-1 px-2 py-1 rounded-lg ${isListening ? 'bg-emerald-500/10' : 'bg-amber-500/10'}`}>
-                        <View className={`w-1.5 h-1.5 rounded-full ${isListening ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-                        <Text className={`text-[10px] font-bold ${isListening ? 'text-emerald-400' : 'text-amber-400'}`}>
+                    <View style={styles.statusAndLinkRow}>
+                      <View style={[styles.statusPill, isListening ? styles.statusListening : styles.statusPaused]}>
+                        <View style={[styles.statusDot, { backgroundColor: isListening ? '#10B981' : '#F59E0B' }]} />
+                        <Text style={[styles.statusText, { color: isListening ? '#10B981' : '#F59E0B' }]}>
                           {isListening ? 'LISTENING' : 'PAUSED'}
                         </Text>
                       </View>
 
                       <Pressable
-                        className="flex-row items-center gap-1 active:opacity-70"
+                        style={styles.openBotBtn}
                         onPress={() => handleOpenBotLink(bot.bot_username)}
                       >
-                        <Ionicons name="open-outline" size={14} color="#0084FF" />
-                        <Text className="text-xs text-[#0084FF] font-bold">Open Bot Link</Text>
+                        <Ionicons name="open-outline" size={14} color="#0284C7" />
+                        <Text style={styles.openBotText}>Open Bot Link</Text>
                       </Pressable>
                     </View>
 
                     {/* Action Buttons Row 1: Chats & Reset History */}
-                    <View className="flex-row gap-2.5">
+                    <View style={styles.actionRowPrimary}>
                       <Pressable
-                        className="flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl border border-[#262930] bg-[#111317] active:opacity-80"
+                        style={[styles.actionBtnPrimary, isDark ? styles.btnDark : styles.btnLight]}
                         onPress={() => {
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                           setActiveSessionBot({ botId: bot.bot_id, botName: bot.bot_name });
                         }}
                       >
-                        <Ionicons name="chatbubbles-outline" size={15} color="#818cf8" />
-                        <Text className="text-xs font-bold text-indigo-400">
+                        <Ionicons name="chatbubbles-outline" size={15} color="#6366F1" />
+                        <Text style={[styles.actionBtnPrimaryText, { color: '#6366F1' }]}>
                           Chats ({bot.chats_count || 0})
                         </Text>
                       </Pressable>
 
                       <Pressable
-                        className="flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl border border-[#262930] bg-[#111317] active:opacity-80"
+                        style={[styles.actionBtnPrimary, isDark ? styles.btnDark : styles.btnLight]}
                         onPress={() => handleResetHistoryConfirm(bot.bot_id, bot.bot_name)}
                       >
-                        <Ionicons name="refresh-outline" size={15} color="#fbbf24" />
-                        <Text className="text-xs font-bold text-amber-400">
+                        <Ionicons name="refresh-outline" size={15} color="#F59E0B" />
+                        <Text style={[styles.actionBtnPrimaryText, { color: '#F59E0B' }]}>
                           Reset History
                         </Text>
                       </Pressable>
                     </View>
 
                     {/* Action Buttons Row 2: Edit, Pause, Delete */}
-                    <View className="flex-row gap-2">
+                    <View style={styles.actionRowSecondary}>
                       <Pressable
-                        className="flex-1 items-center justify-center py-2 rounded-lg border border-[#262930] bg-[#111317] active:opacity-80"
+                        style={[styles.smallActionBtn, isDark ? styles.btnDark : styles.btnLight]}
                         onPress={() => handleEditPress(bot)}
                       >
-                        <Text className="text-xs font-semibold text-white">
+                        <Text style={[styles.smallActionText, isDark ? styles.textDark : styles.textLight]}>
                           Edit
                         </Text>
                       </Pressable>
 
                       <Pressable
-                        className="flex-1 items-center justify-center py-2 rounded-lg border border-[#262930] bg-[#111317] active:opacity-80"
+                        style={[styles.smallActionBtn, isDark ? styles.btnDark : styles.btnLight]}
                         onPress={() => {
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                           toggleStatus({
@@ -419,16 +423,16 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                           });
                         }}
                       >
-                        <Text className="text-xs font-semibold text-white">
+                        <Text style={[styles.smallActionText, isDark ? styles.textDark : styles.textLight]}>
                           {isListening ? 'Pause' : 'Resume'}
                         </Text>
                       </Pressable>
 
                       <Pressable
-                        className="flex-1 items-center justify-center py-2 rounded-lg border border-rose-500/20 bg-rose-500/10 active:opacity-80"
+                        style={[styles.smallActionBtn, isDark ? styles.btnDark : styles.btnLight]}
                         onPress={() => handleDeleteConfirm(bot.id, bot.bot_name)}
                       >
-                        <Text className="text-xs font-semibold text-rose-400">
+                        <Text style={[styles.smallActionText, { color: '#EF4444' }]}>
                           Delete
                         </Text>
                       </Pressable>
@@ -442,53 +446,53 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
 
         {/* Connect Telegram Bot Modal */}
         <Modal visible={isConnectOpen} transparent animationType="fade" onRequestClose={() => setIsConnectOpen(false)}>
-          <View className="flex-1 bg-black/70 justify-center items-center p-5">
-            <View className="w-full max-w-md rounded-2xl border border-[#262930] bg-[#181A1F] p-4">
-              <View className="flex-row justify-between items-center mb-3.5">
-                <Text className="text-base font-bold text-white">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalCard, isDark ? styles.cardDark : styles.cardLight]}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, isDark ? styles.textDark : styles.textLight]}>
                   Connect Telegram AI Bot
                 </Text>
                 <Pressable onPress={() => setIsConnectOpen(false)}>
-                  <Ionicons name="close" size={20} color="#FFFFFF" />
+                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
                 </Pressable>
               </View>
 
-              <ScrollView className="max-h-[420px]" showsVerticalScrollIndicator={false}>
-                <Text className="text-xs font-bold text-white mb-1.5">
+              <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
+                <Text style={[styles.fieldLabel, isDark ? styles.textDark : styles.textLight]}>
                   Telegram Bot Token (from @BotFather)
                 </Text>
-                <View className="px-3 py-2 rounded-xl border border-[#262930] bg-[#111317]">
+                <View style={[styles.inputWrapper, isDark ? styles.inputDark : styles.inputLight]}>
                   <TextInput
-                    className="text-xs text-white p-0"
+                    style={[styles.input, isDark ? styles.inputTextDark : styles.inputTextLight]}
                     placeholder="123456789:ABCdefGHIjklMNOpqr..."
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#94A3B8"
                     value={botToken}
                     onChangeText={setBotToken}
                     autoCapitalize="none"
                   />
                 </View>
 
-                <Text className="text-xs font-bold text-white mb-1.5 mt-2.5">
+                <Text style={[styles.fieldLabel, isDark ? styles.textDark : styles.textLight, { marginTop: 10 }]}>
                   Support Agent Persona Name
                 </Text>
-                <View className="px-3 py-2 rounded-xl border border-[#262930] bg-[#111317]">
+                <View style={[styles.inputWrapper, isDark ? styles.inputDark : styles.inputLight]}>
                   <TextInput
-                    className="text-xs text-white p-0"
+                    style={[styles.input, isDark ? styles.inputTextDark : styles.inputTextLight]}
                     placeholder="e.g. Ads Bot or Support Agent"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#94A3B8"
                     value={supportName}
                     onChangeText={setSupportName}
                   />
                 </View>
 
-                <Text className="text-xs font-bold text-white mb-1.5 mt-2.5">
+                <Text style={[styles.fieldLabel, isDark ? styles.textDark : styles.textLight, { marginTop: 10 }]}>
                   OpenAI API Key
                 </Text>
-                <View className="px-3 py-2 rounded-xl border border-[#262930] bg-[#111317]">
+                <View style={[styles.inputWrapper, isDark ? styles.inputDark : styles.inputLight]}>
                   <TextInput
-                    className="text-xs text-white p-0"
+                    style={[styles.input, isDark ? styles.inputTextDark : styles.inputTextLight]}
                     placeholder="sk-..."
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#94A3B8"
                     value={apiKey}
                     onChangeText={setApiKey}
                     secureTextEntry
@@ -496,28 +500,27 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                   />
                 </View>
 
-                <Text className="text-xs font-bold text-white mb-1.5 mt-2.5">
+                <Text style={[styles.fieldLabel, isDark ? styles.textDark : styles.textLight, { marginTop: 10 }]}>
                   Knowledge Base Title
                 </Text>
-                <View className="px-3 py-2 rounded-xl border border-[#262930] bg-[#111317]">
+                <View style={[styles.inputWrapper, isDark ? styles.inputDark : styles.inputLight]}>
                   <TextInput
-                    className="text-xs text-white p-0"
+                    style={[styles.input, isDark ? styles.inputTextDark : styles.inputTextLight]}
                     placeholder="e.g. Multimedia Knowledge Base"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#94A3B8"
                     value={knowledgeBaseName}
                     onChangeText={setKnowledgeBaseName}
                   />
                 </View>
 
-                <Text className="text-xs font-bold text-white mb-1.5 mt-2.5">
+                <Text style={[styles.fieldLabel, isDark ? styles.textDark : styles.textLight, { marginTop: 10 }]}>
                   System Instructions & Persona Guidelines
                 </Text>
-                <View className="px-3 py-2 rounded-xl border border-[#262930] bg-[#111317] h-20">
+                <View style={[styles.inputWrapper, isDark ? styles.inputDark : styles.inputLight, { height: 80 }]}>
                   <TextInput
-                    className="text-xs text-white p-0"
-                    style={{ textAlignVertical: 'top' }}
+                    style={[styles.input, isDark ? styles.inputTextDark : styles.inputTextLight, { textAlignVertical: 'top' }]}
                     placeholder="You are a helpful customer sales & support agent for..."
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#94A3B8"
                     value={businessInfo}
                     onChangeText={setBusinessInfo}
                     multiline
@@ -526,16 +529,14 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
               </ScrollView>
 
               <Pressable
-                className={`bg-[#0084FF] py-3 rounded-xl items-center mt-3.5 active:opacity-90 ${
-                  isConnecting ? 'opacity-50' : ''
-                }`}
+                style={[styles.submitModalBtn, isConnecting && styles.btnDisabled]}
                 onPress={handleConnectSubmit}
                 disabled={isConnecting}
               >
                 {isConnecting ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <Text className="text-white font-bold text-sm">Connect & Activate AI</Text>
+                  <Text style={styles.submitModalBtnText}>Connect & Activate AI</Text>
                 )}
               </Pressable>
             </View>
@@ -544,37 +545,37 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
 
         {/* Edit Bot Modal */}
         <Modal visible={Boolean(editingChatbot)} transparent animationType="fade" onRequestClose={() => setEditingChatbot(null)}>
-          <View className="flex-1 bg-black/70 justify-center items-center p-5">
-            <View className="w-full max-w-md rounded-2xl border border-[#262930] bg-[#181A1F] p-4">
-              <View className="flex-row justify-between items-center mb-3.5">
-                <Text className="text-base font-bold text-white">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalCard, isDark ? styles.cardDark : styles.cardLight]}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, isDark ? styles.textDark : styles.textLight]}>
                   Edit {editingChatbot?.bot_name}
                 </Text>
                 <Pressable onPress={() => setEditingChatbot(null)}>
-                  <Ionicons name="close" size={20} color="#FFFFFF" />
+                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
                 </Pressable>
               </View>
 
-              <ScrollView className="max-h-[420px]" showsVerticalScrollIndicator={false}>
-                <Text className="text-xs font-bold text-white mb-1.5">
+              <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
+                <Text style={[styles.fieldLabel, isDark ? styles.textDark : styles.textLight]}>
                   Support Agent Persona Name
                 </Text>
-                <View className="px-3 py-2 rounded-xl border border-[#262930] bg-[#111317]">
+                <View style={[styles.inputWrapper, isDark ? styles.inputDark : styles.inputLight]}>
                   <TextInput
-                    className="text-xs text-white p-0"
+                    style={[styles.input, isDark ? styles.inputTextDark : styles.inputTextLight]}
                     value={supportName}
                     onChangeText={setSupportName}
                   />
                 </View>
 
-                <Text className="text-xs font-bold text-white mb-1.5 mt-2.5">
+                <Text style={[styles.fieldLabel, isDark ? styles.textDark : styles.textLight, { marginTop: 10 }]}>
                   OpenAI API Key (Leave blank to keep existing)
                 </Text>
-                <View className="px-3 py-2 rounded-xl border border-[#262930] bg-[#111317]">
+                <View style={[styles.inputWrapper, isDark ? styles.inputDark : styles.inputLight]}>
                   <TextInput
-                    className="text-xs text-white p-0"
+                    style={[styles.input, isDark ? styles.inputTextDark : styles.inputTextLight]}
                     placeholder="Update API Key..."
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor="#94A3B8"
                     value={apiKey}
                     onChangeText={setApiKey}
                     secureTextEntry
@@ -582,24 +583,23 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                   />
                 </View>
 
-                <Text className="text-xs font-bold text-white mb-1.5 mt-2.5">
+                <Text style={[styles.fieldLabel, isDark ? styles.textDark : styles.textLight, { marginTop: 10 }]}>
                   Knowledge Base Title
                 </Text>
-                <View className="px-3 py-2 rounded-xl border border-[#262930] bg-[#111317]">
+                <View style={[styles.inputWrapper, isDark ? styles.inputDark : styles.inputLight]}>
                   <TextInput
-                    className="text-xs text-white p-0"
+                    style={[styles.input, isDark ? styles.inputTextDark : styles.inputTextLight]}
                     value={knowledgeBaseName}
                     onChangeText={setKnowledgeBaseName}
                   />
                 </View>
 
-                <Text className="text-xs font-bold text-white mb-1.5 mt-2.5">
+                <Text style={[styles.fieldLabel, isDark ? styles.textDark : styles.textLight, { marginTop: 10 }]}>
                   System Instructions & Persona Guidelines
                 </Text>
-                <View className="px-3 py-2 rounded-xl border border-[#262930] bg-[#111317] h-24">
+                <View style={[styles.inputWrapper, isDark ? styles.inputDark : styles.inputLight, { height: 100 }]}>
                   <TextInput
-                    className="text-xs text-white p-0"
-                    style={{ textAlignVertical: 'top' }}
+                    style={[styles.input, isDark ? styles.inputTextDark : styles.inputTextLight, { textAlignVertical: 'top' }]}
                     value={businessInfo}
                     onChangeText={setBusinessInfo}
                     multiline
@@ -608,16 +608,14 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
               </ScrollView>
 
               <Pressable
-                className={`bg-[#0084FF] py-3 rounded-xl items-center mt-3.5 active:opacity-90 ${
-                  isUpdating ? 'opacity-50' : ''
-                }`}
+                style={[styles.submitModalBtn, isUpdating && styles.btnDisabled]}
                 onPress={handleUpdateSubmit}
                 disabled={isUpdating}
               >
                 {isUpdating ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <Text className="text-white font-bold text-sm">Save Changes</Text>
+                  <Text style={styles.submitModalBtnText}>Save Changes</Text>
                 )}
               </Pressable>
             </View>
@@ -626,63 +624,63 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
 
         {/* Sessions & Chat Conversations Modal */}
         <Modal visible={Boolean(activeSessionBot)} transparent animationType="slide" onRequestClose={() => setActiveSessionBot(null)}>
-          <View className="flex-1 bg-black/70 justify-center items-center p-5">
-            <View className="w-full max-w-lg rounded-2xl border border-[#262930] bg-[#181A1F] p-4">
-              <View className="flex-row justify-between items-center mb-3.5">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.sessionsCard, isDark ? styles.cardDark : styles.cardLight]}>
+              <View style={styles.modalHeader}>
                 <View>
-                  <Text className="text-base font-bold text-white">
+                  <Text style={[styles.modalTitle, isDark ? styles.textDark : styles.textLight]}>
                     {activeSessionBot?.botName} Chats
                   </Text>
-                  <Text className="text-xs text-slate-400 mt-0.5">Tap a contact to read full conversation thread</Text>
+                  <Text style={styles.subtitle}>Tap a contact to read full conversation thread</Text>
                 </View>
                 <Pressable onPress={() => setActiveSessionBot(null)}>
-                  <Ionicons name="close" size={20} color="#FFFFFF" />
+                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
                 </Pressable>
               </View>
 
               {isLoadingSessions ? (
-                <ActivityIndicator size="large" color="#0084FF" className="my-8" />
+                <ActivityIndicator size="large" color="#0284C7" style={{ marginVertical: 30 }} />
               ) : (sessions || []).length === 0 ? (
-                <View className="items-center py-8 gap-1.5">
+                <View style={{ alignItems: 'center', paddingVertical: 30, gap: 6 }}>
                   <Ionicons name="chatbubbles-outline" size={36} color="#94A3B8" />
-                  <Text className="text-sm font-bold text-white">
+                  <Text style={[styles.emptyTitle, isDark ? styles.textDark : styles.textLight]}>
                     No Active Sessions Yet
                   </Text>
-                  <Text className="text-xs text-slate-400">Users who message this bot will appear here automatically.</Text>
+                  <Text style={styles.emptySubtitle}>Users who message this bot will appear here automatically.</Text>
                 </View>
               ) : (
-                <ScrollView className="max-h-[420px]" showsVerticalScrollIndicator={false}>
-                  <View className="gap-2">
+                <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
+                  <View style={{ gap: 8 }}>
                     {(sessions || []).map((session: ChatBotSession) => (
                       <Pressable
                         key={session.id}
-                        className="flex-row justify-between items-center p-3 rounded-xl border border-[#262930] bg-[#111317] active:opacity-80"
+                        style={[styles.sessionRow, isDark ? styles.metaRowDark : styles.metaRowLight]}
                         onPress={() => handleOpenUserThread(session)}
                       >
-                        <View className="flex-1 gap-0.5">
-                          <View className="flex-row items-center gap-1.5">
-                            <Ionicons name="person-circle" size={20} color="#0084FF" />
-                            <Text className="text-xs font-bold text-white">
+                        <View style={styles.sessionLeftCol}>
+                          <View style={styles.sessionNameRow}>
+                            <Ionicons name="person-circle" size={20} color="#0284C7" />
+                            <Text style={[styles.sessionUserName, isDark ? styles.textDark : styles.textLight]}>
                               {session.user_name || 'Telegram User'}
                             </Text>
                           </View>
-                          <Text className="text-[11px] text-slate-400">ID: {session.telegram_user_id}</Text>
+                          <Text style={styles.sessionUserId}>ID: {session.telegram_user_id}</Text>
                           {session.memory?.services_interested && (
-                            <Text className="text-[11px] text-[#0084FF] mt-0.5" numberOfLines={1}>
+                            <Text style={styles.sessionMemoryText} numberOfLines={1}>
                               Interested: {session.memory.services_interested.join(', ')}
                             </Text>
                           )}
                         </View>
 
-                        <View className="items-end gap-1.5">
+                        <View style={styles.sessionRightCol}>
                           {session.memory?.lead_stage && (
-                            <View className="bg-indigo-500/10 px-1.5 py-0.5 rounded-md">
-                              <Text className="text-[10px] font-bold text-indigo-400">{session.memory.lead_stage}</Text>
+                            <View style={styles.leadStageBadge}>
+                              <Text style={styles.leadStageText}>{session.memory.lead_stage}</Text>
                             </View>
                           )}
-                          <View className="flex-row items-center gap-0.5">
-                            <Text className="text-xs text-[#0084FF] font-semibold">View Chat</Text>
-                            <Ionicons name="chevron-forward" size={14} color="#0084FF" />
+                          <View style={styles.viewChatRow}>
+                            <Text style={styles.viewChatText}>View Chat</Text>
+                            <Ionicons name="chevron-forward" size={14} color="#0284C7" />
                           </View>
                         </View>
                       </Pressable>
@@ -696,54 +694,54 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
 
         {/* Live Conversation Thread Viewer Modal */}
         <Modal visible={Boolean(activeUserThread)} transparent animationType="slide" onRequestClose={() => setActiveUserThread(null)}>
-          <View className="flex-1 bg-black/70 justify-center items-center p-4">
-            <View className="w-full max-w-lg max-h-[90%] rounded-2xl border border-[#262930] bg-[#181A1F] p-4">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.threadCard, isDark ? styles.cardDark : styles.cardLight]}>
               {/* Thread Header */}
-              <View className="flex-row items-center gap-2.5 pb-3 border-b border-[#262930] mb-2.5">
+              <View style={[styles.threadHeader, isDark ? styles.borderDark : styles.borderLight]}>
                 <Pressable
-                  className="w-8 h-8 rounded-full justify-center items-center bg-[#111317] active:opacity-70"
+                  style={styles.backBtn}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setActiveUserThread(null);
                   }}
                 >
-                  <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+                  <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
                 </Pressable>
 
-                <View className="flex-1">
-                  <Text className="text-sm font-bold text-white" numberOfLines={1}>
+                <View style={styles.threadHeaderInfo}>
+                  <Text style={[styles.threadUserName, isDark ? styles.textDark : styles.textLight]} numberOfLines={1}>
                     {activeUserThread?.userName}
                   </Text>
-                  <Text className="text-[11px] text-slate-400 mt-0.5">
+                  <Text style={styles.threadUserId}>
                     Telegram ID: {activeUserThread?.telegramUserId} · Bot: {activeUserThread?.botName}
                   </Text>
                 </View>
 
                 <Pressable onPress={() => setActiveUserThread(null)}>
-                  <Ionicons name="close" size={20} color="#FFFFFF" />
+                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
                 </Pressable>
               </View>
 
               {/* Lead Memory Insights Box (if available) */}
               {threadData?.memory && (
-                <View className="p-2.5 rounded-xl border border-[#262930] bg-[#111317] mb-2.5 gap-1">
-                  <View className="flex-row items-center gap-1.5 mb-0.5">
-                    <Ionicons name="sparkles" size={14} color="#818cf8" />
-                    <Text className="text-xs font-bold text-indigo-400 flex-1">AI Lead Intelligence</Text>
+                <View style={[styles.leadMemoryBox, isDark ? styles.metaRowDark : styles.metaRowLight]}>
+                  <View style={styles.leadMemoryHeader}>
+                    <Ionicons name="sparkles" size={14} color="#6366F1" />
+                    <Text style={styles.leadMemoryTitle}>AI Lead Intelligence</Text>
                     {threadData.memory.lead_stage && (
-                      <View className="bg-indigo-500/10 px-1.5 py-0.5 rounded-md">
-                        <Text className="text-[10px] font-bold text-indigo-400">{threadData.memory.lead_stage}</Text>
+                      <View style={styles.leadStageBadge}>
+                        <Text style={styles.leadStageText}>{threadData.memory.lead_stage}</Text>
                       </View>
                     )}
                   </View>
                   {threadData.memory.services_interested && (
-                    <Text className="text-xs text-slate-400">
-                      <Text className="font-bold text-slate-300">Services:</Text> {threadData.memory.services_interested.join(', ')}
+                    <Text style={styles.leadMemoryItem}>
+                      <Text style={{ fontWeight: '700' }}>Services:</Text> {threadData.memory.services_interested.join(', ')}
                     </Text>
                   )}
                   {threadData.memory.language && (
-                    <Text className="text-xs text-slate-400">
-                      <Text className="font-bold text-slate-300">Language:</Text> {threadData.memory.language}
+                    <Text style={styles.leadMemoryItem}>
+                      <Text style={{ fontWeight: '700' }}>Language:</Text> {threadData.memory.language}
                     </Text>
                   )}
                 </View>
@@ -751,45 +749,59 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
 
               {/* Message Feed */}
               {isLoadingThread ? (
-                <ActivityIndicator size="large" color="#0084FF" className="my-10" />
+                <ActivityIndicator size="large" color="#0284C7" style={{ marginVertical: 40 }} />
               ) : (threadData?.messages || []).length === 0 ? (
-                <View className="items-center py-10 gap-1.5">
+                <View style={{ alignItems: 'center', paddingVertical: 40, gap: 6 }}>
                   <Ionicons name="chatbubble-ellipses-outline" size={36} color="#94A3B8" />
-                  <Text className="text-sm font-bold text-white">
+                  <Text style={[styles.emptyTitle, isDark ? styles.textDark : styles.textLight]}>
                     No Messages Recorded
                   </Text>
-                  <Text className="text-xs text-slate-400">Conversations with this user will display here.</Text>
+                  <Text style={styles.emptySubtitle}>Conversations with this user will display here.</Text>
                 </View>
               ) : (
-                <ScrollView className="max-h-[420px]" contentContainerClassName="gap-2.5 py-1.5">
+                <ScrollView style={styles.messageScrollArea} contentContainerStyle={styles.messageFeedContent}>
                   {(threadData?.messages || []).map((msg: ChatBotMessage) => {
                     const isUser = msg.role === 'user';
                     return (
                       <View
                         key={msg.id}
-                        className={`flex-row items-end gap-1.5 ${isUser ? 'justify-end' : 'justify-start'}`}
+                        style={[
+                          styles.messageRow,
+                          isUser ? styles.messageRowUser : styles.messageRowAssistant,
+                        ]}
                       >
                         {!isUser && (
-                          <View className="w-6 h-6 rounded-full bg-[#0084FF]/15 justify-center items-center mb-0.5">
-                            <Ionicons name="logo-android" size={14} color="#0084FF" />
+                          <View style={styles.aiBubbleAvatar}>
+                            <Ionicons name="logo-android" size={14} color="#0284C7" />
                           </View>
                         )}
                         <View
-                          className={`max-w-[82%] px-3 py-2 rounded-2xl ${
+                          style={[
+                            styles.messageBubble,
                             isUser
-                              ? 'bg-[#0084FF] rounded-br-none'
-                              : 'bg-[#111317] border border-[#262930] rounded-bl-none'
-                          }`}
+                              ? styles.bubbleUser
+                              : isDark
+                              ? styles.bubbleAssistantDark
+                              : styles.bubbleAssistantLight,
+                          ]}
                         >
                           <Text
-                            className={`text-xs leading-5 ${isUser ? 'text-white' : 'text-slate-200'}`}
+                            style={[
+                              styles.messageContentText,
+                              isUser
+                                ? styles.textUserMessage
+                                : isDark
+                                ? styles.textDark
+                                : styles.textLight,
+                            ]}
                           >
                             {msg.content}
                           </Text>
                           <Text
-                            className={`text-[9px] mt-1 self-end ${
-                              isUser ? 'text-white/70' : 'text-slate-400'
-                            }`}
+                            style={[
+                              styles.messageTimeText,
+                              isUser ? styles.timeUserText : styles.timeAssistantText,
+                            ]}
                           >
                             {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </Text>
@@ -807,3 +819,329 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
   );
 };
 
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  containerLight: { backgroundColor: '#F8FAFC' },
+  containerDark: { backgroundColor: '#0B0F19' },
+
+  // Header
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+  },
+  borderLight: { borderBottomColor: '#E2E8F0' },
+  borderDark: { borderBottomColor: '#27272A' },
+  headerLeft: { flex: 1 },
+  title: { fontSize: 18, fontWeight: '700' },
+  textLight: { color: '#0F172A' },
+  textDark: { color: '#F8FAFC' },
+  subtitle: { color: '#64748B', fontSize: 12, marginTop: 2 },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeBtnLight: { backgroundColor: '#F1F5F9' },
+  closeBtnDark: { backgroundColor: '#27272A' },
+
+  scrollArea: { flex: 1 },
+  scrollContent: { padding: 16, gap: 14, paddingBottom: 40 },
+
+  // Action Banner
+  topActionRow: { gap: 10 },
+  headerDescription: { fontSize: 12.5, color: '#64748B', lineHeight: 17 },
+  connectMainBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#0284C7',
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  connectMainBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13.5 },
+
+  // Bot Cards List
+  botCardsList: { gap: 14 },
+  botCard: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 12,
+  },
+  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
+  cardDark: { backgroundColor: '#121212', borderColor: '#27272A' },
+
+  botCardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  avatarWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(2, 132, 199, 0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  botIdentityCol: { flex: 1 },
+  botNameText: { fontSize: 15, fontWeight: '700' },
+  botUsernameText: { fontSize: 12, color: '#64748B', marginTop: 1 },
+
+  // Meta Rows
+  metaSection: { gap: 6 },
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  metaRowLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
+  metaRowDark: { backgroundColor: '#1F2430', borderColor: '#27272A' },
+  metaLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  metaLabel: { fontSize: 11.5, color: '#64748B', fontWeight: '500' },
+  metaValue: { fontSize: 12, fontWeight: '600' },
+  metaValueHighlight: { fontSize: 12, fontWeight: '700', color: '#0284C7', maxWidth: 150 },
+
+  // Status & Link
+  statusAndLinkRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 2,
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3.5,
+    borderRadius: 8,
+  },
+  statusListening: { backgroundColor: 'rgba(16, 185, 129, 0.12)' },
+  statusPaused: { backgroundColor: 'rgba(245, 158, 11, 0.12)' },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
+  statusText: { fontSize: 10.5, fontWeight: '700' },
+  openBotBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  openBotText: { fontSize: 12, color: '#0284C7', fontWeight: '700' },
+
+  // Primary Actions
+  actionRowPrimary: { flexDirection: 'row', gap: 10 },
+  actionBtnPrimary: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  btnLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
+  btnDark: { backgroundColor: '#1F2430', borderColor: '#27272A' },
+  actionBtnPrimaryText: { fontSize: 12, fontWeight: '700' },
+
+  // Secondary Actions
+  actionRowSecondary: { flexDirection: 'row', gap: 8 },
+  smallActionBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  smallActionText: { fontSize: 11.5, fontWeight: '600' },
+
+  // Empty Box
+  emptyCard: {
+    padding: 30,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    gap: 8,
+    marginVertical: 20,
+  },
+  emptyTitle: { fontSize: 15, fontWeight: '700' },
+  emptySubtitle: { fontSize: 12, color: '#94A3B8', textAlign: 'center', lineHeight: 17 },
+  emptyAddBtn: {
+    marginTop: 8,
+    backgroundColor: '#0284C7',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  emptyAddBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 12.5 },
+
+  // Modals
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 440,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 18,
+  },
+  sessionsCard: {
+    width: '100%',
+    maxWidth: 460,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 18,
+  },
+  threadCard: {
+    width: '100%',
+    maxWidth: 480,
+    maxHeight: '90%',
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  modalTitle: { fontSize: 16, fontWeight: '700' },
+  fieldLabel: { fontSize: 11.5, fontWeight: '700', marginBottom: 5 },
+  inputWrapper: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  inputLight: { backgroundColor: '#FFFFFF', borderColor: '#CBD5E1' },
+  inputDark: { backgroundColor: '#1F2430', borderColor: '#334155' },
+  input: { fontSize: 12.5, padding: 0 },
+  inputTextLight: { color: '#0F172A' },
+  inputTextDark: { color: '#FFFFFF' },
+  submitModalBtn: {
+    backgroundColor: '#0284C7',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 14,
+  },
+  submitModalBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13.5 },
+
+  // Sessions Rows
+  sessionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  sessionLeftCol: { flex: 1, gap: 2 },
+  sessionNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  sessionUserName: { fontSize: 13, fontWeight: '700' },
+  sessionUserId: { fontSize: 11, color: '#64748B' },
+  sessionMemoryText: { fontSize: 11, color: '#0284C7', marginTop: 2 },
+  sessionRightCol: { alignItems: 'flex-end', gap: 6 },
+  leadStageBadge: {
+    backgroundColor: 'rgba(99, 102, 241, 0.12)',
+    paddingHorizontal: 6,
+    paddingVertical: 2.5,
+    borderRadius: 6,
+  },
+  leadStageText: { fontSize: 9.5, fontWeight: '700', color: '#6366F1' },
+  viewChatRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  viewChatText: { fontSize: 11.5, color: '#0284C7', fontWeight: '600' },
+
+  // Thread Viewer
+  threadHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    marginBottom: 10,
+  },
+  backBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(100, 116, 139, 0.1)',
+  },
+  threadHeaderInfo: { flex: 1 },
+  threadUserName: { fontSize: 15, fontWeight: '700' },
+  threadUserId: { fontSize: 11, color: '#64748B', marginTop: 1 },
+
+  leadMemoryBox: {
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 10,
+    gap: 3,
+  },
+  leadMemoryHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
+  leadMemoryTitle: { fontSize: 11.5, fontWeight: '700', color: '#6366F1', flex: 1 },
+  leadMemoryItem: { fontSize: 11, color: '#64748B' },
+
+  messageScrollArea: { maxHeight: 420 },
+  messageFeedContent: { gap: 10, paddingVertical: 6 },
+  messageRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 6 },
+  messageRowUser: { justifyContent: 'flex-end' },
+  messageRowAssistant: { justifyContent: 'flex-start' },
+  aiBubbleAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(2, 132, 199, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  messageBubble: {
+    maxWidth: '82%',
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 14,
+  },
+  bubbleUser: {
+    backgroundColor: '#0284C7',
+    borderBottomRightRadius: 2,
+  },
+  bubbleAssistantLight: {
+    backgroundColor: '#F1F5F9',
+    borderColor: '#E2E8F0',
+    borderWidth: 1,
+    borderBottomLeftRadius: 2,
+  },
+  bubbleAssistantDark: {
+    backgroundColor: '#1F2430',
+    borderColor: '#27272A',
+    borderWidth: 1,
+    borderBottomLeftRadius: 2,
+  },
+  messageContentText: { fontSize: 13, lineHeight: 18 },
+  textUserMessage: { color: '#FFFFFF' },
+  messageTimeText: { fontSize: 9.5, marginTop: 4, alignSelf: 'flex-end' },
+  timeUserText: { color: 'rgba(255, 255, 255, 0.7)' },
+  timeAssistantText: { color: '#94A3B8' },
+  btnDisabled: { opacity: 0.5 },
+});

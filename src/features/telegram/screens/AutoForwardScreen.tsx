@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import {
+  Alert,
   Linking,
   Platform,
   Pressable,
+  StyleSheet,
   Text,
   View,
+  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -19,8 +22,13 @@ interface AutoForwardScreenProps {
 }
 
 export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRules, onOpenModal }) => {
+  const isDark = useColorScheme() === 'dark';
   const [afSection, setAfSection] = useState<AfSection>('mappings');
   const [selectedDelay, setSelectedDelay] = useState(0);
+
+  const card = isDark ? styles.cardDark : styles.cardLight;
+  const txt = isDark ? styles.textDark : styles.textLight;
+  const border = isDark ? styles.borderDark : styles.borderLight;
 
   const kpis = [
     { key: 'mappings', label: 'Active Mappings', value: (forwardRules || []).length, icon: 'arrow-redo', color: '#0284C7', bg: 'rgba(2,132,199,0.12)' },
@@ -32,35 +40,35 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
   return (
     <>
       {/* Hero Card */}
-      <View className="p-4 rounded-2xl bg-[#181A1F] border border-[#262930] mb-3.5">
-        <View className="flex-row justify-between items-center">
-          <View className="flex-row items-center gap-2.5 flex-1">
-            <View className="w-10 h-10 rounded-xl bg-sky-500/10 items-center justify-center">
-              <Ionicons name="flash" size={20} color="#0084FF" />
+      <View style={[styles.heroCard, card]}>
+        <View style={styles.heroRow}>
+          <View style={styles.heroLeft}>
+            <View style={styles.heroIconCircle}>
+              <Ionicons name="flash" size={20} color="#0284C7" />
             </View>
-            <View className="flex-1 min-w-0">
-              <Text className="text-base font-extrabold text-white" numberOfLines={1}>AutoForward Control</Text>
-              <View className="flex-row items-center gap-1.5 mt-0.5">
-                <View className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                <Text className="text-slate-400 text-[11px] font-semibold">System Active</Text>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={[styles.heroTitle, txt]} numberOfLines={1}>AutoForward Control</Text>
+              <View style={styles.activeRow}>
+                <View style={styles.dotGreen} />
+                <Text style={styles.activeText}>System Active</Text>
               </View>
             </View>
           </View>
           <Pressable
-            className="flex-row items-center gap-1 bg-[#0084FF] px-3 py-2 rounded-xl active:opacity-80"
+            style={styles.openBotBtn}
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               Linking.openURL('https://t.me/Gapautoforwardingbot');
             }}
           >
             <Ionicons name="logo-android" size={15} color="#FFFFFF" />
-            <Text className="text-white text-xs font-bold">Open Bot</Text>
+            <Text style={styles.openBotBtnText}>Open Bot</Text>
           </Pressable>
         </View>
       </View>
 
       {/* KPI Grid */}
-      <View className="flex-row flex-wrap justify-between gap-y-2 mb-3">
+      <View style={styles.kpiGrid}>
         {kpis.map((k) => (
           <StatCard
             key={k.key}
@@ -91,35 +99,35 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
       </View>
 
       {/* New Rule Button */}
-      <Pressable className="flex-row items-center justify-center gap-1.5 bg-[#0084FF] rounded-xl py-3.5 mb-3 active:opacity-80" onPress={() => onOpenModal('autoforward')}>
+      <Pressable style={styles.primaryBtn} onPress={() => onOpenModal('autoforward')}>
         <Ionicons name="add" size={16} color="#FFFFFF" />
-        <Text className="text-white text-xs font-bold">Configure New Forwarding Rule</Text>
+        <Text style={styles.primaryBtnText}>Configure New Forwarding Rule</Text>
       </Pressable>
 
       {/* MAPPINGS */}
       {afSection === 'mappings' && (
-        <View className="p-4 rounded-2xl bg-[#181A1F] border border-[#262930] mb-3">
-          <View className="flex-row items-center gap-2.5 mb-1">
-            <View className="w-8 h-8 rounded-lg bg-sky-500/10 items-center justify-center">
-              <Ionicons name="arrow-redo" size={14} color="#0084FF" />
+        <View style={[styles.sectionCard, card]}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIconCircle, { backgroundColor: 'rgba(2,132,199,0.12)' }]}>
+              <Ionicons name="arrow-redo" size={14} color="#0284C7" />
             </View>
-            <View className="flex-1">
-              <Text className="text-sm font-bold text-white">Active Routing Rules</Text>
-              <Text className="text-[11px] text-slate-400 mt-0.5">{Math.max((forwardRules || []).length, 2)} source-to-target forwarding channels configured</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.sectionTitle, txt]}>Active Routing Rules</Text>
+              <Text style={styles.sectionSub}>{Math.max((forwardRules || []).length, 2)} source-to-target forwarding channels configured</Text>
             </View>
           </View>
-          <View className="gap-2 mt-2">
+          <View style={{ gap: 8, marginTop: 8 }}>
             {(forwardRules || []).map((rule, idx) => (
-              <View key={`rule_${rule.id || idx}`} className="flex-row items-center p-2.5 rounded-xl bg-[#111317] border border-[#262930]">
-                <View className="flex-row items-center gap-1.5 flex-1">
-                  <View className="w-5 h-5 rounded-full bg-sky-500/10 items-center justify-center">
-                    <Ionicons name="arrow-redo" size={12} color="#0084FF" />
+              <View key={`rule_${rule.id || idx}`} style={[styles.mappingRow, isDark ? styles.mappingRowDark : styles.mappingRowLight]}>
+                <View style={styles.mappingLeft}>
+                  <View style={styles.mappingArrow}>
+                    <Ionicons name="arrow-redo" size={12} color="#0284C7" />
                   </View>
-                  <Text className="text-xs font-semibold text-white flex-1" numberOfLines={1}>{rule.source_chat_title || 'Source Channel'}</Text>
+                  <Text style={[styles.mappingSource, txt]} numberOfLines={1}>{rule.source_chat_title || 'Source Channel'}</Text>
                 </View>
-                <Ionicons name="arrow-forward" size={14} color="#94A3B8" className="mx-2" />
-                <View className="px-2 py-1 rounded-lg border bg-sky-500/10 border-sky-500/20 max-w-[45%]">
-                  <Text className="text-[11px] font-semibold text-sky-400" numberOfLines={1}>{rule.target_chat_title || 'Target Channel'}</Text>
+                <Ionicons name="arrow-forward" size={14} color="#94A3B8" style={{ marginHorizontal: 8 }} />
+                <View style={[styles.targetBadge, isDark ? styles.targetBadgeDark : styles.targetBadgeLight]}>
+                  <Text style={[styles.targetBadgeText, txt]} numberOfLines={1}>{rule.target_chat_title || 'Target Channel'}</Text>
                 </View>
               </View>
             ))}
@@ -129,91 +137,87 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
 
       {/* FILTERS */}
       {afSection === 'filters' && (
-        <View className="p-4 rounded-2xl bg-[#181A1F] border border-[#262930] mb-3">
-          <View className="flex-row items-center gap-2.5 mb-1">
-            <View className="w-8 h-8 rounded-lg bg-purple-500/10 items-center justify-center">
+        <View style={[styles.sectionCard, card]}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIconCircle, { backgroundColor: 'rgba(139,92,246,0.12)' }]}>
               <Ionicons name="filter-outline" size={14} color="#8B5CF6" />
             </View>
-            <View className="flex-1">
-              <Text className="text-sm font-bold text-white">Word Filters & Text Replacements</Text>
-              <Text className="text-[11px] text-slate-400 mt-0.5">Automatic link and username replacement rules</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.sectionTitle, txt]}>Word Filters & Text Replacements</Text>
+              <Text style={styles.sectionSub}>Automatic link and username replacement rules</Text>
             </View>
           </View>
-          <View className="gap-2 mt-2">
+          <View style={{ gap: 8, marginTop: 8 }}>
             {[
               { from: 't.me/old_channel', to: 't.me/TradingGuruVIP' },
               { from: '@competitor_bot', to: '@GetAiPilotBot' },
               { from: 'Call 9876543210', to: 'Visit getaipilot.in' },
             ].map((item, idx) => (
-              <View key={idx} className="flex-row items-center gap-2 py-2 border-b border-[#262930] last:border-b-0">
-                <Text className="text-[11px] text-red-400 font-semibold flex-1">{item.from}</Text>
+              <View key={idx} style={[styles.filterItem, border]}>
+                <Text style={styles.filterFrom}>{item.from}</Text>
                 <Ionicons name="arrow-forward" size={14} color="#94A3B8" />
-                <Text className="text-[11px] text-emerald-400 font-semibold flex-1">{item.to}</Text>
+                <Text style={styles.filterTo}>{item.to}</Text>
               </View>
             ))}
           </View>
-          <Pressable className="flex-row items-center justify-center gap-1.5 bg-[#0084FF] rounded-xl py-3 mt-3 active:opacity-80" onPress={() => onOpenModal('autoforward')}>
+          <Pressable style={[styles.primaryBtn, { marginTop: 12 }]} onPress={() => onOpenModal('autoforward')}>
             <Ionicons name="add" size={15} color="#FFFFFF" />
-            <Text className="text-white text-xs font-bold">Add Replacement Rule</Text>
+            <Text style={styles.primaryBtnText}>Add Replacement Rule</Text>
           </Pressable>
         </View>
       )}
 
       {/* BLOCKED */}
       {afSection === 'blocked' && (
-        <View className="p-4 rounded-2xl bg-[#181A1F] border border-[#262930] mb-3">
-          <View className="flex-row items-center gap-2.5 mb-1">
-            <View className="w-8 h-8 rounded-lg bg-red-500/10 items-center justify-center">
+        <View style={[styles.sectionCard, card]}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIconCircle, { backgroundColor: 'rgba(239,68,68,0.12)' }]}>
               <Ionicons name="shield-outline" size={14} color="#EF4444" />
             </View>
-            <View className="flex-1">
-              <Text className="text-sm font-bold text-white">Blacklisted Keywords</Text>
-              <Text className="text-[11px] text-slate-400 mt-0.5">Messages with these keywords are automatically dropped</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.sectionTitle, txt]}>Blacklisted Keywords</Text>
+              <Text style={styles.sectionSub}>Messages with these keywords are automatically dropped</Text>
             </View>
           </View>
-          <View className="flex-row flex-wrap gap-2 mt-2">
+          <View style={styles.chipsWrap}>
             {['spam', 'forex scam', '100x pump', 'wa.me/', 'dm for paid', 'free giveaway', 'binance scam'].map((chip, idx) => (
-              <View key={idx} className="flex-row items-center gap-1 bg-red-500/10 px-2.5 py-1 rounded-full border border-red-500/20">
-                <Text className="text-[11px] text-red-400 font-semibold">{chip}</Text>
+              <View key={idx} style={styles.blockedChip}>
+                <Text style={styles.blockedChipText}>{chip}</Text>
                 <Ionicons name="close-circle" size={12} color="#EF4444" />
               </View>
             ))}
           </View>
-          <Pressable className="flex-row items-center justify-center gap-1.5 bg-[#0084FF] rounded-xl py-3 mt-3 active:opacity-80" onPress={() => onOpenModal('autoforward')}>
+          <Pressable style={[styles.primaryBtn, { marginTop: 12 }]} onPress={() => onOpenModal('autoforward')}>
             <Ionicons name="add" size={15} color="#FFFFFF" />
-            <Text className="text-white text-xs font-bold">Add Blocked Keyword</Text>
+            <Text style={styles.primaryBtnText}>Add Blocked Keyword</Text>
           </Pressable>
         </View>
       )}
 
       {/* DELAYS */}
       {afSection === 'delays' && (
-        <View className="p-4 rounded-2xl bg-[#181A1F] border border-[#262930] mb-3">
-          <View className="flex-row items-center gap-2.5 mb-1">
-            <View className="w-8 h-8 rounded-lg bg-amber-500/10 items-center justify-center">
+        <View style={[styles.sectionCard, card]}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIconCircle, { backgroundColor: 'rgba(245,158,11,0.12)' }]}>
               <Ionicons name="time-outline" size={14} color="#F59E0B" />
             </View>
-            <View className="flex-1">
-              <Text className="text-sm font-bold text-white">Forwarding Delay Interval</Text>
-              <Text className="text-[11px] text-slate-400 mt-0.5">Prevent Telegram rate-limiting & simulate natural typing</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.sectionTitle, txt]}>Forwarding Delay Interval</Text>
+              <Text style={styles.sectionSub}>Prevent Telegram rate-limiting & simulate natural typing</Text>
             </View>
           </View>
-          <View className="items-center p-5 rounded-xl my-3 bg-[#111317]">
-            <Text className="text-5xl font-black text-white tracking-tighter">{selectedDelay}</Text>
-            <Text className="text-xs text-slate-400 font-semibold mt-1">seconds delay active</Text>
+          <View style={[styles.delayBigBox, isDark ? styles.delayBoxDark : styles.delayBoxLight]}>
+            <Text style={[styles.delayBigNumber, txt]}>{selectedDelay}</Text>
+            <Text style={styles.delayBigLabel}>seconds delay active</Text>
           </View>
-          <View className="flex-row gap-2 flex-wrap">
+          <View style={styles.delayPresetsRow}>
             {[0, 5, 15, 30, 60].map((sec) => (
               <Pressable
                 key={sec}
-                className={`flex-1 py-2.5 rounded-xl border items-center ${
-                  selectedDelay === sec
-                    ? 'bg-[#0084FF] border-[#0084FF]'
-                    : 'bg-[#111317] border-[#262930] active:bg-[#20232A]'
-                }`}
+                style={[styles.delayPresetBtn, border, selectedDelay === sec && styles.delayPresetBtnActive]}
                 onPress={() => setSelectedDelay(sec)}
               >
-                <Text className={`text-xs font-bold ${selectedDelay === sec ? 'text-white' : 'text-slate-300'}`}>
+                <Text style={[styles.delayPresetText, txt, selectedDelay === sec && { color: '#FFFFFF' }]}>
                   {sec === 0 ? 'Instant' : `${sec}s`}
                 </Text>
               </Pressable>
@@ -224,27 +228,86 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
 
       {/* HEADERS */}
       {afSection === 'headers' && (
-        <View className="p-4 rounded-2xl bg-[#181A1F] border border-[#262930] mb-3">
-          <View className="flex-row items-center gap-2.5 mb-1">
-            <View className="w-8 h-8 rounded-lg bg-emerald-500/10 items-center justify-center">
+        <View style={[styles.sectionCard, card]}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIconCircle, { backgroundColor: 'rgba(16,185,129,0.12)' }]}>
               <Ionicons name="text-outline" size={14} color="#10B981" />
             </View>
-            <View className="flex-1">
-              <Text className="text-sm font-bold text-white">Prefix & Suffix Headers</Text>
-              <Text className="text-[11px] text-slate-400 mt-0.5">Brand your forwarded messages with custom headers & signatures</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.sectionTitle, txt]}>Prefix & Suffix Headers</Text>
+              <Text style={styles.sectionSub}>Brand your forwarded messages with custom headers & signatures</Text>
             </View>
           </View>
-          <View className="bg-[#111317] border border-[#262930] rounded-xl p-3 my-3">
-            <Text className="text-[11px] font-bold text-[#0084FF] mb-1">🔥 [VIP SIGNAL ALERT - FORWARDED]</Text>
-            <Text className="text-xs text-slate-300 leading-4">Buy BankNifty 51,200 CE at 340-350 | Target 420 | SL 290. Strict trailing.</Text>
-            <Text className="text-[10px] font-semibold text-emerald-400 mt-1">📈 Verified by SEBI Analyst • Powered by @GetAiPilot</Text>
+          <View style={styles.previewBox}>
+            <Text style={{ fontSize: 11, fontWeight: '700', color: '#0284C7', marginBottom: 4 }}>🔥 [VIP SIGNAL ALERT - FORWARDED]</Text>
+            <Text style={styles.previewText}>Buy BankNifty 51,200 CE at 340-350 | Target 420 | SL 290. Strict trailing.</Text>
+            <Text style={{ fontSize: 10, fontWeight: '600', color: '#10B981', marginTop: 4 }}>📈 Verified by SEBI Analyst • Powered by @GetAiPilot</Text>
           </View>
-          <Pressable className="flex-row items-center justify-center gap-1.5 bg-[#0084FF] rounded-xl py-3 active:opacity-80" onPress={() => onOpenModal('autoforward')}>
+          <Pressable style={[styles.primaryBtn, { marginTop: 4 }]} onPress={() => onOpenModal('autoforward')}>
             <Ionicons name="create-outline" size={15} color="#FFFFFF" />
-            <Text className="text-white text-xs font-bold">Customize Header & Footer</Text>
+            <Text style={styles.primaryBtnText}>Customize Header & Footer</Text>
           </Pressable>
         </View>
       )}
     </>
   );
 };
+
+const styles = StyleSheet.create({
+  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
+  cardDark: { backgroundColor: '#121212', borderColor: '#27272A' },
+  textLight: { color: '#0F172A' },
+  textDark: { color: '#F8FAFC' },
+  borderLight: { borderColor: '#E2E8F0' },
+  borderDark: { borderColor: '#27272A' },
+  heroCard: { padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 14 },
+  heroRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  heroLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  heroIconCircle: { width: 38, height: 38, borderRadius: 10, backgroundColor: 'rgba(2,132,199,0.12)', alignItems: 'center', justifyContent: 'center' },
+  heroTitle: { fontSize: 15, fontWeight: '800' },
+  activeRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
+  dotGreen: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#10B981' },
+  activeText: { color: '#64748B', fontSize: 11, fontWeight: '600' },
+  openBotBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#0284C7', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8 },
+  openBotBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
+  kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
+  kpiCard: { width: '47%', padding: 12, borderRadius: 14, borderWidth: 1 },
+  kpiCardActive: { borderColor: '#0284C7', borderWidth: 2 },
+  kpiIconCircle: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  kpiValue: { fontSize: 20, fontWeight: '800' },
+  kpiSub: { fontSize: 10, color: '#64748B', marginTop: 2, fontWeight: '600' },
+  primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#0284C7', borderRadius: 12, paddingVertical: 13, marginBottom: 12 },
+  primaryBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
+  sectionCard: { padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 12 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
+  sectionIconCircle: { width: 32, height: 32, borderRadius: 8, backgroundColor: 'rgba(2,132,199,0.12)', alignItems: 'center', justifyContent: 'center' },
+  sectionTitle: { fontSize: 14, fontWeight: '800' },
+  sectionSub: { fontSize: 11, color: '#64748B', marginTop: 1 },
+  mappingRow: { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 10, borderWidth: 1 },
+  mappingRowLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
+  mappingRowDark: { backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' },
+  mappingLeft: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 },
+  mappingArrow: { width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(2,132,199,0.12)', alignItems: 'center', justifyContent: 'center' },
+  mappingSource: { fontSize: 12, fontWeight: '600', flex: 1 },
+  targetBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, maxWidth: '45%' },
+  targetBadgeLight: { backgroundColor: '#F0F9FF', borderColor: '#BAE6FD' },
+  targetBadgeDark: { backgroundColor: 'rgba(2,132,199,0.1)', borderColor: 'rgba(2,132,199,0.25)' },
+  targetBadgeText: { fontSize: 11, fontWeight: '600' },
+  filterItem: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, borderBottomWidth: 1 },
+  filterFrom: { fontSize: 11, color: '#EF4444', fontWeight: '600', flex: 1 },
+  filterTo: { fontSize: 11, color: '#10B981', fontWeight: '600', flex: 1 },
+  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  blockedChip: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(239,68,68,0.08)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)' },
+  blockedChipText: { fontSize: 11, color: '#EF4444', fontWeight: '600' },
+  delayBigBox: { alignItems: 'center', padding: 20, borderRadius: 12, marginVertical: 12 },
+  delayBoxLight: { backgroundColor: '#F8FAFC' },
+  delayBoxDark: { backgroundColor: 'rgba(255,255,255,0.04)' },
+  delayBigNumber: { fontSize: 48, fontWeight: '900', letterSpacing: -2 },
+  delayBigLabel: { fontSize: 12, color: '#64748B', fontWeight: '600', marginTop: 4 },
+  delayPresetsRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  delayPresetBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1, alignItems: 'center' },
+  delayPresetBtnActive: { backgroundColor: '#0284C7', borderColor: '#0284C7' },
+  delayPresetText: { fontSize: 12, fontWeight: '700' },
+  previewBox: { backgroundColor: 'rgba(2,132,199,0.06)', borderRadius: 10, padding: 12, marginVertical: 12 },
+  previewText: { fontSize: 12, color: '#64748B', lineHeight: 18 },
+});

@@ -1,30 +1,33 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View, useColorScheme } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Stop, Line, Text as SvgText, Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 
 export const DashboardAnalyticsCharts: React.FC = () => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const chartWidth = 320;
   const chartHeight = 90;
 
   return (
-    <View className="gap-3 mb-4">
+    <View style={styles.container}>
       {/* 1. Channel Join Tracking Card */}
-      <View className="rounded-2xl border p-3.5 bg-[#181A1F] border-[#262930]">
-        <View className="flex-row justify-between items-center mb-0.5">
-          <View className="flex-row items-center gap-1.5">
+      <View style={[styles.chartCard, isDark ? styles.cardDark : styles.cardLight]}>
+        <View style={styles.chartHeaderRow}>
+          <View style={styles.chartTitleGroup}>
             <Ionicons name="trending-up-outline" size={16} color="#10B981" />
-            <Text className="text-sm font-bold text-white">
+            <Text style={[styles.chartTitle, isDark ? styles.textDark : styles.textLight]}>
               Channel Join Tracking
             </Text>
           </View>
-          <View className="bg-emerald-500/10 px-2 py-0.5 rounded-md">
-            <Text className="text-emerald-400 text-xs font-bold">20 recent joins</Text>
+          <View style={styles.badgeGreen}>
+            <Text style={styles.badgeGreenText}>20 recent joins</Text>
           </View>
         </View>
-        <Text className="text-xs text-slate-400 mb-2">Tracked member joins across your deep invite links.</Text>
+        <Text style={styles.chartSubtitle}>Tracked member joins across your deep invite links.</Text>
 
-        <View className="items-center justify-center mt-1">
+        <View style={styles.svgContainer}>
           <Svg width="100%" height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`}>
             <Defs>
               <LinearGradient id="joinGradient" x1="0" y1="0" x2="0" y2="1">
@@ -34,9 +37,9 @@ export const DashboardAnalyticsCharts: React.FC = () => {
             </Defs>
 
             {/* Grid lines */}
-            <Line x1="25" y1="15" x2="310" y2="15" stroke="#262930" strokeWidth="1" strokeDasharray="3 3" />
-            <Line x1="25" y1="40" x2="310" y2="40" stroke="#262930" strokeWidth="1" strokeDasharray="3 3" />
-            <Line x1="25" y1="65" x2="310" y2="65" stroke="#262930" strokeWidth="1" />
+            <Line x1="25" y1="15" x2="310" y2="15" stroke={isDark ? '#27272A' : '#F1F5F9'} strokeWidth="1" strokeDasharray="3 3" />
+            <Line x1="25" y1="40" x2="310" y2="40" stroke={isDark ? '#27272A' : '#F1F5F9'} strokeWidth="1" strokeDasharray="3 3" />
+            <Line x1="25" y1="65" x2="310" y2="65" stroke={isDark ? '#27272A' : '#F1F5F9'} strokeWidth="1" />
 
             {/* Y Axis Labels */}
             <SvgText x="8" y="18" fill="#94A3B8" fontSize="9" fontWeight="600">4</SvgText>
@@ -64,45 +67,45 @@ export const DashboardAnalyticsCharts: React.FC = () => {
         </View>
 
         {/* X Axis Dates */}
-        <View className="flex-row justify-between px-6 mt-1">
-          <Text className="text-[10px] text-slate-400 font-semibold">Fri 28</Text>
-          <Text className="text-[10px] text-slate-400 font-semibold">Sun 30</Text>
-          <Text className="text-[10px] text-slate-400 font-semibold">Tue 1</Text>
-          <Text className="text-[10px] text-slate-400 font-semibold">Thu 3</Text>
-          <Text className="text-[10px] text-slate-400 font-semibold">Sat 5</Text>
-          <Text className="text-[10px] text-slate-400 font-semibold">Mon 7</Text>
-          <Text className="text-[10px] text-slate-400 font-semibold">Thu 10</Text>
+        <View style={styles.xAxisRow}>
+          <Text style={styles.axisLabel}>Fri 28</Text>
+          <Text style={styles.axisLabel}>Sun 30</Text>
+          <Text style={styles.axisLabel}>Tue 1</Text>
+          <Text style={styles.axisLabel}>Thu 3</Text>
+          <Text style={styles.axisLabel}>Sat 5</Text>
+          <Text style={styles.axisLabel}>Mon 7</Text>
+          <Text style={styles.axisLabel}>Thu 10</Text>
         </View>
       </View>
 
       {/* 2. TeleSub Revenue Analytics Card */}
-      <View className="rounded-2xl border p-3.5 bg-[#181A1F] border-[#262930]">
-        <View className="flex-row justify-between items-center mb-0.5">
-          <View className="flex-row items-center gap-1.5">
-            <Ionicons name="card-outline" size={16} color="#0084FF" />
-            <Text className="text-sm font-bold text-white">
+      <View style={[styles.chartCard, isDark ? styles.cardDark : styles.cardLight]}>
+        <View style={styles.chartHeaderRow}>
+          <View style={styles.chartTitleGroup}>
+            <Ionicons name="card-outline" size={16} color="#0284C7" />
+            <Text style={[styles.chartTitle, isDark ? styles.textDark : styles.textLight]}>
               TeleSub Revenue Analytics
             </Text>
           </View>
-          <View className="bg-[#0084FF]/10 px-2 py-0.5 rounded-md">
-            <Text className="text-[#0084FF] text-xs font-bold">₹0</Text>
+          <View style={styles.badgeBlue}>
+            <Text style={styles.badgeBlueText}>₹0</Text>
           </View>
         </View>
-        <Text className="text-xs text-slate-400 mb-2">Real payment earnings from your subscription pages.</Text>
+        <Text style={styles.chartSubtitle}>Real payment earnings from your subscription pages.</Text>
 
-        <View className="items-center justify-center mt-1">
+        <View style={styles.svgContainer}>
           <Svg width="100%" height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`}>
             <Defs>
               <LinearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0%" stopColor="#0084FF" stopOpacity="0.2" />
-                <Stop offset="100%" stopColor="#0084FF" stopOpacity="0.0" />
+                <Stop offset="0%" stopColor="#0284C7" stopOpacity="0.2" />
+                <Stop offset="100%" stopColor="#0284C7" stopOpacity="0.0" />
               </LinearGradient>
             </Defs>
 
             {/* Grid lines */}
-            <Line x1="25" y1="15" x2="310" y2="15" stroke="#262930" strokeWidth="1" strokeDasharray="3 3" />
-            <Line x1="25" y1="40" x2="310" y2="40" stroke="#262930" strokeWidth="1" strokeDasharray="3 3" />
-            <Line x1="25" y1="65" x2="310" y2="65" stroke="#262930" strokeWidth="1" />
+            <Line x1="25" y1="15" x2="310" y2="15" stroke={isDark ? '#27272A' : '#F1F5F9'} strokeWidth="1" strokeDasharray="3 3" />
+            <Line x1="25" y1="40" x2="310" y2="40" stroke={isDark ? '#27272A' : '#F1F5F9'} strokeWidth="1" strokeDasharray="3 3" />
+            <Line x1="25" y1="65" x2="310" y2="65" stroke={isDark ? '#27272A' : '#F1F5F9'} strokeWidth="1" />
 
             {/* Y Axis Labels */}
             <SvgText x="8" y="18" fill="#94A3B8" fontSize="9" fontWeight="600">₹4</SvgText>
@@ -114,22 +117,106 @@ export const DashboardAnalyticsCharts: React.FC = () => {
               d="M 30 65 L 305 65 L 305 65 L 30 65 Z"
               fill="url(#revenueGradient)"
             />
-            <Line x1="30" y1="65" x2="305" y2="65" stroke="#0084FF" strokeWidth="2.5" />
+            <Line x1="30" y1="65" x2="305" y2="65" stroke="#0284C7" strokeWidth="2.5" />
           </Svg>
         </View>
 
         {/* X Axis Dates */}
-        <View className="flex-row justify-between px-6 mt-1">
-          <Text className="text-[10px] text-slate-400 font-semibold">Fri 28</Text>
-          <Text className="text-[10px] text-slate-400 font-semibold">Sun 30</Text>
-          <Text className="text-[10px] text-slate-400 font-semibold">Tue 1</Text>
-          <Text className="text-[10px] text-slate-400 font-semibold">Thu 3</Text>
-          <Text className="text-[10px] text-slate-400 font-semibold">Sat 5</Text>
-          <Text className="text-[10px] text-slate-400 font-semibold">Mon 7</Text>
-          <Text className="text-[10px] text-slate-400 font-semibold">Thu 10</Text>
+        <View style={styles.xAxisRow}>
+          <Text style={styles.axisLabel}>Fri 28</Text>
+          <Text style={styles.axisLabel}>Sun 30</Text>
+          <Text style={styles.axisLabel}>Tue 1</Text>
+          <Text style={styles.axisLabel}>Thu 3</Text>
+          <Text style={styles.axisLabel}>Sat 5</Text>
+          <Text style={styles.axisLabel}>Mon 7</Text>
+          <Text style={styles.axisLabel}>Thu 10</Text>
         </View>
       </View>
     </View>
   );
 };
 
+const styles = StyleSheet.create({
+  container: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  chartCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+  },
+  cardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  cardDark: {
+    backgroundColor: '#121212',
+    borderColor: '#27272A',
+  },
+  chartHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  chartTitleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  chartTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  chartSubtitle: {
+    fontSize: 11,
+    color: '#64748B',
+    marginBottom: 8,
+  },
+  textLight: { color: '#0F172A' },
+  textDark: { color: '#F8FAFC' },
+  badgeGreen: {
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  badgeGreenText: {
+    color: '#059669',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  badgeBlue: {
+    backgroundColor: 'rgba(2, 132, 199, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  badgeBlueText: {
+    color: '#0284C7',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  svgContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+  xAxisRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    marginTop: 4,
+  },
+  axisLabel: {
+    fontSize: 9,
+    color: '#94A3B8',
+    fontWeight: '600',
+  },
+});

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   ScrollView,
   Pressable,
   Switch,
@@ -13,6 +14,7 @@ import {
 } from 'react-native';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
+import { colors } from '../../src/theme/colors';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 import { supabase } from '../../src/lib/supabase';
@@ -37,6 +39,7 @@ export default function AdminMaintenanceScreen() {
   // Global Settings
   const {
     data: globalSettings,
+    isLoading: loadingGlobal,
     refetch: refetchGlobal,
     isRefetching: refetchingGlobal,
   } = useQuery<SystemSettings | null>({
@@ -235,11 +238,11 @@ export default function AdminMaintenanceScreen() {
 
   if (!isAdmin) {
     return (
-      <AppScreen safeArea={false} className="flex-1 bg-[#0B0D10]">
+      <AppScreen safeArea={false} backgroundColor={colors.background}>
         <AppTopBar title="Maintenance Control" showBack={true} />
-        <View className="flex-1 justify-center items-center p-6">
-          <Text className="text-xl font-bold text-white mb-2">Access Restricted</Text>
-          <Text className="text-xs text-slate-400 text-center">
+        <View style={styles.deniedContainer}>
+          <Text style={styles.deniedTitle}>Access Restricted</Text>
+          <Text style={styles.deniedSubtitle}>
             Admin credentials required to view central service controls.
           </Text>
         </View>
@@ -250,36 +253,35 @@ export default function AdminMaintenanceScreen() {
   const isGlobalActive = Boolean(globalSettings?.global_maintenance_enabled);
 
   return (
-    <AppScreen safeArea={false} className="flex-1 bg-[#0B0D10]">
+    <AppScreen safeArea={false} backgroundColor={colors.background}>
       <AppTopBar title="Maintenance Control" subtitle="Central Availability Hub" showBack={true} />
 
       <ScrollView
-        contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl
             refreshing={refetchingGlobal || refetchingProducts || refetchingLogs}
             onRefresh={onRefresh}
-            tintColor="#0084FF"
+            tintColor={colors.primary}
           />
         }
         showsVerticalScrollIndicator={false}
       >
         {/* Global Maintenance Card */}
         <View
-          className={`flex-row items-center rounded-2xl p-4 mb-4 border ${
-            isGlobalActive
-              ? 'border-red-500/50 bg-red-500/10'
-              : 'border-[#262930] bg-[#181A1F]'
-          }`}
+          style={[
+            styles.globalCard,
+            isGlobalActive && styles.globalCardAlert,
+          ]}
         >
-          <View className="flex-1 pr-3">
-            <View className="flex-row items-center gap-2 mb-1">
-              <Text className={`text-sm font-black ${isGlobalActive ? 'text-red-400' : 'text-white'}`}>
+          <View style={{ flex: 1, paddingRight: 12 }}>
+            <View style={styles.globalHeader}>
+              <Text style={[styles.globalTitle, isGlobalActive && { color: '#ef4444' }]}>
                 GLOBAL MAINTENANCE
               </Text>
-              {globalMutation.isPending && <ActivityIndicator size="small" color="#0084FF" />}
+              {globalMutation.isPending && <ActivityIndicator size="small" color={colors.primary} />}
             </View>
-            <Text className="text-xs text-slate-400 leading-4">
+            <Text style={styles.globalDesc}>
               {isGlobalActive
                 ? 'All GetAIPilot products are in maintenance mode.'
                 : 'Enabling will place ALL GetAIPilot products into maintenance mode immediately.'}
@@ -299,30 +301,26 @@ export default function AdminMaintenanceScreen() {
                 ]
               );
             }}
-            trackColor={{ false: '#262930', true: '#ef4444' }}
+            trackColor={{ false: '#333', true: '#ef4444' }}
             thumbColor="#fff"
           />
         </View>
 
         {/* Tab selector */}
-        <View className="flex-row gap-2.5 mb-4">
+        <View style={styles.tabsRow}>
           <Pressable
-            className={`flex-1 py-2.5 rounded-xl items-center border ${
-              activeTab === 'overview' ? 'bg-[#0084FF] border-[#0084FF]' : 'bg-[#181A1F] border-[#262930]'
-            }`}
+            style={[styles.tabChip, activeTab === 'overview' && styles.tabChipActive]}
             onPress={() => setActiveTab('overview')}
           >
-            <Text className={`text-xs font-bold ${activeTab === 'overview' ? 'text-white' : 'text-slate-400'}`}>
+            <Text style={[styles.tabChipText, activeTab === 'overview' && styles.tabChipTextActive]}>
               Services Overview
             </Text>
           </Pressable>
           <Pressable
-            className={`flex-1 py-2.5 rounded-xl items-center border ${
-              activeTab === 'history' ? 'bg-[#0084FF] border-[#0084FF]' : 'bg-[#181A1F] border-[#262930]'
-            }`}
+            style={[styles.tabChip, activeTab === 'history' && styles.tabChipActive]}
             onPress={() => setActiveTab('history')}
           >
-            <Text className={`text-xs font-bold ${activeTab === 'history' ? 'text-white' : 'text-slate-400'}`}>
+            <Text style={[styles.tabChipText, activeTab === 'history' && styles.tabChipTextActive]}>
               Maintenance History ({logs?.length || 0})
             </Text>
           </Pressable>
@@ -331,7 +329,7 @@ export default function AdminMaintenanceScreen() {
         {/* OVERVIEW TAB */}
         {activeTab === 'overview' && (
           <View>
-            <Text className="text-sm font-black text-white mb-3">Product Services</Text>
+            <Text style={styles.sectionHeading}>Product Services</Text>
 
             {loadingProducts ? (
               <AdminTabSkeleton />
@@ -339,42 +337,47 @@ export default function AdminMaintenanceScreen() {
               products?.map((p) => {
                 const isUnder = Boolean(p.maintenance_enabled) || isGlobalActive;
                 return (
-                  <View key={p.id} className="rounded-2xl p-4 mb-3 border border-[#262930] bg-[#181A1F]">
-                    <View className="flex-row items-center justify-between">
-                      <View className="flex-1">
-                        <Text className="text-sm font-extrabold text-white">{p.product_name}</Text>
-                        <Text className="text-[11px] text-slate-400 mt-0.5">Key: {p.product_key}</Text>
+                  <View key={p.id} style={styles.serviceCard}>
+                    <View style={styles.serviceHeader}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.serviceName}>{p.product_name}</Text>
+                        <Text style={styles.serviceKey}>Key: {p.product_key}</Text>
                       </View>
                       <View
-                        className={`px-2 py-1 rounded-md ${
-                          isUnder ? 'bg-red-500/20' : 'bg-emerald-500/20'
-                        }`}
+                        style={[
+                          styles.badge,
+                          {
+                            backgroundColor: isUnder
+                              ? 'rgba(239, 68, 68, 0.15)'
+                              : 'rgba(22, 184, 130, 0.15)',
+                          },
+                        ]}
                       >
                         <Text
-                          className={`text-[10px] font-black ${isUnder ? 'text-red-400' : 'text-emerald-400'}`}
+                          style={[
+                            styles.badgeText,
+                            { color: isUnder ? '#ef4444' : '#16b882' },
+                          ]}
                         >
                           {isUnder ? 'MAINTENANCE' : 'OPERATIONAL'}
                         </Text>
                       </View>
                     </View>
 
-                    <View className="h-px bg-[#262930] my-3" />
+                    <View style={styles.divider} />
 
-                    <View className="flex-row items-center justify-between">
-                      <View className="flex-row items-center gap-2">
-                        <Text className="text-xs text-slate-400 font-semibold">Maintenance</Text>
+                    <View style={styles.serviceActions}>
+                      <View style={styles.switchRow}>
+                        <Text style={styles.switchLabel}>Maintenance</Text>
                         <Switch
                           value={Boolean(p.maintenance_enabled)}
                           onValueChange={(v) => handleQuickToggle(p, v)}
-                          trackColor={{ false: '#262930', true: '#ef4444' }}
+                          trackColor={{ false: '#333', true: '#ef4444' }}
                           thumbColor="#fff"
                         />
                       </View>
-                      <Pressable
-                        className="px-3 py-1.5 rounded-lg border border-[#262930] bg-[#111317]"
-                        onPress={() => handleManageClick(p)}
-                      >
-                        <Text className="text-xs font-bold text-white">Manage Settings</Text>
+                      <Pressable style={styles.manageBtn} onPress={() => handleManageClick(p)}>
+                        <Text style={styles.manageBtnText}>Manage Settings</Text>
                       </Pressable>
                     </View>
                   </View>
@@ -387,30 +390,28 @@ export default function AdminMaintenanceScreen() {
         {/* HISTORY TAB */}
         {activeTab === 'history' && (
           <View>
-            <Text className="text-sm font-black text-white mb-3">Audit Activity Logs</Text>
+            <Text style={styles.sectionHeading}>Audit Activity Logs</Text>
 
             {loadingLogs ? (
               <AdminTabSkeleton />
             ) : logs && logs.length > 0 ? (
               logs.map((log) => (
-                <View key={log.id} className="rounded-xl p-3.5 mb-2.5 border border-[#262930] bg-[#181A1F]">
-                  <View className="flex-row items-center justify-between">
-                    <Text className="text-xs font-bold text-white">{log.action}</Text>
-                    <Text className="text-[11px] text-slate-400">
+                <View key={log.id} style={styles.logCard}>
+                  <View style={styles.logHeader}>
+                    <Text style={styles.logAction}>{log.action}</Text>
+                    <Text style={styles.logDate}>
                       {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </Text>
                   </View>
                   {log.product_key && (
-                    <Text className="text-xs font-semibold text-blue-400 mt-1">
-                      Product: {log.product_key.toUpperCase()}
-                    </Text>
+                    <Text style={styles.logKey}>Product: {log.product_key.toUpperCase()}</Text>
                   )}
-                  {log.reason && <Text className="text-[11px] text-slate-400 mt-0.5">{log.reason}</Text>}
+                  {log.reason && <Text style={styles.logReason}>{log.reason}</Text>}
                 </View>
               ))
             ) : (
-              <View className="p-6 items-center rounded-xl bg-[#181A1F] border border-[#262930]">
-                <Text className="text-xs text-slate-400">No logs found.</Text>
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyText}>No logs found.</Text>
               </View>
             )}
           </View>
@@ -423,63 +424,59 @@ export default function AdminMaintenanceScreen() {
           transparent={true}
           onRequestClose={() => setIsManageOpen(false)}
         >
-          <View className="flex-1 bg-black/70 justify-center p-4">
-            <View className="rounded-3xl p-5 border border-[#262930] bg-[#181A1F]">
-              <Text className="text-base font-black text-white">Configure {selectedProduct?.product_name}</Text>
-              <Text className="text-xs text-slate-400 mt-1 mb-3">Update maintenance message and options</Text>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Configure {selectedProduct?.product_name}</Text>
+              <Text style={styles.modalSubtitle}>Update maintenance message and options</Text>
 
-              <Text className="text-xs font-bold text-slate-300 mb-1 mt-2">Notice Title</Text>
+              <Text style={styles.fieldLabel}>Notice Title</Text>
               <TextInput
-                className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2 text-xs text-white"
+                style={styles.fieldInput}
                 value={maintenanceTitle}
                 onChangeText={setMaintenanceTitle}
                 placeholder="Scheduled Maintenance"
-                placeholderTextColor="#64748B"
+                placeholderTextColor={colors.mutedForeground}
               />
 
-              <Text className="text-xs font-bold text-slate-300 mb-1 mt-2.5">Public Explanation</Text>
+              <Text style={styles.fieldLabel}>Public Explanation</Text>
               <TextInput
-                className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2 text-xs text-white h-20"
+                style={[styles.fieldInput, { height: 75, textAlignVertical: 'top' }]}
                 value={maintenanceMessage}
                 onChangeText={setMaintenanceMessage}
                 multiline
-                textAlignVertical="top"
                 placeholder="Message for users visiting the service"
-                placeholderTextColor="#64748B"
+                placeholderTextColor={colors.mutedForeground}
               />
 
-              <Text className="text-xs font-bold text-slate-300 mb-1 mt-2.5">Internal Log Reason</Text>
+              <Text style={styles.fieldLabel}>Internal Log Reason</Text>
               <TextInput
-                className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2 text-xs text-white"
+                style={styles.fieldInput}
                 value={internalNote}
                 onChangeText={setInternalNote}
                 placeholder="Reason for audit"
-                placeholderTextColor="#64748B"
+                placeholderTextColor={colors.mutedForeground}
               />
 
-              <View className="flex-row items-center justify-between my-3.5">
-                <Text className="text-xs font-semibold text-white">Block App Frontend</Text>
+              <View style={styles.modalRow}>
+                <Text style={styles.modalRowText}>Block App Frontend</Text>
                 <Switch
                   value={blockFrontend}
                   onValueChange={setBlockFrontend}
-                  trackColor={{ false: '#262930', true: '#0084FF' }}
+                  trackColor={{ false: '#333', true: colors.primary }}
                   thumbColor="#fff"
                 />
               </View>
 
-              <View className="flex-row gap-2.5 mt-2">
-                <Pressable
-                  className="flex-1 py-3 rounded-xl items-center border border-[#262930] bg-[#111317]"
-                  onPress={() => setIsManageOpen(false)}
-                >
-                  <Text className="text-xs font-bold text-white">Cancel</Text>
+              <View style={styles.btnRow}>
+                <Pressable style={styles.cancelBtn} onPress={() => setIsManageOpen(false)}>
+                  <Text style={styles.cancelBtnText}>Cancel</Text>
                 </Pressable>
                 <Pressable
-                  className="flex-1 py-3 rounded-xl items-center bg-[#0084FF]"
+                  style={styles.saveBtn}
                   onPress={handleSaveManage}
                   disabled={updateProductMutation.isPending}
                 >
-                  <Text className="text-xs font-extrabold text-white">Save Configuration</Text>
+                  <Text style={styles.saveBtnText}>Save Configuration</Text>
                 </Pressable>
               </View>
             </View>
@@ -489,3 +486,280 @@ export default function AdminMaintenanceScreen() {
     </AppScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  globalCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  globalCardAlert: {
+    borderColor: 'rgba(239, 68, 68, 0.5)',
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+  },
+  globalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  globalTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.foreground,
+  },
+  globalDesc: {
+    fontSize: 12,
+    color: colors.mutedForeground,
+    lineHeight: 16,
+  },
+  tabsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 16,
+  },
+  tabChip: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  tabChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  tabChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.mutedForeground,
+  },
+  tabChipTextActive: {
+    color: colors.primaryForeground,
+  },
+  sectionHeading: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.foreground,
+    marginBottom: 12,
+  },
+  serviceCard: {
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  serviceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  serviceName: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.foreground,
+  },
+  serviceKey: {
+    fontSize: 11.5,
+    color: colors.mutedForeground,
+    marginTop: 2,
+  },
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: 12,
+  },
+  serviceActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  switchLabel: {
+    fontSize: 12.5,
+    color: colors.mutedForeground,
+    fontWeight: '600',
+  },
+  manageBtn: {
+    backgroundColor: colors.secondary,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  manageBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.foreground,
+  },
+  logCard: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  logHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  logAction: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: colors.foreground,
+  },
+  logDate: {
+    fontSize: 11,
+    color: colors.mutedForeground,
+  },
+  logKey: {
+    fontSize: 11.5,
+    color: colors.primary,
+    marginTop: 4,
+    fontWeight: '600',
+  },
+  logReason: {
+    fontSize: 12,
+    color: colors.mutedForeground,
+    marginTop: 2,
+  },
+  emptyCard: {
+    padding: 24,
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: 12,
+  },
+  emptyText: {
+    color: colors.mutedForeground,
+    fontSize: 13.5,
+  },
+  deniedContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  deniedTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.foreground,
+    marginBottom: 8,
+  },
+  deniedSubtitle: {
+    fontSize: 13,
+    color: colors.mutedForeground,
+    textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  modalContent: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: colors.foreground,
+  },
+  modalSubtitle: {
+    fontSize: 12.5,
+    color: colors.mutedForeground,
+    marginTop: 4,
+    marginBottom: 14,
+  },
+  fieldLabel: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: colors.foreground,
+    marginBottom: 4,
+    marginTop: 8,
+  },
+  fieldInput: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    fontSize: 13.5,
+    color: colors.foreground,
+  },
+  modalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 14,
+  },
+  modalRowText: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    color: colors.foreground,
+  },
+  btnRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
+  },
+  cancelBtn: {
+    flex: 1,
+    backgroundColor: colors.secondary,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cancelBtnText: {
+    color: colors.foreground,
+    fontWeight: '700',
+    fontSize: 13.5,
+  },
+  saveBtn: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  saveBtnText: {
+    color: colors.primaryForeground,
+    fontWeight: '800',
+    fontSize: 13.5,
+  },
+});

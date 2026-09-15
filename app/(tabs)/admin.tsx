@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   ScrollView,
   Pressable,
   Switch,
@@ -10,9 +11,9 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
-  useColorScheme,
 } from 'react-native';
 import { AppScreen } from '../../src/components/AppScreen';
+import { colors } from '../../src/theme/colors';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 import { supabase } from '../../src/lib/supabase';
@@ -34,14 +35,14 @@ interface UserProfile {
 
 export default function AdminScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const { user } = useAuth();
   const { isAdmin } = usePlatformSubscription();
   const queryClient = useQueryClient();
 
+  // Admin Tab selection: maintenance | users | logs
   const [adminTab, setAdminTab] = useState<'maintenance' | 'users' | 'logs'>('maintenance');
 
+  // User management state
   const [userSearch, setUserSearch] = useState('');
   const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'active' | 'suspended' | 'banned'>('all');
   const [selectedUserForPlan, setSelectedUserForPlan] = useState<UserProfile | null>(null);
@@ -50,6 +51,7 @@ export default function AdminScreen() {
   const [customDays, setCustomDays] = useState('30');
   const [isUpdatingUser, setIsUpdatingUser] = useState<string | null>(null);
 
+  // Maintenance Modal state
   const [selectedProduct, setSelectedProduct] = useState<SystemProduct | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [maintenanceTitle, setMaintenanceTitle] = useState('');
@@ -58,7 +60,7 @@ export default function AdminScreen() {
   const [blockFrontend, setBlockFrontend] = useState(true);
   const [blockApi, setBlockApi] = useState(false);
 
-  // 1. Global settings query
+  // 1. Fetch Global System Settings
   const {
     data: globalSettings,
     isLoading: loadingGlobal,
@@ -85,7 +87,7 @@ export default function AdminScreen() {
     enabled: !!isAdmin,
   });
 
-  // 2. System products query
+  // 2. Fetch System Products
   const {
     data: products,
     isLoading: loadingProducts,
@@ -114,7 +116,7 @@ export default function AdminScreen() {
     enabled: !!isAdmin,
   });
 
-  // 3. User profiles query
+  // 3. Fetch Registered Users for Moderation
   const {
     data: userProfiles,
     isLoading: loadingUsers,
@@ -138,7 +140,7 @@ export default function AdminScreen() {
     enabled: !!isAdmin,
   });
 
-  // 4. Logs query
+  // 4. Fetch Maintenance Audit Logs
   const {
     data: logs,
     isLoading: loadingLogs,
@@ -162,7 +164,7 @@ export default function AdminScreen() {
     enabled: !!isAdmin,
   });
 
-  // Mutations
+  // Global Maintenance Toggle Mutation
   const globalMutation = useMutation({
     mutationFn: async (enabled: boolean) => {
       if (globalSettings?.id && globalSettings.id !== 'default') {
@@ -201,6 +203,7 @@ export default function AdminScreen() {
     },
   });
 
+  // Update Product Maintenance Mutation
   const updateProductMutation = useMutation({
     mutationFn: async (payload: Partial<SystemProduct> & { id: string }) => {
       const oldState = products?.find((p) => p.id === payload.id);
@@ -242,6 +245,7 @@ export default function AdminScreen() {
     },
   });
 
+  // Moderation: Update Account Status
   const handleUpdateStatus = async (userId: string, status: 'active' | 'suspended' | 'banned') => {
     setIsUpdatingUser(userId);
     try {
@@ -261,6 +265,7 @@ export default function AdminScreen() {
     }
   };
 
+  // Moderation: Assign Subscription Plan
   const handleAssignPlan = async () => {
     if (!selectedUserForPlan) return;
     setIsUpdatingUser(selectedUserForPlan.id);
@@ -289,6 +294,7 @@ export default function AdminScreen() {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + durationDays);
 
+      // Insert/update app_user_subscriptions
       await supabase.from('app_user_subscriptions').upsert({
         user_id: selectedUserForPlan.id,
         plan_id: selectedPlanType,
@@ -299,6 +305,7 @@ export default function AdminScreen() {
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' });
 
+      // Keep profiles subscription in sync
       await supabase.from('profiles').update({
         subscription: `${planLabel} (${durationDays} Days)`,
         updated_at: new Date().toISOString(),
@@ -315,6 +322,7 @@ export default function AdminScreen() {
     }
   };
 
+  // Moderation: Revoke Subscription
   const handleRevokePlan = async (userId: string) => {
     Alert.alert(
       'Revoke Plan?',
@@ -406,10 +414,10 @@ export default function AdminScreen() {
 
   if (!isAdmin) {
     return (
-      <AppScreen safeArea={false}>
-        <View className="flex-1 justify-center items-center px-6">
-          <Text className="text-xl font-bold text-red-500 mb-2">Access Restricted</Text>
-          <Text className="text-sm text-slate-400 text-center">
+      <AppScreen safeArea={false} backgroundColor={colors.background}>
+        <View style={styles.deniedContainer}>
+          <Text style={styles.deniedTitle}>Access Restricted</Text>
+          <Text style={styles.deniedSubtitle}>
             You do not have administrative privileges to view or manage platform maintenance controls.
           </Text>
         </View>
@@ -418,7 +426,11 @@ export default function AdminScreen() {
   }
 
   const isGlobalActive = Boolean(globalSettings?.global_maintenance_enabled);
+  const totalProductsCount = products?.length || 0;
+  const inMaintenanceCount = products?.filter((p) => p.maintenance_enabled).length || 0;
+  const operationalCount = totalProductsCount - inMaintenanceCount;
 
+  // Filter users
   const filteredUsers = (userProfiles || []).filter((u) => {
     const matchesSearch =
       !userSearch ||
@@ -433,41 +445,45 @@ export default function AdminScreen() {
   });
 
   return (
-    <AppScreen safeArea={false}>
+    <AppScreen safeArea={false} backgroundColor={colors.background}>
       <ScrollView
-        className={`flex-1 ${isDark ? "bg-[#0B0D10]" : "bg-[#F2F2F7]"}`}
-        contentContainerStyle={{ padding: 16, paddingBottom: 140 }}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl
             refreshing={refetchingGlobal || refetchingProducts || refetchingUsers || refetchingLogs}
             onRefresh={onRefresh}
-            tintColor="#0284C7"
+            tintColor={colors.primary}
           />
         }
         showsVerticalScrollIndicator={false}
       >
         {/* Admin Header */}
-        <View className="mb-5">
-          <View className="self-start px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-500/40 mb-2">
-            <Text className="text-[10px] font-bold text-emerald-400 tracking-wider">SUPERADMIN CONSOLE</Text>
+        <View style={styles.header}>
+          <View style={styles.adminBadge}>
+            <Text style={styles.adminBadgeText}>SUPERADMIN CONSOLE</Text>
           </View>
-          <Text className={`text-2xl font-bold ${isDark ? "text-white" : "text-black"}`}>System Control Hub</Text>
-          <Text className="text-xs text-slate-400 mt-1 leading-4.5">
+          <Text style={styles.title}>System Control Hub</Text>
+          <Text style={styles.subtitle}>
             Manage global maintenance modes, user accounts, and platform operations.
           </Text>
         </View>
 
         {/* System Health Metric Cards */}
-        <View className="flex-row gap-3 mb-4">
-          <View className={`flex-1 p-3.5 rounded-2xl border ${isDark ? "bg-[#181A1F] border-[#262930]" : "bg-white border-gray-200"}`}>
-            <Text className="text-xs text-slate-400">Platform Status</Text>
-            <Text className={`text-base font-extrabold mt-0.5 ${isGlobalActive ? 'text-red-500' : 'text-emerald-500'}`}>
+        <View style={styles.metricsGrid}>
+          <View style={styles.metricCard}>
+            <Text style={styles.metricLabel}>Platform Status</Text>
+            <Text
+              style={[
+                styles.metricValue,
+                { color: isGlobalActive ? '#ef4444' : '#16b882' },
+              ]}
+            >
               {isGlobalActive ? 'MAINTENANCE' : 'LIVE'}
             </Text>
           </View>
-          <View className={`flex-1 p-3.5 rounded-2xl border ${isDark ? "bg-[#181A1F] border-[#262930]" : "bg-white border-gray-200"}`}>
-            <Text className="text-xs text-slate-400">Registered Users</Text>
-            <Text className={`text-base font-extrabold mt-0.5 ${isDark ? "text-white" : "text-black"}`}>
+          <View style={styles.metricCard}>
+            <Text style={styles.metricLabel}>Registered Users</Text>
+            <Text style={[styles.metricValue, { color: colors.foreground }]}>
               {userProfiles?.length || 0} Accounts
             </Text>
           </View>
@@ -475,36 +491,36 @@ export default function AdminScreen() {
 
         {/* Sales Leads Quick Access */}
         <Pressable
-          className={`flex-row items-center p-4 rounded-2xl border border-emerald-500 mb-4 ${
-            isDark ? "bg-[#181A1F]" : "bg-white"
-          }`}
+          style={styles.leadsBtn}
           onPress={() => router.push('/admin/sales-leads' as any)}
         >
-          <View className="flex-1">
-            <Text className={`text-sm font-extrabold ${isDark ? "text-white" : "text-black"}`}>👥 Sales Leads & Outreach CRM</Text>
-            <Text className="text-xs text-slate-400 mt-0.5">Manage prospective clients, signups, and follow-ups</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.leadsBtnTitle}>👥 Sales Leads & Outreach CRM</Text>
+            <Text style={styles.leadsBtnSub}>Manage prospective clients, signups, and follow-ups</Text>
           </View>
-          <Text className="text-xl font-extrabold text-emerald-500 ml-2">→</Text>
+          <Text style={styles.leadsBtnArrow}>→</Text>
         </Pressable>
 
         {/* Global Maintenance Kill Switch Card */}
         <View
-          className={`flex-row items-center justify-between p-4 rounded-2xl border mb-4 ${
-            isGlobalActive
-              ? "bg-red-500/10 border-red-500/40"
-              : isDark
-              ? "bg-[#181A1F] border-[#262930]"
-              : "bg-white border-gray-200"
-          }`}
+          style={[
+            styles.killSwitchCard,
+            isGlobalActive ? styles.killSwitchCardAlert : null,
+          ]}
         >
-          <View className="flex-1 pr-3">
-            <View className="flex-row items-center gap-2 mb-1">
-              <Text className={`text-sm font-bold ${isGlobalActive ? 'text-red-500' : isDark ? 'text-white' : 'text-black'}`}>
+          <View style={{ flex: 1, paddingRight: 12 }}>
+            <View style={styles.killSwitchHeader}>
+              <Text
+                style={[
+                  styles.killSwitchTitle,
+                  isGlobalActive ? { color: '#ef4444' } : { color: colors.foreground },
+                ]}
+              >
                 Global Platform Maintenance
               </Text>
-              {globalMutation.isPending && <ActivityIndicator size="small" color="#0284C7" />}
+              {globalMutation.isPending && <ActivityIndicator size="small" color={colors.primary} />}
             </View>
-            <Text className="text-xs text-slate-400 leading-4">
+            <Text style={styles.killSwitchDesc}>
               {isGlobalActive
                 ? 'All web/app services are currently showing maintenance splash to public visitors.'
                 : 'Turn ON to route all traffic to the maintenance page for urgent platform upgrades.'}
@@ -514,64 +530,34 @@ export default function AdminScreen() {
             value={isGlobalActive}
             onValueChange={handleToggleGlobal}
             disabled={globalMutation.isPending}
-            trackColor={{ false: '#334155', true: '#ef4444' }}
+            trackColor={{ false: '#333', true: '#ef4444' }}
             thumbColor="#fff"
           />
         </View>
 
         {/* Tab Buttons: Products | Users | Logs */}
-        <View className="flex-row gap-2 mb-4">
+        <View style={styles.tabsContainer}>
           <Pressable
-            className={`flex-1 py-2 rounded-xl items-center border ${
-              adminTab === 'maintenance'
-                ? 'bg-[#0284C7] border-[#0284C7]'
-                : isDark
-                ? 'bg-[#181A1F] border-[#262930]'
-                : 'bg-white border-gray-200'
-            }`}
+            style={[styles.tabButton, adminTab === 'maintenance' && styles.tabButtonActive]}
             onPress={() => setAdminTab('maintenance')}
           >
-            <Text
-              className={`text-xs font-bold ${
-                adminTab === 'maintenance' ? 'text-white' : 'text-slate-400'
-              }`}
-            >
+            <Text style={[styles.tabText, adminTab === 'maintenance' && styles.tabTextActive]}>
               Products ({products?.length || 0})
             </Text>
           </Pressable>
           <Pressable
-            className={`flex-1 py-2 rounded-xl items-center border ${
-              adminTab === 'users'
-                ? 'bg-[#0284C7] border-[#0284C7]'
-                : isDark
-                ? 'bg-[#181A1F] border-[#262930]'
-                : 'bg-white border-gray-200'
-            }`}
+            style={[styles.tabButton, adminTab === 'users' && styles.tabButtonActive]}
             onPress={() => setAdminTab('users')}
           >
-            <Text
-              className={`text-xs font-bold ${
-                adminTab === 'users' ? 'text-white' : 'text-slate-400'
-              }`}
-            >
+            <Text style={[styles.tabText, adminTab === 'users' && styles.tabTextActive]}>
               Users ({userProfiles?.length || 0})
             </Text>
           </Pressable>
           <Pressable
-            className={`flex-1 py-2 rounded-xl items-center border ${
-              adminTab === 'logs'
-                ? 'bg-[#0284C7] border-[#0284C7]'
-                : isDark
-                ? 'bg-[#181A1F] border-[#262930]'
-                : 'bg-white border-gray-200'
-            }`}
+            style={[styles.tabButton, adminTab === 'logs' && styles.tabButtonActive]}
             onPress={() => setAdminTab('logs')}
           >
-            <Text
-              className={`text-xs font-bold ${
-                adminTab === 'logs' ? 'text-white' : 'text-slate-400'
-              }`}
-            >
+            <Text style={[styles.tabText, adminTab === 'logs' && styles.tabTextActive]}>
               Audit Logs ({logs?.length || 0})
             </Text>
           </Pressable>
@@ -579,8 +565,8 @@ export default function AdminScreen() {
 
         {/* SECTION 1: PER PRODUCT MAINTENANCE */}
         {adminTab === 'maintenance' && (
-          <View className="gap-3">
-            <Text className={`text-sm font-bold mb-1 ${isDark ? "text-white" : "text-black"}`}>Product Services & Status</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Product Services & Status</Text>
 
             {loadingProducts ? (
               <AdminTabSkeleton />
@@ -588,49 +574,50 @@ export default function AdminScreen() {
               products?.map((item) => {
                 const isUnderMaintenance = Boolean(item.maintenance_enabled) || isGlobalActive;
                 return (
-                  <View
-                    key={item.id}
-                    className={`p-4 rounded-2xl border ${
-                      isDark ? "bg-[#181A1F] border-[#262930]" : "bg-white border-gray-200"
-                    }`}
-                  >
-                    <View className="flex-row items-center justify-between mb-3">
-                      <View className="flex-1">
-                        <Text className={`text-sm font-bold ${isDark ? "text-white" : "text-black"}`}>{item.product_name}</Text>
-                        <Text className="text-xs text-slate-400">ID: {item.product_key}</Text>
+                  <View key={item.id} style={styles.productCard}>
+                    <View style={styles.productHeader}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.productName}>{item.product_name}</Text>
+                        <Text style={styles.productKey}>ID: {item.product_key}</Text>
                       </View>
                       <View
-                        className={`px-2 py-0.5 rounded-md ${
-                          isUnderMaintenance ? 'bg-red-500/15' : 'bg-emerald-500/15'
-                        }`}
+                        style={[
+                          styles.statusBadge,
+                          {
+                            backgroundColor: isUnderMaintenance
+                              ? 'rgba(239, 68, 68, 0.15)'
+                              : 'rgba(22, 184, 130, 0.15)',
+                          },
+                        ]}
                       >
                         <Text
-                          className={`text-[10px] font-bold ${
-                            isUnderMaintenance ? 'text-red-500' : 'text-emerald-500'
-                          }`}
+                          style={[
+                            styles.statusBadgeText,
+                            { color: isUnderMaintenance ? '#ef4444' : '#16b882' },
+                          ]}
                         >
                           {isUnderMaintenance ? 'MAINTENANCE' : 'OPERATIONAL'}
                         </Text>
                       </View>
                     </View>
 
-                    <View className={`h-[1px] mb-3 ${isDark ? "bg-[#262930]" : "bg-gray-100"}`} />
+                    <View style={styles.productDivider} />
 
-                    <View className="flex-row items-center justify-between">
-                      <View className="flex-row items-center gap-2">
-                        <Text className="text-xs text-slate-400">Maintenance</Text>
+                    <View style={styles.productActions}>
+                      <View style={styles.switchWrapper}>
+                        <Text style={styles.switchLabel}>Maintenance Mode</Text>
                         <Switch
                           value={Boolean(item.maintenance_enabled)}
                           onValueChange={(val) => handleQuickToggleProduct(item, val)}
-                          trackColor={{ false: '#334155', true: '#ef4444' }}
+                          trackColor={{ false: '#333', true: '#ef4444' }}
                           thumbColor="#fff"
                         />
                       </View>
                       <Pressable
-                        className="bg-[#0284C7]/15 px-3 py-1.5 rounded-lg border border-[#0284C7]/30"
+                        style={styles.configButton}
                         onPress={() => handleOpenConfig(item)}
                       >
-                        <Text className="text-xs font-bold text-[#0284C7]">Configure Notice</Text>
+                        <Text style={styles.configButtonText}>Configure Notice</Text>
                       </Pressable>
                     </View>
                   </View>
@@ -642,37 +629,26 @@ export default function AdminScreen() {
 
         {/* SECTION 2: USERS MODERATION */}
         {adminTab === 'users' && (
-          <View className="gap-3">
-            <Text className={`text-sm font-bold mb-1 ${isDark ? "text-white" : "text-black"}`}>User Accounts & Access Moderation</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>User Accounts & Access Moderation</Text>
 
+            {/* Search and filter */}
             <TextInput
-              className={`px-3.5 py-2.5 rounded-xl border text-sm ${
-                isDark ? "bg-[#181A1F] border-[#262930] text-white" : "bg-white border-gray-200 text-black"
-              }`}
+              style={styles.searchInput}
               placeholder="Search user by name, email, or phone..."
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={colors.mutedForeground}
               value={userSearch}
               onChangeText={setUserSearch}
             />
 
-            <View className="flex-row gap-2 mb-2">
+            <View style={styles.filterPillsRow}>
               {(['all', 'active', 'suspended', 'banned'] as const).map((st) => (
                 <Pressable
                   key={st}
-                  className={`px-3 py-1 rounded-full border ${
-                    userStatusFilter === st
-                      ? 'bg-[#0284C7] border-[#0284C7]'
-                      : isDark
-                      ? 'bg-[#181A1F] border-[#262930]'
-                      : 'bg-white border-gray-200'
-                  }`}
+                  style={[styles.filterPill, userStatusFilter === st && styles.filterPillActive]}
                   onPress={() => setUserStatusFilter(st)}
                 >
-                  <Text
-                    className={`text-[10px] font-bold ${
-                      userStatusFilter === st ? 'text-white' : 'text-slate-400'
-                    }`}
-                  >
+                  <Text style={[styles.filterPillText, userStatusFilter === st && styles.filterPillTextActive]}>
                     {st.toUpperCase()}
                   </Text>
                 </Pressable>
@@ -685,90 +661,85 @@ export default function AdminScreen() {
               filteredUsers.map((u) => {
                 const status = u.account_status || 'active';
                 const statusColor =
-                  status === 'active' ? '#10B981' : status === 'suspended' ? '#F59E0B' : '#EF4444';
+                  status === 'active' ? '#16b882' : status === 'suspended' ? '#f59e0b' : '#ef4444';
 
                 return (
-                  <View
-                    key={u.id}
-                    className={`p-4 rounded-2xl border ${
-                      isDark ? "bg-[#181A1F] border-[#262930]" : "bg-white border-gray-200"
-                    }`}
-                  >
-                    <View className="flex-row items-center mb-2.5">
-                      <View className="w-9 h-9 rounded-full bg-[#0284C7]/20 justify-center items-center mr-2.5">
-                        <Text className="text-sm font-bold text-[#0284C7]">
+                  <View key={u.id} style={styles.userCard}>
+                    <View style={styles.userCardHeader}>
+                      <View style={styles.userAvatar}>
+                        <Text style={styles.userAvatarText}>
                           {(u.full_name || u.email || 'U').charAt(0).toUpperCase()}
                         </Text>
                       </View>
-                      <View className="flex-1">
-                        <View className="flex-row items-center gap-1.5">
-                          <Text className={`text-sm font-bold ${isDark ? "text-white" : "text-black"}`}>{u.full_name || 'Unnamed User'}</Text>
-                          {u.is_admin && <Text className="text-[9px] font-extrabold text-amber-500 bg-amber-500/15 px-1 rounded">ADMIN</Text>}
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <Text style={styles.userName}>{u.full_name || 'Unnamed User'}</Text>
+                          {u.is_admin && <Text style={styles.adminTag}>ADMIN</Text>}
                         </View>
-                        <Text className="text-xs text-slate-400">{u.email || u.mobile_number || u.id.slice(0, 12)}</Text>
+                        <Text style={styles.userSub}>{u.email || u.mobile_number || u.id.slice(0, 12)}</Text>
                       </View>
-                      <View className="px-2 py-0.5 rounded-md" style={{ backgroundColor: `${statusColor}22` }}>
-                        <Text className="text-[10px] font-bold" style={{ color: statusColor }}>
+                      <View style={[styles.statusBadge, { backgroundColor: `${statusColor}22` }]}>
+                        <Text style={[styles.statusBadgeText, { color: statusColor }]}>
                           {status.toUpperCase()}
                         </Text>
                       </View>
                     </View>
 
-                    <View className="flex-row justify-between mb-2">
-                      <Text className="text-xs text-slate-400">Active Plan:</Text>
-                      <Text className={`text-xs font-semibold ${isDark ? "text-white" : "text-black"}`}>{u.subscription || 'Free Tier'}</Text>
+                    <View style={styles.userPlanRow}>
+                      <Text style={styles.userPlanLabel}>Active Plan:</Text>
+                      <Text style={styles.userPlanValue}>{u.subscription || 'Free Tier'}</Text>
                     </View>
 
-                    <View className={`h-[1px] mb-2.5 ${isDark ? "bg-[#262930]" : "bg-gray-100"}`} />
+                    <View style={styles.productDivider} />
 
                     {/* Moderation Actions */}
-                    <View className="flex-row flex-wrap gap-2">
+                    <View style={styles.userActionButtons}>
                       {status !== 'active' && (
                         <Pressable
-                          className="bg-emerald-500/15 px-2.5 py-1 rounded-md"
+                          style={[styles.actionBtn, { backgroundColor: 'rgba(22, 184, 130, 0.15)' }]}
                           onPress={() => handleUpdateStatus(u.id, 'active')}
                           disabled={isUpdatingUser === u.id}
                         >
-                          <Text className="text-xs font-bold text-emerald-500">Activate</Text>
+                          <Text style={[styles.actionBtnText, { color: '#16b882' }]}>Activate</Text>
                         </Pressable>
                       )}
 
                       {status !== 'suspended' && (
                         <Pressable
-                          className="bg-amber-500/15 px-2.5 py-1 rounded-md"
+                          style={[styles.actionBtn, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}
                           onPress={() => handleUpdateStatus(u.id, 'suspended')}
                           disabled={isUpdatingUser === u.id}
                         >
-                          <Text className="text-xs font-bold text-amber-500">Suspend</Text>
+                          <Text style={[styles.actionBtnText, { color: '#f59e0b' }]}>Suspend</Text>
                         </Pressable>
                       )}
 
                       {status !== 'banned' && (
                         <Pressable
-                          className="bg-red-500/15 px-2.5 py-1 rounded-md"
+                          style={[styles.actionBtn, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}
                           onPress={() => handleUpdateStatus(u.id, 'banned')}
                           disabled={isUpdatingUser === u.id}
                         >
-                          <Text className="text-xs font-bold text-red-500">Ban</Text>
+                          <Text style={[styles.actionBtnText, { color: '#ef4444' }]}>Ban</Text>
                         </Pressable>
                       )}
 
                       <Pressable
-                        className="bg-[#0284C7] px-2.5 py-1 rounded-md"
+                        style={[styles.actionBtn, { backgroundColor: colors.primary }]}
                         onPress={() => {
                           setSelectedUserForPlan(u);
                           setIsPlanModalOpen(true);
                         }}
                       >
-                        <Text className="text-xs font-bold text-white">Assign Plan</Text>
+                        <Text style={[styles.actionBtnText, { color: '#fff' }]}>Assign Plan</Text>
                       </Pressable>
 
                       {u.subscription && u.subscription !== 'Free' && (
                         <Pressable
-                          className="bg-slate-700/30 px-2.5 py-1 rounded-md"
+                          style={[styles.actionBtn, { backgroundColor: colors.muted }]}
                           onPress={() => handleRevokePlan(u.id)}
                         >
-                          <Text className="text-xs font-bold text-slate-400">Revoke</Text>
+                          <Text style={[styles.actionBtnText, { color: colors.mutedForeground }]}>Revoke</Text>
                         </Pressable>
                       )}
                     </View>
@@ -776,8 +747,8 @@ export default function AdminScreen() {
                 );
               })
             ) : (
-              <View className={`p-6 rounded-2xl border items-center ${isDark ? "bg-[#181A1F] border-[#262930]" : "bg-white border-gray-200"}`}>
-                <Text className="text-xs text-slate-400">No users matched your search criteria.</Text>
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyText}>No users matched your search criteria.</Text>
               </View>
             )}
           </View>
@@ -785,22 +756,17 @@ export default function AdminScreen() {
 
         {/* SECTION 3: AUDIT LOGS */}
         {adminTab === 'logs' && (
-          <View className="gap-3">
-            <Text className={`text-sm font-bold mb-1 ${isDark ? "text-white" : "text-black"}`}>Maintenance Activity History</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Maintenance Activity History</Text>
 
             {loadingLogs ? (
               <AdminTabSkeleton />
             ) : logs && logs.length > 0 ? (
               logs.map((log) => (
-                <View
-                  key={log.id}
-                  className={`p-3.5 rounded-2xl border ${
-                    isDark ? "bg-[#181A1F] border-[#262930]" : "bg-white border-gray-200"
-                  }`}
-                >
-                  <View className="flex-row justify-between items-center mb-1">
-                    <Text className={`text-xs font-bold ${isDark ? "text-white" : "text-black"}`}>{log.action}</Text>
-                    <Text className="text-[11px] text-slate-400">
+                <View key={log.id} style={styles.logCard}>
+                  <View style={styles.logTop}>
+                    <Text style={styles.logAction}>{log.action}</Text>
+                    <Text style={styles.logDate}>
                       {new Date(log.created_at).toLocaleString([], {
                         month: 'short',
                         day: 'numeric',
@@ -810,14 +776,14 @@ export default function AdminScreen() {
                     </Text>
                   </View>
                   {log.product_key && (
-                    <Text className="text-xs text-sky-400">Target: {log.product_key.toUpperCase()}</Text>
+                    <Text style={styles.logTarget}>Target: {log.product_key.toUpperCase()}</Text>
                   )}
-                  {log.reason && <Text className="text-xs text-slate-400 mt-0.5">Note: {log.reason}</Text>}
+                  {log.reason && <Text style={styles.logReason}>Note: {log.reason}</Text>}
                 </View>
               ))
             ) : (
-              <View className={`p-6 rounded-2xl border items-center ${isDark ? "bg-[#181A1F] border-[#262930]" : "bg-white border-gray-200"}`}>
-                <Text className="text-xs text-slate-400">No maintenance logs recorded yet.</Text>
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyText}>No maintenance logs recorded yet.</Text>
               </View>
             )}
           </View>
@@ -830,77 +796,72 @@ export default function AdminScreen() {
           transparent={true}
           onRequestClose={() => setIsModalOpen(false)}
         >
-          <View className="flex-1 bg-black/70 justify-center p-5">
-            <View className={`p-5 rounded-2xl border ${isDark ? "bg-[#181A1F] border-[#262930]" : "bg-white border-gray-200"}`}>
-              <Text className={`text-base font-bold ${isDark ? "text-white" : "text-black"}`}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>
                 Configure: {selectedProduct?.product_name}
               </Text>
-              <Text className="text-xs text-slate-400 mb-3">
+              <Text style={styles.modalSubtitle}>
                 Customize message shown to users when accessing this service.
               </Text>
 
-              <Text className={`text-xs font-semibold mb-1 ${isDark ? "text-white" : "text-black"}`}>Notice Title</Text>
+              <Text style={styles.inputLabel}>Notice Title</Text>
               <TextInput
-                className={`px-3 py-2 rounded-xl border text-sm mb-3 ${
-                  isDark ? "bg-[#121316] border-[#262930] text-white" : "bg-slate-50 border-gray-200 text-black"
-                }`}
+                style={styles.input}
                 value={maintenanceTitle}
                 onChangeText={setMaintenanceTitle}
                 placeholder="Notice headline"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor={colors.mutedForeground}
               />
 
-              <Text className={`text-xs font-semibold mb-1 ${isDark ? "text-white" : "text-black"}`}>User Notice Message</Text>
+              <Text style={styles.inputLabel}>User Notice Message</Text>
               <TextInput
-                className={`px-3 py-2 rounded-xl border text-sm mb-3 h-20 ${
-                  isDark ? "bg-[#121316] border-[#262930] text-white" : "bg-slate-50 border-gray-200 text-black"
-                }`}
+                style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
                 value={maintenanceMessage}
                 onChangeText={setMaintenanceMessage}
                 multiline
                 placeholder="Explanation message for users"
-                placeholderTextColor="#94A3B8"
-                textAlignVertical="top"
+                placeholderTextColor={colors.mutedForeground}
               />
 
-              <Text className={`text-xs font-semibold mb-1 ${isDark ? "text-white" : "text-black"}`}>Internal Admin Reason</Text>
+              <Text style={styles.inputLabel}>Internal Admin Reason</Text>
               <TextInput
-                className={`px-3 py-2 rounded-xl border text-sm mb-3 ${
-                  isDark ? "bg-[#121316] border-[#262930] text-white" : "bg-slate-50 border-gray-200 text-black"
-                }`}
+                style={styles.input}
                 value={internalNote}
                 onChangeText={setInternalNote}
                 placeholder="Reason for audit logs"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor={colors.mutedForeground}
               />
 
-              <View className="flex-row justify-between items-center my-3">
-                <Text className={`text-xs font-semibold ${isDark ? "text-white" : "text-black"}`}>Block App Frontend Access</Text>
+              <View style={styles.modalSwitchRow}>
+                <Text style={styles.modalSwitchLabel}>Block App Frontend Access</Text>
                 <Switch
                   value={blockFrontend}
                   onValueChange={setBlockFrontend}
-                  trackColor={{ false: '#334155', true: '#0284C7' }}
+                  trackColor={{ false: '#333', true: colors.primary }}
                   thumbColor="#fff"
                 />
               </View>
 
-              <View className="flex-row gap-3 mt-2">
+              <View style={styles.modalButtonRow}>
                 <Pressable
-                  className="flex-1 py-2.5 rounded-xl items-center border border-gray-600/30"
+                  style={styles.cancelButton}
                   onPress={() => setIsModalOpen(false)}
                 >
-                  <Text className={`text-xs font-bold ${isDark ? "text-white" : "text-black"}`}>Cancel</Text>
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
                 </Pressable>
                 <Pressable
-                  className="flex-1 py-2.5 rounded-xl items-center bg-[#0284C7]"
-                  style={updateProductMutation.isPending ? { opacity: 0.7 } : undefined}
+                  style={[
+                    styles.saveButton,
+                    updateProductMutation.isPending && { opacity: 0.7 },
+                  ]}
                   onPress={handleSaveProductConfig}
                   disabled={updateProductMutation.isPending}
                 >
                   {updateProductMutation.isPending ? (
                     <ActivityIndicator size="small" color="#fff" />
                   ) : (
-                    <Text className="text-xs font-bold text-white">Save Notice</Text>
+                    <Text style={styles.saveButtonText}>Save Notice</Text>
                   )}
                 </Pressable>
               </View>
@@ -915,16 +876,16 @@ export default function AdminScreen() {
           transparent={true}
           onRequestClose={() => setIsPlanModalOpen(false)}
         >
-          <View className="flex-1 bg-black/70 justify-center p-5">
-            <View className={`p-5 rounded-2xl border ${isDark ? "bg-[#181A1F] border-[#262930]" : "bg-white border-gray-200"}`}>
-              <Text className={`text-base font-bold ${isDark ? "text-white" : "text-black"}`}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>
                 Assign Subscription Plan
               </Text>
-              <Text className="text-xs text-slate-400 mb-3">
+              <Text style={styles.modalSubtitle}>
                 Select tier duration for {selectedUserForPlan?.full_name || selectedUserForPlan?.email}.
               </Text>
 
-              <View className="gap-2">
+              <View style={styles.planOptionsGrid}>
                 {[
                   { id: 'free_trial', label: 'Free Trial (7 Days)' },
                   { id: 'pro_monthly', label: 'Premium (30 Days)' },
@@ -934,23 +895,17 @@ export default function AdminScreen() {
                 ].map((p) => (
                   <Pressable
                     key={p.id}
-                    className={`py-2 px-3 rounded-xl border ${
-                      selectedPlanType === p.id
-                        ? 'bg-[#0284C7]/15 border-[#0284C7]'
-                        : isDark
-                        ? 'bg-[#121316] border-[#262930]'
-                        : 'bg-slate-50 border-gray-200'
-                    }`}
+                    style={[
+                      styles.planOptionCard,
+                      selectedPlanType === p.id && styles.planOptionCardActive,
+                    ]}
                     onPress={() => setSelectedPlanType(p.id)}
                   >
                     <Text
-                      className={`text-xs ${
-                        selectedPlanType === p.id
-                          ? 'text-[#0284C7] font-bold'
-                          : isDark
-                          ? 'text-slate-300'
-                          : 'text-slate-700'
-                      }`}
+                      style={[
+                        styles.planOptionText,
+                        selectedPlanType === p.id && styles.planOptionTextActive,
+                      ]}
                     >
                       {p.label}
                     </Text>
@@ -959,33 +914,30 @@ export default function AdminScreen() {
               </View>
 
               {selectedPlanType === 'custom' && (
-                <View className="mt-3">
-                  <Text className={`text-xs font-semibold mb-1 ${isDark ? "text-white" : "text-black"}`}>Custom Duration (Days)</Text>
+                <View style={{ marginTop: 12 }}>
+                  <Text style={styles.inputLabel}>Custom Duration (Days)</Text>
                   <TextInput
-                    className={`px-3 py-2 rounded-xl border text-sm ${
-                      isDark ? "bg-[#121316] border-[#262930] text-white" : "bg-slate-50 border-gray-200 text-black"
-                    }`}
+                    style={styles.input}
                     value={customDays}
                     onChangeText={setCustomDays}
                     keyboardType="numeric"
                     placeholder="30"
-                    placeholderTextColor="#94A3B8"
                   />
                 </View>
               )}
 
-              <View className="flex-row gap-3 mt-4">
+              <View style={[styles.modalButtonRow, { marginTop: 20 }]}>
                 <Pressable
-                  className="flex-1 py-2.5 rounded-xl items-center border border-gray-600/30"
+                  style={styles.cancelButton}
                   onPress={() => setIsPlanModalOpen(false)}
                 >
-                  <Text className={`text-xs font-bold ${isDark ? "text-white" : "text-black"}`}>Cancel</Text>
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
                 </Pressable>
                 <Pressable
-                  className="flex-1 py-2.5 rounded-xl items-center bg-[#0284C7]"
+                  style={styles.saveButton}
                   onPress={handleAssignPlan}
                 >
-                  <Text className="text-xs font-bold text-white">Confirm Plan</Text>
+                  <Text style={styles.saveButtonText}>Confirm Plan</Text>
                 </Pressable>
               </View>
             </View>
@@ -995,3 +947,494 @@ export default function AdminScreen() {
     </AppScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  header: {
+    marginBottom: 20,
+  },
+  adminBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(22, 184, 130, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(22, 184, 130, 0.4)',
+  },
+  adminBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#16b882',
+    letterSpacing: 1,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: colors.foreground,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: colors.mutedForeground,
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  metricsGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  metricCard: {
+    flex: 1,
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  metricLabel: {
+    fontSize: 12,
+    color: colors.mutedForeground,
+    marginBottom: 6,
+  },
+  metricValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  killSwitchCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  killSwitchCardAlert: {
+    borderColor: 'rgba(239, 68, 68, 0.4)',
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+  },
+  killSwitchHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  killSwitchTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+  killSwitchDesc: {
+    fontSize: 12,
+    color: colors.mutedForeground,
+    lineHeight: 16,
+  },
+  tabsContainer: {
+    flexDirection: 'row',
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  tabButtonActive: {
+    backgroundColor: colors.primary,
+  },
+  tabText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.mutedForeground,
+  },
+  tabTextActive: {
+    color: colors.primaryForeground,
+  },
+  section: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.foreground,
+    marginBottom: 12,
+  },
+  searchInput: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 13,
+    color: colors.foreground,
+    marginBottom: 10,
+  },
+  filterPillsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 14,
+  },
+  filterPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  filterPillActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterPillText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: colors.mutedForeground,
+  },
+  filterPillTextActive: {
+    color: '#fff',
+  },
+  userCard: {
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  userCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  userAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: 'rgba(22, 184, 130, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  userAvatarText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#16b882',
+  },
+  userName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: colors.foreground,
+  },
+  adminTag: {
+    fontSize: 9,
+    fontWeight: '800',
+    backgroundColor: 'rgba(22, 184, 130, 0.2)',
+    color: '#16b882',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  userSub: {
+    fontSize: 11.5,
+    color: colors.mutedForeground,
+    marginTop: 2,
+  },
+  userPlanRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+  },
+  userPlanLabel: {
+    fontSize: 11.5,
+    color: colors.mutedForeground,
+  },
+  userPlanValue: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: colors.foreground,
+  },
+  userActionButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  actionBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  actionBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  productCard: {
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  productHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  productName: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: colors.foreground,
+  },
+  productKey: {
+    fontSize: 12,
+    color: colors.mutedForeground,
+    marginTop: 2,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  productDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: 10,
+  },
+  productActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  switchWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  switchLabel: {
+    fontSize: 13,
+    color: colors.mutedForeground,
+  },
+  configButton: {
+    backgroundColor: colors.secondary,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  configButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.foreground,
+  },
+  logCard: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  logTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  logAction: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: colors.foreground,
+  },
+  logDate: {
+    fontSize: 11,
+    color: colors.mutedForeground,
+  },
+  logTarget: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.primary,
+    marginTop: 2,
+  },
+  logReason: {
+    fontSize: 12,
+    color: colors.mutedForeground,
+    marginTop: 2,
+  },
+  emptyCard: {
+    padding: 24,
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: 12,
+  },
+  emptyText: {
+    color: colors.mutedForeground,
+    fontSize: 14,
+  },
+  deniedContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  deniedTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: colors.foreground,
+    marginBottom: 8,
+  },
+  deniedSubtitle: {
+    fontSize: 14,
+    color: colors.mutedForeground,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  modalContent: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.foreground,
+  },
+  modalSubtitle: {
+    fontSize: 13,
+    color: colors.mutedForeground,
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  planOptionsGrid: {
+    gap: 8,
+  },
+  planOptionCard: {
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  planOptionCardActive: {
+    borderColor: colors.primary,
+    backgroundColor: 'rgba(22, 184, 130, 0.12)',
+  },
+  planOptionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.foreground,
+  },
+  planOptionTextActive: {
+    color: colors.primary,
+    fontWeight: 'bold',
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.foreground,
+    marginBottom: 6,
+    marginTop: 10,
+  },
+  input: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: colors.foreground,
+  },
+  modalSwitchRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 16,
+  },
+  modalSwitchLabel: {
+    fontSize: 14,
+    color: colors.foreground,
+    fontWeight: '600',
+  },
+  modalButtonRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: colors.secondary,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cancelButtonText: {
+    color: colors.foreground,
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  saveButton: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: colors.primaryForeground,
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  leadsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#16B882',
+  },
+  leadsBtnTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.foreground,
+  },
+  leadsBtnSub: {
+    fontSize: 12,
+    color: colors.mutedForeground,
+    marginTop: 2,
+  },
+  leadsBtnArrow: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#16B882',
+    marginLeft: 8,
+  },
+});

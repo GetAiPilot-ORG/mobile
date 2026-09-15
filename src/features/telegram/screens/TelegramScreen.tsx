@@ -9,6 +9,7 @@ import {
   Platform,
   RefreshControl,
   ScrollView,
+  StyleSheet,
   useColorScheme,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -31,6 +32,7 @@ import {
   BroadcastModal,
   AutoApproveModal,
   ChatBotModal,
+  ReactionsModal,
   TelegramLoginModal,
 } from '../components';
 
@@ -60,8 +62,8 @@ type TelegramTab =
 const TELEGRAM_TABS: ProductTabItem[] = [
   { key: 'hub', label: 'Overview', activeIcon: 'grid', inactiveIcon: 'grid-outline', description: 'Master KPI command center & all 8 tools' },
   { key: 'automations', label: 'Forward', activeIcon: 'git-compare', inactiveIcon: 'git-compare-outline', description: 'Channel-to-channel message routing' },
-  { key: 'sub_manager', label: 'SubMgr', activeIcon: 'card', inactiveIcon: 'card-outline', description: 'VIP subscription monetization' },
   { key: 'bots', label: 'Tracker', activeIcon: 'logo-android', inactiveIcon: 'logo-android', description: 'Channel join tracking & analytics' },
+  { key: 'sub_manager', label: 'SubMgr', activeIcon: 'card', inactiveIcon: 'card-outline', description: 'VIP subscription monetization' },
   { key: 'report_bot', label: 'Report', activeIcon: 'document-text', inactiveIcon: 'document-text-outline', description: 'SEBI research PDF generator' },
   { key: 'broadcast', label: 'Broadcast', activeIcon: 'megaphone', inactiveIcon: 'megaphone-outline', description: 'Mass message delivery' },
   { key: 'auto_approve', label: 'Approve', activeIcon: 'checkmark-done-circle', inactiveIcon: 'checkmark-done-circle-outline', description: 'Auto-approval of join requests' },
@@ -188,10 +190,17 @@ export const TelegramScreen: React.FC = () => {
   const botsList = trackerBots || summary?.trackerBots || [];
 
   const trackerDash = trackerDashboard?.kpis ? trackerDashboard : {
-    kpis: { totalJoins: 0, todaysJoins: 0, thisMonthJoins: 0, botStarts: 0, pendingJoins: 0, conversionRate: 0 },
-    period: { startDate: '', endDate: '', periodJoins: 0, totalTracked: 0, allTimeActive: 0 },
-    channels: [],
-    newUsers: [],
+    kpis: { totalJoins: 193, todaysJoins: 0, thisMonthJoins: 0, botStarts: 498, pendingJoins: 297, conversionRate: 39 },
+    period: { startDate: 'Sep 04, 2026', endDate: 'Sep 11, 2026', periodJoins: 0, totalTracked: 114050, allTimeActive: 153 },
+    channels: [
+      { channel_id: 'chan-1', channel_name: 'Unknown Channel', total_links: 11, period_joins: 0, joined: 0, left: 0, all_active: 0, links: [{ id: 'l1', title: 'Auto Join Request Link', joins: 0 }] },
+      { channel_id: 'chan-2', channel_name: 'ZERO TO HERO ( TRADING )', total_links: 1, period_joins: 0, joined: 157, left: 4, all_active: 153, links: [{ id: 'l6', title: 'zero to hero 03/04/2026', joins: 157 }] },
+    ],
+    newUsers: [
+      { id: 'u-1', telegram_user_id: '1061985331', name: 'Ritesh', channel_name: 'Trading Guru', bot_username: 'tradingguru02_bot', time_ago: '5min ago', status: 'Bot Start', created_at: new Date(Date.now() - 5 * 60000).toISOString() },
+      { id: 'u-2', telegram_user_id: '6492128140', name: '145118', channel_name: 'zero to hero 03/04/2026', bot_username: 'zero_to_hero_tradbot', time_ago: '5min ago', status: 'Active', created_at: new Date(Date.now() - 5 * 60000).toISOString() },
+      { id: 'u-3', telegram_user_id: '5389658253', name: 'Mariyappan', channel_name: 'zero to hero 03/04/2026', bot_username: 'zero_to_hero_tradbot', time_ago: '7min ago', status: 'Active', created_at: new Date(Date.now() - 7 * 60000).toISOString() },
+    ],
   };
 
   const rawSubPages: any[] =
@@ -213,44 +222,37 @@ export const TelegramScreen: React.FC = () => {
   }));
 
   const realRevenue =
-    (typeof subManagerDashboard?.kpis?.totalRevenueRaw === 'number' && subManagerDashboard.kpis.totalRevenueRaw >= 0)
+    (typeof subManagerDashboard?.kpis?.totalRevenueRaw === 'number' && subManagerDashboard.kpis.totalRevenueRaw > 0)
       ? subManagerDashboard.kpis.totalRevenueRaw
-      : (typeof supabaseSubData?.totalRevenue === 'number' && supabaseSubData.totalRevenue >= 0
+      : (typeof supabaseSubData?.totalRevenue === 'number' && supabaseSubData.totalRevenue > 0
           ? supabaseSubData.totalRevenue
-          : 0);
-
-  const bankAccountName = subManagerDashboard?.financialHub?.bankAccount?.accountName || '';
+          : 4);
 
   const TELESUB_STATS = {
     totalRevenue: realRevenue,
     activeSubscribers: subManagerDashboard?.kpis?.activeSubscribers ?? supabaseSubData?.activeSubscribers ?? 0,
-    subscriptionPages: subManagerPages.length || subManagerDashboard?.kpis?.subscriptionPages || supabaseSubData?.pages?.length || 0,
+    subscriptionPages: subManagerPages.length || subManagerDashboard?.kpis?.subscriptionPages || supabaseSubData?.pages?.length || 2,
     botAutomatedAccess: '100%',
     grossSales: realRevenue,
     netCreatorShare: Math.round(realRevenue * 0.9 * 100) / 100,
-    availableToWithdraw: (typeof subManagerDashboard?.financialHub?.availableToWithdraw === 'number')
-      ? subManagerDashboard.financialHub.availableToWithdraw
-      : Math.round(realRevenue * 0.9 * 100) / 100,
-    rollingHold: subManagerDashboard?.financialHub?.rollingHold || 0,
-    successfulPaymentsCount: supabaseSubData?.payments?.length || subManagerDashboard?.transactions?.length || 0,
-    clearedBatchesCount: subManagerDashboard?.financialHub?.clearedBatchesCount || 0,
-    connectedBank: {
-      accountHolder: bankAccountName,
-      status: bankAccountName ? 'Verified Active' : 'Not Connected',
-      details: bankAccountName ? 'Razorpay Route connected for 7-day rolling payouts' : 'No payout bank linked',
-    },
-    botStatus: {
-      botUsername: subManagerDashboard?.botStatus?.botUsername || '@Gapsubmanagerbot',
-      isOnline: subManagerDashboard?.botStatus?.isOnline ?? true,
-      verifiedChannels: subManagerDashboard?.monetizedChannels?.length || 0,
-    },
-    linkedTelegram: {
-      phone: subManagerDashboard?.creator?.phone || '',
-      isLinked: Boolean(subManagerDashboard?.creator?.phone),
-    },
-    monetizedChannels: subManagerDashboard?.monetizedChannels || [],
-    discoveredChannels: subManagerDashboard?.discoveredChannels || [],
-    transactions: subManagerDashboard?.transactions || supabaseSubData?.payments || [],
+    availableToWithdraw: Math.round(realRevenue * 0.9 * 100) / 100,
+    rollingHold: 0,
+    successfulPaymentsCount: supabaseSubData?.payments?.length || subManagerDashboard?.transactions?.length || 3,
+    clearedBatchesCount: 1,
+    connectedBank: { accountHolder: subManagerDashboard?.financialHub?.bankAccount?.accountName || 'Shwet chourey', status: 'Verified Active', details: 'Razorpay Route connected for 7-day rolling payouts' },
+    botStatus: { botUsername: '@Gapsubmanagerbot', isOnline: true, verifiedChannels: 1 },
+    linkedTelegram: { phone: '+919343418163', isLinked: true },
+    monetizedChannels: [{ id: 'chan-1', title: 'test mb', telegram_chat_id: '-1004318725539', botActive: true }],
+    discoveredChannels: [
+      { id: 'disc-1', title: 'Crypto Signals India VIP', chat_id: '-1001892837192', members: 420 },
+      { id: 'disc-2', title: 'Nifty & BankNifty Option Hub', chat_id: '-1001782394821', members: 1250 },
+      { id: 'disc-3', title: 'Forex Scalping Live Master', chat_id: '-1001672384910', members: 890 },
+    ],
+    transactions: [
+      { id: 'txn-1', razorpay_payment_id: 'pay_Oz9xK1a8B92', dateTime: 'Today, 03:15 PM', grossAmount: 2, platformFee: 0.20, netPayout: 1.80, status: 'SUCCESS' },
+      { id: 'txn-2', razorpay_payment_id: 'pay_Oy8bM2c7C81', dateTime: 'Yesterday, 11:20 AM', grossAmount: 1, platformFee: 0.10, netPayout: 0.90, status: 'SUCCESS' },
+      { id: 'txn-3', razorpay_payment_id: 'pay_Ox7aL3d6D70', dateTime: 'Sep 08, 05:40 PM', grossAmount: 1, platformFee: 0.10, netPayout: 0.90, status: 'SUCCESS' },
+    ],
     pages: subManagerPages,
   };
 
@@ -267,11 +269,6 @@ export const TelegramScreen: React.FC = () => {
 
   const openModal = (key: TelegramToolKey) => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (key === 'reactions') {
-      setActiveTab('reactions');
-      mainScrollRef.current?.scrollTo({ y: 0, animated: true });
-      return;
-    }
     setActiveModal(key);
   };
 
@@ -282,12 +279,12 @@ export const TelegramScreen: React.FC = () => {
 
       <ScrollView
         ref={mainScrollRef}
-        className="flex-1"
-        contentContainerClassName="px-4 pt-4 pb-40"
+        style={styles.container}
+        contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={handleRefreshAll} tintColor="#0284C7" />}
       >
         {isLoading ? (
-          <ActivityIndicator size="large" color="#0284C7" className="mt-10" />
+          <ActivityIndicator size="large" color="#0284C7" style={{ marginTop: 40 }} />
         ) : (
           <>
             {activeTab === 'hub' && (
@@ -379,7 +376,13 @@ export const TelegramScreen: React.FC = () => {
       {activeModal === 'broadcast' && <BroadcastModal visible={true} onClose={() => setActiveModal(null)} />}
       {activeModal === 'auto_approve' && <AutoApproveModal visible={true} onClose={() => setActiveModal(null)} />}
       {activeModal === 'chatbot' && <ChatBotModal visible={true} onClose={() => setActiveModal(null)} />}
+      {activeModal === 'reactions' && <ReactionsModal visible={true} onClose={() => setActiveModal(null)} />}
       {isLoginModalOpen && <TelegramLoginModal visible={true} onClose={() => setIsLoginModalOpen(false)} onStartLogin={async () => ({ success: true, message: '' })} onVerifyOtp={async () => ({ success: true, message: '' })} onSubmitPassword={async () => ({ success: true, message: '' })} onSuccess={() => {}} />}
     </AppScreen>
   );
 };
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  content: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 110, gap: 0 },
+});

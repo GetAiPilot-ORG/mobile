@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   ScrollView,
   TextInput,
   Pressable,
@@ -11,6 +12,7 @@ import {
 } from 'react-native';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
+import { colors } from '../../src/theme/colors';
 
 export default function PaymentLinkGeneratorScreen() {
   const [upiId, setUpiId] = useState('getaipilot@upi');
@@ -56,71 +58,71 @@ export default function PaymentLinkGeneratorScreen() {
   };
 
   return (
-    <AppScreen safeArea={false} className="flex-1 bg-[#0B0D10]">
+    <AppScreen safeArea={false} backgroundColor={colors.background}>
       <AppTopBar title="UPI Payment Link Generator" subtitle="Instant Collection Links" showBack={true} />
 
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
-        <View className="rounded-2xl p-4 mb-4 border border-[#262930] bg-[#181A1F]">
-          <Text className="text-base font-black text-white mb-1">Create Payment Link</Text>
-          <Text className="text-xs text-slate-400 leading-4 mb-4">
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Create Payment Link</Text>
+          <Text style={styles.cardSubtitle}>
             Generate instant UPI deep links compatible with Google Pay, PhonePe, Paytm, and BHIM.
           </Text>
 
-          <Text className="text-xs font-bold text-slate-300 mb-1.5">Recipient UPI ID / VPA</Text>
+          <Text style={styles.inputLabel}>Recipient UPI ID / VPA</Text>
           <TextInput
-            className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2.5 text-xs text-white mb-3"
+            style={styles.input}
             placeholder="merchant@okhdfcbank"
-            placeholderTextColor="#64748B"
+            placeholderTextColor={colors.mutedForeground}
             value={upiId}
             onChangeText={setUpiId}
             autoCapitalize="none"
           />
 
-          <Text className="text-xs font-bold text-slate-300 mb-1.5">Payee / Business Name</Text>
+          <Text style={styles.inputLabel}>Payee / Business Name</Text>
           <TextInput
-            className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2.5 text-xs text-white mb-3"
+            style={styles.input}
             placeholder="e.g. Acme Services"
-            placeholderTextColor="#64748B"
+            placeholderTextColor={colors.mutedForeground}
             value={payeeName}
             onChangeText={setPayeeName}
           />
 
-          <Text className="text-xs font-bold text-slate-300 mb-1.5">Amount (INR)</Text>
+          <Text style={styles.inputLabel}>Amount (INR)</Text>
           <TextInput
-            className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2.5 text-xs text-white mb-3"
+            style={styles.input}
             placeholder="e.g. 1500"
-            placeholderTextColor="#64748B"
+            placeholderTextColor={colors.mutedForeground}
             value={amount}
             onChangeText={setAmount}
             keyboardType="numeric"
           />
 
-          <Text className="text-xs font-bold text-slate-300 mb-1.5">Payment Note / Reference (Optional)</Text>
+          <Text style={styles.inputLabel}>Payment Note / Reference (Optional)</Text>
           <TextInput
-            className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2.5 text-xs text-white mb-4"
+            style={styles.input}
             placeholder="e.g. Invoice #1042"
-            placeholderTextColor="#64748B"
+            placeholderTextColor={colors.mutedForeground}
             value={note}
             onChangeText={setNote}
           />
 
-          <Pressable className="py-3.5 rounded-xl items-center bg-[#0084FF]" onPress={handleGenerate}>
-            <Text className="text-xs font-extrabold text-white">Generate Payment Link 💳</Text>
+          <Pressable style={styles.generateBtn} onPress={handleGenerate}>
+            <Text style={styles.generateBtnText}>Generate Payment Link 💳</Text>
           </Pressable>
         </View>
 
         {generatedUri ? (
-          <View className="rounded-2xl p-5 items-center border border-emerald-500/40 bg-[#181A1F]">
-            <Text className="text-xs font-bold text-slate-400">Payment Request Ready</Text>
-            <Text className="text-3xl font-black text-[#0084FF] my-1">₹{amount}</Text>
-            <Text className="text-xs text-slate-400 mb-4">Payable to: {payeeName} ({upiId})</Text>
+          <View style={styles.resultCard}>
+            <Text style={styles.resultTitle}>Payment Request Ready</Text>
+            <Text style={styles.resultAmount}>₹{amount}</Text>
+            <Text style={styles.resultSub}>Payable to: {payeeName} ({upiId})</Text>
 
-            <View className="flex-row gap-2.5 w-full">
-              <Pressable className="flex-1 py-3 rounded-xl items-center border border-[#262930] bg-[#111317]" onPress={handleShare}>
-                <Text className="text-xs font-bold text-white">Share Details 📤</Text>
+            <View style={styles.btnRow}>
+              <Pressable style={styles.actionBtnShare} onPress={handleShare}>
+                <Text style={styles.btnText}>Share Details 📤</Text>
               </Pressable>
-              <Pressable className="flex-1 py-3 rounded-xl items-center bg-emerald-500" onPress={handleOpenUPI}>
-                <Text className="text-xs font-extrabold text-black">Launch UPI App ⚡</Text>
+              <Pressable style={styles.actionBtnPay} onPress={handleOpenUPI}>
+                <Text style={styles.btnText}>Launch UPI App ⚡</Text>
               </Pressable>
             </View>
           </View>
@@ -129,3 +131,107 @@ export default function PaymentLinkGeneratorScreen() {
     </AppScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  card: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cardTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: colors.foreground,
+    marginBottom: 4,
+  },
+  cardSubtitle: {
+    fontSize: 13,
+    color: colors.mutedForeground,
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: colors.foreground,
+    marginBottom: 6,
+  },
+  input: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: colors.foreground,
+    marginBottom: 12,
+  },
+  generateBtn: {
+    backgroundColor: colors.primary,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  generateBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 14.5,
+  },
+  resultCard: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#16B882',
+  },
+  resultTitle: {
+    fontSize: 14,
+    color: colors.mutedForeground,
+    fontWeight: '700',
+  },
+  resultAmount: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: colors.primary,
+    marginVertical: 4,
+  },
+  resultSub: {
+    fontSize: 13,
+    color: colors.mutedForeground,
+    marginBottom: 16,
+  },
+  btnRow: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+  },
+  actionBtnShare: {
+    flex: 1,
+    backgroundColor: colors.muted,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  actionBtnPay: {
+    flex: 1,
+    backgroundColor: '#16B882',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  btnText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 13,
+  },
+});

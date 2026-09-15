@@ -3,10 +3,12 @@ import {
   Modal,
   View,
   Text,
+  StyleSheet,
   Pressable,
   ScrollView,
   ActivityIndicator,
   Linking,
+  useColorScheme,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,6 +26,9 @@ export const AutoApproveModal: React.FC<AutoApproveModalProps> = ({
   visible,
   onClose,
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const { data: status, isLoading } = useQuery({
     queryKey: ['telegram_auto_approve_status'],
     queryFn: telegramApi.getAutoApproveStatus,
@@ -50,7 +55,7 @@ export const AutoApproveModal: React.FC<AutoApproveModalProps> = ({
       icon: 'shield-checkmark-outline',
       title: 'Instant Join Approval',
       desc: 'Automatically approve pending join requests in private channels 24/7 without manual delay.',
-      color: '#0084FF',
+      color: '#0284C7',
     },
     {
       icon: 'chatbubble-ellipses-outline',
@@ -74,135 +79,137 @@ export const AutoApproveModal: React.FC<AutoApproveModalProps> = ({
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View className="flex-1 bg-[#0B0D10]">
+      <View style={[styles.container, isDark ? styles.containerDark : styles.containerLight]}>
         {/* Header */}
-        <View className="flex-row justify-between items-center px-4 py-3.5 border-b border-[#262930] bg-[#181A1F]">
-          <View className="flex-row items-center gap-2.5">
-            <View className="w-8 h-8 rounded-xl bg-[#0084FF]/10 items-center justify-center">
-              <Ionicons name="checkmark-done-circle" size={18} color="#0084FF" />
+        <View style={[styles.header, isDark ? styles.borderDark : styles.borderLight]}>
+          <View style={styles.headerTitleRow}>
+            <View style={styles.headerIconCircle}>
+              <Ionicons name="checkmark-done-circle" size={18} color="#0284C7" />
             </View>
             <View>
-              <Text className="text-base font-bold text-white">GAP Auto Approve</Text>
-              <Text className="text-xs text-slate-400">Join Request & Member Verification Automation</Text>
+              <Text style={[styles.title, isDark ? styles.textDark : styles.textLight]}>GAP Auto Approve</Text>
+              <Text style={styles.subtitle}>Join Request & Member Verification Automation</Text>
             </View>
           </View>
           <Pressable
-            className="w-8 h-8 rounded-full bg-[#262930] items-center justify-center"
+            style={[styles.closeBtn, isDark ? styles.closeBtnDark : styles.closeBtnLight]}
             onPress={onClose}
           >
-            <Ionicons name="close" size={18} color="#FFFFFF" />
+            <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
           </Pressable>
         </View>
 
-        <ScrollView className="flex-1" contentContainerClassName="p-4 pb-12" showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
           {isLoading ? (
-            <View className="py-16 items-center justify-center gap-3">
-              <ActivityIndicator size="large" color="#0084FF" />
-              <Text className="text-xs font-semibold text-slate-400">
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#0284C7" />
+              <Text style={[styles.loadingText, isDark ? styles.textDark : styles.textLight]}>
                 Syncing with GAP Auto Approve engine...
               </Text>
             </View>
           ) : (
             <>
-              {/* 🌟 Central Hero Card */}
-              <View className="bg-[#181A1F] border border-[#262930] rounded-2xl p-5 items-center mb-5">
-                {/* Logo Badge */}
-                <View className="mb-4">
-                  <View className="w-20 h-20 rounded-2xl bg-[#111317] border border-[#262930] items-center justify-center shadow-lg">
-                    <Ionicons name="shield-checkmark" size={28} color="#10B981" />
-                    <Text className="text-[10px] font-black text-[#0084FF] tracking-widest mt-1">GAP</Text>
-                    <Text className="text-[9px] font-semibold text-white">Auto Approve</Text>
+              {/* 🌟 Central Hero Card (1:1 Match with Web Screenshot) */}
+              <View style={[styles.heroCard, isDark ? styles.heroCardDark : styles.heroCardLight]}>
+                {/* Logo Badge (Black rounded-square with shield & checkmark) */}
+                <View style={styles.logoBadgeContainer}>
+                  <View style={styles.logoSquare}>
+                    <View style={styles.logoShieldCircle}>
+                      <Ionicons name="shield-checkmark" size={26} color="#10B981" />
+                    </View>
+                    <Text style={styles.logoBrandText}>GAP</Text>
+                    <Text style={styles.logoSubText}>Auto Approve</Text>
                   </View>
                 </View>
 
                 {/* Eyebrow */}
-                <View className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#0084FF]/10 border border-[#0084FF]/20 mb-3">
-                  <Ionicons name="flash" size={10} color="#0084FF" />
-                  <Text className="text-[10px] font-extrabold text-[#0084FF] tracking-wider">JOIN REQUEST AUTOMATION</Text>
+                <View style={styles.eyebrowBadge}>
+                  <Ionicons name="flash" size={11} color="#0284C7" />
+                  <Text style={styles.eyebrowText}>JOIN REQUEST AUTOMATION</Text>
                 </View>
 
                 {/* Main Heading */}
-                <Text className="text-xl font-extrabold text-white text-center mb-1">
+                <Text style={[styles.heroTitle, isDark ? styles.textDark : styles.textLight]}>
                   GAP Auto Approve
                 </Text>
 
                 {/* Subtitle */}
-                <Text className="text-xs font-semibold text-slate-300 text-center mb-2">
+                <Text style={[styles.heroSubtitle, isDark ? styles.textDark : styles.textLight]}>
                   Automatically approve and manage private channel requests.
                 </Text>
 
                 {/* Description */}
-                <Text className="text-xs text-slate-400 text-center leading-relaxed mb-4 px-2">
+                <Text style={styles.heroDesc}>
                   Add the bot to your channel as an administrator and let it handle join requests instantly, without manual admin work.
                 </Text>
 
                 {/* Connected Telegram ID Pill */}
-                <View className="flex-row items-center justify-center gap-2 bg-[#111317] border border-[#262930] px-3.5 py-2.5 rounded-xl w-full mb-4">
-                  <Ionicons name="shield-checkmark-outline" size={15} color="#0084FF" />
-                  <Text className="text-xs font-semibold text-slate-300">
+                <View style={[styles.idCard, isDark ? styles.idCardDark : styles.idCardLight]}>
+                  <Ionicons name="shield-checkmark-outline" size={16} color="#0284C7" />
+                  <Text style={[styles.idLabel, isDark ? styles.textDark : styles.textLight]}>
                     Connected Telegram ID:{' '}
-                    <Text className="text-[#0084FF] font-bold">
+                    <Text style={styles.idValue}>
                       {status?.telegramUserId ? status.telegramUserId : '1032153257'}
                     </Text>
                   </Text>
-                  <View className="w-2 h-2 rounded-full bg-emerald-400 ml-1" />
+                  <View style={styles.activeDot} />
                 </View>
 
                 {/* Action CTA Button */}
                 <Pressable
-                  className="bg-[#0084FF] flex-row items-center justify-center gap-2 w-full py-3.5 rounded-xl active:opacity-80"
+                  style={({ pressed }) => [
+                    styles.openBotBtn,
+                    pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
+                  ]}
                   onPress={handleOpenBot}
                 >
-                  <Ionicons name="logo-android" size={18} color="#FFFFFF" />
-                  <Text className="text-xs font-extrabold text-white tracking-wider">CONNECT TO TELEGRAM BOT</Text>
-                  <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+                  <Ionicons name="logo-android" size={20} color="#FFFFFF" />
+                  <Text style={styles.openBotBtnText}>CONNECT TO TELEGRAM BOT</Text>
+                  <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
                 </Pressable>
 
                 {/* Redirect Footer */}
-                <View className="flex-row items-center gap-1.5 mt-2.5">
-                  <Ionicons name="arrow-redo-outline" size={11} color="#64748B" />
-                  <Text className="text-[11px] text-slate-500">Redirects securely to Telegram app</Text>
+                <View style={styles.redirectHintRow}>
+                  <Ionicons name="arrow-redo-outline" size={12} color="#64748B" />
+                  <Text style={styles.redirectHintText}>Redirects securely to Telegram app</Text>
                 </View>
               </View>
 
               {/* Automation Capabilities Grid */}
-              <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5 px-1">
+              <Text style={[styles.sectionHeading, isDark ? styles.textDark : styles.textLight]}>
                 Key Capabilities
               </Text>
 
-              <View className="gap-2.5 mb-5">
+              <View style={styles.featuresList}>
                 {capabilities.map((item, idx) => (
                   <View
                     key={`aa_feat_${idx}`}
-                    className="flex-row items-start gap-3 bg-[#181A1F] border border-[#262930] p-3.5 rounded-xl"
+                    style={[styles.featureCard, isDark ? styles.featureCardDark : styles.featureCardLight]}
                   >
-                    <View
-                      className="w-9 h-9 rounded-xl items-center justify-center mt-0.5"
-                      style={{ backgroundColor: `${item.color}15` }}
-                    >
+                    <View style={[styles.featureIconCircle, { backgroundColor: `${item.color}15` }]}>
                       <Ionicons name={item.icon as any} size={18} color={item.color} />
                     </View>
-                    <View className="flex-1">
-                      <Text className="text-xs font-bold text-white mb-0.5">
+                    <View style={styles.featureContent}>
+                      <Text style={[styles.featureTitle, isDark ? styles.textDark : styles.textLight]}>
                         {item.title}
                       </Text>
-                      <Text className="text-[11px] text-slate-400 leading-relaxed">{item.desc}</Text>
+                      <Text style={styles.featureDesc}>{item.desc}</Text>
                     </View>
                   </View>
                 ))}
               </View>
 
               {/* Step-by-Step Setup Guide */}
-              <View className="bg-[#181A1F] border border-[#0084FF]/20 p-4 rounded-xl">
-                <View className="flex-row items-center gap-1.5 mb-2">
-                  <Ionicons name="information-circle" size={16} color="#0084FF" />
-                  <Text className="text-xs font-bold text-white">
+              <View style={[styles.infoBox, isDark ? styles.infoBoxDark : styles.infoBoxLight]}>
+                <View style={styles.infoBoxHeader}>
+                  <Ionicons name="information-circle" size={16} color="#0284C7" />
+                  <Text style={[styles.infoBoxTitle, isDark ? styles.textDark : styles.textLight]}>
                     Quick 3-Step Setup:
                   </Text>
                 </View>
-                <Text className="text-[11px] text-slate-400 mb-1 leading-relaxed">1. Tap <Text className="font-bold text-[#0084FF]">Connect to Telegram Bot</Text> above to open @Gapautoapprovebot.</Text>
-                <Text className="text-[11px] text-slate-400 mb-1 leading-relaxed">2. Add <Text className="font-bold text-white">@Gapautoapprovebot</Text> as an Administrator to your private channel.</Text>
-                <Text className="text-[11px] text-slate-400 leading-relaxed">3. Enable <Text className="font-bold text-white">"Invite Users via Link"</Text> & <Text className="font-bold text-white">"Manage Join Requests"</Text> admin rights.</Text>
+                <Text style={styles.infoStepText}>1. Tap <Text style={{ fontWeight: '700', color: '#0284C7' }}>Connect to Telegram Bot</Text> above to open @Gapautoapprovebot.</Text>
+                <Text style={styles.infoStepText}>2. Add <Text style={{ fontWeight: '700' }}>@Gapautoapprovebot</Text> as an Administrator to your private channel.</Text>
+                <Text style={styles.infoStepText}>3. Enable <Text style={{ fontWeight: '700' }}>"Invite Users via Link"</Text> & <Text style={{ fontWeight: '700' }}>"Manage Join Requests"</Text> admin rights.</Text>
               </View>
             </>
           )}
@@ -211,3 +218,290 @@ export const AutoApproveModal: React.FC<AutoApproveModalProps> = ({
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  containerLight: { backgroundColor: '#F8FAFC' },
+  containerDark: { backgroundColor: '#0B0F19' },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+  },
+  borderLight: { borderBottomColor: '#E2E8F0' },
+  borderDark: { borderBottomColor: '#1E2430' },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  headerIconCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: 'rgba(2, 132, 199, 0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title: { fontSize: 17, fontWeight: '700' },
+  textLight: { color: '#0F172A' },
+  textDark: { color: '#F8FAFC' },
+  subtitle: { color: '#64748B', fontSize: 11, marginTop: 1 },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeBtnLight: { backgroundColor: '#F1F5F9' },
+  closeBtnDark: { backgroundColor: '#1E2430' },
+  body: { flex: 1 },
+  bodyContent: { padding: 16, paddingBottom: 40 },
+  loadingContainer: {
+    paddingVertical: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+  },
+  loadingText: { fontSize: 13, fontWeight: '500' },
+
+  // Hero Card
+  heroCard: {
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    marginBottom: 24,
+  },
+  heroCardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  heroCardDark: {
+    backgroundColor: '#121722',
+    borderColor: '#1E2430',
+  },
+  logoBadgeContainer: {
+    marginBottom: 16,
+  },
+  logoSquare: {
+    width: 90,
+    height: 90,
+    borderRadius: 18,
+    backgroundColor: '#0F172A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  logoShieldCircle: {
+    marginBottom: 2,
+  },
+  logoBrandText: {
+    color: '#0284C7',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  logoSubText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '600',
+  },
+  eyebrowBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: 'rgba(2, 132, 199, 0.12)',
+    marginBottom: 12,
+  },
+  eyebrowText: {
+    color: '#0284C7',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  heroTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  heroSubtitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  heroDesc: {
+    color: '#64748B',
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 8,
+  },
+
+  // ID Card
+  idCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    borderRadius: 12,
+    borderWidth: 1,
+    width: '100%',
+    justifyContent: 'center',
+    marginBottom: 18,
+  },
+  idCardLight: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#E2E8F0',
+  },
+  idCardDark: {
+    backgroundColor: '#161C28',
+    borderColor: '#27272A',
+  },
+  idLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  idValue: {
+    color: '#0284C7',
+    fontWeight: '800',
+  },
+  activeDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#10B981',
+    marginLeft: 4,
+  },
+
+  // CTA Button
+  openBotBtn: {
+    backgroundColor: '#0284C7',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    width: '100%',
+    paddingVertical: 15,
+    borderRadius: 14,
+    shadowColor: '#0284C7',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  openBotBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  redirectHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 10,
+  },
+  redirectHintText: {
+    color: '#64748B',
+    fontSize: 11,
+  },
+
+  // Features List
+  sectionHeading: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: -0.1,
+    marginBottom: 12,
+  },
+  featuresList: {
+    gap: 10,
+    marginBottom: 20,
+  },
+  featureCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  featureCardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+  },
+  featureCardDark: {
+    backgroundColor: '#121722',
+    borderColor: '#1E2430',
+  },
+  featureIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  featureContent: {
+    flex: 1,
+  },
+  featureTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  featureDesc: {
+    color: '#64748B',
+    fontSize: 12,
+    lineHeight: 17,
+  },
+
+  // Info Step Box
+  infoBox: {
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  infoBoxLight: {
+    backgroundColor: 'rgba(2, 132, 199, 0.04)',
+    borderColor: 'rgba(2, 132, 199, 0.2)',
+  },
+  infoBoxDark: {
+    backgroundColor: 'rgba(2, 132, 199, 0.08)',
+    borderColor: 'rgba(2, 132, 199, 0.25)',
+  },
+  infoBoxHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  infoBoxTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  infoStepText: {
+    color: '#64748B',
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 4,
+  },
+});

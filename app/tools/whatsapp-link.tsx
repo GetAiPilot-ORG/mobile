@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   ScrollView,
   TextInput,
   Pressable,
@@ -11,6 +12,7 @@ import {
 } from 'react-native';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
+import { colors } from '../../src/theme/colors';
 
 export default function WhatsAppLinkGeneratorScreen() {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -51,57 +53,56 @@ export default function WhatsAppLinkGeneratorScreen() {
   };
 
   return (
-    <AppScreen safeArea={false} className="flex-1 bg-[#0B0D10]">
+    <AppScreen safeArea={false} backgroundColor={colors.background}>
       <AppTopBar title="WhatsApp Link Generator" subtitle="Direct Click-to-Chat URL" showBack={true} />
 
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
-        <View className="rounded-2xl p-4 mb-4 border border-[#262930] bg-[#181A1F]">
-          <Text className="text-base font-black text-white mb-1">Create WhatsApp Link</Text>
-          <Text className="text-xs text-slate-400 leading-4 mb-4">
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Create WhatsApp Link</Text>
+          <Text style={styles.cardSubtitle}>
             Generate a custom URL that allows customers to start a chat with you instantly without saving your phone number.
           </Text>
 
-          <Text className="text-xs font-bold text-slate-300 mb-1.5">WhatsApp Phone Number (with Country Code)</Text>
+          <Text style={styles.inputLabel}>WhatsApp Phone Number (with Country Code)</Text>
           <TextInput
-            className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2.5 text-xs text-white mb-3"
+            style={styles.input}
             placeholder="e.g. 919876543210"
-            placeholderTextColor="#64748B"
+            placeholderTextColor={colors.mutedForeground}
             value={phoneNumber}
             onChangeText={setPhoneNumber}
             keyboardType="phone-pad"
           />
 
-          <Text className="text-xs font-bold text-slate-300 mb-1.5">Prefilled Message (Optional)</Text>
+          <Text style={styles.inputLabel}>Prefilled Message (Optional)</Text>
           <TextInput
-            className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2.5 text-xs text-white mb-4 h-24"
+            style={[styles.input, { height: 90, textAlignVertical: 'top' }]}
             placeholder="Hi! I am interested in learning more about your services."
-            placeholderTextColor="#64748B"
+            placeholderTextColor={colors.mutedForeground}
             value={prefilledMessage}
             onChangeText={setPrefilledMessage}
             multiline
-            textAlignVertical="top"
           />
 
-          <Pressable className="py-3.5 rounded-xl items-center bg-[#25D366]" onPress={handleGenerate}>
-            <Text className="text-xs font-extrabold text-black">Generate WhatsApp Link ✨</Text>
+          <Pressable style={styles.generateBtn} onPress={handleGenerate}>
+            <Text style={styles.generateBtnText}>Generate WhatsApp Link ✨</Text>
           </Pressable>
         </View>
 
         {generatedUrl ? (
-          <View className="rounded-2xl p-4 border border-[#25D366]/40 bg-[#181A1F]">
-            <Text className="text-xs font-bold text-white mb-2">Your Direct Chat Link:</Text>
-            <View className="p-3 rounded-lg bg-[#111317] border border-[#262930] mb-3.5">
-              <Text className="text-xs text-[#25D366] font-mono" numberOfLines={2}>
+          <View style={styles.resultCard}>
+            <Text style={styles.resultTitle}>Your Direct Chat Link:</Text>
+            <View style={styles.urlBox}>
+              <Text style={styles.urlText} numberOfLines={2}>
                 {generatedUrl}
               </Text>
             </View>
 
-            <View className="flex-row gap-2.5">
-              <Pressable className="flex-1 py-3 rounded-xl items-center bg-[#0084FF]" onPress={handleShare}>
-                <Text className="text-xs font-bold text-white">Share Link 🔗</Text>
+            <View style={styles.btnRow}>
+              <Pressable style={styles.actionBtnShare} onPress={handleShare}>
+                <Text style={styles.btnText}>Share Link 🔗</Text>
               </Pressable>
-              <Pressable className="flex-1 py-3 rounded-xl items-center bg-[#25D366]" onPress={handleTestLink}>
-                <Text className="text-xs font-bold text-black">Open in WhatsApp 💬</Text>
+              <Pressable style={styles.actionBtnTest} onPress={handleTestLink}>
+                <Text style={styles.btnText}>Open in WhatsApp 💬</Text>
               </Pressable>
             </View>
           </View>
@@ -110,3 +111,107 @@ export default function WhatsAppLinkGeneratorScreen() {
     </AppScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  card: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cardTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: colors.foreground,
+    marginBottom: 4,
+  },
+  cardSubtitle: {
+    fontSize: 13,
+    color: colors.mutedForeground,
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: colors.foreground,
+    marginBottom: 6,
+    marginTop: 6,
+  },
+  input: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: colors.foreground,
+    marginBottom: 12,
+  },
+  generateBtn: {
+    backgroundColor: colors.products.whatsapp,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  generateBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 14.5,
+  },
+  resultCard: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: colors.products.whatsapp,
+  },
+  resultTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.foreground,
+    marginBottom: 8,
+  },
+  urlBox: {
+    backgroundColor: colors.muted,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 14,
+  },
+  urlText: {
+    fontSize: 13,
+    color: colors.foreground,
+    fontFamily: 'monospace',
+  },
+  btnRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  actionBtnShare: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  actionBtnTest: {
+    flex: 1,
+    backgroundColor: colors.products.whatsapp,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  btnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+});

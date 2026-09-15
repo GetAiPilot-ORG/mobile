@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import * as Clipboard from "expo-clipboard";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -7,10 +8,10 @@ import {
   Linking,
   Pressable,
   RefreshControl,
+  StyleSheet,
   Text,
   View,
 } from "react-native";
-import * as Clipboard from "expo-clipboard";
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
 import { useAuthStore } from "../../src/core/store/authStore";
@@ -19,6 +20,7 @@ import {
   openAuthenticatedDashboard,
   openAuthenticatedTemplate,
 } from "../../src/lib/template-deep-link";
+import { colors } from "../../src/theme/colors";
 import { TemplatesListSkeleton } from "../../src/components/skeletonScreen";
 
 export interface SavedBioPage {
@@ -109,6 +111,13 @@ export default function MyDesignScreen() {
           .eq("user_id", currentUserId)
           .order("created_at", { ascending: false }),
       ]);
+
+      if (bioRes.error) {
+        console.warn("[MyDesigns] Bio pages fetch warning:", bioRes.error.message);
+      }
+      if (landingRes.error) {
+        console.warn("[MyDesigns] Landing pages fetch warning:", landingRes.error.message);
+      }
 
       setBioPages((bioRes.data || []) as SavedBioPage[]);
       setLandingPages((landingRes.data || []) as SavedLandingPage[]);
@@ -280,119 +289,130 @@ export default function MyDesignScreen() {
     const isCopied = copiedId === item.id;
 
     return (
-      <View className="rounded-2xl p-4 border border-[#262930] bg-[#181A1F] mb-3.5">
+      <View style={styles.designCard}>
         {/* Card Header & Thumbnail */}
-        <View className="flex-row items-center">
+        <View style={styles.cardHeaderRow}>
           {imageUrl ? (
             <Image
               source={{ uri: imageUrl }}
-              className="w-13 h-13 rounded-2xl bg-[#111317]"
+              style={styles.thumbnailImage}
               resizeMode="cover"
             />
           ) : (
             <View
-              className={`w-13 h-13 rounded-2xl items-center justify-center ${
-                isBio ? 'bg-emerald-500' : 'bg-blue-600'
-              }`}
+              style={[
+                styles.thumbnailPlaceholder,
+                { backgroundColor: isBio ? "#10B981" : "#3B82F6" },
+              ]}
             >
-              <Text className="text-xl">{isBio ? "🌿" : "🚀"}</Text>
+              <Text style={styles.thumbnailInitial}>
+                {isBio ? "🌿" : "🚀"}
+              </Text>
             </View>
           )}
 
-          <View className="flex-1 ml-3">
-            <View className="flex-row items-center gap-1.5 mb-1">
+          <View style={styles.cardInfoCol}>
+            <View style={styles.badgeRow}>
               <View
-                className={`px-2 py-0.5 rounded-md ${
-                  isBio ? 'bg-emerald-500/20' : 'bg-blue-500/20'
-                }`}
+                style={[
+                  styles.typeBadge,
+                  isBio ? styles.bioBadge : styles.landingBadge,
+                ]}
               >
                 <Text
-                  className={`text-[9px] font-black uppercase ${
-                    isBio ? 'text-emerald-400' : 'text-blue-400'
-                  }`}
+                  style={[
+                    styles.typeBadgeText,
+                    isBio ? styles.bioBadgeText : styles.landingBadgeText,
+                  ]}
                 >
                   {isBio ? "Bio Page" : "Landing Page"}
                 </Text>
               </View>
 
-              <View className="bg-[#111317] border border-[#262930] px-2 py-0.5 rounded-md">
-                <Text className="text-[9px] font-bold text-slate-400">{item.template_id}</Text>
+              <View style={styles.templatePill}>
+                <Text style={styles.templatePillText}>{item.template_id}</Text>
               </View>
             </View>
 
-            <Text className="text-sm font-extrabold text-white" numberOfLines={1}>
+            <Text style={styles.cardTitleText} numberOfLines={1}>
               {title}
             </Text>
 
-            <Text className="text-[11px] text-slate-400 mt-0.5" numberOfLines={1}>
+            <Text style={styles.cardSubtitleText} numberOfLines={1}>
               {subtitle}
             </Text>
           </View>
 
           {/* Delete Action */}
           <Pressable
-            className="w-8 h-8 rounded-lg items-center justify-center ml-1"
+            style={styles.deleteButton}
             onPress={() => handleDeleteItem(item)}
             hitSlop={8}
           >
-            <Text className="text-sm">🗑️</Text>
+            <Text style={styles.deleteIconText}>🗑️</Text>
           </Pressable>
         </View>
 
         {/* Live Link Chip */}
         <Pressable
-          className={`flex-row items-center rounded-xl p-2.5 my-3 border ${
-            isCopied ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-[#111317] border-[#262930]'
-          }`}
+          style={[styles.linkChip, isCopied && styles.linkChipCopied]}
           onPress={() => handleCopyLink(item)}
         >
-          <Text className="text-xs text-slate-400 font-mono">
+          <Text style={styles.linkPrefixText}>
             {isBio ? "gbio.us/" : "gpage.us/"}
           </Text>
-          <Text className="text-xs text-[#0084FF] font-mono font-bold flex-1" numberOfLines={1}>
+          <Text style={styles.linkSlugText} numberOfLines={1}>
             {item.slug}
           </Text>
-          <Text className={`text-[10px] font-bold ${isCopied ? 'text-emerald-400' : 'text-slate-400'}`}>
+          <Text style={styles.copyPillText}>
             {isCopied ? "Copied ✓" : "Copy 📋"}
           </Text>
         </Pressable>
 
         {/* Analytics Mini-Grid */}
-        <View className="flex-row items-center justify-between rounded-xl py-2 px-3 bg-[#111317] border border-[#262930] mb-3">
-          <View className="flex-1 items-center">
-            <Text className="text-xs font-black text-white">{item.page_views || 0}</Text>
-            <Text className="text-[9px] text-slate-400 font-bold uppercase mt-0.5">Views</Text>
+        <View style={styles.cardStatsRow}>
+          <View style={styles.cardStatCol}>
+            <Text style={styles.cardStatValue}>{item.page_views || 0}</Text>
+            <Text style={styles.cardStatLabel}>Views</Text>
           </View>
-          <View className="w-px h-5 bg-[#262930]" />
-          <View className="flex-1 items-center">
-            <Text className="text-xs font-black text-white">{item.button_clicks || 0}</Text>
-            <Text className="text-[9px] text-slate-400 font-bold uppercase mt-0.5">Clicks</Text>
+          <View style={styles.cardStatDivider} />
+          <View style={styles.cardStatCol}>
+            <Text style={styles.cardStatValue}>{item.button_clicks || 0}</Text>
+            <Text style={styles.cardStatLabel}>Clicks</Text>
           </View>
-          <View className="w-px h-5 bg-[#262930]" />
-          <View className="flex-1 items-center">
-            <Text className="text-xs font-black text-white">
+          <View style={styles.cardStatDivider} />
+          <View style={styles.cardStatCol}>
+            <Text style={styles.cardStatValue}>
               {item.page_views && item.page_views > 0
                 ? `${(((item.button_clicks || 0) / item.page_views) * 100).toFixed(0)}%`
                 : "0%"}
             </Text>
-            <Text className="text-[9px] text-slate-400 font-bold uppercase mt-0.5">CTR</Text>
+            <Text style={styles.cardStatLabel}>CTR</Text>
           </View>
         </View>
 
         {/* Action Buttons */}
-        <View className="flex-row gap-2.5">
+        <View style={styles.cardActionRow}>
           <Pressable
-            className="flex-1 py-2.5 rounded-xl items-center border border-[#262930] bg-[#111317]"
+            style={({ pressed }) => [
+              styles.actionButtonSecondary,
+              pressed && { opacity: 0.8 },
+            ]}
             onPress={() => handleViewLive(item)}
           >
-            <Text className="text-xs font-bold text-white">View Live ↗</Text>
+            <Text style={styles.actionButtonSecondaryText}>View Live ↗</Text>
           </Pressable>
 
           <Pressable
-            className="flex-1 py-2.5 rounded-xl items-center bg-[#0084FF]"
+            style={({ pressed }) => [
+              styles.actionButtonPrimary,
+              pressed && { opacity: 0.85 },
+            ]}
             onPress={() => handleEditInCanvas(item)}
           >
-            <Text className="text-xs font-extrabold text-white">Edit in Canvas 🚀</Text>
+            <Text style={styles.actionButtonPrimaryText}>
+              Edit in Canvas 🚀
+            </Text>
           </Pressable>
         </View>
       </View>
@@ -400,7 +420,7 @@ export default function MyDesignScreen() {
   };
 
   return (
-    <AppScreen safeArea={false} className="flex-1 bg-[#0B0D10]">
+    <AppScreen safeArea={false} backgroundColor={colors.background}>
       <AppTopBar
         title="My Designs"
         subtitle="Bio Pages & Landing Pages Hub"
@@ -415,104 +435,128 @@ export default function MyDesignScreen() {
           keyExtractor={(item) => `${item.type}-${item.id}`}
           renderItem={renderDesignCard}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
+          contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor="#0084FF"
+              tintColor={colors.primary}
             />
           }
           ListHeaderComponent={
-            <View className="mb-4">
+            <View style={styles.headerContainer}>
               {/* Top Summary Banner */}
-              <View className="rounded-2xl p-4 border border-[#262930] bg-[#181A1F] mb-4">
-                <View className="flex-row justify-between items-start">
-                  <View className="flex-1">
-                    <Text className="text-lg font-black text-white tracking-tight">Unified Studio</Text>
-                    <Text className="text-xs text-slate-400 mt-1 leading-4">
+              <View style={styles.summaryCard}>
+                <View style={styles.summaryHeader}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.summaryTitle}>Unified Studio</Text>
+                    <Text style={styles.summarySubtitle}>
                       Manage your Bio Pages and Landing Pages from one dashboard.
                     </Text>
                   </View>
                   <Pressable
-                    className="bg-[#0084FF] px-3 py-1.5 rounded-lg ml-2"
+                    style={styles.webDashboardButton}
                     onPress={handleOpenWebDashboard}
                   >
-                    <Text className="text-white text-[11px] font-bold">Web Studio ↗</Text>
+                    <Text style={styles.webDashboardButtonText}>
+                      Web Studio ↗
+                    </Text>
                   </Pressable>
                 </View>
 
                 {/* Metrics Stats Row */}
-                <View className="flex-row items-center justify-between rounded-xl py-3 px-2.5 bg-[#111317] border border-[#262930] mt-4">
-                  <View className="flex-1 items-center">
-                    <Text className="text-sm font-black text-white">{stats.totalDesigns}</Text>
-                    <Text className="text-[9px] font-bold uppercase text-slate-400 mt-0.5">Total Designs</Text>
+                <View style={styles.metricsRow}>
+                  <View style={styles.metricItem}>
+                    <Text style={styles.metricVal}>{stats.totalDesigns}</Text>
+                    <Text style={styles.metricLab}>Total Designs</Text>
                   </View>
-                  <View className="w-px h-6 bg-[#262930]" />
-                  <View className="flex-1 items-center">
-                    <Text className="text-sm font-black text-white">{stats.totalViews}</Text>
-                    <Text className="text-[9px] font-bold uppercase text-slate-400 mt-0.5">Total Views</Text>
+                  <View style={styles.metricDivider} />
+                  <View style={styles.metricItem}>
+                    <Text style={styles.metricVal}>{stats.totalViews}</Text>
+                    <Text style={styles.metricLab}>Total Views</Text>
                   </View>
-                  <View className="w-px h-6 bg-[#262930]" />
-                  <View className="flex-1 items-center">
-                    <Text className="text-sm font-black text-white">{stats.totalClicks}</Text>
-                    <Text className="text-[9px] font-bold uppercase text-slate-400 mt-0.5">Total Clicks</Text>
+                  <View style={styles.metricDivider} />
+                  <View style={styles.metricItem}>
+                    <Text style={styles.metricVal}>{stats.totalClicks}</Text>
+                    <Text style={styles.metricLab}>Total Clicks</Text>
                   </View>
-                  <View className="w-px h-6 bg-[#262930]" />
-                  <View className="flex-1 items-center">
-                    <Text className="text-sm font-black text-white">{stats.avgCtr}%</Text>
-                    <Text className="text-[9px] font-bold uppercase text-slate-400 mt-0.5">Avg CTR</Text>
+                  <View style={styles.metricDivider} />
+                  <View style={styles.metricItem}>
+                    <Text style={styles.metricVal}>{stats.avgCtr}%</Text>
+                    <Text style={styles.metricLab}>Avg CTR</Text>
                   </View>
                 </View>
 
                 {/* Quick Create Buttons */}
-                <View className="flex-row gap-2.5 mt-4">
+                <View style={styles.createButtonsRow}>
                   <Pressable
-                    className="flex-1 py-3 rounded-xl items-center bg-emerald-600"
+                    style={styles.createBioBtn}
                     onPress={handleCreateBio}
                   >
-                    <Text className="text-white text-xs font-bold">+ Create Bio Page</Text>
+                    <Text style={styles.createBioBtnText}>
+                      + Create Bio Page
+                    </Text>
                   </Pressable>
 
                   <Pressable
-                    className="flex-1 py-3 rounded-xl items-center bg-blue-600"
+                    style={styles.createLandingBtn}
                     onPress={handleCreateLanding}
                   >
-                    <Text className="text-white text-xs font-bold">+ Create Landing Page</Text>
+                    <Text style={styles.createLandingBtnText}>
+                      + Create Landing Page
+                    </Text>
                   </Pressable>
                 </View>
               </View>
 
               {/* Filter Tabs */}
-              <View className="flex-row rounded-xl p-1 gap-1 border border-[#262930] bg-[#111317]">
+              <View style={styles.tabsContainer}>
                 <Pressable
-                  className={`flex-1 py-2 rounded-lg items-center ${activeTab === "all" ? "bg-[#181A1F] border border-[#262930]" : ""}`}
+                  style={[
+                    styles.tabButton,
+                    activeTab === "all" && styles.tabButtonActive,
+                  ]}
                   onPress={() => setActiveTab("all")}
                 >
                   <Text
-                    className={`text-xs font-bold ${activeTab === "all" ? "text-white" : "text-slate-400"}`}
+                    style={[
+                      styles.tabButtonText,
+                      activeTab === "all" && styles.tabButtonTextActive,
+                    ]}
                   >
                     All ({bioPages.length + landingPages.length})
                   </Text>
                 </Pressable>
 
                 <Pressable
-                  className={`flex-1 py-2 rounded-lg items-center ${activeTab === "bio" ? "bg-[#181A1F] border border-[#262930]" : ""}`}
+                  style={[
+                    styles.tabButton,
+                    activeTab === "bio" && styles.tabButtonActive,
+                  ]}
                   onPress={() => setActiveTab("bio")}
                 >
                   <Text
-                    className={`text-xs font-bold ${activeTab === "bio" ? "text-white" : "text-slate-400"}`}
+                    style={[
+                      styles.tabButtonText,
+                      activeTab === "bio" && styles.tabButtonTextActive,
+                    ]}
                   >
                     Bio Pages ({bioPages.length})
                   </Text>
                 </Pressable>
 
                 <Pressable
-                  className={`flex-1 py-2 rounded-lg items-center ${activeTab === "landing" ? "bg-[#181A1F] border border-[#262930]" : ""}`}
+                  style={[
+                    styles.tabButton,
+                    activeTab === "landing" && styles.tabButtonActive,
+                  ]}
                   onPress={() => setActiveTab("landing")}
                 >
                   <Text
-                    className={`text-xs font-bold ${activeTab === "landing" ? "text-white" : "text-slate-400"}`}
+                    style={[
+                      styles.tabButtonText,
+                      activeTab === "landing" && styles.tabButtonTextActive,
+                    ]}
                   >
                     Landing Pages ({landingPages.length})
                   </Text>
@@ -521,16 +565,16 @@ export default function MyDesignScreen() {
             </View>
           }
           ListEmptyComponent={
-            <View className="items-center justify-center p-8">
-              <Text className="text-3xl mb-2">🎨</Text>
-              <Text className="text-base font-black text-white">
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyIconText}>🎨</Text>
+              <Text style={styles.emptyTitle}>
                 {activeTab === "bio"
                   ? "No Bio Pages Yet"
                   : activeTab === "landing"
                   ? "No Landing Pages Yet"
                   : "No Designs Created Yet"}
               </Text>
-              <Text className="text-xs text-slate-400 text-center mt-1 leading-5">
+              <Text style={styles.emptyText}>
                 {activeTab === "bio"
                   ? "Create your personal Link-in-Bio profile to showcase all your links."
                   : activeTab === "landing"
@@ -544,3 +588,367 @@ export default function MyDesignScreen() {
     </AppScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  listContent: {
+    padding: 16,
+    paddingBottom: 48,
+  },
+  loaderContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 13,
+    color: colors.mutedForeground,
+    fontWeight: "600",
+  },
+  headerContainer: {
+    marginBottom: 16,
+  },
+  summaryCard: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: 16,
+  },
+  summaryHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  summaryTitle: {
+    fontSize: 20,
+    fontWeight: "900",
+    color: colors.foreground,
+    letterSpacing: -0.4,
+  },
+  summarySubtitle: {
+    fontSize: 12,
+    color: colors.mutedForeground,
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  webDashboardButton: {
+    backgroundColor: "#0A84FF",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
+    marginLeft: 10,
+  },
+  webDashboardButtonText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  metricsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: colors.muted,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    marginTop: 16,
+  },
+  metricItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  metricVal: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: colors.foreground,
+  },
+  metricLab: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.mutedForeground,
+    marginTop: 2,
+    textTransform: "uppercase",
+  },
+  metricDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: colors.border,
+  },
+  createButtonsRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 16,
+  },
+  createBioBtn: {
+    flex: 1,
+    backgroundColor: "#059669",
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  createBioBtnText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  createLandingBtn: {
+    flex: 1,
+    backgroundColor: "#2563EB",
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  createLandingBtnText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  tabsContainer: {
+    flexDirection: "row",
+    backgroundColor: colors.muted,
+    padding: 4,
+    borderRadius: 14,
+    gap: 4,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 9,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tabButtonActive: {
+    backgroundColor: colors.card,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  tabButtonText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.mutedForeground,
+  },
+  tabButtonTextActive: {
+    color: colors.foreground,
+    fontWeight: "900",
+  },
+  designCard: {
+    backgroundColor: colors.card,
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: 14,
+  },
+  cardHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  thumbnailImage: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: colors.muted,
+  },
+  thumbnailPlaceholder: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  thumbnailInitial: {
+    fontSize: 22,
+  },
+  cardInfoCol: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  badgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 4,
+  },
+  typeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  bioBadge: {
+    backgroundColor: "#DCFCE7",
+  },
+  bioBadgeText: {
+    color: "#15803D",
+    fontSize: 10,
+    fontWeight: "800",
+    textTransform: "uppercase",
+  },
+  landingBadge: {
+    backgroundColor: "#DBEAFE",
+  },
+  landingBadgeText: {
+    color: "#1D4ED8",
+    fontSize: 10,
+    fontWeight: "800",
+    textTransform: "uppercase",
+  },
+  typeBadgeText: {
+    fontSize: 10,
+    fontWeight: "800",
+  },
+  templatePill: {
+    backgroundColor: colors.muted,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  templatePillText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.mutedForeground,
+  },
+  cardTitleText: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: colors.foreground,
+  },
+  cardSubtitleText: {
+    fontSize: 12,
+    color: colors.mutedForeground,
+    marginTop: 2,
+  },
+  deleteButton: {
+    padding: 6,
+    marginLeft: 4,
+  },
+  deleteIconText: {
+    fontSize: 16,
+  },
+  linkChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.muted,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 10,
+    marginTop: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  linkChipCopied: {
+    borderColor: "#10B981",
+    backgroundColor: "#ECFDF5",
+  },
+  linkPrefixText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.mutedForeground,
+  },
+  linkSlugText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "800",
+    color: colors.foreground,
+  },
+  copyPillText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: colors.primary,
+    marginLeft: 6,
+  },
+  cardStatsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    paddingVertical: 10,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cardStatCol: {
+    alignItems: "center",
+    flex: 1,
+  },
+  cardStatValue: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: colors.foreground,
+  },
+  cardStatLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.mutedForeground,
+    marginTop: 1,
+    textTransform: "uppercase",
+  },
+  cardStatDivider: {
+    width: 1,
+    height: 20,
+    backgroundColor: colors.border,
+  },
+  cardActionRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 14,
+  },
+  actionButtonSecondary: {
+    flex: 1,
+    backgroundColor: colors.muted,
+    paddingVertical: 11,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  actionButtonSecondaryText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: colors.foreground,
+  },
+  actionButtonPrimary: {
+    flex: 1,
+    backgroundColor: "#0A84FF",
+    paddingVertical: 11,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  actionButtonPrimaryText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#FFFFFF",
+  },
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 48,
+    paddingHorizontal: 24,
+  },
+  emptyIconText: {
+    fontSize: 40,
+    marginBottom: 12,
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: colors.foreground,
+    marginBottom: 6,
+  },
+  emptyText: {
+    textAlign: "center",
+    fontSize: 13,
+    color: colors.mutedForeground,
+    lineHeight: 19,
+  },
+});
+

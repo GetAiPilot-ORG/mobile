@@ -4,9 +4,11 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   View,
+  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -30,6 +32,9 @@ export const TelegramLoginModal: React.FC<TelegramLoginModalProps> = ({
   onVerifyOtp,
   onSubmitPassword,
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [step, setStep] = useState<LoginStep>('phone');
   const [phone, setPhone] = useState('+91');
   const [otp, setOtp] = useState('');
@@ -134,60 +139,60 @@ export const TelegramLoginModal: React.FC<TelegramLoginModalProps> = ({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
-      <View className="flex-1 bg-black/70 justify-end">
-        <View className="bg-[#181A1F] border-t border-[#262930] rounded-t-3xl max-h-[85%] pt-5 px-5">
+      <View style={styles.overlay}>
+        <View style={[styles.container, isDark ? styles.containerDark : styles.containerLight]}>
           {/* Header */}
-          <View className="flex-row justify-between items-center pb-3.5 mb-4 border-b border-[#262930]">
-            <View className="flex-row items-center gap-3">
-              <View className="w-10 h-10 rounded-xl bg-[#0084FF]/10 items-center justify-center">
-                <Ionicons name="paper-plane-outline" size={20} color="#0084FF" />
+          <View style={styles.header}>
+            <View style={styles.headerTitleRow}>
+              <View style={[styles.iconBox, { backgroundColor: isDark ? 'rgba(2,132,199,0.2)' : 'rgba(2,132,199,0.1)' }]}>
+                <Ionicons name="paper-plane-outline" size={22} color="#0284C7" />
               </View>
               <View>
-                <Text className="text-base font-bold text-white">
+                <Text style={[styles.title, isDark ? styles.textDark : styles.textLight]}>
                   Connect Telegram Account
                 </Text>
-                <Text className="text-xs text-slate-400">
+                <Text style={[styles.subtitle, isDark ? styles.subDark : styles.subLight]}>
                   MTProto Session Authorization
                 </Text>
               </View>
             </View>
-            <Pressable onPress={handleClose} hitSlop={10} className="w-8 h-8 rounded-full bg-[#262930] items-center justify-center">
-              <Ionicons name="close" size={18} color="#94A3B8" />
+            <Pressable onPress={handleClose} hitSlop={10} style={styles.closeBtn}>
+              <Ionicons name="close" size={20} color={isDark ? '#94A3B8' : '#64748B'} />
             </Pressable>
           </View>
 
-          <ScrollView className="flex-1" contentContainerClassName="pb-8" showsVerticalScrollIndicator={false}>
+          <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: 24 }}>
             {errorMsg ? (
-              <View className="flex-row items-center gap-2 bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl mb-4">
-                <Ionicons name="alert-circle-outline" size={16} color="#EF4444" />
-                <Text className="text-xs font-semibold text-rose-400 flex-1">{errorMsg}</Text>
+              <View style={[styles.errorBanner, isDark ? styles.errorBannerDark : styles.errorBannerLight]}>
+                <Ionicons name="alert-circle-outline" size={18} color="#EF4444" />
+                <Text style={styles.errorText}>{errorMsg}</Text>
               </View>
             ) : null}
 
             {step === 'phone' && (
               <View>
-                <Text className="text-xs text-slate-400 leading-relaxed mb-4">
+                <Text style={[styles.infoText, isDark ? styles.subDark : styles.subLight]}>
                   Enter the phone number associated with your Telegram account. A verification code will be sent directly to your Telegram app.
                 </Text>
 
-                <Text className="text-[10px] font-bold text-slate-400 mb-1.5 tracking-wider uppercase">
+                <Text style={[styles.label, isDark ? styles.textDark : styles.textLight]}>
                   Telegram Phone Number
                 </Text>
-                <View className="flex-row items-center bg-[#111317] border border-[#262930] rounded-xl px-3.5 py-3 mb-4">
-                  <Ionicons name="call-outline" size={16} color="#94A3B8" style={{ marginRight: 8 }} />
+                <View style={[styles.inputBox, isDark ? styles.inputDark : styles.inputLight]}>
+                  <Ionicons name="call-outline" size={18} color={isDark ? '#94A3B8' : '#64748B'} style={{ marginRight: 8 }} />
                   <TextInput
-                    className="flex-1 text-sm text-white"
+                    style={[styles.input, isDark ? styles.textDark : styles.textLight]}
                     value={phone}
                     onChangeText={setPhone}
                     placeholder="+919876543210"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
                     keyboardType="phone-pad"
                     autoCapitalize="none"
                   />
                 </View>
 
                 <Pressable
-                  className={`bg-[#0084FF] h-12 rounded-xl flex-row items-center justify-center gap-2 ${loading ? 'opacity-60' : 'active:opacity-80'}`}
+                  style={[styles.actionBtn, loading && styles.btnDisabled]}
                   onPress={handleSendOtp}
                   disabled={loading}
                 >
@@ -195,8 +200,8 @@ export const TelegramLoginModal: React.FC<TelegramLoginModalProps> = ({
                     <ActivityIndicator color="#FFFFFF" size="small" />
                   ) : (
                     <>
-                      <Text className="text-xs font-extrabold text-white uppercase tracking-wider">Send Verification Code</Text>
-                      <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+                      <Text style={styles.actionBtnText}>Send Verification Code</Text>
+                      <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
                     </>
                   )}
                 </Pressable>
@@ -205,21 +210,21 @@ export const TelegramLoginModal: React.FC<TelegramLoginModalProps> = ({
 
             {step === 'otp' && (
               <View>
-                <Text className="text-xs text-slate-400 leading-relaxed mb-4">
-                  We sent a 5-digit verification code to your Telegram app on <Text className="font-bold text-white">{phone}</Text>.
+                <Text style={[styles.infoText, isDark ? styles.subDark : styles.subLight]}>
+                  We sent a 5-digit verification code to your Telegram app on <Text style={{ fontWeight: '700' }}>{phone}</Text>.
                 </Text>
 
-                <Text className="text-[10px] font-bold text-slate-400 mb-1.5 tracking-wider uppercase">
+                <Text style={[styles.label, isDark ? styles.textDark : styles.textLight]}>
                   Telegram Login Code
                 </Text>
-                <View className="flex-row items-center bg-[#111317] border border-[#262930] rounded-xl px-3.5 py-3 mb-4">
-                  <Ionicons name="key-outline" size={16} color="#94A3B8" style={{ marginRight: 8 }} />
+                <View style={[styles.inputBox, isDark ? styles.inputDark : styles.inputLight]}>
+                  <Ionicons name="key-outline" size={18} color={isDark ? '#94A3B8' : '#64748B'} style={{ marginRight: 8 }} />
                   <TextInput
-                    className="flex-1 text-base text-white text-center font-extrabold tracking-widest"
+                    style={[styles.input, isDark ? styles.textDark : styles.textLight, { letterSpacing: 4, fontSize: 18, fontWeight: '700' }]}
                     value={otp}
                     onChangeText={setOtp}
                     placeholder="12345"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
                     keyboardType="number-pad"
                     maxLength={6}
                     autoFocus
@@ -227,7 +232,7 @@ export const TelegramLoginModal: React.FC<TelegramLoginModalProps> = ({
                 </View>
 
                 <Pressable
-                  className={`bg-[#0084FF] h-12 rounded-xl flex-row items-center justify-center gap-2 mb-3 ${loading ? 'opacity-60' : 'active:opacity-80'}`}
+                  style={[styles.actionBtn, loading && styles.btnDisabled]}
                   onPress={handleVerifyOtp}
                   disabled={loading}
                 >
@@ -235,42 +240,42 @@ export const TelegramLoginModal: React.FC<TelegramLoginModalProps> = ({
                     <ActivityIndicator color="#FFFFFF" size="small" />
                   ) : (
                     <>
-                      <Text className="text-xs font-extrabold text-white uppercase tracking-wider">Verify & Authorize</Text>
-                      <Ionicons name="checkmark-circle-outline" size={16} color="#FFFFFF" />
+                      <Text style={styles.actionBtnText}>Verify & Authorize</Text>
+                      <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
                     </>
                   )}
                 </Pressable>
 
-                <Pressable className="items-center py-2" onPress={() => setStep('phone')}>
-                  <Text className="text-xs font-bold text-[#0084FF]">Change Phone Number</Text>
+                <Pressable style={styles.backBtn} onPress={() => setStep('phone')}>
+                  <Text style={[styles.backBtnText, { color: '#0284C7' }]}>Change Phone Number</Text>
                 </Pressable>
               </View>
             )}
 
             {step === 'password' && (
               <View>
-                <Text className="text-xs text-slate-400 leading-relaxed mb-4">
+                <Text style={[styles.infoText, isDark ? styles.subDark : styles.subLight]}>
                   Your Telegram account has Two-Step Verification enabled. Enter your cloud password to complete sign in.
                 </Text>
 
-                <Text className="text-[10px] font-bold text-slate-400 mb-1.5 tracking-wider uppercase">
+                <Text style={[styles.label, isDark ? styles.textDark : styles.textLight]}>
                   2FA Cloud Password
                 </Text>
-                <View className="flex-row items-center bg-[#111317] border border-[#262930] rounded-xl px-3.5 py-3 mb-4">
-                  <Ionicons name="lock-closed-outline" size={16} color="#94A3B8" style={{ marginRight: 8 }} />
+                <View style={[styles.inputBox, isDark ? styles.inputDark : styles.inputLight]}>
+                  <Ionicons name="lock-closed-outline" size={18} color={isDark ? '#94A3B8' : '#64748B'} style={{ marginRight: 8 }} />
                   <TextInput
-                    className="flex-1 text-sm text-white"
+                    style={[styles.input, isDark ? styles.textDark : styles.textLight]}
                     value={password}
                     onChangeText={setPassword}
                     placeholder="Enter 2FA password"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
                     secureTextEntry
                     autoFocus
                   />
                 </View>
 
                 <Pressable
-                  className={`bg-[#0084FF] h-12 rounded-xl flex-row items-center justify-center gap-2 ${loading ? 'opacity-60' : 'active:opacity-80'}`}
+                  style={[styles.actionBtn, loading && styles.btnDisabled]}
                   onPress={handleSubmitPassword}
                   disabled={loading}
                 >
@@ -278,8 +283,8 @@ export const TelegramLoginModal: React.FC<TelegramLoginModalProps> = ({
                     <ActivityIndicator color="#FFFFFF" size="small" />
                   ) : (
                     <>
-                      <Text className="text-xs font-extrabold text-white uppercase tracking-wider">Submit Password</Text>
-                      <Ionicons name="shield-checkmark-outline" size={16} color="#FFFFFF" />
+                      <Text style={styles.actionBtnText}>Submit Password</Text>
+                      <Ionicons name="shield-checkmark-outline" size={18} color="#FFFFFF" />
                     </>
                   )}
                 </Pressable>
@@ -287,14 +292,14 @@ export const TelegramLoginModal: React.FC<TelegramLoginModalProps> = ({
             )}
 
             {step === 'success' && (
-              <View className="items-center py-8">
-                <View className="w-16 h-16 rounded-full bg-emerald-500 items-center justify-center mb-3">
-                  <Ionicons name="checkmark-done" size={32} color="#FFFFFF" />
+              <View style={styles.successBox}>
+                <View style={styles.successIcon}>
+                  <Ionicons name="checkmark-done" size={36} color="#FFFFFF" />
                 </View>
-                <Text className="text-lg font-bold text-white mb-1.5">
+                <Text style={[styles.successTitle, isDark ? styles.textDark : styles.textLight]}>
                   Telegram Connected!
                 </Text>
-                <Text className="text-xs text-slate-400 text-center leading-relaxed px-4">
+                <Text style={[styles.successSubtitle, isDark ? styles.subDark : styles.subLight]}>
                   Your MTProto Telegram session is now active. Synced channels and autoforwarding are live.
                 </Text>
               </View>
@@ -305,3 +310,172 @@ export const TelegramLoginModal: React.FC<TelegramLoginModalProps> = ({
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    justifyContent: 'flex-end',
+  },
+  container: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '85%',
+    paddingTop: 20,
+    paddingHorizontal: 20,
+  },
+  containerLight: {
+    backgroundColor: '#FFFFFF',
+  },
+  containerDark: {
+    backgroundColor: '#121212',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(148, 163, 184, 0.15)',
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  iconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  subtitle: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  closeBtn: {
+    padding: 6,
+  },
+  textLight: {
+    color: '#0F172A',
+  },
+  textDark: {
+    color: '#F8FAFC',
+  },
+  subLight: {
+    color: '#64748B',
+  },
+  subDark: {
+    color: '#94A3B8',
+  },
+  body: {
+    paddingTop: 8,
+  },
+  infoText: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 18,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  inputBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 50,
+    marginBottom: 20,
+  },
+  inputLight: {
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+  },
+  inputDark: {
+    borderColor: '#334155',
+    backgroundColor: '#0F172A',
+  },
+  input: {
+    flex: 1,
+    fontSize: 15,
+  },
+  actionBtn: {
+    backgroundColor: '#0284C7',
+    borderRadius: 12,
+    height: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  btnDisabled: {
+    opacity: 0.6,
+  },
+  actionBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  backBtn: {
+    alignItems: 'center',
+    marginTop: 16,
+    padding: 8,
+  },
+  backBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 16,
+  },
+  errorBannerLight: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+  },
+  errorBannerDark: {
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 13,
+    flex: 1,
+  },
+  successBox: {
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  successIcon: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: '#10B981',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  successTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  successSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: 20,
+  },
+});

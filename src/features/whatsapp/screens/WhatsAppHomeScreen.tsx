@@ -9,7 +9,9 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
+  StyleSheet,
   Text,
+  useColorScheme,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -65,6 +67,8 @@ const WHATSAPP_TABS: ProductTabItem[] = [
 
 export const WhatsAppHomeScreen: React.FC = () => {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<WhatsAppTab>('home');
   const [showAccountSwitcher, setShowAccountSwitcher] = useState<boolean>(false);
@@ -118,6 +122,7 @@ export const WhatsAppHomeScreen: React.FC = () => {
   const connectedAccounts = accounts.filter((a) => a.status === 'connected');
   const activeAccount = connectedAccounts.find((a) => a.id === selectedAccountId) || connectedAccounts[0];
 
+  // Effective connection state based on selected connected account or global status
   const currentConnection = activeAccount
     ? {
         connected: true,
@@ -177,21 +182,28 @@ export const WhatsAppHomeScreen: React.FC = () => {
   ];
 
   return (
-    <View className="flex-1 bg-[#0B0D10]">
+    <View style={[styles.rootContainer, { backgroundColor: isDark ? '#000000' : '#F8F9FA' }]}>
       {activeTab === 'contacts' && <WhatsAppContactsScreen onBack={() => setActiveTab('home')} />}
       {activeTab === 'templates' && <WhatsAppTemplatesScreen onBack={() => setActiveTab('home')} />}
       {activeTab === 'broadcasts' && <WhatsAppBroadcastsScreen onBack={() => setActiveTab('home')} />}
 
       {activeTab === 'home' && (
-        <View className="flex-1">
-          {/* Header */}
+        <View style={styles.safeArea}>
+          {/* iOS Standard Header with Circular Back Button */}
           <View
-            className="flex-row justify-between items-center px-4 pb-3 border-b border-[#262930] bg-[#181A1F]"
-            style={{ paddingTop: Platform.OS === 'ios' ? Math.max(insets.top, 44) : 12 }}
+            style={[
+              styles.header,
+              { paddingTop: Platform.OS === 'ios' ? Math.max(insets.top, 44) : 8 },
+              isDark ? styles.headerDark : styles.headerLight,
+            ]}
           >
-            <View className="flex-row items-center flex-1">
+            <View style={styles.headerLeftRow}>
               <Pressable
-                className="w-10 h-10 rounded-full bg-[#111317] border border-[#262930] items-center justify-center mr-3 active:opacity-70"
+                style={({ pressed }) => [
+                  styles.backButton,
+                  isDark ? styles.backButtonDark : styles.backButtonLight,
+                  pressed && styles.backButtonPressed,
+                ]}
                 onPress={() => {
                   if (Platform.OS !== 'web') {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -209,11 +221,11 @@ export const WhatsAppHomeScreen: React.FC = () => {
                 <Ionicons
                   name="chevron-back"
                   size={20}
-                  color="#F8FAFC"
+                  color={isDark ? '#F8FAFC' : '#0F172A'}
                 />
               </Pressable>
 
-              <Text className="text-lg font-bold text-white tracking-tight">
+              <Text style={[styles.title, isDark ? styles.textLight : styles.textDark]}>
                 WhatsApp Business
               </Text>
             </View>
@@ -223,13 +235,13 @@ export const WhatsAppHomeScreen: React.FC = () => {
             <WhatsAppHomeSkeleton />
           ) : (
             <ScrollView
-              className="flex-1"
-              contentContainerClassName="px-4 pt-3 pb-32"
+              style={styles.container}
+              contentContainerStyle={styles.content}
               refreshControl={
                 <RefreshControl
                   refreshing={statusRefetching}
                   onRefresh={handleRefresh}
-                  tintColor="#0084FF"
+                  tintColor="#25d366"
                 />
               }
             >
@@ -245,8 +257,8 @@ export const WhatsAppHomeScreen: React.FC = () => {
               <UsageCard usage={usage} isConnected={isConnected} />
 
               {/* Metrics 2x2 Grid */}
-              <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5 px-1">Overview & Capabilities</Text>
-              <View className="flex-row flex-wrap gap-2.5 mb-3">
+              <Text style={[styles.sectionTitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>Overview & Capabilities</Text>
+              <View style={styles.grid}>
                 <WhatsAppMetricCard
                   label="Contacts"
                   value={totalContactsCount.toLocaleString()}
@@ -278,39 +290,46 @@ export const WhatsAppHomeScreen: React.FC = () => {
               </View>
 
               {/* Section Header: Product Navigation */}
-              <View className="my-2 px-1">
-                <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <View style={styles.sectionHeaderRow}>
+                <Text style={[styles.sectionTitle, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
                   Product Navigation
                 </Text>
               </View>
 
               {/* Quick Actions Navigation List */}
-              <View className="gap-2.5">
+              <View style={styles.actionsList}>
                 {navigationItems.map((item) => (
                   <Pressable
                     key={item.key}
-                    className="flex-row items-center bg-[#181A1F] border border-[#262930] rounded-2xl p-3.5 active:bg-[#262930]"
+                    style={({ pressed }) => [
+                      styles.actionCard,
+                      isDark ? styles.actionCardDark : styles.actionCardLight,
+                      pressed && styles.actionCardPressed,
+                    ]}
                     onPress={item.onPress}
                   >
-                    <View className="w-10 h-10 rounded-xl bg-[#111317] border border-[#262930] items-center justify-center mr-3.5">
+                    <View style={[styles.actionIcon, { backgroundColor: isDark ? '#2C2C2E' : '#F1F5F9' }]}>
                       <Ionicons name={item.icon as any} size={20} color={item.color} />
                     </View>
-                    <View className="flex-1">
-                      <Text className="text-sm font-bold text-white mb-0.5">
+                    <View style={styles.actionDetails}>
+                      <Text style={[styles.actionTitle, isDark ? styles.textLight : styles.textDark]}>
                         {item.title}
                       </Text>
-                      <Text className="text-xs text-slate-400 leading-tight">
+                      <Text style={[styles.actionSub, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
                         {item.subtitle}
                       </Text>
                     </View>
                     <Ionicons
                       name="chevron-forward"
-                      size={16}
-                      color="#64748B"
+                      size={17}
+                      color={isDark ? '#636366' : '#C7C7CC'}
                     />
                   </Pressable>
                 ))}
               </View>
+
+              {/* Bottom Spacing to avoid overlap with Floating Bottom Bar */}
+              <View style={{ height: 100 }} />
             </ScrollView>
           )}
         </View>
@@ -321,81 +340,81 @@ export const WhatsAppHomeScreen: React.FC = () => {
         items={WHATSAPP_TABS}
         activeKey={activeTab}
         onChangeTab={(tab) => handleSelectTab(tab as WhatsAppTab)}
-        accentColor="#0084FF"
+        accentColor="#0A84FF"
         moreMenuTitle="WhatsApp Business Suite"
       />
 
-      {/* Account Switcher Modal */}
+      {/* Account Switcher Modal (iOS Bottom Sheet) */}
       <Modal
         visible={showAccountSwitcher && connectedAccounts.length > 1}
         transparent
         animationType="fade"
         onRequestClose={() => setShowAccountSwitcher(false)}
       >
-        <View className="flex-1 bg-black/70 justify-end">
-          <View className="bg-[#181A1F] border-t border-[#262930] rounded-t-3xl p-5 pb-8">
-            <View className="flex-row justify-between items-start mb-4">
-              <View className="flex-1 mr-2">
-                <Text className="text-base font-bold text-white">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.switcherBox, isDark ? styles.switcherBoxDark : styles.switcherBoxLight]}>
+            <View style={styles.switcherHeader}>
+              <View>
+                <Text style={[styles.switcherTitle, isDark ? styles.textLight : styles.textDark]}>
                   WhatsApp Accounts
                 </Text>
-                <Text className="text-xs text-slate-400 mt-0.5">
+                <Text style={[styles.switcherSub, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
                   Select active business phone number for this workspace
                 </Text>
               </View>
               <Pressable
                 onPress={() => setShowAccountSwitcher(false)}
                 hitSlop={10}
-                className="w-8 h-8 rounded-full bg-[#262930] items-center justify-center"
               >
-                <Ionicons name="close" size={18} color="#94A3B8" />
+                <Ionicons name="close-circle" size={24} color={isDark ? '#636366' : '#C7C7CC'} />
               </Pressable>
             </View>
 
-            <ScrollView className="max-h-72" showsVerticalScrollIndicator={false}>
+            <ScrollView style={{ maxHeight: 300 }} showsVerticalScrollIndicator={false}>
               {connectedAccounts.map((acc) => {
                 const isSelected = activeAccount?.id === acc.id;
 
                 return (
                   <Pressable
                     key={acc.id}
-                    className={`flex-row items-center p-3 rounded-xl mb-2 border ${
-                      isSelected
-                        ? 'border-[#0084FF] bg-[#0084FF]/10'
-                        : 'border-[#262930] bg-[#111317] active:bg-[#262930]'
-                    }`}
+                    style={({ pressed }) => [
+                      styles.accountRow,
+                      isDark ? styles.accountRowDark : styles.accountRowLight,
+                      isSelected && (isDark ? styles.accountRowSelectedDark : styles.accountRowSelectedLight),
+                      pressed && { opacity: 0.75 },
+                    ]}
                     onPress={() => {
                       if (Platform.OS !== 'web') Haptics.selectionAsync();
                       setSelectedAccountId(acc.id);
                       setShowAccountSwitcher(false);
                     }}
                   >
-                    <View className="w-9 h-9 rounded-full bg-emerald-500/15 items-center justify-center mr-2.5">
+                    <View style={styles.accountAvatar}>
                       <Ionicons
                         name="logo-whatsapp"
-                        size={18}
+                        size={20}
                         color="#22C55E"
                       />
                     </View>
 
-                    <View className="flex-1">
-                      <Text className="text-xs font-bold text-white mb-0.5" numberOfLines={1}>
+                    <View style={styles.accountDetails}>
+                      <Text style={[styles.accountName, isDark ? styles.textLight : styles.textDark]} numberOfLines={1}>
                         {acc.name || 'WhatsApp Number'}
                       </Text>
-                      <View className="flex-row items-center gap-1">
-                        <Text className="text-[11px] text-slate-400">
+                      <View style={styles.accountPhoneRow}>
+                        <Text style={[styles.accountPhone, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
                           {acc.display_phone_number || 'No Phone Number'}
                         </Text>
-                        <Text className="text-[10px] text-slate-500">•</Text>
-                        <View className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                        <Text className="text-[10px] font-semibold text-emerald-400">
+                        <Text style={[styles.dotSeparator, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>•</Text>
+                        <View style={[styles.statusMiniDot, { backgroundColor: '#22C55E' }]} />
+                        <Text style={[styles.statusMiniText, { color: '#22C55E' }]}>
                           Connected
                         </Text>
                       </View>
                     </View>
 
                     {isSelected && (
-                      <Ionicons name="checkmark-circle" size={20} color="#0084FF" style={{ marginLeft: 8 }} />
+                      <Ionicons name="checkmark-circle" size={22} color="#007AFF" style={{ marginLeft: 8 }} />
                     )}
                   </Pressable>
                 );
@@ -407,3 +426,267 @@ export const WhatsAppHomeScreen: React.FC = () => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  rootContainer: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  headerDark: {
+    backgroundColor: '#000000',
+    borderBottomColor: '#2C2C2E',
+  },
+  headerLight: {
+    backgroundColor: '#FFFFFF',
+    borderBottomColor: '#E5E7EB',
+  },
+  headerLeftRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  accountPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5.5,
+    borderRadius: 14,
+    maxWidth: 150,
+  },
+  accountPillDark: {
+    backgroundColor: '#1C1C1E',
+  },
+  accountPillLight: {
+    backgroundColor: '#F2F2F7',
+  },
+  accountPillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    flexShrink: 1,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    borderWidth: 1,
+  },
+  backButtonLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  backButtonDark: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  backButtonPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.94 }],
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: -0.4,
+  },
+  container: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
+  sectionHeaderRow: {
+    marginBottom: 8,
+    marginTop: 8,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: -0.2,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 12,
+  },
+  actionsList: {
+    gap: 10,
+  },
+  actionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+  },
+  actionCardDark: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
+  },
+  actionCardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  actionCardPressed: {
+    opacity: 0.75,
+    transform: [{ scale: 0.99 }],
+  },
+  actionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  actionDetails: {
+    flex: 1,
+  },
+  actionTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: -0.2,
+    marginBottom: 2,
+  },
+  actionSub: {
+    fontSize: 12,
+    fontWeight: '400',
+    lineHeight: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  switcherBox: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 32,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  switcherBoxDark: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
+  },
+  switcherBoxLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E5EA',
+  },
+  switcherHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  switcherTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  switcherSub: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  accountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  accountRowDark: {
+    backgroundColor: '#2C2C2E',
+    borderColor: '#3A3A3C',
+  },
+  accountRowLight: {
+    backgroundColor: '#F2F2F7',
+    borderColor: '#E5E5EA',
+  },
+  accountRowSelectedDark: {
+    borderColor: '#0A84FF',
+    backgroundColor: 'rgba(10, 132, 255, 0.12)',
+  },
+  accountRowSelectedLight: {
+    borderColor: '#007AFF',
+    backgroundColor: 'rgba(0, 122, 255, 0.08)',
+  },
+  accountAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(34, 197, 94, 0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  accountDetails: {
+    flex: 1,
+  },
+  accountName: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  accountPhoneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  accountPhone: {
+    fontSize: 12,
+  },
+  dotSeparator: {
+    fontSize: 10,
+  },
+  statusMiniDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  statusMiniText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  textLight: {
+    color: '#FFFFFF',
+  },
+  textDark: {
+    color: '#000000',
+  },
+  textSecondaryDark: {
+    color: '#8E8E93',
+  },
+  textSecondaryLight: {
+    color: '#6B7280',
+  },
+});
+

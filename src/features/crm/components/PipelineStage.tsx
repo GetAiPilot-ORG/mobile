@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { PipelineStage as StageType } from '../types';
 
 interface PipelineStageProps {
@@ -19,22 +19,64 @@ export const PipelineStage: React.FC<PipelineStageProps> = ({
 
   return (
     <Pressable
-      className={`rounded-xl p-3 min-w-[125px] mr-2 border ${
-        isSelected
-          ? 'bg-[#0084FF]/20 border-[#0084FF]'
-          : 'bg-[#181A1F] border-[#262930] active:bg-[#262930]'
-      }`}
+      style={[styles.container, isSelected && styles.selected]}
       onPress={onPress}
     >
-      <View className="flex-row justify-between items-center mb-1">
-        <Text className={`text-xs font-bold ${isSelected ? 'text-[#0084FF]' : 'text-slate-400'}`}>{name}</Text>
-        <View className="bg-white/10 rounded px-1.5 py-0.5">
-          <Text className="text-[10px] font-bold text-white">{count}</Text>
+      <View style={styles.topRow}>
+        <Text style={[styles.name, isSelected && styles.selectedText]}>{name}</Text>
+        <View style={styles.countBadge}>
+          <Text style={styles.countText}>{count}</Text>
         </View>
       </View>
-      <Text className="text-sm font-extrabold text-white">
+      <Text style={styles.totalValue}>
         ₹{val >= 100000 ? `${(val / 100000).toFixed(1)}L` : val.toLocaleString()}
       </Text>
     </Pressable>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: '#0f172a',
+    borderRadius: 12,
+    padding: 12,
+    minWidth: 125,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#1e293b',
+  },
+  selected: {
+    backgroundColor: '#1e1b4b',
+    borderColor: '#6366f1',
+  },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  name: {
+    color: '#94a3b8',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  selectedText: {
+    color: '#818cf8',
+  },
+  countBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  countText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  totalValue: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+});
