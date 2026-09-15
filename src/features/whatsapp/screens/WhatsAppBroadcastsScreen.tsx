@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import {
   FlatList,
@@ -10,14 +12,12 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 
+import { WhatsAppBroadcastsSkeleton } from '../../../components/skeletonScreen';
 import { BroadcastCard } from '../components';
 import { useWhatsAppBroadcasts } from '../hooks/useWhatsAppBroadcasts';
 import { WhatsAppBroadcast } from '../types';
 import { WhatsAppBroadcastDetailScreen } from './WhatsAppBroadcastDetailScreen';
-import { WhatsAppBroadcastsSkeleton } from '../../../components/skeletonScreen';
 
 interface WhatsAppBroadcastsScreenProps {
   onBack?: () => void;
@@ -127,10 +127,7 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
 
         {/* Broadcasts List */}
         {isLoading && !data ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={isDark ? '#F8FAFC' : '#0A84FF'} />
-            <Text style={[styles.loadingText, { color: isDark ? '#94A3B8' : '#64748B' }]}>Loading broadcasts...</Text>
-          </View>
+
           <WhatsAppBroadcastsSkeleton />
         ) : (
           <FlatList
