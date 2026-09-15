@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   RefreshControl,
@@ -17,6 +16,7 @@ import { useRouter } from 'expo-router';
 
 import { TemplateCard } from '../components';
 import { useWhatsAppTemplates } from '../hooks/useWhatsAppTemplates';
+import { WhatsAppTemplatesSkeleton } from '../../../components/skeletonScreen';
 
 interface WhatsAppTemplatesScreenProps {
   onBack?: () => void;
@@ -229,12 +229,7 @@ export const WhatsAppTemplatesScreen: React.FC<WhatsAppTemplatesScreenProps> = (
 
         {/* 3. Templates FlatList / Grid */}
         {isLoading && !templates ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#25d366" />
-            <Text style={[styles.loadingText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-              Syncing Meta WhatsApp templates...
-            </Text>
-          </View>
+          <WhatsAppTemplatesSkeleton />
         ) : (
           <FlatList
             data={filteredTemplates}

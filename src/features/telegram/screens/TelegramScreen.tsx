@@ -22,6 +22,7 @@ import {
   ProductTabItem,
 } from "../../../components/ProductFloatingBottomBar";
 import { telegramApi } from "../api/telegramApi";
+import { TelegramSkeleton } from "../../../components/skeletonScreen";
 import {
   AutoApproveModal,
   AutoforwardModal,
@@ -33,8 +34,10 @@ import {
   ReportBotModal,
   SubManagerModal,
   TelegramLoginModal,
-  DashboardAnalyticsCharts,
+  ToolCard,
+  TrackerModal,
 } from '../components';
+import { TelegramToolKey } from "../types";
 
 type TelegramCategory = 'all' | 'automation' | 'monetization' | 'growth';
 type TelegramTab =
@@ -372,11 +375,7 @@ export const TelegramScreen: React.FC = () => {
         }
       >
         {isLoading ? (
-          <ActivityIndicator
-            size="large"
-            color="#0284C7"
-            style={{ marginTop: 40 }}
-          />
+          <TelegramSkeleton />
         ) : (
           <>
             {/* TAB 0: GAP TRACKER & BOTS */}

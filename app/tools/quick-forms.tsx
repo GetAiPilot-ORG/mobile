@@ -16,6 +16,7 @@ import { openAuthenticatedTemplate } from "@/lib/template-deep-link";
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
 import { supabase } from "../../src/lib/supabase";
+import { QuickFormsSkeleton } from "../../src/components/skeletonScreen";
 
 interface QuickForm {
   id: string;
@@ -266,14 +267,7 @@ export default function SimpleQuickFormsScreen() {
     return (
       <AppScreen safeArea={false}>
         <AppTopBar title="QuickForms" subtitle="Manage your forms" />
-
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0A84FF" />
-
-          <Text style={[styles.loadingText, isDark && styles.loadingTextDark]}>
-            Loading your forms...
-          </Text>
-        </View>
+        <QuickFormsSkeleton />
       </AppScreen>
     );
   }

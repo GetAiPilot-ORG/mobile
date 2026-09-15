@@ -28,6 +28,7 @@ import {
   ProductFloatingBottomBar,
   ProductTabItem,
 } from '../../../components/ProductFloatingBottomBar';
+import { WhatsAppHomeSkeleton } from '../../../components/skeletonScreen';
 
 type WhatsAppTab = 'home' | 'broadcasts' | 'contacts' | 'templates';
 
@@ -115,25 +116,28 @@ export const WhatsAppHomeScreen: React.FC = () => {
             </Pressable>
           </View>
 
-          <ScrollView
-            style={styles.container}
-            contentContainerStyle={styles.content}
-            refreshControl={
-              <RefreshControl
-                refreshing={statusRefetching}
-                onRefresh={handleRefresh}
-                tintColor="#25d366"
-              />
-            }
-          >
-            {/* Connection Status Card */}
-            <ConnectionStatusCard connection={status} isLoading={statusLoading} />
+          {statusLoading && !status ? (
+            <WhatsAppHomeSkeleton />
+          ) : (
+            <ScrollView
+              style={styles.container}
+              contentContainerStyle={styles.content}
+              refreshControl={
+                <RefreshControl
+                  refreshing={statusRefetching}
+                  onRefresh={handleRefresh}
+                  tintColor="#25d366"
+                />
+              }
+            >
+              {/* Connection Status Card */}
+              <ConnectionStatusCard connection={status} isLoading={statusLoading} />
 
-            {/* Cloud Wallet & Usage Card */}
-            <UsageCard usage={usage} />
+              {/* Cloud Wallet & Usage Card */}
+              <UsageCard usage={usage} />
 
-            {/* Metrics 2x2 Grid */}
-            <Text style={[styles.sectionTitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>Overview & Capabilities</Text>
+              {/* Metrics 2x2 Grid */}
+              <Text style={[styles.sectionTitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>Overview & Capabilities</Text>
             <View style={styles.grid}>
               <WhatsAppMetricCard
                 label="Contacts"
@@ -209,6 +213,7 @@ export const WhatsAppHomeScreen: React.FC = () => {
               </Pressable>
             </View>
           </ScrollView>
+        )}
         </SafeAreaView>
       )}
 

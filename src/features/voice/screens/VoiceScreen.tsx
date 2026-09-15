@@ -18,6 +18,7 @@ import {
   ProductFloatingBottomBar,
   ProductTabItem,
 } from '../../../components/ProductFloatingBottomBar';
+import { VoiceCallsSkeleton } from '../../../components/skeletonScreen';
 import { apiClient } from '../../../core/api/client';
 import {
   CallDetailsModal,
@@ -329,7 +330,7 @@ export const VoiceScreen: React.FC = () => {
             </View>
 
             {isCallsLoading ? (
-              <ActivityIndicator size="large" color="#8B5CF6" style={{ marginTop: 24 }} />
+              <VoiceCallsSkeleton />
             ) : (
               <View style={[styles.listCard, isDark ? styles.cardDark : styles.cardLight]}>
                 {calls.map((call, idx, arr) => (

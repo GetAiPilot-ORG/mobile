@@ -1,9 +1,10 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useWhatsAppBroadcasts } from '../hooks/useWhatsAppBroadcasts';
 import { WhatsAppBroadcast } from '../types';
+import { WhatsAppHomeSkeleton } from '../../../components/skeletonScreen';
 
 interface WhatsAppBroadcastDetailScreenProps {
   broadcast?: WhatsAppBroadcast;
@@ -27,12 +28,7 @@ export const WhatsAppBroadcastDetailScreen: React.FC<WhatsAppBroadcastDetailScre
   if (isLoading && !broadcast) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#22c55e" />
-          <Text style={[styles.loadingText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-            Loading broadcast analytics...
-          </Text>
-        </View>
+        <WhatsAppHomeSkeleton />
       </SafeAreaView>
     );
   }

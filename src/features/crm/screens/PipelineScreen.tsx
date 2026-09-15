@@ -17,6 +17,7 @@ import { DealCard } from '../components/DealCard';
 import { CreateDealModal } from '../components/CreateDealModal';
 import { StageSelectorSheet } from '../components/StageSelectorSheet';
 import { CRMDeal, DealStage } from '../types';
+import { CrmPipelineSkeleton } from '../../../components/skeletonScreen';
 
 const STAGE_CONFIGS: Array<{ key: string; label: string; color: string }> = [
   { key: 'all', label: 'All Stages', color: '#6B7280' },
@@ -113,10 +114,7 @@ export const PipelineScreen: React.FC = () => {
 
       {/* Deals List */}
       {isLoading && !deals ? (
-        <View style={styles.loaderBox}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={[styles.loaderText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Loading deals...</Text>
-        </View>
+        <CrmPipelineSkeleton />
       ) : deals.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="briefcase-outline" size={48} color={isDark ? '#4B5563' : '#CBD5E1'} />

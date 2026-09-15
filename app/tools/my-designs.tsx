@@ -14,6 +14,7 @@ import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
 import { supabase } from "../../src/lib/supabase";
 import { colors } from "../../src/theme/colors";
+import { TemplatesListSkeleton } from "../../src/components/skeletonScreen";
 
 type FormData = {
   imageUrl?: string;
@@ -194,11 +195,7 @@ export default function MyDesignScreen() {
       />
 
       {loading ? (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-
-          <Text style={styles.loadingText}>Loading your templates...</Text>
-        </View>
+        <TemplatesListSkeleton />
       ) : (
         <FlatList
           data={submissions}

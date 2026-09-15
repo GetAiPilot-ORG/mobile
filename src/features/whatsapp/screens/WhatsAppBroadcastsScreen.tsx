@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   RefreshControl,
@@ -15,6 +14,7 @@ import { BroadcastCard } from '../components';
 import { useWhatsAppBroadcasts } from '../hooks/useWhatsAppBroadcasts';
 import { WhatsAppBroadcast } from '../types';
 import { WhatsAppBroadcastDetailScreen } from './WhatsAppBroadcastDetailScreen';
+import { WhatsAppBroadcastsSkeleton } from '../../../components/skeletonScreen';
 
 interface WhatsAppBroadcastsScreenProps {
   onBack?: () => void;
@@ -94,10 +94,7 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
 
         {/* Broadcasts List */}
         {isLoading && !data ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#25d366" />
-            <Text style={[styles.loadingText, { color: isDark ? '#64748b' : '#94a3b8' }]}>Loading broadcasts...</Text>
-          </View>
+          <WhatsAppBroadcastsSkeleton />
         ) : (
           <FlatList
             data={broadcasts}
