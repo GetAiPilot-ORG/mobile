@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   Modal,
   Platform,
@@ -210,13 +211,15 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
 
         {/* Contacts List */}
         {isLoading && !data ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#25D366" />
-            <Text style={[styles.loadingText, { color: isDark ? '#64748B' : '#94A3B8' }]}>
-              Loading contacts...
-            </Text>
-          </View>
-          <CrmListSkeleton />
+          <>
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#25D366" />
+              <Text style={[styles.loadingText, { color: isDark ? '#64748B' : '#94A3B8' }]}>
+                Loading contacts...
+              </Text>
+            </View>
+            <CrmListSkeleton />
+          </>
         ) : (
           <FlatList
             style={styles.contactsFlatList}

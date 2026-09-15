@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   Platform,
   Pressable,
@@ -283,13 +284,15 @@ export const WhatsAppTemplatesScreen: React.FC<WhatsAppTemplatesScreenProps> = (
 
         {/* Templates FlatList / Grid */}
         {isLoading && !templates ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#25D366" />
-            <Text style={[styles.loadingText, { color: isDark ? '#94A3B8' : '#64748B' }]}>
-              Syncing Meta WhatsApp templates...
-            </Text>
-          </View>
-          <WhatsAppTemplatesSkeleton />
+          <>
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#25D366" />
+              <Text style={[styles.loadingText, { color: isDark ? '#94A3B8' : '#64748B' }]}>
+                Syncing Meta WhatsApp templates...
+              </Text>
+            </View>
+            <WhatsAppTemplatesSkeleton />
+          </>
         ) : (
           <FlatList
             data={filteredTemplates}

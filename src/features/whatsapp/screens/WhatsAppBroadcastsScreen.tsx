@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   Platform,
   Pressable,
@@ -127,11 +128,13 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
 
         {/* Broadcasts List */}
         {isLoading && !data ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={isDark ? '#F8FAFC' : '#0A84FF'} />
-            <Text style={[styles.loadingText, { color: isDark ? '#94A3B8' : '#64748B' }]}>Loading broadcasts...</Text>
-          </View>
-          <WhatsAppBroadcastsSkeleton />
+          <>
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={isDark ? '#F8FAFC' : '#0A84FF'} />
+              <Text style={[styles.loadingText, { color: isDark ? '#94A3B8' : '#64748B' }]}>Loading broadcasts...</Text>
+            </View>
+            <WhatsAppBroadcastsSkeleton />
+          </>
         ) : (
           <FlatList
             data={broadcasts}

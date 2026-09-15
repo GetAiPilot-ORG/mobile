@@ -33,6 +33,10 @@ export interface ProductFloatingBottomBarProps {
   onChangeTab: (key: string) => void;
   accentColor?: string;
   moreMenuTitle?: string;
+  moreTabLabel?: string;
+  moreTabActiveIcon?: IoniconsName;
+  moreTabInactiveIcon?: IoniconsName;
+  pinPrimaryTabs?: boolean;
 }
 
 export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> = ({
@@ -41,6 +45,10 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
   onChangeTab,
   accentColor = '#0A84FF',
   moreMenuTitle = 'More Options',
+  moreTabLabel = 'More',
+  moreTabActiveIcon = 'apps',
+  moreTabInactiveIcon = 'apps-outline',
+  pinPrimaryTabs = false,
 }) => {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
@@ -62,9 +70,9 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
 
   const moreTabItem = {
     key: '__more__',
-    label: 'More',
-    activeIcon: 'grid' as IoniconsName,
-    inactiveIcon: 'grid-outline' as IoniconsName,
+    label: moreTabLabel,
+    activeIcon: moreTabActiveIcon as IoniconsName,
+    inactiveIcon: moreTabInactiveIcon as IoniconsName,
     description: 'All additional tools and services',
   };
 
@@ -73,7 +81,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
     const activeItem = items.find((i) => i.key === activeKey);
     const isPrimaryActive = defaultPrimary.some((i) => i.key === activeKey);
 
-    if (!isPrimaryActive && activeItem) {
+    if (!pinPrimaryTabs && !isPrimaryActive && activeItem) {
       // Keep top 3 anchors (e.g. Overview, AutoForward, Tracker), place activeItem at 4th slot
       visibleItems = [...items.slice(0, 3), activeItem, moreTabItem];
       // All remaining items go into the More menu
@@ -94,11 +102,12 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
   );
   const safeActiveIndex = activeIndex >= 0 ? activeIndex : 0;
 
-  // Layout measurement for mathematical symmetry
+  // Layout measurement — pill must stay strictly inside its tab slot
   const paddingHorizontal = 6;
   const numTabs = visibleItems.length || 4;
   const availableWidth = Math.max(0, containerWidth - paddingHorizontal * 2);
   const tabWidth = numTabs > 0 ? availableWidth / numTabs : 0;
+  const pillInset = 4; // inset from each side of the tab slot
 
   // Spring animation for smooth gliding active pill
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -157,8 +166,8 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
               style={[
                 styles.slidingIndicator,
                 {
-                  width: tabWidth - 4,
-                  left: paddingHorizontal + 2,
+                  width: tabWidth - pillInset * 2,
+                  left: paddingHorizontal + pillInset,
                   transform: [{ translateX: slideAnim }],
                 },
               ]}
@@ -189,7 +198,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
                 onPress={() => handleTabPress(item)}
                 style={styles.tabItem}
               >
-                <View style={styles.tabContent}>
+                <View style={styles.tabContentAll}>
                   <View style={styles.iconWrapper}>
                     <Ionicons
                       name={iconName}
@@ -210,8 +219,10 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
                       isFocused
                         ? [styles.tabLabelActive, { color: activeColor }]
                         : [styles.tabLabelInactive, { color: inactiveColor }],
+                      { maxWidth: tabWidth > 0 ? tabWidth - 10 : 55 },
                     ]}
                     numberOfLines={1}
+                    ellipsizeMode="tail"
                   >
                     {item.label}
                   </Text>
@@ -324,8 +335,8 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
 const styles = StyleSheet.create({
   floatingWrapper: {
     position: 'absolute',
-    left: 20,
-    right: 20,
+    left: 10,
+    right: 10,
     alignItems: 'center',
     zIndex: 9999,
   },
@@ -333,62 +344,79 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    maxWidth: 390,
-    height: 62,
-    borderRadius: 31,
+    maxWidth: 400,
+    height: 58,
+    borderRadius: 29,
     paddingHorizontal: 6,
     borderWidth: 1,
     position: 'relative',
+    overflow: 'hidden',
   },
   tabBarContainerLight: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderColor: 'rgba(0, 0, 0, 0.08)',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 18,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 8,
   },
   tabBarContainerDark: {
-    backgroundColor: '#161922',
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(28, 28, 30, 0.95)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.45,
-    shadowRadius: 22,
-    elevation: 12,
+    shadowRadius: 20,
+    elevation: 10,
   },
   slidingIndicator: {
     position: 'absolute',
-    top: 5,
-    bottom: 5,
+    top: 6,
+    bottom: 6,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1,
+    zIndex: 0,
   },
   indicatorPillDark: {
     width: '100%',
     height: '100%',
-    borderRadius: 26,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 24,
   },
   indicatorPillLight: {
     width: '100%',
     height: '100%',
-    borderRadius: 26,
-    backgroundColor: 'rgba(0, 0, 0, 0.06)',
+    borderRadius: 24,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     height: '100%',
-    zIndex: 2,
+    zIndex: 1,
+  },
+  tabContentAll: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    flexShrink: 1,
+    width: '100%',
+  },
+  tabContentActive: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+    flexShrink: 1,
+    maxWidth: '100%',
+  },
+  tabContentInactive: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabContent: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 2,
+    gap: 3,
   },
   iconWrapper: {
     position: 'relative',
@@ -420,8 +448,9 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   tabLabel: {
-    fontSize: 11,
+    fontSize: 10.5,
     letterSpacing: -0.2,
+    textAlign: 'center',
   },
   tabLabelInactive: {
     fontWeight: '500',

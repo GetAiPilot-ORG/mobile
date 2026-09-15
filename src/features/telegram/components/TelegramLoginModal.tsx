@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   containerDark: {
-    backgroundColor: '#161B26',
+    backgroundColor: '#121212',
   },
   header: {
     flexDirection: 'row',

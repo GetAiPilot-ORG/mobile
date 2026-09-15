@@ -291,7 +291,7 @@ export const WhatsAppHomeScreen: React.FC = () => {
             </View>
           </ScrollView>
         )}
-        </SafeAreaView>
+        </View>
       )}
 
       {/* Floating Home-Style Product Bottom Navigation Bar */}

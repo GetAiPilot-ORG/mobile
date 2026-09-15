@@ -20,12 +20,9 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 
 import { telegramApi } from '../api/telegramApi';
-import { ReportBotBrandProfile } from '../types';
+import { ReportBotBrandProfile, TelegramToolKey } from '../types';
 
-interface ReportBotModalProps {
-  visible: boolean;
-  onClose: () => void;
-}
+interface Props { onOpenModal: (key: TelegramToolKey) => void; }
 
 type ReportBotTab = 'profile' | 'channels' | 'archive';
 
@@ -56,7 +53,7 @@ const LOGO_PRESETS = [
   },
 ];
 
-export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose }) => {
+export const ReportBotScreen: React.FC<Props> = ({ onOpenModal }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const queryClient = useQueryClient();
@@ -86,7 +83,7 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
   const { data: dashboard, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['telegram_report_bot_dashboard'],
     queryFn: telegramApi.getReportBotDashboard,
-    enabled: visible,
+    enabled: true,
   });
 
   useEffect(() => {
@@ -242,7 +239,7 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
   };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <View style={{ flex: 1, paddingBottom: 110 }}>
       <View style={[styles.container, isDark ? styles.containerDark : styles.containerLight]}>
         {/* Top Header */}
         <View style={[styles.header, isDark ? styles.borderDark : styles.borderLight]}>
@@ -252,9 +249,7 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
               Convert Telegram trading calls into branded SEBI research PDFs. Complete the bot, channel, and brand setup before posting live calls.
             </Text>
           </View>
-          <Pressable style={[styles.closeBtn, isDark ? styles.closeBtnDark : styles.closeBtnLight]} onPress={onClose}>
-            <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
-          </Pressable>
+          
         </View>
 
         {/* Action Header Buttons: Start Bot & Refresh Status */}
@@ -988,7 +983,7 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
           </View>
         </Modal>
       </View>
-    </Modal>
+    </View>
   );
 };
 
