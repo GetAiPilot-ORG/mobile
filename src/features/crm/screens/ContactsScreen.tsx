@@ -19,9 +19,10 @@ import { CrmListSkeleton } from '../../../components/skeletonScreen';
 
 interface ContactsScreenProps {
   onSelectContact: (contactId: string) => void;
+  onBack?: () => void;
 }
 
-export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onSelectContact }) => {
+export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onSelectContact, onBack }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -39,9 +40,20 @@ export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onSelectContact 
     <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>All Contacts</Text>
-          <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Complete customer and partner phonebook</Text>
+        <View style={styles.headerLeft}>
+          {onBack ? (
+            <Pressable
+              style={[styles.backBtn, { backgroundColor: isDark ? '#1E2028' : '#F1F5F9' }]}
+              onPress={onBack}
+              hitSlop={8}
+            >
+              <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+            </Pressable>
+          ) : null}
+          <View>
+            <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>All Contacts</Text>
+            <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Complete customer and partner phonebook</Text>
+          </View>
         </View>
 
         <Pressable style={styles.addBtn} onPress={() => setShowAddModal(true)} hitSlop={8}>
@@ -121,6 +133,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  backBtn: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: '#1E2028',
   },
   title: {
     fontSize: 20,

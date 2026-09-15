@@ -7,9 +7,10 @@ import { useCrmDashboard } from '../hooks/useCrmDashboard';
 
 interface CRMMoreScreenProps {
   onSelectSection: (section: 'contacts' | 'activities') => void;
+  onBack?: () => void;
 }
 
-export const CRMMoreScreen: React.FC<CRMMoreScreenProps> = ({ onSelectSection }) => {
+export const CRMMoreScreen: React.FC<CRMMoreScreenProps> = ({ onSelectSection, onBack }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -21,8 +22,21 @@ export const CRMMoreScreen: React.FC<CRMMoreScreenProps> = ({ onSelectSection })
       <ScrollView style={styles.scroll} contentContainerStyle={styles.contentContainer}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>More CRM Modules</Text>
-          <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Team directory, contacts & touchpoint analytics</Text>
+          <View style={styles.headerLeft}>
+            {onBack ? (
+              <Pressable
+                style={[styles.backBtn, { backgroundColor: isDark ? '#1E2028' : '#F1F5F9' }]}
+                onPress={onBack}
+                hitSlop={8}
+              >
+                <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+              </Pressable>
+            ) : null}
+            <View>
+              <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>More CRM Modules</Text>
+              <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Team directory, contacts & touchpoint analytics</Text>
+            </View>
+          </View>
         </View>
 
         {/* Feature Navigation Grid */}
@@ -118,6 +132,16 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingVertical: 14,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  backBtn: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: '#1E2028',
   },
   title: {
     fontSize: 20,

@@ -7,7 +7,13 @@ export default function CRMLeadsRoute() {
   return (
     <LeadListScreen
       onSelectLead={(id) => router.push(`/products/crm/leads/${id}` as any)}
-      onBack={() => router.back()}
+      onBack={() => {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/products/crm');
+        }
+      }}
     />
   );
 }

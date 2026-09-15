@@ -29,7 +29,11 @@ const STAGE_CONFIGS: Array<{ key: string; label: string; color: string }> = [
   { key: 'closed_lost', label: 'Closed Lost', color: '#EF4444' },
 ];
 
-export const PipelineScreen: React.FC = () => {
+interface PipelineScreenProps {
+  onBack?: () => void;
+}
+
+export const PipelineScreen: React.FC<PipelineScreenProps> = ({ onBack }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -54,9 +58,20 @@ export const PipelineScreen: React.FC = () => {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Pipeline & Deals</Text>
-          <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Track revenue, stages & win rates</Text>
+        <View style={styles.headerLeft}>
+          {onBack ? (
+            <Pressable
+              style={[styles.backBtn, { backgroundColor: isDark ? '#1E2028' : '#F1F5F9' }]}
+              onPress={onBack}
+              hitSlop={8}
+            >
+              <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+            </Pressable>
+          ) : null}
+          <View>
+            <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Pipeline & Deals</Text>
+            <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Track revenue, stages & win rates</Text>
+          </View>
         </View>
 
         <Pressable
@@ -189,6 +204,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  backBtn: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: '#1E2028',
   },
   title: {
     color: '#FFFFFF',

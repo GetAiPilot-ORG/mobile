@@ -1,6 +1,17 @@
-import React from 'react';
+import { useRouter } from 'expo-router';
 import { WhatsAppBroadcastsScreen } from '../../../../src/features/whatsapp/screens/WhatsAppBroadcastsScreen';
 
 export default function WhatsAppBroadcastsRoute() {
-  return <WhatsAppBroadcastsScreen />;
+  const router = useRouter();
+  return (
+    <WhatsAppBroadcastsScreen
+      onBack={() => {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/products/whatsapp');
+        }
+      }}
+    />
+  );
 }
