@@ -3,6 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+  Modal,
   Platform,
   Pressable,
   RefreshControl,
@@ -24,6 +25,7 @@ import {
   UsageCard,
   WhatsAppMetricCard,
 } from '../components';
+import { useWhatsAppAccounts } from '../hooks/useWhatsAppAccounts';
 import { useWhatsAppBroadcasts } from '../hooks/useWhatsAppBroadcasts';
 import { useWhatsAppContacts } from '../hooks/useWhatsAppContacts';
 import { useWhatsAppStatus } from '../hooks/useWhatsAppStatus';
@@ -68,6 +70,8 @@ export const WhatsAppHomeScreen: React.FC = () => {
   const isDark = colorScheme === 'dark';
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<WhatsAppTab>('home');
+  const [showAccountSwitcher, setShowAccountSwitcher] = useState<boolean>(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
 
   const {
     data: status,
@@ -75,6 +79,7 @@ export const WhatsAppHomeScreen: React.FC = () => {
     refetch: refetchStatus,
     isRefetching: statusRefetching,
   } = useWhatsAppStatus();
+  const { data: accountsData, refetch: refetchAccounts } = useWhatsAppAccounts();
   const { data: contactsData, refetch: refetchContacts } = useWhatsAppContacts({ limit: 5 });
   const { data: templates, refetch: refetchTemplates } = useWhatsAppTemplates('APPROVED');
   const { data: broadcastsData, refetch: refetchBroadcasts } = useWhatsAppBroadcasts({ limit: 3 });
@@ -86,6 +91,7 @@ export const WhatsAppHomeScreen: React.FC = () => {
     }
     await Promise.all([
       refetchStatus(),
+      refetchAccounts(),
       refetchContacts(),
       refetchTemplates(),
       refetchBroadcasts(),
@@ -93,13 +99,31 @@ export const WhatsAppHomeScreen: React.FC = () => {
     ]);
   };
 
-  const approvedTemplatesCount = templates?.length ?? 41;
-  const totalContactsCount = contactsData?.total_count ?? 232;
-  const totalBroadcastsCount = broadcastsData?.total_count ?? 73;
+  const accounts = accountsData || [];
+  const connectedAccounts = accounts.filter((a) => a.status === 'connected');
+  const activeAccount = connectedAccounts.find((a) => a.id === selectedAccountId) || connectedAccounts[0];
+
+  // Effective connection state based on selected connected account or global status
+  const currentConnection = activeAccount
+    ? {
+        connected: true,
+        status: 'connected',
+        phone_number: activeAccount.display_phone_number,
+        display_name: activeAccount.name,
+        quality_rating: activeAccount.quality_rating,
+        messaging_limit: activeAccount.messaging_limit,
+      }
+    : (status?.connected ? status : undefined);
+
+  const isConnected = Boolean(currentConnection?.connected && currentConnection?.phone_number);
+
+  const approvedTemplatesCount = templates?.length ?? 0;
+  const totalContactsCount = contactsData?.total_count ?? (contactsData?.contacts?.length ?? 0);
+  const totalBroadcastsCount = broadcastsData?.total_count ?? (broadcastsData?.broadcasts?.length ?? 0);
   const deliveryRate =
     usage && usage.messages_sent > 0
       ? `${Math.min(100, Math.round((usage.messages_delivered / usage.messages_sent) * 1000) / 10)}%`
-      : '58.6%';
+      : '0%';
 
   const handleSelectTab = (tab: WhatsAppTab) => {
     if (Platform.OS !== 'web') {
@@ -107,6 +131,36 @@ export const WhatsAppHomeScreen: React.FC = () => {
     }
     setActiveTab(tab);
   };
+
+  const navigationItems = [
+    {
+      key: 'contacts',
+      title: 'Audience & Contacts',
+      subtitle: 'View contacts, segment tags & link CRM leads',
+      icon: 'people',
+      color: '#A855F7',
+      badge: totalContactsCount > 0 ? `${totalContactsCount}` : undefined,
+      onPress: () => handleSelectTab('contacts'),
+    },
+    {
+      key: 'templates',
+      title: 'Meta Templates',
+      subtitle: 'Approved marketing, utility & OTP message templates',
+      icon: 'document-text',
+      color: '#3B82F6',
+      badge: approvedTemplatesCount > 0 ? `${approvedTemplatesCount}` : undefined,
+      onPress: () => handleSelectTab('templates'),
+    },
+    {
+      key: 'broadcasts',
+      title: 'Broadcast Campaigns',
+      subtitle: 'Launch new bulk sends & view delivery funnels',
+      icon: 'megaphone',
+      color: '#F43F5E',
+      badge: totalBroadcastsCount > 0 ? `${totalBroadcastsCount}` : undefined,
+      onPress: () => handleSelectTab('broadcasts'),
+    },
+  ];
 
   return (
     <View style={[styles.rootContainer, { backgroundColor: isDark ? '#000000' : '#F8F9FA' }]}>
@@ -120,7 +174,7 @@ export const WhatsAppHomeScreen: React.FC = () => {
           <View
             style={[
               styles.header,
-              { paddingTop: Math.max(insets.top, 12) },
+              { paddingTop: Platform.OS === 'ios' ? Math.max(insets.top, 44) : 8 },
               isDark ? styles.headerDark : styles.headerLight,
             ]}
           >
@@ -173,10 +227,15 @@ export const WhatsAppHomeScreen: React.FC = () => {
               }
             >
               {/* Connection Status Card */}
-              <ConnectionStatusCard connection={status} isLoading={statusLoading} />
+              <ConnectionStatusCard
+                connection={currentConnection}
+                isLoading={statusLoading}
+                hasMultipleAccounts={connectedAccounts.length > 1}
+                onSwitchAccountPress={() => setShowAccountSwitcher(true)}
+              />
 
               {/* Cloud Wallet & Usage Card */}
-              <UsageCard usage={usage} />
+              <UsageCard usage={usage} isConnected={isConnected} />
 
               {/* Metrics 2x2 Grid */}
               <Text style={[styles.sectionTitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>Overview & Capabilities</Text>
@@ -220,81 +279,44 @@ export const WhatsAppHomeScreen: React.FC = () => {
 
               {/* Quick Actions Navigation List */}
               <View style={styles.actionsList}>
-                {/* Audience & Contacts */}
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.actionCard,
-                    isDark ? styles.actionCardDark : styles.actionCardLight,
-                    pressed && styles.actionCardPressed,
-                  ]}
-                  onPress={() => handleSelectTab('contacts')}
-                >
-                  <View style={[styles.actionIcon, { backgroundColor: 'rgba(168, 85, 247, 0.12)' }]}>
-                    <Ionicons name="people" size={20} color="#A855F7" />
-                  </View>
-                  <View style={styles.actionDetails}>
-                    <Text style={[styles.actionTitle, isDark ? styles.textLight : styles.textDark]}>
-                      Audience & Contacts
-                    </Text>
-                    <Text style={[styles.actionSub, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
-                      View contacts, segment tags & link CRM leads
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={17} color={isDark ? '#475569' : '#CBD5E1'} />
-                </Pressable>
-
-                {/* Meta Templates */}
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.actionCard,
-                    isDark ? styles.actionCardDark : styles.actionCardLight,
-                    pressed && styles.actionCardPressed,
-                  ]}
-                  onPress={() => handleSelectTab('templates')}
-                >
-                  <View style={[styles.actionIcon, { backgroundColor: 'rgba(59, 130, 246, 0.12)' }]}>
-                    <Ionicons name="document-text" size={20} color="#3B82F6" />
-                  </View>
-                  <View style={styles.actionDetails}>
-                    <Text style={[styles.actionTitle, isDark ? styles.textLight : styles.textDark]}>
-                      Meta Templates
-                    </Text>
-                    <Text style={[styles.actionSub, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
-                      Approved marketing, utility & OTP message templates
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={17} color={isDark ? '#475569' : '#CBD5E1'} />
-                </Pressable>
-
-                {/* Broadcast Campaigns */}
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.actionCard,
-                    isDark ? styles.actionCardDark : styles.actionCardLight,
-                    pressed && styles.actionCardPressed,
-                  ]}
-                  onPress={() => handleSelectTab('broadcasts')}
-                >
-                  <View style={[styles.actionIcon, { backgroundColor: 'rgba(244, 63, 94, 0.12)' }]}>
-                    <Ionicons name="megaphone" size={20} color="#F43F5E" />
-                  </View>
-                  <View style={styles.actionDetails}>
-                    <Text style={[styles.actionTitle, isDark ? styles.textLight : styles.textDark]}>
-                      Broadcast Campaigns
-                    </Text>
-                    <Text style={[styles.actionSub, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
-                      Launch new bulk sends & view delivery funnels
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={17} color={isDark ? '#475569' : '#CBD5E1'} />
-                </Pressable>
+                {navigationItems.map((item) => (
+                  <Pressable
+                    key={item.key}
+                    style={({ pressed }) => [
+                      styles.actionCard,
+                      isDark ? styles.actionCardDark : styles.actionCardLight,
+                      pressed && styles.actionCardPressed,
+                    ]}
+                    onPress={item.onPress}
+                  >
+                    <View style={[styles.actionIcon, { backgroundColor: isDark ? '#2C2C2E' : '#F1F5F9' }]}>
+                      <Ionicons name={item.icon as any} size={20} color={item.color} />
+                    </View>
+                    <View style={styles.actionDetails}>
+                      <Text style={[styles.actionTitle, isDark ? styles.textLight : styles.textDark]}>
+                        {item.title}
+                      </Text>
+                      <Text style={[styles.actionSub, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+                        {item.subtitle}
+                      </Text>
+                    </View>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={17}
+                      color={isDark ? '#636366' : '#C7C7CC'}
+                    />
+                  </Pressable>
+                ))}
               </View>
+
+              {/* Bottom Spacing to avoid overlap with Floating Bottom Bar */}
+              <View style={{ height: 100 }} />
             </ScrollView>
           )}
         </View>
       )}
 
-      {/* Floating Home-Style Product Bottom Navigation Bar */}
+      {/* Floating Bottom Navigation Bar */}
       <ProductFloatingBottomBar
         items={WHATSAPP_TABS}
         activeKey={activeTab}
@@ -302,6 +324,86 @@ export const WhatsAppHomeScreen: React.FC = () => {
         accentColor="#0A84FF"
         moreMenuTitle="WhatsApp Business Suite"
       />
+
+      {/* Account Switcher Modal (iOS Bottom Sheet) */}
+      <Modal
+        visible={showAccountSwitcher && connectedAccounts.length > 1}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAccountSwitcher(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.switcherBox, isDark ? styles.switcherBoxDark : styles.switcherBoxLight]}>
+            <View style={styles.switcherHeader}>
+              <View>
+                <Text style={[styles.switcherTitle, isDark ? styles.textLight : styles.textDark]}>
+                  WhatsApp Accounts
+                </Text>
+                <Text style={[styles.switcherSub, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+                  Select active business phone number for this workspace
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => setShowAccountSwitcher(false)}
+                hitSlop={10}
+              >
+                <Ionicons name="close-circle" size={24} color={isDark ? '#636366' : '#C7C7CC'} />
+              </Pressable>
+            </View>
+
+            <ScrollView style={{ maxHeight: 300 }} showsVerticalScrollIndicator={false}>
+              {connectedAccounts.map((acc) => {
+                const isSelected = activeAccount?.id === acc.id;
+
+                return (
+                  <Pressable
+                    key={acc.id}
+                    style={({ pressed }) => [
+                      styles.accountRow,
+                      isDark ? styles.accountRowDark : styles.accountRowLight,
+                      isSelected && (isDark ? styles.accountRowSelectedDark : styles.accountRowSelectedLight),
+                      pressed && { opacity: 0.75 },
+                    ]}
+                    onPress={() => {
+                      if (Platform.OS !== 'web') Haptics.selectionAsync();
+                      setSelectedAccountId(acc.id);
+                      setShowAccountSwitcher(false);
+                    }}
+                  >
+                    <View style={styles.accountAvatar}>
+                      <Ionicons
+                        name="logo-whatsapp"
+                        size={20}
+                        color="#22C55E"
+                      />
+                    </View>
+
+                    <View style={styles.accountDetails}>
+                      <Text style={[styles.accountName, isDark ? styles.textLight : styles.textDark]} numberOfLines={1}>
+                        {acc.name || 'WhatsApp Number'}
+                      </Text>
+                      <View style={styles.accountPhoneRow}>
+                        <Text style={[styles.accountPhone, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+                          {acc.display_phone_number || 'No Phone Number'}
+                        </Text>
+                        <Text style={[styles.dotSeparator, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>•</Text>
+                        <View style={[styles.statusMiniDot, { backgroundColor: '#22C55E' }]} />
+                        <Text style={[styles.statusMiniText, { color: '#22C55E' }]}>
+                          Connected
+                        </Text>
+                      </View>
+                    </View>
+
+                    {isSelected && (
+                      <Ionicons name="checkmark-circle" size={22} color="#007AFF" style={{ marginLeft: 8 }} />
+                    )}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -333,6 +435,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+  },
+  accountPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5.5,
+    borderRadius: 14,
+    maxWidth: 150,
+  },
+  accountPillDark: {
+    backgroundColor: '#1C1C1E',
+  },
+  accountPillLight: {
+    backgroundColor: '#F2F2F7',
+  },
+  accountPillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    flexShrink: 1,
   },
   backButton: {
     width: 40,
@@ -440,6 +561,101 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '400',
     lineHeight: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  switcherBox: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 32,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  switcherBoxDark: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
+  },
+  switcherBoxLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E5EA',
+  },
+  switcherHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  switcherTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  switcherSub: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  accountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  accountRowDark: {
+    backgroundColor: '#2C2C2E',
+    borderColor: '#3A3A3C',
+  },
+  accountRowLight: {
+    backgroundColor: '#F2F2F7',
+    borderColor: '#E5E5EA',
+  },
+  accountRowSelectedDark: {
+    borderColor: '#0A84FF',
+    backgroundColor: 'rgba(10, 132, 255, 0.12)',
+  },
+  accountRowSelectedLight: {
+    borderColor: '#007AFF',
+    backgroundColor: 'rgba(0, 122, 255, 0.08)',
+  },
+  accountAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(34, 197, 94, 0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  accountDetails: {
+    flex: 1,
+  },
+  accountName: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  accountPhoneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  accountPhone: {
+    fontSize: 12,
+  },
+  dotSeparator: {
+    fontSize: 10,
+  },
+  statusMiniDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  statusMiniText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   textLight: {
     color: '#FFFFFF',

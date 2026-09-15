@@ -8,23 +8,24 @@ const moneyIcon = require('../../../../assets/images/money.png');
 interface UsageCardProps {
   usage?: WhatsAppUsage;
   isLoading?: boolean;
+  isConnected?: boolean;
 }
 
-export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading }) => {
+export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading, isConnected = true }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const rawBalance = usage?.credits_balance ?? 5435.05;
+  const rawBalance = usage?.credits_balance ?? 0;
   const balance = isLoading
     ? '₹...'
     : `₹${rawBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  const sent = usage?.messages_sent ?? 220;
-  const delivered = usage?.messages_delivered ?? 129;
-  const failed = usage?.messages_failed ?? 22;
+  const sent = usage?.messages_sent ?? 0;
+  const delivered = usage?.messages_delivered ?? 0;
+  const failed = usage?.messages_failed ?? 0;
 
   const deliveryRate =
-    sent > 0 ? Math.round((delivered / sent) * 100) : isLoading ? 0 : 59;
+    sent > 0 ? Math.round((delivered / sent) * 100) : 0;
 
   return (
     <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
@@ -40,8 +41,24 @@ export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading }) => {
         </View>
 
         <View style={styles.statusDotRow}>
-          <View style={styles.statusDot} />
-          <Text style={[styles.statusDotText, { color: isDark ? '#8E8E93' : '#64748B' }]}>Active</Text>
+          <View
+            style={[
+              styles.statusDot,
+              { backgroundColor: isConnected ? '#22C55E' : (isDark ? '#636366' : '#94A3B8') },
+            ]}
+          />
+          <Text
+            style={[
+              styles.statusDotText,
+              {
+                color: isConnected
+                  ? (isDark ? '#34C759' : '#16A34A')
+                  : (isDark ? '#8E8E93' : '#64748B'),
+              },
+            ]}
+          >
+            {isConnected ? 'Active' : 'Inactive'}
+          </Text>
         </View>
       </View>
 

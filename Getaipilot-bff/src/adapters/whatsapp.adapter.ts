@@ -224,26 +224,44 @@ export class WhatsAppAdapter {
     }
 
     try {
-      const { data: account, error } = await this.supabase
+      const { data: accounts, error } = await this.supabase
         .from('w_wa_accounts')
         .select('id, organization_id, phone_number_id, whatsapp_business_account_id, display_phone_number, name, status, quality_rating, messaging_limit, connection_status, business_name')
         .eq('organization_id', orgId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      if (account) {
+      if (accounts && accounts.length > 0) {
+        // Look for an explicitly connected / active account first
+        const activeAccount = accounts.find(
+          (a) => a.status === 'connected' || a.connection_status === 'CONNECTED'
+        );
+
+        if (activeAccount) {
+          return {
+            connected: true,
+            status: 'connected',
+            phone_number: activeAccount.display_phone_number || undefined,
+            display_name: activeAccount.name || activeAccount.business_name || 'WhatsApp Business',
+            quality_rating: activeAccount.quality_rating || 'GREEN',
+            messaging_limit: activeAccount.messaging_limit || 'TIER_10K',
+            business_account_id: activeAccount.whatsapp_business_account_id || undefined,
+            phone_number_id: activeAccount.phone_number_id || undefined,
+          };
+        }
+
+        // If all accounts are disconnected
+        const latestAccount = accounts[0];
         return {
-          connected: account.status === 'connected' || account.connection_status === 'CONNECTED',
-          status: account.status || (account.connection_status === 'CONNECTED' ? 'connected' : 'disconnected'),
-          phone_number: account.display_phone_number || undefined,
-          display_name: account.name || account.business_name || 'WhatsApp Business',
-          quality_rating: account.quality_rating || 'GREEN',
-          messaging_limit: account.messaging_limit || 'TIER_10K',
-          business_account_id: account.whatsapp_business_account_id || undefined,
-          phone_number_id: account.phone_number_id || undefined,
+          connected: false,
+          status: 'disconnected',
+          phone_number: latestAccount.display_phone_number || undefined,
+          display_name: latestAccount.name || latestAccount.business_name || 'Disconnected Account',
+          quality_rating: latestAccount.quality_rating || 'UNKNOWN',
+          messaging_limit: 'TIER_NOT_SET',
+          business_account_id: latestAccount.whatsapp_business_account_id || undefined,
+          phone_number_id: latestAccount.phone_number_id || undefined,
         };
       }
 
@@ -285,7 +303,7 @@ export class WhatsAppAdapter {
             whatsapp_business_account_id: acc.whatsapp_business_account_id || acc.waba_id,
             display_phone_number: acc.display_phone_number || '',
             name: acc.name || acc.business_name || 'WhatsApp Business Number',
-            status: acc.status || 'connected',
+            status: acc.status || (acc.connection_status === 'CONNECTED' ? 'connected' : 'disconnected'),
             quality_rating: acc.quality_rating || 'GREEN',
             messaging_limit: acc.messaging_limit || 'TIER_10K',
           }));
@@ -298,8 +316,10 @@ export class WhatsAppAdapter {
     try {
       const { data, error } = await this.supabase
         .from('w_wa_accounts')
-        .select('id, organization_id, phone_number_id, whatsapp_business_account_id, display_phone_number, name, status, quality_rating, messaging_limit, business_name, waba_id')
-        .eq('organization_id', orgId);
+        .select('id, organization_id, phone_number_id, whatsapp_business_account_id, display_phone_number, name, status, quality_rating, messaging_limit, business_name, waba_id, connection_status')
+        .eq('organization_id', orgId)
+        .in('status', ['connected', 'active'])
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -311,7 +331,7 @@ export class WhatsAppAdapter {
           whatsapp_business_account_id: acc.whatsapp_business_account_id || acc.waba_id,
           display_phone_number: acc.display_phone_number || '',
           name: acc.name || acc.business_name || 'WhatsApp Business Number',
-          status: acc.status || 'connected',
+          status: 'connected',
           quality_rating: acc.quality_rating || 'GREEN',
           messaging_limit: acc.messaging_limit || 'TIER_10K',
         }));
@@ -337,7 +357,7 @@ export class WhatsAppAdapter {
     context?: UserSessionContext
   ): Promise<PaginatedContactsResponse> {
     const page = Math.max(1, params?.page || 1);
-    const limit = Math.min(100, Math.max(1, params?.limit || 20));
+    const limit = Math.min(500, Math.max(1, params?.limit || 100));
     const offset = (page - 1) * limit;
 
     if (context) {
