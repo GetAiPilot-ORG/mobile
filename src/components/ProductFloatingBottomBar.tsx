@@ -50,7 +50,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
   const [containerWidth, setContainerWidth] = useState(0);
 
   // Bottom floating offset based on safe area
-  const bottomOffset = Math.max(insets.bottom + 6, 20);
+  const bottomOffset = Math.max(insets.bottom, 12);
 
   const hasOverflow = items.length > 5;
 
@@ -333,30 +333,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    maxWidth: 400,
-    height: 58,
-    borderRadius: 29,
+    maxWidth: 390,
+    height: 62,
+    borderRadius: 31,
     paddingHorizontal: 6,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     position: 'relative',
   },
   tabBarContainerLight: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: '#FFFFFF',
     borderColor: 'rgba(0, 0, 0, 0.08)',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    elevation: 10,
   },
   tabBarContainerDark: {
-    backgroundColor: 'rgba(28, 28, 30, 0.95)',
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: '#161922',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.45,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowRadius: 22,
+    elevation: 12,
   },
   slidingIndicator: {
     position: 'absolute',
@@ -369,12 +369,14 @@ const styles = StyleSheet.create({
   indicatorPillDark: {
     width: '100%',
     height: '100%',
-    borderRadius: 24,
+    borderRadius: 26,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   indicatorPillLight: {
     width: '100%',
     height: '100%',
-    borderRadius: 24,
+    borderRadius: 26,
+    backgroundColor: 'rgba(0, 0, 0, 0.06)',
   },
   tabItem: {
     flex: 1,
@@ -418,7 +420,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   tabLabel: {
-    fontSize: 10.5,
+    fontSize: 11,
     letterSpacing: -0.2,
   },
   tabLabelInactive: {

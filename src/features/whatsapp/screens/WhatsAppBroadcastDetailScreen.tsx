@@ -1,7 +1,19 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useColorScheme,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
+
 import { useWhatsAppBroadcasts } from '../hooks/useWhatsAppBroadcasts';
 import { WhatsAppBroadcast } from '../types';
 import { WhatsAppHomeSkeleton } from '../../../components/skeletonScreen';
@@ -20,32 +32,58 @@ export const WhatsAppBroadcastDetailScreen: React.FC<WhatsAppBroadcastDetailScre
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const handleBack = onBack || (() => router.back());
+
+  const handleBack = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    if (onBack) {
+      onBack();
+    } else {
+      router.back();
+    }
+  };
 
   const { data: broadcastsData, isLoading } = useWhatsAppBroadcasts();
   const broadcast = initialBroadcast || broadcastsData?.broadcasts.find((b) => b.id === broadcastId);
 
   if (isLoading && !broadcast) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
-        <WhatsAppHomeSkeleton />
+      <SafeAreaView
+        edges={['top', 'left', 'right']}
+        style={[styles.safeArea, { backgroundColor: isDark ? '#000000' : '#F8F9FA' }]}
+      >
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={isDark ? '#F8FAFC' : '#0A84FF'} />
+          <Text style={[styles.loadingText, { color: isDark ? '#94A3B8' : '#64748B' }]}>
+            Loading broadcast analytics...
+          </Text>
+        </View>
       </SafeAreaView>
     );
   }
 
   if (!broadcast) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
+      <SafeAreaView
+        edges={['top', 'left', 'right']}
+        style={[styles.safeArea, { backgroundColor: isDark ? '#000000' : '#F8F9FA' }]}
+      >
         <View style={styles.loadingContainer}>
-          <Text style={[styles.errorText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+          <Text style={[styles.errorText, { color: isDark ? '#F8FAFC' : '#0F172A' }]}>
             Broadcast campaign not found
           </Text>
           <Pressable
-            style={[styles.backButton, isDark ? styles.backButtonDark : styles.backButtonLight]}
+            style={({ pressed }) => [
+              styles.backPillButton,
+              isDark ? styles.backPillDark : styles.backPillLight,
+              pressed && styles.backButtonPressed,
+            ]}
             onPress={handleBack}
           >
-            <Text style={[styles.backText, { color: isDark ? '#818cf8' : '#4f46e5' }]}>
-              ← Return to Broadcasts
+            <Ionicons name="chevron-back" size={16} color={isDark ? '#F8FAFC' : '#0F172A'} style={{ marginRight: 4 }} />
+            <Text style={[styles.backPillText, { color: isDark ? '#F8FAFC' : '#0F172A' }]}>
+              Return to Broadcasts
             </Text>
           </Pressable>
         </View>
@@ -55,7 +93,23 @@ export const WhatsAppBroadcastDetailScreen: React.FC<WhatsAppBroadcastDetailScre
 
   const isCompleted = broadcast.status === 'completed';
   const isQueued = broadcast.status === 'queued' || broadcast.status === 'preparing';
-  const statusColor = isCompleted ? '#10b981' : isQueued ? '#6366f1' : '#ef4444';
+  const isScheduled = broadcast.status === 'scheduled';
+
+  const statusBg = isCompleted
+    ? isDark ? 'rgba(52, 199, 89, 0.16)' : 'rgba(52, 199, 89, 0.12)'
+    : isQueued
+    ? isDark ? 'rgba(10, 132, 255, 0.16)' : 'rgba(0, 122, 255, 0.12)'
+    : isScheduled
+    ? isDark ? 'rgba(255, 159, 10, 0.16)' : 'rgba(255, 149, 0, 0.12)'
+    : isDark ? 'rgba(255, 69, 58, 0.16)' : 'rgba(255, 59, 48, 0.12)';
+
+  const statusText = isCompleted
+    ? isDark ? '#30D158' : '#248A3D'
+    : isQueued
+    ? isDark ? '#0A84FF' : '#007AFF'
+    : isScheduled
+    ? isDark ? '#FF9F0A' : '#D97706'
+    : isDark ? '#FF453A' : '#DC2626';
 
   const deliveryRate =
     broadcast.sent_count > 0
@@ -64,108 +118,179 @@ export const WhatsAppBroadcastDetailScreen: React.FC<WhatsAppBroadcastDetailScre
   const readRate =
     broadcast.sent_count > 0 ? Math.round((broadcast.read_count / broadcast.sent_count) * 100) : 0;
 
+  const funnelSteps = [
+    {
+      label: 'Total Audience',
+      value: broadcast.recipients_count.toLocaleString(),
+      icon: 'people-outline' as const,
+      iconColor: isDark ? '#94A3B8' : '#64748B',
+      bgColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9',
+    },
+    {
+      label: 'Dispatched / Sent',
+      value: broadcast.sent_count.toLocaleString(),
+      icon: 'paper-plane-outline' as const,
+      iconColor: '#0A84FF',
+      bgColor: isDark ? 'rgba(10, 132, 255, 0.12)' : 'rgba(0, 122, 255, 0.08)',
+    },
+    {
+      label: `Delivered (${deliveryRate}%)`,
+      value: broadcast.delivered_count.toLocaleString(),
+      icon: 'checkmark-done-outline' as const,
+      iconColor: isDark ? '#30D158' : '#248A3D',
+      bgColor: isDark ? 'rgba(52, 199, 89, 0.12)' : 'rgba(52, 199, 89, 0.08)',
+    },
+    {
+      label: `Read / Opened (${readRate}%)`,
+      value: broadcast.read_count.toLocaleString(),
+      icon: 'mail-open-outline' as const,
+      iconColor: isDark ? '#38BDF8' : '#0284C7',
+      bgColor: isDark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(2, 132, 199, 0.08)',
+    },
+    ...(broadcast.failed_count > 0
+      ? [
+          {
+            label: 'Failed / Undelivered',
+            value: broadcast.failed_count.toLocaleString(),
+            icon: 'alert-circle-outline' as const,
+            iconColor: isDark ? '#FF453A' : '#DC2626',
+            bgColor: isDark ? 'rgba(255, 69, 58, 0.12)' : 'rgba(220, 38, 38, 0.08)',
+          },
+        ]
+      : []),
+  ];
+
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
+    <SafeAreaView
+      edges={['top', 'left', 'right']}
+      style={[styles.safeArea, { backgroundColor: isDark ? '#000000' : '#F8F9FA' }]}
+    >
+      {/* Header matching Overview Tab */}
       <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
-        <Pressable
-          style={[styles.backButton, isDark ? styles.backButtonDark : styles.backButtonLight]}
-          onPress={handleBack}
-        >
-          <Text style={[styles.backText, { color: isDark ? '#818cf8' : '#4f46e5' }]}>← Back</Text>
-        </Pressable>
-        <View style={styles.headerTitleContainer}>
-          <Text style={[styles.title, { color: isDark ? '#f8fafc' : '#0f172a' }]} numberOfLines={1}>
+        <View style={styles.headerLeftRow}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.backButton,
+              isDark ? styles.backButtonDark : styles.backButtonLight,
+              pressed && styles.backButtonPressed,
+            ]}
+            onPress={handleBack}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
+            <Ionicons
+              name="chevron-back"
+              size={20}
+              color={isDark ? '#F8FAFC' : '#0F172A'}
+            />
+          </Pressable>
+          <Text style={[styles.title, isDark ? styles.titleDark : styles.titleLight]} numberOfLines={1}>
             {broadcast.name}
           </Text>
-          <Text style={[styles.subtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>Campaign Analytics</Text>
         </View>
       </View>
 
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {/* Status Card */}
-        <View style={[styles.statusCard, isDark ? styles.statusCardDark : styles.statusCardLight]}>
-          <View style={styles.statusHeader}>
-            <Text style={[styles.statusLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>Execution Status</Text>
-            <View style={[styles.statusBadge, { borderColor: statusColor, backgroundColor: `${statusColor}1A` }]}>
-              <Text style={[styles.statusText, { color: statusColor }]}>
-                {broadcast.status.toUpperCase()}
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Campaign Summary Card */}
+        <View style={[styles.summaryCard, isDark ? styles.cardDark : styles.cardLight]}>
+          <View style={styles.summaryTopRow}>
+            <Text style={[styles.summaryLabel, isDark ? styles.textMutedDark : styles.textMutedLight]}>
+              Execution Status
+            </Text>
+            <View style={[styles.statusBadge, { backgroundColor: statusBg }]}>
+              <Text style={[styles.statusText, { color: statusText }]}>
+                {broadcast.status.charAt(0).toUpperCase() + broadcast.status.slice(1).toLowerCase()}
               </Text>
             </View>
           </View>
-          <Text style={[styles.campaignName, { color: isDark ? '#f8fafc' : '#0f172a' }]}>{broadcast.name}</Text>
-          <Text style={[styles.templateDetail, { color: isDark ? '#64748b' : '#64748b' }]}>
+          <Text style={[styles.campaignName, isDark ? styles.textPrimaryDark : styles.textPrimaryLight]}>
+            {broadcast.name}
+          </Text>
+          <Text
+            style={[styles.templateDetail, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             Template: {broadcast.template_name} ({broadcast.template_language})
           </Text>
         </View>
 
         {/* Funnel Telemetry Breakdown */}
-        <Text style={[styles.sectionTitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>Delivery Funnel</Text>
-        <View style={[styles.funnelContainer, isDark ? styles.funnelContainerDark : styles.funnelContainerLight]}>
-          <View style={[styles.funnelItem, isDark ? styles.funnelItemDark : styles.funnelItemLight]}>
-            <Text style={[styles.funnelLabel, { color: isDark ? '#cbd5e1' : '#334155' }]}>Total Audience</Text>
-            <Text style={[styles.funnelValue, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-              {broadcast.recipients_count.toLocaleString()}
-            </Text>
-          </View>
-          <View style={styles.funnelArrow}><Text style={[styles.arrowText, { color: isDark ? '#475569' : '#94a3b8' }]}>↓</Text></View>
-
-          <View style={[styles.funnelItem, isDark ? styles.funnelItemDark : styles.funnelItemLight]}>
-            <Text style={[styles.funnelLabel, { color: isDark ? '#cbd5e1' : '#334155' }]}>Dispatched / Sent</Text>
-            <Text style={[styles.funnelValue, { color: '#6366f1' }]}>
-              {broadcast.sent_count.toLocaleString()}
-            </Text>
-          </View>
-          <View style={styles.funnelArrow}><Text style={[styles.arrowText, { color: isDark ? '#475569' : '#94a3b8' }]}>↓</Text></View>
-
-          <View style={[styles.funnelItem, isDark ? styles.funnelItemDark : styles.funnelItemLight]}>
-            <Text style={[styles.funnelLabel, { color: isDark ? '#cbd5e1' : '#334155' }]}>
-              Delivered ({deliveryRate}%)
-            </Text>
-            <Text style={[styles.funnelValue, { color: '#10b981' }]}>
-              {broadcast.delivered_count.toLocaleString()}
-            </Text>
-          </View>
-          <View style={styles.funnelArrow}><Text style={[styles.arrowText, { color: isDark ? '#475569' : '#94a3b8' }]}>↓</Text></View>
-
-          <View style={[styles.funnelItem, isDark ? styles.funnelItemDark : styles.funnelItemLight]}>
-            <Text style={[styles.funnelLabel, { color: isDark ? '#cbd5e1' : '#334155' }]}>
-              Read / Opened ({readRate}%)
-            </Text>
-            <Text style={[styles.funnelValue, { color: isDark ? '#38bdf8' : '#0284c7' }]}>
-              {broadcast.read_count.toLocaleString()}
-            </Text>
-          </View>
-
-          {broadcast.failed_count > 0 ? (
-            <View style={[styles.funnelItem, isDark ? styles.funnelItemDark : styles.funnelItemLight, { marginTop: 8, borderColor: 'rgba(239, 68, 68, 0.3)' }]}>
-              <Text style={[styles.funnelLabel, { color: isDark ? '#cbd5e1' : '#334155' }]}>Failed / Undelivered</Text>
-              <Text style={[styles.funnelValue, { color: '#ef4444' }]}>
-                {broadcast.failed_count.toLocaleString()}
-              </Text>
-            </View>
-          ) : null}
+        <Text style={[styles.sectionTitle, isDark ? styles.textMutedDark : styles.textMutedLight]}>
+          Delivery Funnel
+        </Text>
+        <View style={[styles.funnelGroup, isDark ? styles.cardDark : styles.cardLight]}>
+          {funnelSteps.map((step, index) => (
+            <React.Fragment key={step.label}>
+              <View style={styles.funnelRow}>
+                <View style={[styles.funnelIconBox, { backgroundColor: step.bgColor }]}>
+                  <Ionicons name={step.icon} size={18} color={step.iconColor} />
+                </View>
+                <View style={styles.funnelTextCol}>
+                  <Text style={[styles.funnelLabel, isDark ? styles.textPrimaryDark : styles.textPrimaryLight]}>
+                    {step.label}
+                  </Text>
+                </View>
+                <Text style={[styles.funnelValue, isDark ? styles.textPrimaryDark : styles.textPrimaryLight]}>
+                  {step.value}
+                </Text>
+              </View>
+              {index < funnelSteps.length - 1 && (
+                <View style={[styles.divider, isDark ? styles.dividerDark : styles.dividerLight]} />
+              )}
+            </React.Fragment>
+          ))}
         </View>
 
-        {/* Metadata Card */}
-        <Text style={[styles.sectionTitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>Campaign Details</Text>
-        <View style={[styles.metaCard, isDark ? styles.metaCardDark : styles.metaCardLight]}>
-          <View style={[styles.metaRow, { borderBottomColor: isDark ? '#1e293b' : '#e2e8f0' }]}>
-            <Text style={[styles.metaLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>Audience Segment</Text>
-            <Text style={[styles.metaValue, { color: isDark ? '#f8fafc' : '#0f172a' }]}>{broadcast.audience_tag || 'All Contacts'}</Text>
+        {/* Campaign Metadata Details */}
+        <Text style={[styles.sectionTitle, isDark ? styles.textMutedDark : styles.textMutedLight]}>
+          Campaign Details
+        </Text>
+        <View style={[styles.metaGroup, isDark ? styles.cardDark : styles.cardLight]}>
+          <View style={styles.metaRow}>
+            <Text style={[styles.metaLabel, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+              Audience Segment
+            </Text>
+            <Text style={[styles.metaValue, isDark ? styles.textPrimaryDark : styles.textPrimaryLight]}>
+              {broadcast.audience_tag || 'All Contacts'}
+            </Text>
           </View>
-          <View style={[styles.metaRow, { borderBottomColor: isDark ? '#1e293b' : '#e2e8f0' }]}>
-            <Text style={[styles.metaLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>Audience Type</Text>
-            <Text style={[styles.metaValue, { color: isDark ? '#f8fafc' : '#0f172a' }]}>{broadcast.audience_type.toUpperCase()}</Text>
+          <View style={[styles.divider, isDark ? styles.dividerDark : styles.dividerLight]} />
+
+          <View style={styles.metaRow}>
+            <Text style={[styles.metaLabel, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+              Audience Type
+            </Text>
+            <Text style={[styles.metaValue, isDark ? styles.textPrimaryDark : styles.textPrimaryLight]}>
+              {broadcast.audience_type
+                ? broadcast.audience_type.charAt(0).toUpperCase() + broadcast.audience_type.slice(1).toLowerCase()
+                : 'Custom'}
+            </Text>
           </View>
-          <View style={[styles.metaRow, { borderBottomColor: isDark ? '#1e293b' : '#e2e8f0' }]}>
-            <Text style={[styles.metaLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>Cost Incurred</Text>
-            <Text style={[styles.metaValue, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+          <View style={[styles.divider, isDark ? styles.dividerDark : styles.dividerLight]} />
+
+          <View style={styles.metaRow}>
+            <Text style={[styles.metaLabel, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+              Cost Incurred
+            </Text>
+            <Text style={[styles.metaValue, isDark ? styles.textPrimaryDark : styles.textPrimaryLight]}>
               ₹{((broadcast.actual_cost_paise || broadcast.estimated_cost_paise || 0) / 100).toFixed(2)}
             </Text>
           </View>
-          <View style={[styles.metaRow, { borderBottomWidth: 0 }]}>
-            <Text style={[styles.metaLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>Created At</Text>
-            <Text style={[styles.metaValue, { color: isDark ? '#f8fafc' : '#0f172a' }]}>{new Date(broadcast.created_at).toLocaleString()}</Text>
+          <View style={[styles.divider, isDark ? styles.dividerDark : styles.dividerLight]} />
+
+          <View style={styles.metaRow}>
+            <Text style={[styles.metaLabel, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+              Created At
+            </Text>
+            <Text style={[styles.metaValue, isDark ? styles.textPrimaryDark : styles.textPrimaryLight]}>
+              {new Date(broadcast.created_at).toLocaleString()}
+            </Text>
           </View>
         </View>
       </ScrollView>
@@ -182,183 +307,232 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerDark: {
-    backgroundColor: '#0b1329',
-    borderBottomColor: '#1e293b',
+    backgroundColor: '#000000',
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
   headerLight: {
-    backgroundColor: '#ffffff',
-    borderBottomColor: '#e2e8f0',
+    backgroundColor: '#FFFFFF',
+    borderBottomColor: 'rgba(0, 0, 0, 0.06)',
   },
-  backButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    marginRight: 12,
-  },
-  backButtonDark: {
-    backgroundColor: '#1e293b',
-  },
-  backButtonLight: {
-    backgroundColor: '#f1f5f9',
-  },
-  backText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  headerTitleContainer: {
+  headerLeftRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: '800',
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    borderWidth: 1,
   },
-  subtitle: {
-    fontSize: 11,
+  backButtonLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  backButtonDark: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  backButtonPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.94 }],
+  },
+  backPillButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginTop: 12,
+  },
+  backPillLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+  },
+  backPillDark: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
+  },
+  backPillText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: -0.4,
+    flex: 1,
+  },
+  titleLight: {
+    color: '#0F172A',
+  },
+  titleDark: {
+    color: '#F8FAFC',
   },
   container: {
     flex: 1,
   },
   content: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 140, // Ensure content scrolls comfortably past floating bottom bar
   },
-  statusCard: {
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    marginBottom: 20,
+  cardDark: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
   },
-  statusCardDark: {
-    backgroundColor: '#0f172a',
-    borderColor: '#1e293b',
-  },
-  statusCardLight: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+  cardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
     elevation: 2,
   },
-  statusHeader: {
+  summaryCard: {
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: 20,
+  },
+  summaryTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-  statusLabel: {
+  summaryLabel: {
     fontSize: 12,
     fontWeight: '600',
+    letterSpacing: -0.1,
   },
   statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 100,
   },
   statusText: {
-    fontSize: 10,
-    fontWeight: '800',
+    fontSize: 11.5,
+    fontWeight: '600',
+    letterSpacing: -0.1,
   },
   campaignName: {
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: '700',
+    letterSpacing: -0.3,
     marginBottom: 4,
   },
   templateDetail: {
-    fontSize: 12,
+    fontSize: 12.5,
+    fontWeight: '500',
+    letterSpacing: -0.1,
   },
   sectionTitle: {
     fontSize: 13,
-    fontWeight: '700',
-    textTransform: 'uppercase',
+    fontWeight: '600',
+    letterSpacing: -0.2,
     marginBottom: 10,
+    marginLeft: 4,
   },
-  funnelContainer: {
+  funnelGroup: {
     borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
     marginBottom: 20,
   },
-  funnelContainerDark: {
-    backgroundColor: '#0f172a',
-    borderColor: '#1e293b',
-  },
-  funnelContainerLight: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  funnelItem: {
+  funnelRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
   },
-  funnelItemDark: {
-    backgroundColor: '#020617',
-    borderColor: '#1e293b',
+  funnelIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
-  funnelItemLight: {
-    backgroundColor: '#f8fafc',
-    borderColor: '#e2e8f0',
+  funnelTextCol: {
+    flex: 1,
   },
   funnelLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
+    letterSpacing: -0.2,
   },
   funnelValue: {
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '700',
+    letterSpacing: -0.2,
   },
-  funnelArrow: {
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  arrowText: {
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  metaCard: {
+  metaGroup: {
     borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-  },
-  metaCardDark: {
-    backgroundColor: '#0f172a',
-    borderColor: '#1e293b',
-  },
-  metaCardLight: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
   },
   metaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
+    alignItems: 'center',
+    paddingVertical: 13,
+    paddingHorizontal: 16,
   },
   metaLabel: {
-    fontSize: 13,
+    fontSize: 13.5,
+    fontWeight: '500',
+    letterSpacing: -0.1,
   },
   metaValue: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 13.5,
+    fontWeight: '600',
+    letterSpacing: -0.1,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: 16,
+  },
+  dividerDark: {
+    backgroundColor: '#2C2C2E',
+  },
+  dividerLight: {
+    backgroundColor: '#E5E7EB',
+  },
+  textPrimaryDark: {
+    color: '#F8FAFC',
+  },
+  textPrimaryLight: {
+    color: '#0F172A',
+  },
+  textSecondaryDark: {
+    color: '#94A3B8',
+  },
+  textSecondaryLight: {
+    color: '#64748B',
+  },
+  textMutedDark: {
+    color: '#64748B',
+  },
+  textMutedLight: {
+    color: '#94A3B8',
   },
   loadingContainer: {
     flex: 1,
@@ -369,6 +543,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 14,
     marginTop: 12,
+    fontWeight: '500',
   },
   errorText: {
     fontSize: 16,

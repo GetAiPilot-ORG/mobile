@@ -259,15 +259,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   orgName: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    fontSize: 12.5,
+    fontWeight: '500',
+    letterSpacing: -0.1,
   },
   userName: {
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: '700',
     marginTop: 2,
+    letterSpacing: -0.4,
   },
   subBadge: {
     flexDirection: 'row',

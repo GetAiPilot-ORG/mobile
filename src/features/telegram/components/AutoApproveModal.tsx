@@ -315,9 +315,8 @@ const styles = StyleSheet.create({
   },
   logoSubText: {
     color: '#FFFFFF',
-    fontSize: 8,
-    fontWeight: '700',
-    textTransform: 'uppercase',
+    fontSize: 9,
+    fontWeight: '600',
   },
   eyebrowBadge: {
     flexDirection: 'row',
@@ -429,9 +428,8 @@ const styles = StyleSheet.create({
   // Features List
   sectionHeading: {
     fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    fontWeight: '700',
+    letterSpacing: -0.1,
     marginBottom: 12,
   },
   featuresList: {

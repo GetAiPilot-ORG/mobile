@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   FlatList,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -12,6 +13,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 
 import { useAuthStore } from '../../../core/store/authStore';
 import { inboxApi } from '../../inbox/api/inboxApi';
@@ -44,7 +47,19 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
     tag: selectedTag,
   });
 
+  const handleBack = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    if (onBack) {
+      onBack();
+    }
+  };
+
   const handleOpenChat = async (contact: WhatsAppContact) => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     if (onOpenChat) {
       onOpenChat(contact);
       return;
@@ -96,35 +111,62 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
   const contacts = data?.contacts || [];
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
+    <SafeAreaView
+      edges={['top', 'left', 'right']}
+      style={[styles.safeArea, { backgroundColor: isDark ? '#000000' : '#F8F9FA' }]}
+    >
       <View style={styles.container}>
-        {/* Header */}
+        {/* Header matching Overview Tab */}
         <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
-          {onBack ? (
-            <Pressable
-              style={[styles.backButton, isDark ? styles.backButtonDark : styles.backButtonLight]}
-              onPress={onBack}
-            >
-              <Text style={styles.backText}>← Back</Text>
-            </Pressable>
-          ) : null}
-          <View>
-            <Text style={[styles.title, { color: isDark ? '#f8fafc' : '#0f172a' }]}>WhatsApp Contacts</Text>
-            <Text style={[styles.subtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-              Audience & Customer Directory
+          <View style={styles.headerLeftRow}>
+            {onBack ? (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.backButton,
+                  isDark ? styles.backButtonDark : styles.backButtonLight,
+                  pressed && styles.backButtonPressed,
+                ]}
+                onPress={handleBack}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel="Back"
+              >
+                <Ionicons
+                  name="chevron-back"
+                  size={20}
+                  color={isDark ? '#F8FAFC' : '#0F172A'}
+                />
+              </Pressable>
+            ) : null}
+            <Text style={[styles.title, isDark ? styles.titleDark : styles.titleLight]}>
+              WhatsApp Contacts
             </Text>
           </View>
         </View>
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <TextInput
-            style={[styles.searchInput, isDark ? styles.searchInputDark : styles.searchInputLight]}
-            placeholder="Search contacts by name or phone..."
-            placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
+          <View style={[styles.searchBar, isDark ? styles.searchBarDark : styles.searchBarLight]}>
+            <Ionicons
+              name="search-outline"
+              size={18}
+              color={isDark ? '#64748B' : '#94A3B8'}
+              style={styles.searchIcon}
+            />
+            <TextInput
+              style={[styles.searchInput, { color: isDark ? '#F8FAFC' : '#0F172A' }]}
+              placeholder="Search contacts by name or phone..."
+              placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              clearButtonMode="while-editing"
+            />
+            {searchQuery.length > 0 && (
+              <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+                <Ionicons name="close-circle" size={16} color={isDark ? '#64748B' : '#94A3B8'} />
+              </Pressable>
+            )}
+          </View>
         </View>
 
         {/* Tag Filters */}
@@ -144,12 +186,17 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
                     isDark ? styles.tagChipDark : styles.tagChipLight,
                     isSelected && styles.tagChipActive,
                   ]}
-                  onPress={() => setSelectedTag(item === 'All' ? undefined : item)}
+                  onPress={() => {
+                    if (Platform.OS !== 'web') {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }
+                    setSelectedTag(item === 'All' ? undefined : item);
+                  }}
                 >
                   <Text
                     style={[
                       styles.tagChipText,
-                      { color: isSelected ? '#020617' : isDark ? '#94a3b8' : '#64748b' },
+                      { color: isSelected ? '#000000' : isDark ? '#94A3B8' : '#64748B' },
                       isSelected && styles.tagChipTextActive,
                     ]}
                   >
@@ -163,6 +210,12 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
 
         {/* Contacts List */}
         {isLoading && !data ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#25D366" />
+            <Text style={[styles.loadingText, { color: isDark ? '#64748B' : '#94A3B8' }]}>
+              Loading contacts...
+            </Text>
+          </View>
           <CrmListSkeleton />
         ) : (
           <FlatList
@@ -177,11 +230,11 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
             )}
             contentContainerStyle={styles.listContent}
             refreshControl={
-              <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#25d366" />
+              <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#25D366" />
             }
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Text style={[styles.emptyText, { color: isDark ? '#64748b' : '#94a3b8' }]}>
+                <Text style={[styles.emptyText, { color: isDark ? '#64748B' : '#94A3B8' }]}>
                   No contacts found matching your query
                 </Text>
               </View>
@@ -220,67 +273,101 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerDark: {
-    borderBottomColor: '#1e293b',
+    backgroundColor: '#000000',
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
   headerLight: {
-    borderBottomColor: '#e2e8f0',
+    backgroundColor: '#FFFFFF',
+    borderBottomColor: 'rgba(0, 0, 0, 0.06)',
+  },
+  headerLeftRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   backButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
-  },
-  backButtonDark: {
-    backgroundColor: '#1e293b',
+    borderWidth: 1,
   },
   backButtonLight: {
-    backgroundColor: '#e2e8f0',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  backText: {
-    color: '#6366f1',
-    fontSize: 13,
-    fontWeight: '700',
+  backButtonDark: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  backButtonPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.94 }],
   },
   title: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: -0.4,
   },
-  subtitle: {
-    fontSize: 11,
+  titleLight: {
+    color: '#0F172A',
+  },
+  titleDark: {
+    color: '#F8FAFC',
   },
   searchContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingTop: 10,
+    paddingBottom: 4,
   },
-  searchInput: {
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 14,
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
     borderWidth: 1,
   },
-  searchInputDark: {
-    backgroundColor: '#0f172a',
-    borderColor: '#1e293b',
-    color: '#f8fafc',
+  searchBarDark: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
   },
-  searchInputLight: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
-    color: '#0f172a',
+  searchBarLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    paddingVertical: 0,
   },
   tagWrapper: {
-    height: 44,
-    minHeight: 44,
-    maxHeight: 44,
+    height: 48,
+    minHeight: 48,
+    maxHeight: 48,
     flexShrink: 0,
     flexGrow: 0,
     justifyContent: 'center',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   tagList: {
     paddingHorizontal: 16,
@@ -290,35 +377,32 @@ const styles = StyleSheet.create({
   },
   tagChip: {
     paddingHorizontal: 14,
-    paddingVertical: 6,
-    height: 32,
-    borderRadius: 8,
+    paddingVertical: 7,
+    borderRadius: 10,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tagChipDark: {
-    backgroundColor: '#0f172a',
-    borderColor: '#1e293b',
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
   },
   tagChipLight: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
   },
   tagChipActive: {
-    backgroundColor: '#25d366',
-    borderColor: '#25d366',
+    backgroundColor: '#25D366',
+    borderColor: '#25D366',
   },
   tagChipText: {
-    fontSize: 12.5,
+    fontSize: 12,
     fontWeight: '600',
-    lineHeight: 16,
-    includeFontPadding: false,
-    textAlignVertical: 'center',
+    letterSpacing: 0.2,
   },
   tagChipTextActive: {
-    color: '#020617',
-    fontWeight: '800',
+    color: '#000000',
+    fontWeight: '700',
   },
   contactsFlatList: {
     flex: 1,

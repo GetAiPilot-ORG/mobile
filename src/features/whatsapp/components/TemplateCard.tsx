@@ -265,7 +265,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({ template, onSelect, 
               { color: isApproved ? '#25d366' : isPending ? '#fbbf24' : '#f87171' },
             ]}
           >
-            {template.status || 'APPROVED'}
+            {isApproved ? 'Approved' : isPending ? 'Pending' : isRejected ? 'Rejected' : (template.status || 'Approved')}
           </Text>
         </View>
       </View>
@@ -484,9 +484,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(239, 68, 68, 0.25)',
   },
   statusText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.3,
+    fontSize: 11,
+    fontWeight: '600',
   },
 });
 

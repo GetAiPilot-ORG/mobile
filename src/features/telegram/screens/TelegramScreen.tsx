@@ -1,7 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import * as Clipboard from 'expo-clipboard';
-import * as Haptics from 'expo-haptics';
+import { Ionicons } from "@expo/vector-icons";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as Clipboard from "expo-clipboard";
+import * as Haptics from "expo-haptics";
 import React, { useRef, useState } from "react";
 import {
   Alert,
@@ -14,8 +14,8 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme
-} from 'react-native';
+  useColorScheme,
+} from "react-native";
 
 import { AppScreen } from "../../../components/AppScreen";
 import { AppTopBar } from "../../../components/AppTopBar";

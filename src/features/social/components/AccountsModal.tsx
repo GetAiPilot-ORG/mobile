@@ -8,7 +8,7 @@ import {
   ScrollView,
   Image,
   useColorScheme,
-  ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -26,7 +26,6 @@ export const AccountsModal: React.FC<AccountsModalProps> = ({
   accounts,
   onClose,
   onDisconnect,
-  isLoading,
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -47,34 +46,53 @@ export const AccountsModal: React.FC<AccountsModalProps> = ({
     });
   }
 
+  const getProviderIcon = (provider: string) => {
+    const p = provider.toLowerCase();
+    if (p.includes('instagram')) return { icon: 'logo-instagram', color: '#EC4899' };
+    if (p.includes('youtube')) return { icon: 'logo-youtube', color: '#EF4444' };
+    if (p.includes('facebook')) return { icon: 'logo-facebook', color: '#3B82F6' };
+    if (p.includes('twitter') || p.includes('x')) return { icon: 'logo-twitter', color: '#38BDF8' };
+    if (p.includes('linkedin')) return { icon: 'logo-linkedin', color: '#0A66C2' };
+    return { icon: 'globe-outline', color: '#8E8E93' };
+  };
+
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View style={[styles.modalCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
+        <View style={[styles.modalCard, isDark ? styles.modalCardDark : styles.modalCardLight]}>
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
-              <View style={[styles.iconWrap, { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}>
-                <Ionicons name="link" size={20} color="#3b82f6" />
+              <View style={[styles.iconWrap, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF' }]}>
+                <Ionicons name="link-outline" size={18} color="#3B82F6" />
               </View>
-              <Text style={[styles.title, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                Connected Social Channels
+              <Text style={[styles.title, isDark ? styles.textLight : styles.textDark]}>
+                Connected Channels
               </Text>
             </View>
-            <Pressable onPress={onClose} style={styles.closeBtn}>
-              <Ionicons name="close" size={20} color={isDark ? '#94a3b8' : '#64748b'} />
+            <Pressable
+              onPress={() => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                onClose();
+              }}
+              style={styles.closeBtn}
+              hitSlop={8}
+            >
+              <Ionicons name="close" size={20} color={isDark ? '#94A3B8' : '#64748B'} />
             </Pressable>
           </View>
 
           <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false}>
             {accountList.length === 0 ? (
               <View style={styles.emptyWrap}>
-                <Ionicons name="cloud-offline" size={36} color={isDark ? '#475569' : '#cbd5e1'} />
-                <Text style={[styles.emptyText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-                  No active social channels connected yet.
+                <Ionicons name="cloud-offline-outline" size={40} color={isDark ? '#475569' : '#CBD5E1'} />
+                <Text style={[styles.emptyText, isDark ? styles.textLight : styles.textDark]}>
+                  No active channels connected
                 </Text>
-                <Text style={[styles.emptySub, { color: isDark ? '#64748b' : '#94a3b8' }]}>
-                  Connect Instagram, YouTube, Facebook, LinkedIn or X on the web portal.
+                <Text style={[styles.emptySub, { color: isDark ? '#8E8E93' : '#64748B' }]}>
+                  Connect Instagram, YouTube, Facebook, LinkedIn or X on the GetAiPilot web portal.
                 </Text>
               </View>
             ) : (
@@ -83,16 +101,14 @@ export const AccountsModal: React.FC<AccountsModalProps> = ({
                 const username = acc.username || acc.name || acc.channelTitle || 'Connected Account';
                 const provider = acc.provider || acc.platform || 'channel';
                 const followers = acc.followers || acc.subscriberCount;
+                const provInfo = getProviderIcon(provider);
 
                 return (
                   <View
                     key={index}
                     style={[
                       styles.accountCard,
-                      {
-                        backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                        borderColor: isDark ? '#334155' : '#e2e8f0',
-                      },
+                      isDark ? styles.accountCardDark : styles.accountCardLight,
                     ]}
                   >
                     <View style={styles.cardLeft}>
@@ -102,43 +118,44 @@ export const AccountsModal: React.FC<AccountsModalProps> = ({
                           style={styles.avatar}
                         />
                       ) : (
-                        <View style={[styles.avatarPlaceholder, { backgroundColor: '#ec4899' }]}>
+                        <View style={[styles.avatarPlaceholder, { backgroundColor: provInfo.color }]}>
                           <Text style={styles.avatarInitial}>{username[0]?.toUpperCase()}</Text>
                         </View>
                       )}
-                      <View style={{ flex: 1 }}>
-                        <View style={styles.providerRow}>
-                          <Text style={styles.providerBadge}>{provider.toUpperCase()}</Text>
+                      <View style={styles.infoCol}>
+                        <View style={styles.nameRow}>
+                          <Text
+                            style={[styles.accountName, isDark ? styles.textLight : styles.textDark]}
+                            numberOfLines={1}
+                          >
+                            {username}
+                          </Text>
                           <View
                             style={[
                               styles.liveDot,
-                              { backgroundColor: isLive ? '#22c55e' : '#ef4444' },
+                              { backgroundColor: isLive ? '#22C55E' : '#EF4444' },
                             ]}
                           />
                         </View>
-                        <Text
-                          style={[styles.accountName, { color: isDark ? '#f8fafc' : '#0f172a' }]}
-                          numberOfLines={1}
-                        >
-                          {username}
+                        <Text style={[styles.providerSubText, { color: isDark ? '#8E8E93' : '#64748B' }]}>
+                          {provider.charAt(0).toUpperCase() + provider.slice(1).toLowerCase()}
+                          {followers != null ? ` • ${Number(followers).toLocaleString()} audience` : ''}
                         </Text>
-                        {followers != null && (
-                          <Text style={styles.followersText}>
-                            {Number(followers).toLocaleString()} audience reach
-                          </Text>
-                        )}
                       </View>
                     </View>
 
                     {onDisconnect && (
                       <Pressable
                         onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                          if (Platform.OS !== 'web') {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                          }
                           onDisconnect(provider, acc.id || acc.account_id);
                         }}
                         style={styles.disconnectBtn}
+                        hitSlop={6}
                       >
-                        <Ionicons name="trash-outline" size={16} color="#ef4444" />
+                        <Ionicons name="trash-outline" size={16} color="#EF4444" />
                       </Pressable>
                     )}
                   </View>
@@ -149,8 +166,16 @@ export const AccountsModal: React.FC<AccountsModalProps> = ({
 
           {/* Footer */}
           <View style={styles.footer}>
-            <Pressable onPress={onClose} style={styles.doneBtn}>
-              <Text style={styles.doneBtnText}>Close</Text>
+            <Pressable
+              onPress={() => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                onClose();
+              }}
+              style={styles.doneBtn}
+            >
+              <Text style={styles.doneBtnText}>Done</Text>
             </Pressable>
           </View>
         </View>
@@ -162,7 +187,7 @@ export const AccountsModal: React.FC<AccountsModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.65)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
   },
   modalCard: {
@@ -170,11 +195,21 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     maxHeight: '80%',
     padding: 20,
+    borderWidth: 1,
+    borderBottomWidth: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.15,
     shadowRadius: 16,
     elevation: 20,
+  },
+  modalCardDark: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
+  },
+  modalCardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
   },
   header: {
     flexDirection: 'row',
@@ -188,36 +223,42 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   iconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
   title: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: -0.3,
   },
   closeBtn: {
-    padding: 6,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollBody: {
-    maxHeight: 400,
+    maxHeight: 380,
   },
   emptyWrap: {
-    paddingVertical: 32,
+    paddingVertical: 36,
     alignItems: 'center',
     gap: 8,
   },
   emptyText: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '600',
     marginTop: 6,
   },
   emptySub: {
-    fontSize: 12,
+    fontSize: 12.5,
     textAlign: 'center',
     paddingHorizontal: 20,
+    lineHeight: 18,
   },
   accountCard: {
     flexDirection: 'row',
@@ -228,6 +269,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 10,
   },
+  accountCardDark: {
+    backgroundColor: '#121214',
+    borderColor: '#2C2C2E',
+  },
+  accountCardLight: {
+    backgroundColor: '#F8F9FA',
+    borderColor: '#E5E7EB',
+  },
   cardLeft: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -235,46 +284,47 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   avatarPlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarInitial: {
     color: '#ffffff',
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '700',
   },
-  providerRow: {
+  infoCol: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     marginBottom: 2,
   },
-  providerBadge: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#ec4899',
+  accountName: {
+    fontSize: 14.5,
+    fontWeight: '600',
+    letterSpacing: -0.2,
   },
   liveDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
   },
-  accountName: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  followersText: {
-    fontSize: 11,
-    color: '#64748b',
-    marginTop: 2,
+  providerSubText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   disconnectBtn: {
     padding: 8,
@@ -284,18 +334,22 @@ const styles = StyleSheet.create({
   footer: {
     marginTop: 14,
     paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(148, 163, 184, 0.1)',
   },
   doneBtn: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#0A84FF',
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
   },
   doneBtnText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '800',
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  textLight: {
+    color: '#F8FAFC',
+  },
+  textDark: {
+    color: '#0F172A',
   },
 });

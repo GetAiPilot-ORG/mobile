@@ -1144,11 +1144,10 @@ const styles = StyleSheet.create({
   saveBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
   groupHeading: {
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#0284C7',
     marginBottom: 2,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: -0.1,
   },
   groupDesc: { color: '#64748B', fontSize: 11, marginBottom: 10 },
   row: { flexDirection: 'row' },
@@ -1656,11 +1655,10 @@ const styles = StyleSheet.create({
   },
   pdfSectionHeading: {
     fontSize: 12,
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#0284C7',
     marginBottom: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: -0.1,
   },
   pdfSectionBody: {
     fontSize: 11,

@@ -73,7 +73,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
               <View style={[styles.statusBadge, { backgroundColor: `${statusColor}20` }]}>
                 <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
                 <Text style={[styles.statusText, { color: statusColor }]}>
-                  {post.status?.toUpperCase()}
+                  {post.status ? post.status.charAt(0).toUpperCase() + post.status.slice(1).toLowerCase() : 'Draft'}
                 </Text>
               </View>
               <Text style={[styles.headerDate, { color: isDark ? '#94a3b8' : '#64748b' }]}>
@@ -100,7 +100,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
                 >
                   <Ionicons name="share-social" size={12} color="#ec4899" />
                   <Text style={[styles.channelText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
-                    {ch.replace(/^.+:/, '').toUpperCase()}
+                    {ch.replace(/^.+:/, '')}
                   </Text>
                 </View>
               ))}
@@ -310,10 +310,10 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   captionTitle: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 12.5,
+    fontWeight: '600',
     marginBottom: 6,
-    textTransform: 'uppercase',
+    letterSpacing: -0.1,
   },
   captionCard: {
     borderRadius: 12,
@@ -328,10 +328,10 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   metricsTitle: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 12.5,
+    fontWeight: '600',
     marginBottom: 8,
-    textTransform: 'uppercase',
+    letterSpacing: -0.1,
   },
   metricsGrid: {
     flexDirection: 'row',
@@ -349,10 +349,10 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   metricLabel: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#64748b',
-    textTransform: 'uppercase',
-    fontWeight: '600',
+    fontWeight: '500',
+    letterSpacing: -0.1,
   },
   errorBanner: {
     flexDirection: 'row',
