@@ -31,6 +31,7 @@ import {
   ProductFloatingBottomBar,
   ProductTabItem,
 } from '../../../components/ProductFloatingBottomBar';
+import { WhatsAppHomeSkeleton } from '../../../components/skeletonScreen';
 
 type WhatsAppTab = 'home' | 'broadcasts' | 'contacts' | 'templates';
 
@@ -157,35 +158,28 @@ export const WhatsAppHomeScreen: React.FC = () => {
             </View>
           </View>
 
-          <ScrollView
-            style={styles.container}
-            contentContainerStyle={[
-              styles.content,
-              { paddingBottom: Math.max(insets.bottom, 20) + 96 },
-            ]}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={statusRefetching}
-                onRefresh={handleRefresh}
-                tintColor="#22C55E"
-              />
-            }
-          >
-            {/* Connection Status Card */}
-            <ConnectionStatusCard connection={status} isLoading={statusLoading} />
+          {statusLoading && !status ? (
+            <WhatsAppHomeSkeleton />
+          ) : (
+            <ScrollView
+              style={styles.container}
+              contentContainerStyle={styles.content}
+              refreshControl={
+                <RefreshControl
+                  refreshing={statusRefetching}
+                  onRefresh={handleRefresh}
+                  tintColor="#25d366"
+                />
+              }
+            >
+              {/* Connection Status Card */}
+              <ConnectionStatusCard connection={status} isLoading={statusLoading} />
 
-            {/* Cloud Wallet & Live Usage Card */}
-            <UsageCard usage={usage} />
+              {/* Cloud Wallet & Usage Card */}
+              <UsageCard usage={usage} />
 
-            {/* Section Header: Overview & Capabilities */}
-            <View style={styles.sectionHeaderRow}>
-              <Text style={[styles.sectionTitle, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
-                Overview & Capabilities
-              </Text>
-            </View>
-
-            {/* Metrics 2x2 Grid */}
+              {/* Metrics 2x2 Grid */}
+              <Text style={[styles.sectionTitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>Overview & Capabilities</Text>
             <View style={styles.grid}>
               <WhatsAppMetricCard
                 label="Contacts"
@@ -296,7 +290,8 @@ export const WhatsAppHomeScreen: React.FC = () => {
               </Pressable>
             </View>
           </ScrollView>
-        </View>
+        )}
+        </SafeAreaView>
       )}
 
       {/* Floating Home-Style Product Bottom Navigation Bar */}

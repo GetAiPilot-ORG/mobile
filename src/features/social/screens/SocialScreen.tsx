@@ -21,6 +21,11 @@ import {
   ProductFloatingBottomBar,
   ProductTabItem,
 } from '../../../components/ProductFloatingBottomBar';
+import {
+  SocialPostsSkeleton,
+  SocialScreenSkeleton,
+  SocialTrendsSkeleton,
+} from '../../../components/skeletonScreen';
 import { apiClient } from '../../../core/api/client';
 import {
   CreatePostModal,
@@ -272,6 +277,9 @@ export const SocialScreen: React.FC = () => {
       >
         {/* TAB 1: OVERVIEW */}
         {activeTab === 'overview' && (
+          overviewLoading && !overviewData ? (
+            <SocialScreenSkeleton />
+          ) : (
           <View>
             {/* Quick Action Banner */}
             <View style={[styles.actionBanner, { backgroundColor: isDark ? '#1e1b4b' : '#fdf2f8' }]}>
@@ -477,6 +485,7 @@ export const SocialScreen: React.FC = () => {
               )}
             </View>
           </View>
+          )
         )}
 
         {/* TAB 2: POSTS */}
@@ -496,7 +505,7 @@ export const SocialScreen: React.FC = () => {
             </View>
 
             {postsLoading ? (
-              <ActivityIndicator size="large" color="#ec4899" style={{ marginTop: 30 }} />
+              <SocialPostsSkeleton />
             ) : postsList.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <Ionicons name="newspaper-outline" size={40} color={isDark ? '#475569' : '#94a3b8'} />
@@ -657,7 +666,7 @@ export const SocialScreen: React.FC = () => {
             </View>
 
             {trendsLoading ? (
-              <ActivityIndicator size="large" color="#ec4899" style={{ marginTop: 30 }} />
+              <SocialTrendsSkeleton />
             ) : trendsList.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <Ionicons name="flame-outline" size={40} color={isDark ? '#475569' : '#94a3b8'} />

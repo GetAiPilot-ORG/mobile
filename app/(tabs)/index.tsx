@@ -1,13 +1,11 @@
 import { HomeSkeleton } from "@/components/skeletonScreen/HomeSkeletonScreen";
 import { NetworkStatusScreen } from "@/components/StatusScreen";
 import { Ionicons } from "@expo/vector-icons";
-import NetInfo from "@react-native-community/netinfo";
 import { useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  Alert,
   Image,
   Pressable,
   RefreshControl,
@@ -21,6 +19,7 @@ import {
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
 import { useAuth } from "../../src/contexts/AuthContext";
+import { useNetwork } from "../../src/contexts/NetworkContext";
 import { apiClient } from "../../src/core/api/client";
 import { usePlatformSubscription } from "../../src/hooks/usePlatformSubscription";
 import { supabase } from "../../src/lib/supabase";
@@ -60,8 +59,7 @@ export default function HomeScreen() {
     "all" | "bots" | "tools"
   >("all");
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isOnline, setIsOnline] = useState(true);
-  const [networkChecked, setNetworkChecked] = useState(false);
+  const { isOnline, networkChecked, refresh, isChecking } = useNetwork();
 
   // Real Workspace Telemetry from Supabase
   const { data: telemetry, refetch: refetchTelemetry } = useQuery({
@@ -125,52 +123,14 @@ export default function HomeScreen() {
     setIsRefreshing(false);
   };
 
+  const prevOnlineRef = useRef(isOnline);
   useEffect(() => {
-    const checkInitialConnection = async () => {
-      const state = await NetInfo.fetch();
-
-      const online =
-        state.isConnected === true && state.isInternetReachable !== false;
-
-      setIsOnline(online);
-      setNetworkChecked(true);
-    };
-
-    checkInitialConnection();
-
-    let wasOnline = true;
-
-    const unsubscribe = NetInfo.addEventListener((state) => {
-      const online =
-        state.isConnected === true && state.isInternetReachable !== false;
-
-      setIsOnline(online);
-      setNetworkChecked(true);
-
-      if (wasOnline && !online) {
-        Alert.alert(
-          "Device Offline",
-          "Your device has lost its internet connection.",
-          [{ text: "OK" }],
-        );
-      }
-
-      if (!wasOnline && online) {
-        Alert.alert(
-          "Back Online",
-          "Your device is connected to the internet again.",
-          [{ text: "OK" }],
-        );
-
-        refetchDeviceSessions();
-        refetchTelemetry();
-      }
-
-      wasOnline = online;
-    });
-
-    return () => unsubscribe();
-  }, [refetchDeviceSessions, refetchTelemetry]);
+    if (!prevOnlineRef.current && isOnline) {
+      refetchDeviceSessions();
+      refetchTelemetry();
+    }
+    prevOnlineRef.current = isOnline;
+  }, [isOnline, refetchDeviceSessions, refetchTelemetry]);
 
   const triggerHaptic = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -307,23 +267,10 @@ export default function HomeScreen() {
 
   if (!isOnline) {
     return (
-      <AppScreen safeArea={false}>
-        <NetworkStatusScreen
-          onRetry={async () => {
-            const state = await NetInfo.fetch();
-
-            const online =
-              state.isConnected === true && state.isInternetReachable !== false;
-
-            setIsOnline(online);
-
-            if (online) {
-              refetchTelemetry();
-              refetchDeviceSessions();
-            }
-          }}
-        />
-      </AppScreen>
+      <NetworkStatusScreen
+        onRetry={refresh}
+        isChecking={isChecking}
+      />
     );
   }
   return (
@@ -566,9 +513,9 @@ export default function HomeScreen() {
             style={[
               styles.segmentedTab,
               selectedFilter === "all" &&
-                (isDark
-                  ? styles.segmentedTabActiveDark
-                  : styles.segmentedTabActive),
+              (isDark
+                ? styles.segmentedTabActiveDark
+                : styles.segmentedTabActive),
             ]}
             onPress={() => {
               triggerHaptic();
@@ -579,9 +526,9 @@ export default function HomeScreen() {
               style={[
                 styles.segmentedTabText,
                 selectedFilter === "all" &&
-                  (isDark
-                    ? styles.segmentedTabTextActiveDark
-                    : styles.segmentedTabTextActive),
+                (isDark
+                  ? styles.segmentedTabTextActiveDark
+                  : styles.segmentedTabTextActive),
               ]}
             >
               All Engines
@@ -592,9 +539,9 @@ export default function HomeScreen() {
             style={[
               styles.segmentedTab,
               selectedFilter === "bots" &&
-                (isDark
-                  ? styles.segmentedTabActiveDark
-                  : styles.segmentedTabActive),
+              (isDark
+                ? styles.segmentedTabActiveDark
+                : styles.segmentedTabActive),
             ]}
             onPress={() => {
               triggerHaptic();
@@ -605,9 +552,9 @@ export default function HomeScreen() {
               style={[
                 styles.segmentedTabText,
                 selectedFilter === "bots" &&
-                  (isDark
-                    ? styles.segmentedTabTextActiveDark
-                    : styles.segmentedTabTextActive),
+                (isDark
+                  ? styles.segmentedTabTextActiveDark
+                  : styles.segmentedTabTextActive),
               ]}
             >
               Automation Hub
@@ -618,9 +565,9 @@ export default function HomeScreen() {
             style={[
               styles.segmentedTab,
               selectedFilter === "tools" &&
-                (isDark
-                  ? styles.segmentedTabActiveDark
-                  : styles.segmentedTabActive),
+              (isDark
+                ? styles.segmentedTabActiveDark
+                : styles.segmentedTabActive),
             ]}
             onPress={() => {
               triggerHaptic();
@@ -631,9 +578,9 @@ export default function HomeScreen() {
               style={[
                 styles.segmentedTabText,
                 selectedFilter === "tools" &&
-                  (isDark
-                    ? styles.segmentedTabTextActiveDark
-                    : styles.segmentedTabTextActive),
+                (isDark
+                  ? styles.segmentedTabTextActiveDark
+                  : styles.segmentedTabTextActive),
               ]}
             >
               Studio Tools

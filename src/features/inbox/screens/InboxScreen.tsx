@@ -20,6 +20,8 @@ import { inboxApi } from '../api/inboxApi';
 import { ConversationCard } from '../components';
 import { useInboxWebSocket } from '../hooks/useInboxWebSocket';
 import { ContactItem, NormalizedConversation } from '../types';
+import { SkeletonCircle, SkeletonRow, SkeletonText } from '../../../components/Skeleton';
+import { InboxListSkeleton, InboxSkeleton } from '../../../components/skeletonScreen';
 import { ConversationScreen } from './ConversationScreen';
 
 export const InboxScreen: React.FC = () => {
@@ -236,12 +238,7 @@ export const InboxScreen: React.FC = () => {
 
         {/* Conversation List */}
         {isLoading && !conversations ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#00a884" />
-            <Text style={[styles.loadingText, { color: isDark ? '#8696a0' : '#64748b' }]}>
-              Syncing WhatsApp conversations...
-            </Text>
-          </View>
+          <InboxListSkeleton />
         ) : (
           <FlatList
             data={filteredConversations}
@@ -319,7 +316,17 @@ export const InboxScreen: React.FC = () => {
               {/* Contacts List */}
               <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={false}>
                 {isLoadingContacts ? (
-                  <ActivityIndicator size="small" color="#00a884" style={{ marginVertical: 20 }} />
+                  <View style={{ paddingVertical: 10 }}>
+                    {[1, 2, 3].map((i) => (
+                      <SkeletonRow key={i} style={{ paddingVertical: 10, paddingHorizontal: 12 }}>
+                        <SkeletonCircle size={40} style={{ marginRight: 12 }} />
+                        <View style={{ flex: 1 }}>
+                          <SkeletonText width={120} height={14} style={{ marginBottom: 6 }} />
+                          <SkeletonText width={160} height={11} />
+                        </View>
+                      </SkeletonRow>
+                    ))}
+                  </View>
                 ) : filteredContacts.length === 0 ? (
                   <View style={{ padding: 20, alignItems: 'center' }}>
                     <Text style={{ color: isDark ? '#8696a0' : '#64748b', fontSize: 13 }}>No contacts found</Text>

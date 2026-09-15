@@ -22,6 +22,7 @@ import { ActivityTimelineItem } from '../components/ActivityTimelineItem';
 import { CreateLeadModal } from '../components/CreateLeadModal';
 import { CreateDealModal } from '../components/CreateDealModal';
 import { CreateTaskModal } from '../components/CreateTaskModal';
+import { CrmHomeSkeleton } from '../../../components/skeletonScreen';
 
 interface CRMHomeScreenProps {
   onNavigateTab?: (tabKey: string) => void;
@@ -96,10 +97,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
         </View>
 
         {isLoading && !dashboard ? (
-          <View style={styles.loaderBox}>
-            <ActivityIndicator size="large" color="#3B82F6" />
-            <Text style={[styles.loaderText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Loading live CRM metrics...</Text>
-          </View>
+          <CrmHomeSkeleton />
         ) : (
           <>
             {/* KPI Stat Cards Grid */}

@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Platform,
   Pressable,
@@ -19,6 +18,7 @@ import * as Haptics from 'expo-haptics';
 
 import { TemplateCard } from '../components';
 import { useWhatsAppTemplates } from '../hooks/useWhatsAppTemplates';
+import { WhatsAppTemplatesSkeleton } from '../../../components/skeletonScreen';
 
 interface WhatsAppTemplatesScreenProps {
   onBack?: () => void;
@@ -289,6 +289,7 @@ export const WhatsAppTemplatesScreen: React.FC<WhatsAppTemplatesScreenProps> = (
               Syncing Meta WhatsApp templates...
             </Text>
           </View>
+          <WhatsAppTemplatesSkeleton />
         ) : (
           <FlatList
             data={filteredTemplates}
