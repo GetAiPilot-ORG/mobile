@@ -39,7 +39,7 @@ import {
   ToolCard,
   TrackerModal,
 } from '../components';
-import { TelegramToolKey } from "../types";
+import { TelegramToolKey } from '../types';
 
 type TelegramCategory = 'all' | 'automation' | 'monetization' | 'growth';
 type TelegramTab =
