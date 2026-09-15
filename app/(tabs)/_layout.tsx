@@ -7,6 +7,7 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      backBehavior="history"
       tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,

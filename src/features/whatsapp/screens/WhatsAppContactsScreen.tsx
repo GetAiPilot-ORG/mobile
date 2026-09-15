@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   FlatList,
@@ -34,6 +35,7 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
   onBack,
   onOpenChat,
 }) => {
+  const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const user = useAuthStore((s) => s.user);
@@ -53,6 +55,10 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
     }
     if (onBack) {
       onBack();
+    } else if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/products/whatsapp');
     }
   };
 
@@ -119,25 +125,23 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
         {/* Header matching Overview Tab */}
         <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
           <View style={styles.headerLeftRow}>
-            {onBack ? (
-              <Pressable
-                style={({ pressed }) => [
-                  styles.backButton,
-                  isDark ? styles.backButtonDark : styles.backButtonLight,
-                  pressed && styles.backButtonPressed,
-                ]}
-                onPress={handleBack}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityRole="button"
-                accessibilityLabel="Back"
-              >
-                <Ionicons
-                  name="chevron-back"
-                  size={20}
-                  color={isDark ? '#F8FAFC' : '#0F172A'}
-                />
-              </Pressable>
-            ) : null}
+            <Pressable
+              style={({ pressed }) => [
+                styles.backButton,
+                isDark ? styles.backButtonDark : styles.backButtonLight,
+                pressed && styles.backButtonPressed,
+              ]}
+              onPress={handleBack}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+            >
+              <Ionicons
+                name="chevron-back"
+                size={20}
+                color={isDark ? '#F8FAFC' : '#0F172A'}
+              />
+            </Pressable>
             <Text style={[styles.title, isDark ? styles.titleDark : styles.titleLight]}>
               WhatsApp Contacts
             </Text>
