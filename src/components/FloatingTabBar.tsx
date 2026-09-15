@@ -3,9 +3,7 @@ import {
   View,
   Text,
   Pressable,
-  StyleSheet,
   Platform,
-  useColorScheme,
   Animated,
   LayoutChangeEvent,
 } from 'react-native';
@@ -53,8 +51,6 @@ export interface FloatingTabBarProps {
 
 export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
 
   // Bottom floating offset based on safe area
   const bottomOffset = Math.max(insets.bottom, 12);
@@ -101,28 +97,23 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   };
 
   return (
-    <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
+    <View className="absolute left-5 right-5 items-center z-[9999]" style={{ bottom: bottomOffset }} pointerEvents="box-none">
       <View
         onLayout={onContainerLayout}
-        style={[
-          styles.tabBarContainer,
-          isDark ? styles.tabBarContainerDark : styles.tabBarContainerLight,
-        ]}
+        className="flex-row items-center w-full max-w-[390px] h-[62px] rounded-full px-1.5 border relative bg-[#161922] border-white/10 shadow-2xl elevation-12"
       >
         {/* Soft Gliding Active Capsule Pill */}
         {tabWidth > 0 && (
           <Animated.View
-            style={[
-              styles.slidingIndicator,
-              {
-                width: tabWidth - 4,
-                left: paddingHorizontal + 2,
-                transform: [{ translateX: slideAnim }],
-              },
-            ]}
+            className="absolute top-1.5 bottom-1.5 justify-center items-center z-[1]"
+            style={{
+              width: tabWidth - 4,
+              left: paddingHorizontal + 2,
+              transform: [{ translateX: slideAnim }],
+            }}
             pointerEvents="none"
           >
-            <View style={isDark ? styles.indicatorPillDark : styles.indicatorPillLight} />
+            <View className="w-full h-full rounded-full bg-white/10" />
           </Animated.View>
         )}
 
@@ -157,8 +148,8 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
           };
 
           const iconName = isFocused ? config.activeIcon : config.inactiveIcon;
-          const activeColor = isDark ? '#38BDF8' : '#0055D4';
-          const inactiveColor = isDark ? '#94A3B8' : '#0F172A';
+          const activeColor = '#0084FF';
+          const inactiveColor = '#94A3B8';
 
           return (
             <Pressable
@@ -169,21 +160,18 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
               testID={options.tabBarButtonTestID}
               onPress={onPress}
               onLongPress={onLongPress}
-              style={styles.tabItem}
+              className="flex-1 items-center justify-center h-full z-[2]"
             >
-              <View style={styles.tabContent}>
+              <View className="items-center justify-center gap-0.5">
                 <Ionicons
                   name={iconName}
                   size={isFocused ? 22 : 21}
                   color={isFocused ? activeColor : inactiveColor}
                 />
                 <Text
-                  style={[
-                    styles.tabLabel,
-                    isFocused
-                      ? [styles.tabLabelActive, { color: activeColor }]
-                      : [styles.tabLabelInactive, { color: inactiveColor }],
-                  ]}
+                  className={`text-[11px] tracking-tight ${
+                    isFocused ? 'font-bold text-[#0084FF]' : 'font-medium text-slate-400'
+                  }`}
                   numberOfLines={1}
                 >
                   {config.label}
@@ -196,85 +184,3 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  floatingWrapper: {
-    position: 'absolute',
-    left: 20,
-    right: 20,
-    alignItems: 'center',
-    zIndex: 9999,
-  },
-  tabBarContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: 390,
-    height: 62,
-    borderRadius: 31,
-    paddingHorizontal: 6,
-    borderWidth: 1,
-    position: 'relative',
-  },
-  tabBarContainerLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 18,
-    elevation: 10,
-  },
-  tabBarContainerDark: {
-    backgroundColor: '#161922',
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.45,
-    shadowRadius: 22,
-    elevation: 12,
-  },
-  slidingIndicator: {
-    position: 'absolute',
-    top: 5,
-    bottom: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1,
-  },
-  indicatorPillDark: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 26,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  indicatorPillLight: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 26,
-    backgroundColor: 'rgba(0, 0, 0, 0.06)',
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-    zIndex: 2,
-  },
-  tabContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-  },
-  tabLabel: {
-    fontSize: 11,
-    letterSpacing: -0.2,
-  },
-  tabLabelInactive: {
-    fontWeight: '500',
-  },
-  tabLabelActive: {
-    fontWeight: '700',
-  },
-});
-

@@ -1,13 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import React from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,8 +19,6 @@ import {
 import { DashboardSkeleton } from '../../../components/skeletonScreen';
 
 export const DashboardScreen: React.FC = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
@@ -37,7 +32,7 @@ export const DashboardScreen: React.FC = () => {
 
   if (isLoading && !data) {
     return (
-      <SafeAreaView style={[styles.stateContainer, { backgroundColor: isDark ? '#020617' : '#f8fafc', padding: 0 }]}>
+      <SafeAreaView className="flex-1 justify-center items-center p-0 bg-[#0B0D10]">
         <DashboardSkeleton />
       </SafeAreaView>
     );
@@ -45,14 +40,14 @@ export const DashboardScreen: React.FC = () => {
 
   if (isError && !data) {
     return (
-      <SafeAreaView style={[styles.stateContainer, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
-        <Text style={styles.errorIcon}>⚠️</Text>
-        <Text style={[styles.stateTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Connection Error</Text>
-        <Text style={[styles.stateSubtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+      <SafeAreaView className="flex-1 justify-center items-center p-6 bg-[#0B0D10]">
+        <Text className="text-4xl">⚠️</Text>
+        <Text className="text-lg font-bold mt-4 text-center text-white">Connection Error</Text>
+        <Text className="text-[13px] mt-1.5 text-center leading-[18px] text-slate-400">
           {(error as Error)?.message || 'Failed to communicate with GetAiPilot-BFF gateway.'}
         </Text>
-        <Pressable style={styles.retryButton} onPress={() => refetch()}>
-          <Text style={styles.retryText}>Retry Connection</Text>
+        <Pressable className="mt-5 bg-[#0084FF] px-5 py-2.5 rounded-xl active:opacity-85" onPress={() => refetch()}>
+          <Text className="text-white font-bold text-sm">Retry Connection</Text>
         </Pressable>
       </SafeAreaView>
     );
@@ -63,29 +58,29 @@ export const DashboardScreen: React.FC = () => {
   const sub = data?.subscription;
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
+    <SafeAreaView className="flex-1 bg-[#0B0D10]">
       <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.contentContainer}
+        className="flex-1"
+        contentContainerClassName="p-4 pb-32"
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#6366f1" />
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#0084FF" />
         }
       >
         {/* Organization & User Header */}
-        <View style={styles.header}>
-          <View style={styles.headerInfo}>
-            <Text style={[styles.orgName, { color: isDark ? '#64748b' : '#94a3b8' }]}>{org?.name || 'GetAiPilot Workspace'}</Text>
-            <Text style={[styles.userName, { color: isDark ? '#f8fafc' : '#0f172a' }]}>{user?.name || org?.user_name || 'Commander'}</Text>
+        <View className="flex-row justify-between items-center mb-5 pt-2">
+          <View className="flex-1">
+            <Text className="text-[12.5px] font-medium tracking-tight text-slate-400">{org?.name || 'GetAiPilot Workspace'}</Text>
+            <Text className="text-[22px] font-bold mt-0.5 tracking-tight text-white">{user?.name || org?.user_name || 'Commander'}</Text>
           </View>
-          <View style={styles.subBadge}>
-            <View style={styles.subDot} />
-            <Text style={styles.subText}>{sub?.plan_name || 'Pro Plan'}</Text>
+          <View className="flex-row items-center px-3 py-1.5 rounded-full bg-[#0084FF]/15 border border-[#0084FF]/30">
+            <View className="w-1.5 h-1.5 rounded-full bg-[#0084FF] mr-1.5" />
+            <Text className="text-[#0084FF] text-xs font-bold">{sub?.plan_name || 'Pro Plan'}</Text>
           </View>
         </View>
 
         {/* Live Ecosystem Telemetry Grid */}
-        <Text style={[styles.sectionTitle, { color: isDark ? '#cbd5e1' : '#475569' }]}>Ecosystem Realtime Telemetry</Text>
-        <View style={styles.metricsRow}>
+        <Text className="text-[15px] font-bold mt-4.5 mb-2.5 tracking-wide text-white">Ecosystem Realtime Telemetry</Text>
+        <View className="flex-row justify-between mb-1.5">
           <MetricGlassCard
             title="WA Messages"
             value={(metrics?.whatsapp.messages_count || 3864).toLocaleString()}
@@ -101,7 +96,7 @@ export const DashboardScreen: React.FC = () => {
             accentColor="#3b82f6"
           />
         </View>
-        <View style={styles.metricsRow}>
+        <View className="flex-row justify-between mb-1.5">
           <MetricGlassCard
             title="AI Voice Calls"
             value={metrics?.voice.calls_count || 48}
@@ -119,7 +114,7 @@ export const DashboardScreen: React.FC = () => {
         </View>
 
         {/* Resource Usage Gauges */}
-        <Text style={[styles.sectionTitle, { color: isDark ? '#cbd5e1' : '#475569' }]}>Resource Allocation & Gauges</Text>
+        <Text className="text-[15px] font-bold mt-4.5 mb-2.5 tracking-wide text-white">Resource Allocation & Gauges</Text>
         <UsageMeterCard
           label="WhatsApp Contacts Synced"
           current={metrics?.whatsapp.contacts_count || 3003}
@@ -143,7 +138,7 @@ export const DashboardScreen: React.FC = () => {
         />
 
         {/* Product Hub Navigation Cards */}
-        <Text style={[styles.sectionTitle, { color: isDark ? '#cbd5e1' : '#475569' }]}>Connected Product Hubs</Text>
+        <Text className="text-[15px] font-bold mt-4.5 mb-2.5 tracking-wide text-white">Connected Product Hubs</Text>
         <ProductActionCard
           title="GAP WhatsApp Business"
           description={`${(metrics?.whatsapp.contacts_count || 3003).toLocaleString()} contacts, ${(metrics?.whatsapp.messages_count || 3864).toLocaleString()} messages synced`}
@@ -186,8 +181,8 @@ export const DashboardScreen: React.FC = () => {
         />
 
         {/* Recent Ecosystem Timeline */}
-        <Text style={[styles.sectionTitle, { color: isDark ? '#cbd5e1' : '#475569' }]}>Recent Ecosystem Activity Feed</Text>
-        <View style={[styles.activityBox, isDark ? styles.activityBoxDark : styles.activityBoxLight]}>
+        <Text className="text-[15px] font-bold mt-4.5 mb-2.5 tracking-wide text-white">Recent Ecosystem Activity Feed</Text>
+        <View className="rounded-2xl p-4 bg-[#181A1F] border border-[#262930]">
           {data?.recent_activity?.map((act) => (
             <ActivityFeedItem
               key={act.id}
@@ -203,123 +198,3 @@ export const DashboardScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  stateContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  stateTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: 16,
-    textAlign: 'center',
-  },
-  stateSubtitle: {
-    fontSize: 13,
-    marginTop: 6,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  errorIcon: {
-    fontSize: 40,
-  },
-  retryButton: {
-    marginTop: 20,
-    backgroundColor: '#6366f1',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  retryText: {
-    color: '#ffffff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingTop: 8,
-  },
-  headerInfo: {
-    flex: 1,
-  },
-  orgName: {
-    fontSize: 12.5,
-    fontWeight: '500',
-    letterSpacing: -0.1,
-  },
-  userName: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginTop: 2,
-    letterSpacing: -0.4,
-  },
-  subBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(99, 102, 241, 0.15)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.3)',
-  },
-  subDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#818cf8',
-    marginRight: 6,
-  },
-  subText: {
-    color: '#818cf8',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginTop: 18,
-    marginBottom: 10,
-    letterSpacing: 0.3,
-  },
-  metricsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  activityBox: {
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-  },
-  activityBoxDark: {
-    backgroundColor: '#0b1329',
-    borderColor: '#1e293b',
-  },
-  activityBoxLight: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-});
-

@@ -10,10 +10,8 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
-  useColorScheme,
   View,
 } from "react-native";
 import { AppScreen } from "../../src/components/AppScreen";
@@ -41,8 +39,6 @@ interface DeviceSessionsResponse {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
   const { user } = useAuth();
   const {
     planLabel,
@@ -135,9 +131,6 @@ export default function HomeScreen() {
   const triggerHaptic = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
-
-  const displayName =
-    user?.user_metadata?.full_name || user?.email?.split("@")[0] || "AI Pilot";
 
   // Primary Automation Engines (Bundled Native Logos)
   const ENGINES = [
@@ -273,20 +266,15 @@ export default function HomeScreen() {
       />
     );
   }
+
   return (
     <AppScreen safeArea={false}>
       {/* Top Header */}
       <AppTopBar />
 
       <ScrollView
-        style={[
-          styles.scrollView,
-          isDark ? styles.scrollViewDark : styles.scrollViewLight,
-        ]}
-        contentContainerStyle={[
-          styles.scrollContent,
-          isDark ? styles.scrollContentDark : styles.scrollContentLight,
-        ]}
+        className="flex-1 bg-[#0B0D10]"
+        contentContainerClassName="px-4 pt-3.5 pb-32 bg-[#0B0D10]"
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -297,20 +285,15 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* iOS Native Search Field */}
-        <View
-          style={[
-            styles.searchBarContainer,
-            isDark && styles.searchBarContainerDark,
-          ]}
-        >
+        <View className="flex-row items-center bg-[#181A1F] border border-[#262930] rounded-xl px-2.5 h-10 mb-4">
           <Ionicons
             name="search"
             size={16}
             color="#8E8E93"
-            style={styles.searchIcon}
+            style={{ marginRight: 6 }}
           />
           <TextInput
-            style={[styles.searchInput, isDark && styles.searchInputDark]}
+            className="flex-1 text-sm text-white py-1.5"
             placeholder="Search bots, automation & tools..."
             placeholderTextColor="#8E8E93"
             value={searchQuery}
@@ -326,40 +309,23 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* Dual Telemetry Widgets (Apple Inset Dual Cards) */}
-        <View style={styles.heroRow}>
+        {/* Dual Telemetry Widgets */}
+        <View className="flex-row gap-3 mb-4">
           <Pressable
-            style={[styles.heroCard, isDark && styles.heroCardDark]}
+            className="flex-1 flex-row items-center bg-[#181A1F] border border-[#262930] rounded-2xl py-3 px-3 gap-2"
             onPress={() => {
               triggerHaptic();
               router.push("/account/plans" as any);
             }}
           >
-            <View
-              style={[
-                styles.heroIconBox,
-                { backgroundColor: "rgba(10, 132, 255, 0.15)" },
-              ]}
-            >
+            <View className="w-8 h-8 rounded-lg bg-blue-500/15 justify-center items-center">
               <Ionicons name="diamond" size={17} color="#0A84FF" />
             </View>
-            <View style={styles.heroCardTextCol}>
-              <Text
-                style={[
-                  styles.heroCardEyebrow,
-                  isDark && styles.heroCardEyebrowDark,
-                ]}
-                numberOfLines={1}
-              >
+            <View className="flex-1 justify-center">
+              <Text className="text-[10px] font-medium text-slate-400 mb-0.5" numberOfLines={1}>
                 Workspace Plan
               </Text>
-              <Text
-                style={[
-                  styles.heroCardTitle,
-                  isDark && styles.heroCardTitleDark,
-                ]}
-                numberOfLines={1}
-              >
+              <Text className="text-[13.5px] font-bold text-white tracking-tight" numberOfLines={1}>
                 {planLabel || "GAP Pro Max"}
               </Text>
             </View>
@@ -367,37 +333,20 @@ export default function HomeScreen() {
           </Pressable>
 
           <Pressable
-            style={[styles.heroCard, isDark && styles.heroCardDark]}
+            className="flex-1 flex-row items-center bg-[#181A1F] border border-[#262930] rounded-2xl py-3 px-3 gap-2"
             onPress={() => {
               triggerHaptic();
               router.push("/(tabs)/activity" as any);
             }}
           >
-            <View
-              style={[
-                styles.heroIconBox,
-                { backgroundColor: "rgba(48, 209, 88, 0.15)" },
-              ]}
-            >
+            <View className="w-8 h-8 rounded-lg bg-emerald-500/15 justify-center items-center">
               <Ionicons name="rocket" size={17} color="#30D158" />
             </View>
-            <View style={styles.heroCardTextCol}>
-              <Text
-                style={[
-                  styles.heroCardEyebrow,
-                  isDark && styles.heroCardEyebrowDark,
-                ]}
-                numberOfLines={1}
-              >
+            <View className="flex-1 justify-center">
+              <Text className="text-[10px] font-medium text-slate-400 mb-0.5" numberOfLines={1}>
                 Automation Fleet
               </Text>
-              <Text
-                style={[
-                  styles.heroCardTitle,
-                  isDark && styles.heroCardTitleDark,
-                ]}
-                numberOfLines={1}
-              >
+              <Text className="text-[13.5px] font-bold text-white tracking-tight" numberOfLines={1}>
                 5 Engines
               </Text>
             </View>
@@ -405,12 +354,9 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* Signed-in device summary. Full device management lives in Account > Security. */}
+        {/* Signed-in device summary */}
         <Pressable
-          style={[
-            styles.loginSecurityCard,
-            isDark && styles.loginSecurityCardDark,
-          ]}
+          className="flex-row items-center bg-[#181A1F] border border-[#262930] rounded-2xl p-3.5 mb-4"
           onPress={() => {
             triggerHaptic();
             router.push({
@@ -421,30 +367,20 @@ export default function HomeScreen() {
           accessibilityRole="button"
           accessibilityLabel="View logged-in devices in account security"
         >
-          <View
-            style={[
-              styles.loginSecurityIcon,
-              { backgroundColor: "rgba(16, 185, 129, 0.15)" },
-            ]}
-          >
+          <View className="w-9 h-9 rounded-xl bg-emerald-500/15 justify-center items-center mr-3">
             <Ionicons
               name="shield-checkmark-outline"
               size={20}
               color="#10B981"
             />
           </View>
-          <View style={styles.loginSecurityContent}>
-            <View style={styles.loginSecurityHeader}>
-              <Text
-                style={[
-                  styles.loginSecurityTitle,
-                  isDark && styles.loginSecurityTitleDark,
-                ]}
-              >
+          <View className="flex-1">
+            <View className="flex-row items-center justify-between gap-2">
+              <Text className="text-[14.5px] font-bold text-white">
                 Login security
               </Text>
-              <View style={styles.loginSecurityCount}>
-                <Text style={styles.loginSecurityCountText}>
+              <View className="bg-emerald-500/15 rounded-md px-2 py-0.5">
+                <Text className="text-emerald-400 text-[10.5px] font-extrabold">
                   {isLoadingDevices
                     ? "Checking…"
                     : `${deviceSessions?.activeDeviceCount ?? 0} active`}
@@ -452,9 +388,9 @@ export default function HomeScreen() {
               </View>
             </View>
             {deviceSessions?.devices.length ? (
-              <View style={styles.loginDeviceList}>
+              <View className="mt-1.5 gap-1">
                 {deviceSessions.devices.slice(0, 2).map((device) => (
-                  <View key={device.sessionId} style={styles.loginDeviceRow}>
+                  <View key={device.sessionId} className="flex-row items-center gap-1.5">
                     <Ionicons
                       name={
                         device.platform === "web"
@@ -464,13 +400,7 @@ export default function HomeScreen() {
                       size={13}
                       color="#8E8E93"
                     />
-                    <Text
-                      style={[
-                        styles.loginDeviceText,
-                        isDark && styles.loginDeviceTextDark,
-                      ]}
-                      numberOfLines={1}
-                    >
+                    <Text className="flex-1 text-slate-400 text-xs" numberOfLines={1}>
                       {device.deviceName} ·{" "}
                       {device.isOnline ? "Online" : "Offline"}
                       {device.isCurrent ? " · This device" : ""}
@@ -478,24 +408,14 @@ export default function HomeScreen() {
                   </View>
                 ))}
                 {deviceSessions.activeDeviceCount > 2 && (
-                  <Text
-                    style={[
-                      styles.loginMoreDevices,
-                      isDark && styles.loginMoreDevicesDark,
-                    ]}
-                  >
+                  <Text className="text-blue-400 text-[11.5px] font-bold ml-4">
                     +{deviceSessions.activeDeviceCount - 2} more device
                     {deviceSessions.activeDeviceCount - 2 === 1 ? "" : "s"}
                   </Text>
                 )}
               </View>
             ) : (
-              <Text
-                style={[
-                  styles.loginSecuritySubtitle,
-                  isDark && styles.loginSecuritySubtitleDark,
-                ]}
-              >
+              <Text className="text-slate-400 text-xs mt-1">
                 {isLoadingDevices
                   ? "Loading signed-in devices"
                   : "No active device logins found"}
@@ -505,83 +425,45 @@ export default function HomeScreen() {
           <Ionicons name="chevron-forward" size={17} color="#8E8E93" />
         </Pressable>
 
-        {/* iOS Native Segmented Filter Bar */}
-        <View
-          style={[styles.segmentedTrack, isDark && styles.segmentedTrackDark]}
-        >
+        {/* Segmented Filter Bar */}
+        <View className="flex-row bg-[#181A1F] border border-[#262930] rounded-xl p-1 mb-5">
           <Pressable
-            style={[
-              styles.segmentedTab,
-              selectedFilter === "all" &&
-              (isDark
-                ? styles.segmentedTabActiveDark
-                : styles.segmentedTabActive),
-            ]}
+            className={`flex-1 py-1.5 rounded-lg items-center justify-center ${selectedFilter === "all" ? "bg-[#262930]" : ""}`}
             onPress={() => {
               triggerHaptic();
               setSelectedFilter("all");
             }}
           >
             <Text
-              style={[
-                styles.segmentedTabText,
-                selectedFilter === "all" &&
-                (isDark
-                  ? styles.segmentedTabTextActiveDark
-                  : styles.segmentedTabTextActive),
-              ]}
+              className={`text-xs font-semibold ${selectedFilter === "all" ? "text-white" : "text-slate-400"}`}
             >
               All Engines
             </Text>
           </Pressable>
 
           <Pressable
-            style={[
-              styles.segmentedTab,
-              selectedFilter === "bots" &&
-              (isDark
-                ? styles.segmentedTabActiveDark
-                : styles.segmentedTabActive),
-            ]}
+            className={`flex-1 py-1.5 rounded-lg items-center justify-center ${selectedFilter === "bots" ? "bg-[#262930]" : ""}`}
             onPress={() => {
               triggerHaptic();
               setSelectedFilter("bots");
             }}
           >
             <Text
-              style={[
-                styles.segmentedTabText,
-                selectedFilter === "bots" &&
-                (isDark
-                  ? styles.segmentedTabTextActiveDark
-                  : styles.segmentedTabTextActive),
-              ]}
+              className={`text-xs font-semibold ${selectedFilter === "bots" ? "text-white" : "text-slate-400"}`}
             >
               Automation Hub
             </Text>
           </Pressable>
 
           <Pressable
-            style={[
-              styles.segmentedTab,
-              selectedFilter === "tools" &&
-              (isDark
-                ? styles.segmentedTabActiveDark
-                : styles.segmentedTabActive),
-            ]}
+            className={`flex-1 py-1.5 rounded-lg items-center justify-center ${selectedFilter === "tools" ? "bg-[#262930]" : ""}`}
             onPress={() => {
               triggerHaptic();
               setSelectedFilter("tools");
             }}
           >
             <Text
-              style={[
-                styles.segmentedTabText,
-                selectedFilter === "tools" &&
-                (isDark
-                  ? styles.segmentedTabTextActiveDark
-                  : styles.segmentedTabTextActive),
-              ]}
+              className={`text-xs font-semibold ${selectedFilter === "tools" ? "text-white" : "text-slate-400"}`}
             >
               Studio Tools
             </Text>
@@ -590,14 +472,9 @@ export default function HomeScreen() {
 
         {/* SECTION 1: Automation Engines */}
         {(selectedFilter === "all" || selectedFilter === "bots") && (
-          <View style={styles.sectionBlock}>
-            <View style={styles.sectionHeaderRow}>
-              <Text
-                style={[
-                  styles.sectionHeaderTitle,
-                  isDark && styles.sectionHeaderTitleDark,
-                ]}
-              >
+          <View className="mb-6">
+            <View className="flex-row justify-between items-center px-1 mb-2">
+              <Text className="text-[13px] font-semibold text-slate-400 tracking-tight">
                 Automation Engines
               </Text>
               <Pressable
@@ -606,18 +483,16 @@ export default function HomeScreen() {
                   router.push("/(tabs)/products" as any);
                 }}
               >
-                <Text style={styles.sectionActionText}>See All ›</Text>
+                <Text className="text-[13px] font-medium text-blue-400">See All ›</Text>
               </Pressable>
             </View>
 
             {/* Inset Grouped Icon Grid */}
-            <View
-              style={[styles.gridContainer, isDark && styles.gridContainerDark]}
-            >
+            <View className="flex-row justify-between items-center bg-[#181A1F] border border-[#262930] rounded-2xl py-3.5 px-3.5">
               {filteredEngines.map((item) => (
                 <Pressable
                   key={item.id}
-                  style={styles.gridItem}
+                  className="items-center justify-center"
                   onPress={() => {
                     triggerHaptic();
                     router.push(item.route as any);
@@ -625,7 +500,7 @@ export default function HomeScreen() {
                 >
                   <Image
                     source={item.logo}
-                    style={styles.gridLogoImage}
+                    className="w-12 h-12 rounded-xl"
                     resizeMode="contain"
                   />
                 </Pressable>
@@ -634,16 +509,11 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* SECTION 2: Studio & Utilities (Apple HIG Inset Grouped List) */}
+        {/* SECTION 2: Studio & Utilities */}
         {(selectedFilter === "all" || selectedFilter === "tools") && (
-          <View style={styles.sectionBlock}>
-            <View style={styles.sectionHeaderRow}>
-              <Text
-                style={[
-                  styles.sectionHeaderTitle,
-                  isDark && styles.sectionHeaderTitleDark,
-                ]}
-              >
+          <View className="mb-6">
+            <View className="flex-row justify-between items-center px-1 mb-2">
+              <Text className="text-[13px] font-semibold text-slate-400 tracking-tight">
                 Studio & Utilities
               </Text>
               <Pressable
@@ -652,33 +522,26 @@ export default function HomeScreen() {
                   router.push("/(tabs)/tools" as any);
                 }}
               >
-                <Text style={styles.sectionActionText}>Explore Tools ›</Text>
+                <Text className="text-[13px] font-medium text-blue-400">Explore Tools ›</Text>
               </Pressable>
             </View>
 
-            {/* Apple HIG Inset Grouped Unified Card with Hairline Dividers */}
-            <View
-              style={[
-                styles.groupedListContainer,
-                isDark && styles.groupedListContainerDark,
-              ]}
-            >
+            {/* Inset Grouped List */}
+            <View className="bg-[#181A1F] border border-[#262930] rounded-2xl overflow-hidden">
               {filteredTools.map((tool, index) => {
                 const isLast = index === filteredTools.length - 1;
                 return (
                   <View key={tool.id}>
                     <Pressable
-                      style={styles.groupedListItem}
+                      className="flex-row items-center py-3 px-3.5 gap-3"
                       onPress={() => {
                         triggerHaptic();
                         router.push(tool.route as any);
                       }}
                     >
                       <View
-                        style={[
-                          styles.toolIconBox,
-                          { backgroundColor: tool.iconBg },
-                        ]}
+                        className="w-8 h-8 rounded-lg justify-center items-center"
+                        style={{ backgroundColor: tool.iconBg }}
                       >
                         <Ionicons
                           name={tool.icon as any}
@@ -686,22 +549,11 @@ export default function HomeScreen() {
                           color="#FFFFFF"
                         />
                       </View>
-                      <View style={styles.toolInfo}>
-                        <Text
-                          style={[
-                            styles.toolName,
-                            isDark && styles.toolNameDark,
-                          ]}
-                        >
+                      <View className="flex-1">
+                        <Text className="text-[14.5px] font-bold text-white tracking-tight mb-0.5">
                           {tool.name}
                         </Text>
-                        <Text
-                          style={[
-                            styles.toolDesc,
-                            isDark && styles.toolDescDark,
-                          ]}
-                          numberOfLines={1}
-                        >
+                        <Text className="text-[11.5px] text-slate-400" numberOfLines={1}>
                           {tool.desc}
                         </Text>
                       </View>
@@ -712,12 +564,7 @@ export default function HomeScreen() {
                       />
                     </Pressable>
                     {!isLast && (
-                      <View
-                        style={[
-                          styles.hairlineDivider,
-                          isDark && styles.hairlineDividerDark,
-                        ]}
-                      />
+                      <View className="h-[1px] bg-[#262930] ml-14" />
                     )}
                   </View>
                 );
@@ -730,348 +577,3 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewLight: {
-    backgroundColor: "#F2F2F7",
-  },
-  scrollViewDark: {
-    backgroundColor: "#000000",
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 130,
-  },
-  scrollContentLight: {
-    backgroundColor: "#F2F2F7",
-  },
-  scrollContentDark: {
-    backgroundColor: "#000000",
-  },
-  avatarBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#0A84FF",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarBtnText: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  // ─── iOS Native Search Field ───────────────────────────────────
-  searchBarContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#E3E3E8",
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    height: 38,
-    marginBottom: 16,
-  },
-  searchBarContainerDark: {
-    backgroundColor: "#1C1C1E",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#2C2C2E",
-  },
-  searchIcon: {
-    marginRight: 6,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: "#000000",
-    paddingVertical: 6,
-  },
-  searchInputDark: {
-    color: "#FFFFFF",
-  },
-  // ─── Dual Telemetry Widgets ────────────────────────────────────
-  heroRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 16,
-  },
-  heroCard: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingVertical: 11,
-    paddingHorizontal: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#E5E7EB",
-    gap: 9,
-  },
-  heroCardDark: {
-    backgroundColor: "#161B22",
-    borderColor: "#262C36",
-  },
-  heroIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  heroCardTextCol: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  heroCardEyebrow: {
-    fontSize: 10,
-    fontWeight: "500",
-    color: "#6B7280",
-    marginBottom: 2,
-  },
-  heroCardEyebrowDark: {
-    color: "#8E8E93",
-  },
-  heroCardTitle: {
-    fontSize: 13.5,
-    fontWeight: "700",
-    color: "#000000",
-    letterSpacing: -0.2,
-  },
-  heroCardTitleDark: {
-    color: "#FFFFFF",
-  },
-  loginSecurityCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 13,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#E5E7EB",
-    marginBottom: 16,
-  },
-  loginSecurityCardDark: {
-    backgroundColor: "#161B22",
-    borderColor: "#262C36",
-  },
-  loginSecurityIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 11,
-  },
-  loginSecurityContent: {
-    flex: 1,
-  },
-  loginSecurityHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  loginSecurityTitle: {
-    fontSize: 14.5,
-    fontWeight: "700",
-    color: "#000000",
-  },
-  loginSecurityTitleDark: {
-    color: "#FFFFFF",
-  },
-  loginSecurityCount: {
-    backgroundColor: "rgba(16, 185, 129, 0.16)",
-    borderRadius: 8,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-  },
-  loginSecurityCountText: {
-    color: "#10B981",
-    fontSize: 10.5,
-    fontWeight: "800",
-  },
-  loginSecuritySubtitle: {
-    color: "#6B7280",
-    fontSize: 12,
-    marginTop: 3,
-  },
-  loginSecuritySubtitleDark: {
-    color: "#8E8E93",
-  },
-  loginDeviceList: {
-    marginTop: 5,
-    gap: 3,
-  },
-  loginDeviceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-  },
-  loginDeviceText: {
-    flex: 1,
-    color: "#6B7280",
-    fontSize: 12,
-  },
-  loginDeviceTextDark: {
-    color: "#8E8E93",
-  },
-  loginMoreDevices: {
-    color: "#0A84FF",
-    fontSize: 11.5,
-    fontWeight: "700",
-    marginLeft: 18,
-  },
-  loginMoreDevicesDark: {
-    color: "#64B5FF",
-  },
-  // ─── iOS Native Segmented Track ────────────────────────────────
-  segmentedTrack: {
-    flexDirection: "row",
-    backgroundColor: "#E3E3E8",
-    borderRadius: 10,
-    padding: 3,
-    marginBottom: 20,
-  },
-  segmentedTrackDark: {
-    backgroundColor: "#161B22",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#262C36",
-  },
-  segmentedTab: {
-    flex: 1,
-    paddingVertical: 7,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  segmentedTabActive: {
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  segmentedTabActiveDark: {
-    backgroundColor: "#262C36",
-  },
-  segmentedTabText: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#6B7280",
-  },
-  segmentedTabTextActive: {
-    color: "#000000",
-    fontWeight: "600",
-  },
-  segmentedTabTextActiveDark: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-  },
-  // ─── Section Header (Apple HIG Style) ──────────────────────────
-  sectionBlock: {
-    marginBottom: 24,
-  },
-  sectionHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 4,
-    marginBottom: 8,
-  },
-  sectionHeaderTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#374151",
-    letterSpacing: -0.2,
-  },
-  sectionHeaderTitleDark: {
-    color: "#9CA3AF",
-  },
-  sectionActionText: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "#0A84FF",
-  },
-  // ─── Inset Grouped Grid (5 Engines Row) ────────────────────────
-  gridContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#E5E7EB",
-  },
-  gridContainerDark: {
-    backgroundColor: "#161B22",
-    borderColor: "#262C36",
-  },
-  gridItem: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  gridLogoImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 13,
-  },
-  // ─── Inset Grouped List (Apple HIG Settings Style) ─────────────
-  groupedListContainer: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#E5E7EB",
-    overflow: "hidden",
-  },
-  groupedListContainerDark: {
-    backgroundColor: "#161B22",
-    borderColor: "#262C36",
-  },
-  groupedListItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    gap: 12,
-  },
-  toolIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  toolInfo: {
-    flex: 1,
-  },
-  toolName: {
-    fontSize: 14.5,
-    fontWeight: "700",
-    color: "#000000",
-    letterSpacing: -0.2,
-    marginBottom: 1,
-  },
-  toolNameDark: {
-    color: "#FFFFFF",
-  },
-  toolDesc: {
-    fontSize: 11.5,
-    color: "#6B7280",
-  },
-  toolDescDark: {
-    color: "#8E8E93",
-  },
-  hairlineDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: "#E5E7EB",
-    marginLeft: 58,
-  },
-  hairlineDividerDark: {
-    backgroundColor: "#262C36",
-  },
-});

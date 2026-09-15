@@ -2,17 +2,14 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TextInput,
   Pressable,
-  ActivityIndicator,
   Linking,
   RefreshControl,
 } from 'react-native';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
-import { colors } from '../../src/theme/colors';
 import { supabase } from '../../src/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
@@ -21,7 +18,6 @@ import { SalesLeadsSkeleton } from '../../src/components/skeletonScreen';
 export default function SalesLeadsScreen() {
   const { isAdmin } = usePlatformSubscription();
   const [search, setSearch] = useState('');
-  const [filterTab, setFilterTab] = useState<'all' | 'new' | 'active'>('all');
 
   const { data: profiles, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['admin-sales-leads'],
@@ -51,9 +47,9 @@ export default function SalesLeadsScreen() {
 
   if (!isAdmin) {
     return (
-      <AppScreen safeArea={false} backgroundColor={colors.background}>
-        <View style={styles.deniedWrapper}>
-          <Text style={styles.deniedText}>Admin access required.</Text>
+      <AppScreen safeArea={false} className="flex-1 bg-[#0B0D10]">
+        <View className="flex-1 justify-center items-center p-6">
+          <Text className="text-base font-bold text-red-500">Admin access required.</Text>
         </View>
       </AppScreen>
     );
@@ -67,92 +63,92 @@ export default function SalesLeadsScreen() {
   });
 
   return (
-    <AppScreen safeArea={false} backgroundColor={colors.background}>
+    <AppScreen safeArea={false} className="flex-1 bg-[#0B0D10]">
       <AppTopBar title="Sales Leads Central" subtitle="User Registrations & CRM Outreach" showBack={true} />
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#0084FF" />
         }
         showsVerticalScrollIndicator={false}
       >
         {/* Metric Cards */}
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Total Users</Text>
-            <Text style={styles.summaryValue}>{profiles?.length || 0}</Text>
+        <View className="flex-row gap-3 mb-4">
+          <View className="flex-1 rounded-2xl p-3.5 border border-[#262930] bg-[#181A1F]">
+            <Text className="text-[11px] font-bold uppercase text-slate-400">Total Users</Text>
+            <Text className="text-2xl font-black text-white mt-1">{profiles?.length || 0}</Text>
           </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Conversion Ready</Text>
-            <Text style={[styles.summaryValue, { color: '#16B882' }]}>
+          <View className="flex-1 rounded-2xl p-3.5 border border-[#262930] bg-[#181A1F]">
+            <Text className="text-[11px] font-bold uppercase text-slate-400">Conversion Ready</Text>
+            <Text className="text-2xl font-black text-emerald-400 mt-1">
               {profiles?.filter((p) => Boolean(p.business_name)).length || 0}
             </Text>
           </View>
         </View>
 
         {/* Search */}
-        <View style={styles.searchBox}>
-          <Text style={styles.searchIcon}>🔍</Text>
+        <View className="flex-row items-center rounded-xl px-3 h-11 border border-[#262930] bg-[#181A1F] mb-4">
+          <Text className="text-sm mr-2">🔍</Text>
           <TextInput
-            style={styles.searchInput}
+            className="flex-1 text-xs text-white"
             placeholder="Search lead by name or email..."
-            placeholderTextColor={colors.mutedForeground}
+            placeholderTextColor="#64748B"
             value={search}
             onChangeText={setSearch}
           />
         </View>
 
         {/* Leads Cards */}
-        <View style={styles.leadsList}>
+        <View className="gap-3">
           {isLoading ? (
             <SalesLeadsSkeleton />
           ) : filtered.length > 0 ? (
             filtered.map((lead) => (
-              <View key={lead.id} style={styles.leadCard}>
-                <View style={styles.leadTop}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.leadName}>
+              <View key={lead.id} className="rounded-2xl p-3.5 border border-[#262930] bg-[#181A1F]">
+                <View className="flex-row justify-between items-start">
+                  <View className="flex-1 pr-2">
+                    <Text className="text-sm font-black text-white">
                       {lead.full_name || lead.email?.split('@')[0] || 'Prospective Client'}
                     </Text>
-                    <Text style={styles.leadEmail}>{lead.email || 'No email'}</Text>
+                    <Text className="text-xs text-slate-400 mt-0.5">{lead.email || 'No email'}</Text>
                     {lead.business_name ? (
-                      <Text style={styles.leadBiz}>🏢 {lead.business_name}</Text>
+                      <Text className="text-xs text-[#0084FF] font-bold mt-1">🏢 {lead.business_name}</Text>
                     ) : null}
                   </View>
-                  <View style={styles.leadBadge}>
-                    <Text style={styles.leadBadgeText}>
+                  <View className="bg-emerald-500/15 px-2 py-0.5 rounded-md">
+                    <Text className="text-[10px] font-black text-emerald-400">
                       {lead.is_admin ? 'Admin' : 'Prospect'}
                     </Text>
                   </View>
                 </View>
 
-                <View style={styles.leadDivider} />
+                <View className="h-px bg-[#262930] my-2.5" />
 
-                <View style={styles.leadBottom}>
-                  <Text style={styles.leadDate}>
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-[11px] text-slate-400">
                     Joined: {lead.created_at ? new Date(lead.created_at).toLocaleDateString() : 'N/A'}
                   </Text>
-                  <View style={styles.actionsRow}>
+                  <View className="flex-row gap-2">
                     <Pressable
-                      style={styles.actionWa}
+                      className="px-2.5 py-1 rounded-md bg-[#25D366]"
                       onPress={() => handleWhatsApp(lead.email)}
                     >
-                      <Text style={styles.actionText}>Chat</Text>
+                      <Text className="text-white text-[11px] font-bold">Chat</Text>
                     </Pressable>
                     <Pressable
-                      style={styles.actionCall}
+                      className="px-2.5 py-1 rounded-md bg-[#0084FF]"
                       onPress={() => handleCall(lead.email)}
                     >
-                      <Text style={styles.actionText}>Call</Text>
+                      <Text className="text-white text-[11px] font-bold">Call</Text>
                     </Pressable>
                   </View>
                 </View>
               </View>
             ))
           ) : (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyText}>No leads matching your search criteria.</Text>
+            <View className="p-6 items-center rounded-xl bg-[#181A1F] border border-[#262930]">
+              <Text className="text-xs text-slate-400">No leads matching your search criteria.</Text>
             </View>
           )}
         </View>
@@ -160,153 +156,3 @@ export default function SalesLeadsScreen() {
     </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
-  },
-  summaryCard: {
-    flex: 1,
-    backgroundColor: colors.card,
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  summaryLabel: {
-    fontSize: 11.5,
-    fontWeight: '700',
-    color: colors.mutedForeground,
-    textTransform: 'uppercase',
-  },
-  summaryValue: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: colors.foreground,
-    marginTop: 4,
-  },
-  searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 44,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: 16,
-  },
-  searchIcon: {
-    fontSize: 14,
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.foreground,
-  },
-  leadsList: {
-    gap: 12,
-  },
-  leadCard: {
-    backgroundColor: colors.card,
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  leadTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  leadName: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: colors.foreground,
-  },
-  leadEmail: {
-    fontSize: 12.5,
-    color: colors.mutedForeground,
-    marginTop: 2,
-  },
-  leadBiz: {
-    fontSize: 12,
-    color: colors.primary,
-    fontWeight: '700',
-    marginTop: 3,
-  },
-  leadBadge: {
-    backgroundColor: 'rgba(22, 184, 130, 0.12)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  leadBadgeText: {
-    fontSize: 10.5,
-    fontWeight: '800',
-    color: '#16B882',
-  },
-  leadDivider: {
-    height: 1,
-    backgroundColor: colors.muted,
-    marginVertical: 10,
-  },
-  leadBottom: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  leadDate: {
-    fontSize: 11.5,
-    color: colors.mutedForeground,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionWa: {
-    backgroundColor: colors.products.whatsapp,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  actionCall: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  actionText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  emptyCard: {
-    padding: 24,
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: 12,
-  },
-  emptyText: {
-    color: colors.mutedForeground,
-    fontSize: 13,
-  },
-  deniedWrapper: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  deniedText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.destructive,
-  },
-});

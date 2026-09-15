@@ -2,21 +2,18 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TextInput,
   Pressable,
   Alert,
   Share,
   Linking,
-  useColorScheme,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
-import { colors } from '../../src/theme/colors';
 
 type QRType = 'url' | 'whatsapp' | 'upi' | 'wifi' | 'contact' | 'text';
 
@@ -31,7 +28,7 @@ const QR_COLORS: QRColorOption[] = [
   { name: 'Emerald', color: '#10B981', dotColor: '#10B981' },
   { name: 'Royal Purple', color: '#8B5CF6', dotColor: '#8B5CF6' },
   { name: 'Crimson', color: '#E11D48', dotColor: '#E11D48' },
-  { name: 'Classic Dark', color: '#0F172A', dotColor: '#0F172A' },
+  { name: 'Classic Dark', color: '#000000', dotColor: '#000000' },
 ];
 
 const CATEGORIES: { id: QRType; title: string; icon: string }[] = [
@@ -44,47 +41,22 @@ const CATEGORIES: { id: QRType; title: string; icon: string }[] = [
 ];
 
 export default function QRCodeGeneratorScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
   const [qrType, setQrType] = useState<QRType>('url');
   const [selectedColor, setSelectedColor] = useState<QRColorOption>(QR_COLORS[0]);
 
   // Form Fields
   const [url, setUrl] = useState('https://getaipilot.in');
-  
-  // WhatsApp
   const [waPhone, setWaPhone] = useState('919876543210');
   const [waMessage, setWaMessage] = useState('Hi! I want to learn more about GetAiPilot.');
-
-  // UPI
   const [upiVpa, setUpiVpa] = useState('business@upi');
   const [upiName, setUpiName] = useState('GetAiPilot Enterprise');
   const [upiAmount, setUpiAmount] = useState('999');
-
-  // Wi-Fi
   const [wifiSsid, setWifiSsid] = useState('GetAiPilot_Guest');
   const [wifiPass, setWifiPass] = useState('Welcome@2026');
-
-  // Contact vCard
   const [contactName, setContactName] = useState('Alex Smith');
   const [contactPhone, setContactPhone] = useState('+91 98765 43210');
   const [contactEmail, setContactEmail] = useState('alex@getaipilot.in');
-
-  // Text
   const [textContent, setTextContent] = useState('Scan to unlock VIP GetAiPilot discount coupon: PILOT50');
-
-  // Dynamic Theme Mapping
-  const theme = {
-    bg: isDark ? colors.backgroundDark : colors.background,
-    card: isDark ? colors.surfaceDark : colors.card,
-    cardBorder: isDark ? colors.borderDark : colors.border,
-    text: isDark ? colors.foregroundDark : colors.foreground,
-    mutedText: colors.mutedForeground,
-    inputBg: isDark ? '#141416' : '#FFFFFF',
-    inputBorder: isDark ? '#2C2C2E' : colors.border,
-    primary: colors.primary, // GetAiPilot Electric Blue
-  };
 
   // Compute final QR payload
   const getQRValue = (): string => {
@@ -139,39 +111,34 @@ export default function QRCodeGeneratorScreen() {
   };
 
   return (
-    <AppScreen safeArea={false} backgroundColor={theme.bg}>
+    <AppScreen safeArea={false} className="flex-1 bg-[#0B0D10]">
       <AppTopBar title="QR Code Studio" subtitle="High-Resolution Custom QR Generator" showBack={true} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
         {/* Category Selector Grid */}
-        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-          <Text style={[styles.cardTitle, { color: theme.text }]}>1. Choose QR Category</Text>
-          <Text style={[styles.cardSubtitle, { color: theme.mutedText }]}>
+        <View className="rounded-2xl p-4 mb-4 border border-[#262930] bg-[#181A1F]">
+          <Text className="text-sm font-black text-white mb-1">1. Choose QR Category</Text>
+          <Text className="text-xs text-slate-400 mb-3.5 leading-4">
             Select the type of content you want encoded into your high-resolution QR code.
           </Text>
 
-          <View style={styles.categoriesGrid}>
+          <View className="flex-row flex-wrap gap-2">
             {CATEGORIES.map((cat) => (
               <Pressable
                 key={cat.id}
-                style={[
-                  styles.categoryBtn,
-                  {
-                    backgroundColor: qrType === cat.id ? theme.primary : isDark ? '#141416' : '#F3F4F6',
-                    borderColor: qrType === cat.id ? theme.primary : theme.cardBorder,
-                  },
-                ]}
+                className={`w-[31%] py-3 items-center rounded-xl border gap-1 ${
+                  qrType === cat.id ? 'bg-[#0084FF] border-[#0084FF]' : 'bg-[#111317] border-[#262930]'
+                }`}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setQrType(cat.id);
                 }}
               >
-                <Text style={{ fontSize: 20 }}>{cat.icon}</Text>
+                <Text className="text-xl">{cat.icon}</Text>
                 <Text
-                  style={[
-                    styles.categoryBtnText,
-                    { color: qrType === cat.id ? '#FFFFFF' : theme.text },
-                  ]}
+                  className={`text-xs font-bold ${
+                    qrType === cat.id ? 'text-white' : 'text-slate-300'
+                  }`}
                 >
                   {cat.title}
                 </Text>
@@ -180,19 +147,19 @@ export default function QRCodeGeneratorScreen() {
           </View>
         </View>
 
-        {/* Dynamic Inputs Based on Selected Category */}
-        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-          <Text style={[styles.cardTitle, { color: theme.text }]}>2. Enter Details</Text>
+        {/* Dynamic Inputs */}
+        <View className="rounded-2xl p-4 mb-4 border border-[#262930] bg-[#181A1F]">
+          <Text className="text-sm font-black text-white mb-3">2. Enter Details</Text>
 
           {qrType === 'url' && (
             <View>
-              <Text style={[styles.inputLabel, { color: theme.mutedText }]}>Website URL</Text>
+              <Text className="text-xs font-bold text-slate-300 mb-1">Website URL</Text>
               <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
+                className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2 text-xs text-white"
                 value={url}
                 onChangeText={setUrl}
                 placeholder="https://yourwebsite.com"
-                placeholderTextColor={theme.mutedText}
+                placeholderTextColor="#64748B"
                 autoCapitalize="none"
                 keyboardType="url"
               />
@@ -201,56 +168,57 @@ export default function QRCodeGeneratorScreen() {
 
           {qrType === 'whatsapp' && (
             <View>
-              <Text style={[styles.inputLabel, { color: theme.mutedText }]}>WhatsApp Number (with Country Code)</Text>
+              <Text className="text-xs font-bold text-slate-300 mb-1">WhatsApp Number (with Country Code)</Text>
               <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
+                className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2 text-xs text-white mb-3"
                 value={waPhone}
                 onChangeText={setWaPhone}
                 placeholder="919876543210"
-                placeholderTextColor={theme.mutedText}
+                placeholderTextColor="#64748B"
                 keyboardType="phone-pad"
               />
 
-              <Text style={[styles.inputLabel, { color: theme.mutedText, marginTop: 10 }]}>Prefilled Message</Text>
+              <Text className="text-xs font-bold text-slate-300 mb-1">Prefilled Message</Text>
               <TextInput
-                style={[styles.input, { height: 75, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
+                className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2 text-xs text-white h-20"
                 value={waMessage}
                 onChangeText={setWaMessage}
                 placeholder="Hi! I am interested in..."
-                placeholderTextColor={theme.mutedText}
+                placeholderTextColor="#64748B"
                 multiline
+                textAlignVertical="top"
               />
             </View>
           )}
 
           {qrType === 'upi' && (
             <View>
-              <Text style={[styles.inputLabel, { color: theme.mutedText }]}>UPI ID (VPA)</Text>
+              <Text className="text-xs font-bold text-slate-300 mb-1">UPI ID (VPA)</Text>
               <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
+                className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2 text-xs text-white mb-3"
                 value={upiVpa}
                 onChangeText={setUpiVpa}
                 placeholder="merchant@okhdfcbank"
-                placeholderTextColor={theme.mutedText}
+                placeholderTextColor="#64748B"
                 autoCapitalize="none"
               />
 
-              <Text style={[styles.inputLabel, { color: theme.mutedText, marginTop: 10 }]}>Payee Business Name</Text>
+              <Text className="text-xs font-bold text-slate-300 mb-1">Payee Business Name</Text>
               <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
+                className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2 text-xs text-white mb-3"
                 value={upiName}
                 onChangeText={setUpiName}
                 placeholder="GetAiPilot Store"
-                placeholderTextColor={theme.mutedText}
+                placeholderTextColor="#64748B"
               />
 
-              <Text style={[styles.inputLabel, { color: theme.mutedText, marginTop: 10 }]}>Fixed Amount (₹ INR - Optional)</Text>
+              <Text className="text-xs font-bold text-slate-300 mb-1">Fixed Amount (₹ INR - Optional)</Text>
               <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
+                className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2 text-xs text-white"
                 value={upiAmount}
                 onChangeText={setUpiAmount}
                 placeholder="499"
-                placeholderTextColor={theme.mutedText}
+                placeholderTextColor="#64748B"
                 keyboardType="numeric"
               />
             </View>
@@ -258,23 +226,23 @@ export default function QRCodeGeneratorScreen() {
 
           {qrType === 'wifi' && (
             <View>
-              <Text style={[styles.inputLabel, { color: theme.mutedText }]}>Wi-Fi Network Name (SSID)</Text>
+              <Text className="text-xs font-bold text-slate-300 mb-1">Wi-Fi Network Name (SSID)</Text>
               <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
+                className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2 text-xs text-white mb-3"
                 value={wifiSsid}
                 onChangeText={setWifiSsid}
                 placeholder="Office_5G_Guest"
-                placeholderTextColor={theme.mutedText}
+                placeholderTextColor="#64748B"
                 autoCapitalize="none"
               />
 
-              <Text style={[styles.inputLabel, { color: theme.mutedText, marginTop: 10 }]}>Wi-Fi Password</Text>
+              <Text className="text-xs font-bold text-slate-300 mb-1">Wi-Fi Password</Text>
               <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
+                className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2 text-xs text-white"
                 value={wifiPass}
                 onChangeText={setWifiPass}
                 placeholder="SecurityPassword123"
-                placeholderTextColor={theme.mutedText}
+                placeholderTextColor="#64748B"
                 autoCapitalize="none"
                 secureTextEntry
               />
@@ -283,32 +251,32 @@ export default function QRCodeGeneratorScreen() {
 
           {qrType === 'contact' && (
             <View>
-              <Text style={[styles.inputLabel, { color: theme.mutedText }]}>Full Name</Text>
+              <Text className="text-xs font-bold text-slate-300 mb-1">Full Name</Text>
               <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
+                className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2 text-xs text-white mb-3"
                 value={contactName}
                 onChangeText={setContactName}
                 placeholder="Sarah Connor"
-                placeholderTextColor={theme.mutedText}
+                placeholderTextColor="#64748B"
               />
 
-              <Text style={[styles.inputLabel, { color: theme.mutedText, marginTop: 10 }]}>Phone Number</Text>
+              <Text className="text-xs font-bold text-slate-300 mb-1">Phone Number</Text>
               <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
+                className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2 text-xs text-white mb-3"
                 value={contactPhone}
                 onChangeText={setContactPhone}
                 placeholder="+91 98765 43210"
-                placeholderTextColor={theme.mutedText}
+                placeholderTextColor="#64748B"
                 keyboardType="phone-pad"
               />
 
-              <Text style={[styles.inputLabel, { color: theme.mutedText, marginTop: 10 }]}>Email Address</Text>
+              <Text className="text-xs font-bold text-slate-300 mb-1">Email Address</Text>
               <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
+                className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2 text-xs text-white"
                 value={contactEmail}
                 onChangeText={setContactEmail}
                 placeholder="sarah@skynet.ai"
-                placeholderTextColor={theme.mutedText}
+                placeholderTextColor="#64748B"
                 autoCapitalize="none"
                 keyboardType="email-address"
               />
@@ -317,80 +285,79 @@ export default function QRCodeGeneratorScreen() {
 
           {qrType === 'text' && (
             <View>
-              <Text style={[styles.inputLabel, { color: theme.mutedText }]}>Plain Text / Note</Text>
+              <Text className="text-xs font-bold text-slate-300 mb-1">Plain Text / Note</Text>
               <TextInput
-                style={[styles.input, { height: 90, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
+                className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2 text-xs text-white h-24"
                 value={textContent}
                 onChangeText={setTextContent}
                 placeholder="Type your message, secret code, or note..."
-                placeholderTextColor={theme.mutedText}
+                placeholderTextColor="#64748B"
                 multiline
+                textAlignVertical="top"
               />
             </View>
           )}
 
           {/* Color Customizer */}
-          <Text style={[styles.inputLabel, { color: theme.mutedText, marginTop: 16 }]}>3. Custom QR Code Color</Text>
-          <View style={styles.colorPaletteRow}>
+          <Text className="text-xs font-bold text-slate-300 mb-2 mt-4">3. Custom QR Code Color</Text>
+          <View className="flex-row gap-3">
             {QR_COLORS.map((c, i) => (
               <Pressable
                 key={i}
-                style={[
-                  styles.colorCircleBtn,
-                  { backgroundColor: c.color },
-                  selectedColor.color === c.color && styles.colorCircleBtnActive,
-                ]}
+                className={`w-9 h-9 rounded-full justify-center items-center ${
+                  selectedColor.color === c.color ? 'border-2 border-white scale-110' : ''
+                }`}
+                style={{ backgroundColor: c.color }}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setSelectedColor(c);
                 }}
               >
                 {selectedColor.color === c.color && (
-                  <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 'bold' }}>✓</Text>
+                  <Text className="text-white text-xs font-bold">✓</Text>
                 )}
               </Pressable>
             ))}
           </View>
         </View>
 
-        {/* ── LIVE SCANNABLE QR CODE CANVAS ──────────────────────────── */}
+        {/* Canvas */}
         {payload ? (
-          <View style={[styles.qrCanvasCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-            <Text style={[styles.cardTitle, { color: theme.text, textAlign: 'center', marginBottom: 4 }]}>
-              Scannable QR Code ✨
-            </Text>
-            <Text style={[styles.cardSubtitle, { color: theme.mutedText, textAlign: 'center', marginBottom: 16 }]}>
+          <View className="rounded-2xl p-5 items-center border border-[#262930] bg-[#181A1F]">
+            <Text className="text-base font-black text-white text-center mb-1">Scannable QR Code ✨</Text>
+            <Text className="text-xs text-slate-400 text-center mb-4 leading-4">
               High-resolution vector SVG ready for instant mobile scanning and printing.
             </Text>
 
-            {/* Framed QR Code Chassis */}
-            <View style={styles.qrChassis}>
+            <View className="bg-white p-4 rounded-2xl mb-4 shadow-lg">
               <QRCode
                 value={payload}
-                size={220}
+                size={200}
                 color={selectedColor.color}
                 backgroundColor="#FFFFFF"
               />
             </View>
 
-            {/* 3-Action Button Bar */}
-            <View style={styles.actionsRow}>
-              <Pressable style={[styles.actionBtn, { backgroundColor: theme.primary }]} onPress={handleShare}>
-                <Text style={styles.actionBtnText}>Share QR 📤</Text>
+            <View className="flex-row gap-2 w-full">
+              <Pressable
+                className="flex-1 py-3 rounded-xl items-center bg-[#0084FF]"
+                onPress={handleShare}
+              >
+                <Text className="text-xs font-bold text-white">Share QR 📤</Text>
               </Pressable>
 
               <Pressable
-                style={[styles.actionBtn, { backgroundColor: isDark ? '#2C2C2E' : '#E5E7EB' }]}
+                className="flex-1 py-3 rounded-xl items-center border border-[#262930] bg-[#111317]"
                 onPress={handleCopyPayload}
               >
-                <Text style={[styles.actionBtnText, { color: theme.text }]}>Copy Link 📋</Text>
+                <Text className="text-xs font-bold text-white">Copy Link 📋</Text>
               </Pressable>
 
               <Pressable
-                style={[styles.actionBtn, { backgroundColor: colors.products.whatsapp }]}
+                className="flex-1 py-3 rounded-xl items-center bg-[#25D366]"
                 onPress={handleTestPayload}
               >
-                <Text style={styles.actionBtnText}>Test Link 🔗</Text>
+                <Text className="text-xs font-bold text-black">Test Link 🔗</Text>
               </Pressable>
             </View>
           </View>
@@ -399,123 +366,3 @@ export default function QRCodeGeneratorScreen() {
     </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 50,
-  },
-  card: {
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 16,
-    borderWidth: 1,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  cardSubtitle: {
-    fontSize: 12.5,
-    lineHeight: 18,
-    marginBottom: 14,
-  },
-  categoriesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  categoryBtn: {
-    width: '31%',
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 4,
-  },
-  categoryBtnText: {
-    fontSize: 11.5,
-    fontWeight: '700',
-  },
-  inputLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  input: {
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 13.5,
-    borderWidth: 1,
-  },
-  colorPaletteRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 4,
-  },
-  colorCircleBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  colorCircleBtnActive: {
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
-    transform: [{ scale: 1.1 }],
-  },
-  qrCanvasCard: {
-    borderRadius: 18,
-    padding: 20,
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  qrChassis: {
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 18,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 6,
-    marginBottom: 16,
-  },
-  payloadBox: {
-    width: '100%',
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    marginBottom: 16,
-  },
-  payloadLabel: {
-    fontSize: 10.5,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    marginBottom: 2,
-  },
-  payloadText: {
-    fontSize: 12,
-    fontFamily: 'monospace',
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    width: '100%',
-  },
-  actionBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '800',
-    fontSize: 12.5,
-  },
-});

@@ -2,19 +2,16 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   Pressable,
   ActivityIndicator,
   Alert,
   Share,
-  useColorScheme,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
-import { colors } from '../../src/theme/colors';
 
 interface SampleAudio {
   id: string;
@@ -74,9 +71,6 @@ const LANGUAGES = [
 ];
 
 export default function SpeechToTextScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
   const [isRecording, setIsRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -86,18 +80,6 @@ export default function SpeechToTextScreen() {
   const [transcript, setTranscript] = useState('');
   const [summaryBullets, setSummaryBullets] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
-
-  // Dynamic Theme Mapping
-  const theme = {
-    bg: isDark ? colors.backgroundDark : colors.background,
-    card: isDark ? colors.surfaceDark : colors.card,
-    cardBorder: isDark ? colors.borderDark : colors.border,
-    text: isDark ? colors.foregroundDark : colors.foreground,
-    mutedText: colors.mutedForeground,
-    inputBg: isDark ? '#141416' : '#FFFFFF',
-    primary: colors.primary, // GetAiPilot Electric Blue
-    primarySoft: colors.accentSoft,
-  };
 
   // Recording Timer
   useEffect(() => {
@@ -121,7 +103,6 @@ export default function SpeechToTextScreen() {
   const handleToggleRecord = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     if (isRecording) {
-      // Stop Recording & Trigger Whisper AI Transcriber
       setIsRecording(false);
       setIsProcessing(true);
 
@@ -138,7 +119,6 @@ export default function SpeechToTextScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }, 1400);
     } else {
-      // Start Recording
       setTranscript('');
       setSummaryBullets([]);
       setCopied(false);
@@ -178,40 +158,35 @@ export default function SpeechToTextScreen() {
   };
 
   return (
-    <AppScreen safeArea={false} backgroundColor={theme.bg}>
+    <AppScreen safeArea={false} className="flex-1 bg-[#0B0D10]">
       <AppTopBar title="AI Speech-to-Text" subtitle="Voice Notes & Audio Transcriber" showBack={true} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
         {/* Main Recording Studio Card */}
-        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-          <Text style={[styles.cardTitle, { color: theme.text }]}>Voice Note Transcriber</Text>
-          <Text style={[styles.cardSubtitle, { color: theme.mutedText }]}>
+        <View className="rounded-2xl p-4 mb-4 border border-[#262930] bg-[#181A1F]">
+          <Text className="text-sm font-black text-white mb-1">Voice Note Transcriber</Text>
+          <Text className="text-xs text-slate-400 leading-4 mb-3.5">
             Record speech in real-time or select an audio sample to generate clean text and AI executive summaries.
           </Text>
 
           {/* Language Selector Pills */}
-          <Text style={[styles.inputLabel, { color: theme.mutedText }]}>Recognition Language:</Text>
-          <View style={styles.langRow}>
+          <Text className="text-xs font-bold text-slate-300 mb-1.5">Recognition Language:</Text>
+          <View className="flex-row flex-wrap gap-1.5 mb-4">
             {LANGUAGES.map((lang) => (
               <Pressable
                 key={lang.code}
-                style={[
-                  styles.langPill,
-                  {
-                    backgroundColor: selectedLanguage === lang.code ? theme.primary : isDark ? '#141416' : '#F3F4F6',
-                    borderColor: selectedLanguage === lang.code ? theme.primary : theme.cardBorder,
-                  },
-                ]}
+                className={`px-3 py-1.5 rounded-lg border ${
+                  selectedLanguage === lang.code ? 'bg-[#0084FF] border-[#0084FF]' : 'bg-[#111317] border-[#262930]'
+                }`}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setSelectedLanguage(lang.code);
                 }}
               >
                 <Text
-                  style={[
-                    styles.langPillText,
-                    { color: selectedLanguage === lang.code ? '#FFFFFF' : theme.text },
-                  ]}
+                  className={`text-xs font-bold ${
+                    selectedLanguage === lang.code ? 'text-white' : 'text-slate-300'
+                  }`}
                 >
                   {lang.label}
                 </Text>
@@ -220,41 +195,37 @@ export default function SpeechToTextScreen() {
           </View>
 
           {/* Big Recording Button Chassis */}
-          <View style={styles.recorderContainer}>
-            {/* Animated Waveform Visualizer simulation */}
+          <View className="items-center py-3">
+            {/* Waveform Visualizer */}
             {isRecording && (
-              <View style={styles.waveformContainer}>
-                <View style={[styles.waveBar, { height: 28, backgroundColor: '#EF4444' }]} />
-                <View style={[styles.waveBar, { height: 44, backgroundColor: '#EF4444' }]} />
-                <View style={[styles.waveBar, { height: 18, backgroundColor: '#EF4444' }]} />
-                <View style={[styles.waveBar, { height: 52, backgroundColor: '#EF4444' }]} />
-                <View style={[styles.waveBar, { height: 35, backgroundColor: '#EF4444' }]} />
-                <View style={[styles.waveBar, { height: 22, backgroundColor: '#EF4444' }]} />
-                <View style={[styles.waveBar, { height: 48, backgroundColor: '#EF4444' }]} />
+              <View className="flex-row items-center gap-1 h-14 mb-2.5">
+                <View className="w-1.5 h-7 rounded-sm bg-red-500" />
+                <View className="w-1.5 h-11 rounded-sm bg-red-500" />
+                <View className="w-1.5 h-5 rounded-sm bg-red-500" />
+                <View className="w-1.5 h-14 rounded-sm bg-red-500" />
+                <View className="w-1.5 h-9 rounded-sm bg-red-500" />
+                <View className="w-1.5 h-6 rounded-sm bg-red-500" />
+                <View className="w-1.5 h-12 rounded-sm bg-red-500" />
               </View>
             )}
 
-            {/* Pulsing Mic Button */}
+            {/* Mic Button */}
             <Pressable
-              style={[
-                styles.micCircleBtn,
-                {
-                  backgroundColor: isRecording ? '#EF4444' : theme.primary,
-                  shadowColor: isRecording ? '#EF4444' : theme.primary,
-                },
-              ]}
+              className={`w-20 h-20 rounded-full justify-center items-center shadow-lg mb-2.5 ${
+                isRecording ? 'bg-red-500 shadow-red-500/50' : 'bg-[#0084FF] shadow-[#0084FF]/50'
+              }`}
               onPress={handleToggleRecord}
               disabled={isProcessing}
             >
-              <Text style={{ fontSize: 36 }}>{isRecording ? '⏹' : '🎙️'}</Text>
+              <Text className="text-3xl">{isRecording ? '⏹' : '🎙️'}</Text>
             </Pressable>
 
             {/* Status & Live Timer */}
-            <Text style={[styles.recordingTimerText, { color: isRecording ? '#EF4444' : theme.text }]}>
+            <Text className={`text-xl font-black font-mono mb-1 ${isRecording ? 'text-red-500' : 'text-white'}`}>
               {isRecording ? formatTimer(recordSeconds) : '00:00'}
             </Text>
 
-            <Text style={[styles.recorderStatusHint, { color: theme.mutedText }]}>
+            <Text className="text-xs font-semibold text-slate-400 text-center">
               {isRecording
                 ? 'Recording in Progress... Tap to Stop & Transcribe'
                 : isProcessing
@@ -263,77 +234,64 @@ export default function SpeechToTextScreen() {
             </Text>
 
             {isProcessing && (
-              <ActivityIndicator size="large" color={theme.primary} style={{ marginTop: 14 }} />
+              <ActivityIndicator size="large" color="#0084FF" className="mt-3.5" />
             )}
           </View>
         </View>
 
         {/* 1-Tap Sample Audio Notes */}
-        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-          <Text style={[styles.cardHeading, { color: theme.text }]}>Or Test with Sample Voice Notes</Text>
-          <Text style={[styles.cardSubtitle, { color: theme.mutedText }]}>
+        <View className="rounded-2xl p-4 mb-4 border border-[#262930] bg-[#181A1F]">
+          <Text className="text-sm font-black text-white mb-1">Or Test with Sample Voice Notes</Text>
+          <Text className="text-xs text-slate-400 mb-3">
             Experience instant AI speech recognition without speaking out loud.
           </Text>
 
-          <View style={{ gap: 8 }}>
+          <View className="gap-2">
             {SAMPLE_VOICE_NOTES.map((sample) => (
               <Pressable
                 key={sample.id}
-                style={[
-                  styles.sampleCard,
-                  { backgroundColor: isDark ? '#141416' : '#F9FAFB', borderColor: theme.cardBorder },
-                ]}
+                className="flex-row items-center p-3 rounded-xl border border-[#262930] bg-[#111317]"
                 onPress={() => handleLoadSample(sample)}
               >
-                <View style={[styles.samplePlayIcon, { backgroundColor: theme.primarySoft }]}>
-                  <Text style={{ fontSize: 16 }}>▶️</Text>
+                <View className="w-8 h-8 rounded-full items-center justify-center bg-[#0084FF]/20">
+                  <Text className="text-sm">▶️</Text>
                 </View>
 
-                <View style={{ flex: 1, marginLeft: 10 }}>
-                  <Text style={[styles.sampleTitle, { color: theme.text }]}>{sample.title}</Text>
-                  <Text style={[styles.sampleCategory, { color: theme.primary }]}>
+                <View className="flex-1 ml-2.5">
+                  <Text className="text-xs font-black text-white">{sample.title}</Text>
+                  <Text className="text-[10px] text-[#0084FF] font-semibold">
                     {sample.category} • {sample.duration}
                   </Text>
                 </View>
 
-                <Text style={{ color: theme.primary, fontSize: 12, fontWeight: '700' }}>Load ➔</Text>
+                <Text className="text-xs font-bold text-[#0084FF]">Load ➔</Text>
               </Pressable>
             ))}
           </View>
         </View>
 
-        {/* ── TRANSCRIPTION & AI SUMMARY RESULTS CARD ──────────────── */}
+        {/* RESULTS CARD */}
         {transcript ? (
-          <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <Text style={[styles.cardHeading, { color: theme.text }]}>AI Output</Text>
+          <View className="rounded-2xl p-4 border border-[#262930] bg-[#181A1F] mb-4">
+            <View className="flex-row justify-between items-center mb-3">
+              <Text className="text-sm font-black text-white">AI Output</Text>
 
-              {/* Segmented Switcher (Full Text vs Summary) */}
-              <View style={[styles.outputTabs, { backgroundColor: isDark ? '#141416' : '#E5E7EB' }]}>
+              {/* Tabs */}
+              <View className="flex-row p-1 rounded-lg bg-[#111317] border border-[#262930]">
                 <Pressable
-                  style={[styles.outputTabBtn, activeTab === 'transcript' && { backgroundColor: theme.primary }]}
+                  className={`px-2.5 py-1 rounded-md ${activeTab === 'transcript' ? 'bg-[#0084FF]' : ''}`}
                   onPress={() => setActiveTab('transcript')}
                 >
-                  <Text
-                    style={[
-                      styles.outputTabBtnText,
-                      { color: activeTab === 'transcript' ? '#FFFFFF' : theme.mutedText },
-                    ]}
-                  >
+                  <Text className={`text-[11px] font-bold ${activeTab === 'transcript' ? 'text-white' : 'text-slate-400'}`}>
                     Full Text 📝
                   </Text>
                 </Pressable>
 
                 <Pressable
-                  style={[styles.outputTabBtn, activeTab === 'summary' && { backgroundColor: theme.primary }]}
+                  className={`px-2.5 py-1 rounded-md ${activeTab === 'summary' ? 'bg-[#0084FF]' : ''}`}
                   onPress={() => setActiveTab('summary')}
                 >
-                  <Text
-                    style={[
-                      styles.outputTabBtnText,
-                      { color: activeTab === 'summary' ? '#FFFFFF' : theme.mutedText },
-                    ]}
-                  >
+                  <Text className={`text-[11px] font-bold ${activeTab === 'summary' ? 'text-white' : 'text-slate-400'}`}>
                     AI Summary ⚡
                   </Text>
                 </Pressable>
@@ -342,36 +300,36 @@ export default function SpeechToTextScreen() {
 
             {/* Display Body */}
             {activeTab === 'transcript' ? (
-              <View style={[styles.transcriptBox, { backgroundColor: isDark ? '#141416' : '#F9FAFB', borderColor: theme.cardBorder }]}>
-                <Text style={[styles.transcriptBodyText, { color: theme.text }]}>{transcript}</Text>
+              <View className="p-3.5 rounded-xl border border-[#262930] bg-[#111317] mb-3.5">
+                <Text className="text-xs text-slate-200 leading-5">{transcript}</Text>
               </View>
             ) : (
-              <View style={[styles.transcriptBox, { backgroundColor: isDark ? '#141416' : '#F9FAFB', borderColor: theme.cardBorder }]}>
+              <View className="p-3.5 rounded-xl border border-[#262930] bg-[#111317] mb-3.5">
                 {summaryBullets.map((bullet, idx) => (
-                  <View key={idx} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 }}>
-                    <Text style={{ color: theme.primary, marginRight: 8, fontSize: 14 }}>•</Text>
-                    <Text style={[styles.bulletText, { color: theme.text }]}>{bullet}</Text>
+                  <View key={idx} className="flex-row items-start mb-2">
+                    <Text className="text-[#0084FF] mr-2 text-sm leading-4">•</Text>
+                    <Text className="text-xs text-slate-200 flex-1 leading-4">{bullet}</Text>
                   </View>
                 ))}
               </View>
             )}
 
             {/* Actions Bar */}
-            <View style={styles.resultsActionRow}>
+            <View className="flex-row gap-2">
               <Pressable
-                style={[styles.actionBtn, { backgroundColor: isDark ? '#2C2C2E' : '#E5E7EB' }]}
+                className="flex-1 py-3 rounded-xl items-center border border-[#262930] bg-[#111317]"
                 onPress={handleCopyText}
               >
-                <Text style={[styles.actionBtnText, { color: theme.text }]}>
+                <Text className="text-xs font-bold text-white">
                   {copied ? 'Copied to Clipboard ✅' : 'Copy Text 📋'}
                 </Text>
               </Pressable>
 
               <Pressable
-                style={[styles.actionBtn, { backgroundColor: theme.primary }]}
+                className="flex-1 py-3 rounded-xl items-center bg-[#0084FF]"
                 onPress={handleShare}
               >
-                <Text style={[styles.actionBtnText, { color: '#FFFFFF' }]}>Share Transcript 📤</Text>
+                <Text className="text-xs font-bold text-white">Share Transcript 📤</Text>
               </Pressable>
             </View>
           </View>
@@ -380,156 +338,3 @@ export default function SpeechToTextScreen() {
     </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 50,
-  },
-  card: {
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 16,
-    borderWidth: 1,
-  },
-  cardTitle: {
-    fontSize: 16.5,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  cardSubtitle: {
-    fontSize: 12.5,
-    lineHeight: 18,
-    marginBottom: 14,
-  },
-  cardHeading: {
-    fontSize: 15,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  inputLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  langRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 16,
-  },
-  langPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  langPillText: {
-    fontSize: 11.5,
-    fontWeight: '700',
-  },
-  recorderContainer: {
-    alignItems: 'center',
-    paddingVertical: 14,
-  },
-  waveformContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    height: 60,
-    marginBottom: 10,
-  },
-  waveBar: {
-    width: 6,
-    borderRadius: 3,
-  },
-  micCircleBtn: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 8,
-    marginBottom: 10,
-  },
-  recordingTimerText: {
-    fontSize: 22,
-    fontWeight: '900',
-    fontFamily: 'monospace',
-    marginBottom: 4,
-  },
-  recorderStatusHint: {
-    fontSize: 12,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  sampleCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  samplePlayIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sampleTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    marginBottom: 2,
-  },
-  sampleCategory: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  outputTabs: {
-    flexDirection: 'row',
-    padding: 3,
-    borderRadius: 8,
-  },
-  outputTabBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 6,
-  },
-  outputTabBtnText: {
-    fontSize: 11.5,
-    fontWeight: '700',
-  },
-  transcriptBox: {
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 14,
-  },
-  transcriptBodyText: {
-    fontSize: 13.5,
-    lineHeight: 20,
-  },
-  bulletText: {
-    flex: 1,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  resultsActionRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  actionBtnText: {
-    fontSize: 12.5,
-    fontWeight: '800',
-  },
-});

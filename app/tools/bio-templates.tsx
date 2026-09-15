@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -7,7 +7,6 @@ import {
   Linking,
   Pressable,
   RefreshControl,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -19,7 +18,6 @@ import {
   openAuthenticatedTemplate,
 } from "../../src/lib/template-deep-link";
 import { supabase } from "../../src/lib/supabase";
-import { colors } from "../../src/theme/colors";
 import { TemplatesListSkeleton } from "../../src/components/skeletonScreen";
 
 type TemplateFormData = {
@@ -77,7 +75,6 @@ export default function BioTemplatesScreen() {
       setTemplates(data ?? []);
     } catch (error) {
       console.error("Error fetching templates:", error);
-
       Alert.alert("Error", "Failed to load your templates.");
     } finally {
       setLoading(false);
@@ -86,7 +83,6 @@ export default function BioTemplatesScreen() {
   }, []);
 
   useEffect(() => {
-    // Defer the initial network request until after this render is committed.
     const loadTimer = setTimeout(() => {
       void fetchTemplates();
     }, 0);
@@ -137,7 +133,6 @@ export default function BioTemplatesScreen() {
               );
             } catch (error) {
               console.error("Delete template error:", error);
-
               Alert.alert("Error", "Failed to delete template.");
             } finally {
               setDeletingId(null);
@@ -181,108 +176,95 @@ export default function BioTemplatesScreen() {
       const templateName = getTemplateName(item);
 
       return (
-        <View style={styles.templateCard}>
+        <View className="rounded-2xl border border-[#262930] bg-[#181A1F] overflow-hidden mb-3.5">
           {/* Preview */}
-          <View style={styles.previewContainer}>
+          <View className="h-44 bg-[#111317] relative">
             {formData.imageUrl ? (
               <Image
                 source={{ uri: formData.imageUrl }}
-                style={styles.previewImage}
+                className="w-full h-full"
                 resizeMode="cover"
               />
             ) : (
-              <View style={styles.previewPlaceholder}>
-                <Text style={styles.previewPlaceholderText}>
-                  Template Preview
-                </Text>
+              <View className="flex-1 items-center justify-center">
+                <Text className="text-xs font-bold text-slate-400">Template Preview</Text>
               </View>
             )}
 
-            <View style={styles.templateBadge}>
-              <Text style={styles.templateBadgeText}>TEMPLATE</Text>
+            <View className="absolute top-3 left-3 px-2 py-1 rounded-md bg-black/65">
+              <Text className="text-white text-[9px] font-black">TEMPLATE</Text>
             </View>
           </View>
 
           {/* Content */}
-          <View style={styles.cardContent}>
-            <Text style={styles.templateName} numberOfLines={1}>
+          <View className="p-4">
+            <Text className="text-base font-black text-white" numberOfLines={1}>
               {templateName}
             </Text>
 
-            <Text style={styles.templateId} numberOfLines={1}>
+            <Text className="text-[11px] text-slate-400 mt-0.5" numberOfLines={1}>
               {item.template_id}
             </Text>
 
             {formData.channelTitle ? (
-              <Text style={styles.channelTitle} numberOfLines={1}>
+              <Text className="text-xs font-bold text-white mt-2" numberOfLines={1}>
                 {formData.channelTitle}
               </Text>
             ) : null}
 
             {formData.channelDesc1 ? (
-              <Text style={styles.description} numberOfLines={2}>
+              <Text className="text-xs text-slate-400 mt-1 leading-4" numberOfLines={2}>
                 {formData.channelDesc1}
               </Text>
             ) : null}
 
             {/* Meta */}
-            <View style={styles.metaRow}>
-              <View style={styles.metaItem}>
-                <Text style={styles.metaLabel}>Niche</Text>
-
-                <Text style={styles.metaValue} numberOfLines={1}>
+            <View className="flex-row mt-3.5 pt-3 border-t border-[#262930]">
+              <View className="flex-1">
+                <Text className="text-[10px] text-slate-400 mb-0.5">Niche</Text>
+                <Text className="text-xs font-bold text-white" numberOfLines={1}>
                   {item.niche || "General"}
                 </Text>
               </View>
 
-              <View style={styles.metaItem}>
-                <Text style={styles.metaLabel}>Downloaded</Text>
-
-                <Text style={styles.metaValue}>
+              <View className="flex-1">
+                <Text className="text-[10px] text-slate-400 mb-0.5">Downloaded</Text>
+                <Text className="text-xs font-bold text-white">
                   {formatDate(item.downloaded_at)}
                 </Text>
               </View>
             </View>
 
             {/* Actions */}
-            <View style={styles.actions}>
+            <View className="flex-row gap-2.5 mt-4">
               <Pressable
-                style={({ pressed }) => [
-                  styles.previewButton,
-                  pressed && styles.pressed,
-                ]}
+                className="flex-1 h-10 rounded-xl items-center justify-center bg-[#0084FF]"
                 onPress={() => handlePreview(item)}
               >
-                <Text style={styles.previewButtonText}>Preview</Text>
+                <Text className="text-white text-xs font-extrabold">Preview</Text>
               </Pressable>
 
               <Pressable
-                style={({ pressed }) => [
-                  styles.editButton,
-                  pressed && styles.pressed,
-                ]}
+                className="w-16 h-10 rounded-xl items-center justify-center bg-[#111317] border border-[#262930]"
                 onPress={() => handleOpenEditor(item)}
                 disabled={openingId === item.id}
               >
                 {openingId === item.id ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.editButtonText}>Edit</Text>
+                  <Text className="text-white text-xs font-extrabold">Edit</Text>
                 )}
               </Pressable>
 
               <Pressable
-                style={({ pressed }) => [
-                  styles.deleteButton,
-                  pressed && styles.pressed,
-                ]}
+                className="w-20 h-10 rounded-xl items-center justify-center bg-red-500/10 border border-red-500/30"
                 onPress={() => handleDelete(item)}
                 disabled={deletingId === item.id}
               >
                 {deletingId === item.id ? (
-                  <ActivityIndicator size="small" color={colors.foreground} />
+                  <ActivityIndicator size="small" color="#EF4444" />
                 ) : (
-                  <Text style={styles.deleteButtonText}>Delete</Text>
+                  <Text className="text-red-400 text-xs font-bold">Delete</Text>
                 )}
               </Pressable>
             </View>
@@ -294,12 +276,8 @@ export default function BioTemplatesScreen() {
   );
 
   return (
-    <AppScreen safeArea={false} backgroundColor={colors.background}>
-      <AppTopBar
-        title="Bio Templates"
-        subtitle="Your downloaded templates"
-        showBack
-      />
+    <AppScreen safeArea={false} className="flex-1 bg-[#0B0D10]">
+      <AppTopBar title="Bio Templates" subtitle="Your downloaded templates" showBack />
 
       {loading ? (
         <TemplatesListSkeleton />
@@ -309,20 +287,16 @@ export default function BioTemplatesScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderTemplate}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={[
-            styles.listContent,
-            templates.length === 0 && styles.emptyListContent,
-          ]}
+          contentContainerStyle={{ padding: 16, paddingBottom: 60, flexGrow: templates.length === 0 ? 1 : undefined }}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#0084FF" />
           }
           ListHeaderComponent={
             templates.length > 0 ? (
-              <View style={styles.headerCard}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.headerTitle}>My Templates</Text>
-
-                  <Text style={styles.headerSubtitle}>
+              <View className="flex-row items-center justify-between rounded-2xl border border-[#262930] bg-[#181A1F] p-4 mb-4">
+                <View className="flex-1">
+                  <Text className="text-base font-black text-white">My Templates</Text>
+                  <Text className="text-xs text-slate-400 mt-0.5">
                     {templates.length}{" "}
                     {templates.length === 1 ? "template" : "templates"}{" "}
                     downloaded
@@ -330,45 +304,31 @@ export default function BioTemplatesScreen() {
                 </View>
 
                 <Pressable
-                  style={{
-                    backgroundColor: "#0A84FF",
-                    paddingHorizontal: 12,
-                    paddingVertical: 8,
-                    borderRadius: 8,
-                    marginRight: 8,
-                  }}
+                  className="bg-[#0084FF] px-3 py-1.5 rounded-lg mr-2"
                   onPress={handleOpenBioDashboard}
                 >
-                  <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700" }}>Web Dashboard ↗</Text>
+                  <Text className="text-white text-xs font-bold">Web Dashboard ↗</Text>
                 </Pressable>
 
-                <View style={styles.countBadge}>
-                  <Text style={styles.countText}>{templates.length}</Text>
+                <View className="w-9 h-9 rounded-full items-center justify-center bg-[#111317] border border-[#262930]">
+                  <Text className="text-xs font-black text-white">{templates.length}</Text>
                 </View>
               </View>
             ) : null
           }
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyIcon}>▣</Text>
-
-              <Text style={styles.emptyTitle}>No Templates Found</Text>
-
-              <Text style={styles.emptyText}>
+            <View className="flex-1 items-center justify-center px-8 pb-20">
+              <Text className="text-4xl mb-3">▣</Text>
+              <Text className="text-lg font-black text-white">No Templates Found</Text>
+              <Text className="mt-1 text-xs text-slate-400 text-center leading-5">
                 Your downloaded bio templates will appear here.
               </Text>
 
               <Pressable
-                style={{
-                  backgroundColor: "#0A84FF",
-                  paddingHorizontal: 18,
-                  paddingVertical: 12,
-                  borderRadius: 10,
-                  marginTop: 16,
-                }}
+                className="mt-4 px-4 py-3 rounded-xl bg-[#0084FF]"
                 onPress={() => handleOpenEditor({ id: "creators-v1" } as any)}
               >
-                <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "700" }}>Create Bio Page 🚀</Text>
+                <Text className="text-white text-xs font-bold">Create Bio Page 🚀</Text>
               </Pressable>
             </View>
           }
@@ -377,8 +337,6 @@ export default function BioTemplatesScreen() {
     </AppScreen>
   );
 }
-
-/* ---------------- Helpers ---------------- */
 
 const getTemplateName = (template: TemplateSubmission) => {
   return (
@@ -391,266 +349,11 @@ const getTemplateName = (template: TemplateSubmission) => {
 
 const formatDate = (date?: string) => {
   if (!date) return "N/A";
-
   const parsedDate = new Date(date);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return "N/A";
-  }
-
+  if (Number.isNaN(parsedDate.getTime())) return "N/A";
   return parsedDate.toLocaleDateString("en-IN", {
     day: "2-digit",
     month: "short",
     year: "numeric",
   });
 };
-
-/* ---------------- Styles ---------------- */
-
-const styles = StyleSheet.create({
-  listContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-
-  emptyListContent: {
-    flexGrow: 1,
-  },
-
-  headerCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 16,
-    marginBottom: 16,
-  },
-
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: colors.foreground,
-  },
-
-  headerSubtitle: {
-    marginTop: 3,
-    fontSize: 12,
-    color: colors.mutedForeground,
-  },
-
-  countBadge: {
-    minWidth: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.muted,
-  },
-
-  countText: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: colors.foreground,
-  },
-
-  templateCard: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: "hidden",
-    marginBottom: 14,
-  },
-
-  previewContainer: {
-    height: 170,
-    backgroundColor: colors.muted,
-    position: "relative",
-  },
-
-  previewImage: {
-    width: "100%",
-    height: "100%",
-  },
-
-  previewPlaceholder: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  previewPlaceholderText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: colors.mutedForeground,
-  },
-
-  templateBadge: {
-    position: "absolute",
-    top: 12,
-    left: 12,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 7,
-    backgroundColor: "rgba(0,0,0,0.65)",
-  },
-
-  templateBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 9,
-    fontWeight: "800",
-  },
-
-  cardContent: {
-    padding: 16,
-  },
-
-  templateName: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: colors.foreground,
-  },
-
-  templateId: {
-    marginTop: 3,
-    fontSize: 11,
-    color: colors.mutedForeground,
-  },
-
-  channelTitle: {
-    marginTop: 10,
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.foreground,
-  },
-
-  description: {
-    marginTop: 4,
-    fontSize: 12,
-    lineHeight: 17,
-    color: colors.mutedForeground,
-  },
-
-  metaRow: {
-    flexDirection: "row",
-    marginTop: 14,
-    paddingTop: 13,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-
-  metaItem: {
-    flex: 1,
-  },
-
-  metaLabel: {
-    fontSize: 10,
-    color: colors.mutedForeground,
-    marginBottom: 3,
-  },
-
-  metaValue: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.foreground,
-  },
-
-  actions: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 15,
-  },
-
-  previewButton: {
-    flex: 1,
-    height: 42,
-    borderRadius: 9,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.primary,
-  },
-
-  previewButtonText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "800",
-  },
-
-  editButton: {
-    width: 72,
-    height: 42,
-    borderRadius: 9,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.primary,
-  },
-
-  editButtonText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "800",
-  },
-
-  deleteButton: {
-    width: 90,
-    height: 42,
-    borderRadius: 9,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.muted,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-
-  deleteButtonText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: colors.foreground,
-  },
-
-  pressed: {
-    opacity: 0.7,
-  },
-
-  loader: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  loadingText: {
-    marginTop: 10,
-    fontSize: 13,
-    color: colors.mutedForeground,
-  },
-
-  emptyContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 30,
-  },
-
-  emptyIcon: {
-    fontSize: 38,
-    color: colors.mutedForeground,
-    marginBottom: 12,
-  },
-
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: colors.foreground,
-  },
-
-  emptyText: {
-    marginTop: 6,
-    textAlign: "center",
-    fontSize: 13,
-    lineHeight: 19,
-    color: colors.mutedForeground,
-  },
-});

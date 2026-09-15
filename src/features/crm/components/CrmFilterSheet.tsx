@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, Modal, Pressable, ScrollView, useColorScheme } from 'react-native';
+import { Text, View, Modal, Pressable, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useMembers } from '../hooks/useMembers';
 
@@ -28,9 +28,6 @@ export const CrmFilterSheet: React.FC<CrmFilterSheetProps> = ({
   onReset,
   onClose,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
   const [tempStatus, setTempStatus] = React.useState(selectedStatus);
   const [tempAssignee, setTempAssignee] = React.useState(selectedAssignee);
 
@@ -58,56 +55,40 @@ export const CrmFilterSheet: React.FC<CrmFilterSheetProps> = ({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={[styles.backdrop, { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0.5)' }]}>
-        <View
-          style={[
-            styles.sheetContent,
-            {
-              backgroundColor: isDark ? '#181A20' : '#FFFFFF',
-              borderColor: isDark ? '#262A34' : '#E2E8F0',
-            },
-          ]}
-        >
-          <View style={[styles.dragHandle, { backgroundColor: isDark ? '#374151' : '#CBD5E1' }]} />
-          <View style={styles.header}>
-            <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Filter Records</Text>
+      <View className="flex-1 bg-black/80 justify-end">
+        <View className="bg-[#181A1F] border-t border-[#262930] rounded-t-3xl px-5 pt-3 pb-8 max-h-[80%]">
+          <View className="w-9 h-1 bg-[#262930] rounded-full self-center mb-3" />
+          <View className="flex-row items-center justify-between mb-4">
+            <Text className="text-white text-lg font-bold">Filter Records</Text>
             <Pressable
-              style={[styles.closeBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              className="p-1.5 rounded-lg bg-[#262930]"
               onPress={onClose}
               hitSlop={8}
             >
-              <Ionicons name="close" size={20} color={isDark ? '#9CA3AF' : '#64748B'} />
+              <Ionicons name="close" size={20} color="#94A3B8" />
             </Pressable>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
+          <ScrollView showsVerticalScrollIndicator={false} className="mb-4">
             {/* Status Section */}
-            <Text style={[styles.sectionTitle, { color: isDark ? '#D1D5DB' : '#475569' }]}>Status</Text>
-            <View style={styles.chipGrid}>
+            <Text className="text-slate-300 text-xs font-semibold mt-3 mb-2">Status</Text>
+            <View className="flex-row flex-wrap gap-2">
               {STATUS_FILTERS.map((s) => {
                 const isSelected = tempStatus === s.key;
                 return (
                   <Pressable
                     key={s.key}
-                    style={[
-                      styles.chip,
-                      {
-                        backgroundColor: isSelected
-                          ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
-                          : isDark ? '#222630' : '#F1F5F9',
-                        borderColor: isSelected ? '#3B82F6' : 'transparent',
-                      },
-                    ]}
+                    className={`px-3 py-2 rounded-lg border ${
+                      isSelected
+                        ? 'bg-blue-500/20 border-blue-500'
+                        : 'bg-[#111317] border-[#262930]'
+                    }`}
                     onPress={() => setTempStatus(s.key)}
                   >
                     <Text
-                      style={[
-                        styles.chipText,
-                        {
-                          color: isSelected ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B',
-                          fontWeight: isSelected ? '600' : '500',
-                        },
-                      ]}
+                      className={`text-xs ${
+                        isSelected ? 'text-blue-400 font-semibold' : 'text-slate-400 font-medium'
+                      }`}
                     >
                       {s.label}
                     </Text>
@@ -119,28 +100,20 @@ export const CrmFilterSheet: React.FC<CrmFilterSheetProps> = ({
             {/* Assignee Section */}
             {members && members.length > 0 ? (
               <>
-                <Text style={[styles.sectionTitle, { color: isDark ? '#D1D5DB' : '#475569' }]}>Assignee</Text>
-                <View style={styles.chipGrid}>
+                <Text className="text-slate-300 text-xs font-semibold mt-4 mb-2">Assignee</Text>
+                <View className="flex-row flex-wrap gap-2">
                   <Pressable
-                    style={[
-                      styles.chip,
-                      {
-                        backgroundColor: tempAssignee === 'all'
-                          ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
-                          : isDark ? '#222630' : '#F1F5F9',
-                        borderColor: tempAssignee === 'all' ? '#3B82F6' : 'transparent',
-                      },
-                    ]}
+                    className={`px-3 py-2 rounded-lg border ${
+                      tempAssignee === 'all'
+                        ? 'bg-blue-500/20 border-blue-500'
+                        : 'bg-[#111317] border-[#262930]'
+                    }`}
                     onPress={() => setTempAssignee('all')}
                   >
                     <Text
-                      style={[
-                        styles.chipText,
-                        {
-                          color: tempAssignee === 'all' ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B',
-                          fontWeight: tempAssignee === 'all' ? '600' : '500',
-                        },
-                      ]}
+                      className={`text-xs ${
+                        tempAssignee === 'all' ? 'text-blue-400 font-semibold' : 'text-slate-400 font-medium'
+                      }`}
                     >
                       All Assignees
                     </Text>
@@ -150,25 +123,17 @@ export const CrmFilterSheet: React.FC<CrmFilterSheetProps> = ({
                     return (
                       <Pressable
                         key={m.id}
-                        style={[
-                          styles.chip,
-                          {
-                            backgroundColor: isSelected
-                              ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
-                              : isDark ? '#222630' : '#F1F5F9',
-                            borderColor: isSelected ? '#3B82F6' : 'transparent',
-                          },
-                        ]}
+                        className={`px-3 py-2 rounded-lg border ${
+                          isSelected
+                            ? 'bg-blue-500/20 border-blue-500'
+                            : 'bg-[#111317] border-[#262930]'
+                        }`}
                         onPress={() => setTempAssignee(m.id)}
                       >
                         <Text
-                          style={[
-                            styles.chipText,
-                            {
-                              color: isSelected ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B',
-                              fontWeight: isSelected ? '600' : '500',
-                            },
-                          ]}
+                          className={`text-xs ${
+                            isSelected ? 'text-blue-400 font-semibold' : 'text-slate-400 font-medium'
+                          }`}
                         >
                           {m.name}
                         </Text>
@@ -181,15 +146,18 @@ export const CrmFilterSheet: React.FC<CrmFilterSheetProps> = ({
           </ScrollView>
 
           {/* Footer Actions */}
-          <View style={styles.footer}>
+          <View className="flex-row gap-3">
             <Pressable
-              style={[styles.resetBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              className="flex-1 py-3 rounded-xl bg-[#262930] items-center justify-center"
               onPress={handleReset}
             >
-              <Text style={[styles.resetBtnText, { color: isDark ? '#D1D5DB' : '#475569' }]}>Reset</Text>
+              <Text className="text-slate-300 text-sm font-semibold">Reset</Text>
             </Pressable>
-            <Pressable style={styles.applyBtn} onPress={handleApply}>
-              <Text style={styles.applyBtnText}>Apply Filters</Text>
+            <Pressable
+              className="flex-[2] py-3 rounded-xl bg-[#0084FF] items-center justify-center"
+              onPress={handleApply}
+            >
+              <Text className="text-white text-sm font-semibold">Apply Filters</Text>
             </Pressable>
           </View>
         </View>
@@ -197,113 +165,3 @@ export const CrmFilterSheet: React.FC<CrmFilterSheetProps> = ({
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    justifyContent: 'flex-end',
-  },
-  sheetContent: {
-    backgroundColor: '#181A20',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 32,
-    maxHeight: '80%',
-    borderWidth: 1,
-    borderColor: '#262A34',
-  },
-  dragHandle: {
-    width: 36,
-    height: 4,
-    backgroundColor: '#374151',
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 12,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  title: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  closeBtn: {
-    padding: 6,
-    borderRadius: 8,
-    backgroundColor: '#262A34',
-  },
-  scroll: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    color: '#D1D5DB',
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: -0.1,
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  chipGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#222630',
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  chipSelected: {
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-    borderColor: '#3B82F6',
-  },
-  chipText: {
-    color: '#9CA3AF',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  chipTextSelected: {
-    color: '#60A5FA',
-    fontWeight: '600',
-  },
-  footer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  resetBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: '#262A34',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  resetBtnText: {
-    color: '#D1D5DB',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  applyBtn: {
-    flex: 2,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: '#3B82F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  applyBtnText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-});

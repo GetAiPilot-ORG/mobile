@@ -1,15 +1,11 @@
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   View,
   Image,
-  useColorScheme,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
@@ -44,8 +40,6 @@ const SOCIAL_TABS: ProductTabItem[] = [
 ];
 
 export const SocialScreen: React.FC = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -67,7 +61,6 @@ export const SocialScreen: React.FC = () => {
   // 2. Connected Channels / Accounts Query
   const {
     data: accountsData,
-    isLoading: accountsLoading,
     refetch: refetchAccounts,
   } = useQuery({
     queryKey: ['social', 'accounts'],
@@ -88,7 +81,6 @@ export const SocialScreen: React.FC = () => {
   // 4. Scheduled Queue Query
   const {
     data: queueData,
-    isLoading: queueLoading,
     refetch: refetchQueue,
   } = useQuery({
     queryKey: ['social', 'queue'],
@@ -238,24 +230,24 @@ export const SocialScreen: React.FC = () => {
   const getPlatformColor = (provider?: string) => {
     switch (provider?.toLowerCase()) {
       case 'facebook':
-        return '#1877f2';
+        return '#0084FF';
       case 'instagram':
-        return '#e1306c';
+        return '#E1306C';
       case 'threads':
-        return '#000000';
+        return '#FFFFFF';
       case 'youtube':
-        return '#ff0000';
+        return '#FF0000';
       case 'linkedin':
-        return '#0a66c2';
+        return '#0A66C2';
       case 'x':
       case 'twitter':
-        return '#000000';
+        return '#38BDF8';
       case 'reddit':
-        return '#ff4500';
+        return '#FF4500';
       case 'pinterest':
-        return '#e60023';
+        return '#E60023';
       default:
-        return '#ec4899';
+        return '#EC4899';
     }
   };
 
@@ -265,13 +257,13 @@ export const SocialScreen: React.FC = () => {
 
       {/* Main Content Area */}
       <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1 bg-[#0B0D10]"
+        contentContainerClassName="px-4 pb-32 pt-2"
         refreshControl={
           <RefreshControl
             refreshing={isOverviewRefetching || isPostsRefetching}
             onRefresh={handleRefresh}
-            tintColor="#ec4899"
+            tintColor="#0084FF"
           />
         }
       >
@@ -280,239 +272,224 @@ export const SocialScreen: React.FC = () => {
           overviewLoading && !overviewData ? (
             <SocialScreenSkeleton />
           ) : (
-          <View>
-            {/* Quick Action Banner */}
-            <View style={[styles.actionBanner, { backgroundColor: isDark ? '#1e1b4b' : '#fdf2f8' }]}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.actionTitle, { color: isDark ? '#f472b6' : '#be185d' }]}>
-                  Broadcast Engine Ready
-                </Text>
-                <Text style={[styles.actionSub, { color: isDark ? '#cbd5e1' : '#64748b' }]}>
-                  {connectedList.length > 0
-                    ? `${connectedList.length} connected channel${connectedList.length === 1 ? '' : 's'} active across your workspace.`
-                    : 'Publish or schedule posts across Instagram, Facebook, YouTube, LinkedIn and Threads.'}
-                </Text>
-              </View>
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  setShowCreateModal(true);
-                }}
-                style={styles.actionBtn}
-              >
-                <Ionicons name="add" size={18} color="#ffffff" />
-                <Text style={styles.actionBtnText}>New Post</Text>
-              </Pressable>
-            </View>
-
-            {/* Overview Metrics Cards */}
-            <View style={styles.metricsGrid}>
-              <View style={[styles.metricCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
-                <Ionicons name="send" size={18} color="#22c55e" />
-                <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                  {totalSentCount}
-                </Text>
-                <Text style={styles.metricLabel}>Published</Text>
-              </View>
-
-              <View style={[styles.metricCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
-                <Ionicons name="time" size={18} color="#3b82f6" />
-                <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                  {totalScheduledCount}
-                </Text>
-                <Text style={styles.metricLabel}>Scheduled</Text>
-              </View>
-
-              <View style={[styles.metricCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
-                <Ionicons name="checkmark-done-circle" size={18} color="#ec4899" />
-                <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                  {ops.successRate != null ? `${ops.successRate}%` : computedSuccessRate}
-                </Text>
-                <Text style={styles.metricLabel}>Success Rate</Text>
-              </View>
-            </View>
-
-            {/* Connected Channels Summary Card */}
-            <View style={[styles.sectionCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionHeaderLeft}>
-                  <Ionicons name="share-social" size={18} color="#ec4899" />
-                  <Text style={[styles.sectionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                    Connected Channels ({connectedList.length})
+            <View>
+              {/* Quick Action Banner */}
+              <View className="flex-row items-center p-4 rounded-2xl mb-3.5 bg-[#181A1F] border border-[#262930]">
+                <View className="flex-1 mr-3">
+                  <Text className="text-base font-bold text-white">
+                    Broadcast Engine Ready
+                  </Text>
+                  <Text className="text-xs text-slate-400 mt-1">
+                    {connectedList.length > 0
+                      ? `${connectedList.length} connected channel${connectedList.length === 1 ? '' : 's'} active across your workspace.`
+                      : 'Publish or schedule posts across Instagram, Facebook, YouTube, LinkedIn and Threads.'}
                   </Text>
                 </View>
                 <Pressable
-                  onPress={() => setShowAccountsModal(true)}
-                  style={styles.manageLink}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    setShowCreateModal(true);
+                  }}
+                  className="flex-row items-center gap-1 bg-[#0084FF] px-3.5 py-2.5 rounded-xl"
                 >
-                  <Text style={styles.manageLinkText}>Manage</Text>
+                  <Ionicons name="add" size={18} color="#FFFFFF" />
+                  <Text className="text-white text-xs font-bold">New Post</Text>
                 </Pressable>
               </View>
 
-              {connectedList.length === 0 ? (
-                <View style={styles.emptyInlineWrap}>
-                  <Ionicons name="link-outline" size={20} color={isDark ? '#475569' : '#94a3b8'} />
-                  <Text style={[styles.emptyInlineText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-                    No active channels connected. Tap Manage to link Instagram, Facebook, Threads or YouTube.
+              {/* Overview Metrics Cards */}
+              <View className="flex-row gap-2.5 mb-3.5">
+                <View className="flex-1 p-3.5 rounded-2xl items-center bg-[#181A1F] border border-[#262930]">
+                  <Ionicons name="send" size={18} color="#10B981" />
+                  <Text className="text-lg font-bold text-white mt-1">
+                    {totalSentCount}
                   </Text>
+                  <Text className="text-[11px] text-slate-400 font-medium">Published</Text>
                 </View>
-              ) : (
-                <View style={styles.channelsPillsRow}>
-                  {connectedList.map((acc: any, idx: number) => {
-                    const provider = acc.provider || acc.platform || 'channel';
-                    const name = acc.username || acc.name || acc.channelTitle || provider;
-                    const avatarUrl = acc.profilePicture || acc.profile_picture_url;
+
+                <View className="flex-1 p-3.5 rounded-2xl items-center bg-[#181A1F] border border-[#262930]">
+                  <Ionicons name="time" size={18} color="#0084FF" />
+                  <Text className="text-lg font-bold text-white mt-1">
+                    {totalScheduledCount}
+                  </Text>
+                  <Text className="text-[11px] text-slate-400 font-medium">Scheduled</Text>
+                </View>
+
+                <View className="flex-1 p-3.5 rounded-2xl items-center bg-[#181A1F] border border-[#262930]">
+                  <Ionicons name="checkmark-done-circle" size={18} color="#EC4899" />
+                  <Text className="text-lg font-bold text-white mt-1">
+                    {ops.successRate != null ? `${ops.successRate}%` : computedSuccessRate}
+                  </Text>
+                  <Text className="text-[11px] text-slate-400 font-medium">Success Rate</Text>
+                </View>
+              </View>
+
+              {/* Connected Channels Summary Card */}
+              <View className="p-4 rounded-2xl mb-3.5 bg-[#181A1F] border border-[#262930]">
+                <View className="flex-row justify-between items-center mb-3">
+                  <View className="flex-row items-center gap-2">
+                    <Ionicons name="share-social" size={18} color="#0084FF" />
+                    <Text className="text-sm font-bold text-white">
+                      Connected Channels ({connectedList.length})
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={() => setShowAccountsModal(true)}
+                    className="px-2 py-1 rounded-md bg-[#262930]"
+                  >
+                    <Text className="text-[#0084FF] text-xs font-semibold">Manage</Text>
+                  </Pressable>
+                </View>
+
+                {connectedList.length === 0 ? (
+                  <View className="py-4 items-center gap-1.5">
+                    <Ionicons name="link-outline" size={20} color="#64748B" />
+                    <Text className="text-xs text-center text-slate-400">
+                      No active channels connected. Tap Manage to link Instagram, Facebook, Threads or YouTube.
+                    </Text>
+                  </View>
+                ) : (
+                  <View className="flex-row flex-wrap gap-2">
+                    {connectedList.map((acc: any, idx: number) => {
+                      const provider = acc.provider || acc.platform || 'channel';
+                      const name = acc.username || acc.name || acc.channelTitle || provider;
+                      const avatarUrl = acc.profilePicture || acc.profile_picture_url;
+                      return (
+                        <View
+                          key={acc.id || idx}
+                          className="flex-row items-center gap-2 p-2 rounded-xl bg-[#111317] border border-[#262930]"
+                        >
+                          {avatarUrl ? (
+                            <Image source={{ uri: avatarUrl }} className="w-5 h-5 rounded-full" />
+                          ) : (
+                            <Ionicons
+                              name={getPlatformIconName(provider) as any}
+                              size={14}
+                              color={getPlatformColor(provider)}
+                            />
+                          )}
+                          <View className="max-w-[120px]">
+                            <Text
+                              className="text-xs font-semibold text-white"
+                              numberOfLines={1}
+                            >
+                              {name}
+                            </Text>
+                            <Text className="text-[10px] text-slate-500">
+                              {provider ? provider.charAt(0).toUpperCase() + provider.slice(1).toLowerCase() : ''}
+                            </Text>
+                          </View>
+                          <View className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        </View>
+                      );
+                    })}
+                  </View>
+                )}
+              </View>
+
+              {/* Recent Broadcasts */}
+              <View className="p-4 rounded-2xl bg-[#181A1F] border border-[#262930]">
+                <View className="flex-row justify-between items-center mb-3">
+                  <View className="flex-row items-center gap-2">
+                    <Ionicons name="albums" size={18} color="#0084FF" />
+                    <Text className="text-sm font-bold text-white">
+                      Recent Activity ({recentActivityList.length})
+                    </Text>
+                  </View>
+                  <Pressable onPress={() => setActiveTab('posts')}>
+                    <Text className="text-[#0084FF] text-xs font-semibold">View All</Text>
+                  </Pressable>
+                </View>
+
+                {recentActivityList.length === 0 ? (
+                  <View className="py-4 items-center">
+                    <Text className="text-xs text-slate-400">
+                      No broadcast history yet. Create your first post above.
+                    </Text>
+                  </View>
+                ) : (
+                  recentActivityList.map((post: any) => {
+                    const mediaThumb = post.thumbnail_url || post.media_url;
                     return (
-                      <View
-                        key={acc.id || idx}
-                        style={[
-                          styles.platformPill,
-                          {
-                            backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                            borderColor: isDark ? '#334155' : '#e2e8f0',
-                            borderWidth: 1,
-                          },
-                        ]}
+                      <Pressable
+                        key={post.id}
+                        onPress={() => setSelectedPost(post)}
+                        className="flex-row items-center py-2.5 border-b border-[#262930] last:border-b-0"
                       >
-                        {avatarUrl ? (
-                          <Image source={{ uri: avatarUrl }} style={styles.pillAvatar} />
-                        ) : (
-                          <Ionicons
-                            name={getPlatformIconName(provider) as any}
-                            size={14}
-                            color={getPlatformColor(provider)}
-                          />
+                        {mediaThumb && (
+                          <Image source={{ uri: mediaThumb }} className="w-10 h-10 rounded-lg mr-2.5" />
                         )}
-                        <View style={{ maxWidth: 120 }}>
+                        <View className="flex-1">
                           <Text
-                            style={[styles.platformText, { color: isDark ? '#f8fafc' : '#0f172a' }]}
-                            numberOfLines={1}
+                            className="text-sm font-medium text-white"
+                            numberOfLines={2}
                           >
-                            {name}
+                            {post.caption || 'Untitled Broadcast'}
                           </Text>
-                          <Text style={styles.pillSubText}>
-                            {provider ? provider.charAt(0).toUpperCase() + provider.slice(1).toLowerCase() : ''}
+                          <Text className="text-[11px] text-slate-500 mt-0.5">
+                            {new Date(post.posted_at || post.scheduled_for || post.created_at || Date.now()).toLocaleDateString([], {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
                           </Text>
                         </View>
-                        <View style={styles.liveDot} />
-                      </View>
-                    );
-                  })}
-                </View>
-              )}
-            </View>
-
-            {/* Recent Broadcasts */}
-            <View style={[styles.sectionCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionHeaderLeft}>
-                  <Ionicons name="albums" size={18} color="#3b82f6" />
-                  <Text style={[styles.sectionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                    Recent Activity ({recentActivityList.length})
-                  </Text>
-                </View>
-                <Pressable onPress={() => setActiveTab('posts')}>
-                  <Text style={styles.manageLinkText}>View All</Text>
-                </Pressable>
-              </View>
-
-              {recentActivityList.length === 0 ? (
-                <View style={styles.emptyInlineWrap}>
-                  <Text style={[styles.emptyInlineText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-                    No broadcast history yet. Create your first post above.
-                  </Text>
-                </View>
-              ) : (
-                recentActivityList.map((post: any) => {
-                  const mediaThumb = post.thumbnail_url || post.media_url;
-                  return (
-                    <Pressable
-                      key={post.id}
-                      onPress={() => setSelectedPost(post)}
-                      style={[styles.postItem, { borderBottomColor: isDark ? '#1e293b' : '#f1f5f9' }]}
-                    >
-                      {mediaThumb && (
-                        <Image source={{ uri: mediaThumb }} style={styles.recentThumb} />
-                      )}
-                      <View style={{ flex: 1, paddingHorizontal: mediaThumb ? 10 : 0 }}>
-                        <Text
-                          style={[styles.postCaption, { color: isDark ? '#f8fafc' : '#0f172a' }]}
-                          numberOfLines={2}
+                        <View
+                          className={`px-2 py-0.5 rounded-md ml-2 ${
+                            post.status === 'sent' || post.status === 'published'
+                              ? 'bg-emerald-500/15'
+                              : post.status === 'failed'
+                                ? 'bg-red-500/15'
+                                : 'bg-blue-500/15'
+                          }`}
                         >
-                          {post.caption || 'Untitled Broadcast'}
-                        </Text>
-                        <Text style={styles.postMeta}>
-                          {new Date(post.posted_at || post.scheduled_for || post.created_at || Date.now()).toLocaleDateString([], {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </Text>
-                      </View>
-                      <View
-                        style={[
-                          styles.badge,
-                          {
-                            backgroundColor:
+                          <Text
+                            className={`text-[11px] font-semibold ${
                               post.status === 'sent' || post.status === 'published'
-                                ? 'rgba(34, 197, 94, 0.15)'
+                                ? 'text-emerald-400'
                                 : post.status === 'failed'
-                                  ? 'rgba(239, 68, 68, 0.15)'
-                                  : 'rgba(59, 130, 246, 0.15)',
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.badgeText,
-                            {
-                              color:
-                                post.status === 'sent' || post.status === 'published'
-                                  ? '#22c55e'
-                                  : post.status === 'failed'
-                                    ? '#ef4444'
-                                    : '#3b82f6',
-                            },
-                          ]}
-                        >
-                          {post.status || 'sent'}
-                        </Text>
-                      </View>
-                    </Pressable>
-                  );
-                })
-              )}
+                                  ? 'text-red-400'
+                                  : 'text-blue-400'
+                            }`}
+                          >
+                            {post.status || 'sent'}
+                          </Text>
+                        </View>
+                      </Pressable>
+                    );
+                  })
+                )}
+              </View>
             </View>
-          </View>
           )
         )}
 
         {/* TAB 2: POSTS */}
         {activeTab === 'posts' && (
           <View>
-            <View style={styles.tabHeaderRow}>
-              <Text style={[styles.tabHeading, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+            <View className="flex-row justify-between items-center mb-3">
+              <Text className="text-base font-bold text-white">
                 Broadcast Posts ({postsList.length})
               </Text>
               <Pressable
                 onPress={() => setShowCreateModal(true)}
-                style={styles.smallCreateBtn}
+                className="flex-row items-center gap-1 bg-[#0084FF] px-3 py-1.5 rounded-xl"
               >
-                <Ionicons name="add" size={16} color="#ffffff" />
-                <Text style={styles.smallCreateBtnText}>Create</Text>
+                <Ionicons name="add" size={16} color="#FFFFFF" />
+                <Text className="text-white text-xs font-bold">Create</Text>
               </Pressable>
             </View>
 
             {postsLoading ? (
               <SocialPostsSkeleton />
             ) : postsList.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Ionicons name="newspaper-outline" size={40} color={isDark ? '#475569' : '#94a3b8'} />
-                <Text style={[styles.emptyTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              <View className="py-12 items-center gap-2">
+                <Ionicons name="newspaper-outline" size={40} color="#64748B" />
+                <Text className="text-base font-semibold text-white">
                   No Broadcast Posts Found
                 </Text>
-                <Text style={[styles.emptyDesc, { color: isDark ? '#64748b' : '#94a3b8' }]}>
+                <Text className="text-xs text-slate-400">
                   Create your first social media broadcast now.
                 </Text>
               </View>
@@ -521,41 +498,33 @@ export const SocialScreen: React.FC = () => {
                 <Pressable
                   key={post.id}
                   onPress={() => setSelectedPost(post)}
-                  style={[styles.fullPostCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}
+                  className="p-4 rounded-2xl mb-3 bg-[#181A1F] border border-[#262930]"
                 >
-                  <View style={styles.postTop}>
-                    <View style={styles.postChannels}>
+                  <View className="flex-row justify-between items-center mb-2">
+                    <View className="flex-row gap-1.5">
                       {(post.selected_channels || ['social']).map((ch: string, i: number) => (
-                        <Text key={i} style={styles.chTag}>
+                        <Text key={i} className="text-[11px] font-bold text-[#0084FF] bg-blue-500/10 px-2 py-0.5 rounded-md">
                           {ch.replace(/^.+:/, '')}
                         </Text>
                       ))}
                     </View>
                     <View
-                      style={[
-                        styles.badge,
-                        {
-                          backgroundColor:
-                            post.status === 'sent' || post.status === 'published'
-                              ? 'rgba(34, 197, 94, 0.15)'
-                              : post.status === 'failed'
-                                ? 'rgba(239, 68, 68, 0.15)'
-                                : 'rgba(59, 130, 246, 0.15)',
-                        },
-                      ]}
+                      className={`px-2 py-0.5 rounded-md ${
+                        post.status === 'sent' || post.status === 'published'
+                          ? 'bg-emerald-500/15'
+                          : post.status === 'failed'
+                            ? 'bg-red-500/15'
+                            : 'bg-blue-500/15'
+                      }`}
                     >
                       <Text
-                        style={[
-                          styles.badgeText,
-                          {
-                            color:
-                              post.status === 'sent' || post.status === 'published'
-                                ? '#22c55e'
-                                : post.status === 'failed'
-                                  ? '#ef4444'
-                                  : '#3b82f6',
-                          },
-                        ]}
+                        className={`text-[11px] font-semibold ${
+                          post.status === 'sent' || post.status === 'published'
+                            ? 'text-emerald-400'
+                            : post.status === 'failed'
+                              ? 'text-red-400'
+                              : 'text-blue-400'
+                        }`}
                       >
                         {post.status || 'sent'}
                       </Text>
@@ -563,7 +532,7 @@ export const SocialScreen: React.FC = () => {
                   </View>
 
                   <Text
-                    style={[styles.postFullCaption, { color: isDark ? '#e2e8f0' : '#1e293b' }]}
+                    className="text-sm leading-5 text-slate-200 mb-2"
                     numberOfLines={3}
                   >
                     {post.caption || 'No caption provided.'}
@@ -572,13 +541,13 @@ export const SocialScreen: React.FC = () => {
                   {(post.thumbnail_url || post.media_url) && (
                     <Image
                       source={{ uri: post.thumbnail_url || post.media_url }}
-                      style={styles.postThumb}
+                      className="w-full h-44 rounded-xl mb-2.5"
                       resizeMode="cover"
                     />
                   )}
 
-                  <View style={styles.postBottom}>
-                    <Text style={styles.postDate}>
+                  <View className="flex-row justify-between items-center pt-2 border-t border-[#262930]">
+                    <Text className="text-xs text-slate-500">
                       {new Date(post.posted_at || post.scheduled_for || post.created_at || Date.now()).toLocaleDateString([], {
                         month: 'short',
                         day: 'numeric',
@@ -586,7 +555,7 @@ export const SocialScreen: React.FC = () => {
                         minute: '2-digit',
                       })}
                     </Text>
-                    <Ionicons name="chevron-forward" size={16} color="#64748b" />
+                    <Ionicons name="chevron-forward" size={16} color="#64748B" />
                   </View>
                 </Pressable>
               ))
@@ -597,26 +566,26 @@ export const SocialScreen: React.FC = () => {
         {/* TAB 3: CALENDAR */}
         {activeTab === 'calendar' && (
           <View>
-            <View style={styles.tabHeaderRow}>
-              <Text style={[styles.tabHeading, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+            <View className="flex-row justify-between items-center mb-3">
+              <Text className="text-base font-bold text-white">
                 Scheduled Queue ({queueList.length})
               </Text>
               <Pressable
                 onPress={() => setShowCreateModal(true)}
-                style={styles.smallCreateBtn}
+                className="flex-row items-center gap-1 bg-[#0084FF] px-3 py-1.5 rounded-xl"
               >
-                <Ionicons name="calendar" size={16} color="#ffffff" />
-                <Text style={styles.smallCreateBtnText}>Schedule</Text>
+                <Ionicons name="calendar" size={16} color="#FFFFFF" />
+                <Text className="text-white text-xs font-bold">Schedule</Text>
               </Pressable>
             </View>
 
             {queueList.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Ionicons name="time-outline" size={40} color={isDark ? '#475569' : '#94a3b8'} />
-                <Text style={[styles.emptyTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              <View className="py-12 items-center gap-2">
+                <Ionicons name="time-outline" size={40} color="#64748B" />
+                <Text className="text-base font-semibold text-white">
                   No Pending Scheduled Posts
                 </Text>
-                <Text style={[styles.emptyDesc, { color: isDark ? '#64748b' : '#94a3b8' }]}>
+                <Text className="text-xs text-slate-400">
                   Schedule future posts to maintain an active multi-channel presence.
                 </Text>
               </View>
@@ -625,29 +594,29 @@ export const SocialScreen: React.FC = () => {
                 <Pressable
                   key={item.id}
                   onPress={() => setSelectedPost(item)}
-                  style={[styles.fullPostCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}
+                  className="p-4 rounded-2xl mb-3 bg-[#181A1F] border border-[#262930]"
                 >
-                  <View style={styles.postTop}>
-                    <View style={styles.postChannels}>
+                  <View className="flex-row justify-between items-center mb-2">
+                    <View className="flex-row gap-1.5">
                       {(item.selected_channels || ['social']).map((ch: string, i: number) => (
-                        <Text key={i} style={styles.chTag}>
+                        <Text key={i} className="text-[11px] font-bold text-[#0084FF] bg-blue-500/10 px-2 py-0.5 rounded-md">
                           {ch}
                         </Text>
                       ))}
                     </View>
-                    <View style={[styles.badge, { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}>
-                      <Text style={[styles.badgeText, { color: '#3b82f6' }]}>
+                    <View className="px-2 py-0.5 rounded-md bg-blue-500/15">
+                      <Text className="text-[11px] font-semibold text-blue-400">
                         {item.status || 'scheduled'}
                       </Text>
                     </View>
                   </View>
                   <Text
-                    style={[styles.postFullCaption, { color: isDark ? '#e2e8f0' : '#1e293b' }]}
+                    className="text-sm text-slate-200 mb-2"
                     numberOfLines={2}
                   >
                     {item.caption}
                   </Text>
-                  <Text style={[styles.scheduledDateText, { color: '#ec4899' }]}>
+                  <Text className="text-xs text-pink-400 font-semibold">
                     ⏰ Scheduled for: {new Date(item.scheduled_for).toLocaleString()}
                   </Text>
                 </Pressable>
@@ -659,8 +628,8 @@ export const SocialScreen: React.FC = () => {
         {/* TAB 4: TRENDS */}
         {activeTab === 'trends' && (
           <View>
-            <View style={styles.tabHeaderRow}>
-              <Text style={[styles.tabHeading, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+            <View className="flex-row justify-between items-center mb-3">
+              <Text className="text-base font-bold text-white">
                 Viral Inspiration Feed
               </Text>
             </View>
@@ -668,12 +637,12 @@ export const SocialScreen: React.FC = () => {
             {trendsLoading ? (
               <SocialTrendsSkeleton />
             ) : trendsList.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Ionicons name="flame-outline" size={40} color={isDark ? '#475569' : '#94a3b8'} />
-                <Text style={[styles.emptyTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              <View className="py-12 items-center gap-2">
+                <Ionicons name="flame-outline" size={40} color="#64748B" />
+                <Text className="text-base font-semibold text-white">
                   Trending Feed Loading
                 </Text>
-                <Text style={[styles.emptyDesc, { color: isDark ? '#64748b' : '#94a3b8' }]}>
+                <Text className="text-xs text-slate-400">
                   Fetching real-time trending content across YouTube, Reddit and social feeds.
                 </Text>
               </View>
@@ -681,16 +650,16 @@ export const SocialScreen: React.FC = () => {
               trendsList.map((trend: any, idx: number) => (
                 <View
                   key={trend.id || idx}
-                  style={[styles.trendCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}
+                  className="p-4 rounded-2xl mb-3 bg-[#181A1F] border border-[#262930]"
                 >
-                  <View style={styles.trendHeader}>
-                    <Text style={styles.trendSource}>
+                  <View className="flex-row justify-between items-center mb-2">
+                    <Text className="text-xs font-bold text-pink-400">
                       {trend.source_platform || trend.platform || 'YouTube'}
                     </Text>
-                    <Ionicons name="trending-up" size={16} color="#ec4899" />
+                    <Ionicons name="trending-up" size={16} color="#EC4899" />
                   </View>
                   <Text
-                    style={[styles.trendTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+                    className="text-sm font-semibold text-white mb-2"
                     numberOfLines={2}
                   >
                     {trend.title || trend.caption || 'Trending viral topic'}
@@ -698,19 +667,19 @@ export const SocialScreen: React.FC = () => {
                   {trend.thumbnail_url && (
                     <Image
                       source={{ uri: trend.thumbnail_url }}
-                      style={styles.trendImage}
+                      className="w-full h-40 rounded-xl mb-2.5"
                       resizeMode="cover"
                     />
                   )}
                   {trend.metrics && (
-                    <View style={styles.trendMetricsRow}>
+                    <View className="flex-row gap-3 pt-2 border-t border-[#262930]">
                       {trend.metrics.views != null && (
-                        <Text style={styles.trendMetricText}>
+                        <Text className="text-xs text-slate-400 font-medium">
                           👁️ {Number(trend.metrics.views).toLocaleString()} Views
                         </Text>
                       )}
                       {trend.metrics.likes != null && (
-                        <Text style={styles.trendMetricText}>
+                        <Text className="text-xs text-slate-400 font-medium">
                           ❤️ {Number(trend.metrics.likes).toLocaleString()} Likes
                         </Text>
                       )}
@@ -773,329 +742,9 @@ export const SocialScreen: React.FC = () => {
             setActiveTab(key as TabType);
           }
         }}
-        accentColor="#EC4899"
+        accentColor="#0084FF"
         moreMenuTitle="SocialPilot Menu"
       />
     </AppScreen>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 130,
-  },
-  tabBar: {
-    flexDirection: 'row',
-    marginHorizontal: 16,
-    marginVertical: 12,
-    backgroundColor: 'rgba(148, 163, 184, 0.1)',
-    borderRadius: 12,
-    padding: 4,
-  },
-  tabItem: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabItemActive: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  tabText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  actionBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 16,
-  },
-  actionTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  actionSub: {
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  actionBtn: {
-    backgroundColor: '#ec4899',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  actionBtnText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  metricsGrid: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 16,
-  },
-  metricCard: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-    gap: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.15)',
-  },
-  metricNum: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  metricLabel: {
-    fontSize: 11,
-    color: '#64748b',
-    fontWeight: '500',
-    letterSpacing: -0.1,
-  },
-  sectionCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.15)',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  manageLink: {
-    paddingHorizontal: 4,
-  },
-  manageLinkText: {
-    color: '#ec4899',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  channelsPillsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  platformPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  pillAvatar: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-  },
-  pillSubText: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: '#94a3b8',
-    letterSpacing: 0.5,
-  },
-  emptyInlineWrap: {
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  emptyInlineText: {
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#22c55e',
-  },
-  platformText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  recentThumb: {
-    width: 44,
-    height: 44,
-    borderRadius: 8,
-    backgroundColor: '#000',
-  },
-  postItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-  },
-  postCaption: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  postMeta: {
-    fontSize: 11,
-    color: '#64748b',
-  },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  badgeText: {
-    fontSize: 10.5,
-    fontWeight: '600',
-  },
-  tabHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  tabHeading: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  smallCreateBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#ec4899',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  smallCreateBtnText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-    gap: 8,
-  },
-  emptyTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginTop: 6,
-  },
-  emptyDesc: {
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  fullPostCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.15)',
-  },
-  postTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  postChannels: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  chTag: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#ec4899',
-  },
-  postFullCaption: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 10,
-  },
-  postThumb: {
-    height: 140,
-    borderRadius: 10,
-    marginBottom: 10,
-    backgroundColor: '#000',
-  },
-  postBottom: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  postDate: {
-    fontSize: 11,
-    color: '#64748b',
-  },
-  scheduledDateText: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginTop: 4,
-  },
-  trendCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.15)',
-  },
-  trendHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  trendSource: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#ec4899',
-  },
-  trendTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    lineHeight: 18,
-    marginBottom: 8,
-  },
-  trendImage: {
-    height: 150,
-    borderRadius: 10,
-    marginBottom: 8,
-    backgroundColor: '#000',
-  },
-  trendMetricsRow: {
-    flexDirection: 'row',
-    gap: 14,
-  },
-  trendMetricText: {
-    fontSize: 11,
-    color: '#64748b',
-    fontWeight: '600',
-  },
-});

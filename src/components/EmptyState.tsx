@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { colors } from '../theme/colors';
+import { View, Text, Pressable, useColorScheme } from 'react-native';
 
 interface EmptyStateProps {
   icon?: string;
@@ -8,6 +7,7 @@ interface EmptyStateProps {
   description: string;
   actionText?: string;
   onActionPress?: () => void;
+  className?: string;
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
@@ -16,70 +16,34 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   description,
   actionText,
   onActionPress,
+  className,
 }) => {
+  const isDark = useColorScheme() === 'dark';
+
   return (
-    <View style={styles.container}>
-      <View style={styles.iconBox}>
-        <Text style={styles.icon}>{icon}</Text>
+    <View
+      className={`items-center justify-center p-8 rounded-2xl border my-3 ${
+        isDark ? "bg-[#181A1F] border-[#262930]" : "bg-white border-gray-200"
+      } ${className || ''}`}
+    >
+      <View
+        className={`w-15 h-15 rounded-full justify-center items-center mb-4 ${
+          isDark ? "bg-[#262930]" : "bg-slate-100"
+        }`}
+      >
+        <Text className="text-2xl">{icon}</Text>
       </View>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.description}>{description}</Text>
+      <Text className={`text-base font-extrabold text-center mb-1.5 ${isDark ? "text-white" : "text-black"}`}>
+        {title}
+      </Text>
+      <Text className={`text-xs text-center leading-4.5 mb-4 max-w-[280px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+        {description}
+      </Text>
       {actionText && onActionPress && (
-        <Pressable style={styles.button} onPress={onActionPress}>
-          <Text style={styles.buttonText}>{actionText}</Text>
+        <Pressable className="bg-[#0284C7] px-5 py-2.5 rounded-lg" onPress={onActionPress}>
+          <Text className="text-white font-bold text-xs">{actionText}</Text>
         </Pressable>
       )}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginVertical: 12,
-  },
-  iconBox: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: colors.muted,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  icon: {
-    fontSize: 28,
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: colors.foreground,
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  description: {
-    fontSize: 13,
-    color: colors.mutedForeground,
-    textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 16,
-    maxWidth: 280,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: colors.primaryForeground,
-    fontWeight: '700',
-    fontSize: 13.5,
-  },
-});

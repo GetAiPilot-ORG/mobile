@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  StyleSheet,
   Text,
   View,
   Modal,
@@ -10,7 +9,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CRMDeal, DealStage } from '../types';
@@ -27,10 +25,10 @@ interface CreateDealModalProps {
 }
 
 const STAGES: Array<{ key: DealStage; label: string; color: string }> = [
-  { key: 'lead', label: 'Lead', color: '#6B7280' },
-  { key: 'qualified', label: 'Qualified', color: '#3B82F6' },
-  { key: 'proposal', label: 'Proposal', color: '#D97706' },
-  { key: 'negotiation', label: 'Negotiation', color: '#8B5CF6' },
+  { key: 'lead', label: 'Lead', color: '#94A3B8' },
+  { key: 'qualified', label: 'Qualified', color: '#0084FF' },
+  { key: 'proposal', label: 'Proposal', color: '#F59E0B' },
+  { key: 'negotiation', label: 'Negotiation', color: '#A855F7' },
   { key: 'closed_won', label: 'Closed Won', color: '#10B981' },
   { key: 'closed_lost', label: 'Closed Lost', color: '#EF4444' },
 ];
@@ -43,9 +41,6 @@ export const CreateDealModal: React.FC<CreateDealModalProps> = ({
   defaultStage = 'lead',
   isLoading,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
   const [title, setTitle] = useState('');
   const [value, setValue] = useState('');
   const [currency, setCurrency] = useState('INR');
@@ -103,76 +98,74 @@ export const CreateDealModal: React.FC<CreateDealModalProps> = ({
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.modalOverlay}
+        className="flex-1 bg-black/70 justify-end"
       >
-        <View style={[styles.modalContent, isDark ? styles.modalContentDark : styles.modalContentLight]}>
+        <View className="bg-[#181A1F] border-t border-[#262930] rounded-t-3xl px-5 pt-5 pb-8 max-h-[88%]">
           {/* Header */}
-          <View style={styles.header}>
+          <View className="flex-row items-center justify-between mb-4">
             <View>
-              <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Create New Deal</Text>
-              <Text style={[styles.headerSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Add deal to pipeline with value & stage</Text>
+              <Text className="text-lg font-bold text-white">Create New Deal</Text>
+              <Text className="text-xs text-slate-400 mt-0.5">Add deal to pipeline with value & stage</Text>
             </View>
             <Pressable
-              style={[styles.closeBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              className="w-8 h-8 rounded-full bg-[#262930] items-center justify-center"
               onPress={handleClose}
               hitSlop={8}
             >
-              <Ionicons name="close" size={20} color={isDark ? '#9CA3AF' : '#64748B'} />
+              <Ionicons name="close" size={18} color="#94A3B8" />
             </Pressable>
           </View>
 
           {errorMessage ? (
-            <View style={styles.errorBox}>
+            <View className="flex-row items-center gap-2 bg-rose-500/15 border border-rose-500/30 p-2.5 rounded-xl mb-3">
               <Ionicons name="alert-circle" size={16} color="#EF4444" />
-              <Text style={styles.errorText}>{errorMessage}</Text>
+              <Text className="text-xs text-rose-400 flex-1">{errorMessage}</Text>
             </View>
           ) : null}
 
-          <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
+          <ScrollView className="mb-4" showsVerticalScrollIndicator={false}>
             {/* Title */}
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Deal Title *</Text>
+            <View className="mb-3">
+              <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Deal Title *</Text>
               <TextInput
-                style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+                className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2.5 text-xs text-white"
                 placeholder="e.g. Enterprise Software License"
-                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+                placeholderTextColor="#64748B"
                 value={title}
                 onChangeText={setTitle}
               />
             </View>
 
             {/* Value & Currency */}
-            <View style={styles.row}>
-              <View style={[styles.inputGroup, { flex: 2, marginRight: 8 }]}>
-                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Deal Value *</Text>
+            <View className="flex-row gap-2 mb-3">
+              <View className="flex-2">
+                <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Deal Value *</Text>
                 <TextInput
-                  style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+                  className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2.5 text-xs text-white"
                   placeholder="50000"
-                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+                  placeholderTextColor="#64748B"
                   keyboardType="numeric"
                   value={value}
                   onChangeText={setValue}
                 />
               </View>
-              <View style={[styles.inputGroup, { flex: 1 }]}>
-                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Currency</Text>
-                <View style={styles.currencyRow}>
+              <View className="flex-1">
+                <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Currency</Text>
+                <View className="flex-row gap-1">
                   {['INR', 'USD'].map((c) => (
                     <Pressable
                       key={c}
-                      style={[
-                        styles.currencyBtn,
-                        { backgroundColor: isDark ? '#222630' : '#F1F5F9' },
-                        currency === c && styles.currencyBtnSelected,
-                      ]}
+                      className={`flex-1 py-2.5 rounded-xl items-center border ${
+                        currency === c
+                          ? 'bg-[#0084FF] border-[#0084FF]'
+                          : 'bg-[#111317] border-[#262930] active:bg-[#262930]'
+                      }`}
                       onPress={() => setCurrency(c)}
                     >
                       <Text
-                        style={[
-                          styles.currencyBtnText,
-                          { color: isDark ? '#9CA3AF' : '#64748B' },
-                          currency === c && styles.currencyBtnTextSelected,
-                        ]}
+                        className={`text-xs font-bold ${
+                          currency === c ? 'text-white' : 'text-slate-400'
+                        }`}
                       >
                         {c}
                       </Text>
@@ -183,25 +176,23 @@ export const CreateDealModal: React.FC<CreateDealModalProps> = ({
             </View>
 
             {/* Stage Selector */}
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Pipeline Stage</Text>
-              <View style={styles.stageGrid}>
+            <View className="mb-3">
+              <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Pipeline Stage</Text>
+              <View className="flex-row flex-wrap gap-1.5">
                 {STAGES.map((s) => (
                   <Pressable
                     key={s.key}
-                    style={[
-                      styles.stageChip,
-                      { backgroundColor: isDark ? '#222630' : '#F1F5F9' },
-                      stage === s.key && (isDark ? styles.stageChipSelectedDark : styles.stageChipSelectedLight),
-                    ]}
+                    className={`px-3 py-1.5 rounded-xl border ${
+                      stage === s.key
+                        ? 'bg-[#0084FF]/20 border-[#0084FF]'
+                        : 'bg-[#111317] border-[#262930] active:bg-[#262930]'
+                    }`}
                     onPress={() => setStage(s.key)}
                   >
                     <Text
-                      style={[
-                        styles.stageChipText,
-                        { color: isDark ? '#9CA3AF' : '#64748B' },
-                        stage === s.key && { color: s.color, fontWeight: '700' },
-                      ]}
+                      className={`text-xs ${
+                        stage === s.key ? 'text-[#0084FF] font-bold' : 'text-slate-400 font-semibold'
+                      }`}
                     >
                       {s.label}
                     </Text>
@@ -212,23 +203,21 @@ export const CreateDealModal: React.FC<CreateDealModalProps> = ({
 
             {/* Link Contact */}
             {contactsData?.contacts && contactsData.contacts.length > 0 ? (
-              <View style={styles.inputGroup}>
-                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Link Contact / Lead</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+              <View className="mb-3">
+                <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Link Contact / Lead</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2">
                   <Pressable
-                    style={[
-                      styles.chip,
-                      { backgroundColor: isDark ? '#222630' : '#F1F5F9' },
-                      contactId === '' && (isDark ? styles.chipSelectedDark : styles.chipSelectedLight),
-                    ]}
+                    className={`px-3 py-2 rounded-xl border ${
+                      contactId === ''
+                        ? 'bg-[#0084FF]/20 border-[#0084FF]'
+                        : 'bg-[#111317] border-[#262930] active:bg-[#262930]'
+                    }`}
                     onPress={() => setContactId('')}
                   >
                     <Text
-                      style={[
-                        styles.chipText,
-                        { color: isDark ? '#9CA3AF' : '#64748B' },
-                        contactId === '' && styles.chipTextSelected,
-                      ]}
+                      className={`text-xs ${
+                        contactId === '' ? 'text-[#0084FF] font-bold' : 'text-slate-400'
+                      }`}
                     >
                       None
                     </Text>
@@ -236,19 +225,17 @@ export const CreateDealModal: React.FC<CreateDealModalProps> = ({
                   {contactsData.contacts.map((c) => (
                     <Pressable
                       key={c.id}
-                      style={[
-                        styles.chip,
-                        { backgroundColor: isDark ? '#222630' : '#F1F5F9' },
-                        contactId === c.id && (isDark ? styles.chipSelectedDark : styles.chipSelectedLight),
-                      ]}
+                      className={`px-3 py-2 rounded-xl border ${
+                        contactId === c.id
+                          ? 'bg-[#0084FF]/20 border-[#0084FF]'
+                          : 'bg-[#111317] border-[#262930] active:bg-[#262930]'
+                      }`}
                       onPress={() => setContactId(c.id)}
                     >
                       <Text
-                        style={[
-                          styles.chipText,
-                          { color: isDark ? '#9CA3AF' : '#64748B' },
-                          contactId === c.id && styles.chipTextSelected,
-                        ]}
+                        className={`text-xs ${
+                          contactId === c.id ? 'text-[#0084FF] font-bold' : 'text-slate-400'
+                        }`}
                       >
                         {c.name || `${c.first_name} ${c.last_name}`}
                       </Text>
@@ -259,23 +246,23 @@ export const CreateDealModal: React.FC<CreateDealModalProps> = ({
             ) : null}
 
             {/* Expected Close & Probability */}
-            <View style={styles.row}>
-              <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Expected Close (YYYY-MM-DD)</Text>
+            <View className="flex-row gap-2 mb-3">
+              <View className="flex-1">
+                <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Expected Close (YYYY-MM-DD)</Text>
                 <TextInput
-                  style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+                  className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2.5 text-xs text-white"
                   placeholder="2026-09-30"
-                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+                  placeholderTextColor="#64748B"
                   value={expectedCloseDate}
                   onChangeText={setExpectedCloseDate}
                 />
               </View>
-              <View style={[styles.inputGroup, { flex: 1 }]}>
-                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Probability (%)</Text>
+              <View className="flex-1">
+                <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Probability (%)</Text>
                 <TextInput
-                  style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+                  className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2.5 text-xs text-white"
                   placeholder="80"
-                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+                  placeholderTextColor="#64748B"
                   keyboardType="numeric"
                   value={probability}
                   onChangeText={setProbability}
@@ -285,23 +272,21 @@ export const CreateDealModal: React.FC<CreateDealModalProps> = ({
 
             {/* Assignee */}
             {members && members.length > 0 ? (
-              <View style={styles.inputGroup}>
-                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Assignee</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+              <View className="mb-3">
+                <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Assignee</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2">
                   <Pressable
-                    style={[
-                      styles.chip,
-                      { backgroundColor: isDark ? '#222630' : '#F1F5F9' },
-                      assignedTo === '' && (isDark ? styles.chipSelectedDark : styles.chipSelectedLight),
-                    ]}
+                    className={`px-3 py-2 rounded-xl border ${
+                      assignedTo === ''
+                        ? 'bg-[#0084FF]/20 border-[#0084FF]'
+                        : 'bg-[#111317] border-[#262930] active:bg-[#262930]'
+                    }`}
                     onPress={() => setAssignedTo('')}
                   >
                     <Text
-                      style={[
-                        styles.chipText,
-                        { color: isDark ? '#9CA3AF' : '#64748B' },
-                        assignedTo === '' && styles.chipTextSelected,
-                      ]}
+                      className={`text-xs ${
+                        assignedTo === '' ? 'text-[#0084FF] font-bold' : 'text-slate-400'
+                      }`}
                     >
                       Unassigned
                     </Text>
@@ -309,19 +294,17 @@ export const CreateDealModal: React.FC<CreateDealModalProps> = ({
                   {members.map((m) => (
                     <Pressable
                       key={m.id}
-                      style={[
-                        styles.chip,
-                        { backgroundColor: isDark ? '#222630' : '#F1F5F9' },
-                        assignedTo === m.id && (isDark ? styles.chipSelectedDark : styles.chipSelectedLight),
-                      ]}
+                      className={`px-3 py-2 rounded-xl border ${
+                        assignedTo === m.id
+                          ? 'bg-[#0084FF]/20 border-[#0084FF]'
+                          : 'bg-[#111317] border-[#262930] active:bg-[#262930]'
+                      }`}
                       onPress={() => setAssignedTo(m.id)}
                     >
                       <Text
-                        style={[
-                          styles.chipText,
-                          { color: isDark ? '#9CA3AF' : '#64748B' },
-                          assignedTo === m.id && styles.chipTextSelected,
-                        ]}
+                        className={`text-xs ${
+                          assignedTo === m.id ? 'text-[#0084FF] font-bold' : 'text-slate-400'
+                        }`}
                       >
                         {m.name}
                       </Text>
@@ -332,14 +315,15 @@ export const CreateDealModal: React.FC<CreateDealModalProps> = ({
             ) : null}
 
             {/* Notes */}
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Deal Notes</Text>
+            <View className="mb-2">
+              <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Deal Notes</Text>
               <TextInput
-                style={[styles.input, isDark ? styles.inputDark : styles.inputLight, styles.textArea]}
+                className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2.5 text-xs text-white min-h-[70px]"
                 placeholder="Key requirements, client expectations, milestones..."
-                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+                placeholderTextColor="#64748B"
                 multiline
                 numberOfLines={3}
+                textAlignVertical="top"
                 value={notes}
                 onChangeText={setNotes}
               />
@@ -347,19 +331,23 @@ export const CreateDealModal: React.FC<CreateDealModalProps> = ({
           </ScrollView>
 
           {/* Footer Actions */}
-          <View style={styles.modalFooter}>
+          <View className="flex-row gap-3">
             <Pressable
-              style={[styles.cancelBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              className="flex-1 py-3 rounded-xl bg-[#262930] items-center justify-center active:bg-[#333742]"
               onPress={handleClose}
               disabled={isLoading}
             >
-              <Text style={[styles.cancelBtnText, { color: isDark ? '#D1D5DB' : '#475569' }]}>Cancel</Text>
+              <Text className="text-xs font-bold text-slate-300">Cancel</Text>
             </Pressable>
-            <Pressable style={styles.submitBtn} onPress={handleSubmit} disabled={isLoading}>
+            <Pressable
+              className="flex-2 py-3 rounded-xl bg-[#0084FF] items-center justify-center active:opacity-80"
+              onPress={handleSubmit}
+              disabled={isLoading}
+            >
               {isLoading ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Text style={styles.submitBtnText}>Create Deal</Text>
+                <Text className="text-xs font-bold text-white">Create Deal</Text>
               )}
             </Pressable>
           </View>
@@ -368,198 +356,3 @@ export const CreateDealModal: React.FC<CreateDealModalProps> = ({
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: Platform.OS === 'ios' ? 36 : 24,
-    maxHeight: '88%',
-    borderWidth: 1,
-  },
-  modalContentDark: {
-    backgroundColor: '#181A20',
-    borderColor: '#262A34',
-  },
-  modalContentLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  closeBtn: {
-    padding: 6,
-    borderRadius: 8,
-  },
-  errorBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  errorText: {
-    color: '#EF4444',
-    fontSize: 12,
-    flex: 1,
-  },
-  formScroll: {
-    marginBottom: 16,
-  },
-  row: {
-    flexDirection: 'row',
-  },
-  inputGroup: {
-    marginBottom: 14,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 6,
-  },
-  input: {
-    borderRadius: 10,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-  },
-  inputDark: {
-    backgroundColor: '#121316',
-    borderColor: '#262A34',
-    color: '#FFFFFF',
-  },
-  inputLight: {
-    backgroundColor: '#F8FAFC',
-    borderColor: '#E2E8F0',
-    color: '#0F172A',
-  },
-  textArea: {
-    minHeight: 70,
-    textAlignVertical: 'top',
-  },
-  currencyRow: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  currencyBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  currencyBtnSelected: {
-    backgroundColor: '#3B82F6',
-  },
-  currencyBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  currencyBtnTextSelected: {
-    color: '#FFFFFF',
-  },
-  stageGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  stageChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  stageChipSelectedDark: {
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-    borderColor: '#3B82F6',
-  },
-  stageChipSelectedLight: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#3B82F6',
-  },
-  stageChipText: {
-    fontSize: 12,
-  },
-  chipScroll: {
-    flexDirection: 'row',
-  },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  chipSelectedDark: {
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-    borderColor: '#3B82F6',
-  },
-  chipSelectedLight: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#3B82F6',
-  },
-  chipText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  chipTextSelected: {
-    color: '#3B82F6',
-    fontWeight: '600',
-  },
-  modalFooter: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  cancelBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  submitBtn: {
-    flex: 2,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: '#3B82F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  submitBtnText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-});

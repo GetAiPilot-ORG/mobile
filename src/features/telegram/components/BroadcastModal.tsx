@@ -3,12 +3,10 @@ import {
   Modal,
   View,
   Text,
-  StyleSheet,
   Pressable,
   ScrollView,
   ActivityIndicator,
   Linking,
-  useColorScheme,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,10 +26,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
   visible,
   onClose,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
-  const { data: status, isLoading, refetch, isRefetching } = useQuery({
+  const { data: status, isLoading } = useQuery({
     queryKey: ['telegram_broadcast_status'],
     queryFn: telegramApi.getBroadcastStatus,
     enabled: visible,
@@ -57,7 +52,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
       icon: 'paper-plane-outline',
       title: 'Targeted Outreach',
       desc: 'Reach all users who joined your channels through GAP bots and tracking links.',
-      color: '#0284C7',
+      color: '#0084FF',
     },
     {
       icon: 'flash-outline',
@@ -81,129 +76,129 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View style={[styles.container, isDark ? styles.containerDark : styles.containerLight]}>
+      <View className="flex-1 bg-[#0B0D10]">
         {/* Top Header */}
-        <View style={[styles.header, isDark ? styles.borderDark : styles.borderLight]}>
-          <View style={styles.headerTitleRow}>
-            <View style={styles.headerIconCircle}>
-              <Ionicons name="megaphone" size={16} color="#0284C7" />
+        <View className="flex-row justify-between items-center px-4 py-3.5 border-b border-[#262930] bg-[#181A1F]">
+          <View className="flex-row items-center gap-2.5">
+            <View className="w-8 h-8 rounded-lg bg-[#0084FF]/10 justify-center items-center">
+              <Ionicons name="megaphone" size={16} color="#0084FF" />
             </View>
             <View>
-              <Text style={[styles.title, isDark ? styles.textDark : styles.textLight]}>GAP Broadcast</Text>
-              <Text style={styles.subtitle}>Send bulk messages to your audience instantly</Text>
+              <Text className="text-base font-bold text-white">GAP Broadcast</Text>
+              <Text className="text-xs text-slate-400 mt-0.5">Send bulk messages to your audience instantly</Text>
             </View>
           </View>
           <Pressable
-            style={[styles.closeBtn, isDark ? styles.closeBtnDark : styles.closeBtnLight]}
+            className="w-8 h-8 rounded-full bg-[#111317] justify-center items-center active:opacity-70"
             onPress={onClose}
           >
-            <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+            <Ionicons name="close" size={20} color="#FFFFFF" />
           </Pressable>
         </View>
 
-        <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
+        <ScrollView className="flex-1" contentContainerClassName="p-4 pb-10" showsVerticalScrollIndicator={false}>
           {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#0284C7" />
-              <Text style={[styles.loadingText, isDark ? styles.textDark : styles.textLight]}>
+            <View className="py-16 justify-center items-center gap-3">
+              <ActivityIndicator size="large" color="#0084FF" />
+              <Text className="text-xs font-medium text-slate-400">
                 Syncing with GAP Broadcast engine...
               </Text>
             </View>
           ) : (
             <>
-              {/* Central Broadcast Hero Card (Matches Web 1:1) */}
-              <View style={[styles.heroCard, isDark ? styles.heroCardDark : styles.heroCardLight]}>
+              {/* Central Broadcast Hero Card */}
+              <View className="rounded-2xl p-6 items-center border border-[#262930] bg-[#181A1F] mb-6">
                 {/* Eyebrow badge */}
-                <View style={styles.eyebrowBadge}>
-                  <Ionicons name="sparkles" size={12} color="#0284C7" />
-                  <Text style={styles.eyebrowText}>TELEGRAM BROADCAST</Text>
+                <View className="flex-row items-center gap-1 px-2.5 py-1 rounded-full bg-[#0084FF]/10 mb-4">
+                  <Ionicons name="sparkles" size={12} color="#0084FF" />
+                  <Text className="text-[#0084FF] text-[10px] font-extrabold tracking-wider">TELEGRAM BROADCAST</Text>
                 </View>
 
                 {/* Bot Icon with Glow Ring */}
-                <View style={styles.iconGlowWrapper}>
-                  <View style={styles.iconCircle}>
-                    <Ionicons name="rocket" size={36} color="#FFFFFF" />
+                <View className="w-16 h-16 rounded-full bg-[#0084FF]/20 justify-center items-center mb-3">
+                  <View className="w-12 h-12 rounded-full bg-[#0084FF] justify-center items-center shadow-lg shadow-[#0084FF]/40">
+                    <Ionicons name="rocket" size={26} color="#FFFFFF" />
                   </View>
                 </View>
 
-                <Text style={[styles.heroTitle, isDark ? styles.textDark : styles.textLight]}>
+                <Text className="text-xl font-extrabold text-white mb-1">
                   {status?.botName || 'GAPGrow Bot'}
                 </Text>
 
-                <View style={styles.tagBadge}>
-                  <Text style={styles.tagText}>{status?.botUsername || '@GapGrowBot'}</Text>
+                <View className="px-2.5 py-0.5 rounded-lg bg-[#0084FF]/10 mb-3">
+                  <Text className="text-[#0084FF] text-xs font-bold">{status?.botUsername || '@GapGrowBot'}</Text>
                 </View>
 
-                <Text style={styles.heroDesc}>
+                <Text className="text-slate-400 text-xs leading-5 text-center mb-4 px-2">
                   Reach all users who joined your channels through GAP bots. Perfect for announcements, signals, or daily updates.
                 </Text>
 
                 {/* Connected Telegram User ID Pill */}
-                <View style={[styles.idCard, isDark ? styles.idCardDark : styles.idCardLight]}>
-                  <Ionicons name="hardware-chip-outline" size={16} color="#0284C7" />
-                  <Text style={[styles.idLabel, isDark ? styles.textDark : styles.textLight]}>
+                <View className="flex-row items-center gap-2 px-3.5 py-2.5 rounded-xl border border-[#262930] bg-[#111317] w-full justify-center mb-4">
+                  <Ionicons name="hardware-chip-outline" size={16} color="#0084FF" />
+                  <Text className="text-xs font-semibold text-slate-300">
                     Connected Telegram ID:{' '}
-                    <Text style={styles.idValue}>
+                    <Text className="text-[#0084FF] font-extrabold">
                       {status?.telegramUserId ? status.telegramUserId : '8891953778'}
                     </Text>
                   </Text>
-                  <View style={styles.activeDot} />
+                  <View className="w-2 h-2 rounded-full bg-emerald-400 ml-1" />
                 </View>
 
                 {/* Big Vibrant CTA Action Button */}
                 <Pressable
-                  style={({ pressed }) => [
-                    styles.openBotBtn,
-                    pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
-                  ]}
+                  className="bg-[#0084FF] flex-row items-center justify-center gap-2.5 w-full py-3.5 rounded-xl active:opacity-90 shadow-md shadow-[#0084FF]/30"
                   onPress={handleOpenBot}
                 >
-                  <Ionicons name="logo-android" size={20} color="#FFFFFF" />
-                  <Text style={styles.openBotBtnText}>OPEN GAP GROW BOT</Text>
-                  <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+                  <Ionicons name="logo-android" size={18} color="#FFFFFF" />
+                  <Text className="text-white text-xs font-extrabold tracking-wide">OPEN GAP GROW BOT</Text>
+                  <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
                 </Pressable>
 
-                <View style={styles.redirectHintRow}>
+                <View className="flex-row items-center gap-1 mt-2.5">
                   <Ionicons name="arrow-redo-outline" size={12} color="#64748B" />
-                  <Text style={styles.redirectHintText}>Redirects securely to official Telegram app</Text>
+                  <Text className="text-slate-400 text-[11px]">Redirects securely to official Telegram app</Text>
                 </View>
               </View>
 
               {/* Feature Highlights Grid */}
-              <Text style={[styles.sectionHeading, isDark ? styles.textDark : styles.textLight]}>
+              <Text className="text-sm font-bold tracking-tight text-white mb-3">
                 Broadcast Capabilities
               </Text>
 
-              <View style={styles.featuresList}>
+              <View className="gap-2.5 mb-5">
                 {features.map((item, idx) => (
                   <View
                     key={`bc_feat_${idx}`}
-                    style={[styles.featureCard, isDark ? styles.featureCardDark : styles.featureCardLight]}
+                    className="flex-row items-start gap-3 p-3.5 rounded-xl border border-[#262930] bg-[#181A1F]"
                   >
-                    <View style={[styles.featureIconCircle, { backgroundColor: `${item.color}15` }]}>
+                    <View
+                      className="w-9 h-9 rounded-lg justify-center items-center mt-0.5"
+                      style={{ backgroundColor: `${item.color}18` }}
+                    >
                       <Ionicons name={item.icon as any} size={18} color={item.color} />
                     </View>
-                    <View style={styles.featureContent}>
-                      <Text style={[styles.featureTitle, isDark ? styles.textDark : styles.textLight]}>
+                    <View className="flex-1">
+                      <Text className="text-sm font-bold text-white mb-0.5">
                         {item.title}
                       </Text>
-                      <Text style={styles.featureDesc}>{item.desc}</Text>
+                      <Text className="text-slate-400 text-xs leading-4">{item.desc}</Text>
                     </View>
                   </View>
                 ))}
               </View>
 
               {/* Instructions Card */}
-              <View style={[styles.infoBox, isDark ? styles.infoBoxDark : styles.infoBoxLight]}>
-                <View style={styles.infoBoxHeader}>
-                  <Ionicons name="information-circle" size={16} color="#0284C7" />
-                  <Text style={[styles.infoBoxTitle, isDark ? styles.textDark : styles.textLight]}>
+              <View className="p-3.5 rounded-xl border border-[#0084FF]/25 bg-[#0084FF]/10">
+                <View className="flex-row items-center gap-1.5 mb-2">
+                  <Ionicons name="information-circle" size={16} color="#0084FF" />
+                  <Text className="text-xs font-bold text-white">
                     How to broadcast messages:
                   </Text>
                 </View>
-                <Text style={styles.infoStepText}>1. Tap <Text style={{ fontWeight: '700', color: '#0284C7' }}>Open GAP Grow Bot</Text> above to launch Telegram.</Text>
-                <Text style={styles.infoStepText}>2. Use the interactive menu in <Text style={{ fontWeight: '700' }}>@GapGrowBot</Text> to craft your text, media, and buttons.</Text>
-                <Text style={styles.infoStepText}>3. Select your target audience segment and send instantly.</Text>
+                <Text className="text-slate-300 text-xs leading-5 mb-1">1. Tap <Text className="font-bold text-[#0084FF]">Open GAP Grow Bot</Text> above to launch Telegram.</Text>
+                <Text className="text-slate-300 text-xs leading-5 mb-1">2. Use the interactive menu in <Text className="font-bold text-white">@GapGrowBot</Text> to craft your text, media, and buttons.</Text>
+                <Text className="text-slate-300 text-xs leading-5">3. Select your target audience segment and send instantly.</Text>
               </View>
             </>
           )}
@@ -213,279 +208,3 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  containerLight: { backgroundColor: '#F8FAFC' },
-  containerDark: { backgroundColor: '#0B0F19' },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-  },
-  borderLight: { borderBottomColor: '#E2E8F0' },
-  borderDark: { borderBottomColor: '#1E2430' },
-  headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  headerIconCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: 'rgba(2, 132, 199, 0.12)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: { fontSize: 17, fontWeight: '700' },
-  textLight: { color: '#0F172A' },
-  textDark: { color: '#F8FAFC' },
-  subtitle: { color: '#64748B', fontSize: 11, marginTop: 1 },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeBtnLight: { backgroundColor: '#F1F5F9' },
-  closeBtnDark: { backgroundColor: '#1E2430' },
-  body: { flex: 1 },
-  bodyContent: { padding: 16, paddingBottom: 40 },
-  loadingContainer: {
-    paddingVertical: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 12,
-  },
-  loadingText: { fontSize: 13, fontWeight: '500' },
-
-  // Hero Card
-  heroCard: {
-    borderRadius: 18,
-    padding: 24,
-    alignItems: 'center',
-    borderWidth: 1,
-    marginBottom: 24,
-  },
-  heroCardLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  heroCardDark: {
-    backgroundColor: '#121722',
-    borderColor: '#1E2430',
-  },
-  eyebrowBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: 'rgba(2, 132, 199, 0.12)',
-    marginBottom: 16,
-  },
-  eyebrowText: {
-    color: '#0284C7',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-  },
-  iconGlowWrapper: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(2, 132, 199, 0.18)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  iconCircle: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: '#0284C7',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  heroTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  tagBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 10,
-    backgroundColor: 'rgba(2, 132, 199, 0.1)',
-    marginBottom: 12,
-  },
-  tagText: {
-    color: '#0284C7',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  heroDesc: {
-    color: '#64748B',
-    fontSize: 13,
-    lineHeight: 19,
-    textAlign: 'center',
-    marginBottom: 18,
-    paddingHorizontal: 10,
-  },
-
-  // ID Pill Card
-  idCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    width: '100%',
-    justifyContent: 'center',
-    marginBottom: 18,
-  },
-  idCardLight: {
-    backgroundColor: '#F8FAFC',
-    borderColor: '#E2E8F0',
-  },
-  idCardDark: {
-    backgroundColor: '#161C28',
-    borderColor: '#27272A',
-  },
-  idLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  idValue: {
-    color: '#0284C7',
-    fontWeight: '800',
-  },
-  activeDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: '#10B981',
-    marginLeft: 4,
-  },
-
-  // CTA Button
-  openBotBtn: {
-    backgroundColor: '#0284C7',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    width: '100%',
-    paddingVertical: 15,
-    borderRadius: 14,
-    shadowColor: '#0284C7',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  openBotBtnText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  redirectHintRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginTop: 10,
-  },
-  redirectHintText: {
-    color: '#64748B',
-    fontSize: 11,
-  },
-
-  // Features List
-  sectionHeading: {
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-    marginBottom: 12,
-  },
-  featuresList: {
-    gap: 10,
-    marginBottom: 20,
-  },
-  featureCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  featureCardLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-  },
-  featureCardDark: {
-    backgroundColor: '#121722',
-    borderColor: '#1E2430',
-  },
-  featureIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  featureContent: {
-    flex: 1,
-  },
-  featureTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  featureDesc: {
-    color: '#64748B',
-    fontSize: 12,
-    lineHeight: 17,
-  },
-
-  // Info Step Box
-  infoBox: {
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  infoBoxLight: {
-    backgroundColor: 'rgba(2, 132, 199, 0.04)',
-    borderColor: 'rgba(2, 132, 199, 0.2)',
-  },
-  infoBoxDark: {
-    backgroundColor: 'rgba(2, 132, 199, 0.08)',
-    borderColor: 'rgba(2, 132, 199, 0.25)',
-  },
-  infoBoxHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
-  },
-  infoBoxTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  infoStepText: {
-    color: '#64748B',
-    fontSize: 12,
-    lineHeight: 18,
-    marginBottom: 4,
-  },
-});

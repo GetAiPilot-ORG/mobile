@@ -5,9 +5,7 @@ import {
   ActivityIndicator,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,8 +13,6 @@ import { apiClient } from "../../../core/api/client";
 
 export const ToolsScreen: React.FC = () => {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
   const [openingTool, setOpeningTool] = useState<string | null>(null);
 
   const nativeTools = [
@@ -117,34 +113,30 @@ export const ToolsScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? "#020617" : "#f8fafc" }]}>
+    <SafeAreaView className="flex-1 bg-[#0B0D10]">
       <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.content}
+        className="flex-1"
+        contentContainerClassName="p-4 pb-32"
       >
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: isDark ? "#f8fafc" : "#0f172a" }]}>Free Tools & Builders</Text>
-          <Text style={[styles.subtitle, { color: isDark ? "#94a3b8" : "#64748b" }]}>
+        <View className="mt-2 mb-5">
+          <Text className="text-2xl font-extrabold text-white">Free Tools & Builders</Text>
+          <Text className="text-[13px] text-slate-400 mt-0.5">
             Utility Suite & Visual Drag-and-Drop Builders
           </Text>
         </View>
 
         {/* Native Tools */}
-        <Text style={[styles.sectionTitle, { color: isDark ? "#cbd5e1" : "#475569" }]}>Native Free Tools</Text>
-        <View style={styles.grid}>
+        <Text className="text-[15px] font-bold text-white mb-3">Native Free Tools</Text>
+        <View className="flex-row flex-wrap justify-between mb-4">
           {nativeTools.map((tool) => (
             <Pressable
               key={tool.route}
-              style={({ pressed }) => [
-                styles.card,
-                isDark ? styles.cardDark : styles.cardLight,
-                pressed && styles.cardPressed,
-              ]}
+              className="w-[48%] rounded-2xl p-3.5 mb-3 bg-[#181A1F] border border-[#262930] active:opacity-80"
               onPress={() => router.push(tool.route as any)}
             >
-              <Text style={styles.toolIcon}>{tool.icon}</Text>
-              <Text style={[styles.toolTitle, { color: isDark ? "#f8fafc" : "#0f172a" }]}>{tool.title}</Text>
-              <Text style={[styles.toolDesc, { color: isDark ? "#94a3b8" : "#64748b" }]} numberOfLines={2}>
+              <Text className="text-2xl mb-2">{tool.icon}</Text>
+              <Text className="text-sm font-bold text-white mb-1">{tool.title}</Text>
+              <Text className="text-[11px] leading-[15px] text-slate-400" numberOfLines={2}>
                 {tool.desc}
               </Text>
             </Pressable>
@@ -152,30 +144,26 @@ export const ToolsScreen: React.FC = () => {
         </View>
 
         {/* Secure Webview Builders */}
-        <Text style={[styles.sectionTitle, { color: isDark ? "#cbd5e1" : "#475569" }]}>
+        <Text className="text-[15px] font-bold text-white mb-3">
           Visual Web Builders (Single-Sign-On)
         </Text>
-        <View style={styles.buildersList}>
+        <View className="mb-4">
           {webviewBuilders.map((builder) => (
             <Pressable
               key={builder.id}
-              style={({ pressed }) => [
-                styles.builderCard,
-                isDark ? styles.builderCardDark : styles.builderCardLight,
-                pressed && styles.cardPressed,
-              ]}
+              className="flex-row items-center rounded-2xl p-4 mb-2.5 bg-[#181A1F] border border-[#262930] active:opacity-80"
               disabled={openingTool === builder.id}
               onPress={() => handleOpenBuilder(builder.id)}
             >
-              <Text style={styles.builderIcon}>{builder.icon}</Text>
-              <View style={styles.builderInfo}>
-                <Text style={[styles.builderTitle, { color: isDark ? "#f8fafc" : "#0f172a" }]}>{builder.title}</Text>
-                <Text style={[styles.builderDesc, { color: isDark ? "#94a3b8" : "#64748b" }]}>{builder.desc}</Text>
+              <Text className="text-2xl mr-3.5">{builder.icon}</Text>
+              <View className="flex-1">
+                <Text className="text-[15px] font-bold text-white">{builder.title}</Text>
+                <Text className="text-xs text-slate-400 mt-0.5">{builder.desc}</Text>
               </View>
               {openingTool === builder.id ? (
-                <ActivityIndicator size="small" color="#6366f1" />
+                <ActivityIndicator size="small" color="#0084FF" />
               ) : (
-                <Text style={styles.builderAction}>Launch ↗</Text>
+                <Text className="text-[#0084FF] font-bold text-[13px]">Launch ↗</Text>
               )}
             </Pressable>
           ))}
@@ -184,78 +172,3 @@ export const ToolsScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  safeArea: { flex: 1 },
-  container: { flex: 1 },
-  content: { padding: 16, paddingBottom: 130 },
-  header: { marginTop: 8, marginBottom: 20 },
-  title: { fontSize: 24, fontWeight: "800" },
-  subtitle: { fontSize: 13, marginTop: 2 },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    marginBottom: 12,
-  },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  card: {
-    width: "48%",
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 12,
-    borderWidth: 1,
-  },
-  cardDark: {
-    backgroundColor: "#0f172a",
-    borderColor: "#1e293b",
-  },
-  cardLight: {
-    backgroundColor: "#ffffff",
-    borderColor: "#e2e8f0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  cardPressed: { opacity: 0.8 },
-  toolIcon: { fontSize: 24, marginBottom: 8 },
-  toolTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  toolDesc: { fontSize: 11, lineHeight: 15 },
-  buildersList: { marginBottom: 16 },
-  builderCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-  },
-  builderCardDark: {
-    backgroundColor: "#0f172a",
-    borderColor: "#1e293b",
-  },
-  builderCardLight: {
-    backgroundColor: "#ffffff",
-    borderColor: "#e2e8f0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  builderIcon: { fontSize: 24, marginRight: 14 },
-  builderInfo: { flex: 1 },
-  builderTitle: { fontSize: 15, fontWeight: "700" },
-  builderDesc: { fontSize: 12, marginTop: 2 },
-  builderAction: { color: "#818cf8", fontWeight: "700", fontSize: 13 },
-});

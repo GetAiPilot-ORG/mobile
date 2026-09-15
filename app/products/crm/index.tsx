@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BackHandler, StyleSheet, useColorScheme, View } from 'react-native';
+import { BackHandler, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { CRMHomeScreen } from '../../../src/features/crm/screens/CRMHomeScreen';
 import { LeadListScreen } from '../../../src/features/crm/screens/LeadListScreen';
@@ -66,8 +66,6 @@ const CRM_TABS: ProductTabItem[] = [
 
 export default function CRMIndexRoute() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const [activeTab, setActiveTab] = useState<CRMTab>('home');
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
@@ -104,8 +102,8 @@ export default function CRMIndexRoute() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]}>
-      <View style={styles.screenContainer}>
+    <View className="flex-1 bg-[#0B0D10]">
+      <View className="flex-1">
         {activeTab === 'home' && (
           <CRMHomeScreen
             onNavigateTab={(tab) => {
@@ -173,18 +171,9 @@ export default function CRMIndexRoute() {
         items={CRM_TABS}
         activeKey={activeTab}
         onChangeTab={(key) => setActiveTab(key as CRMTab)}
-        accentColor="#3B82F6"
+        accentColor="#0084FF"
         moreMenuTitle="CRM Tools & Management"
       />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  screenContainer: {
-    flex: 1,
-  },
-});

@@ -2,11 +2,9 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   Pressable,
   Alert,
-  useColorScheme,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { AppScreen } from '../../src/components/AppScreen';
@@ -84,9 +82,6 @@ const TIERS = [
 ];
 
 export default function PlansPricingScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
   const { planLabel } = usePlatformSubscription();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
   const [selectedTier, setSelectedTier] = useState<string>('pro');
@@ -119,119 +114,59 @@ export default function PlansPricingScreen() {
   };
 
   return (
-    <AppScreen safeArea={false} backgroundColor={isDark ? '#000000' : '#F8FAFC'}>
+    <AppScreen safeArea={false} className="flex-1 bg-[#0B0D10]">
       <AppTopBar title="Plans & Quotas" subtitle="Enterprise Subscriptions & Scaling" showBack={true} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         {/* Active Status Glass Banner */}
-        <View
-          style={[
-            styles.statusBanner,
-            {
-              backgroundColor: isDark ? '#071612' : '#ECFDF5',
-              borderColor: isDark ? '#10B98144' : '#A7F3D0',
-            },
-          ]}
-        >
-          <View
-            style={[
-              styles.statusGlow,
-              { backgroundColor: isDark ? '#10B98118' : 'rgba(16, 185, 129, 0.08)' },
-            ]}
-          />
-          <View style={styles.statusHeader}>
-            <View
-              style={[
-                styles.activePill,
-                { backgroundColor: isDark ? '#10B98122' : '#D1FAE5' },
-              ]}
-            >
-              <View style={styles.activeDot} />
-              <Text style={styles.activePillText}>ACTIVE SUBSCRIPTION</Text>
+        <View className="relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-[#071612] p-5 mb-5">
+          <View className="absolute -top-12 -right-12 w-36 h-36 rounded-full bg-emerald-500/10" />
+          <View className="flex-row items-center justify-between mb-2">
+            <View className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20">
+              <View className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <Text className="text-[10px] font-black uppercase tracking-wider text-emerald-400">
+                ACTIVE SUBSCRIPTION
+              </Text>
             </View>
-            <Text style={[styles.planStatusDate, { color: isDark ? '#9CA3AF' : '#059669' }]}>
-              Renews 1st of next month
-            </Text>
+            <Text className="text-xs text-slate-400">Renews 1st of next month</Text>
           </View>
-          <Text style={[styles.statusPlanName, { color: isDark ? '#FFFFFF' : '#065F46' }]}>
+          <Text className="text-2xl font-black text-white tracking-tight">
             {planLabel || 'GAP Pro Max (Active)'}
           </Text>
-          <Text style={[styles.statusPlanDesc, { color: isDark ? '#D1D5DB' : '#047857' }]}>
+          <Text className="text-xs text-slate-300 mt-1 leading-4">
             All 5 automation engines & 10 growth utilities operating at unrestricted speed.
           </Text>
         </View>
 
         {/* Billing Cycle Toggle */}
-        <View
-          style={[
-            styles.toggleContainer,
-            {
-              backgroundColor: isDark ? '#12151A' : '#E2E8F0',
-              borderColor: isDark ? '#1F242F' : '#CBD5E1',
-            },
-          ]}
-        >
+        <View className="flex-row rounded-xl border border-[#262930] bg-[#111317] p-1 mb-5">
           <Pressable
-            style={[
-              styles.toggleBtn,
-              billingCycle === 'annual' && {
-                backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: isDark ? 0 : 0.08,
-                shadowRadius: 2,
-                elevation: 1,
-              },
-            ]}
+            className={`flex-1 flex-row items-center justify-center py-2.5 rounded-lg gap-1.5 ${
+              billingCycle === 'annual' ? 'bg-[#1F242F]' : ''
+            }`}
             onPress={() => handleCycleChange('annual')}
           >
-            <Text
-              style={[
-                styles.toggleBtnText,
-                { color: isDark ? '#9CA3AF' : '#64748B' },
-                billingCycle === 'annual' && {
-                  color: isDark ? '#FFFFFF' : '#0F172A',
-                  fontWeight: '700',
-                },
-              ]}
-            >
+            <Text className={`text-xs font-bold ${billingCycle === 'annual' ? 'text-white' : 'text-slate-400'}`}>
               Annual (Save 20%)
             </Text>
-            <View style={styles.saveBadge}>
-              <Text style={styles.saveBadgeText}>SAVE 20%</Text>
+            <View className="bg-emerald-500/20 px-1.5 py-0.5 rounded">
+              <Text className="text-[9px] font-black text-emerald-400">SAVE 20%</Text>
             </View>
           </Pressable>
           <Pressable
-            style={[
-              styles.toggleBtn,
-              billingCycle === 'monthly' && {
-                backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: isDark ? 0 : 0.08,
-                shadowRadius: 2,
-                elevation: 1,
-              },
-            ]}
+            className={`flex-1 flex-row items-center justify-center py-2.5 rounded-lg gap-1.5 ${
+              billingCycle === 'monthly' ? 'bg-[#1F242F]' : ''
+            }`}
             onPress={() => handleCycleChange('monthly')}
           >
-            <Text
-              style={[
-                styles.toggleBtnText,
-                { color: isDark ? '#9CA3AF' : '#64748B' },
-                billingCycle === 'monthly' && {
-                  color: isDark ? '#FFFFFF' : '#0F172A',
-                  fontWeight: '700',
-                },
-              ]}
-            >
+            <Text className={`text-xs font-bold ${billingCycle === 'monthly' ? 'text-white' : 'text-slate-400'}`}>
               Monthly
             </Text>
           </Pressable>
         </View>
 
         {/* Tier Cards */}
-        <View style={styles.tiersList}>
+        <View className="gap-4">
           {TIERS.map((tier) => {
             const isCurrent = selectedTier === tier.id;
             const price = billingCycle === 'annual' ? tier.annualPrice : tier.monthlyPrice;
@@ -239,138 +174,74 @@ export default function PlansPricingScreen() {
             return (
               <Pressable
                 key={tier.id}
-                style={[
-                  styles.tierCard,
-                  {
-                    backgroundColor: isDark
-                      ? isCurrent
-                        ? '#0F161A'
-                        : '#0D1117'
-                      : isCurrent
-                      ? '#F0FDF4'
-                      : '#FFFFFF',
-                    borderColor: isCurrent
-                      ? isDark
-                        ? '#10B98188'
-                        : '#10B981'
-                      : isDark
-                      ? '#1F242F'
-                      : '#E2E8F0',
-                  },
-                ]}
+                className={`rounded-2xl p-5 border ${
+                  isCurrent ? 'bg-[#0F161A] border-emerald-500/60' : 'bg-[#181A1F] border-[#262930]'
+                }`}
                 onPress={() => handleSelectTier(tier.id)}
               >
                 {/* Header */}
-                <View style={styles.tierTopRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.tierTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
-                      {tier.name}
-                    </Text>
-                    <Text style={[styles.tierSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
-                      {tier.subtitle}
-                    </Text>
+                <View className="flex-row items-start justify-between gap-3">
+                  <View className="flex-1">
+                    <Text className="text-lg font-black text-white tracking-tight">{tier.name}</Text>
+                    <Text className="text-xs text-slate-400 mt-0.5 leading-4">{tier.subtitle}</Text>
                   </View>
                   <View
-                    style={[
-                      styles.badgePill,
-                      {
-                        backgroundColor: `${tier.badgeColor}22`,
-                        borderColor: `${tier.badgeColor}55`,
-                      },
-                    ]}
+                    className="px-2 py-1 rounded-md border"
+                    style={{
+                      backgroundColor: `${tier.badgeColor}22`,
+                      borderColor: `${tier.badgeColor}55`,
+                    }}
                   >
-                    <Text style={[styles.badgeText, { color: tier.badgeColor }]}>{tier.badge}</Text>
+                    <Text className="text-[10px] font-extrabold uppercase" style={{ color: tier.badgeColor }}>
+                      {tier.badge}
+                    </Text>
                   </View>
                 </View>
 
                 {/* Price Display */}
-                <View style={styles.priceRow}>
+                <View className="flex-row items-baseline my-3">
                   {price !== null ? (
                     <>
-                      <Text style={styles.priceCurrency}>₹</Text>
-                      <Text style={[styles.priceValue, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                      <Text className="text-lg font-bold text-emerald-400 mr-0.5">₹</Text>
+                      <Text className="text-3xl font-black text-white tracking-tight">
                         {price.toLocaleString()}
                       </Text>
-                      <Text style={[styles.pricePeriod, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
-                        / month
-                      </Text>
+                      <Text className="text-xs text-slate-400 ml-1.5">/ month</Text>
                     </>
                   ) : (
-                    <Text style={styles.customPriceText}>Custom SLA Quote</Text>
+                    <Text className="text-xl font-black text-purple-400">Custom SLA Quote</Text>
                   )}
                 </View>
 
                 {/* Quota Strip */}
-                <View
-                  style={[
-                    styles.quotaStrip,
-                    {
-                      backgroundColor: isDark ? '#161B22' : '#F8FAFC',
-                      borderColor: isDark ? '#21262D' : '#E2E8F0',
-                      borderWidth: 1,
-                    },
-                  ]}
-                >
+                <View className="flex-row rounded-xl p-2.5 mb-4 justify-between bg-[#111317] border border-[#262930]">
                   {tier.quotas.map((q, idx) => (
-                    <View key={idx} style={styles.quotaBox}>
-                      <Text style={[styles.quotaVal, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
-                        {q.value}
-                      </Text>
-                      <Text style={[styles.quotaLbl, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
-                        {q.label}
-                      </Text>
+                    <View key={idx} className="flex-1 items-center">
+                      <Text className="text-xs font-extrabold text-white">{q.value}</Text>
+                      <Text className="text-[10px] text-slate-400 mt-0.5">{q.label}</Text>
                     </View>
                   ))}
                 </View>
 
-                <View
-                  style={[
-                    styles.tierDivider,
-                    { backgroundColor: isDark ? '#21262D' : '#E2E8F0' },
-                  ]}
-                />
+                <View className="h-px bg-[#262930] mb-4" />
 
                 {/* Features List */}
-                <View style={styles.featuresList}>
+                <View className="gap-2.5 mb-5">
                   {tier.features.map((feat, fIdx) => (
-                    <View key={fIdx} style={styles.featureItem}>
+                    <View key={fIdx} className="flex-row items-center gap-2.5">
                       <View
-                        style={[
-                          styles.checkCircle,
-                          {
-                            backgroundColor: feat.highlight
-                              ? isDark
-                                ? '#10B98125'
-                                : '#D1FAE5'
-                              : isDark
-                              ? '#1F242F'
-                              : '#F1F5F9',
-                          },
-                        ]}
+                        className={`w-5 h-5 rounded-full items-center justify-center ${
+                          feat.highlight ? 'bg-emerald-500/20' : 'bg-[#262930]'
+                        }`}
                       >
-                        <Text
-                          style={[
-                            styles.checkIcon,
-                            { color: feat.highlight ? '#10B981' : isDark ? '#9CA3AF' : '#64748B' },
-                          ]}
-                        >
+                        <Text className={`text-[11px] font-black ${feat.highlight ? 'text-emerald-400' : 'text-slate-400'}`}>
                           ✓
                         </Text>
                       </View>
                       <Text
-                        style={[
-                          styles.featureText,
-                          {
-                            color: feat.highlight
-                              ? isDark
-                                ? '#F3F4F6'
-                                : '#0F172A'
-                              : isDark
-                              ? '#9CA3AF'
-                              : '#64748B',
-                            fontWeight: feat.highlight ? '600' : '400',
-                          },
-                        ]}
+                        className={`text-xs flex-1 leading-4 ${
+                          feat.highlight ? 'text-slate-100 font-semibold' : 'text-slate-400'
+                        }`}
                       >
                         {feat.text}
                       </Text>
@@ -380,26 +251,12 @@ export default function PlansPricingScreen() {
 
                 {/* Action CTA */}
                 <Pressable
-                  style={[
-                    styles.upgradeBtn,
-                    isCurrent
-                      ? styles.upgradeBtnPrimary
-                      : [
-                          styles.upgradeBtnOutline,
-                          {
-                            borderColor: isDark ? '#374151' : '#CBD5E1',
-                            backgroundColor: isDark ? 'transparent' : '#FFFFFF',
-                          },
-                        ],
-                  ]}
+                  className={`py-3.5 rounded-xl items-center justify-center ${
+                    isCurrent ? 'bg-emerald-500' : 'border border-[#383D48] bg-transparent'
+                  }`}
                   onPress={() => handleUpgrade(tier.name)}
                 >
-                  <Text
-                    style={[
-                      styles.upgradeBtnText,
-                      !isCurrent && { color: isDark ? '#FFFFFF' : '#0F172A' },
-                    ]}
-                  >
+                  <Text className={`text-sm font-extrabold ${isCurrent ? 'text-black' : 'text-white'}`}>
                     {tier.id === 'custom' ? 'Talk to Enterprise Team →' : `Upgrade to ${tier.name} →`}
                   </Text>
                 </Pressable>
@@ -409,21 +266,11 @@ export default function PlansPricingScreen() {
         </View>
 
         {/* Security & Guarantee Note */}
-        <View
-          style={[
-            styles.guaranteeBox,
-            {
-              backgroundColor: isDark ? '#0D1117' : '#FFFFFF',
-              borderColor: isDark ? '#1F242F' : '#E2E8F0',
-            },
-          ]}
-        >
-          <Text style={styles.guaranteeIcon}>🛡️</Text>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.guaranteeTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
-              Bank-Grade 256-Bit SSL Encryption
-            </Text>
-            <Text style={[styles.guaranteeSub, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+        <View className="flex-row items-center gap-3.5 rounded-2xl p-4 mt-6 border border-[#262930] bg-[#181A1F]">
+          <Text className="text-2xl">🛡️</Text>
+          <View className="flex-1">
+            <Text className="text-xs font-bold text-white">Bank-Grade 256-Bit SSL Encryption</Text>
+            <Text className="text-[11px] text-slate-400 mt-0.5 leading-4">
               Cancel or adjust quotas anytime. Enterprise invoices include GST compliance and instant billing receipt downloads.
             </Text>
           </View>
@@ -432,243 +279,3 @@ export default function PlansPricingScreen() {
     </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 100,
-  },
-  statusBanner: {
-    borderRadius: 22,
-    padding: 20,
-    marginBottom: 20,
-    borderWidth: 1,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  statusGlow: {
-    position: 'absolute',
-    top: -50,
-    right: -50,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-  },
-  statusHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  activePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 99,
-  },
-  activeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#10B981',
-  },
-  activePillText: {
-    fontSize: 10.5,
-    fontWeight: '800',
-    color: '#10B981',
-    letterSpacing: 0.8,
-  },
-  planStatusDate: {
-    fontSize: 11,
-  },
-  statusPlanName: {
-    fontSize: 24,
-    fontWeight: '900',
-    letterSpacing: -0.3,
-  },
-  statusPlanDesc: {
-    fontSize: 13,
-    marginTop: 6,
-    lineHeight: 18,
-  },
-  toggleContainer: {
-    flexDirection: 'row',
-    borderRadius: 14,
-    padding: 4,
-    marginBottom: 20,
-    borderWidth: 1,
-  },
-  toggleBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: 11,
-    gap: 6,
-  },
-  toggleBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  saveBadge: {
-    backgroundColor: '#10B98122',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  saveBadgeText: {
-    fontSize: 9.5,
-    fontWeight: '800',
-    color: '#10B981',
-  },
-  tiersList: {
-    gap: 16,
-  },
-  tierCard: {
-    borderRadius: 22,
-    padding: 20,
-    borderWidth: 1,
-  },
-  tierTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  tierTitle: {
-    fontSize: 19,
-    fontWeight: '900',
-    letterSpacing: -0.2,
-  },
-  tierSubtitle: {
-    fontSize: 12,
-    marginTop: 3,
-    lineHeight: 16,
-  },
-  badgePill: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  badgeText: {
-    fontSize: 10.5,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    marginTop: 14,
-    marginBottom: 14,
-  },
-  priceCurrency: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#10B981',
-    marginRight: 2,
-  },
-  priceValue: {
-    fontSize: 32,
-    fontWeight: '900',
-    letterSpacing: -0.5,
-  },
-  pricePeriod: {
-    fontSize: 13,
-    marginLeft: 6,
-  },
-  customPriceText: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#8B5CF6',
-  },
-  quotaStrip: {
-    flexDirection: 'row',
-    borderRadius: 12,
-    padding: 10,
-    marginBottom: 16,
-    justifyContent: 'space-between',
-  },
-  quotaBox: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  quotaVal: {
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  quotaLbl: {
-    fontSize: 9.5,
-    marginTop: 2,
-  },
-  tierDivider: {
-    height: 1,
-    marginBottom: 16,
-  },
-  featuresList: {
-    gap: 10,
-    marginBottom: 20,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  checkCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkIcon: {
-    fontSize: 11,
-    fontWeight: '900',
-  },
-  featureText: {
-    fontSize: 13,
-    flex: 1,
-    lineHeight: 18,
-  },
-  upgradeBtn: {
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  upgradeBtnPrimary: {
-    backgroundColor: '#10B981',
-  },
-  upgradeBtnOutline: {
-    borderWidth: 1,
-  },
-  upgradeBtnText: {
-    color: '#000000',
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  guaranteeBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    borderRadius: 18,
-    padding: 16,
-    marginTop: 24,
-    borderWidth: 1,
-  },
-  guaranteeIcon: {
-    fontSize: 26,
-  },
-  guaranteeTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  guaranteeSub: {
-    fontSize: 11.5,
-    marginTop: 3,
-    lineHeight: 16,
-  },
-});

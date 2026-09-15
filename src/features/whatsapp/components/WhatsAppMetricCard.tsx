@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 export type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
@@ -23,112 +23,39 @@ export const WhatsAppMetricCard: React.FC<WhatsAppMetricCardProps> = ({
   iconColor = '#22C55E',
   trend,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
   return (
-    <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+    <View className="flex-1 min-w-[47%] bg-[#181A1F] border border-[#262930] rounded-2xl p-3.5">
       {/* Top row with Label & Icon badge */}
-      <View style={styles.topRow}>
-        <Text style={[styles.label, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+      <View className="flex-row justify-between items-center mb-2">
+        <Text className="text-xs font-semibold text-slate-400">
           {label}
         </Text>
-        <View style={[styles.iconCircle, { backgroundColor: `${iconColor}15` }]}>
+        <View
+          className="w-7 h-7 rounded-lg items-center justify-center"
+          style={{ backgroundColor: `${iconColor}15` }}
+        >
           {ioniconsName ? (
             <Ionicons name={ioniconsName} size={15} color={iconColor} />
           ) : (
-            <Text style={styles.emojiIcon}>{icon || '📊'}</Text>
+            <Text className="text-sm">{icon || '📊'}</Text>
           )}
         </View>
       </View>
 
       {/* Value */}
-      <Text style={[styles.value, isDark ? styles.textLight : styles.textDark]}>
+      <Text className="text-xl font-bold text-white mb-0.5">
         {value}
       </Text>
 
       {/* Subtext */}
       {subtext ? (
-        <Text style={[styles.subtext, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+        <Text className="text-xs text-slate-400">
           {subtext}
         </Text>
       ) : null}
 
       {/* Optional Trend */}
-      {trend ? <Text style={styles.trend}>{trend}</Text> : null}
+      {trend ? <Text className="text-[11px] font-semibold text-emerald-400 mt-1">{trend}</Text> : null}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: 16,
-    padding: 14,
-    flex: 1,
-    minWidth: '47%',
-    borderWidth: 1,
-  },
-  cardDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
-  },
-  cardLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '500',
-    letterSpacing: -0.1,
-  },
-  iconCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emojiIcon: {
-    fontSize: 14,
-  },
-  value: {
-    fontSize: 22,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-    marginBottom: 2,
-  },
-  subtext: {
-    fontSize: 12,
-    fontWeight: '400',
-  },
-  trend: {
-    color: '#34C759',
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  textLight: {
-    color: '#FFFFFF',
-  },
-  textDark: {
-    color: '#000000',
-  },
-  textSecondaryDark: {
-    color: '#8E8E93',
-  },
-  textSecondaryLight: {
-    color: '#6B7280',
-  },
-});
-

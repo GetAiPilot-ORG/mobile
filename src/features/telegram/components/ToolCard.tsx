@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, useColorScheme } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -56,9 +56,6 @@ const DEFAULT_VISUAL: ToolVisualConfig = {
 };
 
 export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
   const visual = TOOL_VISUAL_MAP[tool.key] || DEFAULT_VISUAL;
 
   const handlePress = () => {
@@ -68,11 +65,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
 
   return (
     <Pressable
-      style={({ pressed }) => [
-        styles.card,
-        isDark ? styles.cardDark : styles.cardLight,
-        pressed && styles.cardPressed,
-      ]}
+      className="flex-row items-center px-3.5 py-3 rounded-2xl border border-[#262930] bg-[#181A1F] mb-2.5 gap-3 active:opacity-85"
       onPress={handlePress}
     >
       {/* Left: Rich Gradient App Icon */}
@@ -80,20 +73,27 @@ export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
         colors={visual.gradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.iconContainer}
+        className="w-11 h-11 rounded-xl justify-center items-center shadow-md"
       >
         <Ionicons name={visual.icon} size={22} color="#FFFFFF" />
       </LinearGradient>
 
       {/* Middle: Title & Description */}
-      <View style={styles.infoCol}>
-        <Text
-          style={[styles.title, isDark ? styles.textDark : styles.textLight]}
-          numberOfLines={1}
-        >
-          {tool.title}
-        </Text>
-        <Text style={styles.description} numberOfLines={2}>
+      <View className="flex-1 justify-center">
+        <View className="flex-row items-center mb-0.5">
+          <Text
+            className="text-[15px] font-bold text-white tracking-tight"
+            numberOfLines={1}
+          >
+            {tool.title}
+          </Text>
+          {tool.badge === 'NEW' && (
+            <View className="bg-emerald-500/15 px-1.5 py-0.5 rounded ml-1.5 border border-emerald-500/30">
+              <Text className="text-emerald-400 text-[9px] font-extrabold tracking-wider">NEW</Text>
+            </View>
+          )}
+        </View>
+        <Text className="text-slate-400 text-xs leading-4 mt-0.5" numberOfLines={2}>
           {tool.description}
         </Text>
       </View>
@@ -102,71 +102,8 @@ export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
       <Ionicons
         name="chevron-forward"
         size={18}
-        color={isDark ? '#475569' : '#94A3B8'}
+        color="#94A3B8"
       />
     </Pressable>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 10,
-    gap: 12,
-  },
-  cardLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  cardDark: {
-    backgroundColor: '#121212',
-    borderColor: '#27272A',
-  },
-  cardPressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.99 }],
-  },
-  iconContainer: {
-    width: 46,
-    height: 46,
-    borderRadius: 13,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  infoCol: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-    marginBottom: 2,
-  },
-  textLight: {
-    color: '#0F172A',
-  },
-  textDark: {
-    color: '#F8FAFC',
-  },
-  description: {
-    color: '#94A3B8',
-    fontSize: 12,
-    lineHeight: 16,
-  },
-});

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, Pressable, useColorScheme } from 'react-native';
+import { Text, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CRMTask, TaskPriority } from '../types';
 
@@ -11,16 +11,13 @@ interface TaskItemProps {
 }
 
 const PRIORITY_CONFIG: Record<TaskPriority, { label: string; color: string; bg: string }> = {
-  low: { label: 'Low', color: '#6B7280', bg: 'rgba(156, 163, 175, 0.15)' },
-  medium: { label: 'Medium', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.15)' },
-  high: { label: 'High', color: '#D97706', bg: 'rgba(245, 158, 11, 0.15)' },
-  urgent: { label: 'Urgent', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.15)' },
+  low: { label: 'Low', color: '#94A3B8', bg: 'bg-slate-700/20' },
+  medium: { label: 'Medium', color: '#0084FF', bg: 'bg-[#0084FF]/20' },
+  high: { label: 'High', color: '#F59E0B', bg: 'bg-amber-500/20' },
+  urgent: { label: 'Urgent', color: '#EF4444', bg: 'bg-rose-500/20' },
 };
 
 export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onDelete }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
   const isDone = task.status === 'done';
   const priorityCfg = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.medium;
 
@@ -30,32 +27,29 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onD
 
   return (
     <Pressable
-      style={({ pressed }) => [
-        styles.card,
-        isDark ? styles.cardDark : styles.cardLight,
-        isDone && (isDark ? styles.cardDoneDark : styles.cardDoneLight),
-        pressed && (isDark ? styles.cardPressedDark : styles.cardPressedLight),
-      ]}
+      className={`bg-[#181A1F] border border-[#262930] rounded-2xl p-3.5 mb-2.5 active:bg-[#262930] ${
+        isDone ? 'opacity-60 bg-[#111317]' : ''
+      }`}
       onPress={onPress}
     >
-      <View style={styles.contentRow}>
+      <View className="flex-row items-start">
         {/* Interactive Checkbox */}
         <Pressable
-          style={[styles.checkbox, isDone && styles.checkboxDone]}
+          className={`w-5 h-5 rounded-md border-2 items-center justify-center mr-3 mt-0.5 ${
+            isDone ? 'bg-emerald-500 border-emerald-500' : 'border-slate-500'
+          }`}
           onPress={() => onToggle(!isDone)}
           hitSlop={8}
         >
-          {isDone ? <Ionicons name="checkmark" size={14} color="#FFFFFF" /> : null}
+          {isDone ? <Ionicons name="checkmark" size={13} color="#FFFFFF" /> : null}
         </Pressable>
 
         {/* Info */}
-        <View style={styles.textBlock}>
+        <View className="flex-1 mr-2">
           <Text
-            style={[
-              styles.title,
-              { color: isDark ? '#FFFFFF' : '#0F172A' },
-              isDone && (isDark ? styles.titleDoneDark : styles.titleDoneLight),
-            ]}
+            className={`text-sm font-bold text-white ${
+              isDone ? 'line-through text-slate-500' : ''
+            }`}
             numberOfLines={2}
           >
             {task.title}
@@ -63,33 +57,31 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onD
 
           {task.description ? (
             <Text
-              style={[
-                styles.description,
-                { color: isDark ? '#9CA3AF' : '#64748B' },
-                isDone && styles.descDone,
-              ]}
+              className={`text-xs text-slate-400 mt-0.5 ${
+                isDone ? 'line-through text-slate-600' : ''
+              }`}
               numberOfLines={1}
             >
               {task.description}
             </Text>
           ) : null}
 
-          {/* Context pill: Contact or Deal link */}
+          {/* Context pill */}
           {task.contact || task.deal ? (
-            <View style={styles.contextRow}>
+            <View className="flex-row flex-wrap gap-1.5 mt-1.5">
               {task.contact ? (
-                <View style={[styles.contextPill, { backgroundColor: isDark ? '#222630' : '#F1F5F9' }]}>
-                  <Ionicons name="person-outline" size={10} color={isDark ? '#9CA3AF' : '#64748B'} />
-                  <Text style={[styles.contextText, { color: isDark ? '#D1D5DB' : '#334155' }]} numberOfLines={1}>
+                <View className="flex-row items-center gap-1 bg-[#111317] border border-[#262930] px-1.5 py-0.5 rounded">
+                  <Ionicons name="person-outline" size={10} color="#94A3B8" />
+                  <Text className="text-[10px] text-slate-300" numberOfLines={1}>
                     {`${task.contact.first_name || ''} ${task.contact.last_name || ''}`.trim()}
                   </Text>
                 </View>
               ) : null}
 
               {task.deal ? (
-                <View style={[styles.contextPill, { backgroundColor: isDark ? '#222630' : '#F1F5F9' }]}>
-                  <Ionicons name="briefcase-outline" size={10} color={isDark ? '#9CA3AF' : '#64748B'} />
-                  <Text style={[styles.contextText, { color: isDark ? '#D1D5DB' : '#334155' }]} numberOfLines={1}>
+                <View className="flex-row items-center gap-1 bg-[#111317] border border-[#262930] px-1.5 py-0.5 rounded">
+                  <Ionicons name="briefcase-outline" size={10} color="#94A3B8" />
+                  <Text className="text-[10px] text-slate-300" numberOfLines={1}>
                     {task.deal.title}
                   </Text>
                 </View>
@@ -99,49 +91,51 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onD
         </View>
 
         {/* Priority Badge */}
-        <View style={[styles.priorityBadge, { backgroundColor: priorityCfg.bg }]}>
-          <Text style={[styles.priorityText, { color: priorityCfg.color }]}>
+        <View className={`px-2 py-0.5 rounded-md ${priorityCfg.bg}`}>
+          <Text className="text-[10px] font-bold" style={{ color: priorityCfg.color }}>
             {priorityCfg.label}
           </Text>
         </View>
       </View>
 
       {/* Bottom info row */}
-      <View style={[styles.footer, { borderTopColor: isDark ? '#222630' : '#F1F5F9' }]}>
-        <View style={styles.dueRow}>
+      <View className="flex-row items-center justify-between pt-2 border-t border-[#262930] mt-2">
+        <View className="flex-row items-center gap-2">
           {task.due_date ? (
             <View
-              style={[
-                styles.dueBadge,
-                { backgroundColor: isDark ? '#222630' : '#F1F5F9' },
-                isOverdue && styles.dueOverdue,
-                isToday && styles.dueToday,
-              ]}
+              className={`flex-row items-center gap-1 px-1.5 py-0.5 rounded ${
+                isOverdue
+                  ? 'bg-rose-500/15'
+                  : isToday
+                  ? 'bg-amber-500/15'
+                  : 'bg-[#111317]'
+              }`}
             >
               <Ionicons
                 name="calendar-outline"
                 size={11}
-                color={isOverdue ? '#EF4444' : isToday ? '#F59E0B' : isDark ? '#9CA3AF' : '#64748B'}
+                color={isOverdue ? '#EF4444' : isToday ? '#F59E0B' : '#94A3B8'}
               />
               <Text
-                style={[
-                  styles.dueText,
-                  { color: isDark ? '#9CA3AF' : '#64748B' },
-                  isOverdue && styles.dueTextOverdue,
-                  isToday && styles.dueTextToday,
-                ]}
+                className={`text-[10px] ${
+                  isOverdue
+                    ? 'text-rose-400 font-bold'
+                    : isToday
+                    ? 'text-amber-400 font-bold'
+                    : 'text-slate-400'
+                }`}
               >
                 {isOverdue ? `Overdue: ${task.due_date}` : isToday ? 'Due Today' : task.due_date}
               </Text>
             </View>
           ) : (
-            <Text style={[styles.noDueDate, { color: isDark ? '#6B7280' : '#94A3B8' }]}>No due date</Text>
+            <Text className="text-[10px] text-slate-500">No due date</Text>
           )}
 
           {task.assignee ? (
-            <View style={styles.assigneePill}>
-              <Ionicons name="person-circle-outline" size={12} color={isDark ? '#9CA3AF' : '#64748B'} />
-              <Text style={[styles.assigneeText, { color: isDark ? '#9CA3AF' : '#64748B' }]} numberOfLines={1}>
+            <View className="flex-row items-center gap-1">
+              <Ionicons name="person-circle-outline" size={12} color="#94A3B8" />
+              <Text className="text-[10px] text-slate-400" numberOfLines={1}>
                 {task.assignee.name}
               </Text>
             </View>
@@ -149,168 +143,11 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onD
         </View>
 
         {onDelete ? (
-          <Pressable style={styles.deleteBtn} onPress={onDelete} hitSlop={8}>
-            <Ionicons name="trash-outline" size={14} color="#EF4444" />
+          <Pressable className="p-1" onPress={onDelete} hitSlop={8}>
+            <Ionicons name="trash-outline" size={13} color="#EF4444" />
           </Pressable>
         ) : null}
       </View>
     </Pressable>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-  },
-  cardDark: {
-    backgroundColor: '#181A20',
-    borderColor: '#262A34',
-  },
-  cardLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  cardDoneDark: {
-    opacity: 0.6,
-    backgroundColor: '#14161B',
-  },
-  cardDoneLight: {
-    opacity: 0.6,
-    backgroundColor: '#F8FAFC',
-  },
-  cardPressedDark: {
-    backgroundColor: '#20232B',
-  },
-  cardPressedLight: {
-    backgroundColor: '#F1F5F9',
-  },
-  contentRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#6B7280',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-    marginTop: 2,
-  },
-  checkboxDone: {
-    backgroundColor: '#10B981',
-    borderColor: '#10B981',
-  },
-  textBlock: {
-    flex: 1,
-    marginRight: 8,
-  },
-  title: {
-    fontSize: 15,
-    fontWeight: '600',
-    letterSpacing: -0.2,
-  },
-  titleDoneDark: {
-    textDecorationLine: 'line-through',
-    color: '#9CA3AF',
-  },
-  titleDoneLight: {
-    textDecorationLine: 'line-through',
-    color: '#94A3B8',
-  },
-  description: {
-    fontSize: 12,
-    marginTop: 3,
-  },
-  descDone: {
-    textDecorationLine: 'line-through',
-  },
-  contextRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 6,
-  },
-  contextPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  contextText: {
-    fontSize: 11,
-  },
-  priorityBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  priorityText: {
-    fontSize: 10.5,
-    fontWeight: '600',
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 8,
-    marginTop: 8,
-    borderTopWidth: 1,
-  },
-  dueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  dueBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  dueOverdue: {
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-  },
-  dueToday: {
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
-  },
-  dueText: {
-    fontSize: 11,
-  },
-  dueTextOverdue: {
-    color: '#EF4444',
-    fontWeight: '600',
-  },
-  dueTextToday: {
-    color: '#F59E0B',
-    fontWeight: '600',
-  },
-  noDueDate: {
-    fontSize: 11,
-  },
-  assigneePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  assigneeText: {
-    fontSize: 11,
-  },
-  deleteBtn: {
-    padding: 4,
-  },
-});

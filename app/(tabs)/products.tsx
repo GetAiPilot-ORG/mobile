@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, useColorScheme } from 'react-native';
+import { View, ScrollView, RefreshControl, useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
@@ -14,8 +14,7 @@ export default function ProductsScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const { hasWhatsApp, hasTelegram, hasVoice, hasSocial, hasCRM, refresh } =
-    usePlatformSubscription();
+  const { refresh } = usePlatformSubscription();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   // Fetch real system product statuses
@@ -29,7 +28,7 @@ export default function ProductsScreen() {
   });
 
   const getStatus = (key: string) => {
-    const item = systemProducts?.find((p) => p.product_key === key);
+    const item = systemProducts?.find((p: any) => p.product_key === key);
     if (item?.maintenance_enabled) return 'maintenance';
     return item?.status || 'operational';
   };
@@ -49,8 +48,8 @@ export default function ProductsScreen() {
         <ProductsSkeleton />
       ) : (
         <ScrollView
-          style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}
-          contentContainerStyle={styles.scrollContent}
+          className={`flex-1 ${isDark ? "bg-[#0B0D10]" : "bg-[#F2F2F7]"}`}
+          contentContainerStyle={{ padding: 16, paddingBottom: 140 }}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
@@ -60,73 +59,57 @@ export default function ProductsScreen() {
           }
           showsVerticalScrollIndicator={false}
         >
-        <ProductCard
-          name="GAP WhatsApp Hub"
-          category="Messaging Automation"
-          description="Send broadcasts, automate customer triggers, and manage campaign webhooks with Meta Cloud API."
-          logoImage={require('../../assets/images/products/whatsapp.png')}
-          themeColor={colors.products.whatsapp}
-          status={getStatus('whatsapp')}
-          onPress={() => router.push('/products/whatsapp' as any)}
-        />
+          <ProductCard
+            name="GAP WhatsApp Hub"
+            category="Messaging Automation"
+            description="Send broadcasts, automate customer triggers, and manage campaign webhooks with Meta Cloud API."
+            logoImage={require('../../assets/images/products/whatsapp.png')}
+            themeColor={colors.products.whatsapp}
+            status={getStatus('whatsapp')}
+            onPress={() => router.push('/products/whatsapp' as any)}
+          />
 
-        <ProductCard
-          name="GAP Telegram Auto-Forwarder"
-          category="Channel Routing"
-          description="Auto-forward messages across channels with real-time word filters, text replacements, and join bot."
-          logoImage={require('../../assets/images/products/telegram.png')}
-          themeColor={colors.products.telegram}
-          status={getStatus('telegram')}
-          onPress={() => router.push('/products/telegram' as any)}
-        />
+          <ProductCard
+            name="GAP Telegram Auto-Forwarder"
+            category="Channel Routing"
+            description="Auto-forward messages across channels with real-time word filters, text replacements, and join bot."
+            logoImage={require('../../assets/images/products/telegram.png')}
+            themeColor={colors.products.telegram}
+            status={getStatus('telegram')}
+            onPress={() => router.push('/products/telegram' as any)}
+          />
 
-        <ProductCard
-          name="GAP AI Voice Pilot"
-          category="Telecalling Automation"
-          description="Ultra-low latency conversational AI telecallers for lead qualification, inbound support, and bookings."
-          logoImage={require('../../assets/images/products/voice.png')}
-          themeColor={colors.products.voice}
-          status={getStatus('voice_ai')}
-          onPress={() => router.push('/products/voice' as any)}
-        />
+          <ProductCard
+            name="GAP AI Voice Pilot"
+            category="Telecalling Automation"
+            description="Ultra-low latency conversational AI telecallers for lead qualification, inbound support, and bookings."
+            logoImage={require('../../assets/images/products/voice.png')}
+            themeColor={colors.products.voice}
+            status={getStatus('voice_ai')}
+            onPress={() => router.push('/products/voice' as any)}
+          />
 
-        <ProductCard
-          name="GAP Social Pilot"
-          category="Multi-Channel Sync"
-          description="Schedule and cross-publish content across Instagram, YouTube, X, LinkedIn, Facebook, and Bluesky."
-          logoImage={require('../../assets/images/products/social.png')}
-          themeColor={colors.products.social}
-          status={getStatus('social')}
-          onPress={() => router.push('/products/social' as any)}
-        />
+          <ProductCard
+            name="GAP Social Pilot"
+            category="Multi-Channel Sync"
+            description="Schedule and cross-publish content across Instagram, YouTube, X, LinkedIn, Facebook, and Bluesky."
+            logoImage={require('../../assets/images/products/social.png')}
+            themeColor={colors.products.social}
+            status={getStatus('social')}
+            onPress={() => router.push('/products/social' as any)}
+          />
 
-        <ProductCard
-          name="GAP Smart CRM"
-          category="Pipeline & Leads"
-          description="Track prospects, deal values, conversion stages, and automated client follow-ups across channels."
-          logoImage={require('../../assets/images/products/crm.png')}
-          themeColor={colors.products.crm}
-          status={getStatus('crm')}
-          onPress={() => router.push('/products/crm' as any)}
-        />
+          <ProductCard
+            name="GAP Smart CRM"
+            category="Pipeline & Leads"
+            description="Track prospects, deal values, conversion stages, and automated client follow-ups across channels."
+            logoImage={require('../../assets/images/products/crm.png')}
+            themeColor={colors.products.crm}
+            status={getStatus('crm')}
+            onPress={() => router.push('/products/crm' as any)}
+          />
         </ScrollView>
       )}
     </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewLight: {
-    backgroundColor: '#F2F2F7',
-  },
-  scrollViewDark: {
-    backgroundColor: '#000000',
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 140,
-  },
-});

@@ -1,11 +1,10 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
   Share,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -16,7 +15,6 @@ import {
   openAuthenticatedDashboard,
   openAuthenticatedTemplate,
 } from "../../src/lib/template-deep-link";
-import { colors } from "../../src/theme/colors";
 
 interface LandingTemplate {
   id: string;
@@ -50,7 +48,7 @@ const LANDING_TEMPLATES_CATALOG: LandingTemplate[] = [
     name: "Axnix SaaS & AI Suite",
     category: "Business",
     conversionRate: "26.4%",
-    color: "#003C33",
+    color: "#0084FF",
     desc: "High-converting dark modern SaaS hero with live metric counters & pricing toggle.",
     tags: ["AI Engine", "Waitlist", "SaaS"],
   },
@@ -104,9 +102,7 @@ const LANDING_TEMPLATES_CATALOG: LandingTemplate[] = [
 export default function LandingTemplatesScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [search, setSearch] = useState("");
-  const [openingTemplateId, setOpeningTemplateId] = useState<string | null>(
-    null,
-  );
+  const [openingTemplateId, setOpeningTemplateId] = useState<string | null>(null);
 
   const filtered = LANDING_TEMPLATES_CATALOG.filter((item) => {
     const matchesCat =
@@ -163,36 +159,29 @@ export default function LandingTemplatesScreen() {
   };
 
   return (
-    <AppScreen safeArea={false} backgroundColor={colors.background}>
+    <AppScreen safeArea={false} className="flex-1 bg-[#0B0D10]">
       <AppTopBar
         title="Landing Templates"
         subtitle="100+ Category Layouts"
         showBack={true}
       />
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <Text style={{ fontSize: 13, color: colors.mutedForeground }}>Pick a template to build or edit:</Text>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+        <View className="flex-row justify-between items-center mb-3">
+          <Text className="text-xs text-slate-400">Pick a template to build or edit:</Text>
           <Pressable
-            style={{
-              backgroundColor: "#0A84FF",
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 8,
-            }}
+            className="bg-[#0084FF] px-3 py-1.5 rounded-lg"
             onPress={handleOpenLandingDashboard}
           >
-            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700" }}>Web Dashboard ↗</Text>
+            <Text className="text-white text-xs font-bold">Web Dashboard ↗</Text>
           </Pressable>
         </View>
+
         {/* Search */}
         <TextInput
-          style={styles.searchInput}
+          className="rounded-xl border border-[#262930] bg-[#181A1F] px-3.5 py-2.5 text-xs text-white mb-3"
           placeholder="🔍 Search templates (SaaS, Crypto, Gym, Real Estate)..."
-          placeholderTextColor={colors.mutedForeground}
+          placeholderTextColor="#64748B"
           value={search}
           onChangeText={setSearch}
         />
@@ -201,22 +190,20 @@ export default function LandingTemplatesScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.catScroll}
+          className="mb-3"
         >
           {CATEGORIES.map((cat) => (
             <Pressable
               key={cat}
-              style={[
-                styles.catChip,
-                selectedCategory === cat && styles.catChipActive,
-              ]}
+              className={`px-3.5 py-2 rounded-xl border mr-2 ${
+                selectedCategory === cat ? 'bg-[#0084FF] border-[#0084FF]' : 'bg-[#181A1F] border-[#262930]'
+              }`}
               onPress={() => setSelectedCategory(cat)}
             >
               <Text
-                style={[
-                  styles.catText,
-                  selectedCategory === cat && styles.catTextActive,
-                ]}
+                className={`text-xs font-bold ${
+                  selectedCategory === cat ? 'text-white' : 'text-slate-400'
+                }`}
               >
                 {cat}
               </Text>
@@ -224,49 +211,47 @@ export default function LandingTemplatesScreen() {
           ))}
         </ScrollView>
 
-        <Text style={styles.resultsCount}>
-          Showing {filtered.length} high-converting template
-          {filtered.length !== 1 ? "s" : ""}
+        <Text className="text-xs text-slate-400 mb-3 font-semibold">
+          Showing {filtered.length} high-converting template{filtered.length !== 1 ? "s" : ""}
         </Text>
 
-        <View style={styles.list}>
+        <View className="gap-3.5">
           {filtered.map((item) => (
-            <View key={item.id} style={styles.itemCard}>
-              <View
-                style={[styles.badgeStrip, { backgroundColor: item.color }]}
-              />
-              <View style={styles.itemBody}>
-                <View style={styles.itemHeaderRow}>
-                  <Text style={styles.itemCategory}>
+            <View key={item.id} className="rounded-2xl border border-[#262930] bg-[#181A1F] overflow-hidden">
+              <View style={{ height: 4, width: "100%", backgroundColor: item.color }} />
+              <View className="p-4">
+                <View className="flex-row justify-between items-center mb-1.5">
+                  <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400">
                     {item.category.toUpperCase()}
                   </Text>
-                  <View style={styles.convPill}>
-                    <Text style={styles.convText}>
+                  <View className="bg-emerald-500/15 px-2 py-0.5 rounded-md">
+                    <Text className="text-[10px] font-bold text-emerald-400">
                       Avg CVR: {item.conversionRate}
                     </Text>
                   </View>
                 </View>
 
-                <Text style={styles.itemName}>{item.name}</Text>
-                <Text style={styles.itemDesc}>{item.desc}</Text>
+                <Text className="text-base font-black text-white">{item.name}</Text>
+                <Text className="text-xs text-slate-400 mt-1 leading-4">{item.desc}</Text>
 
-                <View style={styles.tagRow}>
+                <View className="flex-row flex-wrap gap-1.5 my-3">
                   {item.tags.map((t) => (
-                    <View key={t} style={styles.tag}>
-                      <Text style={styles.tagText}>#{t}</Text>
+                    <View key={t} className="bg-[#111317] border border-[#262930] px-2 py-0.5 rounded-md">
+                      <Text className="text-[10px] font-semibold text-slate-400">#{t}</Text>
                     </View>
                   ))}
                 </View>
 
                 <Pressable
-                  style={[styles.useBtn, { backgroundColor: item.color }]}
+                  className="py-2.5 rounded-xl items-center"
+                  style={{ backgroundColor: item.color }}
                   onPress={() => handleDeploy(item)}
                   disabled={openingTemplateId === item.id}
                 >
                   {openingTemplateId === item.id ? (
                     <ActivityIndicator size="small" color="#FFFFFF" />
                   ) : (
-                    <Text style={styles.useBtnText}>Deploy Template →</Text>
+                    <Text className="text-white text-xs font-extrabold">Deploy Template →</Text>
                   )}
                 </Pressable>
               </View>
@@ -277,129 +262,3 @@ export default function LandingTemplatesScreen() {
     </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  searchInput: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 13.5,
-    color: colors.foreground,
-    marginBottom: 12,
-  },
-  catScroll: {
-    marginBottom: 12,
-  },
-  catChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginRight: 8,
-  },
-  catChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  catText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.mutedForeground,
-  },
-  catTextActive: {
-    color: "#FFFFFF",
-  },
-  resultsCount: {
-    fontSize: 12,
-    color: colors.mutedForeground,
-    marginBottom: 12,
-    fontWeight: "600",
-  },
-  list: {
-    gap: 14,
-  },
-  itemCard: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: "hidden",
-  },
-  badgeStrip: {
-    height: 5,
-    width: "100%",
-  },
-  itemBody: {
-    padding: 16,
-  },
-  itemHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  itemCategory: {
-    fontSize: 10.5,
-    fontWeight: "800",
-    color: colors.mutedForeground,
-    letterSpacing: 0.5,
-  },
-  convPill: {
-    backgroundColor: "rgba(22, 184, 130, 0.12)",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  convText: {
-    fontSize: 10.5,
-    fontWeight: "800",
-    color: "#16B882",
-  },
-  itemName: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: colors.foreground,
-  },
-  itemDesc: {
-    fontSize: 12.5,
-    color: colors.mutedForeground,
-    marginTop: 4,
-    lineHeight: 17,
-  },
-  tagRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    marginVertical: 12,
-  },
-  tag: {
-    backgroundColor: colors.muted,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  tagText: {
-    fontSize: 11,
-    color: colors.mutedForeground,
-    fontWeight: "600",
-  },
-  useBtn: {
-    paddingVertical: 11,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  useBtnText: {
-    color: "#FFFFFF",
-    fontWeight: "800",
-    fontSize: 13.5,
-  },
-});

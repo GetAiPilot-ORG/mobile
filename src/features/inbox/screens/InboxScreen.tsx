@@ -1,15 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Modal,
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
-  useColorScheme,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,13 +18,11 @@ import { ConversationCard } from '../components';
 import { useInboxWebSocket } from '../hooks/useInboxWebSocket';
 import { ContactItem, NormalizedConversation } from '../types';
 import { SkeletonCircle, SkeletonRow, SkeletonText } from '../../../components/Skeleton';
-import { InboxListSkeleton, InboxSkeleton } from '../../../components/skeletonScreen';
+import { InboxListSkeleton } from '../../../components/skeletonScreen';
 import { ConversationScreen } from './ConversationScreen';
 
 export const InboxScreen: React.FC = () => {
   const queryClient = useQueryClient();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
 
   const [activeTab, setActiveTab] = useState<'ALL' | 'UNREAD' | 'UNASSIGNED' | 'MINE' | 'BOT_ACTIVE'>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -155,49 +150,49 @@ export const InboxScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0b141a' : '#f8fafc' }]}>
-      <View style={styles.container}>
+    <SafeAreaView className="flex-1 bg-[#0B0D10]">
+      <View className="flex-1 px-3.5">
         {/* Header Bar */}
-        <View style={styles.header}>
+        <View className="flex-row justify-between items-center mt-2 mb-3.5">
           <View>
-            <Text style={[styles.title, { color: isDark ? '#e9edef' : '#0f172a' }]}>WhatsApp LiveChat</Text>
-            <Text style={[styles.subtitle, { color: isDark ? '#8696a0' : '#64748b' }]}>Omnichannel Customer Inbox</Text>
+            <Text className="text-[22px] font-extrabold text-white">WhatsApp LiveChat</Text>
+            <Text className="text-xs text-slate-400 mt-0.5">Omnichannel Customer Inbox</Text>
           </View>
-          <View style={styles.headerRightActions}>
+          <View className="flex-row items-center gap-2">
             {unreadTotal > 0 && (
-              <View style={styles.unreadTotalBadge}>
-                <Text style={styles.unreadTotalText}>{unreadTotal} Unread</Text>
+              <View className="bg-emerald-600 px-2 py-0.5 rounded-lg">
+                <Text className="text-white text-[10.5px] font-extrabold">{unreadTotal} Unread</Text>
               </View>
             )}
             <Pressable
-              style={styles.newChatBtn}
+              className="flex-row items-center bg-[#0084FF] px-3 py-1.5 rounded-xl active:opacity-85"
               onPress={() => setShowNewChatModal(true)}
             >
               <Ionicons name="chatbubble-ellipses" size={15} color="#ffffff" style={{ marginRight: 5 }} />
-              <Text style={styles.newChatBtnText}>+ New Chat</Text>
+              <Text className="text-white text-xs font-bold">+ New Chat</Text>
             </Pressable>
           </View>
         </View>
 
         {/* Search Bar */}
-        <View style={[styles.searchBar, isDark ? styles.searchBarDark : styles.searchBarLight]}>
-          <Ionicons name="search" size={16} color={isDark ? '#8696a0' : '#94a3b8'} style={styles.searchIcon} />
+        <View className="flex-row items-center rounded-xl px-3 py-2.5 bg-[#111317] border border-[#262930] mb-2.5">
+          <Ionicons name="search" size={16} color="#94a3b8" style={{ marginRight: 8 }} />
           <TextInput
-            style={[styles.searchInput, { color: isDark ? '#e9edef' : '#0f172a' }]}
+            className="flex-1 text-[13.5px] text-white p-0"
             placeholder="Search contacts, numbers or messages..."
-            placeholderTextColor={isDark ? '#8696a0' : '#94a3b8'}
+            placeholderTextColor="#64748b"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
           {searchQuery ? (
             <Pressable onPress={() => setSearchQuery('')} hitSlop={10}>
-              <Ionicons name="close-circle" size={16} color={isDark ? '#8696a0' : '#94a3b8'} />
+              <Ionicons name="close-circle" size={16} color="#94a3b8" />
             </Pressable>
           ) : null}
         </View>
 
         {/* Filter Tabs Horizontal Scroll */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-grow-0 mb-3">
           {[
             { id: 'ALL', label: 'All Chats', icon: 'chatbubbles' },
             { id: 'UNREAD', label: 'Unread', icon: 'mail-unread' },
@@ -209,25 +204,23 @@ export const InboxScreen: React.FC = () => {
             return (
               <Pressable
                 key={tab.id}
-                style={[
-                  styles.tabPill,
-                  isDark ? styles.tabPillDark : styles.tabPillLight,
-                  isActive && styles.activeTabPill,
-                ]}
+                className={`flex-row items-center px-3 py-1.5 rounded-full mr-1.5 border ${
+                  isActive
+                    ? 'bg-[#0084FF] border-[#0084FF]'
+                    : 'bg-[#181A1F] border-[#262930]'
+                }`}
                 onPress={() => setActiveTab(tab.id as any)}
               >
                 <Ionicons
                   name={tab.icon as any}
                   size={13}
-                  color={isActive ? '#ffffff' : isDark ? '#8696a0' : '#64748b'}
+                  color={isActive ? '#ffffff' : '#94a3b8'}
                   style={{ marginRight: 5 }}
                 />
                 <Text
-                  style={[
-                    styles.tabText,
-                    { color: isActive ? '#ffffff' : isDark ? '#8696a0' : '#64748b' },
-                    isActive && styles.activeTabText,
-                  ]}
+                  className={`text-[11.5px] ${
+                    isActive ? 'text-white font-extrabold' : 'text-slate-400 font-semibold'
+                  }`}
                 >
                   {tab.label}
                 </Text>
@@ -249,109 +242,107 @@ export const InboxScreen: React.FC = () => {
                 onPress={() => handleOpenConversation(item)}
               />
             )}
-            contentContainerStyle={styles.listContent}
+            contentContainerClassName="pb-28"
             refreshControl={
-              <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#00a884" />
+              <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#0084FF" />
             }
             ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Ionicons name="chatbubble-ellipses-outline" size={48} color={isDark ? '#334155' : '#cbd5e1'} />
-                <Text style={[styles.emptyTitle, { color: isDark ? '#e9edef' : '#0f172a' }]}>
+              <View className="py-10 px-4 items-center">
+                <Ionicons name="chatbubble-ellipses-outline" size={48} color="#334155" />
+                <Text className="text-[15px] font-bold text-white mt-2.5 mb-1.5">
                   No conversations found
                 </Text>
-                <Text style={[styles.emptySubtitle, { color: isDark ? '#8696a0' : '#64748b' }]}>
+                <Text className="text-[12.5px] text-center leading-[18px] text-slate-400">
                   {activeTab !== 'ALL'
                     ? `No conversations match the '${activeTab}' filter.`
                     : 'Incoming messages from WhatsApp customers will appear here in real time.'}
                 </Text>
                 <Pressable
-                  style={styles.emptyNewChatBtn}
+                  className="flex-row items-center bg-[#0084FF] px-3.5 py-2 rounded-xl mt-3.5 active:opacity-85"
                   onPress={() => setShowNewChatModal(true)}
                 >
                   <Ionicons name="add" size={16} color="#ffffff" style={{ marginRight: 4 }} />
-                  <Text style={styles.emptyNewChatBtnText}>Start New Conversation</Text>
+                  <Text className="text-white text-[12.5px] font-bold">Start New Conversation</Text>
                 </Pressable>
               </View>
             }
           />
         )}
 
-        {/* ------------------------------------------------------------- */}
         {/* Start New Chat / Contact Picker Modal */}
-        {/* ------------------------------------------------------------- */}
         <Modal
           visible={showNewChatModal}
           transparent
           animationType="slide"
           onRequestClose={() => setShowNewChatModal(false)}
         >
-          <View style={styles.modalOverlay}>
-            <View style={[styles.newChatModalBox, isDark ? styles.modalBoxDark : styles.modalBoxLight]}>
-              <View style={styles.modalHeader}>
+          <View className="flex-1 bg-black/60 justify-end">
+            <View className="rounded-t-3xl p-4 bg-[#181A1F] border-t border-[#262930] max-h-[80%]">
+              <View className="flex-row justify-between items-start mb-3">
                 <View>
-                  <Text style={[styles.modalTitle, { color: isDark ? '#e9edef' : '#0f172a' }]}>
+                  <Text className="text-[17px] font-extrabold text-white">
                     Start New WhatsApp Chat
                   </Text>
-                  <Text style={[styles.modalSub, { color: isDark ? '#8696a0' : '#64748b' }]}>
+                  <Text className="text-xs text-slate-400 mt-0.5 leading-4">
                     Select a contact from your workspace to open live chat.
                   </Text>
                 </View>
                 <Pressable onPress={() => setShowNewChatModal(false)} hitSlop={10}>
-                  <Ionicons name="close" size={24} color={isDark ? '#8696a0' : '#64748b'} />
+                  <Ionicons name="close" size={24} color="#94a3b8" />
                 </Pressable>
               </View>
 
               {/* Search Contacts */}
-              <View style={[styles.contactSearchBox, isDark ? styles.contactSearchDark : styles.contactSearchLight]}>
-                <Ionicons name="search" size={15} color={isDark ? '#8696a0' : '#94a3b8'} style={{ marginRight: 8 }} />
+              <View className="flex-row items-center rounded-xl px-3 py-2 bg-[#111317] border border-[#262930] mb-2.5">
+                <Ionicons name="search" size={15} color="#94a3b8" style={{ marginRight: 8 }} />
                 <TextInput
-                  style={[styles.contactSearchInput, { color: isDark ? '#e9edef' : '#0f172a' }]}
+                  className="flex-1 text-[13px] text-white p-0"
                   placeholder="Search contacts by name or phone..."
-                  placeholderTextColor={isDark ? '#8696a0' : '#94a3b8'}
+                  placeholderTextColor="#64748b"
                   value={contactSearchQuery}
                   onChangeText={setContactSearchQuery}
                 />
               </View>
 
               {/* Contacts List */}
-              <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={false}>
+              <ScrollView className="max-h-[360px]" showsVerticalScrollIndicator={false}>
                 {isLoadingContacts ? (
-                  <View style={{ paddingVertical: 10 }}>
+                  <View className="py-2.5">
                     {[1, 2, 3].map((i) => (
-                      <SkeletonRow key={i} style={{ paddingVertical: 10, paddingHorizontal: 12 }}>
-                        <SkeletonCircle size={40} style={{ marginRight: 12 }} />
-                        <View style={{ flex: 1 }}>
-                          <SkeletonText width={120} height={14} style={{ marginBottom: 6 }} />
+                      <SkeletonRow key={i} className="py-2.5 px-3">
+                        <SkeletonCircle size={40} className="mr-3" />
+                        <View className="flex-1">
+                          <SkeletonText width={120} height={14} className="mb-1.5" />
                           <SkeletonText width={160} height={11} />
                         </View>
                       </SkeletonRow>
                     ))}
                   </View>
                 ) : filteredContacts.length === 0 ? (
-                  <View style={{ padding: 20, alignItems: 'center' }}>
-                    <Text style={{ color: isDark ? '#8696a0' : '#64748b', fontSize: 13 }}>No contacts found</Text>
+                  <View className="p-5 items-center">
+                    <Text className="text-slate-400 text-[13px]">No contacts found</Text>
                   </View>
                 ) : (
                   filteredContacts.map((cnt) => (
                     <Pressable
                       key={cnt.id}
-                      style={[styles.contactItemRow, isDark ? styles.contactItemDark : styles.contactItemLight]}
+                      className="flex-row items-center p-3 rounded-xl mb-2 bg-[#111317] border border-[#262930] active:opacity-75"
                       onPress={() => handleStartChatWithContact(cnt)}
                     >
-                      <View style={styles.contactItemAvatar}>
-                        <Text style={styles.contactItemAvatarText}>
+                      <View className="w-9 h-9 rounded-full bg-[#0084FF] justify-center items-center mr-2.5">
+                        <Text className="text-white text-[15px] font-bold">
                           {cnt.name ? cnt.name.charAt(0).toUpperCase() : 'C'}
                         </Text>
                       </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.contactItemName, { color: isDark ? '#e9edef' : '#0f172a' }]}>
+                      <View className="flex-1">
+                        <Text className="text-sm font-bold text-white">
                           {cnt.name || cnt.custom_name || 'Contact'}
                         </Text>
-                        <Text style={[styles.contactItemPhone, { color: isDark ? '#8696a0' : '#64748b' }]}>
+                        <Text className="text-[11.5px] text-slate-400 mt-0.5">
                           +{cnt.phone || cnt.wa_id}
                         </Text>
                       </View>
-                      <Ionicons name="chevron-forward" size={16} color={isDark ? '#8696a0' : '#94a3b8'} />
+                      <Ionicons name="chevron-forward" size={16} color="#94a3b8" />
                     </Pressable>
                   ))
                 )}
@@ -384,250 +375,3 @@ export const InboxScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 14,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 14,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '800',
-  },
-  subtitle: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  headerRightActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  unreadTotalBadge: {
-    backgroundColor: '#00a884',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-  },
-  unreadTotalText: {
-    color: '#ffffff',
-    fontSize: 10.5,
-    fontWeight: '800',
-  },
-  newChatBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#00a884',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-  },
-  newChatBtnText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderWidth: 1,
-    marginBottom: 10,
-  },
-  searchBarDark: {
-    backgroundColor: '#111b21',
-    borderColor: '#202c33',
-  },
-  searchBarLight: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 13.5,
-  },
-  tabsScroll: {
-    flexGrow: 0,
-    marginBottom: 12,
-  },
-  tabPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 6,
-    borderWidth: 1,
-  },
-  tabPillDark: {
-    backgroundColor: '#111b21',
-    borderColor: '#202c33',
-  },
-  tabPillLight: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
-  },
-  activeTabPill: {
-    backgroundColor: '#00a884',
-    borderColor: '#00a884',
-  },
-  tabText: {
-    fontSize: 11.5,
-    fontWeight: '600',
-  },
-  activeTabText: {
-    color: '#ffffff',
-    fontWeight: '800',
-  },
-  listContent: {
-    paddingBottom: 110,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 13,
-    marginTop: 12,
-  },
-  emptyContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  emptyTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginTop: 10,
-    marginBottom: 6,
-  },
-  emptySubtitle: {
-    fontSize: 12.5,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  emptyNewChatBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#00a884',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
-    marginTop: 14,
-  },
-  emptyNewChatBtnText: {
-    color: '#ffffff',
-    fontSize: 12.5,
-    fontWeight: '700',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'flex-end',
-  },
-  newChatModalBox: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 18,
-    maxHeight: '80%',
-    borderWidth: 1,
-  },
-  modalBoxDark: {
-    backgroundColor: '#1f2c34',
-    borderColor: '#2a3942',
-  },
-  modalBoxLight: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  modalTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-  },
-  modalSub: {
-    fontSize: 12,
-    marginTop: 2,
-    lineHeight: 16,
-  },
-  contactSearchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
-    marginBottom: 10,
-  },
-  contactSearchDark: {
-    backgroundColor: '#111b21',
-    borderColor: '#2a3942',
-  },
-  contactSearchLight: {
-    backgroundColor: '#f8fafc',
-    borderColor: '#e2e8f0',
-  },
-  contactSearchInput: {
-    flex: 1,
-    fontSize: 13,
-  },
-  contactItemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-  },
-  contactItemDark: {
-    backgroundColor: '#111b21',
-    borderColor: '#2a3942',
-  },
-  contactItemLight: {
-    backgroundColor: '#f8fafc',
-    borderColor: '#e2e8f0',
-  },
-  contactItemAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#00a884',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  contactItemAvatarText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  contactItemName: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  contactItemPhone: {
-    fontSize: 11.5,
-    marginTop: 2,
-  },
-});
-

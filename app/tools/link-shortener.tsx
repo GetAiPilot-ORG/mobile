@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TextInput,
   Pressable,
@@ -11,7 +10,6 @@ import {
 } from 'react-native';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
-import { colors } from '../../src/theme/colors';
 
 export default function LinkShortenerScreen() {
   const [destinationUrl, setDestinationUrl] = useState('');
@@ -44,55 +42,55 @@ export default function LinkShortenerScreen() {
   };
 
   return (
-    <AppScreen safeArea={false} backgroundColor={colors.background}>
+    <AppScreen safeArea={false} className="flex-1 bg-[#0B0D10]">
       <AppTopBar title="Instant Link Shortener" subtitle="Custom Slugs & Analytics" showBack={true} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Shorten Any URL</Text>
-          <Text style={styles.cardSubtitle}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+        <View className="rounded-2xl p-4 mb-4 border border-[#262930] bg-[#181A1F]">
+          <Text className="text-base font-black text-white mb-1">Shorten Any URL</Text>
+          <Text className="text-xs text-slate-400 leading-4 mb-4">
             Transform long, complex URLs into concise branded links optimized for campaigns and SMS.
           </Text>
 
-          <Text style={styles.inputLabel}>Long Destination URL</Text>
+          <Text className="text-xs font-bold text-slate-300 mb-1.5">Long Destination URL</Text>
           <TextInput
-            style={styles.input}
+            className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2.5 text-xs text-white mb-3"
             placeholder="https://example.com/very/long/landing-page-path"
-            placeholderTextColor={colors.mutedForeground}
+            placeholderTextColor="#64748B"
             value={destinationUrl}
             onChangeText={setDestinationUrl}
             autoCapitalize="none"
           />
 
-          <Text style={styles.inputLabel}>Custom Alias / Slug (Optional)</Text>
+          <Text className="text-xs font-bold text-slate-300 mb-1.5">Custom Alias / Slug (Optional)</Text>
           <TextInput
-            style={styles.input}
+            className="rounded-xl border border-[#262930] bg-[#111317] px-3.5 py-2.5 text-xs text-white mb-4"
             placeholder="e.g. promo-2026"
-            placeholderTextColor={colors.mutedForeground}
+            placeholderTextColor="#64748B"
             value={customAlias}
             onChangeText={setCustomAlias}
             autoCapitalize="none"
           />
 
-          <Pressable style={styles.shortenBtn} onPress={handleShorten}>
-            <Text style={styles.shortenBtnText}>Create Short Link ⚡</Text>
+          <Pressable className="py-3.5 rounded-xl items-center bg-[#0084FF]" onPress={handleShorten}>
+            <Text className="text-xs font-extrabold text-white">Create Short Link ⚡</Text>
           </Pressable>
         </View>
 
         {shortUrl ? (
-          <View style={styles.resultCard}>
-            <Text style={styles.resultTitle}>Your Shortened Link:</Text>
-            <View style={styles.shortBox}>
-              <Text style={styles.shortText}>{shortUrl}</Text>
+          <View className="rounded-2xl p-4 border border-[#0084FF]/40 bg-[#181A1F]">
+            <Text className="text-xs font-bold text-white mb-2">Your Shortened Link:</Text>
+            <View className="p-3 rounded-lg bg-[#111317] border border-[#262930] mb-3">
+              <Text className="text-sm font-extrabold text-[#0084FF]">{shortUrl}</Text>
             </View>
 
-            <View style={styles.statsBar}>
-              <Text style={styles.statsLabel}>Total Clicks Tracked:</Text>
-              <Text style={styles.statsValue}>{clickCount}</Text>
+            <View className="flex-row justify-between items-center mb-3.5 px-1">
+              <Text className="text-xs text-slate-400">Total Clicks Tracked:</Text>
+              <Text className="text-sm font-black text-white">{clickCount}</Text>
             </View>
 
-            <Pressable style={styles.shareBtn} onPress={handleShare}>
-              <Text style={styles.shareBtnText}>Share Link 🔗</Text>
+            <Pressable className="py-3 rounded-xl items-center bg-[#0084FF]" onPress={handleShare}>
+              <Text className="text-xs font-bold text-white">Share Link 🔗</Text>
             </Pressable>
           </View>
         ) : null}
@@ -100,109 +98,3 @@ export default function LinkShortenerScreen() {
     </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  cardTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: colors.foreground,
-    marginBottom: 4,
-  },
-  cardSubtitle: {
-    fontSize: 13,
-    color: colors.mutedForeground,
-    lineHeight: 18,
-    marginBottom: 16,
-  },
-  inputLabel: {
-    fontSize: 12.5,
-    fontWeight: '700',
-    color: colors.foreground,
-    marginBottom: 6,
-  },
-  input: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: colors.foreground,
-    marginBottom: 12,
-  },
-  shortenBtn: {
-    backgroundColor: colors.primary,
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 6,
-  },
-  shortenBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '800',
-    fontSize: 14.5,
-  },
-  resultCard: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  resultTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: colors.foreground,
-    marginBottom: 8,
-  },
-  shortBox: {
-    backgroundColor: colors.muted,
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  shortText: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: colors.primary,
-  },
-  statsBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  statsLabel: {
-    fontSize: 13,
-    color: colors.mutedForeground,
-  },
-  statsValue: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: colors.foreground,
-  },
-  shareBtn: {
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  shareBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 13,
-  },
-});

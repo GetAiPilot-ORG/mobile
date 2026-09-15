@@ -12,10 +12,8 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
-  useColorScheme,
   View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -32,8 +30,6 @@ const brandLogo = require("../../assets/images/logo.png");
 export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const login = useAuthStore((s) => s.login);
   const [authMode, setAuthMode] = useState<"password" | "otp">("password");
 
@@ -65,8 +61,6 @@ export default function LoginScreen() {
       } catch { }
     })();
   }, []);
-
-
 
   const triggerHaptic = (
     style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Light,
@@ -184,32 +178,30 @@ export default function LoginScreen() {
       </AppScreen>
     );
   }
+
   return (
-    <View style={[styles.container, isDark && styles.containerDark]}>
+    <View className="flex-1 bg-[#0B0D10]">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={{ flex: 1 }}
+        className="flex-1"
         enabled={Platform.OS === "ios"}
       >
         <ScrollView
-          contentContainerStyle={[
-            styles.scrollContent,
-            {
-              paddingTop: Math.max(insets.top + 16, 44),
-              paddingBottom: Math.max(insets.bottom + 24, 32),
-            },
-          ]}
+          className="flex-1"
+          contentContainerClassName="flex-grow px-6 justify-center max-w-[500px] w-full self-center"
+          contentContainerStyle={{
+            paddingTop: Math.max(insets.top + 16, 44),
+            paddingBottom: Math.max(insets.bottom + 24, 32),
+          }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           {/* Top Brand Logo Section */}
-          <View style={styles.logoSection}>
-            <View
-              style={[styles.logoWrapper, isDark && styles.logoWrapperDark]}
-            >
+          <View className="items-center mb-6">
+            <View className="w-[92px] h-[92px] rounded-full overflow-hidden bg-[#181A1F] border border-[#262930] shadow-lg shadow-purple-500/20">
               <Image
                 source={brandLogo}
-                style={styles.logoImage}
+                className="w-full h-full rounded-full"
                 contentFit="cover"
                 transition={200}
               />
@@ -217,41 +209,37 @@ export default function LoginScreen() {
           </View>
 
           {/* Heading */}
-          <Text style={[styles.heading, isDark && styles.headingDark]}>
+          <Text className="text-2xl font-extrabold text-white text-center leading-8 tracking-tight mb-7">
             Log in with your phone{"\n"}number or account
           </Text>
 
           {/* Inline Feedback Banner */}
           {feedback && (
             <View
-              style={[
-                styles.feedbackBanner,
+              className={`py-2.5 px-3.5 rounded-xl mb-4.5 ${
                 feedback.type === "error"
-                  ? styles.feedbackBannerError
-                  : styles.feedbackBannerSuccess,
-              ]}
+                  ? "bg-red-500/15 border border-red-500/30"
+                  : "bg-emerald-500/15 border border-emerald-500/30"
+              }`}
             >
               <Text
-                style={[
-                  styles.feedbackBannerText,
-                  feedback.type === "error"
-                    ? styles.feedbackErrorText
-                    : styles.feedbackSuccessText,
-                ]}
+                className={`text-xs font-semibold text-center leading-5 ${
+                  feedback.type === "error" ? "text-red-400" : "text-emerald-400"
+                }`}
               >
                 {feedback.message}
               </Text>
             </View>
           )}
 
-          {/* Grouped iOS Input Fields Card */}
-          <View style={[styles.inputGroup, isDark && styles.inputGroupDark]}>
+          {/* Grouped Input Fields Card */}
+          <View className="bg-[#181A1F] border border-[#262930] rounded-2xl overflow-hidden mb-4">
             {/* Field 1: Phone / Email */}
-            <View style={styles.inputRow}>
+            <View className="flex-row items-center px-4 min-h-[52px]">
               <TextInput
-                style={[styles.nativeInput, isDark && styles.nativeInputDark]}
+                className="flex-1 text-base font-normal text-white py-3.5"
                 placeholder="Phone number or email"
-                placeholderTextColor={isDark ? "#636366" : "#8E8E93"}
+                placeholderTextColor="#636366"
                 value={identifier}
                 onChangeText={setIdentifier}
                 autoCapitalize="none"
@@ -263,34 +251,25 @@ export default function LoginScreen() {
                 <Pressable
                   onPress={() => setIdentifier("")}
                   hitSlop={10}
-                  style={styles.clearBtn}
+                  className="w-5 h-5 rounded-full bg-slate-700 justify-center items-center ml-2"
                 >
-                  <Text style={styles.clearBtnText}>✕</Text>
+                  <Text className="text-[10px] text-slate-300 font-extrabold">✕</Text>
                 </Pressable>
               )}
             </View>
 
             {/* Hairline Divider */}
             {authMode === "password" && (
-              <View
-                style={[
-                  styles.hairlineDivider,
-                  isDark && styles.hairlineDividerDark,
-                ]}
-              />
+              <View className="h-[1px] bg-[#262930] ml-4" />
             )}
 
             {/* Field 2: Password */}
             {authMode === "password" && (
-              <View style={styles.inputRow}>
+              <View className="flex-row items-center px-4 min-h-[52px]">
                 <TextInput
-                  style={[
-                    styles.nativeInput,
-                    { flex: 1 },
-                    isDark && styles.nativeInputDark,
-                  ]}
+                  className="flex-1 text-base font-normal text-white py-3.5"
                   placeholder="Password"
-                  placeholderTextColor={isDark ? "#636366" : "#8E8E93"}
+                  placeholderTextColor="#636366"
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -302,14 +281,9 @@ export default function LoginScreen() {
                   <Pressable
                     onPress={() => setShowPassword(!showPassword)}
                     hitSlop={8}
-                    style={styles.eyeBtn}
+                    className="px-2 py-1.5"
                   >
-                    <Text
-                      style={[
-                        styles.eyeBtnText,
-                        isDark && styles.eyeBtnTextDark,
-                      ]}
-                    >
+                    <Text className="text-xs font-semibold text-slate-400">
                       {showPassword ? "Hide" : "Show"}
                     </Text>
                   </Pressable>
@@ -320,33 +294,31 @@ export default function LoginScreen() {
 
           {/* Save Login Info Checkbox Row */}
           <Pressable
-            style={styles.saveLoginRow}
+            className="flex-row items-center mb-5 gap-2.5"
             onPress={handleToggleSaveLogin}
             hitSlop={6}
           >
             <View
-              style={[
-                styles.checkbox,
-                saveLoginInfo && styles.checkboxActive,
-                isDark && !saveLoginInfo && styles.checkboxDark,
-              ]}
+              className={`w-5 h-5 rounded-md border-[1.8px] justify-center items-center ${
+                saveLoginInfo
+                  ? "bg-[#0084FF] border-[#0084FF]"
+                  : "border-slate-600 bg-transparent"
+              }`}
             >
-              {saveLoginInfo && <Text style={styles.checkmarkIcon}>✓</Text>}
+              {saveLoginInfo && <Text className="text-white text-xs font-black">✓</Text>}
             </View>
-            <Text
-              style={[styles.saveLoginText, isDark && styles.saveLoginTextDark]}
-            >
+            <Text className="text-sm font-medium text-slate-400">
               Save login info
             </Text>
           </Pressable>
 
-          {/* Primary Action Button ("Log in") */}
+          {/* Primary Action Button */}
           <Pressable
-            style={[
-              styles.primaryButton,
-              !isFormValid && styles.primaryButtonDisabled,
-              loading && { opacity: 0.8 },
-            ]}
+            className={`py-4 rounded-full items-center justify-center mb-3 shadow-md shadow-blue-500/20 ${
+              !isFormValid
+                ? "bg-[#181A1F] border border-[#262930]"
+                : "bg-[#0084FF]"
+            } ${loading ? "opacity-80" : ""}`}
             onPress={handleLogin}
             disabled={!isFormValid || loading}
           >
@@ -354,39 +326,30 @@ export default function LoginScreen() {
               <ActivityIndicator color="#FFFFFF" />
             ) : (
               <Text
-                style={[
-                  styles.primaryButtonText,
-                  !isFormValid && styles.primaryButtonTextDisabled,
-                ]}
+                className={`text-base font-bold tracking-tight ${
+                  !isFormValid ? "text-slate-500" : "text-white"
+                }`}
               >
                 Log in
               </Text>
             )}
           </Pressable>
 
-          {/* Secondary Action Button ("Create new account") */}
+          {/* Secondary Action Button */}
           <Pressable
-            style={[
-              styles.secondaryButton,
-              isDark && styles.secondaryButtonDark,
-            ]}
+            className="bg-[#181A1F] border border-[#262930] py-4 rounded-full items-center justify-center mb-6"
             onPress={() => {
               triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
               router.push("/(auth)/signup" as any);
             }}
           >
-            <Text
-              style={[
-                styles.secondaryButtonText,
-                isDark && styles.secondaryButtonTextDark,
-              ]}
-            >
+            <Text className="text-white text-base font-bold tracking-tight">
               Create new account
             </Text>
           </Pressable>
 
-          {/* Footer Action Links: Forgot Password & Magic Link toggle */}
-          <View style={styles.footerSection}>
+          {/* Footer Action Links */}
+          <View className="items-center gap-3.5">
             <Pressable
               onPress={() => {
                 triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
@@ -394,12 +357,13 @@ export default function LoginScreen() {
               }}
               hitSlop={8}
             >
-              <Text style={styles.forgotPasswordLink}>Forgot password?</Text>
+              <Text className="text-[#0084FF] text-[15px] font-semibold tracking-tight">
+                Forgot password?
+              </Text>
             </Pressable>
 
-            {/* Subtle OTP / Magic link mode toggle */}
             <Pressable
-              style={styles.otpToggleBtn}
+              className="py-1.5 px-3"
               onPress={() => {
                 triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
                 setAuthMode(authMode === "password" ? "otp" : "password");
@@ -407,12 +371,7 @@ export default function LoginScreen() {
               }}
               hitSlop={8}
             >
-              <Text
-                style={[
-                  styles.otpToggleText,
-                  isDark && styles.otpToggleTextDark,
-                ]}
-              >
+              <Text className="text-xs text-slate-400 font-medium">
                 {authMode === "password"
                   ? "Sign in with Magic Link / OTP"
                   : "Sign in with Password"}
@@ -425,250 +384,3 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-  },
-  containerDark: {
-    backgroundColor: "#000000",
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    justifyContent: "center",
-    alignItems: "stretch",
-    maxWidth: 500,
-    width: "100%",
-    alignSelf: "center",
-  },
-  logoSection: {
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  logoWrapper: {
-    width: 92,
-    height: 92,
-    borderRadius: 46,
-    overflow: "hidden",
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#3B82F6",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 6,
-  },
-  logoWrapperDark: {
-    backgroundColor: "#1C1C1E",
-    shadowColor: "#8B5CF6",
-    shadowOpacity: 0.4,
-  },
-  logoImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 46,
-    resizeMode: "contain",
-    backgroundColor: "transparent",
-  },
-  heading: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#000000",
-    textAlign: "center",
-    lineHeight: 31,
-    letterSpacing: -0.6,
-    marginBottom: 28,
-  },
-  headingDark: {
-    color: "#FFFFFF",
-  },
-  feedbackBanner: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    marginBottom: 18,
-  },
-  feedbackBannerError: {
-    backgroundColor: "#FEE2E2",
-  },
-  feedbackBannerSuccess: {
-    backgroundColor: "#DCFCE7",
-  },
-  feedbackBannerText: {
-    fontSize: 13,
-    fontWeight: "600",
-    textAlign: "center",
-    lineHeight: 18,
-  },
-  feedbackErrorText: {
-    color: "#DC2626",
-  },
-  feedbackSuccessText: {
-    color: "#16A34A",
-  },
-  inputGroup: {
-    backgroundColor: "#F2F4F7",
-    borderRadius: 16,
-    overflow: "hidden",
-    marginBottom: 16,
-  },
-  inputGroupDark: {
-    backgroundColor: "#1C1C1E",
-  },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    minHeight: 52,
-  },
-  nativeInput: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: "400",
-    color: "#000000",
-    paddingVertical: 14,
-    ...(Platform.OS === "web" ? { outlineStyle: "none" as any } : {}),
-  },
-  nativeInputDark: {
-    color: "#FFFFFF",
-  },
-  hairlineDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: "#E5E7EB",
-    marginLeft: 16,
-  },
-  hairlineDividerDark: {
-    backgroundColor: "#2C2C2E",
-  },
-  clearBtn: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "#D1D5DB",
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: 8,
-  },
-  clearBtnText: {
-    fontSize: 10,
-    color: "#4B5563",
-    fontWeight: "800",
-  },
-  eyeBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-  },
-  eyeBtnText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#6B7280",
-  },
-  eyeBtnTextDark: {
-    color: "#9CA3AF",
-  },
-  saveLoginRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-    gap: 10,
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 6,
-    borderWidth: 1.8,
-    borderColor: "#9CA3AF",
-    backgroundColor: "transparent",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  checkboxDark: {
-    borderColor: "#4B5563",
-  },
-  checkboxActive: {
-    backgroundColor: "#0084FF",
-    borderColor: "#0084FF",
-  },
-  checkmarkIcon: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "900",
-  },
-  saveLoginText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#4B5563",
-  },
-  saveLoginTextDark: {
-    color: "#9CA3AF",
-  },
-  primaryButton: {
-    backgroundColor: "#0084FF",
-    paddingVertical: 15,
-    borderRadius: 28,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-    shadowColor: "#0084FF",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  primaryButtonDisabled: {
-    backgroundColor: "#F2F4F7",
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: -0.2,
-  },
-  primaryButtonTextDisabled: {
-    color: "#9CA3AF",
-  },
-  secondaryButton: {
-    backgroundColor: "#F2F4F7",
-    paddingVertical: 15,
-    borderRadius: 28,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 24,
-  },
-  secondaryButtonDark: {
-    backgroundColor: "#1C1C1E",
-  },
-  secondaryButtonText: {
-    color: "#000000",
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: -0.2,
-  },
-  secondaryButtonTextDark: {
-    color: "#FFFFFF",
-  },
-  footerSection: {
-    alignItems: "center",
-    gap: 14,
-  },
-  forgotPasswordLink: {
-    color: "#0084FF",
-    fontSize: 15,
-    fontWeight: "600",
-    letterSpacing: -0.2,
-  },
-  otpToggleBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  otpToggleText: {
-    fontSize: 13,
-    color: "#6B7280",
-    fontWeight: "500",
-  },
-  otpToggleTextDark: {
-    color: "#9CA3AF",
-  },
-});

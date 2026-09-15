@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
 import {
-  StyleSheet,
   Text,
   View,
   FlatList,
   Pressable,
   RefreshControl,
-  ActivityIndicator,
-  useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,9 +27,6 @@ interface ActivitiesScreenProps {
 }
 
 export const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ onBack }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
   const [selectedType, setSelectedType] = useState<string>('all');
   const [showLogModal, setShowLogModal] = useState(false);
 
@@ -43,55 +37,53 @@ export const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ onBack }) =>
   const createActivity = useCreateActivity();
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
+    <SafeAreaView className="flex-1 bg-[#0B0D10]" edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
+      <View className="flex-row items-center justify-between px-4 py-3">
+        <View className="flex-row items-center gap-2.5">
           {onBack ? (
             <Pressable
-              style={[styles.backBtn, { backgroundColor: isDark ? '#1E2028' : '#F1F5F9' }]}
+              className="p-1.5 rounded-lg bg-[#181A1F] border border-[#262930]"
               onPress={onBack}
               hitSlop={8}
             >
-              <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
             </Pressable>
           ) : null}
           <View>
-            <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Activity Stream</Text>
-            <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Full chronological history of client touchpoints</Text>
+            <Text className="text-white text-xl font-bold tracking-tight">Activity Stream</Text>
+            <Text className="text-slate-400 text-xs mt-0.5">Full chronological history of client touchpoints</Text>
           </View>
         </View>
 
         <Pressable
-          style={styles.addBtn}
+          className="flex-row items-center gap-1 bg-[#0084FF] px-3 py-2 rounded-xl"
           onPress={() => setShowLogModal(true)}
           hitSlop={8}
         >
           <Ionicons name="add" size={18} color="#FFFFFF" />
-          <Text style={styles.addBtnText}>Log Event</Text>
+          <Text className="text-white text-xs font-semibold">Log Event</Text>
         </Pressable>
       </View>
 
       {/* Filter Chips */}
-      <View style={styles.tabContainer}>
+      <View className="flex-row px-4 gap-1.5 mb-3 mt-1">
         {ACTIVITY_FILTER_TABS.map((tab) => {
           const isSelected = selectedType === tab.key;
           return (
             <Pressable
               key={tab.key}
-              style={[
-                styles.tabChip,
-                { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' },
-                isSelected && (isDark ? styles.tabChipSelectedDark : styles.tabChipSelectedLight),
-              ]}
+              className={`px-3 py-1.5 rounded-lg border ${
+                isSelected
+                  ? 'bg-blue-500/20 border-blue-500'
+                  : 'bg-[#181A1F] border-[#262930]'
+              }`}
               onPress={() => setSelectedType(tab.key)}
             >
               <Text
-                style={[
-                  styles.tabText,
-                  { color: isDark ? '#9CA3AF' : '#64748B' },
-                  isSelected && styles.tabTextSelected,
-                ]}
+                className={`text-xs ${
+                  isSelected ? 'text-blue-400 font-bold' : 'text-slate-400 font-medium'
+                }`}
               >
                 {tab.label}
               </Text>
@@ -104,16 +96,19 @@ export const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ onBack }) =>
       {isLoading && !activities ? (
         <CrmActivitySkeleton />
       ) : activities.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="time-outline" size={48} color={isDark ? '#4B5563' : '#CBD5E1'} />
-          <Text style={[styles.emptyTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>No events recorded</Text>
-          <Text style={[styles.emptySubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+        <View className="flex-1 items-center justify-center px-8">
+          <Ionicons name="time-outline" size={48} color="#475569" />
+          <Text className="text-white text-base font-semibold mt-3">No events recorded</Text>
+          <Text className="text-slate-400 text-xs text-center mt-1.5 mb-5">
             {selectedType !== 'all'
               ? `No ${selectedType} activities logged yet.`
               : 'Log calls, meetings, notes, and emails to build a unified timeline.'}
           </Text>
-          <Pressable style={styles.emptyBtn} onPress={() => setShowLogModal(true)}>
-            <Text style={styles.emptyBtnText}>+ Log First Event</Text>
+          <Pressable
+            className="bg-[#0084FF] px-4 py-2.5 rounded-xl"
+            onPress={() => setShowLogModal(true)}
+          >
+            <Text className="text-white text-sm font-semibold">+ Log First Event</Text>
           </Pressable>
         </View>
       ) : (
@@ -126,14 +121,14 @@ export const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ onBack }) =>
               isLast={index === activities.length - 1}
             />
           )}
-          contentContainerStyle={styles.listContent}
+          contentContainerClassName="px-4 pb-28 pt-2"
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
               onRefresh={refetch}
-              tintColor="#3B82F6"
-              colors={['#3B82F6']}
+              tintColor="#0084FF"
+              colors={['#0084FF']}
             />
           }
         />
@@ -151,120 +146,3 @@ export const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ onBack }) =>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  backBtn: {
-    padding: 6,
-    borderRadius: 8,
-    backgroundColor: '#1E2028',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
-  subtitle: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  addBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-  },
-  addBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    gap: 6,
-    marginBottom: 12,
-    marginTop: 4,
-  },
-  tabChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  tabChipSelectedDark: {
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-    borderColor: '#3B82F6',
-  },
-  tabChipSelectedLight: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#3B82F6',
-  },
-  tabText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  tabTextSelected: {
-    color: '#3B82F6',
-    fontWeight: '700',
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 40,
-    paddingTop: 8,
-  },
-  loaderBox: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loaderText: {
-    fontSize: 13,
-    marginTop: 12,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: 12,
-  },
-  emptySubtitle: {
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: 6,
-    marginBottom: 20,
-  },
-  emptyBtn: {
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  emptyBtnText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-});

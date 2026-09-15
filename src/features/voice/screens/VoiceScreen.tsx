@@ -2,11 +2,9 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   RefreshControl,
   Pressable,
-  useColorScheme,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,8 +36,6 @@ const VOICE_TABS: ProductTabItem[] = [
 ];
 
 export const VoiceScreen: React.FC = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const queryClient = useQueryClient();
 
   const [activeSection, setActiveSection] = useState<VoiceSectionKey>('overview');
@@ -143,11 +139,6 @@ export const VoiceScreen: React.FC = () => {
     isCampaignsRefetching ||
     isNumbersRefetching;
 
-  const handleSelectSection = (key: VoiceSectionKey) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setActiveSection(key);
-  };
-
   const overview = overviewData?.data || overviewData || {};
   const calls: any[] = Array.isArray(callsData) ? callsData : (callsData as any)?.calls || [];
   const agents: any[] = Array.isArray(agentsData) ? agentsData : (agentsData as any)?.assistants || [];
@@ -159,108 +150,108 @@ export const VoiceScreen: React.FC = () => {
       <AppTopBar title="VoicePilot" subtitle="AI Telecalling & Voice Agents" showBack={true} />
 
       <ScrollView
-        style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1 bg-[#0B0D10]"
+        contentContainerClassName="px-4 pt-3.5 pb-32"
         refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={isDark ? '#FFFFFF' : '#8B5CF6'} />
+          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor="#0084FF" />
         }
         showsVerticalScrollIndicator={false}
       >
         {/* --- SECTION 1: OVERVIEW --- */}
         {activeSection === 'overview' && (
-          <View style={styles.sectionContainer}>
-            {/* Telemetry Metric Cards - Balanced 2x2 Grid */}
-            <View style={styles.metricsGridContainer}>
+          <View className="gap-3.5">
+            {/* Telemetry Metric Cards */}
+            <View className="gap-2.5">
               {/* Row 1 */}
-              <View style={styles.metricsRow}>
-                <View style={[styles.metricCard, isDark ? styles.cardDark : styles.cardLight]}>
-                  <View style={styles.metricHeader}>
-                    <View style={[styles.metricIconBox, { backgroundColor: 'rgba(139, 92, 246, 0.15)' }]}>
-                      <Ionicons name="mic" size={18} color="#8B5CF6" />
+              <View className="flex-row gap-2.5">
+                <View className="flex-1 rounded-2xl p-3.5 bg-[#181A1F] border border-[#262930] justify-between min-h-[104px]">
+                  <View className="flex-row justify-between items-center mb-2">
+                    <View className="w-8 h-8 rounded-xl justify-center items-center bg-blue-500/15">
+                      <Ionicons name="mic" size={18} color="#0084FF" />
                     </View>
                   </View>
-                  <Text style={[styles.metricNumber, isDark && styles.textDark]} numberOfLines={1}>
+                  <Text className="text-xl font-extrabold tracking-tight text-white" numberOfLines={1}>
                     {overview.totalAssistants ?? agents.length}
                   </Text>
-                  <Text style={styles.metricLabel}>Active AI Agents</Text>
+                  <Text className="text-[11px] text-slate-400 font-medium mt-0.5">Active AI Agents</Text>
                 </View>
 
-                <View style={[styles.metricCard, isDark ? styles.cardDark : styles.cardLight]}>
-                  <View style={styles.metricHeader}>
-                    <View style={[styles.metricIconBox, { backgroundColor: 'rgba(10, 132, 255, 0.15)' }]}>
-                      <Ionicons name="call" size={18} color="#0A84FF" />
+                <View className="flex-1 rounded-2xl p-3.5 bg-[#181A1F] border border-[#262930] justify-between min-h-[104px]">
+                  <View className="flex-row justify-between items-center mb-2">
+                    <View className="w-8 h-8 rounded-xl justify-center items-center bg-blue-500/15">
+                      <Ionicons name="call" size={18} color="#0084FF" />
                     </View>
                   </View>
-                  <Text style={[styles.metricNumber, isDark && styles.textDark]} numberOfLines={1}>
+                  <Text className="text-xl font-extrabold tracking-tight text-white" numberOfLines={1}>
                     {overview.totalCalls ?? calls.length}
                   </Text>
-                  <Text style={styles.metricLabel}>Dispatched Calls</Text>
+                  <Text className="text-[11px] text-slate-400 font-medium mt-0.5">Dispatched Calls</Text>
                 </View>
               </View>
 
               {/* Row 2 */}
-              <View style={styles.metricsRow}>
-                <View style={[styles.metricCard, isDark ? styles.cardDark : styles.cardLight]}>
-                  <View style={styles.metricHeader}>
-                    <View style={[styles.metricIconBox, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
+              <View className="flex-row gap-2.5">
+                <View className="flex-1 rounded-2xl p-3.5 bg-[#181A1F] border border-[#262930] justify-between min-h-[104px]">
+                  <View className="flex-row justify-between items-center mb-2">
+                    <View className="w-8 h-8 rounded-xl justify-center items-center bg-amber-500/15">
                       <Ionicons name="rocket" size={18} color="#F59E0B" />
                     </View>
                   </View>
-                  <Text style={[styles.metricNumber, isDark && styles.textDark]} numberOfLines={1}>
+                  <Text className="text-xl font-extrabold tracking-tight text-white" numberOfLines={1}>
                     {overview.activeCampaigns ?? campaigns.length}
                   </Text>
-                  <Text style={styles.metricLabel}>Voice Campaigns</Text>
+                  <Text className="text-[11px] text-slate-400 font-medium mt-0.5">Voice Campaigns</Text>
                 </View>
 
-                <View style={[styles.metricCard, isDark ? styles.cardDark : styles.cardLight]}>
-                  <View style={styles.metricHeader}>
-                    <View style={[styles.metricIconBox, { backgroundColor: 'rgba(48, 209, 88, 0.15)' }]}>
-                      <Ionicons name="wallet" size={18} color="#30D158" />
+                <View className="flex-1 rounded-2xl p-3.5 bg-[#181A1F] border border-[#262930] justify-between min-h-[104px]">
+                  <View className="flex-row justify-between items-center mb-2">
+                    <View className="w-8 h-8 rounded-xl justify-center items-center bg-emerald-500/15">
+                      <Ionicons name="wallet" size={18} color="#10B981" />
                     </View>
                   </View>
-                  <Text style={[styles.metricNumber, { color: '#30D158' }]} numberOfLines={1}>
+                  <Text className="text-xl font-extrabold tracking-tight text-emerald-400" numberOfLines={1}>
                     {overview.creditBalanceDisplay || `${Math.floor(overview.creditBalance ?? 0)} AI Mins`}
                   </Text>
-                  <Text style={styles.metricLabel}>Credit Balance</Text>
+                  <Text className="text-[11px] text-slate-400 font-medium mt-0.5">Credit Balance</Text>
                 </View>
               </View>
             </View>
 
             {/* Quick Action Dock */}
-            <View style={[styles.actionsCard, isDark ? styles.cardDark : styles.cardLight]}>
-              <Text style={styles.cardHeaderTitle}>VOICEPILOT CONTROL ACTIONS</Text>
-              <View style={styles.actionButtonsRow}>
+            <View className="rounded-2xl p-4 bg-[#181A1F] border border-[#262930]">
+              <Text className="text-[11px] font-bold text-slate-400 tracking-wider mb-3">VOICEPILOT CONTROL ACTIONS</Text>
+              <View className="flex-row gap-2">
                 <Pressable
-                  style={[styles.primaryActionBtn, { backgroundColor: '#8B5CF6' }]}
+                  className="flex-1 flex-row items-center justify-center gap-1 py-2.5 px-1 rounded-xl bg-[#0084FF]"
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setIsTriggerModalOpen(true);
                   }}
                 >
                   <Ionicons name="call" size={15} color="#FFFFFF" />
-                  <Text style={styles.primaryActionBtnText} numberOfLines={1}>Trigger Call</Text>
+                  <Text className="text-white text-xs font-bold" numberOfLines={1}>Trigger Call</Text>
                 </Pressable>
 
                 <Pressable
-                  style={[styles.primaryActionBtn, { backgroundColor: '#0A84FF' }]}
+                  className="flex-1 flex-row items-center justify-center gap-1 py-2.5 px-1 rounded-xl bg-blue-600"
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setIsCampaignModalOpen(true);
                   }}
                 >
                   <Ionicons name="rocket" size={15} color="#FFFFFF" />
-                  <Text style={styles.primaryActionBtnText} numberOfLines={1}>Campaign</Text>
+                  <Text className="text-white text-xs font-bold" numberOfLines={1}>Campaign</Text>
                 </Pressable>
 
                 <Pressable
-                  style={[styles.primaryActionBtn, isDark ? styles.secondaryBtnDark : styles.secondaryBtnLight]}
+                  className="flex-1 flex-row items-center justify-center gap-1 py-2.5 px-1 rounded-xl bg-[#262930] border border-[#334155]"
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setIsAgentModalOpen(true);
                   }}
                 >
-                  <Ionicons name="add-circle" size={16} color={isDark ? '#FFFFFF' : '#000000'} />
-                  <Text style={[styles.primaryActionBtnText, isDark ? styles.textDark : { color: '#000000' }]} numberOfLines={1}>
+                  <Ionicons name="add-circle" size={16} color="#FFFFFF" />
+                  <Text className="text-white text-xs font-bold" numberOfLines={1}>
                     New Agent
                   </Text>
                 </Pressable>
@@ -268,47 +259,47 @@ export const VoiceScreen: React.FC = () => {
             </View>
 
             {/* Recent Call Telemetry Stream */}
-            <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>RECENT CALL TELEMETRY</Text>
+            <View className="flex-row justify-between items-center mt-1.5">
+              <Text className="text-[11.5px] font-bold text-slate-400 tracking-wider">RECENT CALL TELEMETRY</Text>
             </View>
 
-            <View style={[styles.listCard, isDark ? styles.cardDark : styles.cardLight]}>
+            <View className="rounded-2xl border border-[#262930] overflow-hidden bg-[#181A1F]">
               {calls.slice(0, 5).map((call, idx, arr) => (
                 <View key={call.id || idx}>
                   <Pressable
-                    style={styles.callRow}
+                    className="flex-row items-center p-3.5"
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       setSelectedCall(call);
                     }}
                   >
-                    <View style={[styles.callIconBox, { backgroundColor: 'rgba(139, 92, 246, 0.12)' }]}>
-                      <Ionicons name="call" size={18} color="#8B5CF6" />
+                    <View className="w-9 h-9 rounded-xl justify-center items-center mr-3 bg-blue-500/15">
+                      <Ionicons name="call" size={18} color="#0084FF" />
                     </View>
-                    <View style={styles.callInfo}>
-                      <View style={styles.callRowHeader}>
-                        <Text style={[styles.callPhone, isDark && styles.textDark]} numberOfLines={1}>
+                    <View className="flex-1 mr-2">
+                      <View className="flex-row justify-between mb-0.5">
+                        <Text className="text-sm font-bold text-white" numberOfLines={1}>
                           {call.customerNumber || call.phone_number || 'Unknown Recipient'}
                         </Text>
-                        <Text style={styles.callDuration}>{call.duration || '0s'}</Text>
+                        <Text className="text-[11px] text-slate-400 font-semibold">{call.duration || '0s'}</Text>
                       </View>
-                      <Text style={styles.callAgent}>{call.assistant || 'Voice Assistant'}</Text>
+                      <Text className="text-[11.5px] text-slate-400">{call.assistant || 'Voice Assistant'}</Text>
                       {call.summary ? (
-                        <Text style={styles.callSummarySnippet} numberOfLines={1}>
+                        <Text className="text-[11px] text-slate-500 italic mt-0.5" numberOfLines={1}>
                           "{call.summary}"
                         </Text>
                       ) : null}
                     </View>
-                    <Ionicons name="chevron-forward" size={14} color="#8E8E93" />
+                    <Ionicons name="chevron-forward" size={14} color="#64748B" />
                   </Pressable>
-                  {idx < arr.length - 1 && <View style={[styles.divider, isDark ? styles.dividerDark : styles.dividerLight]} />}
+                  {idx < arr.length - 1 && <View className="h-[1px] ml-15 bg-[#262930]" />}
                 </View>
               ))}
 
               {calls.length === 0 && !isCallsLoading && (
-                <View style={styles.emptyContainer}>
-                  <Ionicons name="call-outline" size={32} color="#8E8E93" />
-                  <Text style={styles.emptyText}>No recent calls dispatched yet.</Text>
+                <View className="items-center py-7 gap-2">
+                  <Ionicons name="call-outline" size={32} color="#64748B" />
+                  <Text className="text-xs text-slate-400">No recent calls dispatched yet.</Text>
                 </View>
               )}
             </View>
@@ -317,51 +308,51 @@ export const VoiceScreen: React.FC = () => {
 
         {/* --- SECTION 2: CALL LOGS --- */}
         {activeSection === 'calls' && (
-          <View style={styles.sectionContainer}>
-            <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>CALL LOGS & TRANSCRIPTS ({calls.length})</Text>
+          <View className="gap-3.5">
+            <View className="flex-row justify-between items-center mt-1.5">
+              <Text className="text-[11.5px] font-bold text-slate-400 tracking-wider">CALL LOGS & TRANSCRIPTS ({calls.length})</Text>
               <Pressable
-                style={styles.headerBtn}
+                className="flex-row items-center gap-1"
                 onPress={() => setIsTriggerModalOpen(true)}
               >
-                <Ionicons name="add" size={16} color="#8B5CF6" />
-                <Text style={styles.headerBtnText}>Trigger Call</Text>
+                <Ionicons name="add" size={16} color="#0084FF" />
+                <Text className="text-[#0084FF] text-xs font-bold">Trigger Call</Text>
               </Pressable>
             </View>
 
             {isCallsLoading ? (
               <VoiceCallsSkeleton />
             ) : (
-              <View style={[styles.listCard, isDark ? styles.cardDark : styles.cardLight]}>
+              <View className="rounded-2xl border border-[#262930] overflow-hidden bg-[#181A1F]">
                 {calls.map((call, idx, arr) => (
                   <View key={call.id || idx}>
                     <Pressable
-                      style={styles.callRow}
+                      className="flex-row items-center p-3.5"
                       onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                         setSelectedCall(call);
                       }}
                     >
-                      <View style={[styles.callIconBox, { backgroundColor: call.status === 'completed' ? 'rgba(48, 209, 88, 0.12)' : 'rgba(245, 158, 11, 0.12)' }]}>
-                        <Ionicons name={call.recordingUrl ? 'mic' : 'call'} size={18} color={call.status === 'completed' ? '#30D158' : '#F59E0B'} />
+                      <View className={`w-9 h-9 rounded-xl justify-center items-center mr-3 ${call.status === 'completed' ? 'bg-emerald-500/15' : 'bg-amber-500/15'}`}>
+                        <Ionicons name={call.recordingUrl ? 'mic' : 'call'} size={18} color={call.status === 'completed' ? '#10B981' : '#F59E0B'} />
                       </View>
-                      <View style={styles.callInfo}>
-                        <View style={styles.callRowHeader}>
-                          <Text style={[styles.callPhone, isDark && styles.textDark]}>
+                      <View className="flex-1 mr-2">
+                        <View className="flex-row justify-between mb-0.5">
+                          <Text className="text-sm font-bold text-white">
                             {call.customerNumber || call.phone_number}
                           </Text>
-                          <Text style={styles.callDuration}>{call.duration}</Text>
+                          <Text className="text-[11px] text-slate-400 font-semibold">{call.duration}</Text>
                         </View>
-                        <Text style={styles.callAgent}>{call.assistant} • {call.time || 'Recent'}</Text>
+                        <Text className="text-[11.5px] text-slate-400">{call.assistant} • {call.time || 'Recent'}</Text>
                         {call.summary ? (
-                          <Text style={styles.callSummarySnippet} numberOfLines={1}>
+                          <Text className="text-[11px] text-slate-500 italic mt-0.5" numberOfLines={1}>
                             "{call.summary}"
                           </Text>
                         ) : null}
                       </View>
-                      <Ionicons name="chevron-forward" size={14} color="#8E8E93" />
+                      <Ionicons name="chevron-forward" size={14} color="#64748B" />
                     </Pressable>
-                    {idx < arr.length - 1 && <View style={[styles.divider, isDark ? styles.dividerDark : styles.dividerLight]} />}
+                    {idx < arr.length - 1 && <View className="h-[1px] ml-15 bg-[#262930]" />}
                   </View>
                 ))}
               </View>
@@ -371,53 +362,53 @@ export const VoiceScreen: React.FC = () => {
 
         {/* --- SECTION 3: AGENTS --- */}
         {activeSection === 'agents' && (
-          <View style={styles.sectionContainer}>
-            <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>AI VOICE ASSISTANTS ({agents.length})</Text>
-              <Pressable style={styles.headerBtn} onPress={() => setIsAgentModalOpen(true)}>
-                <Ionicons name="add" size={16} color="#8B5CF6" />
-                <Text style={styles.headerBtnText}>New Agent</Text>
+          <View className="gap-3.5">
+            <View className="flex-row justify-between items-center mt-1.5">
+              <Text className="text-[11.5px] font-bold text-slate-400 tracking-wider">AI VOICE ASSISTANTS ({agents.length})</Text>
+              <Pressable className="flex-row items-center gap-1" onPress={() => setIsAgentModalOpen(true)}>
+                <Ionicons name="add" size={16} color="#0084FF" />
+                <Text className="text-[#0084FF] text-xs font-bold">New Agent</Text>
               </Pressable>
             </View>
 
             {isAgentsLoading ? (
-              <ActivityIndicator size="large" color="#8B5CF6" style={{ marginTop: 24 }} />
+              <ActivityIndicator size="large" color="#0084FF" className="mt-6" />
             ) : (
-              <View style={styles.cardsStack}>
+              <View className="gap-2.5">
                 {agents.map((ast) => (
-                  <View key={ast.id} style={[styles.agentCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={styles.agentCardHeader}>
-                      <View style={[styles.agentAvatarBox, { backgroundColor: 'rgba(139, 92, 246, 0.15)' }]}>
-                        <Ionicons name="mic" size={20} color="#8B5CF6" />
+                  <View key={ast.id} className="rounded-2xl p-4 bg-[#181A1F] border border-[#262930]">
+                    <View className="flex-row items-center gap-3">
+                      <View className="w-10 h-10 rounded-xl justify-center items-center bg-blue-500/15">
+                        <Ionicons name="mic" size={20} color="#0084FF" />
                       </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.agentName, isDark && styles.textDark]}>{ast.name}</Text>
-                        <Text style={styles.agentSub}>
+                      <View className="flex-1">
+                        <Text className="text-[15px] font-bold text-white">{ast.name}</Text>
+                        <Text className="text-[11.5px] text-slate-400 mt-0.5">
                           {ast.provider || 'vomyra'} • Status: {ast.status || 'active'}
                         </Text>
                       </View>
-                      <View style={styles.onlinePill}>
-                        <View style={styles.onlineDot} />
-                        <Text style={styles.onlinePillText}>Ready</Text>
+                      <View className="flex-row items-center gap-1 bg-emerald-500/10 px-2 py-1 rounded-md">
+                        <View className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <Text className="text-[10.5px] font-bold text-emerald-400">Ready</Text>
                       </View>
                     </View>
 
                     {ast.config_snapshot?.prompt || ast.config_snapshot?.system_prompt ? (
-                      <Text style={[styles.agentPromptSnippet, isDark && styles.agentPromptSnippetDark]} numberOfLines={2}>
+                      <Text className="text-xs text-slate-400 italic mt-2.5 leading-4" numberOfLines={2}>
                         "{ast.config_snapshot?.prompt || ast.config_snapshot?.system_prompt}"
                       </Text>
                     ) : null}
 
-                    <View style={styles.agentCardFooter}>
+                    <View className="flex-row justify-end mt-3">
                       <Pressable
-                        style={[styles.agentActionBtn, { backgroundColor: 'rgba(139, 92, 246, 0.15)' }]}
+                        className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/15"
                         onPress={() => {
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                           setIsTriggerModalOpen(true);
                         }}
                       >
-                        <Ionicons name="call" size={14} color="#8B5CF6" />
-                        <Text style={[styles.agentActionBtnText, { color: '#8B5CF6' }]}>Test Call</Text>
+                        <Ionicons name="call" size={14} color="#0084FF" />
+                        <Text className="text-xs font-bold text-[#0084FF]">Test Call</Text>
                       </Pressable>
                     </View>
                   </View>
@@ -429,45 +420,45 @@ export const VoiceScreen: React.FC = () => {
 
         {/* --- SECTION 4: CAMPAIGNS --- */}
         {activeSection === 'campaigns' && (
-          <View style={styles.sectionContainer}>
-            <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>BULK VOICE CAMPAIGNS ({campaigns.length})</Text>
-              <Pressable style={styles.headerBtn} onPress={() => setIsCampaignModalOpen(true)}>
-                <Ionicons name="add" size={16} color="#8B5CF6" />
-                <Text style={styles.headerBtnText}>Start Campaign</Text>
+          <View className="gap-3.5">
+            <View className="flex-row justify-between items-center mt-1.5">
+              <Text className="text-[11.5px] font-bold text-slate-400 tracking-wider">BULK VOICE CAMPAIGNS ({campaigns.length})</Text>
+              <Pressable className="flex-row items-center gap-1" onPress={() => setIsCampaignModalOpen(true)}>
+                <Ionicons name="add" size={16} color="#0084FF" />
+                <Text className="text-[#0084FF] text-xs font-bold">Start Campaign</Text>
               </Pressable>
             </View>
 
             {isCampaignsLoading ? (
-              <ActivityIndicator size="large" color="#8B5CF6" style={{ marginTop: 24 }} />
+              <ActivityIndicator size="large" color="#0084FF" className="mt-6" />
             ) : (
-              <View style={[styles.listCard, isDark ? styles.cardDark : styles.cardLight]}>
+              <View className="rounded-2xl border border-[#262930] overflow-hidden bg-[#181A1F]">
                 {campaigns.map((camp, idx, arr) => (
                   <View key={camp.id || idx}>
-                    <View style={styles.campaignRow}>
-                      <View style={[styles.campaignIconBox, { backgroundColor: 'rgba(10, 132, 255, 0.12)' }]}>
-                        <Ionicons name="rocket" size={18} color="#0A84FF" />
+                    <View className="flex-row items-center p-3.5">
+                      <View className="w-9 h-9 rounded-xl justify-center items-center mr-3 bg-blue-500/15">
+                        <Ionicons name="rocket" size={18} color="#0084FF" />
                       </View>
-                      <View style={styles.campaignInfo}>
-                        <Text style={[styles.campaignName, isDark && styles.textDark]}>{camp.name}</Text>
-                        <Text style={styles.campaignMeta}>
+                      <View className="flex-1 mr-2">
+                        <Text className="text-sm font-bold text-white">{camp.name}</Text>
+                        <Text className="text-[11.5px] text-slate-400 mt-0.5">
                           {camp.total_contacts || 0} Contacts • Status: {camp.status || 'completed'}
                         </Text>
                       </View>
-                      <View style={[styles.badge, camp.status === 'running' ? styles.badgeWarning : styles.badgeSuccess]}>
-                        <Text style={[styles.badgeText, camp.status === 'running' ? styles.textWarning : styles.textSuccess]}>
+                      <View className={`px-2 py-1 rounded-md ${camp.status === 'running' ? 'bg-amber-500/15' : 'bg-emerald-500/15'}`}>
+                        <Text className={`text-[11px] font-semibold ${camp.status === 'running' ? 'text-amber-400' : 'text-emerald-400'}`}>
                           {camp.status || 'completed'}
                         </Text>
                       </View>
                     </View>
-                    {idx < arr.length - 1 && <View style={[styles.divider, isDark ? styles.dividerDark : styles.dividerLight]} />}
+                    {idx < arr.length - 1 && <View className="h-[1px] ml-15 bg-[#262930]" />}
                   </View>
                 ))}
 
                 {campaigns.length === 0 && (
-                  <View style={styles.emptyContainer}>
-                    <Ionicons name="rocket-outline" size={32} color="#8E8E93" />
-                    <Text style={styles.emptyText}>No automated voice campaigns created yet.</Text>
+                  <View className="items-center py-7 gap-2">
+                    <Ionicons name="rocket-outline" size={32} color="#64748B" />
+                    <Text className="text-xs text-slate-400">No automated voice campaigns created yet.</Text>
                   </View>
                 )}
               </View>
@@ -477,39 +468,39 @@ export const VoiceScreen: React.FC = () => {
 
         {/* --- SECTION 5: NUMBERS --- */}
         {activeSection === 'numbers' && (
-          <View style={styles.sectionContainer}>
-            <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>VIRTUAL PHONE NUMBERS ({numbers.length})</Text>
+          <View className="gap-3.5">
+            <View className="flex-row justify-between items-center mt-1.5">
+              <Text className="text-[11.5px] font-bold text-slate-400 tracking-wider">VIRTUAL PHONE NUMBERS ({numbers.length})</Text>
             </View>
 
             {isNumbersLoading ? (
-              <ActivityIndicator size="large" color="#8B5CF6" style={{ marginTop: 24 }} />
+              <ActivityIndicator size="large" color="#0084FF" className="mt-6" />
             ) : (
-              <View style={[styles.listCard, isDark ? styles.cardDark : styles.cardLight]}>
+              <View className="rounded-2xl border border-[#262930] overflow-hidden bg-[#181A1F]">
                 {numbers.map((pn, idx, arr) => (
                   <View key={pn.id || idx}>
-                    <View style={styles.numberRow}>
-                      <View style={[styles.numberIconBox, { backgroundColor: 'rgba(48, 209, 88, 0.12)' }]}>
-                        <Ionicons name="keypad" size={18} color="#30D158" />
+                    <View className="flex-row items-center p-3.5">
+                      <View className="w-9 h-9 rounded-xl justify-center items-center mr-3 bg-emerald-500/15">
+                        <Ionicons name="keypad" size={18} color="#10B981" />
                       </View>
-                      <View style={styles.numberInfo}>
-                        <Text style={[styles.numberVal, isDark && styles.textDark]}>{pn.phone_number}</Text>
-                        <Text style={styles.numberMeta}>
+                      <View className="flex-1 mr-2">
+                        <Text className="text-sm font-bold text-white">{pn.phone_number}</Text>
+                        <Text className="text-[11.5px] text-slate-400 mt-0.5">
                           {pn.assistants?.name ? `Assigned to: ${pn.assistants.name}` : 'Unassigned'} • Provider: {pn.provider || 'vomyra'}
                         </Text>
                       </View>
-                      <View style={styles.badgeSuccess}>
-                        <Text style={[styles.badgeText, styles.textSuccess]}>{pn.status || 'active'}</Text>
+                      <View className="bg-emerald-500/15 px-2 py-1 rounded-md">
+                        <Text className="text-[11px] font-semibold text-emerald-400">{pn.status || 'active'}</Text>
                       </View>
                     </View>
-                    {idx < arr.length - 1 && <View style={[styles.divider, isDark ? styles.dividerDark : styles.dividerLight]} />}
+                    {idx < arr.length - 1 && <View className="h-[1px] ml-15 bg-[#262930]" />}
                   </View>
                 ))}
 
                 {numbers.length === 0 && (
-                  <View style={styles.emptyContainer}>
-                    <Ionicons name="keypad-outline" size={32} color="#8E8E93" />
-                    <Text style={styles.emptyText}>No virtual phone numbers claimed yet.</Text>
+                  <View className="items-center py-7 gap-2">
+                    <Ionicons name="keypad-outline" size={32} color="#64748B" />
+                    <Text className="text-xs text-slate-400">No virtual phone numbers claimed yet.</Text>
                   </View>
                 )}
               </View>
@@ -563,148 +554,9 @@ export const VoiceScreen: React.FC = () => {
         items={VOICE_TABS}
         activeKey={activeSection}
         onChangeTab={(key) => setActiveSection(key as VoiceSectionKey)}
-        accentColor="#8B5CF6"
+        accentColor="#0084FF"
         moreMenuTitle="VoicePilot Tools"
       />
     </AppScreen>
   );
 };
-
-const styles = StyleSheet.create({
-  scrollView: { flex: 1 },
-  scrollViewLight: { backgroundColor: '#F2F2F7' },
-  scrollViewDark: { backgroundColor: '#020617' },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 130 },
-  segmentedTrack: {
-    flexDirection: 'row',
-    backgroundColor: '#E3E3E8',
-    borderRadius: 12,
-    padding: 3,
-    marginBottom: 16,
-  },
-  segmentedTrackDark: {
-    backgroundColor: '#0F172A',
-    borderWidth: 1,
-    borderColor: '#1E293B',
-  },
-  segmentedTab: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  segmentedTabActiveLight: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  segmentedTabActiveDark: { backgroundColor: '#1E293B' },
-  segmentedTabText: { fontSize: 11.5, fontWeight: '600', color: '#64748B' },
-  segmentedTabTextActiveLight: { color: '#000000', fontWeight: '700' },
-  segmentedTabTextActiveDark: { color: '#F8FAFC', fontWeight: '700' },
-  sectionContainer: { gap: 14 },
-  metricsGridContainer: { gap: 10 },
-  metricsRow: { flexDirection: 'row', gap: 10 },
-  metricCard: {
-    flex: 1,
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    justifyContent: 'space-between',
-    minHeight: 104,
-  },
-  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  cardDark: { backgroundColor: '#0F172A', borderColor: '#1E293B' },
-  metricHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  metricIconBox: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  metricNumber: { fontSize: 20, fontWeight: '800', letterSpacing: -0.5 },
-  metricLabel: { fontSize: 11.5, color: '#64748B', marginTop: 3, fontWeight: '500' },
-  textDark: { color: '#F8FAFC' },
-  actionsCard: {
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-  },
-  cardHeaderTitle: { fontSize: 11, fontWeight: '700', color: '#64748B', letterSpacing: 0.6, marginBottom: 12 },
-  actionButtonsRow: { flexDirection: 'row', gap: 8 },
-  primaryActionBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-    borderRadius: 10,
-  },
-  primaryActionBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
-  secondaryBtnLight: { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#CBD5E1' },
-  secondaryBtnDark: { backgroundColor: '#1E293B', borderWidth: 1, borderColor: '#334155' },
-  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 },
-  sectionTitle: { fontSize: 11.5, fontWeight: '700', color: '#64748B', letterSpacing: 0.5 },
-  headerBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  headerBtnText: { color: '#8B5CF6', fontSize: 12.5, fontWeight: '700' },
-  listCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  callRow: { flexDirection: 'row', alignItems: 'center', padding: 14 },
-  callIconBox: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  callInfo: { flex: 1, marginRight: 8 },
-  callRowHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
-  callPhone: { fontSize: 14, fontWeight: '700' },
-  callDuration: { fontSize: 11, color: '#64748B', fontWeight: '600' },
-  callAgent: { fontSize: 11.5, color: '#64748B' },
-  callSummarySnippet: { fontSize: 11, color: '#94A3B8', fontStyle: 'italic', marginTop: 3 },
-  divider: { height: 1, marginLeft: 62 },
-  dividerLight: { backgroundColor: '#E2E8F0' },
-  dividerDark: { backgroundColor: '#1E293B' },
-  emptyContainer: { alignItems: 'center', paddingVertical: 28, gap: 8 },
-  emptyText: { fontSize: 12.5, color: '#64748B' },
-  cardsStack: { gap: 10 },
-  agentCard: { borderRadius: 16, padding: 16, borderWidth: 1 },
-  agentCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  agentAvatarBox: { width: 42, height: 42, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  agentName: { fontSize: 15, fontWeight: '700' },
-  agentSub: { fontSize: 11.5, color: '#64748B', marginTop: 1 },
-  onlinePill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(48, 209, 88, 0.1)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  onlineDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#30D158' },
-  onlinePillText: { fontSize: 10.5, fontWeight: '700', color: '#30D158' },
-  agentPromptSnippet: { fontSize: 11.5, color: '#94A3B8', fontStyle: 'italic', marginTop: 10, lineHeight: 16 },
-  agentPromptSnippetDark: { color: '#94A3B8' },
-  agentCardFooter: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 },
-  agentActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
-  agentActionBtnText: { fontSize: 12, fontWeight: '700' },
-  campaignRow: { flexDirection: 'row', alignItems: 'center', padding: 14 },
-  campaignIconBox: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  campaignInfo: { flex: 1, marginRight: 8 },
-  campaignName: { fontSize: 14, fontWeight: '700' },
-  campaignMeta: { fontSize: 11.5, color: '#64748B', marginTop: 2 },
-  numberRow: { flexDirection: 'row', alignItems: 'center', padding: 14 },
-  numberIconBox: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  numberInfo: { flex: 1, marginRight: 8 },
-  numberVal: { fontSize: 14, fontWeight: '700' },
-  numberMeta: { fontSize: 11.5, color: '#64748B', marginTop: 2 },
-  badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  badgeSuccess: { backgroundColor: 'rgba(48, 209, 88, 0.15)' },
-  badgeWarning: { backgroundColor: 'rgba(245, 158, 11, 0.15)' },
-  badgeText: { fontSize: 11, fontWeight: '600' },
-  textSuccess: { color: '#30D158' },
-  textWarning: { color: '#F59E0B' },
-});

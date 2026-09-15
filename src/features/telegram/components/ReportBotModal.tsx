@@ -3,13 +3,11 @@ import {
   Modal,
   View,
   Text,
-  StyleSheet,
   Pressable,
   ScrollView,
   TextInput,
   ActivityIndicator,
   Linking,
-  useColorScheme,
   Alert,
   Image,
   Share,
@@ -34,7 +32,7 @@ const LOGO_PRESETS = [
     name: 'GAP Pilot Pro',
     url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80',
     icon: 'shield-checkmark',
-    color: '#0284C7',
+    color: '#0084FF',
   },
   {
     name: 'Bull Market AI',
@@ -57,8 +55,6 @@ const LOGO_PRESETS = [
 ];
 
 export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<ReportBotTab>('profile');
@@ -105,6 +101,11 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
       if (p.page4Policy !== undefined) setPage4Policy(p.page4Policy || '');
     }
   }, [dashboard]);
+
+  // Derived Stats
+  const channelsCount = dashboard?.channelsCount ?? dashboard?.channels?.length ?? 0;
+  const reportsCount = dashboard?.reportsCount ?? dashboard?.reports?.length ?? 0;
+  const isDmConnected = dashboard?.dmConnected ?? true;
 
   // Save Settings Mutation
   const { mutateAsync: saveSettings, isPending: isSaving } = useMutation({
@@ -243,105 +244,165 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View style={[styles.container, isDark ? styles.containerDark : styles.containerLight]}>
+      <View className="flex-1 bg-[#0B0D10]">
         {/* Top Header */}
-        <View style={[styles.header, isDark ? styles.borderDark : styles.borderLight]}>
-          <View style={{ flex: 1, paddingRight: 8 }}>
-            <Text style={[styles.title, isDark ? styles.textDark : styles.textLight]}>GAP Report Bot</Text>
-            <Text style={styles.subtitle} numberOfLines={2}>
-              Convert Telegram trading calls into branded SEBI research PDFs. Complete the bot, channel, and brand setup before posting live calls.
+        <View className="flex-row justify-between items-start px-4 pt-4 pb-3 border-b border-[#262930] bg-[#181A1F]">
+          <View className="flex-1 mr-3">
+            <View className="flex-row items-center gap-2 mb-1">
+              <Text className="text-xl font-bold text-white">GAP Report Bot</Text>
+              <View className="bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                <Text className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">SEBI Compliant</Text>
+              </View>
+            </View>
+            <Text className="text-xs text-slate-400" numberOfLines={2}>
+              Convert Telegram trading calls into branded research PDFs with compliance disclaimers.
             </Text>
           </View>
-          <Pressable style={[styles.closeBtn, isDark ? styles.closeBtnDark : styles.closeBtnLight]} onPress={onClose}>
-            <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+          <Pressable
+            className="w-8 h-8 rounded-full bg-[#262930] items-center justify-center"
+            onPress={onClose}
+            hitSlop={8}
+          >
+            <Ionicons name="close" size={18} color="#CBD5E1" />
           </Pressable>
         </View>
 
         {/* Action Header Buttons: Start Bot & Refresh Status */}
-        <View style={[styles.actionHeaderRow, isDark ? styles.borderDark : styles.borderLight]}>
-          <Pressable style={styles.startBotBtn} onPress={handleStartBot}>
-            <Ionicons name="paper-plane-outline" size={14} color="#FFFFFF" />
-            <Text style={styles.startBotBtnText}>Start Bot</Text>
-            <Ionicons name="open-outline" size={12} color="#FFFFFF" />
+        <View className="flex-row items-center gap-2 px-4 py-3 border-b border-[#262930] bg-[#111317]">
+          <Pressable
+            className="flex-1 flex-row items-center justify-center gap-1.5 bg-[#0084FF] py-2.5 rounded-xl active:opacity-80"
+            onPress={handleStartBot}
+          >
+            <Ionicons name="paper-plane" size={14} color="#FFFFFF" />
+            <Text className="text-xs font-bold text-white">Start Bot</Text>
+            <Ionicons name="open-outline" size={13} color="rgba(255,255,255,0.8)" />
           </Pressable>
 
           <Pressable
-            style={[styles.refreshBtn, isDark ? styles.btnDark : styles.btnLight]}
+            className="flex-1 flex-row items-center justify-center gap-1.5 bg-[#181A1F] border border-[#262930] py-2.5 rounded-xl active:bg-[#262930]"
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               refetch();
             }}
             disabled={isRefetching}
           >
-            <Ionicons name="refresh-outline" size={14} color={isDark ? '#CBD5E1' : '#475569'} />
-            <Text style={[styles.refreshBtnText, isDark ? styles.textDark : styles.textLight]}>
+            <Ionicons
+              name="refresh-outline"
+              size={15}
+              color="#94A3B8"
+            />
+            <Text className="text-xs font-semibold text-slate-300">
               {isRefetching ? 'Refreshing...' : 'Refresh Status'}
             </Text>
           </Pressable>
         </View>
 
-        {/* 3-Segment Tab Bar & Live Status Bar */}
-        <View style={[styles.tabBarSection, isDark ? styles.borderDark : styles.borderLight]}>
-          <View style={styles.tabsRow}>
+        {/* Stats Metrics Cards */}
+        <View className="flex-row gap-2 px-4 py-3 border-b border-[#262930] bg-[#0B0D10]">
+          <View className="flex-1 bg-[#181A1F] border border-[#262930] p-2.5 rounded-xl">
+            <View className="flex-row items-center gap-1.5 mb-1">
+              <View className="w-5 h-5 rounded-full bg-emerald-500/10 items-center justify-center">
+                <Ionicons name="radio-outline" size={11} color="#10B981" />
+              </View>
+              <Text className="text-[10px] font-bold text-slate-400 tracking-wider">BOT DM</Text>
+            </View>
+            <View className="flex-row items-center gap-1">
+              <View className={`w-1.5 h-1.5 rounded-full ${isDmConnected ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+              <Text className="text-xs font-bold text-white">
+                {isDmConnected ? 'Connected' : 'Offline'}
+              </Text>
+            </View>
+          </View>
+
+          <View className="flex-1 bg-[#181A1F] border border-[#262930] p-2.5 rounded-xl">
+            <View className="flex-row items-center gap-1.5 mb-1">
+              <View className="w-5 h-5 rounded-full bg-[#0084FF]/10 items-center justify-center">
+                <Ionicons name="megaphone-outline" size={11} color="#0084FF" />
+              </View>
+              <Text className="text-[10px] font-bold text-slate-400 tracking-wider">CHANNELS</Text>
+            </View>
+            <Text className="text-xs font-bold text-white">
+              {channelsCount} Active
+            </Text>
+          </View>
+
+          <View className="flex-1 bg-[#181A1F] border border-[#262930] p-2.5 rounded-xl">
+            <View className="flex-row items-center gap-1.5 mb-1">
+              <View className="w-5 h-5 rounded-full bg-purple-500/10 items-center justify-center">
+                <Ionicons name="document-text-outline" size={11} color="#8B5CF6" />
+              </View>
+              <Text className="text-[10px] font-bold text-slate-400 tracking-wider">REPORTS</Text>
+            </View>
+            <Text className="text-xs font-bold text-white">
+              {reportsCount} Generated
+            </Text>
+          </View>
+        </View>
+
+        {/* 3-Segment Tab Bar */}
+        <View className="px-4 py-2 border-b border-[#262930] bg-[#111317]">
+          <View className="flex-row bg-[#181A1F] p-1 rounded-xl border border-[#262930]">
             <Pressable
-              style={[styles.tabPill, activeTab === 'profile' && styles.tabPillActive]}
+              className={`flex-1 flex-row items-center justify-center py-2 rounded-lg ${activeTab === 'profile' ? 'bg-[#0084FF]' : ''}`}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setActiveTab('profile');
               }}
             >
-              <Text style={[styles.tabPillText, activeTab === 'profile' && styles.tabPillTextActive]}>
+              <Ionicons
+                name="person-outline"
+                size={13}
+                color={activeTab === 'profile' ? '#FFFFFF' : '#94A3B8'}
+                style={{ marginRight: 4 }}
+              />
+              <Text className={`text-xs font-bold ${activeTab === 'profile' ? 'text-white' : 'text-slate-400'}`}>
                 Brand Profile
               </Text>
             </Pressable>
 
             <Pressable
-              style={[styles.tabPill, activeTab === 'channels' && styles.tabPillActive]}
+              className={`flex-1 flex-row items-center justify-center py-2 rounded-lg ${activeTab === 'channels' ? 'bg-[#0084FF]' : ''}`}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setActiveTab('channels');
               }}
             >
-              <Text style={[styles.tabPillText, activeTab === 'channels' && styles.tabPillTextActive]}>
-                Channels ({dashboard?.channelsCount ?? 0})
+              <Ionicons
+                name="megaphone-outline"
+                size={13}
+                color={activeTab === 'channels' ? '#FFFFFF' : '#94A3B8'}
+                style={{ marginRight: 4 }}
+              />
+              <Text className={`text-xs font-bold ${activeTab === 'channels' ? 'text-white' : 'text-slate-400'}`}>
+                Channels ({channelsCount})
               </Text>
             </Pressable>
 
             <Pressable
-              style={[styles.tabPill, activeTab === 'archive' && styles.tabPillActive]}
+              className={`flex-1 flex-row items-center justify-center py-2 rounded-lg ${activeTab === 'archive' ? 'bg-[#0084FF]' : ''}`}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setActiveTab('archive');
               }}
             >
-              <Text style={[styles.tabPillText, activeTab === 'archive' && styles.tabPillTextActive]}>
-                Reports Archive ({dashboard?.reportsCount ?? 0})
+              <Ionicons
+                name="folder-outline"
+                size={13}
+                color={activeTab === 'archive' ? '#FFFFFF' : '#94A3B8'}
+                style={{ marginRight: 4 }}
+              />
+              <Text className={`text-xs font-bold ${activeTab === 'archive' ? 'text-white' : 'text-slate-400'}`}>
+                Archive ({reportsCount})
               </Text>
             </Pressable>
           </View>
-
-          {/* Live Status Indicators */}
-          <View style={styles.statusPillsRow}>
-            <View style={styles.statusIndicator}>
-              <View style={styles.dotGreen} />
-              <Text style={styles.statusText}>DM Connected</Text>
-            </View>
-            <View style={styles.statusIndicator}>
-              <View style={styles.dotGreen} />
-              <Text style={styles.statusText}>Channels {dashboard?.channelsCount ?? 0}</Text>
-            </View>
-            <View style={styles.statusIndicator}>
-              <View style={styles.dotGreen} />
-              <Text style={styles.statusText}>Reports {dashboard?.reportsCount ?? 0}</Text>
-            </View>
-          </View>
         </View>
 
-        <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
+        <ScrollView className="flex-1" contentContainerClassName="p-4 pb-20" showsVerticalScrollIndicator={false}>
           {isLoading ? (
-            <View style={styles.loadingBox}>
-              <ActivityIndicator size="large" color="#0284C7" />
-              <Text style={[styles.loadingText, isDark ? styles.textDark : styles.textLight]}>
+            <View className="items-center justify-center py-16">
+              <ActivityIndicator size="large" color="#0084FF" />
+              <Text className="text-sm font-semibold text-slate-400 mt-3">
                 Loading SEBI Report Bot Suite...
               </Text>
             </View>
@@ -351,278 +412,313 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
               {activeTab === 'profile' && (
                 <>
                   {/* SEBI Brand Profile Card Header */}
-                  <View style={[styles.formCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={styles.formHeaderRow}>
-                      <View>
-                        <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight]}>
+                  <View className="bg-[#181A1F] border border-[#262930] rounded-2xl p-4 mb-4">
+                    <View className="flex-row justify-between items-center mb-4">
+                      <View className="flex-1 mr-2">
+                        <Text className="text-base font-bold text-white">
                           SEBI Brand Profile
                         </Text>
-                        <Text style={styles.sectionSubtitle}>These details appear on every generated research PDF.</Text>
+                        <Text className="text-xs text-slate-400">
+                          These details appear on every generated research PDF.
+                        </Text>
                       </View>
-                      <Pressable style={styles.saveBtn} onPress={handleSave} disabled={isSaving}>
+                      <Pressable
+                        className="flex-row items-center gap-1.5 bg-[#0084FF] px-3.5 py-2 rounded-xl active:opacity-80"
+                        onPress={handleSave}
+                        disabled={isSaving}
+                      >
                         {isSaving ? (
                           <ActivityIndicator size="small" color="#FFFFFF" />
                         ) : (
                           <>
                             <Ionicons name="save-outline" size={14} color="#FFFFFF" />
-                            <Text style={styles.saveBtnText}>Save Settings</Text>
+                            <Text className="text-xs font-bold text-white">Save Settings</Text>
                           </>
                         )}
                       </Pressable>
                     </View>
 
                     {/* SECTION 1: IDENTITY (REQUIRED) */}
-                    <Text style={styles.groupHeading}>Identity</Text>
-                    <Text style={styles.groupDesc}>Required information for the report header and Hub completion</Text>
+                    <View className="flex-row items-center gap-2 mb-1">
+                      <View className="flex-row items-center gap-1 bg-[#0084FF]/10 px-2 py-0.5 rounded-full border border-[#0084FF]/20">
+                        <Ionicons name="shield-checkmark-outline" size={11} color="#0084FF" />
+                        <Text className="text-[10px] font-bold text-[#0084FF]">REQUIRED</Text>
+                      </View>
+                      <Text className="text-sm font-bold text-white">Identity & Registration</Text>
+                    </View>
+                    <Text className="text-xs text-slate-400 mb-3">Mandatory details for official SEBI report header formatting.</Text>
 
-                    <View style={styles.row}>
-                      <View style={[styles.field, { flex: 1, marginRight: 6 }]}>
-                        <Text style={styles.label}>ADVISORY FIRM *</Text>
+                    <View className="flex-row gap-2 mb-3">
+                      <View className="flex-1">
+                        <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Advisory Firm *</Text>
                         <TextInput
-                          style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+                          className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2.5 text-xs text-white"
                           value={advisoryFirm}
                           onChangeText={setAdvisoryFirm}
-                          placeholder="No Brand"
-                          placeholderTextColor="#94A3B8"
+                          placeholder="Advisory Firm Name"
+                          placeholderTextColor="#64748B"
                         />
                       </View>
-                      <View style={[styles.field, { flex: 1, marginLeft: 6 }]}>
-                        <Text style={styles.label}>RESEARCH ANALYST *</Text>
+                      <View className="flex-1">
+                        <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Research Analyst *</Text>
                         <TextInput
-                          style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+                          className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2.5 text-xs text-white"
                           value={researchAnalyst}
                           onChangeText={setResearchAnalyst}
-                          placeholder="SEBI"
-                          placeholderTextColor="#94A3B8"
+                          placeholder="Analyst Name"
+                          placeholderTextColor="#64748B"
                         />
                       </View>
                     </View>
 
-                    <View style={styles.row}>
-                      <View style={[styles.field, { flex: 1, marginRight: 6 }]}>
-                        <Text style={styles.label}>SEBI REGISTRATION *</Text>
+                    <View className="flex-row gap-2 mb-4">
+                      <View className="flex-1">
+                        <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">SEBI Registration *</Text>
                         <TextInput
-                          style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+                          className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2.5 text-xs text-white"
                           value={sebiRegistration}
                           onChangeText={setSebiRegistration}
                           placeholder="INH010600090"
-                          placeholderTextColor="#94A3B8"
+                          placeholderTextColor="#64748B"
                         />
                       </View>
-                      <View style={[styles.field, { flex: 1, marginLeft: 6 }]}>
-                        <Text style={styles.label}>WEBSITE</Text>
+                      <View className="flex-1">
+                        <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Website</Text>
                         <TextInput
-                          style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+                          className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2.5 text-xs text-white"
                           value={website}
                           onChangeText={setWebsite}
                           placeholder="getaipilot.com"
-                          placeholderTextColor="#94A3B8"
+                          placeholderTextColor="#64748B"
+                          autoCapitalize="none"
                         />
                       </View>
                     </View>
 
                     {/* SECTION 2: CONTACT (OPTIONAL) */}
-                    <Text style={[styles.groupHeading, { marginTop: 14 }]}>Contact</Text>
-                    <Text style={styles.groupDesc}>Optional details that can appear in footer and compliance pages.</Text>
+                    <View className="flex-row items-center gap-2 mb-1 pt-2 border-t border-[#262930]">
+                      <View className="flex-row items-center gap-1 bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700">
+                        <Ionicons name="mail-outline" size={11} color="#94A3B8" />
+                        <Text className="text-[10px] font-bold text-slate-400">CONTACT</Text>
+                      </View>
+                      <Text className="text-sm font-bold text-white">Contact & Location</Text>
+                    </View>
+                    <Text className="text-xs text-slate-400 mb-3">Optional details rendered in PDF footer and compliance page.</Text>
 
-                    <View style={styles.field}>
-                      <Text style={styles.label}>EMAIL</Text>
+                    <View className="mb-3">
+                      <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Email</Text>
                       <TextInput
-                        style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+                        className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2.5 text-xs text-white"
                         value={email}
                         onChangeText={setEmail}
                         placeholder="research@example.com"
-                        placeholderTextColor="#94A3B8"
+                        placeholderTextColor="#64748B"
                         keyboardType="email-address"
+                        autoCapitalize="none"
                       />
                     </View>
 
-                    <View style={styles.field}>
-                      <Text style={styles.label}>LOCATION / OFFICE ADDRESS (OPTIONAL)</Text>
+                    <View className="mb-4">
+                      <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Location / Office Address (Optional)</Text>
                       <TextInput
-                        style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+                        className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2.5 text-xs text-white"
                         value={officeAddress}
                         onChangeText={setOfficeAddress}
                         placeholder="e.g. Kallam, Latur, Maharashtra"
-                        placeholderTextColor="#94A3B8"
+                        placeholderTextColor="#64748B"
                       />
                     </View>
 
                     {/* SECTION 3: REPORT ASSETS & CLICKABLE LOGO UPLOAD */}
-                    <Text style={[styles.groupHeading, { marginTop: 14 }]}>Report Assets</Text>
-                    <Text style={styles.groupDesc}>Logo and first-page risk language are used in every generated PDF.</Text>
+                    <View className="flex-row items-center gap-2 mb-1 pt-2 border-t border-[#262930]">
+                      <View className="flex-row items-center gap-1 bg-[#0084FF]/10 px-2 py-0.5 rounded-full border border-[#0084FF]/20">
+                        <Ionicons name="image-outline" size={11} color="#0084FF" />
+                        <Text className="text-[10px] font-bold text-[#0084FF]">BRAND ASSETS</Text>
+                      </View>
+                      <Text className="text-sm font-bold text-white">Brand Logo & First Page</Text>
+                    </View>
+                    <Text className="text-xs text-slate-400 mb-3">Logo and page 1 risk language are embedded in every generated PDF.</Text>
 
-                    <View style={styles.row}>
+                    <View className="flex-row gap-2 mb-4">
                       {/* Interactive Pressable Logo Box */}
                       <Pressable
-                        style={({ pressed }) => [
-                          styles.logoUploadBox,
-                          isDark ? styles.logoUploadBoxDark : styles.logoUploadBoxLight,
-                          logoUrl ? styles.logoUploadBoxActive : null,
-                          pressed && { opacity: 0.8 },
-                        ]}
+                        className="w-28 h-28 rounded-2xl bg-[#111317] border border-dashed border-[#262930] items-center justify-center p-2 active:opacity-80"
                         onPress={() => {
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                           setIsLogoModalOpen(true);
                         }}
                       >
                         {logoUrl ? (
-                          <View style={styles.logoPreviewWrapper}>
-                            <Image source={{ uri: logoUrl }} style={styles.logoImagePreview} resizeMode="contain" />
-                            <View style={styles.changeBadge}>
-                              <Ionicons name="create-outline" size={10} color="#FFFFFF" />
-                              <Text style={styles.changeBadgeText}>Change</Text>
+                          <View className="w-full h-full items-center justify-center relative">
+                            <Image source={{ uri: logoUrl }} className="w-full h-full rounded-xl" resizeMode="contain" />
+                            <View className="absolute bottom-1 right-1 bg-black/70 px-1.5 py-0.5 rounded flex-row items-center gap-1">
+                              <Ionicons name="create-outline" size={9} color="#FFFFFF" />
+                              <Text className="text-[9px] font-bold text-white">Edit</Text>
                             </View>
                           </View>
                         ) : (
                           <>
-                            <Ionicons name="image-outline" size={26} color="#0284C7" />
-                            <Text style={styles.logoUploadLabel}>Brand Logo</Text>
-                            <View style={styles.uploadBtnMini}>
-                              <Ionicons name="cloud-upload-outline" size={12} color="#0284C7" />
-                              <Text style={styles.uploadBtnMiniText}>Upload Logo</Text>
+                            <Ionicons name="cloud-upload-outline" size={24} color="#0084FF" />
+                            <Text className="text-[10px] font-bold text-slate-300 mt-1">Brand Logo</Text>
+                            <View className="mt-1 flex-row items-center bg-[#0084FF]/10 px-2 py-0.5 rounded border border-[#0084FF]/20">
+                              <Ionicons name="add" size={10} color="#0084FF" />
+                              <Text className="text-[9px] font-bold text-[#0084FF]">Upload</Text>
                             </View>
                           </>
                         )}
                       </Pressable>
 
-                      <View style={{ flex: 1, marginLeft: 10 }}>
-                        <Text style={styles.label}>PAGE 1 RISK DISCLAIMER</Text>
+                      <View className="flex-1">
+                        <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Page 1 Risk Disclaimer</Text>
                         <TextInput
-                          style={[styles.input, isDark ? styles.inputDark : styles.inputLight, { height: 95, textAlignVertical: 'top' }]}
+                          className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2 text-xs text-white h-28"
                           multiline
+                          textAlignVertical="top"
                           value={page1Disclaimer}
                           onChangeText={setPage1Disclaimer}
                           placeholder="Add short SEBI/risk disclaimer for the first page..."
-                          placeholderTextColor="#94A3B8"
+                          placeholderTextColor="#64748B"
                         />
                       </View>
                     </View>
 
                     {/* SECTION 4: OPTIONAL PAGES */}
-                    <Text style={[styles.groupHeading, { marginTop: 14 }]}>Optional Pages</Text>
-                    <Text style={styles.groupDesc}>Add only the disclosure pages you want appended after the recommendation page.</Text>
+                    <View className="flex-row items-center gap-2 mb-1 pt-2 border-t border-[#262930]">
+                      <View className="flex-row items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                        <Ionicons name="documents-outline" size={11} color="#F59E0B" />
+                        <Text className="text-[10px] font-bold text-amber-400">DISCLOSURES</Text>
+                      </View>
+                      <Text className="text-sm font-bold text-white">Optional Extra Pages</Text>
+                    </View>
+                    <Text className="text-xs text-slate-400 mb-3">
+                      Add disclosure or policy sections appended after the main recommendation page.
+                    </Text>
 
-                    <View style={styles.field}>
-                      <Text style={styles.label}>PAGE 2 DISCLOSURE</Text>
+                    <View className="mb-3">
+                      <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Page 2 Disclosure</Text>
                       <TextInput
-                        style={[styles.input, isDark ? styles.inputDark : styles.inputLight, { height: 60, textAlignVertical: 'top' }]}
+                        className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2 text-xs text-white h-16"
                         multiline
+                        textAlignVertical="top"
                         value={page2Disclosure}
                         onChangeText={setPage2Disclosure}
-                        placeholder="Optional disclosure content."
-                        placeholderTextColor="#94A3B8"
+                        placeholder="Optional regulatory disclosure content."
+                        placeholderTextColor="#64748B"
                       />
                     </View>
 
-                    <View style={styles.field}>
-                      <Text style={styles.label}>PAGE 3 CONFLICTS</Text>
+                    <View className="mb-3">
+                      <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Page 3 Conflicts of Interest</Text>
                       <TextInput
-                        style={[styles.input, isDark ? styles.inputDark : styles.inputLight, { height: 60, textAlignVertical: 'top' }]}
+                        className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2 text-xs text-white h-16"
                         multiline
+                        textAlignVertical="top"
                         value={page3Conflicts}
                         onChangeText={setPage3Conflicts}
-                        placeholder="Optional conflict of interest content."
-                        placeholderTextColor="#94A3B8"
+                        placeholder="Optional conflict of interest statement."
+                        placeholderTextColor="#64748B"
                       />
                     </View>
 
-                    <View style={styles.field}>
-                      <Text style={styles.label}>PAGE 4 POLICY</Text>
+                    <View className="mb-1">
+                      <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Page 4 Risk & Execution Policy</Text>
                       <TextInput
-                        style={[styles.input, isDark ? styles.inputDark : styles.inputLight, { height: 60, textAlignVertical: 'top' }]}
+                        className="bg-[#111317] border border-[#262930] rounded-xl px-3 py-2 text-xs text-white h-16"
                         multiline
+                        textAlignVertical="top"
                         value={page4Policy}
                         onChangeText={setPage4Policy}
-                        placeholder="Optional risk and policy content."
-                        placeholderTextColor="#94A3B8"
+                        placeholder="Optional risk policy content."
+                        placeholderTextColor="#64748B"
                       />
                     </View>
                   </View>
 
                   {/* 🌟 PDF PREVIEW CARD */}
-                  <View style={[styles.previewCard, isDark ? styles.previewCardDark : styles.previewCardLight]}>
-                    <View style={styles.previewHeaderRow}>
-                      <View>
-                        <Text style={[styles.previewTitle, isDark ? styles.textDark : styles.textLight]}>
+                  <View className="bg-[#181A1F] border border-[#262930] rounded-2xl p-4">
+                    <View className="flex-row justify-between items-center mb-3">
+                      <View className="flex-1">
+                        <Text className="text-base font-bold text-white">
                           PDF Preview
                         </Text>
-                        <Text style={styles.previewSubtitle}>Live snapshot rendered from your SEBI brand settings.</Text>
+                        <Text className="text-xs text-slate-400">Live snapshot rendered from your SEBI brand settings.</Text>
                       </View>
-                      <View style={styles.completedBadge}>
-                        <View style={styles.dotGreen} />
-                        <Text style={styles.completedBadgeText}>Live Synced</Text>
+                      <View className="flex-row items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                        <View className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <Text className="text-[10px] font-bold text-emerald-400">Live Synced</Text>
                       </View>
                     </View>
 
                     {/* Rendered Sample PDF Sheet View */}
-                    <View style={[styles.pdfPaper, isDark ? styles.pdfPaperDark : styles.pdfPaperLight]}>
+                    <View className="bg-[#111317] border border-[#262930] rounded-xl p-3.5 mb-3">
                       {/* PDF Header with Avatar / Logo & SEBI Registration */}
-                      <View style={styles.pdfHeader}>
+                      <View className="flex-row items-center gap-2.5 mb-3">
                         {logoUrl ? (
-                          <Image source={{ uri: logoUrl }} style={styles.pdfHeaderLogo} resizeMode="contain" />
+                          <Image source={{ uri: logoUrl }} className="w-10 h-10 rounded-lg" resizeMode="contain" />
                         ) : (
-                          <View style={styles.pdfAvatarBox}>
-                            <Text style={styles.pdfAvatarText}>{advisoryFirm ? advisoryFirm.charAt(0).toUpperCase() : 'N'}</Text>
+                          <View className="w-10 h-10 rounded-lg bg-[#0084FF] items-center justify-center">
+                            <Text className="text-base font-extrabold text-white">
+                              {advisoryFirm ? advisoryFirm.charAt(0).toUpperCase() : 'N'}
+                            </Text>
                           </View>
                         )}
-                        <View style={{ flex: 1 }}>
-                          <Text style={[styles.pdfFirmName, isDark ? styles.textDark : styles.textLight]} numberOfLines={1}>
+                        <View className="flex-1">
+                          <Text className="text-sm font-bold text-white" numberOfLines={1}>
                             {advisoryFirm || 'No Brand'}
                           </Text>
-                          <Text style={styles.pdfAnalystMeta}>
+                          <Text className="text-[11px] text-slate-400">
                             {researchAnalyst || 'SEBI'} • Reg: {sebiRegistration || 'INH010600090'}
                           </Text>
                         </View>
                       </View>
 
                       {/* Trade Recommendation Badge Banner */}
-                      <View style={styles.tradeRecommendationBanner}>
-                        <Ionicons name="trending-up" size={16} color="#FFFFFF" />
-                        <Text style={styles.tradeRecommendationText}>
+                      <View className="flex-row items-center gap-2 bg-[#0084FF] px-3 py-2 rounded-lg mb-3">
+                        <Ionicons name="trending-up" size={14} color="#FFFFFF" />
+                        <Text className="text-xs font-extrabold text-white">
                           BUY RECOMMENDATION : NIFTY 24000 CE
                         </Text>
                       </View>
 
                       {/* 3 Call Metrics: Entry, Target, Stop Loss */}
-                      <View style={styles.tradeMetricsRow}>
-                        <View style={[styles.metricBox, isDark ? styles.metricBoxDark : styles.metricBoxLight]}>
-                          <Text style={styles.metricKey}>ENTRY</Text>
-                          <Text style={[styles.metricVal, isDark ? styles.textDark : styles.textLight]}>Rs 150</Text>
+                      <View className="flex-row gap-2 mb-3">
+                        <View className="flex-1 bg-[#181A1F] border border-[#262930] p-2 rounded-lg">
+                          <Text className="text-[9px] font-bold text-slate-400 uppercase">ENTRY</Text>
+                          <Text className="text-xs font-bold text-white">Rs 150</Text>
                         </View>
-                        <View style={[styles.metricBox, isDark ? styles.metricBoxDark : styles.metricBoxLight]}>
-                          <Text style={styles.metricKey}>TARGET</Text>
-                          <Text style={[styles.metricVal, { color: '#10B981' }]}>Rs 200</Text>
+                        <View className="flex-1 bg-[#181A1F] border border-[#262930] p-2 rounded-lg">
+                          <Text className="text-[9px] font-bold text-slate-400 uppercase">TARGET</Text>
+                          <Text className="text-xs font-bold text-emerald-400">Rs 200</Text>
                         </View>
-                        <View style={[styles.metricBox, isDark ? styles.metricBoxDark : styles.metricBoxLight]}>
-                          <Text style={styles.metricKey}>STOP LOSS</Text>
-                          <Text style={[styles.metricVal, { color: '#EF4444' }]}>Rs 120</Text>
+                        <View className="flex-1 bg-[#181A1F] border border-[#262930] p-2 rounded-lg">
+                          <Text className="text-[9px] font-bold text-slate-400 uppercase">STOP LOSS</Text>
+                          <Text className="text-xs font-bold text-rose-400">Rs 120</Text>
                         </View>
                       </View>
 
                       {/* Disclaimer Snippet */}
-                      <Text style={styles.pdfDisclaimerSnippet} numberOfLines={2}>
-                        {page1Disclaimer || 'Your disclaimer appears here. Add compact risk language so generated reports stay ready for review.'}
+                      <Text className="text-[10px] text-slate-400 mb-2 leading-relaxed" numberOfLines={2}>
+                        {page1Disclaimer || 'Investment in securities market are subject to market risks. Read all related documents carefully.'}
                       </Text>
 
-                      <View style={styles.pdfFooterRow}>
-                        <Text style={styles.pdfPagesCount}>
+                      <View className="flex-row justify-between items-center pt-2 border-t border-[#262930]">
+                        <Text className="text-[10px] text-slate-500">
                           {[true, !!page2Disclosure, !!page3Conflicts, !!page4Policy].filter(Boolean).length} pages configured
                         </Text>
-                        <Text style={styles.pdfPoweredBy}>Powered by GAP SEBI Engine</Text>
+                        <Text className="text-[10px] font-bold text-[#0084FF]">Powered by GAP SEBI Engine</Text>
                       </View>
                     </View>
 
                     {/* Preview CTA Button - Opens Full Interactive PDF Previewer */}
                     <Pressable
-                      style={styles.previewBtn}
+                      className="flex-row items-center justify-center gap-2 bg-[#0084FF] py-3 rounded-xl active:opacity-80"
                       onPress={() => {
                         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                         setIsPdfPreviewOpen(true);
                       }}
                     >
-                      <Ionicons name="eye" size={16} color="#FFFFFF" />
-                      <Text style={styles.previewBtnText}>Preview My PDF</Text>
+                      <Ionicons name="eye-outline" size={16} color="#FFFFFF" />
+                      <Text className="text-xs font-bold text-white">Preview Full PDF</Text>
                     </Pressable>
                   </View>
                 </>
@@ -630,43 +726,46 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
 
               {/* TAB 2: CHANNELS */}
               {activeTab === 'channels' && (
-                <View style={[styles.formCard, isDark ? styles.cardDark : styles.cardLight]}>
-                  <View style={styles.formHeaderRow}>
-                    <View>
-                      <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight]}>
-                        Mapped Trading Channels
-                      </Text>
-                      <Text style={styles.sectionSubtitle}>
-                        Channels where @ResearchReport233_bot generates automated SEBI PDFs.
-                      </Text>
-                    </View>
+                <View className="bg-[#181A1F] border border-[#262930] rounded-2xl p-4">
+                  <View className="mb-4">
+                    <Text className="text-base font-bold text-white">
+                      Connected Trading Channels
+                    </Text>
+                    <Text className="text-xs text-slate-400">
+                      Channels where @ResearchReport233_bot listens and generates compliance PDFs.
+                    </Text>
                   </View>
 
                   {(dashboard?.channels || []).length === 0 ? (
-                    <View style={styles.emptyBox}>
-                      <Ionicons name="radio-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
-                      <Text style={[styles.emptyTitle, isDark ? styles.textDark : styles.textLight]}>
+                    <View className="items-center justify-center py-10">
+                      <View className="w-14 h-14 rounded-full bg-[#0084FF]/10 items-center justify-center mb-3">
+                        <Ionicons name="radio-outline" size={28} color="#0084FF" />
+                      </View>
+                      <Text className="text-sm font-bold text-white text-center mb-1">
                         No Channels Connected Yet
                       </Text>
-                      <Text style={styles.emptyDesc}>
-                        Add @ResearchReport233_bot as an Admin to your Telegram trading channel to begin auto-converting calls.
+                      <Text className="text-xs text-slate-400 text-center px-4 leading-relaxed mb-4">
+                        Add @ResearchReport233_bot as an Admin to your Telegram trading channel to begin auto-converting calls into branded PDFs.
                       </Text>
-                      <Pressable style={[styles.startBotBtn, { marginTop: 12 }]} onPress={handleStartBot}>
-                        <Ionicons name="add" size={16} color="#FFFFFF" />
-                        <Text style={styles.startBotBtnText}>Connect Channel</Text>
+                      <Pressable className="flex-row items-center gap-1.5 bg-[#0084FF] px-4 py-2.5 rounded-xl active:opacity-80" onPress={handleStartBot}>
+                        <Ionicons name="add" size={15} color="#FFFFFF" />
+                        <Text className="text-xs font-bold text-white">Connect Channel in Telegram</Text>
                       </Pressable>
                     </View>
                   ) : (
                     (dashboard?.channels || []).map((ch, idx) => (
-                      <View key={`ch_${ch.id || idx}`} style={[styles.channelItem, isDark ? styles.itemDark : styles.itemLight]}>
-                        <View style={styles.channelIcon}>
-                          <Ionicons name="megaphone" size={16} color="#0284C7" />
+                      <View key={`ch_${ch.id || idx}`} className="flex-row items-center gap-3 bg-[#111317] border border-[#262930] p-3 rounded-xl mb-2">
+                        <View className="w-8 h-8 rounded-lg bg-[#0084FF]/10 items-center justify-center">
+                          <Ionicons name="megaphone" size={16} color="#0084FF" />
                         </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={[styles.channelName, isDark ? styles.textDark : styles.textLight]}>
+                        <View className="flex-1">
+                          <Text className="text-xs font-bold text-white">
                             {ch.name}
                           </Text>
-                          <Text style={styles.channelStatus}>● Active Listener</Text>
+                          <View className="flex-row items-center gap-1 mt-0.5">
+                            <View className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                            <Text className="text-[10px] text-emerald-400">Active Listener</Text>
+                          </View>
                         </View>
                         <Ionicons name="checkmark-circle" size={18} color="#10B981" />
                       </View>
@@ -677,50 +776,55 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
 
               {/* TAB 3: REPORTS ARCHIVE */}
               {activeTab === 'archive' && (
-                <View style={[styles.formCard, isDark ? styles.cardDark : styles.cardLight]}>
-                  <View style={styles.formHeaderRow}>
-                    <View>
-                      <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight]}>
-                        Generated Reports Archive
-                      </Text>
-                      <Text style={styles.sectionSubtitle}>
-                        Complete compliance history of all generated research PDFs.
-                      </Text>
-                    </View>
+                <View className="bg-[#181A1F] border border-[#262930] rounded-2xl p-4">
+                  <View className="mb-4">
+                    <Text className="text-base font-bold text-white">
+                      Generated Reports Archive
+                    </Text>
+                    <Text className="text-xs text-slate-400">
+                      Complete compliance history of all generated research PDFs.
+                    </Text>
                   </View>
 
                   {(dashboard?.reports || []).length === 0 ? (
-                    <View style={styles.emptyBox}>
-                      <Ionicons name="document-text-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
-                      <Text style={[styles.emptyTitle, isDark ? styles.textDark : styles.textLight]}>
+                    <View className="items-center justify-center py-10">
+                      <View className="w-14 h-14 rounded-full bg-rose-500/10 items-center justify-center mb-3">
+                        <Ionicons name="document-text-outline" size={28} color="#EF4444" />
+                      </View>
+                      <Text className="text-sm font-bold text-white text-center mb-1">
                         No Reports Generated Yet
                       </Text>
-                      <Text style={styles.emptyDesc}>
-                        When you post trading calls in your connected channels, formatted SEBI compliance PDFs will appear here.
+                      <Text className="text-xs text-slate-400 text-center px-4 leading-relaxed">
+                        When you post trading calls in your connected channels, formatted SEBI compliance PDFs will automatically appear here.
                       </Text>
                     </View>
                   ) : (
                     (dashboard?.reports || []).map((rep) => (
-                      <View key={rep.id} style={[styles.reportItem, isDark ? styles.itemDark : styles.itemLight]}>
-                        <View style={styles.reportIconCircle}>
-                          <Ionicons name="document-text" size={18} color="#EF4444" />
+                      <View key={rep.id} className="flex-row items-center gap-3 bg-[#111317] border border-[#262930] p-3 rounded-xl mb-2">
+                        <View className="w-8 h-8 rounded-lg bg-rose-500/10 items-center justify-center">
+                          <Ionicons name="document-text" size={16} color="#EF4444" />
                         </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={[styles.reportItemTitle, isDark ? styles.textDark : styles.textLight]}>
-                            {rep.title}
-                          </Text>
-                          <Text style={styles.reportItemMeta}>
-                            Call: {rep.callType} • Entry: {rep.entry} • Target: {rep.target} • SL: {rep.stopLoss}
+                        <View className="flex-1">
+                          <View className="flex-row items-center justify-between gap-1 mb-0.5">
+                            <Text className="text-xs font-bold text-white flex-1" numberOfLines={1}>
+                              {rep.title}
+                            </Text>
+                            <View className="bg-[#262930] px-1.5 py-0.5 rounded">
+                              <Text className="text-[9px] font-bold text-slate-300">{rep.callType}</Text>
+                            </View>
+                          </View>
+                          <Text className="text-[10px] text-slate-400">
+                            Entry: {rep.entry} • Target: {rep.target} • SL: {rep.stopLoss}
                           </Text>
                         </View>
                         <Pressable
-                          style={styles.downloadBtn}
+                          className="w-8 h-8 rounded-lg bg-[#0084FF]/10 items-center justify-center active:bg-[#0084FF]/20"
                           onPress={() => {
                             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                             setIsPdfPreviewOpen(true);
                           }}
                         >
-                          <Ionicons name="eye-outline" size={16} color="#0284C7" />
+                          <Ionicons name="eye-outline" size={16} color="#0084FF" />
                         </Pressable>
                       </View>
                     ))
@@ -733,22 +837,22 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
 
         {/* 🖼️ BRAND LOGO UPLOADER / SELECTOR MODAL WITH GALLERY & CAMERA */}
         <Modal visible={isLogoModalOpen} transparent animationType="fade" onRequestClose={() => setIsLogoModalOpen(false)}>
-          <View style={styles.dialogOverlay}>
-            <View style={[styles.dialogCard, isDark ? styles.dialogCardDark : styles.dialogCardLight]}>
-              <View style={styles.dialogHeader}>
-                <View>
-                  <Text style={[styles.dialogTitle, isDark ? styles.textDark : styles.textLight]}>Upload Brand Logo</Text>
-                  <Text style={styles.dialogSub}>Choose from gallery, snap a photo, or paste a URL.</Text>
+          <View className="flex-1 bg-black/70 justify-center items-center p-4">
+            <View className="bg-[#181A1F] border border-[#262930] rounded-2xl w-full max-w-sm p-4">
+              <View className="flex-row justify-between items-start mb-4">
+                <View className="flex-1 mr-2">
+                  <Text className="text-base font-bold text-white">Upload Brand Logo</Text>
+                  <Text className="text-xs text-slate-400">Choose from gallery, snap a photo, or paste a URL.</Text>
                 </View>
-                <Pressable onPress={() => setIsLogoModalOpen(false)} style={styles.dialogCloseBtn}>
-                  <Ionicons name="close" size={18} color={isDark ? '#FFFFFF' : '#0F172A'} />
+                <Pressable onPress={() => setIsLogoModalOpen(false)} className="w-7 h-7 rounded-full bg-[#262930] items-center justify-center">
+                  <Ionicons name="close" size={16} color="#FFFFFF" />
                 </Pressable>
               </View>
 
-              {/* 📸 PRIMARY NATIVE ACTIONS: GALLERY & CAMERA */}
-              <View style={styles.nativeUploadRow}>
+              {/* PRIMARY NATIVE ACTIONS: GALLERY & CAMERA */}
+              <View className="flex-row gap-2 mb-4">
                 <Pressable
-                  style={[styles.nativeUploadBtn, styles.nativeUploadBtnPrimary]}
+                  className="flex-1 flex-row items-center justify-center gap-2 bg-[#0084FF] py-3 px-2 rounded-xl active:opacity-80"
                   onPress={handlePickFromGallery}
                   disabled={isPickingImage}
                 >
@@ -756,42 +860,42 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
                     <ActivityIndicator size="small" color="#FFFFFF" />
                   ) : (
                     <>
-                      <Ionicons name="images" size={20} color="#FFFFFF" />
+                      <Ionicons name="images" size={18} color="#FFFFFF" />
                       <View>
-                        <Text style={styles.nativeUploadBtnTitle}>Choose from Gallery</Text>
-                        <Text style={styles.nativeUploadBtnSub}>Pick logo from photo library</Text>
+                        <Text className="text-xs font-bold text-white">Gallery</Text>
+                        <Text className="text-[9px] text-white/80">Photo library</Text>
                       </View>
                     </>
                   )}
                 </Pressable>
 
                 <Pressable
-                  style={[styles.nativeUploadBtn, isDark ? styles.nativeUploadBtnDark : styles.nativeUploadBtnLight]}
+                  className="flex-1 flex-row items-center justify-center gap-2 bg-[#111317] border border-[#262930] py-3 px-2 rounded-xl active:bg-[#262930]"
                   onPress={handleTakeCameraPhoto}
                   disabled={isPickingImage}
                 >
-                  <Ionicons name="camera" size={20} color="#0284C7" />
+                  <Ionicons name="camera" size={18} color="#0084FF" />
                   <View>
-                    <Text style={[styles.nativeUploadBtnTitle, isDark ? styles.textDark : styles.textLight]}>Take Photo</Text>
-                    <Text style={styles.nativeUploadBtnSub}>Snap logo with camera</Text>
+                    <Text className="text-xs font-bold text-white">Camera</Text>
+                    <Text className="text-[9px] text-slate-400">Snap photo</Text>
                   </View>
                 </Pressable>
               </View>
 
               {/* Custom Image URL Input */}
-              <View style={{ marginBottom: 14 }}>
-                <Text style={styles.label}>OR PASTE IMAGE URL</Text>
-                <View style={styles.urlInputRow}>
+              <View className="mb-4">
+                <Text className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Or Paste Image URL</Text>
+                <View className="flex-row gap-2">
                   <TextInput
-                    style={[styles.input, isDark ? styles.inputDark : styles.inputLight, { flex: 1 }]}
+                    className="flex-1 bg-[#111317] border border-[#262930] rounded-xl px-3 py-2 text-xs text-white"
                     placeholder="https://example.com/logo.png"
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor="#64748B"
                     value={customLogoInput}
                     onChangeText={setCustomLogoInput}
                     autoCapitalize="none"
                   />
                   <Pressable
-                    style={[styles.applyUrlBtn, !customLogoInput.trim() && { opacity: 0.5 }]}
+                    className={`bg-[#0084FF] px-3.5 items-center justify-center rounded-xl ${!customLogoInput.trim() ? 'opacity-50' : 'active:opacity-80'}`}
                     onPress={() => {
                       if (customLogoInput.trim()) {
                         handleApplyLogoUrl(customLogoInput.trim());
@@ -799,26 +903,22 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
                     }}
                     disabled={!customLogoInput.trim()}
                   >
-                    <Text style={styles.applyUrlBtnText}>Apply</Text>
+                    <Text className="text-xs font-bold text-white">Apply</Text>
                   </Pressable>
                 </View>
               </View>
 
               {/* Curated Presets Grid */}
-              <Text style={styles.label}>OR CHOOSE A BRAND PRESET</Text>
-              <View style={styles.presetGrid}>
+              <Text className="text-[10px] font-bold text-slate-400 mb-1.5 tracking-wider uppercase">Or Choose a Brand Preset</Text>
+              <View className="flex-row flex-wrap gap-2 mb-4">
                 {LOGO_PRESETS.map((preset) => (
                   <Pressable
                     key={preset.name}
-                    style={[
-                      styles.presetItem,
-                      isDark ? styles.presetItemDark : styles.presetItemLight,
-                      logoUrl === preset.url && styles.presetItemActive,
-                    ]}
+                    className={`flex-row items-center gap-2 bg-[#111317] border ${logoUrl === preset.url ? 'border-[#0084FF]' : 'border-[#262930]'} p-2 rounded-xl flex-1 min-w-[45%]`}
                     onPress={() => handleApplyLogoUrl(preset.url)}
                   >
-                    <Image source={{ uri: preset.url }} style={styles.presetImage} resizeMode="cover" />
-                    <Text style={[styles.presetName, isDark ? styles.textDark : styles.textLight]} numberOfLines={1}>
+                    <Image source={{ uri: preset.url }} className="w-6 h-6 rounded-md" resizeMode="cover" />
+                    <Text className="text-xs font-semibold text-white flex-1" numberOfLines={1}>
                       {preset.name}
                     </Text>
                   </Pressable>
@@ -827,9 +927,9 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
 
               {/* Footer with Remove button */}
               {logoUrl && (
-                <Pressable style={styles.removeLogoBtn} onPress={handleRemoveLogo}>
+                <Pressable className="flex-row items-center justify-center gap-1.5 py-2" onPress={handleRemoveLogo}>
                   <Ionicons name="trash-outline" size={14} color="#EF4444" />
-                  <Text style={styles.removeLogoBtnText}>Remove Current Logo</Text>
+                  <Text className="text-xs font-semibold text-rose-500">Remove Current Logo</Text>
                 </Pressable>
               )}
             </View>
@@ -837,151 +937,166 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
         </Modal>
 
         {/* 📑 FULL INTERACTIVE SEBI PDF REPORT VIEWER MODAL */}
-        <Modal visible={isPdfPreviewOpen} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setIsPdfPreviewOpen(false)}>
-          <View style={[styles.pdfViewerContainer, isDark ? styles.containerDark : styles.containerLight]}>
+        <Modal
+          visible={isPdfPreviewOpen}
+          animationType="slide"
+          presentationStyle="fullScreen"
+          onRequestClose={() => setIsPdfPreviewOpen(false)}
+        >
+          <View className="flex-1 bg-[#0B0D10]">
             {/* Viewer Top Bar */}
-            <View style={[styles.pdfViewerHeader, isDark ? styles.borderDark : styles.borderLight]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Pressable style={styles.viewerCloseBtn} onPress={() => setIsPdfPreviewOpen(false)}>
-                  <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+            <View className="flex-row items-center justify-between px-4 pt-12 pb-3 border-b border-[#262930] bg-[#181A1F]">
+              <View className="flex-row items-center gap-2 flex-1 mr-2">
+                <Pressable className="w-8 h-8 rounded-full bg-[#262930] items-center justify-center" onPress={() => setIsPdfPreviewOpen(false)}>
+                  <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
                 </Pressable>
-                <View>
-                  <Text style={[styles.viewerTitle, isDark ? styles.textDark : styles.textLight]}>
+                <View className="flex-1">
+                  <Text className="text-sm font-bold text-white" numberOfLines={1}>
                     SEBI Research Report PDF
                   </Text>
-                  <Text style={styles.viewerSub}>{advisoryFirm} • Verified Sample</Text>
+                  <Text className="text-[11px] text-slate-400" numberOfLines={1}>
+                    {advisoryFirm || 'SEBI Research'} • Live Sample
+                  </Text>
                 </View>
               </View>
 
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Pressable style={styles.viewerActionBtn} onPress={handleShareReport}>
-                  <Ionicons name="share-outline" size={18} color="#0284C7" />
+              <View className="flex-row items-center gap-2">
+                <Pressable className="w-8 h-8 rounded-lg bg-[#0084FF]/10 items-center justify-center" onPress={handleShareReport}>
+                  <Ionicons name="share-outline" size={16} color="#0084FF" />
                 </Pressable>
                 <Pressable
-                  style={styles.viewerActionBtnPrimary}
+                  className="flex-row items-center gap-1 bg-[#0084FF] px-3 py-1.5 rounded-lg active:opacity-80"
                   onPress={() => {
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                     Alert.alert('PDF Ready', 'Report PDF is generated with high-res vector graphics and ready to broadcast.');
                   }}
                 >
-                  <Ionicons name="download-outline" size={16} color="#FFFFFF" />
-                  <Text style={styles.viewerActionBtnPrimaryText}>Save</Text>
+                  <Ionicons name="download-outline" size={14} color="#FFFFFF" />
+                  <Text className="text-xs font-bold text-white">Save</Text>
                 </Pressable>
               </View>
             </View>
 
             {/* Scrollable Multi-Page Document View */}
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.pdfViewerBody} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              className="flex-1"
+              contentContainerClassName="p-4 pb-20"
+              showsVerticalScrollIndicator={false}
+            >
               {/* PAGE 1: TRADE RECOMMENDATION */}
-              <View style={[styles.fullPdfPage, isDark ? styles.fullPdfPageDark : styles.fullPdfPageLight]}>
-                <View style={styles.pageNumberBadge}>
-                  <Text style={styles.pageNumberText}>Page 1 of {[true, !!page2Disclosure, !!page3Conflicts, !!page4Policy].filter(Boolean).length}</Text>
+              <View className="bg-[#181A1F] border border-[#262930] rounded-2xl p-4 mb-4 relative">
+                <View className="absolute top-4 right-4 bg-[#262930] px-2 py-0.5 rounded-md">
+                  <Text className="text-[10px] font-bold text-slate-300">
+                    Page 1 of {[true, !!page2Disclosure, !!page3Conflicts, !!page4Policy].filter(Boolean).length}
+                  </Text>
                 </View>
 
                 {/* Branded Header */}
-                <View style={styles.fullPdfHeader}>
+                <View className="flex-row items-center gap-3 mb-4 pr-16">
                   {logoUrl ? (
-                    <Image source={{ uri: logoUrl }} style={styles.fullPdfLogo} resizeMode="contain" />
+                    <Image source={{ uri: logoUrl }} className="w-12 h-12 rounded-xl" resizeMode="contain" />
                   ) : (
-                    <View style={styles.fullPdfAvatarBox}>
-                      <Text style={styles.fullPdfAvatarText}>{advisoryFirm ? advisoryFirm.charAt(0).toUpperCase() : 'N'}</Text>
+                    <View className="w-12 h-12 rounded-xl bg-[#0084FF] items-center justify-center">
+                      <Text className="text-lg font-extrabold text-white">{advisoryFirm ? advisoryFirm.charAt(0).toUpperCase() : 'N'}</Text>
                     </View>
                   )}
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.fullPdfFirmTitle}>{advisoryFirm || 'No Brand'}</Text>
-                    <Text style={styles.fullPdfMetaText}>
+                  <View className="flex-1">
+                    <Text className="text-base font-bold text-white">{advisoryFirm || 'No Brand'}</Text>
+                    <Text className="text-[11px] text-slate-400">
                       Research Analyst: {researchAnalyst} • SEBI Reg: {sebiRegistration}
                     </Text>
-                    <Text style={styles.fullPdfMetaText}>
+                    <Text className="text-[11px] text-slate-400">
                       Web: {website} • Email: {email}
                     </Text>
                   </View>
                 </View>
 
-                <View style={styles.pdfDivider} />
+                <View className="h-px bg-[#262930] mb-4" />
 
                 {/* Call Banner */}
-                <View style={styles.fullPdfCallBanner}>
-                  <Text style={styles.fullPdfCallBadge}>INTRADAY OPTION CALL</Text>
-                  <Text style={styles.fullPdfCallTitle}>BUY NIFTY 24000 CE</Text>
-                  <Text style={styles.fullPdfCallTime}>Generated on {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
+                <View className="bg-[#111317] border border-[#262930] rounded-xl p-3 mb-4">
+                  <Text className="text-[10px] font-bold text-[#0084FF] tracking-wider uppercase mb-0.5">INTRADAY OPTION CALL</Text>
+                  <Text className="text-base font-extrabold text-white mb-1">BUY NIFTY 24000 CE</Text>
+                  <Text className="text-[10px] text-slate-500">
+                    Generated on {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </Text>
                 </View>
 
                 {/* Trade Matrix Table */}
-                <View style={styles.fullPdfMatrix}>
-                  <View style={styles.matrixCol}>
-                    <Text style={styles.matrixLabel}>ENTRY RANGE</Text>
-                    <Text style={styles.matrixValue}>Rs 150.00</Text>
+                <View className="flex-row bg-[#111317] border border-[#262930] rounded-xl p-3 mb-4">
+                  <View className="flex-1 items-center">
+                    <Text className="text-[9px] font-bold text-slate-400 tracking-wider uppercase mb-0.5">ENTRY RANGE</Text>
+                    <Text className="text-xs font-extrabold text-white">Rs 150.00</Text>
                   </View>
-                  <View style={[styles.matrixCol, styles.matrixBorder]}>
-                    <Text style={styles.matrixLabel}>TARGET</Text>
-                    <Text style={[styles.matrixValue, { color: '#059669' }]}>Rs 200.00</Text>
+                  <View className="flex-1 items-center border-x border-[#262930]">
+                    <Text className="text-[9px] font-bold text-slate-400 tracking-wider uppercase mb-0.5">TARGET</Text>
+                    <Text className="text-xs font-extrabold text-emerald-400">Rs 200.00</Text>
                   </View>
-                  <View style={styles.matrixCol}>
-                    <Text style={styles.matrixLabel}>STOP LOSS</Text>
-                    <Text style={[styles.matrixValue, { color: '#DC2626' }]}>Rs 120.00</Text>
+                  <View className="flex-1 items-center">
+                    <Text className="text-[9px] font-bold text-slate-400 tracking-wider uppercase mb-0.5">STOP LOSS</Text>
+                    <Text className="text-xs font-extrabold text-rose-400">Rs 120.00</Text>
                   </View>
                 </View>
 
                 {/* Rationale & Setup Section */}
-                <View style={styles.pdfSectionBlock}>
-                  <Text style={styles.pdfSectionHeading}>Technical Setup & Rationale</Text>
-                  <Text style={styles.pdfSectionBody}>
+                <View className="bg-[#111317] border border-[#262930] rounded-xl p-3 mb-4">
+                  <Text className="text-xs font-bold text-white mb-1">Technical Setup & Rationale</Text>
+                  <Text className="text-xs text-slate-300 leading-relaxed">
                     Nifty 24000 CE is exhibiting strong momentum above resistance with heavy open interest buildup. F&O PCR trend remains bullish with 1:1.67 risk-reward ratio.
                   </Text>
                 </View>
 
                 {/* Page 1 Mandatory SEBI Disclaimer */}
-                <View style={styles.pdfDisclaimerBox}>
-                  <Text style={styles.pdfDisclaimerTitle}>SEBI COMPLIANCE & RISK DISCLAIMER</Text>
-                  <Text style={styles.pdfDisclaimerText}>
+                <View className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 mb-4">
+                  <Text className="text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-1">SEBI COMPLIANCE & RISK DISCLAIMER</Text>
+                  <Text className="text-[11px] text-amber-200/80 leading-relaxed">
                     {page1Disclaimer || 'Investment in securities market are subject to market risks. Read all the related documents carefully before investing. Registration granted by SEBI and certification from NISM in no way guarantee performance.'}
                   </Text>
                 </View>
 
                 {/* Footer Stamp */}
-                <View style={styles.fullPdfFooter}>
-                  <Text style={styles.footerAddressText}>{officeAddress}</Text>
-                  <Text style={styles.footerEngineText}>GAP SEBI Report Bot Suite</Text>
+                <View className="flex-row justify-between items-center pt-3 border-t border-[#262930]">
+                  <Text className="text-[10px] text-slate-500">{officeAddress}</Text>
+                  <Text className="text-[10px] font-bold text-[#0084FF]">GAP SEBI Report Bot Suite</Text>
                 </View>
               </View>
 
               {/* PAGE 2: DISCLOSURES (IF CONFIGURED) */}
               {page2Disclosure ? (
-                <View style={[styles.fullPdfPage, isDark ? styles.fullPdfPageDark : styles.fullPdfPageLight]}>
-                  <View style={styles.pageNumberBadge}>
-                    <Text style={styles.pageNumberText}>Page 2</Text>
+                <View className="bg-[#181A1F] border border-[#262930] rounded-2xl p-4 mb-4 relative">
+                  <View className="absolute top-4 right-4 bg-[#262930] px-2 py-0.5 rounded-md">
+                    <Text className="text-[10px] font-bold text-slate-300">Page 2</Text>
                   </View>
-                  <Text style={styles.fullPdfFirmTitle}>{advisoryFirm}</Text>
-                  <Text style={styles.pdfSectionHeading}>Regulatory Disclosures</Text>
-                  <View style={styles.pdfDivider} />
-                  <Text style={styles.pdfSectionBody}>{page2Disclosure}</Text>
+                  <Text className="text-sm font-bold text-white mb-1">{advisoryFirm}</Text>
+                  <Text className="text-xs font-semibold text-slate-400 mb-2">Regulatory Disclosures</Text>
+                  <View className="h-px bg-[#262930] mb-3" />
+                  <Text className="text-xs text-slate-300 leading-relaxed">{page2Disclosure}</Text>
                 </View>
               ) : null}
 
               {/* PAGE 3: CONFLICTS (IF CONFIGURED) */}
               {page3Conflicts ? (
-                <View style={[styles.fullPdfPage, isDark ? styles.fullPdfPageDark : styles.fullPdfPageLight]}>
-                  <View style={styles.pageNumberBadge}>
-                    <Text style={styles.pageNumberText}>Page 3</Text>
+                <View className="bg-[#181A1F] border border-[#262930] rounded-2xl p-4 mb-4 relative">
+                  <View className="absolute top-4 right-4 bg-[#262930] px-2 py-0.5 rounded-md">
+                    <Text className="text-[10px] font-bold text-slate-300">Page 3</Text>
                   </View>
-                  <Text style={styles.fullPdfFirmTitle}>{advisoryFirm}</Text>
-                  <Text style={styles.pdfSectionHeading}>Conflict of Interest Statement</Text>
-                  <View style={styles.pdfDivider} />
-                  <Text style={styles.pdfSectionBody}>{page3Conflicts}</Text>
+                  <Text className="text-sm font-bold text-white mb-1">{advisoryFirm}</Text>
+                  <Text className="text-xs font-semibold text-slate-400 mb-2">Conflict of Interest Statement</Text>
+                  <View className="h-px bg-[#262930] mb-3" />
+                  <Text className="text-xs text-slate-300 leading-relaxed">{page3Conflicts}</Text>
                 </View>
               ) : null}
 
               {/* PAGE 4: POLICY (IF CONFIGURED) */}
               {page4Policy ? (
-                <View style={[styles.fullPdfPage, isDark ? styles.fullPdfPageDark : styles.fullPdfPageLight]}>
-                  <View style={styles.pageNumberBadge}>
-                    <Text style={styles.pageNumberText}>Page 4</Text>
+                <View className="bg-[#181A1F] border border-[#262930] rounded-2xl p-4 relative">
+                  <View className="absolute top-4 right-4 bg-[#262930] px-2 py-0.5 rounded-md">
+                    <Text className="text-[10px] font-bold text-slate-300">Page 4</Text>
                   </View>
-                  <Text style={styles.fullPdfFirmTitle}>{advisoryFirm}</Text>
-                  <Text style={styles.pdfSectionHeading}>Risk & Execution Policy</Text>
-                  <View style={styles.pdfDivider} />
-                  <Text style={styles.pdfSectionBody}>{page4Policy}</Text>
+                  <Text className="text-sm font-bold text-white mb-1">{advisoryFirm}</Text>
+                  <Text className="text-xs font-semibold text-slate-400 mb-2">Risk & Execution Policy</Text>
+                  <View className="h-px bg-[#262930] mb-3" />
+                  <Text className="text-xs text-slate-300 leading-relaxed">{page4Policy}</Text>
                 </View>
               ) : null}
             </ScrollView>
@@ -991,707 +1106,3 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  containerLight: { backgroundColor: '#F8FAFC' },
-  containerDark: { backgroundColor: '#0B0F19' },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-  },
-  borderLight: { borderBottomColor: '#E2E8F0' },
-  borderDark: { borderBottomColor: '#1E2430' },
-  title: { fontSize: 18, fontWeight: '800' },
-  textLight: { color: '#0F172A' },
-  textDark: { color: '#F8FAFC' },
-  subtitle: { color: '#64748B', fontSize: 11, marginTop: 3, lineHeight: 16 },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeBtnLight: { backgroundColor: '#F1F5F9' },
-  closeBtnDark: { backgroundColor: '#1E2430' },
-
-  // Action Header Row
-  actionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-  },
-  startBotBtn: {
-    backgroundColor: '#0284C7',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-  },
-  startBotBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
-  refreshBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  btnLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  btnDark: { backgroundColor: '#161C28', borderColor: '#27272A' },
-  refreshBtnText: { fontSize: 12, fontWeight: '600' },
-
-  // Tabs Section & Status Bar
-  tabBarSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    gap: 8,
-  },
-  tabsRow: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(2, 132, 199, 0.08)',
-    padding: 3,
-    borderRadius: 10,
-    gap: 4,
-  },
-  tabPill: {
-    flex: 1,
-    paddingVertical: 7,
-    alignItems: 'center',
-    borderRadius: 8,
-  },
-  tabPillActive: {
-    backgroundColor: '#0284C7',
-  },
-  tabPillText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#64748B',
-  },
-  tabPillTextActive: {
-    color: '#FFFFFF',
-  },
-  statusPillsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  statusIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  dotGreen: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#10B981',
-  },
-  statusText: {
-    fontSize: 11,
-    color: '#64748B',
-    fontWeight: '600',
-  },
-
-  body: { flex: 1 },
-  bodyContent: { padding: 16, paddingBottom: 40 },
-  loadingBox: {
-    paddingVertical: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 12,
-  },
-  loadingText: { fontSize: 13, fontWeight: '500' },
-
-  // Form Card
-  formCard: {
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 20,
-  },
-  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  cardDark: { backgroundColor: '#121722', borderColor: '#1E2430' },
-  formHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  sectionTitle: { fontSize: 16, fontWeight: '800' },
-  sectionSubtitle: { color: '#64748B', fontSize: 11, marginTop: 2 },
-  saveBtn: {
-    backgroundColor: '#0284C7',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8,
-  },
-  saveBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
-  groupHeading: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0284C7',
-    marginBottom: 2,
-    letterSpacing: -0.1,
-  },
-  groupDesc: { color: '#64748B', fontSize: 11, marginBottom: 10 },
-  row: { flexDirection: 'row' },
-  field: { marginBottom: 12 },
-  label: { color: '#64748B', fontSize: 10, fontWeight: '800', marginBottom: 5, letterSpacing: 0.5 },
-  input: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 13,
-  },
-  inputLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0', color: '#0F172A' },
-  inputDark: { backgroundColor: '#161C28', borderColor: '#27272A', color: '#F8FAFC' },
-
-  // Logo Upload Box (Pressable)
-  logoUploadBox: {
-    width: 110,
-    height: 110,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 6,
-  },
-  logoUploadBoxLight: { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1' },
-  logoUploadBoxDark: { backgroundColor: '#161C28', borderColor: '#334155' },
-  logoUploadBoxActive: { borderStyle: 'solid', borderColor: '#0284C7' },
-  logoUploadLabel: { fontSize: 10, fontWeight: '700', color: '#64748B', marginTop: 4 },
-  uploadBtnMini: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(2, 132, 199, 0.1)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginTop: 6,
-  },
-  uploadBtnMiniText: { color: '#0284C7', fontSize: 9, fontWeight: '700' },
-  logoPreviewWrapper: {
-    width: '100%',
-    height: '100%',
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoImagePreview: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-  },
-  changeBadge: {
-    position: 'absolute',
-    bottom: -2,
-    backgroundColor: 'rgba(2, 132, 199, 0.9)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  changeBadgeText: { color: '#FFFFFF', fontSize: 8, fontWeight: '700' },
-
-  // Native Upload Action Buttons in Modal
-  nativeUploadRow: {
-    gap: 10,
-    marginBottom: 16,
-  },
-  nativeUploadBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 12,
-    borderRadius: 12,
-  },
-  nativeUploadBtnPrimary: {
-    backgroundColor: '#0284C7',
-  },
-  nativeUploadBtnLight: {
-    backgroundColor: '#F1F5F9',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  nativeUploadBtnDark: {
-    backgroundColor: '#1E2430',
-    borderWidth: 1,
-    borderColor: '#27272A',
-  },
-  nativeUploadBtnTitle: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  nativeUploadBtnSub: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 10,
-    marginTop: 1,
-  },
-
-  // PDF Preview Card
-  previewCard: {
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 20,
-  },
-  previewCardLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  previewCardDark: { backgroundColor: '#121722', borderColor: '#1E2430' },
-  previewHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 14,
-  },
-  previewTitle: { fontSize: 16, fontWeight: '800' },
-  previewSubtitle: { color: '#64748B', fontSize: 11, marginTop: 2 },
-  completedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.25)',
-  },
-  completedBadgeText: { color: '#10B981', fontSize: 10, fontWeight: '700' },
-
-  // Rendered PDF Sheet
-  pdfPaper: {
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    marginBottom: 14,
-  },
-  pdfPaperLight: { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1' },
-  pdfPaperDark: { backgroundColor: '#161C28', borderColor: '#334155' },
-  pdfHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(148, 163, 184, 0.2)',
-    paddingBottom: 8,
-  },
-  pdfHeaderLogo: {
-    width: 36,
-    height: 36,
-    borderRadius: 6,
-  },
-  pdfAvatarBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 6,
-    backgroundColor: '#0284C7',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  pdfAvatarText: { color: '#FFFFFF', fontSize: 15, fontWeight: '900' },
-  pdfFirmName: { fontSize: 14, fontWeight: '800' },
-  pdfAnalystMeta: { fontSize: 10, color: '#64748B', marginTop: 1 },
-  tradeRecommendationBanner: {
-    backgroundColor: '#059669',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  tradeRecommendationText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
-  tradeMetricsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 10,
-  },
-  metricBox: {
-    flex: 1,
-    padding: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  metricBoxLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  metricBoxDark: { backgroundColor: '#121722', borderColor: '#27272A' },
-  metricKey: { fontSize: 9, fontWeight: '800', color: '#64748B' },
-  metricVal: { fontSize: 13, fontWeight: '800', marginTop: 2 },
-  pdfDisclaimerSnippet: {
-    fontSize: 10,
-    color: '#64748B',
-    lineHeight: 14,
-    marginBottom: 10,
-    fontStyle: 'italic',
-  },
-  pdfFooterRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(148, 163, 184, 0.2)',
-    paddingTop: 6,
-  },
-  pdfPagesCount: { fontSize: 10, color: '#94A3B8', fontWeight: '600' },
-  pdfPoweredBy: { fontSize: 10, color: '#0284C7', fontWeight: '700' },
-
-  previewBtn: {
-    backgroundColor: '#0284C7',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  previewBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
-
-  // Empty Box
-  emptyBox: {
-    paddingVertical: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  emptyTitle: { fontSize: 14, fontWeight: '700', marginBottom: 4 },
-  emptyDesc: { color: '#64748B', fontSize: 11, textAlign: 'center', lineHeight: 16 },
-
-  // Channel Item & Report Item
-  channelItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    marginBottom: 8,
-  },
-  reportItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    marginBottom: 8,
-  },
-  itemLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
-  itemDark: { backgroundColor: '#161C28', borderColor: '#27272A' },
-  channelIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: 'rgba(2, 132, 199, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  channelName: { fontSize: 13, fontWeight: '700' },
-  channelStatus: { fontSize: 10, color: '#10B981', marginTop: 1 },
-  reportIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  reportItemTitle: { fontSize: 13, fontWeight: '700' },
-  reportItemMeta: { fontSize: 11, color: '#64748B', marginTop: 2 },
-  downloadBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: 'rgba(2, 132, 199, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // Dialog Overlay & Card (Logo Selector)
-  dialogOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  dialogCard: {
-    width: '100%',
-    maxWidth: 400,
-    borderRadius: 18,
-    padding: 20,
-    borderWidth: 1,
-  },
-  dialogCardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  dialogCardDark: { backgroundColor: '#121722', borderColor: '#1E2430' },
-  dialogHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  dialogTitle: { fontSize: 16, fontWeight: '800' },
-  dialogSub: { color: '#64748B', fontSize: 11, marginTop: 2 },
-  dialogCloseBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(148, 163, 184, 0.15)',
-  },
-  urlInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  applyUrlBtn: {
-    backgroundColor: '#0284C7',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  applyUrlBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
-  presetGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginTop: 4,
-    marginBottom: 16,
-  },
-  presetItem: {
-    width: '48%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    padding: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  presetItemLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
-  presetItemDark: { backgroundColor: '#161C28', borderColor: '#27272A' },
-  presetItemActive: { borderColor: '#0284C7', backgroundColor: 'rgba(2, 132, 199, 0.12)' },
-  presetImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 6,
-  },
-  presetName: { fontSize: 11, fontWeight: '700', flex: 1 },
-  removeLogoBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-  },
-  removeLogoBtnText: { color: '#EF4444', fontSize: 12, fontWeight: '700' },
-
-  // PDF Viewer Fullscreen Modal
-  pdfViewerContainer: { flex: 1 },
-  pdfViewerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-  },
-  viewerCloseBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(148, 163, 184, 0.15)',
-  },
-  viewerTitle: { fontSize: 15, fontWeight: '800' },
-  viewerSub: { fontSize: 11, color: '#64748B' },
-  viewerActionBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(2, 132, 199, 0.12)',
-  },
-  viewerActionBtnPrimary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: '#0284C7',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-  },
-  viewerActionBtnPrimaryText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
-  pdfViewerBody: {
-    padding: 16,
-    gap: 20,
-    paddingBottom: 40,
-  },
-  fullPdfPage: {
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
-    position: 'relative',
-  },
-  fullPdfPageLight: { backgroundColor: '#FFFFFF', borderColor: '#CBD5E1' },
-  fullPdfPageDark: { backgroundColor: '#131824', borderColor: '#2E384D' },
-  pageNumberBadge: {
-    position: 'absolute',
-    top: 14,
-    right: 14,
-    backgroundColor: 'rgba(148, 163, 184, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  pageNumberText: { fontSize: 9, fontWeight: '700', color: '#64748B' },
-  fullPdfHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
-  },
-  fullPdfLogo: {
-    width: 44,
-    height: 44,
-    borderRadius: 8,
-  },
-  fullPdfAvatarBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 8,
-    backgroundColor: '#0284C7',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  fullPdfAvatarText: { color: '#FFFFFF', fontSize: 20, fontWeight: '900' },
-  fullPdfFirmTitle: { fontSize: 17, fontWeight: '800', color: '#0284C7', marginBottom: 2 },
-  fullPdfMetaText: { fontSize: 10, color: '#64748B', lineHeight: 14 },
-  pdfDivider: {
-    height: 1,
-    backgroundColor: 'rgba(148, 163, 184, 0.25)',
-    marginVertical: 12,
-  },
-  fullPdfCallBanner: {
-    backgroundColor: '#059669',
-    borderRadius: 10,
-    padding: 12,
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  fullPdfCallBadge: {
-    color: '#D1FAE5',
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-    marginBottom: 2,
-  },
-  fullPdfCallTitle: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' },
-  fullPdfCallTime: { color: '#A7F3D0', fontSize: 9, marginTop: 3 },
-  fullPdfMatrix: {
-    flexDirection: 'row',
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    borderRadius: 10,
-    overflow: 'hidden',
-    marginBottom: 14,
-  },
-  matrixCol: {
-    flex: 1,
-    padding: 10,
-    alignItems: 'center',
-    backgroundColor: 'rgba(2, 132, 199, 0.04)',
-  },
-  matrixBorder: {
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: '#CBD5E1',
-  },
-  matrixLabel: { fontSize: 9, fontWeight: '800', color: '#64748B' },
-  matrixValue: { fontSize: 14, fontWeight: '900', marginTop: 2, color: '#0F172A' },
-  pdfSectionBlock: {
-    marginBottom: 14,
-  },
-  pdfSectionHeading: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#0284C7',
-    marginBottom: 4,
-    letterSpacing: -0.1,
-  },
-  pdfSectionBody: {
-    fontSize: 11,
-    color: '#475569',
-    lineHeight: 16,
-  },
-  pdfDisclaimerBox: {
-    backgroundColor: 'rgba(245, 158, 11, 0.08)',
-    borderLeftWidth: 3,
-    borderLeftColor: '#F59E0B',
-    padding: 10,
-    borderRadius: 6,
-    marginBottom: 14,
-  },
-  pdfDisclaimerTitle: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#D97706',
-    marginBottom: 3,
-  },
-  pdfDisclaimerText: {
-    fontSize: 9,
-    color: '#78350F',
-    lineHeight: 13,
-  },
-  fullPdfFooter: {
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(148, 163, 184, 0.25)',
-    paddingTop: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  footerAddressText: { fontSize: 9, color: '#94A3B8' },
-  footerEngineText: { fontSize: 9, fontWeight: '700', color: '#0284C7' },
-});

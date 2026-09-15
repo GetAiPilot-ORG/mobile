@@ -9,9 +9,6 @@ import React, {
 import NetInfo, { NetInfoState } from "@react-native-community/netinfo";
 import {
   View,
-  StyleSheet,
-  ActivityIndicator,
-  useColorScheme,
   Platform,
 } from "react-native";
 import * as Haptics from "expo-haptics";
@@ -49,8 +46,6 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
 
   const prevOnlineRef = useRef<boolean>(true);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
 
   const updateState = useCallback((state: NetInfoState) => {
     const online =
@@ -125,13 +120,7 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
 
           {/* 2. Global Offline UI design displayed everywhere when offline - NO Alert */}
           {!isOnline && (
-            <View
-              style={[
-                StyleSheet.absoluteFill,
-                styles.overlay,
-                { backgroundColor: isDark ? "#000000" : "#F2F2F7" },
-              ]}
-            >
+            <View className="absolute inset-0 z-[99990] bg-[#0B0D10]">
               <NetworkStatusScreen
                 onRetry={refresh}
                 isChecking={isChecking}
@@ -143,14 +132,3 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
     </NetworkContext.Provider>
   );
 }
-
-const styles = StyleSheet.create({
-  centered: {
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 99998,
-  },
-  overlay: {
-    zIndex: 99990,
-  },
-});

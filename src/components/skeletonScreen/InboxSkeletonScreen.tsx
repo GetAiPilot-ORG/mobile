@@ -1,14 +1,12 @@
 import React from "react";
-import { ScrollView, StyleSheet, View, useColorScheme } from "react-native";
+import { ScrollView, View } from "react-native";
 import { Skeleton, SkeletonCard, SkeletonCircle, SkeletonRow, SkeletonText } from "../Skeleton";
 
 export function InboxSkeleton() {
-  const isDark = useColorScheme() === "dark";
-
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? "#0B141A" : "#FFFFFF" }]}>
+    <View className="flex-1 bg-[#0B0D10]">
       {/* Search Bar */}
-      <View style={styles.searchContainer}>
+      <View className="px-4 pt-3 pb-2">
         <Skeleton width="100%" height={40} borderRadius={10} />
       </View>
 
@@ -16,7 +14,7 @@ export function InboxSkeleton() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.tabsScroll}
+        contentContainerClassName="px-4 py-2"
       >
         {[70, 85, 95, 65, 90].map((width, idx) => (
           <Skeleton
@@ -24,7 +22,7 @@ export function InboxSkeleton() {
             width={width}
             height={32}
             borderRadius={16}
-            style={{ marginRight: 8 }}
+            className="mr-2"
           />
         ))}
       </ScrollView>
@@ -36,30 +34,26 @@ export function InboxSkeleton() {
 }
 
 export function InboxListSkeleton() {
-  const isDark = useColorScheme() === "dark";
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.listContent}
+      contentContainerClassName="px-4 pb-24"
     >
       {[1, 2, 3, 4, 5, 6, 7].map((item) => (
         <View
           key={item}
-          style={[
-            styles.convRow,
-            { borderBottomColor: isDark ? "rgba(255,255,255,0.06)" : "#F1F5F9" },
-          ]}
+          className="flex-row items-center py-3.5 border-b border-white/5"
         >
           {/* Avatar */}
-          <SkeletonCircle size={48} style={{ marginRight: 14 }} />
+          <SkeletonCircle size={48} className="mr-3.5" />
 
           {/* Content info */}
-          <View style={{ flex: 1 }}>
-            <SkeletonRow style={{ justifyContent: "space-between", marginBottom: 6 }}>
+          <View className="flex-1">
+            <SkeletonRow className="justify-between mb-1.5">
               <SkeletonText width={item % 2 === 0 ? 140 : 110} height={15} />
               <SkeletonText width={45} height={11} />
             </SkeletonRow>
-            <SkeletonRow style={{ justifyContent: "space-between", alignItems: "center" }}>
+            <SkeletonRow className="justify-between items-center">
               <SkeletonText width={item % 2 === 0 ? "75%" : "60%"} height={13} />
               {item % 3 === 0 && <Skeleton width={18} height={18} borderRadius={9} />}
             </SkeletonRow>
@@ -71,21 +65,14 @@ export function InboxListSkeleton() {
 }
 
 export function ConversationSkeleton() {
-  const isDark = useColorScheme() === "dark";
-
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? "#0B141A" : "#ECE5DD" }]}>
+    <View className="flex-1 bg-[#0B0D10]">
       {/* Chat Top Header */}
-      <View
-        style={[
-          styles.chatHeader,
-          { backgroundColor: isDark ? "#1F2C34" : "#F0F2F5" },
-        ]}
-      >
-        <Skeleton width={24} height={24} borderRadius={12} style={{ marginRight: 12 }} />
-        <SkeletonCircle size={40} style={{ marginRight: 10 }} />
-        <View style={{ flex: 1 }}>
-          <SkeletonText width={130} height={15} style={{ marginBottom: 4 }} />
+      <View className="flex-row items-center px-3.5 pt-12 pb-3 bg-[#181A1F] border-b border-[#262930]">
+        <Skeleton width={24} height={24} borderRadius={12} className="mr-3" />
+        <SkeletonCircle size={40} className="mr-2.5" />
+        <View className="flex-1">
+          <SkeletonText width={130} height={15} className="mb-1" />
           <SkeletonText width={80} height={11} />
         </View>
         <Skeleton width={28} height={28} borderRadius={14} />
@@ -94,158 +81,69 @@ export function ConversationSkeleton() {
       {/* Messages List Area */}
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.messagesContainer}
+        contentContainerClassName="px-3.5 pb-5"
       >
         {/* Day divider */}
-        <View style={{ alignItems: "center", marginVertical: 14 }}>
+        <View className="items-center my-3.5">
           <Skeleton width={90} height={22} borderRadius={11} />
         </View>
 
         {/* Incoming bubble */}
-        <View style={styles.incomingWrapper}>
+        <View className="mb-2 items-start">
           <SkeletonCard
-            style={[
-              styles.bubble,
-              {
-                backgroundColor: isDark ? "#1F2C34" : "#FFFFFF",
-                alignSelf: "flex-start",
-                width: "72%",
-              },
-            ]}
+            className="rounded-2xl p-3 mb-0 self-start w-[72%] bg-[#181A1F] border border-[#262930]"
           >
-            <SkeletonText width="95%" height={13} style={{ marginBottom: 6 }} />
-            <SkeletonText width="70%" height={13} style={{ marginBottom: 6 }} />
-            <SkeletonText width={40} height={10} style={{ alignSelf: "flex-end" }} />
+            <SkeletonText width="95%" height={13} className="mb-1.5" />
+            <SkeletonText width="70%" height={13} className="mb-1.5" />
+            <SkeletonText width={40} height={10} className="self-end" />
           </SkeletonCard>
         </View>
 
         {/* Outgoing bubble */}
-        <View style={styles.outgoingWrapper}>
+        <View className="mb-2 items-end">
           <SkeletonCard
-            style={[
-              styles.bubble,
-              {
-                backgroundColor: isDark ? "#005C4B" : "#D9FDD3",
-                alignSelf: "flex-end",
-                width: "65%",
-              },
-            ]}
+            className="rounded-2xl p-3 mb-0 self-end w-[65%] bg-[#005C4B]"
           >
-            <SkeletonText width="90%" height={13} style={{ marginBottom: 6 }} />
-            <SkeletonText width="50%" height={13} style={{ marginBottom: 6 }} />
-            <SkeletonText width={40} height={10} style={{ alignSelf: "flex-end" }} />
+            <SkeletonText width="90%" height={13} className="mb-1.5" />
+            <SkeletonText width="50%" height={13} className="mb-1.5" />
+            <SkeletonText width={40} height={10} className="self-end" />
           </SkeletonCard>
         </View>
 
         {/* Incoming short bubble */}
-        <View style={styles.incomingWrapper}>
+        <View className="mb-2 items-start">
           <SkeletonCard
-            style={[
-              styles.bubble,
-              {
-                backgroundColor: isDark ? "#1F2C34" : "#FFFFFF",
-                alignSelf: "flex-start",
-                width: "55%",
-              },
-            ]}
+            className="rounded-2xl p-3 mb-0 self-start w-[55%] bg-[#181A1F] border border-[#262930]"
           >
-            <SkeletonText width="85%" height={13} style={{ marginBottom: 6 }} />
-            <SkeletonText width={40} height={10} style={{ alignSelf: "flex-end" }} />
+            <SkeletonText width="85%" height={13} className="mb-1.5" />
+            <SkeletonText width={40} height={10} className="self-end" />
           </SkeletonCard>
         </View>
 
         {/* Outgoing long bubble */}
-        <View style={styles.outgoingWrapper}>
+        <View className="mb-2 items-end">
           <SkeletonCard
-            style={[
-              styles.bubble,
-              {
-                backgroundColor: isDark ? "#005C4B" : "#D9FDD3",
-                alignSelf: "flex-end",
-                width: "78%",
-              },
-            ]}
+            className="rounded-2xl p-3 mb-0 self-end w-[78%] bg-[#005C4B]"
           >
-            <SkeletonText width="95%" height={13} style={{ marginBottom: 6 }} />
-            <SkeletonText width="85%" height={13} style={{ marginBottom: 6 }} />
-            <SkeletonText width="60%" height={13} style={{ marginBottom: 6 }} />
-            <SkeletonText width={40} height={10} style={{ alignSelf: "flex-end" }} />
+            <SkeletonText width="95%" height={13} className="mb-1.5" />
+            <SkeletonText width="85%" height={13} className="mb-1.5" />
+            <SkeletonText width="60%" height={13} className="mb-1.5" />
+            <SkeletonText width={40} height={10} className="self-end" />
           </SkeletonCard>
         </View>
       </ScrollView>
 
       {/* Input bar */}
-      <View
-        style={[
-          styles.inputBar,
-          { backgroundColor: isDark ? "#1F2C34" : "#F0F2F5" },
-        ]}
-      >
-        <SkeletonCircle size={36} style={{ marginRight: 8 }} />
+      <View className="flex-row items-center px-3 py-2.5 pb-8 bg-[#181A1F] border-t border-[#262930]">
+        <SkeletonCircle size={36} className="mr-2" />
         <Skeleton
           width="72%"
           height={40}
           borderRadius={20}
-          style={{ marginRight: 8 }}
+          className="mr-2"
         />
         <SkeletonCircle size={38} />
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  searchContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  tabsScroll: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 100,
-  },
-  convRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  chatHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-    paddingTop: 48,
-    paddingBottom: 12,
-  },
-  messagesContainer: {
-    paddingHorizontal: 14,
-    paddingBottom: 20,
-  },
-  incomingWrapper: {
-    marginBottom: 8,
-    alignItems: "flex-start",
-  },
-  outgoingWrapper: {
-    marginBottom: 8,
-    alignItems: "flex-end",
-  },
-  bubble: {
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 0,
-  },
-  inputBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    paddingBottom: 30,
-  },
-});
