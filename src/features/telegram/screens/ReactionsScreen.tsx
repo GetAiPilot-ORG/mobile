@@ -45,8 +45,8 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
       <View style={[styles.statsRow, { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }]}>
         {[
           { label: 'CHANNELS', val: (chats || []).length, color: '#0284C7', icon: 'megaphone-outline', bg: 'rgba(2,132,199,0.12)', hint: 'Target channels' },
-          { label: 'REACTIONS SENT', val: '12.4K', color: '#FBBF24', icon: 'sparkles-outline', bg: 'rgba(251,191,36,0.12)', hint: 'Total sent' },
-          { label: 'POSTS BOOSTED', val: 843, color: '#10B981', icon: 'trending-up-outline', bg: 'rgba(16,185,129,0.12)', hint: 'Engaged posts' },
+          { label: 'REACTIONS SENT', val: 0, color: '#FBBF24', icon: 'sparkles-outline', bg: 'rgba(251,191,36,0.12)', hint: 'Total sent' },
+          { label: 'POSTS BOOSTED', val: 0, color: '#10B981', icon: 'trending-up-outline', bg: 'rgba(16,185,129,0.12)', hint: 'Engaged posts' },
         ].map((s, i) => (
           <StatCard
             key={i}
@@ -144,8 +144,7 @@ const styles = StyleSheet.create({
   heroIcon: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   heroTitle: { fontSize: 18, fontWeight: '800' },
   heroSub: { fontSize: 12, color: '#64748B', lineHeight: 17, marginTop: 2 },
-  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
-  statCard: { flex: 1, padding: 12, borderRadius: 14, borderWidth: 1, alignItems: 'center' },
+  statsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 14, width: '100%' },
   statVal: { fontSize: 20, fontWeight: '800' },
   statLabel: { fontSize: 10, color: '#64748B', fontWeight: '600', marginTop: 2 },
   sectionCard: { padding: 14, borderRadius: 16, borderWidth: 1, marginBottom: 12 },

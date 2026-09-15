@@ -1,149 +1,245 @@
-import React, { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Switch, Text, View, useColorScheme } from 'react-native';
+import React from 'react';
+import {
+  Image,
+  Linking,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  useColorScheme,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useAuthStore } from '../../../core/store/authStore';
 import { TelegramToolKey } from '../types';
-import { StatCard } from '../components/ui/StatCard';
 
 interface Props {
-  chats: any[];
-  summary: any;
-  onOpenModal: (key: TelegramToolKey) => void;
+  chats?: any[];
+  summary?: any;
+  onOpenModal?: (key: TelegramToolKey) => void;
 }
 
-export const AutoApproveScreen: React.FC<Props> = ({ chats, summary, onOpenModal }) => {
+export const AutoApproveScreen: React.FC<Props> = () => {
   const isDark = useColorScheme() === 'dark';
-  const [globalEnabled, setGlobalEnabled] = useState(true);
-  const [channelEnabled, setChannelEnabled] = useState<Record<string, boolean>>({});
+  const user = useAuthStore((s) => s.user);
+
+  const telegramUserId =
+    (user as any)?.telegram_user_id ||
+    (user as any)?.user_metadata?.telegram_user_id ||
+    '2093321330';
 
   const card = isDark ? styles.cardDark : styles.cardLight;
   const txt = isDark ? styles.textDark : styles.textLight;
 
-  const displayChats = chats?.length > 0 ? chats : [
-    { id: 'ch-1', title: 'Trading Guru VIP', members: 420 },
-    { id: 'ch-2', title: 'Zero To Hero Trading', members: 890 },
-    { id: 'ch-3', title: 'BankNifty Option Hub', members: 310 },
-  ];
+  const handleConnect = async () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    const url = 'https://t.me/Gapautoapprovebot?start=true';
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        await Linking.openURL('https://t.me/Gapautoapprovebot?start=true');
+      }
+    } catch {
+      await Linking.openURL('https://t.me/Gapautoapprovebot?start=true');
+    }
+  };
 
   return (
-    <>
-      {/* Hero */}
-      <View style={[styles.hero, card]}>
-        <View style={[styles.heroIcon, { backgroundColor: 'rgba(16,185,129,0.12)' }]}>
-          <Ionicons name="checkmark-done-circle" size={28} color="#10B981" />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.heroTitle, txt]}>Auto Approve</Text>
-          <Text style={styles.heroSub}>Instant approval of private channel join requests — zero manual work</Text>
-        </View>
-        <Switch
-          value={globalEnabled}
-          onValueChange={setGlobalEnabled}
-          trackColor={{ false: '#CBD5E1', true: '#10B981' }}
-          thumbColor="#FFFFFF"
-        />
-      </View>
-
-      {/* Stats */}
-      <View style={[styles.statsRow, { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }]}>
-        {[
-          { label: 'CHANNELS', val: displayChats.length, color: '#0284C7', icon: 'megaphone-outline', bg: 'rgba(2,132,199,0.12)', hint: 'Target channels' },
-          { label: 'APPROVED TODAY', val: summary?.autoApprovedToday ?? 0, color: '#10B981', icon: 'checkmark-circle-outline', bg: 'rgba(16,185,129,0.12)', hint: 'Approved' },
-          { label: 'PENDING', val: summary?.pendingRequests ?? 0, color: '#F59E0B', icon: 'time-outline', bg: 'rgba(245,158,11,0.12)', hint: 'Waitlist' },
-        ].map((s, i) => (
-          <StatCard
-            key={i}
-            label={s.label}
-            value={s.val}
-            icon={s.icon}
-            color={s.color}
-            bg={s.bg}
-            sub={s.hint}
+    <View style={styles.container}>
+      <View style={[styles.card, card]}>
+        {/* App Icon */}
+        <View style={[styles.iconWrapper, isDark ? styles.iconWrapperDark : styles.iconWrapperLight]}>
+          <Image
+            source={require('../../../../assets/images/autoapprove-icon.jpg')}
+            style={styles.botIcon}
+            resizeMode="cover"
           />
-        ))}
-      </View>
+        </View>
 
-      {/* How it Works */}
-      <View style={[styles.sectionCard, card]}>
-        <Text style={[styles.sectionTitle, txt]}>How it Works</Text>
-        <View style={{ gap: 10, marginTop: 10 }}>
-          {[
-            { step: '1', text: 'User clicks join request on your private Telegram channel', color: '#0284C7' },
-            { step: '2', text: 'GAP Auto Approve Bot detects the request in real-time', color: '#8B5CF6' },
-            { step: '3', text: 'Request instantly approved — user enters channel automatically', color: '#10B981' },
-          ].map((item) => (
-            <View key={item.step} style={styles.stepRow}>
-              <View style={[styles.stepCircle, { backgroundColor: `${item.color}20` }]}>
-                <Text style={[styles.stepNum, { color: item.color }]}>{item.step}</Text>
-              </View>
-              <Text style={[styles.stepText, txt]}>{item.text}</Text>
-            </View>
-          ))}
+        {/* Category Eyebrow */}
+        <Text style={styles.eyebrow}>JOIN REQUEST AUTOMATION</Text>
+
+        {/* Title */}
+        <Text style={[styles.title, txt]}>GAP Auto Approve</Text>
+
+        {/* Subtitle */}
+        <Text style={styles.subtitle}>
+          Automatically approve and manage private channel requests.
+        </Text>
+
+        {/* Description */}
+        <Text style={styles.description}>
+          Add the bot to your channel as an administrator and let it handle join requests instantly, without manual admin work.
+        </Text>
+
+        {/* Connected Telegram ID Pill */}
+        {telegramUserId ? (
+          <View style={[styles.idPill, isDark ? styles.idPillDark : styles.idPillLight]}>
+            <Ionicons name="shield-checkmark" size={16} color="#0284C7" />
+            <Text style={[styles.idPillText, txt]}>
+              Connected Telegram ID: {telegramUserId}
+            </Text>
+          </View>
+        ) : null}
+
+        {/* Connect Action Button */}
+        <Pressable style={styles.primaryBtn} onPress={handleConnect}>
+          <Ionicons name="hardware-chip-outline" size={18} color="#FFFFFF" />
+          <Text style={styles.primaryBtnText}>CONNECT TO TELEGRAM BOT</Text>
+          <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+        </Pressable>
+
+        {/* Secure Redirect Note */}
+        <View style={styles.footerNote}>
+          <Ionicons name="open-outline" size={14} color="#64748B" />
+          <Text style={styles.footerNoteText}>Redirects securely to Telegram app</Text>
         </View>
       </View>
-
-      {/* Channel Toggles */}
-      <View style={[styles.sectionCard, card]}>
-        <Text style={[styles.sectionTitle, txt]}>Channel Configuration</Text>
-        <View style={{ gap: 8, marginTop: 10 }}>
-          {displayChats.map((ch: any) => {
-            const enabled = channelEnabled[ch.id] !== undefined ? channelEnabled[ch.id] : globalEnabled;
-            return (
-              <View key={ch.id} style={[styles.chanRow, isDark ? styles.chanRowDark : styles.chanRowLight]}>
-                <View style={styles.chanAvatar}>
-                  <Text style={styles.chanAvatarText}>{(ch.title || 'C').charAt(0).toUpperCase()}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.chanName, txt]} numberOfLines={1}>{ch.title}</Text>
-                  <Text style={styles.chanStatus}>{enabled ? '🟢 Auto Approve Active' : '🔴 Manual Mode'}</Text>
-                </View>
-                <Switch
-                  value={enabled}
-                  onValueChange={(val) => setChannelEnabled((prev) => ({ ...prev, [ch.id]: val }))}
-                  trackColor={{ false: '#CBD5E1', true: '#10B981' }}
-                  thumbColor="#FFFFFF"
-                />
-              </View>
-            );
-          })}
-        </View>
-      </View>
-
-      {/* Bot Setup CTA */}
-      <Pressable style={styles.primaryBtn} onPress={() => onOpenModal('auto_approve')}>
-        <Ionicons name="settings-outline" size={16} color="#FFFFFF" />
-        <Text style={styles.primaryBtnText}>Configure Bot Settings</Text>
-      </Pressable>
-    </>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  cardDark: { backgroundColor: '#121212', borderColor: '#27272A' },
+  container: {
+    paddingVertical: 10,
+    alignItems: 'center',
+    width: '100%',
+  },
+  card: {
+    width: '100%',
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 24,
+    alignItems: 'center',
+    textAlign: 'center',
+  },
+  cardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardDark: {
+    backgroundColor: '#121212',
+    borderColor: '#27272A',
+  },
   textLight: { color: '#0F172A' },
   textDark: { color: '#F8FAFC' },
-  hero: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 14 },
-  heroIcon: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  heroTitle: { fontSize: 18, fontWeight: '800' },
-  heroSub: { fontSize: 12, color: '#64748B', lineHeight: 17, marginTop: 2 },
-  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
-  statCard: { flex: 1, padding: 12, borderRadius: 14, borderWidth: 1, alignItems: 'center', gap: 4 },
-  statIconCircle: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  statVal: { fontSize: 22, fontWeight: '800' },
-  statLabel: { fontSize: 10, color: '#64748B', fontWeight: '600' },
-  sectionCard: { padding: 14, borderRadius: 16, borderWidth: 1, marginBottom: 12 },
-  sectionTitle: { fontSize: 14, fontWeight: '800' },
-  stepRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  stepCircle: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  stepNum: { fontSize: 13, fontWeight: '900' },
-  stepText: { fontSize: 13, lineHeight: 19, flex: 1, paddingTop: 4 },
-  chanRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 10 },
-  chanRowLight: { backgroundColor: '#F8FAFC' },
-  chanRowDark: { backgroundColor: 'rgba(255,255,255,0.04)' },
-  chanAvatar: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#0284C7', alignItems: 'center', justifyContent: 'center' },
-  chanAvatarText: { color: '#FFF', fontWeight: '800', fontSize: 13 },
-  chanName: { fontSize: 13, fontWeight: '700' },
-  chanStatus: { fontSize: 10, color: '#64748B', marginTop: 1 },
-  primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#10B981', borderRadius: 12, paddingVertical: 14 },
-  primaryBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+  iconWrapper: {
+    width: 96,
+    height: 96,
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 4,
+    marginBottom: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconWrapperLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+  },
+  iconWrapperDark: {
+    backgroundColor: '#1E2430',
+    borderColor: '#27272A',
+  },
+  botIcon: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 16,
+  },
+  eyebrow: {
+    fontSize: 11.5,
+    fontWeight: '800',
+    color: '#0284C7',
+    letterSpacing: 1,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: '800',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 14.5,
+    fontWeight: '600',
+    color: '#334155',
+    textAlign: 'center',
+    marginBottom: 12,
+    maxWidth: 320,
+  },
+  description: {
+    fontSize: 13,
+    color: '#64748B',
+    lineHeight: 19,
+    textAlign: 'center',
+    marginBottom: 24,
+    maxWidth: 340,
+  },
+  idPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 24,
+  },
+  idPillLight: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#E2E8F0',
+  },
+  idPillDark: {
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  idPillText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  primaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: '#024AD8',
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 12,
+    shadowColor: '#024AD8',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+    marginBottom: 20,
+  },
+  primaryBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13.5,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+  },
+  footerNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    paddingTop: 16,
+    width: '100%',
+    justifyContent: 'center',
+  },
+  footerNoteText: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '600',
+  },
 });
