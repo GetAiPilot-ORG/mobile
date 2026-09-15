@@ -324,68 +324,14 @@ export default function AccountScreen() {
     retry: 1,
   });
 
-  /**
-   * Register the current app installation with the BFF.
-   *
-   * DO NOT call signInWithPassword here. The user is already authenticated,
-   * and user.password is not available from Supabase User anyway.
-   *
-   * apiClient should send the current Supabase access token in Authorization.
-   */
-  const registerCurrentDevice = async (showError = false) => {
-    if (!user?.id) return false;
 
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-
-      if (!sessionData.session?.access_token) {
-        console.warn('[DeviceSessions] No authenticated Supabase session');
-        return false;
-      }
-
-      const payload = await getDeviceRegistrationPayload();
-
-      console.log('[DeviceSessions] Registering current device:', payload);
-
-      await apiClient.post(
-        '/mobile/v1/auth/device-sessions',
-        payload
-      );
-
-      console.log('[DeviceSessions] Current device registered');
-
-      return true;
-    } catch (error: any) {
-      console.error('[DeviceSessions] Registration failed:', error);
-
-      if (showError) {
-        Alert.alert(
-          'Device Registration Failed',
-          error?.message || 'Could not register this device.'
-        );
-      }
-
-      return false;
-    }
-  };
-
-  /**
-   * When Security opens:
-   * 1. Register this app installation.
-   * 2. Fetch all devices.
-   *
-   * This fixes the main issue where GET was called but the current device
-   * was never registered.
-   */
   useEffect(() => {
     if (activeTab !== 'security' || !user?.id) return;
 
     let cancelled = false;
 
     const syncCurrentDevice = async () => {
-      const registered = await registerCurrentDevice();
-
-      if (!cancelled && registered) {
+      if (!cancelled) {
         await queryClient.invalidateQueries({
           queryKey: ['auth-device-sessions', user.id],
         });
@@ -402,7 +348,6 @@ export default function AccountScreen() {
     // Keep lastSeenAt / online status fresh while this screen is open.
     const heartbeat = setInterval(async () => {
       if (!cancelled) {
-        await registerCurrentDevice(false);
         await refetchDeviceSessions();
       }
     }, 30_000);
