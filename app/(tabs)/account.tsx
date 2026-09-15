@@ -27,6 +27,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 import { BiometricService, BiometricSettings } from '../../src/lib/biometrics';
 import { apiClient } from '../../src/core/api/client';
+import { DeviceSessionsSkeleton } from '../../src/components/skeletonScreen';
 
 type AccountTab = 'overview' | 'edit' | 'security' | 'billing' | 'preferences';
 
@@ -1037,10 +1038,7 @@ export default function AccountScreen() {
               </View>
 
               {isLoadingDeviceSessions ? (
-                <View style={styles.deviceLoadingRow}>
-                  <ActivityIndicator size="small" color="#0A84FF" />
-                  <Text style={[styles.actionSubtitle, isDark && styles.actionSubtitleDark]}>Loading devices…</Text>
-                </View>
+                <DeviceSessionsSkeleton />
               ) : deviceSessionsResponse?.devices.length ? (
                 deviceSessionsResponse.devices.map((device, index) => (
                   <View

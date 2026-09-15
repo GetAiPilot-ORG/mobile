@@ -20,6 +20,7 @@ import {
 } from "../../src/lib/template-deep-link";
 import { supabase } from "../../src/lib/supabase";
 import { colors } from "../../src/theme/colors";
+import { TemplatesListSkeleton } from "../../src/components/skeletonScreen";
 
 type TemplateFormData = {
   imageUrl?: string;
@@ -169,7 +170,6 @@ export default function BioTemplatesScreen() {
       await openAuthenticatedTemplate("bio-builder", template.id);
     } catch (error) {
       console.error("Failed to open authenticated bio template:", error);
-      Alert.alert("Unable to open editor", "Please check your connection and try again.");
     } finally {
       setOpeningId(null);
     }
@@ -302,11 +302,7 @@ export default function BioTemplatesScreen() {
       />
 
       {loading ? (
-        <View style={styles.loader}>
-          <ActivityIndicator size="large" color={colors.primary} />
-
-          <Text style={styles.loadingText}>Loading templates...</Text>
-        </View>
+        <TemplatesListSkeleton />
       ) : (
         <FlatList
           data={templates}

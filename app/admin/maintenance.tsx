@@ -20,6 +20,7 @@ import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription
 import { supabase } from '../../src/lib/supabase';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SystemProduct, SystemSettings, SystemMaintenanceLog } from '../../src/types/database';
+import { AdminTabSkeleton } from '../../src/components/skeletonScreen';
 
 export default function AdminMaintenanceScreen() {
   const { user } = useAuth();
@@ -331,7 +332,7 @@ export default function AdminMaintenanceScreen() {
             <Text style={styles.sectionHeading}>Product Services</Text>
 
             {loadingProducts ? (
-              <ActivityIndicator color={colors.primary} style={{ marginTop: 20 }} />
+              <AdminTabSkeleton />
             ) : (
               products?.map((p) => {
                 const isUnder = Boolean(p.maintenance_enabled) || isGlobalActive;
@@ -392,7 +393,7 @@ export default function AdminMaintenanceScreen() {
             <Text style={styles.sectionHeading}>Audit Activity Logs</Text>
 
             {loadingLogs ? (
-              <ActivityIndicator color={colors.primary} style={{ marginTop: 20 }} />
+              <AdminTabSkeleton />
             ) : logs && logs.length > 0 ? (
               logs.map((log) => (
                 <View key={log.id} style={styles.logCard}>

@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 
 import { useWhatsAppBroadcasts } from '../hooks/useWhatsAppBroadcasts';
 import { WhatsAppBroadcast } from '../types';
+import { WhatsAppHomeSkeleton } from '../../../components/skeletonScreen';
 
 interface WhatsAppBroadcastDetailScreenProps {
   broadcast?: WhatsAppBroadcast;

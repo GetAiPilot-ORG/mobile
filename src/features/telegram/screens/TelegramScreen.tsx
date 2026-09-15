@@ -4,7 +4,6 @@ import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import React, { useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Linking,
   Platform,
@@ -24,6 +23,7 @@ import {
   ProductFloatingBottomBar,
   ProductTabItem,
 } from "../../../components/ProductFloatingBottomBar";
+import { TelegramSkeleton } from "../../../components/skeletonScreen";
 import { telegramApi } from "../api/telegramApi";
 import {
   AutoApproveModal,
@@ -584,11 +584,7 @@ export const TelegramScreen: React.FC = () => {
         }
       >
         {isLoading ? (
-          <ActivityIndicator
-            size="large"
-            color="#0284C7"
-            style={{ marginTop: 40 }}
-          />
+          <TelegramSkeleton />
         ) : (
           <>
             {/* TAB 0: GAP TRACKER & BOTS */}
@@ -1393,7 +1389,7 @@ export const TelegramScreen: React.FC = () => {
                 <View style={styles.afKpiGrid}>
                   <Pressable
                     style={[styles.afKpiCard, isDark ? styles.cardDark : styles.cardLight,
-                      afSection === 'mappings' && styles.afKpiCardActive]}
+                    afSection === 'mappings' && styles.afKpiCardActive]}
                     onPress={() => { setAfSection('mappings'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                   >
                     <View style={[styles.afKpiIconCircle, { backgroundColor: 'rgba(2, 132, 199, 0.12)' }]}>
@@ -1412,7 +1408,7 @@ export const TelegramScreen: React.FC = () => {
 
                   <Pressable
                     style={[styles.afKpiCard, isDark ? styles.cardDark : styles.cardLight,
-                      afSection === 'filters' && styles.afKpiCardActive]}
+                    afSection === 'filters' && styles.afKpiCardActive]}
                     onPress={() => { setAfSection('filters'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                   >
                     <View style={[styles.afKpiIconCircle, { backgroundColor: 'rgba(139, 92, 246, 0.12)' }]}>
@@ -1431,7 +1427,7 @@ export const TelegramScreen: React.FC = () => {
 
                   <Pressable
                     style={[styles.afKpiCard, isDark ? styles.cardDark : styles.cardLight,
-                      afSection === 'blocked' && styles.afKpiCardActive]}
+                    afSection === 'blocked' && styles.afKpiCardActive]}
                     onPress={() => { setAfSection('blocked'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                   >
                     <View style={[styles.afKpiIconCircle, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]}>
@@ -1450,7 +1446,7 @@ export const TelegramScreen: React.FC = () => {
 
                   <Pressable
                     style={[styles.afKpiCard, isDark ? styles.cardDark : styles.cardLight,
-                      afSection === 'delays' && styles.afKpiCardActive]}
+                    afSection === 'delays' && styles.afKpiCardActive]}
                     onPress={() => { setAfSection('delays'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                   >
                     <View style={[styles.afKpiIconCircle, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
@@ -1462,8 +1458,8 @@ export const TelegramScreen: React.FC = () => {
 
                   <Pressable
                     style={[styles.afKpiCard, isDark ? styles.cardDark : styles.cardLight,
-                      afSection === 'headers' && styles.afKpiCardActive,
-                      { flexGrow: 1, width: '100%' }]}
+                    afSection === 'headers' && styles.afKpiCardActive,
+                    { flexGrow: 1, width: '100%' }]}
                     onPress={() => { setAfSection('headers'); if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                   >
                     <View style={[styles.afKpiIconCircle, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
@@ -2507,7 +2503,7 @@ export const TelegramScreen: React.FC = () => {
                                 <Pressable
                                   style={styles.pageUrlIconButton}
                                   onPress={() => {
-                                    Linking.openURL(pg.url).catch(() => {});
+                                    Linking.openURL(pg.url).catch(() => { });
                                   }}
                                 >
                                   <Ionicons name="eye-outline" size={15} color="#64748B" />

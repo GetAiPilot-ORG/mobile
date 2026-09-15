@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Modal,
   Platform,
@@ -24,6 +23,7 @@ import { NormalizedConversation } from '../../inbox/types';
 import { ContactCard } from '../components/ContactCard';
 import { useWhatsAppContacts } from '../hooks/useWhatsAppContacts';
 import { WhatsAppContact } from '../types';
+import { CrmListSkeleton } from '../../../components/skeletonScreen';
 
 interface WhatsAppContactsScreenProps {
   onBack?: () => void;
@@ -213,6 +213,7 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
               Loading contacts...
             </Text>
           </View>
+          <CrmListSkeleton />
         ) : (
           <FlatList
             style={styles.contactsFlatList}

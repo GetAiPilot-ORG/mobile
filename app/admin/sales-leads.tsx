@@ -16,6 +16,7 @@ import { colors } from '../../src/theme/colors';
 import { supabase } from '../../src/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
+import { SalesLeadsSkeleton } from '../../src/components/skeletonScreen';
 
 export default function SalesLeadsScreen() {
   const { isAdmin } = usePlatformSubscription();
@@ -105,7 +106,7 @@ export default function SalesLeadsScreen() {
         {/* Leads Cards */}
         <View style={styles.leadsList}>
           {isLoading ? (
-            <ActivityIndicator color={colors.primary} style={{ marginTop: 20 }} />
+            <SalesLeadsSkeleton />
           ) : filtered.length > 0 ? (
             filtered.map((lead) => (
               <View key={lead.id} style={styles.leadCard}>

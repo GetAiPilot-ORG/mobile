@@ -15,6 +15,7 @@ import { useActivities, useCreateActivity } from '../hooks/useActivities';
 import { ActivityTimelineItem } from '../components/ActivityTimelineItem';
 import { LogActivityModal } from '../components/LogActivityModal';
 import { ActivityType } from '../types';
+import { CrmActivitySkeleton } from '../../../components/skeletonScreen';
 
 const ACTIVITY_FILTER_TABS: Array<{ key: string; label: string }> = [
   { key: 'all', label: 'All Events' },
@@ -86,10 +87,7 @@ export const ActivitiesScreen: React.FC = () => {
 
       {/* Activity List */}
       {isLoading && !activities ? (
-        <View style={styles.loaderBox}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={[styles.loaderText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Loading activity history...</Text>
-        </View>
+        <CrmActivitySkeleton />
       ) : activities.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="time-outline" size={48} color={isDark ? '#4B5563' : '#CBD5E1'} />
