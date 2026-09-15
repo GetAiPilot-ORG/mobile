@@ -1,9 +1,9 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useRef } from "react";
-import { Animated, StyleSheet, ViewStyle, useColorScheme } from "react-native";
+import { Animated, DimensionValue, StyleSheet, ViewStyle, useColorScheme } from "react-native";
 
 interface SkeletonProps {
-  width: number | string;
+  width: DimensionValue;
   height: number;
   borderRadius?: number;
   style?: ViewStyle;
@@ -72,7 +72,7 @@ export default function Skeleton({
           ]}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
         />
       </Animated.View>
     </Animated.View>
