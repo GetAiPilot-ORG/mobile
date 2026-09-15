@@ -50,7 +50,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
   const [containerWidth, setContainerWidth] = useState(0);
 
   // Bottom floating offset based on safe area
-  const bottomOffset = Math.max(insets.bottom + 6, 20);
+  const bottomOffset = Math.max(insets.bottom, 12);
 
   const hasOverflow = items.length > 5;
 

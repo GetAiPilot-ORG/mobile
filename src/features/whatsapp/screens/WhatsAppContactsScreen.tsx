@@ -111,7 +111,10 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
   const contacts = data?.contacts || [];
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#000000' : '#F8F9FA' }]}>
+    <SafeAreaView
+      edges={['top', 'left', 'right']}
+      style={[styles.safeArea, { backgroundColor: isDark ? '#000000' : '#F8F9FA' }]}
+    >
       <View style={styles.container}>
         {/* Header matching Overview Tab */}
         <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>

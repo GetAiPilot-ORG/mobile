@@ -63,7 +63,10 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
   const statusTabs = ['all', 'completed', 'queued', 'scheduled'];
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#000000' : '#F8F9FA' }]}>
+    <SafeAreaView
+      edges={['top', 'left', 'right']}
+      style={[styles.safeArea, { backgroundColor: isDark ? '#000000' : '#F8F9FA' }]}
+    >
       <View style={styles.container}>
         {/* Header matching Overview Tab */}
         <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
@@ -100,18 +103,19 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
             return (
               <Pressable
                 key={tab}
-                style={[
+                style={({ pressed }) => [
                   styles.filterChip,
                   isDark ? styles.filterChipDark : styles.filterChipLight,
-                  isSelected && styles.filterChipActive,
+                  isSelected && (isDark ? styles.filterChipActiveDark : styles.filterChipActiveLight),
+                  pressed && styles.filterChipPressed,
                 ]}
                 onPress={() => handleStatusSelect(tab)}
               >
                 <Text
                   style={[
                     styles.filterChipText,
-                    { color: isSelected ? '#000000' : isDark ? '#94A3B8' : '#64748B' },
-                    isSelected && styles.filterChipTextActive,
+                    isDark ? styles.filterChipTextDark : styles.filterChipTextLight,
+                    isSelected && (isDark ? styles.filterChipTextActiveDark : styles.filterChipTextActiveLight),
                   ]}
                 >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -124,7 +128,7 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
         {/* Broadcasts List */}
         {isLoading && !data ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#25D366" />
+            <ActivityIndicator size="large" color={isDark ? '#F8FAFC' : '#0A84FF'} />
             <Text style={[styles.loadingText, { color: isDark ? '#94A3B8' : '#64748B' }]}>Loading broadcasts...</Text>
           </View>
         ) : (
@@ -139,7 +143,7 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
             )}
             contentContainerStyle={styles.listContent}
             refreshControl={
-              <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#25D366" />
+              <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={isDark ? '#FFFFFF' : '#0A84FF'} />
             }
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
@@ -229,31 +233,48 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 10,
-    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 100,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   filterChipDark: {
     backgroundColor: '#1C1C1E',
     borderColor: '#2C2C2E',
   },
   filterChipLight: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F2F2F7',
     borderColor: '#E5E7EB',
   },
-  filterChipActive: {
-    backgroundColor: '#25D366',
-    borderColor: '#25D366',
+  filterChipActiveDark: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
+  },
+  filterChipActiveLight: {
+    backgroundColor: '#000000',
+    borderColor: '#000000',
+  },
+  filterChipPressed: {
+    opacity: 0.8,
   },
   filterChipText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
-    letterSpacing: 0.2,
+    letterSpacing: -0.1,
   },
-  filterChipTextActive: {
-    fontWeight: '700',
+  filterChipTextDark: {
+    color: '#8E8E93',
+  },
+  filterChipTextLight: {
+    color: '#6B7280',
+  },
+  filterChipTextActiveDark: {
     color: '#000000',
+    fontWeight: '700',
+  },
+  filterChipTextActiveLight: {
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   listContent: {
     padding: 16,

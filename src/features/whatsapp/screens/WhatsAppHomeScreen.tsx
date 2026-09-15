@@ -304,7 +304,7 @@ export const WhatsAppHomeScreen: React.FC = () => {
         items={WHATSAPP_TABS}
         activeKey={activeTab}
         onChangeTab={(tab) => handleSelectTab(tab as WhatsAppTab)}
-        accentColor="#22C55E"
+        accentColor="#0A84FF"
         moreMenuTitle="WhatsApp Business Suite"
       />
     </View>

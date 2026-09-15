@@ -57,7 +57,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   const isDark = colorScheme === 'dark';
 
   // Bottom floating offset based on safe area
-  const bottomOffset = Math.max(insets.bottom + 6, 20);
+  const bottomOffset = Math.max(insets.bottom, 12);
 
   // Filter visible routes: strictly the 4 main tabs (Home, Inbox, Tools, Activity)
   const visibleRoutes = state.routes.filter((route: any) => {
