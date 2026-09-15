@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import {
+  StyleSheet,
   Text,
   View,
   FlatList,
   TextInput,
   Pressable,
   RefreshControl,
+  ActivityIndicator,
+  useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,6 +16,7 @@ import { useLeads, useCreateLead } from '../hooks/useLeads';
 import { LeadCard } from '../components/LeadCard';
 import { CreateLeadModal } from '../components/CreateLeadModal';
 import { CrmFilterSheet } from '../components/CrmFilterSheet';
+import { ContactStatus } from '../types';
 import { CrmListSkeleton } from '../../../components/skeletonScreen';
 
 interface LeadListScreenProps {
@@ -29,6 +33,9 @@ const STATUS_TABS: Array<{ key: string; label: string }> = [
 ];
 
 export const LeadListScreen: React.FC<LeadListScreenProps> = ({ onSelectLead, onBack }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
@@ -46,95 +53,97 @@ export const LeadListScreen: React.FC<LeadListScreenProps> = ({ onSelectLead, on
   const totalCount = data?.total_count || leads.length;
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0B0D10]" edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-3">
-        <View className="flex-row items-center gap-2.5">
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
           {onBack ? (
             <Pressable
-              className="p-1.5 rounded-lg bg-[#181A1F] border border-[#262930]"
+              style={[styles.backBtn, { backgroundColor: isDark ? '#1E2028' : '#F1F5F9' }]}
               onPress={onBack}
               hitSlop={8}
             >
-              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+              <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
             </Pressable>
           ) : null}
           <View>
-            <View className="flex-row items-center gap-2">
-              <Text className="text-white text-xl font-bold tracking-tight">Leads & Contacts</Text>
-              <View className="bg-[#262930] px-2 py-0.5 rounded-full">
-                <Text className="text-[#0084FF] text-xs font-bold">{totalCount}</Text>
+            <View style={styles.titleRow}>
+              <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Leads & Contacts</Text>
+              <View style={[styles.countBadge, { backgroundColor: isDark ? '#262A34' : '#E2E8F0' }]}>
+                <Text style={styles.countText}>{totalCount}</Text>
               </View>
             </View>
-            <Text className="text-slate-400 text-xs mt-0.5">
+            <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
               Prospects & customer directory
             </Text>
           </View>
         </View>
 
         <Pressable
-          className="flex-row items-center gap-1 bg-[#0084FF] px-3 py-2 rounded-xl"
+          style={styles.addBtn}
           onPress={() => setShowAddModal(true)}
           hitSlop={8}
         >
           <Ionicons name="add" size={18} color="#FFFFFF" />
-          <Text className="text-white text-xs font-semibold">New Lead</Text>
+          <Text style={styles.addBtnText}>New Lead</Text>
         </Pressable>
       </View>
 
       {/* Search Bar & Filter Button */}
-      <View className="flex-row items-center gap-2 px-4 mb-2.5">
-        <View className="flex-1 flex-row items-center gap-2 bg-[#181A1F] rounded-xl px-3 py-2 border border-[#262930]">
-          <Ionicons name="search" size={16} color="#94A3B8" />
+      <View style={styles.searchRow}>
+        <View style={[styles.searchBar, { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' }]}>
+          <Ionicons name="search" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
           <TextInput
-            className="flex-1 text-white text-sm py-0.5"
+            style={[styles.searchInput, { color: isDark ? '#FFFFFF' : '#0F172A' }]}
             placeholder="Search by name, company, email..."
-            placeholderTextColor="#64748B"
+            placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
             value={search}
             onChangeText={setSearch}
             clearButtonMode="while-editing"
           />
           {search ? (
             <Pressable onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={16} color="#94A3B8" />
+              <Ionicons name="close-circle" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
             </Pressable>
           ) : null}
         </View>
 
         <Pressable
-          className={`w-10 h-10 rounded-xl items-center justify-center border ${
-            statusFilter !== 'all' || assigneeFilter !== 'all'
-              ? 'bg-blue-500/10 border-blue-500'
-              : 'bg-[#181A1F] border-[#262930]'
-          }`}
+          style={[
+            styles.filterBtn,
+            { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+            (statusFilter !== 'all' || assigneeFilter !== 'all') && styles.filterBtnActive,
+          ]}
           onPress={() => setShowFilterSheet(true)}
         >
           <Ionicons
             name="options-outline"
             size={18}
-            color={statusFilter !== 'all' || assigneeFilter !== 'all' ? '#0084FF' : '#94A3B8'}
+            color={statusFilter !== 'all' || assigneeFilter !== 'all' ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B'}
           />
         </Pressable>
       </View>
 
       {/* Status Segment Chips */}
-      <View className="flex-row px-4 gap-1.5 mb-3">
+      <View style={styles.tabContainer}>
         {STATUS_TABS.map((tab) => {
           const isSelected = statusFilter === tab.key;
           return (
             <Pressable
               key={tab.key}
-              className={`px-3 py-1.5 rounded-lg border ${
-                isSelected
-                  ? 'bg-blue-500/20 border-blue-500'
-                  : 'bg-[#181A1F] border-[#262930]'
-              }`}
+              style={[
+                styles.tabChip,
+                { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+                isSelected && (isDark ? styles.tabChipSelectedDark : styles.tabChipSelectedLight),
+              ]}
               onPress={() => setStatusFilter(tab.key)}
             >
               <Text
-                className={`text-xs ${
-                  isSelected ? 'text-blue-400 font-bold' : 'text-slate-400 font-medium'
-                }`}
+                style={[
+                  styles.tabText,
+                  { color: isDark ? '#9CA3AF' : '#64748B' },
+                  isSelected && styles.tabTextSelected,
+                ]}
               >
                 {tab.label}
               </Text>
@@ -147,19 +156,16 @@ export const LeadListScreen: React.FC<LeadListScreenProps> = ({ onSelectLead, on
       {isLoading && !data ? (
         <CrmListSkeleton />
       ) : leads.length === 0 ? (
-        <View className="flex-1 items-center justify-center px-8">
-          <Ionicons name="people-outline" size={48} color="#475569" />
-          <Text className="text-white text-base font-semibold mt-3">No matching records</Text>
-          <Text className="text-slate-400 text-xs text-center mt-1.5 mb-5 leading-5">
+        <View style={styles.emptyContainer}>
+          <Ionicons name="people-outline" size={48} color={isDark ? '#4B5563' : '#CBD5E1'} />
+          <Text style={[styles.emptyTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>No matching records</Text>
+          <Text style={[styles.emptySubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
             {search
               ? `No contacts found matching "${search}"`
               : 'Add your first lead to start building your sales pipeline.'}
           </Text>
-          <Pressable
-            className="bg-[#0084FF] px-4 py-2.5 rounded-xl"
-            onPress={() => setShowAddModal(true)}
-          >
-            <Text className="text-white text-sm font-semibold">+ Add New Lead</Text>
+          <Pressable style={styles.emptyAddBtn} onPress={() => setShowAddModal(true)}>
+            <Text style={styles.emptyAddBtnText}>+ Add New Lead</Text>
           </Pressable>
         </View>
       ) : (
@@ -169,14 +175,14 @@ export const LeadListScreen: React.FC<LeadListScreenProps> = ({ onSelectLead, on
           renderItem={({ item }) => (
             <LeadCard lead={item} onPress={() => onSelectLead(item.id)} />
           )}
-          contentContainerClassName="px-4 pb-28"
+          contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
               onRefresh={refetch}
-              tintColor="#0084FF"
-              colors={['#0084FF']}
+              tintColor="#3B82F6"
+              colors={['#3B82F6']}
             />
           }
         />
@@ -209,3 +215,178 @@ export const LeadListScreen: React.FC<LeadListScreenProps> = ({ onSelectLead, on
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#0F1015',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  backBtn: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: '#1E2028',
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  title: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  countBadge: {
+    backgroundColor: '#262A34',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  countText: {
+    color: '#3B82F6',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  subtitle: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  addBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#181A20',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#262A34',
+  },
+  searchInput: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 14,
+  },
+  filterBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#181A20',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#262A34',
+  },
+  filterBtnActive: {
+    borderColor: '#3B82F6',
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    gap: 6,
+    marginBottom: 12,
+  },
+  tabChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#181A20',
+    borderWidth: 1,
+    borderColor: '#262A34',
+  },
+  tabChipSelectedDark: {
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    borderColor: '#3B82F6',
+  },
+  tabChipSelectedLight: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#3B82F6',
+  },
+  tabText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  tabTextSelected: {
+    color: '#3B82F6',
+    fontWeight: '700',
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+  },
+  loaderBox: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loaderText: {
+    fontSize: 13,
+    marginTop: 12,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 12,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 6,
+    marginBottom: 20,
+    lineHeight: 18,
+  },
+  emptyAddBtn: {
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  emptyAddBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+});

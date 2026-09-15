@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View, Pressable, Linking } from 'react-native';
+import { StyleSheet, Text, View, Pressable, Linking, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NormalizedMessage } from '../types';
 import { useAuthStore } from '../../../core/store/authStore';
@@ -9,6 +9,9 @@ interface MessageBubbleProps {
 }
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const user = useAuthStore((s) => s.user);
   const currentUserId = user?.id;
   const currentUserName = user?.name;
@@ -51,33 +54,33 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
 
     switch (message.status) {
       case 'read':
-        return <Ionicons name="checkmark-done" size={14} color="#38bdf8" className="ml-0.5" />;
+        return <Ionicons name="checkmark-done" size={14} color="#53bdeb" style={styles.statusIcon} />;
       case 'delivered':
-        return <Ionicons name="checkmark-done" size={14} color="#94a3b8" className="ml-0.5" />;
+        return <Ionicons name="checkmark-done" size={14} color={isDark ? '#8696a0' : '#64748b'} style={styles.statusIcon} />;
       case 'sent':
-        return <Ionicons name="checkmark" size={14} color="#94a3b8" className="ml-0.5" />;
+        return <Ionicons name="checkmark" size={14} color={isDark ? '#8696a0' : '#64748b'} style={styles.statusIcon} />;
       case 'failed':
-        return <Ionicons name="alert-circle" size={14} color="#ef4444" className="ml-0.5" />;
+        return <Ionicons name="alert-circle" size={14} color="#ef4444" style={styles.statusIcon} />;
       default:
-        return <Ionicons name="checkmark" size={14} color="#94a3b8" className="ml-0.5" />;
+        return <Ionicons name="checkmark" size={14} color={isDark ? '#8696a0' : '#64748b'} style={styles.statusIcon} />;
     }
   };
 
   // 1. Internal Team Note Rendering
   if (isInternalNote) {
     return (
-      <View className="my-1 items-center px-2.5">
-        <View className="rounded-xl p-2.5 max-w-[92%] w-full border bg-amber-950/40 border-amber-800/60">
-          <View className="flex-row items-center gap-1.5 mb-1">
+      <View style={styles.internalNoteWrapper}>
+        <View style={[styles.internalNoteBubble, isDark ? styles.internalNoteBubbleDark : styles.internalNoteBubbleLight]}>
+          <View style={styles.internalNoteHeader}>
             <Ionicons name="lock-closed" size={13} color="#f59e0b" />
-            <Text className="text-[11.5px] font-semibold text-amber-400">
+            <Text style={[styles.internalNoteTitle, { color: isDark ? '#fbbf24' : '#b45309' }]}>
               Internal Note • {outboundLabel}
             </Text>
           </View>
-          <Text className="text-[13px] leading-[18px] text-amber-100">
+          <Text style={[styles.internalNoteContent, { color: isDark ? '#fef3c7' : '#78350f' }]}>
             {message.content}
           </Text>
-          <Text className="text-[10px] mt-1 self-end text-amber-500">{time}</Text>
+          <Text style={[styles.internalNoteTime, { color: isDark ? '#b45309' : '#92400e' }]}>{time}</Text>
         </View>
       </View>
     );
@@ -86,53 +89,65 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   const template = message.template;
 
   return (
-    <View className={`my-0.5 flex-row ${isOutbound ? 'justify-end' : 'justify-start'}`}>
+    <View style={[styles.wrapper, isOutbound ? styles.outboundWrapper : styles.inboundWrapper]}>
       <View
-        className={`max-w-[82%] px-3 py-2 rounded-2xl ${
+        style={[
+          styles.bubble,
           isOutbound
             ? isBot
-              ? 'bg-[#004c3e] border border-emerald-500/40 rounded-br-sm'
-              : 'bg-[#005c4b] rounded-br-sm'
-            : 'bg-[#181A1F] border border-[#262930] rounded-bl-sm'
-        }`}
+              ? isDark
+                ? styles.botBubbleDark
+                : styles.botBubbleLight
+              : isDark
+              ? styles.outboundBubbleDark
+              : styles.outboundBubbleLight
+            : isDark
+            ? styles.inboundBubbleDark
+            : styles.inboundBubbleLight,
+        ]}
       >
         {/* Sender Name / Bot Badge */}
-        <View className="mb-0.5">
+        <View style={styles.senderHeader}>
           {isBot ? (
-            <View className="bg-emerald-500/20 px-1.5 py-0.5 rounded-md self-start mb-0.5">
-              <Text className="text-emerald-400 text-[10px] font-extrabold">🤖 GAP AI Pilot</Text>
+            <View style={styles.botBadge}>
+              <Text style={styles.botBadgeText}>🤖 GAP AI Pilot</Text>
             </View>
           ) : isOutbound ? (
-            <Text className={`text-[10.5px] font-semibold ${isMe ? 'text-[#0084FF] font-bold' : 'text-slate-400'}`}>
+            <Text style={[styles.outboundSenderText, isMe && styles.outboundSenderYou]}>
               {outboundLabel}
             </Text>
           ) : (
-            <Text className="text-emerald-400 text-[11px] font-bold">{message.sender?.name || 'Contact'}</Text>
+            <Text style={styles.inboundSenderText}>{message.sender?.name || 'Contact'}</Text>
           )}
         </View>
 
         {/* Template Message Card */}
         {template ? (
-          <View className="gap-1">
+          <View style={styles.templateCard}>
             {template.header?.text && (
-              <Text className="text-emerald-400 text-[13px] font-extrabold mb-0.5">{template.header.text}</Text>
+              <Text style={styles.templateHeader}>{template.header.text}</Text>
             )}
-            <Text className="text-[14px] leading-[19px] text-white">
+            <Text
+              style={[
+                styles.content,
+                { color: isDark ? '#e9edef' : '#111b21' },
+              ]}
+            >
               {template.body || message.content}
             </Text>
             {template.footer && (
-              <Text className="text-[11.5px] text-slate-400 mt-1">
+              <Text style={[styles.templateFooter, { color: isDark ? '#8696a0' : '#64748b' }]}>
                 {template.footer}
               </Text>
             )}
 
             {/* Template Interactive Action Buttons */}
             {template.buttons && template.buttons.length > 0 && (
-              <View className="mt-2 border-t border-white/15 pt-1.5 gap-1.5">
+              <View style={[styles.templateButtonsContainer, isDark ? styles.borderDark : styles.borderLight]}>
                 {template.buttons.map((btn, idx) => (
                   <Pressable
                     key={idx}
-                    className="flex-row items-center justify-center py-1.5 px-3 rounded-lg bg-black/25 active:bg-black/40"
+                    style={[styles.templateButton, isDark ? styles.templateBtnDark : styles.templateBtnLight]}
                     onPress={() => {
                       if (btn.url) Linking.openURL(btn.url).catch(() => {});
                     }}
@@ -140,10 +155,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
                     <Ionicons
                       name={btn.url ? 'open-outline' : btn.phone_number ? 'call-outline' : 'chatbubble-ellipses-outline'}
                       size={14}
-                      color="#34d399"
+                      color="#00a884"
                       style={{ marginRight: 6 }}
                     />
-                    <Text className="text-emerald-400 text-[13px] font-bold">{btn.text}</Text>
+                    <Text style={styles.templateButtonText}>{btn.text}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -151,22 +166,27 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
           </View>
         ) : (
           /* Standard Free-form Message Content */
-          <Text className="text-[14px] leading-[19px] text-white">
+          <Text
+            style={[
+              styles.content,
+              { color: isDark ? '#e9edef' : '#111b21' },
+            ]}
+          >
             {message.content}
           </Text>
         )}
 
         {/* Media Attachments Preview */}
         {message.media && message.media.length > 0 && (
-          <View className="mt-1.5 gap-1">
+          <View style={styles.mediaContainer}>
             {message.media.map((med, idx) => (
-              <View key={idx} className="flex-row items-center px-2.5 py-1.5 rounded-lg gap-2 bg-black/25">
+              <View key={idx} style={[styles.mediaBox, isDark ? styles.mediaBoxDark : styles.mediaBoxLight]}>
                 <Ionicons
                   name={med.type === 'image' ? 'image' : med.type === 'audio' ? 'mic' : 'document'}
                   size={16}
-                  color="#e2e8f0"
+                  color={isDark ? '#e2e8f0' : '#475569'}
                 />
-                <Text className="text-[12.5px] font-semibold text-white">
+                <Text style={[styles.mediaText, { color: isDark ? '#f8fafc' : '#1e293b' }]}>
                   {med.type === 'image' ? 'Photo' : med.type === 'audio' ? 'Voice Note' : 'Document'}
                 </Text>
               </View>
@@ -175,8 +195,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
         )}
 
         {/* Footer Timestamp & Delivery Ticks */}
-        <View className="flex-row items-center justify-end mt-1 gap-1">
-          <Text className="text-[10.5px] text-slate-400">
+        <View style={styles.footerRow}>
+          <Text
+            style={[
+              styles.time,
+              { color: isDark ? (isOutbound ? 'rgba(233, 237, 239, 0.65)' : '#8696a0') : '#667781' },
+            ]}
+          >
             {time}
           </Text>
           {renderDeliveryStatus()}
@@ -185,3 +210,213 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  wrapper: {
+    marginVertical: 3,
+    flexDirection: 'row',
+  },
+  outboundWrapper: {
+    justifyContent: 'flex-end',
+  },
+  inboundWrapper: {
+    justifyContent: 'flex-start',
+  },
+  bubble: {
+    maxWidth: '82%',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 14,
+  },
+  outboundBubbleDark: {
+    backgroundColor: '#005c4b', // WhatsApp Dark Outbound Green
+    borderBottomRightRadius: 2,
+  },
+  outboundBubbleLight: {
+    backgroundColor: '#d9fdd3', // WhatsApp Light Outbound Green
+    borderBottomRightRadius: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 1,
+    elevation: 1,
+  },
+  botBubbleDark: {
+    backgroundColor: '#004c3e',
+    borderBottomRightRadius: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 168, 132, 0.4)',
+  },
+  botBubbleLight: {
+    backgroundColor: '#cbfcd4',
+    borderBottomRightRadius: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 168, 132, 0.3)',
+  },
+  inboundBubbleDark: {
+    backgroundColor: '#202c33', // WhatsApp Dark Inbound Slate
+    borderBottomLeftRadius: 2,
+  },
+  inboundBubbleLight: {
+    backgroundColor: '#ffffff', // WhatsApp Light Inbound White
+    borderBottomLeftRadius: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 1,
+    elevation: 1,
+  },
+  senderHeader: {
+    marginBottom: 3,
+  },
+  botBadge: {
+    backgroundColor: 'rgba(0, 168, 132, 0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+    marginBottom: 2,
+  },
+  botBadgeText: {
+    color: '#00a884',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  outboundSenderText: {
+    color: '#8696a0',
+    fontSize: 10.5,
+    fontWeight: '600',
+  },
+  outboundSenderYou: {
+    color: '#0084ff',
+    fontWeight: '700',
+  },
+  inboundSenderText: {
+    color: '#00a884',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  content: {
+    fontSize: 14.2,
+    lineHeight: 19.5,
+  },
+  templateCard: {
+    gap: 4,
+  },
+  templateHeader: {
+    color: '#00a884',
+    fontSize: 13,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  templateFooter: {
+    fontSize: 11.5,
+    marginTop: 4,
+  },
+  templateButtonsContainer: {
+    marginTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 6,
+    gap: 6,
+  },
+  borderDark: {
+    borderTopColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  borderLight: {
+    borderTopColor: 'rgba(0, 0, 0, 0.08)',
+  },
+  templateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  templateBtnDark: {
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+  },
+  templateBtnLight: {
+    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+  },
+  templateButtonText: {
+    color: '#00a884',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  mediaContainer: {
+    marginTop: 6,
+    gap: 4,
+  },
+  mediaBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 8,
+    gap: 8,
+  },
+  mediaBoxDark: {
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+  },
+  mediaBoxLight: {
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  mediaText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+  },
+  footerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 4,
+    gap: 3,
+  },
+  time: {
+    fontSize: 10.5,
+  },
+  statusIcon: {
+    marginLeft: 2,
+  },
+  internalNoteWrapper: {
+    marginVertical: 4,
+    alignItems: 'center',
+    paddingHorizontal: 10,
+  },
+  internalNoteBubble: {
+    borderRadius: 12,
+    padding: 10,
+    maxWidth: '92%',
+    width: '100%',
+    borderWidth: 1,
+  },
+  internalNoteBubbleDark: {
+    backgroundColor: '#3b200b',
+    borderColor: '#78350f',
+  },
+  internalNoteBubbleLight: {
+    backgroundColor: '#fffbeb',
+    borderColor: '#fde68a',
+  },
+  internalNoteHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 4,
+  },
+  internalNoteTitle: {
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
+  internalNoteContent: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  internalNoteTime: {
+    fontSize: 10,
+    marginTop: 4,
+    alignSelf: 'flex-end',
+  },
+});
+

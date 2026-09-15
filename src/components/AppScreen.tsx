@@ -3,10 +3,9 @@ import { View, StyleProp, ViewStyle, useColorScheme } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 
-export interface AppScreenProps {
+interface AppScreenProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
-  className?: string;
   safeArea?: boolean | 'top' | 'bottom';
   backgroundColor?: string;
 }
@@ -14,7 +13,6 @@ export interface AppScreenProps {
 export function AppScreen({
   children,
   style,
-  className,
   safeArea = false,
   backgroundColor,
 }: AppScreenProps) {
@@ -37,7 +35,6 @@ export function AppScreen({
 
   return (
     <View
-      className={className}
       style={[
         {
           flex: 1,

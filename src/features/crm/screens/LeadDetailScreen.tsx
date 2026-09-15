@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import {
+  StyleSheet,
   Text,
   View,
   ScrollView,
   Pressable,
   Linking,
   TextInput,
+  ActivityIndicator,
   Alert,
+  useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,6 +42,9 @@ const STATUS_CONFIG: Partial<Record<ContactStatus, { label: string; bg: string; 
 };
 
 export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBack }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const { data: lead, isLoading, refetch } = useLead(leadId);
   const updateLead = useUpdateLead();
   const deleteLead = useDeleteLead();
@@ -101,28 +107,28 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
 
   if (isLoading || !lead) {
     return (
-      <SafeAreaView className="flex-1 bg-[#0B0D10]">
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]}>
         <LeadDetailSkeleton />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0B0D10]" edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
       {/* Top Header */}
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-[#262930]">
+      <View style={[styles.header, { borderBottomColor: isDark ? '#1E2028' : '#E2E8F0' }]}>
         <Pressable
-          className="p-2 rounded-lg bg-[#181A1F] border border-[#262930]"
+          style={[styles.iconBtn, { backgroundColor: isDark ? '#181A20' : '#F1F5F9' }]}
           onPress={onBack}
           hitSlop={8}
         >
-          <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+          <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
         </Pressable>
-        <Text className="text-white text-base font-bold flex-1 text-center mx-2.5" numberOfLines={1}>
+        <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]} numberOfLines={1}>
           {lead.name || `${lead.first_name} ${lead.last_name}`}
         </Text>
         <Pressable
-          className="p-2 rounded-lg bg-[#181A1F] border border-[#262930]"
+          style={[styles.iconBtn, { backgroundColor: isDark ? '#181A20' : '#F1F5F9' }]}
           onPress={handleDelete}
           hitSlop={8}
         >
@@ -130,29 +136,29 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
         </Pressable>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Profile Card */}
-        <View className="m-4 rounded-2xl p-4 bg-[#181A1F] border border-[#262930]">
-          <View className="flex-row mb-4">
-            <View className="w-13 h-13 rounded-2xl bg-[#111317] border border-[#262930] items-center justify-center mr-3.5">
-              <Text className="text-[#0084FF] text-lg font-bold">
+        <View style={[styles.profileCard, isDark ? styles.cardDark : styles.cardLight]}>
+          <View style={styles.profileRow}>
+            <View style={[styles.avatar, { backgroundColor: isDark ? '#262A34' : '#E2E8F0' }]}>
+              <Text style={styles.avatarText}>
                 {(lead.first_name?.[0] || 'L').toUpperCase()}
                 {(lead.last_name?.[0] || '').toUpperCase()}
               </Text>
             </View>
 
-            <View className="flex-1">
-              <Text className="text-white text-lg font-bold tracking-tight">
+            <View style={styles.profileInfo}>
+              <Text style={[styles.profileName, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
                 {lead.name || `${lead.first_name} ${lead.last_name}`}
               </Text>
               {lead.company || lead.job_title ? (
-                <Text className="text-slate-400 text-xs mt-0.5 mb-2">
+                <Text style={[styles.profileCompany, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
                   {[lead.job_title, lead.company].filter(Boolean).join(' • ')}
                 </Text>
               ) : null}
 
               {/* Status Pill Switcher */}
-              <View className="flex-row flex-wrap gap-1.5 mt-1">
+              <View style={styles.statusRow}>
                 {(['lead', 'prospect', 'customer', 'churned'] as ContactStatus[]).map((s) => {
                   const isCurrent = lead.status === s;
                   const cfg = STATUS_CONFIG[s] || {
@@ -164,19 +170,18 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
                   return (
                     <Pressable
                       key={s}
-                      className={`px-2 py-1 rounded-md border ${
-                        isCurrent
-                          ? 'border-blue-500 bg-blue-500/20'
-                          : 'bg-[#111317] border-[#262930]'
-                      }`}
+                      style={[
+                        styles.statusTab,
+                        { backgroundColor: isDark ? '#121316' : '#F8FAFC', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+                        isCurrent && { backgroundColor: cfg.bg, borderColor: cfg.dot },
+                      ]}
                       onPress={() => handleStatusChange(s)}
                     >
                       <Text
-                        className="text-[11px]"
-                        style={{
-                          color: isCurrent ? cfg.text : '#94A3B8',
-                          fontWeight: isCurrent ? '700' : '500',
-                        }}
+                        style={[
+                          styles.statusTabText,
+                          isCurrent ? { color: cfg.text, fontWeight: '700' } : { color: isDark ? '#6B7280' : '#94A3B8' },
+                        ]}
                       >
                         {cfg.label}
                       </Text>
@@ -188,44 +193,44 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
           </View>
 
           {/* Quick Action Toolbar */}
-          <View className="flex-row justify-between pt-3 border-t border-[#262930]">
+          <View style={[styles.actionToolbar, { borderTopColor: isDark ? '#222630' : '#F1F5F9' }]}>
             <Pressable
-              className={`flex-1 items-center justify-center gap-1 py-1.5 ${!lead.phone ? 'opacity-40' : ''}`}
+              style={[styles.toolBtn, !lead.phone && styles.toolBtnDisabled]}
               onPress={handleCall}
               disabled={!lead.phone}
             >
-              <Ionicons name="call" size={16} color={lead.phone ? '#10B981' : '#64748B'} />
-              <Text className={`text-[11px] font-semibold ${lead.phone ? 'text-slate-200' : 'text-slate-500'}`}>Call</Text>
+              <Ionicons name="call" size={16} color={lead.phone ? '#10B981' : isDark ? '#4B5563' : '#CBD5E1'} />
+              <Text style={[styles.toolBtnText, { color: isDark ? '#D1D5DB' : '#334155' }, !lead.phone && styles.toolBtnTextDisabled]}>Call</Text>
             </Pressable>
 
             <Pressable
-              className={`flex-1 items-center justify-center gap-1 py-1.5 ${!lead.email ? 'opacity-40' : ''}`}
+              style={[styles.toolBtn, !lead.email && styles.toolBtnDisabled]}
               onPress={handleEmail}
               disabled={!lead.email}
             >
-              <Ionicons name="mail" size={16} color={lead.email ? '#0084FF' : '#64748B'} />
-              <Text className={`text-[11px] font-semibold ${lead.email ? 'text-slate-200' : 'text-slate-500'}`}>Email</Text>
+              <Ionicons name="mail" size={16} color={lead.email ? '#3B82F6' : isDark ? '#4B5563' : '#CBD5E1'} />
+              <Text style={[styles.toolBtnText, { color: isDark ? '#D1D5DB' : '#334155' }, !lead.email && styles.toolBtnTextDisabled]}>Email</Text>
             </Pressable>
 
-            <Pressable className="flex-1 items-center justify-center gap-1 py-1.5" onPress={() => setShowAddTask(true)}>
+            <Pressable style={styles.toolBtn} onPress={() => setShowAddTask(true)}>
               <Ionicons name="checkbox-outline" size={16} color="#F59E0B" />
-              <Text className="text-slate-200 text-[11px] font-semibold">+ Task</Text>
+              <Text style={[styles.toolBtnText, { color: isDark ? '#D1D5DB' : '#334155' }]}>+ Task</Text>
             </Pressable>
 
-            <Pressable className="flex-1 items-center justify-center gap-1 py-1.5" onPress={() => setShowAddDeal(true)}>
+            <Pressable style={styles.toolBtn} onPress={() => setShowAddDeal(true)}>
               <Ionicons name="briefcase-outline" size={16} color="#8B5CF6" />
-              <Text className="text-slate-200 text-[11px] font-semibold">+ Deal</Text>
+              <Text style={[styles.toolBtnText, { color: isDark ? '#D1D5DB' : '#334155' }]}>+ Deal</Text>
             </Pressable>
 
-            <Pressable className="flex-1 items-center justify-center gap-1 py-1.5" onPress={() => setShowLogActivity(true)}>
+            <Pressable style={styles.toolBtn} onPress={() => setShowLogActivity(true)}>
               <Ionicons name="add-circle-outline" size={16} color="#EC4899" />
-              <Text className="text-slate-200 text-[11px] font-semibold">Log</Text>
+              <Text style={[styles.toolBtnText, { color: isDark ? '#D1D5DB' : '#334155' }]}>Log</Text>
             </Pressable>
           </View>
         </View>
 
         {/* Navigation Tabs */}
-        <View className="flex-row px-4 border-b border-[#262930] mb-4">
+        <View style={[styles.tabNav, { borderBottomColor: isDark ? '#1E2028' : '#E2E8F0' }]}>
           {[
             { key: 'overview', label: 'Overview', count: null },
             { key: 'deals', label: 'Deals', count: deals.length },
@@ -236,15 +241,15 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
             return (
               <Pressable
                 key={tab.key}
-                className={`py-2.5 mr-4 border-b-2 ${
-                  isSelected ? 'border-[#0084FF]' : 'border-transparent'
-                }`}
+                style={[styles.navTabItem, isSelected && styles.navTabItemSelected]}
                 onPress={() => setActiveTab(tab.key as any)}
               >
                 <Text
-                  className={`text-sm ${
-                    isSelected ? 'text-white font-bold' : 'text-slate-400 font-medium'
-                  }`}
+                  style={[
+                    styles.navTabText,
+                    { color: isDark ? '#9CA3AF' : '#64748B' },
+                    isSelected && (isDark ? styles.navTabTextSelectedDark : styles.navTabTextSelectedLight),
+                  ]}
                 >
                   {tab.label} {tab.count !== null ? `(${tab.count})` : ''}
                 </Text>
@@ -254,50 +259,50 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
         </View>
 
         {/* Tab Content */}
-        <View className="px-4 pb-28">
+        <View style={styles.tabContent}>
           {activeTab === 'overview' && (
-            <View className="gap-3.5">
+            <View style={styles.overviewContainer}>
               {/* Contact Details Card */}
-              <View className="rounded-2xl p-4 bg-[#181A1F] border border-[#262930]">
-                <Text className="text-white text-[15px] font-bold mb-3.5">Contact Information</Text>
+              <View style={[styles.infoCard, isDark ? styles.cardDark : styles.cardLight]}>
+                <Text style={[styles.infoCardTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Contact Information</Text>
 
-                <View className="flex-row items-start gap-3 mb-3">
-                  <Ionicons name="call-outline" size={16} color="#94A3B8" />
-                  <View className="flex-1">
-                    <Text className="text-slate-500 text-[11px]">Phone</Text>
-                    <Text className="text-slate-200 text-sm font-medium mt-0.5">{lead.phone || 'Not provided'}</Text>
+                <View style={styles.infoRow}>
+                  <Ionicons name="call-outline" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
+                  <View style={styles.infoCol}>
+                    <Text style={[styles.infoLabel, { color: isDark ? '#6B7280' : '#94A3B8' }]}>Phone</Text>
+                    <Text style={[styles.infoValue, { color: isDark ? '#E5E7EB' : '#1E293B' }]}>{lead.phone || 'Not provided'}</Text>
                   </View>
                 </View>
 
-                <View className="flex-row items-start gap-3 mb-3">
-                  <Ionicons name="mail-outline" size={16} color="#94A3B8" />
-                  <View className="flex-1">
-                    <Text className="text-slate-500 text-[11px]">Email</Text>
-                    <Text className="text-slate-200 text-sm font-medium mt-0.5">{lead.email || 'Not provided'}</Text>
+                <View style={styles.infoRow}>
+                  <Ionicons name="mail-outline" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
+                  <View style={styles.infoCol}>
+                    <Text style={[styles.infoLabel, { color: isDark ? '#6B7280' : '#94A3B8' }]}>Email</Text>
+                    <Text style={[styles.infoValue, { color: isDark ? '#E5E7EB' : '#1E293B' }]}>{lead.email || 'Not provided'}</Text>
                   </View>
                 </View>
 
-                <View className="flex-row items-start gap-3 mb-3">
-                  <Ionicons name="business-outline" size={16} color="#94A3B8" />
-                  <View className="flex-1">
-                    <Text className="text-slate-500 text-[11px]">Company</Text>
-                    <Text className="text-slate-200 text-sm font-medium mt-0.5">{lead.company || 'Not provided'}</Text>
+                <View style={styles.infoRow}>
+                  <Ionicons name="business-outline" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
+                  <View style={styles.infoCol}>
+                    <Text style={[styles.infoLabel, { color: isDark ? '#6B7280' : '#94A3B8' }]}>Company</Text>
+                    <Text style={[styles.infoValue, { color: isDark ? '#E5E7EB' : '#1E293B' }]}>{lead.company || 'Not provided'}</Text>
                   </View>
                 </View>
 
-                <View className="flex-row items-start gap-3">
-                  <Ionicons name="person-circle-outline" size={16} color="#94A3B8" />
-                  <View className="flex-1">
-                    <Text className="text-slate-500 text-[11px]">Assigned Representative</Text>
-                    <Text className="text-slate-200 text-sm font-medium mt-0.5">{lead.assignee?.name || 'Unassigned'}</Text>
+                <View style={styles.infoRow}>
+                  <Ionicons name="person-circle-outline" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
+                  <View style={styles.infoCol}>
+                    <Text style={[styles.infoLabel, { color: isDark ? '#6B7280' : '#94A3B8' }]}>Assigned Representative</Text>
+                    <Text style={[styles.infoValue, { color: isDark ? '#E5E7EB' : '#1E293B' }]}>{lead.assignee?.name || 'Unassigned'}</Text>
                   </View>
                 </View>
               </View>
 
               {/* Notes Card */}
-              <View className="rounded-2xl p-4 bg-[#181A1F] border border-[#262930]">
-                <Text className="text-white text-[15px] font-bold mb-2">Notes & Context</Text>
-                <Text className="text-slate-300 text-xs leading-5">
+              <View style={[styles.infoCard, isDark ? styles.cardDark : styles.cardLight]}>
+                <Text style={[styles.infoCardTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Notes & Context</Text>
+                <Text style={[styles.notesText, { color: isDark ? '#D1D5DB' : '#334155' }]}>
                   {lead.notes || 'No general notes logged for this contact.'}
                 </Text>
               </View>
@@ -306,20 +311,20 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
 
           {activeTab === 'deals' && (
             <View>
-              <View className="flex-row items-center justify-between mb-3">
-                <Text className="text-white text-[15px] font-bold">Linked Deals</Text>
+              <View style={styles.subHeader}>
+                <Text style={[styles.subHeaderTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Linked Deals</Text>
                 <Pressable
-                  className="px-2.5 py-1.5 rounded-lg bg-[#262930]"
+                  style={[styles.subHeaderBtn, { backgroundColor: isDark ? '#262A34' : '#EFF6FF' }]}
                   onPress={() => setShowAddDeal(true)}
                 >
-                  <Text className="text-[#0084FF] text-xs font-semibold">+ New Deal</Text>
+                  <Text style={styles.subHeaderBtnText}>+ New Deal</Text>
                 </Pressable>
               </View>
 
               {deals.length === 0 ? (
-                <View className="rounded-2xl p-6 items-center justify-center bg-[#181A1F] border border-dashed border-[#262930]">
-                  <Ionicons name="briefcase-outline" size={32} color="#64748B" />
-                  <Text className="text-slate-400 text-xs mt-2 text-center">No deals associated with this contact yet.</Text>
+                <View style={[styles.emptyTabCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <Ionicons name="briefcase-outline" size={32} color={isDark ? '#6B7280' : '#94A3B8'} />
+                  <Text style={[styles.emptyTabText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>No deals associated with this contact yet.</Text>
                 </View>
               ) : (
                 deals.map((d) => (
@@ -331,20 +336,20 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
 
           {activeTab === 'tasks' && (
             <View>
-              <View className="flex-row items-center justify-between mb-3">
-                <Text className="text-white text-[15px] font-bold">Pending Follow-ups & Tasks</Text>
+              <View style={styles.subHeader}>
+                <Text style={[styles.subHeaderTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Pending Follow-ups & Tasks</Text>
                 <Pressable
-                  className="px-2.5 py-1.5 rounded-lg bg-[#262930]"
+                  style={[styles.subHeaderBtn, { backgroundColor: isDark ? '#262A34' : '#EFF6FF' }]}
                   onPress={() => setShowAddTask(true)}
                 >
-                  <Text className="text-[#0084FF] text-xs font-semibold">+ New Task</Text>
+                  <Text style={styles.subHeaderBtnText}>+ New Task</Text>
                 </Pressable>
               </View>
 
               {tasks.length === 0 ? (
-                <View className="rounded-2xl p-6 items-center justify-center bg-[#181A1F] border border-dashed border-[#262930]">
-                  <Ionicons name="checkbox-outline" size={32} color="#64748B" />
-                  <Text className="text-slate-400 text-xs mt-2 text-center">No open tasks for this contact.</Text>
+                <View style={[styles.emptyTabCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <Ionicons name="checkbox-outline" size={32} color={isDark ? '#6B7280' : '#94A3B8'} />
+                  <Text style={[styles.emptyTabText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>No open tasks for this contact.</Text>
                 </View>
               ) : (
                 tasks.map((t) => (
@@ -361,16 +366,16 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
           {activeTab === 'timeline' && (
             <View>
               {/* Quick Note Input Bar */}
-              <View className="flex-row items-center gap-2 rounded-xl p-2 bg-[#181A1F] border border-[#262930] mb-4">
+              <View style={[styles.quickNoteBar, { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' }]}>
                 <TextInput
-                  className="flex-1 text-white text-xs px-2"
+                  style={[styles.quickNoteInput, { color: isDark ? '#FFFFFF' : '#0F172A' }]}
                   placeholder="Add a quick note or update..."
-                  placeholderTextColor="#64748B"
+                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                   value={quickNote}
                   onChangeText={setQuickNote}
                 />
                 <Pressable
-                  className={`w-8 h-8 rounded-lg bg-[#0084FF] items-center justify-center ${!quickNote.trim() ? 'opacity-50' : ''}`}
+                  style={[styles.quickNoteSendBtn, !quickNote.trim() && { opacity: 0.5 }]}
                   onPress={handleSendQuickNote}
                   disabled={!quickNote.trim() || addLeadNote.isPending}
                 >
@@ -379,9 +384,9 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
               </View>
 
               {activities.length === 0 ? (
-                <View className="rounded-2xl p-6 items-center justify-center bg-[#181A1F] border border-dashed border-[#262930]">
-                  <Ionicons name="time-outline" size={32} color="#64748B" />
-                  <Text className="text-slate-400 text-xs mt-2 text-center">No activity history logged yet.</Text>
+                <View style={[styles.emptyTabCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <Ionicons name="time-outline" size={32} color={isDark ? '#6B7280' : '#94A3B8'} />
+                  <Text style={[styles.emptyTabText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>No activity history logged yet.</Text>
                 </View>
               ) : (
                 activities.map((act, idx) => (
@@ -433,3 +438,246 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    flex: 1,
+    textAlign: 'center',
+    marginHorizontal: 10,
+  },
+  iconBtn: {
+    padding: 8,
+    borderRadius: 8,
+  },
+  scroll: {
+    flex: 1,
+  },
+  profileCard: {
+    margin: 16,
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+  },
+  cardDark: {
+    backgroundColor: '#181A20',
+    borderColor: '#262A34',
+  },
+  cardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  profileRow: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  avatarText: {
+    color: '#3B82F6',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  profileName: {
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  profileCompany: {
+    fontSize: 13,
+    marginTop: 2,
+    marginBottom: 8,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  statusTab: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  statusTabText: {
+    fontSize: 11,
+  },
+  actionToolbar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    borderTopWidth: 1,
+  },
+  toolBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 6,
+  },
+  toolBtnDisabled: {
+    opacity: 0.4,
+  },
+  toolBtnText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  toolBtnTextDisabled: {
+    color: '#6B7280',
+  },
+  tabNav: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    marginBottom: 16,
+  },
+  navTabItem: {
+    paddingVertical: 10,
+    marginRight: 16,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  navTabItemSelected: {
+    borderBottomColor: '#3B82F6',
+  },
+  navTabText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  navTabTextSelectedDark: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  navTabTextSelectedLight: {
+    color: '#0F172A',
+    fontWeight: '700',
+  },
+  tabContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+  },
+  overviewContainer: {
+    gap: 14,
+  },
+  infoCard: {
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+  },
+  infoCardTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 14,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 12,
+  },
+  infoCol: {
+    flex: 1,
+  },
+  infoLabel: {
+    fontSize: 11,
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  notesText: {
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  subHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  subHeaderTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  subHeaderBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  subHeaderBtnText: {
+    color: '#3B82F6',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  emptyTabCard: {
+    borderRadius: 14,
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderStyle: 'dashed',
+  },
+  emptyTabText: {
+    fontSize: 13,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  quickNoteBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 12,
+    padding: 8,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  quickNoteInput: {
+    flex: 1,
+    fontSize: 13,
+    paddingHorizontal: 8,
+  },
+  quickNoteSendBtn: {
+    backgroundColor: '#3B82F6',
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loaderBox: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loaderText: {
+    fontSize: 13,
+    marginTop: 12,
+  },
+});

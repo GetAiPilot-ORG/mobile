@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { InboxChannel } from '../types';
 
 interface ChannelBadgeProps {
@@ -9,31 +9,31 @@ interface ChannelBadgeProps {
 
 const CHANNEL_CONFIG: Record<
   InboxChannel,
-  { icon: string; label: string; bgClass: string; textClass: string }
+  { icon: string; label: string; bg: string; color: string }
 > = {
   whatsapp: {
     icon: '💬',
     label: 'WhatsApp',
-    bgClass: 'bg-emerald-500/15',
-    textClass: 'text-emerald-500',
+    bg: 'rgba(34, 197, 94, 0.15)',
+    color: '#22c55e',
   },
   telegram: {
     icon: '✈️',
     label: 'Telegram',
-    bgClass: 'bg-sky-500/15',
-    textClass: 'text-sky-400',
+    bg: 'rgba(14, 165, 233, 0.15)',
+    color: '#0ea5e9',
   },
   instagram: {
     icon: '📸',
     label: 'Instagram',
-    bgClass: 'bg-pink-500/15',
-    textClass: 'text-pink-400',
+    bg: 'rgba(236, 72, 153, 0.15)',
+    color: '#ec4899',
   },
   facebook: {
     icon: '👤',
     label: 'Facebook',
-    bgClass: 'bg-blue-500/15',
-    textClass: 'text-blue-400',
+    bg: 'rgba(59, 130, 246, 0.15)',
+    color: '#3b82f6',
   },
 };
 
@@ -41,9 +41,27 @@ export const ChannelBadge: React.FC<ChannelBadgeProps> = ({ channel, showLabel =
   const config = CHANNEL_CONFIG[channel] || CHANNEL_CONFIG.whatsapp;
 
   return (
-    <View className={`flex-row items-center px-2 py-0.5 rounded-md ${config.bgClass}`}>
-      <Text className="text-[11px] mr-1">{config.icon}</Text>
-      {showLabel ? <Text className={`text-[11px] font-semibold ${config.textClass}`}>{config.label}</Text> : null}
+    <View style={[styles.badge, { backgroundColor: config.bg }]}>
+      <Text style={styles.icon}>{config.icon}</Text>
+      {showLabel ? <Text style={[styles.label, { color: config.color }]}>{config.label}</Text> : null}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  icon: {
+    fontSize: 11,
+    marginRight: 4,
+  },
+  label: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+});

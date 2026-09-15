@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, useColorScheme, View } from 'react-native';
 
 interface MetricGlassCardProps {
   title: string;
@@ -14,17 +14,76 @@ export const MetricGlassCard: React.FC<MetricGlassCardProps> = ({
   value,
   subtitle,
   icon,
+  accentColor = '#6366f1',
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   return (
-    <View className="rounded-2xl p-4 bg-[#181A1F] border border-[#262930] flex-1 min-w-[140px] m-1.5">
-      <View className="flex-row items-center mb-2">
-        <View className="w-8 h-8 rounded-lg justify-center items-center mr-2 bg-[#111317]">
-          <Text className="text-base font-bold">{icon}</Text>
+    <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+      <View style={styles.header}>
+        <View style={[styles.iconContainer, { backgroundColor: `${accentColor}1A` }]}>
+          <Text style={[styles.iconText, { color: accentColor }]}>{icon}</Text>
         </View>
-        <Text className="text-[12.5px] font-medium tracking-tight text-slate-400">{title}</Text>
+        <Text style={[styles.title, { color: isDark ? '#94a3b8' : '#64748b' }]}>{title}</Text>
       </View>
-      <Text className="text-2xl font-bold mt-1 text-white">{value}</Text>
-      {subtitle ? <Text className="text-[11px] mt-1 text-slate-400">{subtitle}</Text> : null}
+      <Text style={[styles.value, { color: isDark ? '#f8fafc' : '#0f172a' }]}>{value}</Text>
+      {subtitle ? <Text style={[styles.subtitle, { color: isDark ? '#64748b' : '#94a3b8' }]}>{subtitle}</Text> : null}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  card: {
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    flex: 1,
+    minWidth: 140,
+    margin: 6,
+  },
+  cardDark: {
+    backgroundColor: '#0f172a',
+    borderColor: '#1e293b',
+  },
+  cardLight: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  iconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  iconText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  title: {
+    fontSize: 12.5,
+    fontWeight: '500',
+    letterSpacing: -0.1,
+  },
+  value: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  subtitle: {
+    fontSize: 11,
+    marginTop: 4,
+  },
+});

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  StyleSheet,
   Text,
   View,
   Modal,
@@ -9,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CRMTask, TaskPriority } from '../types';
@@ -39,6 +41,9 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   defaultDealId,
   isLoading,
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<TaskPriority>('medium');
@@ -90,68 +95,89 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1 bg-black/80 justify-end"
+        style={[styles.modalOverlay, { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0.5)' }]}
       >
-        <View className="bg-[#181A1F] border-t border-[#262930] rounded-t-3xl px-5 pt-5 pb-8 max-h-[88%]">
+        <View
+          style={[
+            styles.modalContent,
+            {
+              backgroundColor: isDark ? '#181A20' : '#FFFFFF',
+              borderColor: isDark ? '#262A34' : '#E2E8F0',
+            },
+          ]}
+        >
           {/* Header */}
-          <View className="flex-row items-center justify-between mb-4">
+          <View style={styles.header}>
             <View>
-              <Text className="text-white text-lg font-bold">Create Task</Text>
-              <Text className="text-slate-400 text-xs mt-0.5">
+              <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Create Task</Text>
+              <Text style={[styles.headerSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
                 Set follow-ups and action items
               </Text>
             </View>
             <Pressable
-              className="p-1.5 rounded-lg bg-[#262930]"
+              style={[styles.closeBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
               onPress={handleClose}
               hitSlop={8}
             >
-              <Ionicons name="close" size={20} color="#94A3B8" />
+              <Ionicons name="close" size={20} color={isDark ? '#9CA3AF' : '#64748B'} />
             </Pressable>
           </View>
 
           {errorMessage ? (
-            <View className="flex-row items-center gap-2 bg-red-500/15 p-2.5 rounded-lg mb-3">
+            <View style={styles.errorBox}>
               <Ionicons name="alert-circle" size={16} color="#EF4444" />
-              <Text className="text-red-400 text-xs flex-1">{errorMessage}</Text>
+              <Text style={styles.errorText}>{errorMessage}</Text>
             </View>
           ) : null}
 
-          <ScrollView className="mb-4" showsVerticalScrollIndicator={false}>
+          <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
             {/* Title */}
-            <View className="mb-3.5">
-              <Text className="text-slate-300 text-xs font-semibold mb-1.5">Task Title *</Text>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Task Title *</Text>
               <TextInput
-                className="bg-[#111317] rounded-xl border border-[#262930] px-3 py-2.5 text-white text-sm"
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: isDark ? '#121316' : '#F8FAFC',
+                    borderColor: isDark ? '#262A34' : '#CBD5E1',
+                    color: isDark ? '#FFFFFF' : '#0F172A',
+                  },
+                ]}
                 placeholder="e.g. Follow up on demo feedback"
-                placeholderTextColor="#64748B"
+                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                 value={title}
                 onChangeText={setTitle}
               />
             </View>
 
             {/* Priority */}
-            <View className="mb-3.5">
-              <Text className="text-slate-300 text-xs font-semibold mb-1.5">Priority</Text>
-              <View className="flex-row gap-2">
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Priority</Text>
+              <View style={styles.priorityRow}>
                 {PRIORITIES.map((p) => {
                   const isSelected = priority === p.key;
                   return (
                     <Pressable
                       key={p.key}
-                      className={`flex-1 py-2 rounded-lg items-center border ${
-                        isSelected
-                          ? 'bg-blue-500/20 border-blue-500'
-                          : 'bg-[#111317] border-[#262930]'
-                      }`}
+                      style={[
+                        styles.priorityOption,
+                        {
+                          backgroundColor: isSelected
+                            ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
+                            : isDark ? '#222630' : '#F1F5F9',
+                          borderColor: isSelected ? '#3B82F6' : 'transparent',
+                        },
+                      ]}
                       onPress={() => setPriority(p.key)}
                     >
                       <Text
-                        className="text-xs"
-                        style={{
-                          color: isSelected ? p.color : '#94A3B8',
-                          fontWeight: isSelected ? '700' : '600',
-                        }}
+                        style={[
+                          styles.priorityOptionText,
+                          {
+                            color: isSelected ? p.color : isDark ? '#9CA3AF' : '#64748B',
+                            fontWeight: isSelected ? '700' : '600',
+                          },
+                        ]}
                       >
                         {p.label}
                       </Text>
@@ -162,12 +188,19 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             </View>
 
             {/* Due Date */}
-            <View className="mb-3.5">
-              <Text className="text-slate-300 text-xs font-semibold mb-1.5">Due Date (YYYY-MM-DD)</Text>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Due Date (YYYY-MM-DD)</Text>
               <TextInput
-                className="bg-[#111317] rounded-xl border border-[#262930] px-3 py-2.5 text-white text-sm"
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: isDark ? '#121316' : '#F8FAFC',
+                    borderColor: isDark ? '#262A34' : '#CBD5E1',
+                    color: isDark ? '#FFFFFF' : '#0F172A',
+                  },
+                ]}
                 placeholder={new Date().toISOString().split('T')[0]}
-                placeholderTextColor="#64748B"
+                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                 value={dueDate}
                 onChangeText={setDueDate}
               />
@@ -175,21 +208,29 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 
             {/* Link Contact */}
             {contactsData?.contacts && contactsData.contacts.length > 0 ? (
-              <View className="mb-3.5">
-                <Text className="text-slate-300 text-xs font-semibold mb-1.5">Link Contact / Lead</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+              <View style={styles.inputGroup}>
+                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Link Contact / Lead</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
                   <Pressable
-                    className={`px-3 py-2 rounded-lg mr-2 border ${
-                      contactId === ''
-                        ? 'bg-blue-500/20 border-blue-500'
-                        : 'bg-[#111317] border-[#262930]'
-                    }`}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: contactId === ''
+                          ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
+                          : isDark ? '#222630' : '#F1F5F9',
+                        borderColor: contactId === '' ? '#3B82F6' : 'transparent',
+                      },
+                    ]}
                     onPress={() => setContactId('')}
                   >
                     <Text
-                      className={`text-xs ${
-                        contactId === '' ? 'text-blue-400 font-semibold' : 'text-slate-400 font-medium'
-                      }`}
+                      style={[
+                        styles.chipText,
+                        {
+                          color: contactId === '' ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B',
+                          fontWeight: contactId === '' ? '600' : '500',
+                        },
+                      ]}
                     >
                       None
                     </Text>
@@ -199,17 +240,25 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                     return (
                       <Pressable
                         key={c.id}
-                        className={`px-3 py-2 rounded-lg mr-2 border ${
-                          isSelected
-                            ? 'bg-blue-500/20 border-blue-500'
-                            : 'bg-[#111317] border-[#262930]'
-                        }`}
+                        style={[
+                          styles.chip,
+                          {
+                            backgroundColor: isSelected
+                              ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
+                              : isDark ? '#222630' : '#F1F5F9',
+                            borderColor: isSelected ? '#3B82F6' : 'transparent',
+                          },
+                        ]}
                         onPress={() => setContactId(c.id)}
                       >
                         <Text
-                          className={`text-xs ${
-                            isSelected ? 'text-blue-400 font-semibold' : 'text-slate-400 font-medium'
-                          }`}
+                          style={[
+                            styles.chipText,
+                            {
+                              color: isSelected ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B',
+                              fontWeight: isSelected ? '600' : '500',
+                            },
+                          ]}
                         >
                           {c.name || `${c.first_name} ${c.last_name}`}
                         </Text>
@@ -222,21 +271,29 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 
             {/* Assignee */}
             {members && members.length > 0 ? (
-              <View className="mb-3.5">
-                <Text className="text-slate-300 text-xs font-semibold mb-1.5">Assign to</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+              <View style={styles.inputGroup}>
+                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Assign to</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
                   <Pressable
-                    className={`px-3 py-2 rounded-lg mr-2 border ${
-                      assignedTo === ''
-                        ? 'bg-blue-500/20 border-blue-500'
-                        : 'bg-[#111317] border-[#262930]'
-                    }`}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: assignedTo === ''
+                          ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
+                          : isDark ? '#222630' : '#F1F5F9',
+                        borderColor: assignedTo === '' ? '#3B82F6' : 'transparent',
+                      },
+                    ]}
                     onPress={() => setAssignedTo('')}
                   >
                     <Text
-                      className={`text-xs ${
-                        assignedTo === '' ? 'text-blue-400 font-semibold' : 'text-slate-400 font-medium'
-                      }`}
+                      style={[
+                        styles.chipText,
+                        {
+                          color: assignedTo === '' ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B',
+                          fontWeight: assignedTo === '' ? '600' : '500',
+                        },
+                      ]}
                     >
                       Myself
                     </Text>
@@ -246,17 +303,25 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                     return (
                       <Pressable
                         key={m.id}
-                        className={`px-3 py-2 rounded-lg mr-2 border ${
-                          isSelected
-                            ? 'bg-blue-500/20 border-blue-500'
-                            : 'bg-[#111317] border-[#262930]'
-                        }`}
+                        style={[
+                          styles.chip,
+                          {
+                            backgroundColor: isSelected
+                              ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
+                              : isDark ? '#222630' : '#F1F5F9',
+                            borderColor: isSelected ? '#3B82F6' : 'transparent',
+                          },
+                        ]}
                         onPress={() => setAssignedTo(m.id)}
                       >
                         <Text
-                          className={`text-xs ${
-                            isSelected ? 'text-blue-400 font-semibold' : 'text-slate-400 font-medium'
-                          }`}
+                          style={[
+                            styles.chipText,
+                            {
+                              color: isSelected ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B',
+                              fontWeight: isSelected ? '600' : '500',
+                            },
+                          ]}
                         >
                           {m.name}
                         </Text>
@@ -268,12 +333,20 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             ) : null}
 
             {/* Description */}
-            <View className="mb-3.5">
-              <Text className="text-slate-300 text-xs font-semibold mb-1.5">Description & Notes</Text>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Description & Notes</Text>
               <TextInput
-                className="bg-[#111317] rounded-xl border border-[#262930] px-3 py-2.5 text-white text-sm min-h-[70px] text-top"
+                style={[
+                  styles.input,
+                  styles.textArea,
+                  {
+                    backgroundColor: isDark ? '#121316' : '#F8FAFC',
+                    borderColor: isDark ? '#262A34' : '#CBD5E1',
+                    color: isDark ? '#FFFFFF' : '#0F172A',
+                  },
+                ]}
                 placeholder="Details of what needs to be discussed or prepared..."
-                placeholderTextColor="#64748B"
+                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                 multiline
                 numberOfLines={3}
                 value={description}
@@ -283,23 +356,19 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           </ScrollView>
 
           {/* Footer Actions */}
-          <View className="flex-row gap-3">
+          <View style={styles.modalFooter}>
             <Pressable
-              className="flex-1 py-3 rounded-xl bg-[#262930] items-center justify-center"
+              style={[styles.cancelBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
               onPress={handleClose}
               disabled={isLoading}
             >
-              <Text className="text-slate-300 text-sm font-semibold">Cancel</Text>
+              <Text style={[styles.cancelBtnText, { color: isDark ? '#D1D5DB' : '#475569' }]}>Cancel</Text>
             </Pressable>
-            <Pressable
-              className="flex-[2] py-3 rounded-xl bg-[#0084FF] items-center justify-center"
-              onPress={handleSubmit}
-              disabled={isLoading}
-            >
+            <Pressable style={styles.submitBtn} onPress={handleSubmit} disabled={isLoading}>
               {isLoading ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Text className="text-white text-sm font-semibold">Add Task</Text>
+                <Text style={styles.submitBtnText}>Add Task</Text>
               )}
             </Pressable>
           </View>
@@ -308,3 +377,160 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#181A20',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: Platform.OS === 'ios' ? 36 : 24,
+    maxHeight: '88%',
+    borderWidth: 1,
+    borderColor: '#262A34',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  headerTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  headerSubtitle: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  closeBtn: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: '#262A34',
+  },
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 12,
+    flex: 1,
+  },
+  formScroll: {
+    marginBottom: 16,
+  },
+  inputGroup: {
+    marginBottom: 14,
+  },
+  label: {
+    color: '#D1D5DB',
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  input: {
+    backgroundColor: '#121316',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#262A34',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: '#FFFFFF',
+    fontSize: 14,
+  },
+  textArea: {
+    minHeight: 70,
+    textAlignVertical: 'top',
+  },
+  priorityRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  priorityOption: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#222630',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  priorityOptionSelected: {
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    borderColor: '#3B82F6',
+  },
+  priorityOptionText: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  chipScroll: {
+    flexDirection: 'row',
+  },
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#222630',
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  chipSelected: {
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    borderColor: '#3B82F6',
+  },
+  chipText: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  chipTextSelected: {
+    color: '#60A5FA',
+    fontWeight: '600',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  cancelBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#262A34',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelBtnText: {
+    color: '#D1D5DB',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  submitBtn: {
+    flex: 2,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#3B82F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  submitBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+});
