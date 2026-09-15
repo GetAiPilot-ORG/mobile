@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   FlatList,
@@ -34,6 +35,7 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
   onBack,
   onOpenChat,
 }) => {
+  const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const user = useAuthStore((s) => s.user);
@@ -45,6 +47,7 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
   const { data, isLoading, refetch, isRefetching } = useWhatsAppContacts({
     search: searchQuery || undefined,
     tag: selectedTag,
+    limit: 250,
   });
 
   const handleBack = () => {
@@ -53,6 +56,10 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
     }
     if (onBack) {
       onBack();
+    } else if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/products/whatsapp');
     }
   };
 
@@ -109,6 +116,7 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
   const tags = ['All', 'VIP', 'Enterprise', 'Lead', 'Retail', 'High-Value', 'Agency', 'Creator'];
 
   const contacts = data?.contacts || [];
+  const totalCount = data?.total_count ?? contacts.length;
 
   return (
     <SafeAreaView
@@ -119,25 +127,23 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
         {/* Header matching Overview Tab */}
         <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
           <View style={styles.headerLeftRow}>
-            {onBack ? (
-              <Pressable
-                style={({ pressed }) => [
-                  styles.backButton,
-                  isDark ? styles.backButtonDark : styles.backButtonLight,
-                  pressed && styles.backButtonPressed,
-                ]}
-                onPress={handleBack}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityRole="button"
-                accessibilityLabel="Back"
-              >
-                <Ionicons
-                  name="chevron-back"
-                  size={20}
-                  color={isDark ? '#F8FAFC' : '#0F172A'}
-                />
-              </Pressable>
-            ) : null}
+            <Pressable
+              style={({ pressed }) => [
+                styles.backButton,
+                isDark ? styles.backButtonDark : styles.backButtonLight,
+                pressed && styles.backButtonPressed,
+              ]}
+              onPress={handleBack}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+            >
+              <Ionicons
+                name="chevron-back"
+                size={20}
+                color={isDark ? '#F8FAFC' : '#0F172A'}
+              />
+            </Pressable>
             <Text style={[styles.title, isDark ? styles.titleDark : styles.titleLight]}>
               WhatsApp Contacts
             </Text>
@@ -148,13 +154,13 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
         <View style={styles.searchContainer}>
           <View style={[styles.searchBar, isDark ? styles.searchBarDark : styles.searchBarLight]}>
             <Ionicons
-              name="search-outline"
-              size={18}
-              color={isDark ? '#64748B' : '#94A3B8'}
+              name="search"
+              size={17}
+              color={isDark ? '#8E8E93' : '#8E8E93'}
               style={styles.searchIcon}
             />
             <TextInput
-              style={[styles.searchInput, { color: isDark ? '#F8FAFC' : '#0F172A' }]}
+              style={[styles.searchInput, isDark ? styles.textPrimaryDark : styles.textPrimaryLight]}
               placeholder="Search contacts by name or phone..."
               placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
               value={searchQuery}
@@ -163,7 +169,7 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
             />
             {searchQuery.length > 0 && (
               <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-                <Ionicons name="close-circle" size={16} color={isDark ? '#64748B' : '#94A3B8'} />
+                <Ionicons name="close-circle" size={17} color={isDark ? '#8E8E93' : '#8E8E93'} />
               </Pressable>
             )}
           </View>
@@ -181,10 +187,11 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
               return (
                 <Pressable
                   key={item}
-                  style={[
+                  style={({ pressed }) => [
                     styles.tagChip,
                     isDark ? styles.tagChipDark : styles.tagChipLight,
-                    isSelected && styles.tagChipActive,
+                    isSelected && (isDark ? styles.tagChipActiveDark : styles.tagChipActiveLight),
+                    pressed && styles.tagChipPressed,
                   ]}
                   onPress={() => {
                     if (Platform.OS !== 'web') {
@@ -196,8 +203,8 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
                   <Text
                     style={[
                       styles.tagChipText,
-                      { color: isSelected ? '#000000' : isDark ? '#94A3B8' : '#64748B' },
-                      isSelected && styles.tagChipTextActive,
+                      isDark ? styles.tagChipTextDark : styles.tagChipTextLight,
+                      isSelected && (isDark ? styles.tagChipTextActiveDark : styles.tagChipTextActiveLight),
                     ]}
                   >
                     {item}
@@ -210,7 +217,6 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
 
         {/* Contacts List */}
         {isLoading && !data ? (
-
           <CrmListSkeleton />
         ) : (
           <FlatList
@@ -225,11 +231,11 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
             )}
             contentContainerStyle={styles.listContent}
             refreshControl={
-              <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#25D366" />
+              <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={isDark ? '#FFFFFF' : '#0A84FF'} />
             }
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Text style={[styles.emptyText, { color: isDark ? '#64748B' : '#94A3B8' }]}>
+                <Text style={[styles.emptyText, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
                   No contacts found matching your query
                 </Text>
               </View>
@@ -325,25 +331,37 @@ const styles = StyleSheet.create({
   titleDark: {
     color: '#F8FAFC',
   },
+  subtitle: {
+    fontSize: 12,
+    fontWeight: '400',
+    marginTop: 1,
+    letterSpacing: -0.1,
+  },
+  subtitleLight: {
+    color: '#64748B',
+  },
+  subtitleDark: {
+    color: '#8E8E93',
+  },
   searchContainer: {
     paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 4,
+    paddingTop: 12,
+    paddingBottom: 6,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 12,
     paddingHorizontal: 12,
-    height: 44,
-    borderWidth: 1,
+    height: 40,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   searchBarDark: {
     backgroundColor: '#1C1C1E',
     borderColor: '#2C2C2E',
   },
   searchBarLight: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F2F2F7',
     borderColor: '#E5E7EB',
   },
   searchIcon: {
@@ -356,13 +374,8 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   tagWrapper: {
-    height: 48,
-    minHeight: 48,
-    maxHeight: 48,
-    flexShrink: 0,
-    flexGrow: 0,
-    justifyContent: 'center',
-    marginBottom: 4,
+    paddingVertical: 6,
+    marginBottom: 6,
   },
   tagList: {
     paddingHorizontal: 16,
@@ -371,10 +384,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tagChip: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 7,
-    borderRadius: 10,
-    borderWidth: 1,
+    borderRadius: 100,
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -383,37 +396,46 @@ const styles = StyleSheet.create({
     borderColor: '#2C2C2E',
   },
   tagChipLight: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F2F2F7',
     borderColor: '#E5E7EB',
   },
-  tagChipActive: {
-    backgroundColor: '#25D366',
-    borderColor: '#25D366',
+  tagChipActiveDark: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
+  },
+  tagChipActiveLight: {
+    backgroundColor: '#000000',
+    borderColor: '#000000',
+  },
+  tagChipPressed: {
+    opacity: 0.8,
   },
   tagChipText: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '600',
-    letterSpacing: 0.2,
+    letterSpacing: -0.1,
   },
-  tagChipTextActive: {
+  tagChipTextDark: {
+    color: '#8E8E93',
+  },
+  tagChipTextLight: {
+    color: '#6B7280',
+  },
+  tagChipTextActiveDark: {
     color: '#000000',
+    fontWeight: '700',
+  },
+  tagChipTextActiveLight: {
+    color: '#FFFFFF',
     fontWeight: '700',
   },
   contactsFlatList: {
     flex: 1,
   },
   listContent: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 4,
     paddingBottom: 130,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 13,
-    marginTop: 10,
   },
   emptyContainer: {
     padding: 40,
@@ -421,5 +443,18 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
+    textAlign: 'center',
+  },
+  textPrimaryDark: {
+    color: '#F8FAFC',
+  },
+  textPrimaryLight: {
+    color: '#0F172A',
+  },
+  textSecondaryDark: {
+    color: '#8E8E93',
+  },
+  textSecondaryLight: {
+    color: '#64748B',
   },
 });

@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   FlatList,
@@ -24,6 +25,7 @@ interface WhatsAppBroadcastsScreenProps {
 }
 
 export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> = ({ onBack }) => {
+  const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -40,6 +42,10 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
     }
     if (onBack) {
       onBack();
+    } else if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/products/whatsapp');
     }
   };
 
@@ -70,87 +76,83 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
       <View style={styles.container}>
         {/* Header matching Overview Tab */}
         <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
-          <View style={styles.headerLeftRow}>
-            {onBack ? (
-              <Pressable
-                style={({ pressed }) => [
-                  styles.backButton,
-                  isDark ? styles.backButtonDark : styles.backButtonLight,
-                  pressed && styles.backButtonPressed,
-                ]}
-                onPress={handleBack}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityRole="button"
-                accessibilityLabel="Back"
-              >
-                <Ionicons
-                  name="chevron-back"
-                  size={20}
-                  color={isDark ? '#F8FAFC' : '#0F172A'}
-                />
-              </Pressable>
-            ) : null}
-            <Text style={[styles.title, isDark ? styles.titleDark : styles.titleLight]}>
-              Broadcast Campaigns
-            </Text>
-          </View>
+          <Pressable
+            style={({ pressed }) => [
+              styles.backButton,
+              isDark ? styles.backButtonDark : styles.backButtonLight,
+              pressed && styles.backButtonPressed,
+            ]}
+            onPress={handleBack}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
+            <Ionicons
+              name="chevron-back"
+              size={20}
+              color={isDark ? '#F8FAFC' : '#0F172A'}
+            />
+          </Pressable>
+          <Text style={[styles.title, isDark ? styles.titleDark : styles.titleLight]}>
+            Broadcast Campaigns
+          </Text>
         </View>
-
-        {/* Filter Pills */}
-        <View style={styles.filterRow}>
-          {statusTabs.map((tab) => {
-            const isSelected = selectedStatus === tab;
-            return (
-              <Pressable
-                key={tab}
-                style={({ pressed }) => [
-                  styles.filterChip,
-                  isDark ? styles.filterChipDark : styles.filterChipLight,
-                  isSelected && (isDark ? styles.filterChipActiveDark : styles.filterChipActiveLight),
-                  pressed && styles.filterChipPressed,
-                ]}
-                onPress={() => handleStatusSelect(tab)}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    isDark ? styles.filterChipTextDark : styles.filterChipTextLight,
-                    isSelected && (isDark ? styles.filterChipTextActiveDark : styles.filterChipTextActiveLight),
-                  ]}
-                >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {/* Broadcasts List */}
-        {isLoading && !data ? (
-
-          <WhatsAppBroadcastsSkeleton />
-        ) : (
-          <FlatList
-            data={broadcasts}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <BroadcastCard
-                broadcast={item}
-                onPress={(b) => setSelectedBroadcast(b)}
-              />
-            )}
-            contentContainerStyle={styles.listContent}
-            refreshControl={
-              <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={isDark ? '#FFFFFF' : '#0A84FF'} />
-            }
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text style={[styles.emptyText, { color: isDark ? '#94A3B8' : '#64748B' }]}>No broadcast campaigns found</Text>
-              </View>
-            }
-          />
-        )}
       </View>
+
+      {/* Filter Pills */}
+      <View style={styles.filterRow}>
+        {statusTabs.map((tab) => {
+          const isSelected = selectedStatus === tab;
+          return (
+            <Pressable
+              key={tab}
+              style={({ pressed }) => [
+                styles.filterChip,
+                isDark ? styles.filterChipDark : styles.filterChipLight,
+                isSelected && (isDark ? styles.filterChipActiveDark : styles.filterChipActiveLight),
+                pressed && styles.filterChipPressed,
+              ]}
+              onPress={() => handleStatusSelect(tab)}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  isDark ? styles.filterChipTextDark : styles.filterChipTextLight,
+                  isSelected && (isDark ? styles.filterChipTextActiveDark : styles.filterChipTextActiveLight),
+                ]}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {/* Broadcasts List */}
+      {isLoading && !data ? (
+
+        <WhatsAppBroadcastsSkeleton />
+      ) : (
+        <FlatList
+          data={broadcasts}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <BroadcastCard
+              broadcast={item}
+              onPress={(b) => setSelectedBroadcast(b)}
+            />
+          )}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={isDark ? '#FFFFFF' : '#0A84FF'} />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={[styles.emptyText, { color: isDark ? '#94A3B8' : '#64748B' }]}>No broadcast campaigns found</Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 };

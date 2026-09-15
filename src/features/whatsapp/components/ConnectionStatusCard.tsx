@@ -8,21 +8,27 @@ import { WhatsAppConnection } from '../types';
 interface ConnectionStatusCardProps {
   connection?: WhatsAppConnection;
   isLoading?: boolean;
+  onConnectPress?: () => void;
+  onSwitchAccountPress?: () => void;
+  hasMultipleAccounts?: boolean;
 }
 
 export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
   connection,
   isLoading,
+  onConnectPress,
+  onSwitchAccountPress,
+  hasMultipleAccounts = false,
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const isConnected = connection?.connected ?? true;
+  const isConnected = connection?.connected === true && Boolean(connection?.phone_number);
 
   const rawLimit = connection?.messaging_limit;
-  const formattedLimit = rawLimit && rawLimit !== 'null'
-    ? rawLimit.replace('TIER_', '') + ' msgs'
-    : '10K msgs';
+  const formattedLimit = rawLimit && rawLimit !== 'TIER_NOT_SET' && rawLimit !== 'null'
+    ? rawLimit.replace('TIER_', '') + ' msgs / 24h'
+    : 'Not Configured';
 
   const handleCopyPhone = async () => {
     if (connection?.phone_number) {
@@ -40,7 +46,11 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
         {/* iOS Avatar with Live Connection Dot */}
         <View style={styles.avatarWrapper}>
           <View style={[styles.avatar, isDark ? styles.avatarDark : styles.avatarLight]}>
-            <Ionicons name="logo-whatsapp" size={24} color="#22C55E" />
+            <Ionicons
+              name="logo-whatsapp"
+              size={24}
+              color={isConnected ? '#22C55E' : (isDark ? '#8E8E93' : '#64748B')}
+            />
           </View>
           {/* Live Online / Connected Indicator Ring */}
           <View
@@ -56,48 +66,80 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
         <View style={styles.infoCol}>
           <View style={styles.nameRow}>
             <Text style={[styles.displayName, isDark ? styles.textLight : styles.textDark]} numberOfLines={1}>
-              {connection?.display_name || 'Get Ai Pilot'}
+              {connection?.display_name || (isConnected ? 'WhatsApp Business' : 'No Active Connection')}
             </Text>
-            <Ionicons name="checkmark-circle" size={15} color="#0084FF" />
+            {isConnected && <Ionicons name="checkmark-circle" size={15} color="#0084FF" />}
           </View>
 
           <View style={styles.subMetaRow}>
-            <Pressable style={styles.phonePressable} onPress={handleCopyPhone} hitSlop={6}>
+            {connection?.phone_number ? (
+              <Pressable style={styles.phonePressable} onPress={handleCopyPhone} hitSlop={6}>
+                <Text style={[styles.phoneNumber, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+                  {connection.phone_number}
+                </Text>
+                <Ionicons
+                  name="copy-outline"
+                  size={11.5}
+                  color={isDark ? '#64748B' : '#94A3B8'}
+                />
+              </Pressable>
+            ) : (
               <Text style={[styles.phoneNumber, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
-                {connection?.phone_number || '+91 74045 62984'}
+                No Number Linked
               </Text>
-              <Ionicons
-                name="copy-outline"
-                size={11.5}
-                color={isDark ? '#64748B' : '#94A3B8'}
-              />
-            </Pressable>
+            )}
 
             <Text style={[styles.dotSeparator, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>•</Text>
 
             <Text style={[styles.statusCaption, { color: isConnected ? '#22C55E' : '#EF4444' }]}>
-              {isConnected ? 'Connected' : 'Offline'}
+              {isConnected ? 'Connected' : 'Disconnected'}
             </Text>
           </View>
         </View>
+
+        {/* Switch Account Action if multiple numbers */}
+        {hasMultipleAccounts && onSwitchAccountPress && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.switchBtn,
+              isDark ? styles.switchBtnDark : styles.switchBtnLight,
+              pressed && { opacity: 0.7 },
+            ]}
+            onPress={onSwitchAccountPress}
+          >
+            <Ionicons name="swap-horizontal" size={14} color={isDark ? '#0A84FF' : '#007AFF'} />
+            <Text style={[styles.switchBtnText, { color: isDark ? '#0A84FF' : '#007AFF' }]}>
+              Switch
+            </Text>
+          </Pressable>
+        )}
       </View>
 
-      {/* Subtle Bottom SLA Info Row */}
-      <View style={[styles.footerRow, isDark ? styles.footerBorderDark : styles.footerBorderLight]}>
-        <View style={styles.tierInfo}>
-          <Ionicons name="speedometer-outline" size={13} color={isDark ? '#64748B' : '#94A3B8'} />
-          <Text style={[styles.limitLabel, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
-            Tier Limit:{' '}
-            <Text style={[styles.limitValue, isDark ? styles.textLight : styles.textDark]}>
-              {formattedLimit} / 24h
+      {/* SLA / Connection Notice Row */}
+      {isConnected ? (
+        <View style={[styles.footerRow, isDark ? styles.footerBorderDark : styles.footerBorderLight]}>
+          <View style={styles.tierInfo}>
+            <Ionicons name="speedometer-outline" size={13} color={isDark ? '#64748B' : '#94A3B8'} />
+            <Text style={[styles.limitLabel, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+              Tier Limit:{' '}
+              <Text style={[styles.limitValue, isDark ? styles.textLight : styles.textDark]}>
+                {formattedLimit}
+              </Text>
             </Text>
+          </View>
+
+          <View style={styles.metaLiveTag}>
+            <Text style={styles.metaLiveText}>Meta Cloud API</Text>
+          </View>
+        </View>
+      ) : (
+        <View style={[styles.disconnectedFooter, isDark ? styles.disconnectedFooterDark : styles.disconnectedFooterLight]}>
+          <Ionicons name="information-circle" size={14} color="#EF4444" style={{ marginRight: 6 }} />
+          <Text style={[styles.disconnectedText, { color: isDark ? '#FCA5A5' : '#B91C1C' }]}>
+            WhatsApp is disconnected. Link your number in web dashboard to resume messaging.
           </Text>
         </View>
-
-        <View style={styles.metaLiveTag}>
-          <Text style={styles.metaLiveText}>Cloud API v20.0</Text>
-        </View>
-      </View>
+      )}
     </View>
   );
 };
@@ -235,6 +277,41 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     fontWeight: '600',
     letterSpacing: 0.1,
+  },
+  disconnectedFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 10,
+  },
+  disconnectedFooterDark: {
+    borderTopColor: '#2C2C2E',
+  },
+  disconnectedFooterLight: {
+    borderTopColor: '#E5E7EB',
+  },
+  disconnectedText: {
+    fontSize: 11.5,
+    lineHeight: 16,
+    flex: 1,
+  },
+  switchBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  switchBtnDark: {
+    backgroundColor: 'rgba(10, 132, 255, 0.12)',
+  },
+  switchBtnLight: {
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+  },
+  switchBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   textLight: {
     color: '#FFFFFF',

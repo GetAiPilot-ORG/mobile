@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { useRouter, usePathname } from 'expo-router';
 import { useAuthStore } from '../core/store/authStore';
-import React from 'react';
-import { Platform, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { BackHandler, Platform, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const brandLogo = require("../../assets/images/logo.jpg");
@@ -16,7 +16,66 @@ export interface AppTopBarProps {
   rightElement?: React.ReactNode;
   leftElement?: React.ReactNode;
   onBackPress?: () => void;
+  parentRoute?: string;
 }
+
+/**
+ * Intelligent parent route resolver so sub-screens never fall back blindly to Home screen
+ */
+export const getParentRoute = (pathname: string): string => {
+  if (!pathname) return '/(tabs)';
+
+  // 1. Tool sub-screens -> go to Tools tab
+  if (pathname.startsWith('/tools/')) {
+    return '/(tabs)/tools';
+  }
+
+  // 2. CRM sub-screens -> go to CRM overview or Products tab
+  if (pathname.startsWith('/products/crm/leads/')) {
+    return '/products/crm';
+  }
+  if (pathname.startsWith('/products/crm')) {
+    return '/(tabs)/products';
+  }
+
+  // 3. WhatsApp sub-screens -> go to WhatsApp overview or Products tab
+  if (pathname.startsWith('/products/whatsapp/broadcasts/')) {
+    return '/products/whatsapp';
+  }
+  if (pathname.startsWith('/products/whatsapp/')) {
+    return '/products/whatsapp';
+  }
+  if (pathname.startsWith('/products/whatsapp')) {
+    return '/(tabs)/products';
+  }
+
+  // 4. Other products -> go to Products tab
+  if (
+    pathname.startsWith('/products/voice') ||
+    pathname.startsWith('/products/social') ||
+    pathname.startsWith('/products/telegram') ||
+    pathname.startsWith('/products/')
+  ) {
+    return '/(tabs)/products';
+  }
+
+  // 5. Account sub-screens -> go to Account tab
+  if (pathname.startsWith('/account/')) {
+    return '/(tabs)/account';
+  }
+
+  // 6. Admin sub-screens -> go to Admin tab
+  if (pathname.startsWith('/admin/')) {
+    return '/(tabs)/admin';
+  }
+
+  // 7. Inbox sub-screens -> go to Inbox tab
+  if (pathname.startsWith('/inbox/')) {
+    return '/(tabs)/inbox';
+  }
+
+  return '/(tabs)';
+};
 
 export const AppTopBar: React.FC<AppTopBarProps> = ({
   title,
@@ -25,8 +84,10 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
   rightElement,
   leftElement,
   onBackPress,
+  parentRoute,
 }) => {
   const router = useRouter();
+  const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -45,12 +106,27 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
       return;
     }
 
+    const fallbackParent = parentRoute || getParentRoute(pathname);
+
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace('/(tabs)');
+      router.replace(fallbackParent as any);
     }
   };
+
+  // Android hardware back button handler
+  useEffect(() => {
+    if (!shouldShowBack) return;
+
+    const onHardwareBack = () => {
+      handleBack();
+      return true;
+    };
+
+    const sub = BackHandler.addEventListener('hardwareBackPress', onHardwareBack);
+    return () => sub.remove();
+  }, [shouldShowBack, onBackPress, parentRoute, pathname]);
 
   const handleProfilePress = () => {
     if (Platform.OS !== "web") {

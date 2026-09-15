@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { StyleSheet, useColorScheme, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { BackHandler, StyleSheet, useColorScheme, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { CRMHomeScreen } from '../../../src/features/crm/screens/CRMHomeScreen';
 import { LeadListScreen } from '../../../src/features/crm/screens/LeadListScreen';
 import { LeadDetailScreen } from '../../../src/features/crm/screens/LeadDetailScreen';
@@ -59,15 +60,38 @@ const CRM_TABS: ProductTabItem[] = [
     label: 'Team & Hub',
     activeIcon: 'grid',
     inactiveIcon: 'grid-outline',
-    description: 'Team members, roles & settings',
+    description: 'Team directory & advanced features',
   },
 ];
 
 export default function CRMIndexRoute() {
+  const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const [activeTab, setActiveTab] = useState<CRMTab>('home');
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const onHardwareBack = () => {
+      if (selectedLeadId) {
+        setSelectedLeadId(null);
+        return true;
+      }
+      if (activeTab !== 'home') {
+        setActiveTab('home');
+        return true;
+      }
+      if (router.canGoBack()) {
+        router.back();
+        return true;
+      }
+      router.replace('/(tabs)/products');
+      return true;
+    };
+
+    const sub = BackHandler.addEventListener('hardwareBackPress', onHardwareBack);
+    return () => sub.remove();
+  }, [selectedLeadId, activeTab]);
 
   // If a lead is selected, show LeadDetailScreen
   if (selectedLeadId) {
@@ -97,22 +121,41 @@ export default function CRMIndexRoute() {
               }
             }}
             onSelectLead={(id) => setSelectedLeadId(id)}
+            onBack={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)/products');
+              }
+            }}
           />
         )}
 
         {activeTab === 'leads' && (
-          <LeadListScreen onSelectLead={(id) => setSelectedLeadId(id)} />
+          <LeadListScreen
+            onSelectLead={(id) => setSelectedLeadId(id)}
+            onBack={() => setActiveTab('home')}
+          />
         )}
 
-        {activeTab === 'pipeline' && <PipelineScreen />}
+        {activeTab === 'pipeline' && (
+          <PipelineScreen onBack={() => setActiveTab('home')} />
+        )}
 
-        {activeTab === 'tasks' && <TasksScreen />}
+        {activeTab === 'tasks' && (
+          <TasksScreen onBack={() => setActiveTab('home')} />
+        )}
 
         {activeTab === 'contacts' && (
-          <ContactsScreen onSelectContact={(id) => setSelectedLeadId(id)} />
+          <ContactsScreen
+            onSelectContact={(id) => setSelectedLeadId(id)}
+            onBack={() => setActiveTab('home')}
+          />
         )}
 
-        {activeTab === 'activities' && <ActivitiesScreen />}
+        {activeTab === 'activities' && (
+          <ActivitiesScreen onBack={() => setActiveTab('home')} />
+        )}
 
         {activeTab === 'more' && (
           <CRMMoreScreen
@@ -120,6 +163,7 @@ export default function CRMIndexRoute() {
               if (section === 'contacts') setActiveTab('contacts');
               else if (section === 'activities') setActiveTab('activities');
             }}
+            onBack={() => setActiveTab('home')}
           />
         )}
       </View>
