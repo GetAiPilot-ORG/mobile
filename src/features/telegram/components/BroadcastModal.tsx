@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
   },
   idCardDark: {
     backgroundColor: '#161C28',
-    borderColor: '#262C36',
+    borderColor: '#27272A',
   },
   idLabel: {
     fontSize: 12,

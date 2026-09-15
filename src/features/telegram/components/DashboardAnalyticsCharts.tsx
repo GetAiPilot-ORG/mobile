@@ -37,9 +37,9 @@ export const DashboardAnalyticsCharts: React.FC = () => {
             </Defs>
 
             {/* Grid lines */}
-            <Line x1="25" y1="15" x2="310" y2="15" stroke={isDark ? '#262C36' : '#F1F5F9'} strokeWidth="1" strokeDasharray="3 3" />
-            <Line x1="25" y1="40" x2="310" y2="40" stroke={isDark ? '#262C36' : '#F1F5F9'} strokeWidth="1" strokeDasharray="3 3" />
-            <Line x1="25" y1="65" x2="310" y2="65" stroke={isDark ? '#262C36' : '#F1F5F9'} strokeWidth="1" />
+            <Line x1="25" y1="15" x2="310" y2="15" stroke={isDark ? '#27272A' : '#F1F5F9'} strokeWidth="1" strokeDasharray="3 3" />
+            <Line x1="25" y1="40" x2="310" y2="40" stroke={isDark ? '#27272A' : '#F1F5F9'} strokeWidth="1" strokeDasharray="3 3" />
+            <Line x1="25" y1="65" x2="310" y2="65" stroke={isDark ? '#27272A' : '#F1F5F9'} strokeWidth="1" />
 
             {/* Y Axis Labels */}
             <SvgText x="8" y="18" fill="#94A3B8" fontSize="9" fontWeight="600">4</SvgText>
@@ -103,9 +103,9 @@ export const DashboardAnalyticsCharts: React.FC = () => {
             </Defs>
 
             {/* Grid lines */}
-            <Line x1="25" y1="15" x2="310" y2="15" stroke={isDark ? '#262C36' : '#F1F5F9'} strokeWidth="1" strokeDasharray="3 3" />
-            <Line x1="25" y1="40" x2="310" y2="40" stroke={isDark ? '#262C36' : '#F1F5F9'} strokeWidth="1" strokeDasharray="3 3" />
-            <Line x1="25" y1="65" x2="310" y2="65" stroke={isDark ? '#262C36' : '#F1F5F9'} strokeWidth="1" />
+            <Line x1="25" y1="15" x2="310" y2="15" stroke={isDark ? '#27272A' : '#F1F5F9'} strokeWidth="1" strokeDasharray="3 3" />
+            <Line x1="25" y1="40" x2="310" y2="40" stroke={isDark ? '#27272A' : '#F1F5F9'} strokeWidth="1" strokeDasharray="3 3" />
+            <Line x1="25" y1="65" x2="310" y2="65" stroke={isDark ? '#27272A' : '#F1F5F9'} strokeWidth="1" />
 
             {/* Y Axis Labels */}
             <SvgText x="8" y="18" fill="#94A3B8" fontSize="9" fontWeight="600">₹4</SvgText>
@@ -156,8 +156,8 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   cardDark: {
-    backgroundColor: '#161B26',
-    borderColor: '#262C36',
+    backgroundColor: '#121212',
+    borderColor: '#27272A',
   },
   chartHeaderRow: {
     flexDirection: 'row',

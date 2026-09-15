@@ -1,6 +1,5 @@
 # GetAIPilot Component Migration Mapping (Web → Mobile)
-
-This document is the authoritative component-by-component mapping between the existing production web app (`getaipilot.in/src/`) and the native React Native mobile app (`mobile/src/`).
+ +++0oduction web app (`getaipilot.in/src/`) and the native React Native mobile app (`mobile/src/`).
 
 ## Architecture & Migration Method
 

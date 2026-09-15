@@ -20,7 +20,7 @@ export const productThemes: Record<string, ProductTheme> = {
   telegram: {
     id: 'telegram',
     name: 'GAP Telegram',
-    tagline: 'Auto-forwarding, Auto-Approve, Reactions & Telesub Paywalls',
+    tagline: 'Auto-forwarding, Auto-Approve, Reactions & Sub Manager Paywalls',
     primary: colors.products.telegram,
     dark: colors.products.telegramDark,
     soft: colors.products.telegramSoft,

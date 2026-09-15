@@ -1035,7 +1035,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   borderLight: { borderBottomColor: '#E2E8F0' },
-  borderDark: { borderBottomColor: '#262C36' },
+  borderDark: { borderBottomColor: '#27272A' },
   headerLeft: { flex: 1 },
   headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { fontSize: 17, fontWeight: '700' },
@@ -1061,7 +1061,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   closeBtnLight: { backgroundColor: '#F1F5F9' },
-  closeBtnDark: { backgroundColor: '#262C36' },
+  closeBtnDark: { backgroundColor: '#27272A' },
 
   // Wallet Bar
   walletBar: {
@@ -1109,7 +1109,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   tabContainerLight: { backgroundColor: '#F1F5F9', borderColor: '#E2E8F0' },
-  tabContainerDark: { backgroundColor: '#161B26', borderColor: '#262C36' },
+  tabContainerDark: { backgroundColor: '#121212', borderColor: '#27272A' },
   tabBtn: {
     flex: 1,
     flexDirection: 'row',
@@ -1146,7 +1146,7 @@ const styles = StyleSheet.create({
 
   // Common Cards & Styles
   cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  cardDark: { backgroundColor: '#161B26', borderColor: '#262C36' },
+  cardDark: { backgroundColor: '#121212', borderColor: '#27272A' },
 
   // Bot Setup Banner
   botSetupBanner: {
@@ -1389,7 +1389,7 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   priceBoxLight: { backgroundColor: '#F1F5F9', borderColor: '#E2E8F0' },
-  priceBoxDark: { backgroundColor: '#1F2430', borderColor: '#262C36' },
+  priceBoxDark: { backgroundColor: '#1F2430', borderColor: '#27272A' },
   priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   priceRowFinal: {
     borderTopWidth: 1,
