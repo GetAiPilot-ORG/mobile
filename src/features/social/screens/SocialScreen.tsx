@@ -508,7 +508,7 @@ export const SocialScreen: React.FC = () => {
               <SocialPostsSkeleton />
             ) : postsList.length === 0 ? (
               <View style={styles.emptyContainer}>
-                <Ionicons name="newspaper-outline" size={40} color={isDark ? '#475569' : '#94a3b8'} />s
+                <Ionicons name="newspaper-outline" size={40} color={isDark ? '#475569' : '#94a3b8'} />
                 <Text style={[styles.emptyTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
                   No Broadcast Posts Found
                 </Text>

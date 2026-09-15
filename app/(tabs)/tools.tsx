@@ -50,11 +50,7 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
       "Pick mobile bio site themes optimized for creators, agencies, and businesses.",
     icon: "🔗",
     badge: "Popular",
-    route: "/free-tools/bio-templates",
-    builder: {
-      targetTool: "bio-builder",
-      templateId: "creators-v1",
-    },
+    route: "/tools/bio-templates",
   },
   {
     id: "landing-templates",
@@ -64,7 +60,7 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
       "Pre-built high-converting lead capture funnels and product waitlist pages.",
     icon: "🚀",
     badge: "Ready",
-    route: "/free-tools/landing-templates",
+    route: "/tools/landing-templates",
     builder: {
       targetTool: "landing-templates",
     },

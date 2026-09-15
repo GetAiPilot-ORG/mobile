@@ -12,7 +12,10 @@ import {
 } from "react-native";
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
-import { openAuthenticatedTemplate } from "../../src/lib/template-deep-link";
+import {
+  openAuthenticatedDashboard,
+  openAuthenticatedTemplate,
+} from "../../src/lib/template-deep-link";
 import { colors } from "../../src/theme/colors";
 
 interface LandingTemplate {
@@ -126,6 +129,15 @@ export default function LandingTemplatesScreen() {
     }
   };
 
+  const handleOpenLandingDashboard = async () => {
+    try {
+      await openAuthenticatedDashboard("landing-dashboard");
+    } catch (error) {
+      console.error("Failed to open landing dashboard:", error);
+      Alert.alert("Unable to open dashboard", "Please check your connection and try again.");
+    }
+  };
+
   const handleDeploy = (item: LandingTemplate) => {
     Alert.alert(
       "Deploy Landing Page",
@@ -162,6 +174,20 @@ export default function LandingTemplatesScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <Text style={{ fontSize: 13, color: colors.mutedForeground }}>Pick a template to build or edit:</Text>
+          <Pressable
+            style={{
+              backgroundColor: "#0A84FF",
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              borderRadius: 8,
+            }}
+            onPress={handleOpenLandingDashboard}
+          >
+            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700" }}>Web Dashboard ↗</Text>
+          </Pressable>
+        </View>
         {/* Search */}
         <TextInput
           style={styles.searchInput}

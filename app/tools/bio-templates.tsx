@@ -14,7 +14,10 @@ import {
 
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
-import { openAuthenticatedTemplate } from "../../src/lib/template-deep-link";
+import {
+  openAuthenticatedDashboard,
+  openAuthenticatedTemplate,
+} from "../../src/lib/template-deep-link";
 import { supabase } from "../../src/lib/supabase";
 import { colors } from "../../src/theme/colors";
 import { TemplatesListSkeleton } from "../../src/components/skeletonScreen";
@@ -50,18 +53,20 @@ export default function BioTemplatesScreen() {
   const fetchTemplates = useCallback(async () => {
     try {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      if (!user) {
+      if (!session?.user) {
         setTemplates([]);
+        setLoading(false);
+        setRefreshing(false);
         return;
       }
 
       const { data, error } = await supabase
         .from("free_template_submissions")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", session.user.id)
         .neq("niche", "earn_storefront")
         .order("downloaded_at", {
           ascending: false,
@@ -148,6 +153,15 @@ export default function BioTemplatesScreen() {
       console.error("Failed to open URL:", err);
       Alert.alert("Error", "Failed to open the template link.");
     });
+  }, []);
+
+  const handleOpenBioDashboard = useCallback(async () => {
+    try {
+      await openAuthenticatedDashboard("bio-dashboard");
+    } catch (error) {
+      console.error("Failed to open bio dashboard:", error);
+      Alert.alert("Unable to open dashboard", "Please check your connection and try again.");
+    }
   }, []);
 
   const handleOpenEditor = useCallback(async (template: TemplateSubmission) => {
@@ -305,7 +319,7 @@ export default function BioTemplatesScreen() {
           ListHeaderComponent={
             templates.length > 0 ? (
               <View style={styles.headerCard}>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.headerTitle}>My Templates</Text>
 
                   <Text style={styles.headerSubtitle}>
@@ -314,6 +328,19 @@ export default function BioTemplatesScreen() {
                     downloaded
                   </Text>
                 </View>
+
+                <Pressable
+                  style={{
+                    backgroundColor: "#0A84FF",
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    borderRadius: 8,
+                    marginRight: 8,
+                  }}
+                  onPress={handleOpenBioDashboard}
+                >
+                  <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700" }}>Web Dashboard ↗</Text>
+                </Pressable>
 
                 <View style={styles.countBadge}>
                   <Text style={styles.countText}>{templates.length}</Text>
@@ -330,6 +357,19 @@ export default function BioTemplatesScreen() {
               <Text style={styles.emptyText}>
                 Your downloaded bio templates will appear here.
               </Text>
+
+              <Pressable
+                style={{
+                  backgroundColor: "#0A84FF",
+                  paddingHorizontal: 18,
+                  paddingVertical: 12,
+                  borderRadius: 10,
+                  marginTop: 16,
+                }}
+                onPress={() => handleOpenEditor({ id: "creators-v1" } as any)}
+              >
+                <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "700" }}>Create Bio Page 🚀</Text>
+              </Pressable>
             </View>
           }
         />
