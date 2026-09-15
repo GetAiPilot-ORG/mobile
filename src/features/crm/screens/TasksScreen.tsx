@@ -16,6 +16,7 @@ import { useTasks, useCreateTask, useToggleTask, useDeleteTask } from '../hooks/
 import { TaskItem } from '../components/TaskItem';
 import { CreateTaskModal } from '../components/CreateTaskModal';
 import { CRMTask } from '../types';
+import { CrmTaskSkeleton } from '../../../components/skeletonScreen';
 
 const TIMEFRAME_TABS: Array<{ key: 'all' | 'today' | 'upcoming' | 'overdue' | 'completed'; label: string }> = [
   { key: 'today', label: 'Today' },
@@ -100,10 +101,7 @@ export const TasksScreen: React.FC = () => {
 
       {/* Tasks List */}
       {isLoading && !tasks ? (
-        <View style={styles.loaderBox}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={[styles.loaderText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Loading tasks...</Text>
-        </View>
+        <CrmTaskSkeleton />
       ) : tasks.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="checkbox-outline" size={48} color={isDark ? '#4B5563' : '#CBD5E1'} />

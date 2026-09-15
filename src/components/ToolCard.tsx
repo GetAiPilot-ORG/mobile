@@ -90,11 +90,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   category: {
-    fontSize: 10,
-    fontWeight: '800',
+    fontSize: 11,
+    fontWeight: '500',
     color: '#8E8E93',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: -0.1,
   },
   categoryDark: {
     color: '#8E8E93',

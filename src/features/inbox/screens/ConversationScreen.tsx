@@ -26,6 +26,7 @@ import { inboxApi } from '../api/inboxApi';
 import { ChannelBadge, MessageBubble } from '../components';
 import { useInboxWebSocket } from '../hooks/useInboxWebSocket';
 import { NormalizedConversation, NormalizedMessage, TeamMember } from '../types';
+import { ConversationSkeleton } from '../../../components/skeletonScreen';
 
 const CUSTOMER_SERVICE_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 Hours Meta Window
 
@@ -363,14 +364,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   });
 
   if (isLoading && !conversation) {
-    return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0b141a' : '#f0f2f5' }]}>
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#00a884" />
-          <Text style={[styles.loadingText, { color: isDark ? '#8696a0' : '#64748b' }]}>Loading WhatsApp conversation...</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <ConversationSkeleton />;
   }
 
   if (!conversation) {

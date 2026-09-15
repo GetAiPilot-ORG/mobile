@@ -21,6 +21,11 @@ import {
   ProductFloatingBottomBar,
   ProductTabItem,
 } from '../../../components/ProductFloatingBottomBar';
+import {
+  SocialPostsSkeleton,
+  SocialScreenSkeleton,
+  SocialTrendsSkeleton,
+} from '../../../components/skeletonScreen';
 import { apiClient } from '../../../core/api/client';
 import {
   CreatePostModal,
@@ -272,6 +277,9 @@ export const SocialScreen: React.FC = () => {
       >
         {/* TAB 1: OVERVIEW */}
         {activeTab === 'overview' && (
+          overviewLoading && !overviewData ? (
+            <SocialScreenSkeleton />
+          ) : (
           <View>
             {/* Quick Action Banner */}
             <View style={[styles.actionBanner, { backgroundColor: isDark ? '#1e1b4b' : '#fdf2f8' }]}>
@@ -383,7 +391,7 @@ export const SocialScreen: React.FC = () => {
                             {name}
                           </Text>
                           <Text style={styles.pillSubText}>
-                            {provider.toUpperCase()}
+                            {provider ? provider.charAt(0).toUpperCase() + provider.slice(1).toLowerCase() : ''}
                           </Text>
                         </View>
                         <View style={styles.liveDot} />
@@ -477,6 +485,7 @@ export const SocialScreen: React.FC = () => {
               )}
             </View>
           </View>
+          )
         )}
 
         {/* TAB 2: POSTS */}
@@ -496,7 +505,7 @@ export const SocialScreen: React.FC = () => {
             </View>
 
             {postsLoading ? (
-              <ActivityIndicator size="large" color="#ec4899" style={{ marginTop: 30 }} />
+              <SocialPostsSkeleton />
             ) : postsList.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <Ionicons name="newspaper-outline" size={40} color={isDark ? '#475569' : '#94a3b8'} />
@@ -518,7 +527,7 @@ export const SocialScreen: React.FC = () => {
                     <View style={styles.postChannels}>
                       {(post.selected_channels || ['social']).map((ch: string, i: number) => (
                         <Text key={i} style={styles.chTag}>
-                          {ch.replace(/^.+:/, '').toUpperCase()}
+                          {ch.replace(/^.+:/, '')}
                         </Text>
                       ))}
                     </View>
@@ -622,7 +631,7 @@ export const SocialScreen: React.FC = () => {
                     <View style={styles.postChannels}>
                       {(item.selected_channels || ['social']).map((ch: string, i: number) => (
                         <Text key={i} style={styles.chTag}>
-                          {ch.toUpperCase()}
+                          {ch}
                         </Text>
                       ))}
                     </View>
@@ -657,7 +666,7 @@ export const SocialScreen: React.FC = () => {
             </View>
 
             {trendsLoading ? (
-              <ActivityIndicator size="large" color="#ec4899" style={{ marginTop: 30 }} />
+              <SocialTrendsSkeleton />
             ) : trendsList.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <Ionicons name="flame-outline" size={40} color={isDark ? '#475569' : '#94a3b8'} />
@@ -676,7 +685,7 @@ export const SocialScreen: React.FC = () => {
                 >
                   <View style={styles.trendHeader}>
                     <Text style={styles.trendSource}>
-                      {(trend.source_platform || trend.platform || 'YOUTUBE').toUpperCase()}
+                      {trend.source_platform || trend.platform || 'YouTube'}
                     </Text>
                     <Ionicons name="trending-up" size={16} color="#ec4899" />
                   </View>
@@ -854,10 +863,10 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   metricLabel: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#64748b',
-    textTransform: 'uppercase',
-    fontWeight: '700',
+    fontWeight: '500',
+    letterSpacing: -0.1,
   },
   sectionCard: {
     borderRadius: 16,
@@ -961,9 +970,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   badgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    textTransform: 'uppercase',
+    fontSize: 10.5,
+    fontWeight: '600',
   },
   tabHeaderRow: {
     flexDirection: 'row',

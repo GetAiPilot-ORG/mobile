@@ -19,6 +19,7 @@ import {
   ProductActionCard,
   UsageMeterCard,
 } from '../components';
+import { DashboardSkeleton } from '../../../components/skeletonScreen';
 
 export const DashboardScreen: React.FC = () => {
   const colorScheme = useColorScheme();
@@ -36,10 +37,8 @@ export const DashboardScreen: React.FC = () => {
 
   if (isLoading && !data) {
     return (
-      <SafeAreaView style={[styles.stateContainer, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
-        <ActivityIndicator size="large" color="#6366f1" />
-        <Text style={[styles.stateTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Loading GetAiPilot Workspace...</Text>
-        <Text style={[styles.stateSubtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>Aggregating live telemetry across 6 products</Text>
+      <SafeAreaView style={[styles.stateContainer, { backgroundColor: isDark ? '#020617' : '#f8fafc', padding: 0 }]}>
+        <DashboardSkeleton />
       </SafeAreaView>
     );
   }
@@ -260,15 +259,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   orgName: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    fontSize: 12.5,
+    fontWeight: '500',
+    letterSpacing: -0.1,
   },
   userName: {
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: '700',
     marginTop: 2,
+    letterSpacing: -0.4,
   },
   subBadge: {
     flexDirection: 'row',

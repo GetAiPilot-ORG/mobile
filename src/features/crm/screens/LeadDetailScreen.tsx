@@ -24,6 +24,7 @@ import { ActivityTimelineItem } from '../components/ActivityTimelineItem';
 import { CreateDealModal } from '../components/CreateDealModal';
 import { CreateTaskModal } from '../components/CreateTaskModal';
 import { LogActivityModal } from '../components/LogActivityModal';
+import { LeadDetailSkeleton } from '../../../components/skeletonScreen';
 
 interface LeadDetailScreenProps {
   leadId: string;
@@ -107,10 +108,7 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({ leadId, onBa
   if (isLoading || !lead) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]}>
-        <View style={styles.loaderBox}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={[styles.loaderText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Loading contact details...</Text>
-        </View>
+        <LeadDetailSkeleton />
       </SafeAreaView>
     );
   }

@@ -124,10 +124,6 @@ export default function LandingTemplatesScreen() {
       await openAuthenticatedTemplate("landing-templates", item.id);
     } catch (error) {
       console.error("Failed to open authenticated landing template:", error);
-      Alert.alert(
-        "Unable to open canvas",
-        "Please check your connection and try again.",
-      );
     } finally {
       setOpeningTemplateId(null);
     }

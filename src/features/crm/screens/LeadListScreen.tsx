@@ -17,6 +17,7 @@ import { LeadCard } from '../components/LeadCard';
 import { CreateLeadModal } from '../components/CreateLeadModal';
 import { CrmFilterSheet } from '../components/CrmFilterSheet';
 import { ContactStatus } from '../types';
+import { CrmListSkeleton } from '../../../components/skeletonScreen';
 
 interface LeadListScreenProps {
   onSelectLead: (leadId: string) => void;
@@ -153,10 +154,7 @@ export const LeadListScreen: React.FC<LeadListScreenProps> = ({ onSelectLead, on
 
       {/* Leads FlatList */}
       {isLoading && !data ? (
-        <View style={styles.loaderBox}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={[styles.loaderText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Loading leads...</Text>
-        </View>
+        <CrmListSkeleton />
       ) : leads.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="people-outline" size={48} color={isDark ? '#4B5563' : '#CBD5E1'} />

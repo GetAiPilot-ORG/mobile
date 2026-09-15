@@ -73,10 +73,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   title: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    fontSize: 12.5,
+    fontWeight: '500',
+    letterSpacing: -0.1,
   },
   value: {
     fontSize: 24,

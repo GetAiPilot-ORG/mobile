@@ -8,6 +8,7 @@ import { colors } from '../../src/theme/colors';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../src/lib/supabase';
+import { ProductsSkeleton } from '../../src/components/skeletonScreen';
 
 export default function ProductsScreen() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function ProductsScreen() {
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   // Fetch real system product statuses
-  const { data: systemProducts, refetch: refetchProducts } = useQuery({
+  const { data: systemProducts, isLoading, refetch: refetchProducts } = useQuery({
     queryKey: ['products-system-status'],
     queryFn: async () => {
       const { data, error } = await supabase.from('system_products').select('*');
@@ -44,18 +45,21 @@ export default function ProductsScreen() {
     <AppScreen safeArea={false}>
       <AppTopBar title="Product Suite" subtitle="Connected AI Automation Engines" />
 
-      <ScrollView
-        style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={onRefresh}
-            tintColor={isDark ? '#FFFFFF' : colors.primary}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-      >
+      {isLoading && !systemProducts ? (
+        <ProductsSkeleton />
+      ) : (
+        <ScrollView
+          style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={onRefresh}
+              tintColor={isDark ? '#FFFFFF' : colors.primary}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+        >
         <ProductCard
           name="GAP WhatsApp Hub"
           category="Messaging Automation"
@@ -105,7 +109,8 @@ export default function ProductsScreen() {
           status={getStatus('crm')}
           onPress={() => router.push('/products/crm' as any)}
         />
-      </ScrollView>
+        </ScrollView>
+      )}
     </AppScreen>
   );
 }

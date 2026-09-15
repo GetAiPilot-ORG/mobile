@@ -18,6 +18,7 @@ import {
   ProductFloatingBottomBar,
   ProductTabItem,
 } from '../../../components/ProductFloatingBottomBar';
+import { VoiceCallsSkeleton } from '../../../components/skeletonScreen';
 import { apiClient } from '../../../core/api/client';
 import {
   CallDetailsModal,
@@ -329,7 +330,7 @@ export const VoiceScreen: React.FC = () => {
             </View>
 
             {isCallsLoading ? (
-              <ActivityIndicator size="large" color="#8B5CF6" style={{ marginTop: 24 }} />
+              <VoiceCallsSkeleton />
             ) : (
               <View style={[styles.listCard, isDark ? styles.cardDark : styles.cardLight]}>
                 {calls.map((call, idx, arr) => (
@@ -703,7 +704,7 @@ const styles = StyleSheet.create({
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   badgeSuccess: { backgroundColor: 'rgba(48, 209, 88, 0.15)' },
   badgeWarning: { backgroundColor: 'rgba(245, 158, 11, 0.15)' },
-  badgeText: { fontSize: 10.5, fontWeight: '700', textTransform: 'uppercase' },
+  badgeText: { fontSize: 11, fontWeight: '600' },
   textSuccess: { color: '#30D158' },
   textWarning: { color: '#F59E0B' },
 });
