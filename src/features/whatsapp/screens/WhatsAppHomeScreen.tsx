@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
+  BackHandler,
   Platform,
   Pressable,
   RefreshControl,
@@ -80,6 +81,24 @@ export const WhatsAppHomeScreen: React.FC = () => {
   const { data: broadcastsData, refetch: refetchBroadcasts } = useWhatsAppBroadcasts({ limit: 3 });
   const { data: usage, refetch: refetchUsage } = useWhatsAppUsage();
 
+  useEffect(() => {
+    const onHardwareBack = () => {
+      if (activeTab !== 'home') {
+        setActiveTab('home');
+        return true;
+      }
+      if (router.canGoBack()) {
+        router.back();
+        return true;
+      }
+      router.replace('/(tabs)/products');
+      return true;
+    };
+
+    const sub = BackHandler.addEventListener('hardwareBackPress', onHardwareBack);
+    return () => sub.remove();
+  }, [activeTab]);
+
   const handleRefresh = async () => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -138,7 +157,7 @@ export const WhatsAppHomeScreen: React.FC = () => {
                   if (router.canGoBack()) {
                     router.back();
                   } else {
-                    router.replace('/(tabs)');
+                    router.replace('/(tabs)/products');
                   }
                 }}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}

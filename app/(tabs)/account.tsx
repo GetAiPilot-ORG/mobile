@@ -1,33 +1,33 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-  TextInput,
-  Switch,
-  Alert,
   ActivityIndicator,
-  Modal,
-  useColorScheme,
+  Alert,
   Animated,
   LayoutChangeEvent,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  useColorScheme,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { AppScreen } from '../../src/components/AppScreen';
-import { colors } from '../../src/theme/colors';
+import { DeviceSessionsSkeleton } from '../../src/components/skeletonScreen';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { supabase } from '../../src/lib/supabase';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Profile } from '../../src/types/database';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { apiClient } from '../../src/core/api/client';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 import { BiometricService, BiometricSettings } from '../../src/lib/biometrics';
-import { apiClient } from '../../src/core/api/client';
-import { DeviceSessionsSkeleton } from '../../src/components/skeletonScreen';
+import { supabase } from '../../src/lib/supabase';
+import { Profile } from '../../src/types/database';
 
 type AccountTab = 'overview' | 'edit' | 'security' | 'billing' | 'preferences';
 
@@ -48,6 +48,51 @@ interface DeviceSessionsResponse {
   activeDeviceCount: number;
   devices: DeviceSession[];
 }
+
+/**
+ * A stable ID for this app installation.
+ *
+ * Do not use the Supabase access token or user password as the device ID.
+ * The same ID is reused after app restarts, so the backend can upsert one
+ * device instead of creating a new device on every request.
+ */
+const DEVICE_ID_STORAGE_KEY = '@get_ai_pilot_device_id';
+
+const getOrCreateDeviceId = async (): Promise<string> => {
+  const existing = await AsyncStorage.getItem(DEVICE_ID_STORAGE_KEY);
+
+  if (existing) {
+    return existing;
+  }
+
+  const randomPart = Math.random().toString(36).slice(2);
+  const deviceId = `mobile-${Date.now()}-${randomPart}`;
+
+  await AsyncStorage.setItem(DEVICE_ID_STORAGE_KEY, deviceId);
+
+  return deviceId;
+};
+
+const getDeviceRegistrationPayload = async () => {
+  const deviceId = await getOrCreateDeviceId();
+
+  return {
+    deviceId,
+    deviceName:
+      Platform.OS === 'ios'
+        ? 'iPhone / iPad'
+        : Platform.OS === 'android'
+          ? 'Android Device'
+          : 'Web',
+    platform:
+      Platform.OS === 'ios'
+        ? 'ios'
+        : Platform.OS === 'android'
+          ? 'android'
+          : 'web',
+    appVersion: 'mobile',
+  };
+};
 
 const TABS: { id: AccountTab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -200,7 +245,7 @@ export default function AccountScreen() {
       try {
         const invs = await apiClient.get<any[]>('/mobile/v1/user/invoices');
         if (Array.isArray(invs)) return invs;
-      } catch (e) {}
+      } catch (e) { }
       const { data } = await supabase
         .from('app_subscription_payments')
         .select('*')
@@ -220,7 +265,7 @@ export default function AccountScreen() {
       try {
         const bp = await apiClient.get<any>('/mobile/v1/user/billing-profile');
         if (bp) return bp;
-      } catch (e) {}
+      } catch (e) { }
       const { data } = await supabase
         .from('app_billing_profiles')
         .select('*')
@@ -231,20 +276,142 @@ export default function AccountScreen() {
     enabled: !!user?.id,
   });
 
-  // Device sessions are BFF-only. Supabase's auth.sessions table is not
-  // available to the mobile client and the BFF uses its service role to read
-  // this user's safe, app-facing device metadata.
+  // Device sessions are BFF-only.
+  //
+  // IMPORTANT:
+  // This GET only reads the registered devices. It does not create a device
+  // session. The registration effect below creates/updates the current device.
   const {
     data: deviceSessionsResponse,
     isLoading: isLoadingDeviceSessions,
     isFetching: isRefreshingDeviceSessions,
     refetch: refetchDeviceSessions,
+    error: deviceSessionsError,
   } = useQuery<DeviceSessionsResponse>({
     queryKey: ['auth-device-sessions', user?.id],
-    queryFn: () => apiClient.get<DeviceSessionsResponse>('/mobile/v1/auth/device-sessions'),
+
+    queryFn: async () => {
+      if (!user?.id) {
+        return {
+          activeDeviceCount: 0,
+          devices: [],
+        };
+      }
+
+      try {
+        const response = await apiClient.get<DeviceSessionsResponse>(
+          '/mobile/v1/auth/device-sessions'
+        );
+
+        console.log('[DeviceSessions] GET response:', response);
+
+        return {
+          activeDeviceCount: response?.activeDeviceCount ?? 0,
+          devices: Array.isArray(response?.devices) ? response.devices : [],
+        };
+      } catch (error) {
+        console.error('[DeviceSessions] GET failed:', error);
+        throw error;
+      }
+    },
+
     enabled: activeTab === 'security' && !!user?.id,
+
+    // Don't keep stale device information for long.
     staleTime: 15_000,
+
+    // One retry is enough. Repeated requests can make debugging harder.
+    retry: 1,
   });
+
+  /**
+   * Register the current app installation with the BFF.
+   *
+   * DO NOT call signInWithPassword here. The user is already authenticated,
+   * and user.password is not available from Supabase User anyway.
+   *
+   * apiClient should send the current Supabase access token in Authorization.
+   */
+  const registerCurrentDevice = async (showError = false) => {
+    if (!user?.id) return false;
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+
+      if (!sessionData.session?.access_token) {
+        console.warn('[DeviceSessions] No authenticated Supabase session');
+        return false;
+      }
+
+      const payload = await getDeviceRegistrationPayload();
+
+      console.log('[DeviceSessions] Registering current device:', payload);
+
+      await apiClient.post(
+        '/mobile/v1/auth/device-sessions',
+        payload
+      );
+
+      console.log('[DeviceSessions] Current device registered');
+
+      return true;
+    } catch (error: any) {
+      console.error('[DeviceSessions] Registration failed:', error);
+
+      if (showError) {
+        Alert.alert(
+          'Device Registration Failed',
+          error?.message || 'Could not register this device.'
+        );
+      }
+
+      return false;
+    }
+  };
+
+  /**
+   * When Security opens:
+   * 1. Register this app installation.
+   * 2. Fetch all devices.
+   *
+   * This fixes the main issue where GET was called but the current device
+   * was never registered.
+   */
+  useEffect(() => {
+    if (activeTab !== 'security' || !user?.id) return;
+
+    let cancelled = false;
+
+    const syncCurrentDevice = async () => {
+      const registered = await registerCurrentDevice();
+
+      if (!cancelled && registered) {
+        await queryClient.invalidateQueries({
+          queryKey: ['auth-device-sessions', user.id],
+        });
+
+        await refetchDeviceSessions();
+      } else if (!cancelled) {
+        // Still fetch existing devices if registration failed.
+        await refetchDeviceSessions();
+      }
+    };
+
+    syncCurrentDevice();
+
+    // Keep lastSeenAt / online status fresh while this screen is open.
+    const heartbeat = setInterval(async () => {
+      if (!cancelled) {
+        await registerCurrentDevice(false);
+        await refetchDeviceSessions();
+      }
+    }, 30_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(heartbeat);
+    };
+  }, [activeTab, user?.id]);
 
   // Sync form state when profile loads
   useEffect(() => {
@@ -518,7 +685,6 @@ export default function AccountScreen() {
       ]
     );
   };
-
 
   const displayName =
     fullName || profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
@@ -1039,7 +1205,19 @@ export default function AccountScreen() {
 
               {isLoadingDeviceSessions ? (
                 <DeviceSessionsSkeleton />
-              ) : deviceSessionsResponse?.devices.length ? (
+              ) : deviceSessionsError ? (
+                <View style={styles.deviceLoadingRow}>
+                  <Ionicons name="cloud-offline-outline" size={20} color="#EF4444" />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.actionTitle, isDark && styles.actionTitleDark]}>
+                      Could not load devices
+                    </Text>
+                    <Text style={[styles.actionSubtitle, isDark && styles.actionSubtitleDark]}>
+                      Check your connection and tap Refresh.
+                    </Text>
+                  </View>
+                </View>
+              ) : deviceSessionsResponse?.devices?.length ? (
                 deviceSessionsResponse.devices.map((device, index) => (
                   <View
                     key={device.sessionId}
