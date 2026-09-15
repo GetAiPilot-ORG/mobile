@@ -1,6 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Platform,
   Pressable,
@@ -13,13 +15,10 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
 
+import { WhatsAppTemplatesSkeleton } from '../../../components/skeletonScreen';
 import { TemplateCard } from '../components';
 import { useWhatsAppTemplates } from '../hooks/useWhatsAppTemplates';
-import { WhatsAppTemplatesSkeleton } from '../../../components/skeletonScreen';
 
 interface WhatsAppTemplatesScreenProps {
   onBack?: () => void;
@@ -284,15 +283,8 @@ export const WhatsAppTemplatesScreen: React.FC<WhatsAppTemplatesScreenProps> = (
 
         {/* Templates FlatList / Grid */}
         {isLoading && !templates ? (
-          <>
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#25D366" />
-              <Text style={[styles.loadingText, { color: isDark ? '#94A3B8' : '#64748B' }]}>
-                Syncing Meta WhatsApp templates...
-              </Text>
-            </View>
-            <WhatsAppTemplatesSkeleton />
-          </>
+
+          <WhatsAppTemplatesSkeleton />
         ) : (
           <FlatList
             data={filteredTemplates}

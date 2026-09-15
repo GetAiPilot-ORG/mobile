@@ -1,6 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Modal,
   Platform,
@@ -14,9 +15,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 
+import { CrmListSkeleton } from '../../../components/skeletonScreen';
 import { useAuthStore } from '../../../core/store/authStore';
 import { inboxApi } from '../../inbox/api/inboxApi';
 import { ConversationScreen } from '../../inbox/screens/ConversationScreen';
@@ -24,7 +24,6 @@ import { NormalizedConversation } from '../../inbox/types';
 import { ContactCard } from '../components/ContactCard';
 import { useWhatsAppContacts } from '../hooks/useWhatsAppContacts';
 import { WhatsAppContact } from '../types';
-import { CrmListSkeleton } from '../../../components/skeletonScreen';
 
 interface WhatsAppContactsScreenProps {
   onBack?: () => void;
@@ -211,15 +210,8 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
 
         {/* Contacts List */}
         {isLoading && !data ? (
-          <>
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#25D366" />
-              <Text style={[styles.loadingText, { color: isDark ? '#64748B' : '#94A3B8' }]}>
-                Loading contacts...
-              </Text>
-            </View>
-            <CrmListSkeleton />
-          </>
+
+          <CrmListSkeleton />
         ) : (
           <FlatList
             style={styles.contactsFlatList}

@@ -1,6 +1,9 @@
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -8,12 +11,14 @@ import {
   Text,
   useColorScheme,
   View,
-  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 
+import {
+  ProductFloatingBottomBar,
+  ProductTabItem,
+} from '../../../components/ProductFloatingBottomBar';
+import { WhatsAppHomeSkeleton } from '../../../components/skeletonScreen';
 import {
   ConnectionStatusCard,
   UsageCard,
@@ -27,11 +32,6 @@ import { useWhatsAppUsage } from '../hooks/useWhatsAppUsage';
 import { WhatsAppBroadcastsScreen } from './WhatsAppBroadcastsScreen';
 import { WhatsAppContactsScreen } from './WhatsAppContactsScreen';
 import { WhatsAppTemplatesScreen } from './WhatsAppTemplatesScreen';
-import {
-  ProductFloatingBottomBar,
-  ProductTabItem,
-} from '../../../components/ProductFloatingBottomBar';
-import { WhatsAppHomeSkeleton } from '../../../components/skeletonScreen';
 
 type WhatsAppTab = 'home' | 'broadcasts' | 'contacts' | 'templates';
 
@@ -180,117 +180,117 @@ export const WhatsAppHomeScreen: React.FC = () => {
 
               {/* Metrics 2x2 Grid */}
               <Text style={[styles.sectionTitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>Overview & Capabilities</Text>
-            <View style={styles.grid}>
-              <WhatsAppMetricCard
-                label="Contacts"
-                value={totalContactsCount.toLocaleString()}
-                subtext="Synchronized audience"
-                ioniconsName="people"
-                iconColor="#A855F7"
-              />
-              <WhatsAppMetricCard
-                label="Templates"
-                value={approvedTemplatesCount}
-                subtext="Approved by Meta"
-                ioniconsName="document-text"
-                iconColor="#3B82F6"
-              />
-              <WhatsAppMetricCard
-                label="Broadcasts"
-                value={totalBroadcastsCount}
-                subtext="Campaigns executed"
-                ioniconsName="megaphone"
-                iconColor="#F43F5E"
-              />
-              <WhatsAppMetricCard
-                label="Delivery Rate"
-                value={deliveryRate}
-                subtext="Cloud SLA"
-                ioniconsName="flash"
-                iconColor="#F59E0B"
-              />
-            </View>
+              <View style={styles.grid}>
+                <WhatsAppMetricCard
+                  label="Contacts"
+                  value={totalContactsCount.toLocaleString()}
+                  subtext="Synchronized audience"
+                  ioniconsName="people"
+                  iconColor="#A855F7"
+                />
+                <WhatsAppMetricCard
+                  label="Templates"
+                  value={approvedTemplatesCount}
+                  subtext="Approved by Meta"
+                  ioniconsName="document-text"
+                  iconColor="#3B82F6"
+                />
+                <WhatsAppMetricCard
+                  label="Broadcasts"
+                  value={totalBroadcastsCount}
+                  subtext="Campaigns executed"
+                  ioniconsName="megaphone"
+                  iconColor="#F43F5E"
+                />
+                <WhatsAppMetricCard
+                  label="Delivery Rate"
+                  value={deliveryRate}
+                  subtext="Cloud SLA"
+                  ioniconsName="flash"
+                  iconColor="#F59E0B"
+                />
+              </View>
 
-            {/* Section Header: Product Navigation */}
-            <View style={styles.sectionHeaderRow}>
-              <Text style={[styles.sectionTitle, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
-                Product Navigation
-              </Text>
-            </View>
+              {/* Section Header: Product Navigation */}
+              <View style={styles.sectionHeaderRow}>
+                <Text style={[styles.sectionTitle, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+                  Product Navigation
+                </Text>
+              </View>
 
-            {/* Quick Actions Navigation List */}
-            <View style={styles.actionsList}>
-              {/* Audience & Contacts */}
-              <Pressable
-                style={({ pressed }) => [
-                  styles.actionCard,
-                  isDark ? styles.actionCardDark : styles.actionCardLight,
-                  pressed && styles.actionCardPressed,
-                ]}
-                onPress={() => handleSelectTab('contacts')}
-              >
-                <View style={[styles.actionIcon, { backgroundColor: 'rgba(168, 85, 247, 0.12)' }]}>
-                  <Ionicons name="people" size={20} color="#A855F7" />
-                </View>
-                <View style={styles.actionDetails}>
-                  <Text style={[styles.actionTitle, isDark ? styles.textLight : styles.textDark]}>
-                    Audience & Contacts
-                  </Text>
-                  <Text style={[styles.actionSub, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
-                    View contacts, segment tags & link CRM leads
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={17} color={isDark ? '#475569' : '#CBD5E1'} />
-              </Pressable>
+              {/* Quick Actions Navigation List */}
+              <View style={styles.actionsList}>
+                {/* Audience & Contacts */}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.actionCard,
+                    isDark ? styles.actionCardDark : styles.actionCardLight,
+                    pressed && styles.actionCardPressed,
+                  ]}
+                  onPress={() => handleSelectTab('contacts')}
+                >
+                  <View style={[styles.actionIcon, { backgroundColor: 'rgba(168, 85, 247, 0.12)' }]}>
+                    <Ionicons name="people" size={20} color="#A855F7" />
+                  </View>
+                  <View style={styles.actionDetails}>
+                    <Text style={[styles.actionTitle, isDark ? styles.textLight : styles.textDark]}>
+                      Audience & Contacts
+                    </Text>
+                    <Text style={[styles.actionSub, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+                      View contacts, segment tags & link CRM leads
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={17} color={isDark ? '#475569' : '#CBD5E1'} />
+                </Pressable>
 
-              {/* Meta Templates */}
-              <Pressable
-                style={({ pressed }) => [
-                  styles.actionCard,
-                  isDark ? styles.actionCardDark : styles.actionCardLight,
-                  pressed && styles.actionCardPressed,
-                ]}
-                onPress={() => handleSelectTab('templates')}
-              >
-                <View style={[styles.actionIcon, { backgroundColor: 'rgba(59, 130, 246, 0.12)' }]}>
-                  <Ionicons name="document-text" size={20} color="#3B82F6" />
-                </View>
-                <View style={styles.actionDetails}>
-                  <Text style={[styles.actionTitle, isDark ? styles.textLight : styles.textDark]}>
-                    Meta Templates
-                  </Text>
-                  <Text style={[styles.actionSub, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
-                    Approved marketing, utility & OTP message templates
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={17} color={isDark ? '#475569' : '#CBD5E1'} />
-              </Pressable>
+                {/* Meta Templates */}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.actionCard,
+                    isDark ? styles.actionCardDark : styles.actionCardLight,
+                    pressed && styles.actionCardPressed,
+                  ]}
+                  onPress={() => handleSelectTab('templates')}
+                >
+                  <View style={[styles.actionIcon, { backgroundColor: 'rgba(59, 130, 246, 0.12)' }]}>
+                    <Ionicons name="document-text" size={20} color="#3B82F6" />
+                  </View>
+                  <View style={styles.actionDetails}>
+                    <Text style={[styles.actionTitle, isDark ? styles.textLight : styles.textDark]}>
+                      Meta Templates
+                    </Text>
+                    <Text style={[styles.actionSub, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+                      Approved marketing, utility & OTP message templates
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={17} color={isDark ? '#475569' : '#CBD5E1'} />
+                </Pressable>
 
-              {/* Broadcast Campaigns */}
-              <Pressable
-                style={({ pressed }) => [
-                  styles.actionCard,
-                  isDark ? styles.actionCardDark : styles.actionCardLight,
-                  pressed && styles.actionCardPressed,
-                ]}
-                onPress={() => handleSelectTab('broadcasts')}
-              >
-                <View style={[styles.actionIcon, { backgroundColor: 'rgba(244, 63, 94, 0.12)' }]}>
-                  <Ionicons name="megaphone" size={20} color="#F43F5E" />
-                </View>
-                <View style={styles.actionDetails}>
-                  <Text style={[styles.actionTitle, isDark ? styles.textLight : styles.textDark]}>
-                    Broadcast Campaigns
-                  </Text>
-                  <Text style={[styles.actionSub, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
-                    Launch new bulk sends & view delivery funnels
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={17} color={isDark ? '#475569' : '#CBD5E1'} />
-              </Pressable>
-            </View>
-          </ScrollView>
-        )}
+                {/* Broadcast Campaigns */}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.actionCard,
+                    isDark ? styles.actionCardDark : styles.actionCardLight,
+                    pressed && styles.actionCardPressed,
+                  ]}
+                  onPress={() => handleSelectTab('broadcasts')}
+                >
+                  <View style={[styles.actionIcon, { backgroundColor: 'rgba(244, 63, 94, 0.12)' }]}>
+                    <Ionicons name="megaphone" size={20} color="#F43F5E" />
+                  </View>
+                  <View style={styles.actionDetails}>
+                    <Text style={[styles.actionTitle, isDark ? styles.textLight : styles.textDark]}>
+                      Broadcast Campaigns
+                    </Text>
+                    <Text style={[styles.actionSub, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+                      Launch new bulk sends & view delivery funnels
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={17} color={isDark ? '#475569' : '#CBD5E1'} />
+                </Pressable>
+              </View>
+            </ScrollView>
+          )}
         </View>
       )}
 
