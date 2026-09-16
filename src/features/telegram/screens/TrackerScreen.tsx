@@ -60,7 +60,7 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
     }
   };
 
-  const kpis = trackerDash?.kpis || { totalJoins: 193, todaysJoins: 0, thisMonthJoins: 0, botStarts: 498, pendingJoins: 297, conversionRate: 39 };
+  const kpis = trackerDash?.kpis || { totalJoins: 0, todaysJoins: 0, thisMonthJoins: 0, botStarts: 0, pendingJoins: 0, conversionRate: 0 };
 
   return (
     <>
@@ -76,17 +76,13 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
           </View>
           <Text style={styles.headerSub}>Connect bots, map channels & generate deep link trackers</Text>
         </View>
-        <Pressable style={styles.consoleBtn} onPress={() => onOpenModal('tracker')}>
-          <Ionicons name="open-outline" size={13} color="#FFFFFF" />
-          <Text style={styles.consoleBtnText}>Console</Text>
-        </Pressable>
       </View>
 
       {/* 3-Tab Segmented Bar */}
       <View style={[styles.segBar, card]}>
         {([
           { key: 'connect', icon: 'link-outline', label: 'Connect', badge: botsList.length },
-          { key: 'links', icon: 'globe-outline', label: 'Join Links', badge: (trackerLinks || []).length || 4 },
+          { key: 'links', icon: 'globe-outline', label: 'Join Links', badge: (trackerLinks || []).length || 0 },
           { key: 'joins', icon: 'analytics-outline', label: 'Analytics', badge: null },
         ] as { key: TrackerSection; icon: string; label: string; badge: number | null }[]).map((tab) => (
           <Pressable
@@ -290,17 +286,13 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
       {trackerSection === 'links' && (
         <View style={{ gap: 12 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={[styles.sectionTitle, txt]}>Tracking Links ({(trackerLinks || []).length || 4})</Text>
+            <Text style={[styles.sectionTitle, txt]}>Tracking Links ({(trackerLinks || []).length})</Text>
             <Pressable style={styles.primaryBtn} onPress={() => onOpenModal('tracker')}>
               <Ionicons name="add" size={16} color="#FFFFFF" />
               <Text style={styles.primaryBtnText}>Create Link</Text>
             </Pressable>
           </View>
-          {(trackerLinks || [
-            { id: 'bab7d8c7', title: 'Premuimchannel', bot_username: 'GapAutoPilotBot', channel_name: 'Subs Manager', bot_starts: 35, joined: 24, conversion_rate: 68, deep_link_url: 'https://t.me/GapAutoPilotBot?start=premuimchannel' },
-            { id: '63785fbc', title: 'hello', bot_username: 'GapAutoPilotBot', channel_name: 'New new gameX', bot_starts: 12, joined: 8, conversion_rate: 66, deep_link_url: 'https://t.me/GapAutoPilotBot?start=hello' },
-            { id: '76ffaf4d', title: 'testing', bot_username: 'GapAutoPilotBot', channel_name: 'New new gameX', bot_starts: 5, joined: 3, conversion_rate: 60, deep_link_url: 'https://t.me/GapAutoPilotBot?start=testing' },
-          ]).map((link: any) => (
+          {(trackerLinks || []).map((link: any) => (
             <View key={link.id} style={[styles.botCard, card]}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <View style={{ flex: 1 }}>
@@ -338,8 +330,6 @@ const styles = StyleSheet.create({
   greenBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(16,185,129,0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20 },
   dotGreen: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981' },
   greenBadgeText: { fontSize: 11, fontWeight: '700', color: '#10B981' },
-  consoleBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#0284C7', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8 },
-  consoleBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
   segBar: { flexDirection: 'row', borderRadius: 14, padding: 4, marginBottom: 16, borderWidth: 1 },
   segTab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 9, borderRadius: 10 },
   segTabActiveLight: { backgroundColor: '#EFF6FF' },
@@ -350,14 +340,13 @@ const styles = StyleSheet.create({
   segBadgeActive: { backgroundColor: 'rgba(2,132,199,0.15)' },
   segBadgeText: { fontSize: 9, fontWeight: '800', color: '#64748B' },
   segBadgeTextActive: { color: '#0284C7' },
-  kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  kpiCard: { width: '47%', padding: 14, borderRadius: 14, borderWidth: 1 },
+  kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 12, width: '100%' },
   kpiIconWrap: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   kpiNumber: { fontSize: 22, fontWeight: '800' },
   kpiLabel: { fontSize: 11, fontWeight: '700', color: '#475569', marginTop: 2 },
   kpiHint: { fontSize: 10, color: '#94A3B8', marginTop: 2 },
   matrixCard: { padding: 14, borderRadius: 16, borderWidth: 1 },
-  matrixHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  matrixHeader: { flexDirection: 'column', alignItems: 'flex-start', gap: 6, marginBottom: 12 },
   matrixTitle: { fontSize: 14, fontWeight: '800' },
   periodBadge: { backgroundColor: 'rgba(2,132,199,0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   periodBadgeText: { fontSize: 10, fontWeight: '700', color: '#0284C7' },

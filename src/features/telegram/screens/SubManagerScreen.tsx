@@ -57,10 +57,13 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
   const txt = isDark ? styles.textDark : styles.textLight;
   const border = isDark ? styles.borderDark : styles.borderLight;
 
-  const filteredTxns = stats.transactions.filter((tx) => {
+  const filteredTxns = (stats.transactions || []).filter((tx: any) => {
     const q = txnSearch.toLowerCase();
-    const matchSearch = tx.razorpay_payment_id.toLowerCase().includes(q) || tx.dateTime.toLowerCase().includes(q);
-    const matchFilter = txnFilter === 'All' || (txnFilter === 'Success' && tx.status === 'SUCCESS') || (txnFilter === 'On Hold' && tx.status === 'ON_HOLD');
+    const pid = (tx.razorpay_payment_id || tx.id || '').toLowerCase();
+    const dt = (tx.dateTime || (tx.created_at ? new Date(tx.created_at).toLocaleString() : '')).toLowerCase();
+    const matchSearch = !q || pid.includes(q) || dt.includes(q);
+    const st = (tx.status || '').toUpperCase();
+    const matchFilter = txnFilter === 'All' || (txnFilter === 'Success' && (st === 'SUCCESS' || st === 'CAPTURED')) || (txnFilter === 'On Hold' && (st === 'ON_HOLD' || st === 'PENDING'));
     return matchSearch && matchFilter;
   });
 
@@ -85,23 +88,23 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
     <>
       {/* Clean Header */}
       <View style={[styles.header, card]}>
-        <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Text style={[styles.headerTitle, txt]}>Sub Manager</Text>
+        <View style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text style={[styles.headerTitle, txt]} numberOfLines={1}>Sub Manager</Text>
             <View style={styles.activeBadge}>
               <View style={styles.dotGreen} />
               <Text style={styles.activeBadgeText}>Bot Active</Text>
             </View>
           </View>
-          <Text style={[styles.headerSub, isDark ? { color: '#94A3B8' } : { color: '#64748B' }]}>VIP Community & Subscription Hub</Text>
+          <Text style={[styles.headerSub, isDark ? { color: '#94A3B8' } : { color: '#64748B' }]} numberOfLines={1}>VIP Community & Subscription Hub</Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Pressable style={styles.newBtn} onPress={() => onOpenModal('sub_manager')}>
-            <Ionicons name="add" size={15} color="#FFFFFF" />
+            <Ionicons name="add" size={14} color="#FFFFFF" />
             <Text style={styles.newBtnText}>New Page</Text>
           </Pressable>
           <Pressable style={[styles.iconBtn, border]} onPress={onRefresh}>
-            <Ionicons name="refresh-outline" size={16} color="#0284C7" />
+            <Ionicons name="refresh-outline" size={15} color="#0284C7" />
           </Pressable>
         </View>
       </View>
@@ -155,7 +158,7 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
       {/* 3-Tab Segmented Control */}
       <View style={[styles.segBar, card]}>
         {([
-          { key: 'pages', label: `Pages (${stats.pages.length || 2})` },
+          { key: 'pages', label: `Pages (${stats.pages.length || 0})` },
           { key: 'revenue', label: 'Revenue & KYC' },
           { key: 'channels', label: `Channels (${stats.monetizedChannels.length})` },
         ] as { key: SubSection; label: string }[]).map((tab) => (
@@ -187,23 +190,26 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
           <View style={pageView === 'grid' ? styles.pagesGrid : { gap: 10 }}>
             {filteredPages.map((page) => (
               <View key={page.id} style={[pageView === 'grid' ? styles.pageCardGrid : styles.pageCardList, card]}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <View style={styles.pageCardHeader}>
                   <View style={[styles.pageIconCircle, { backgroundColor: page.isActive ? 'rgba(16,185,129,0.12)' : 'rgba(148,163,184,0.12)' }]}>
-                    <Ionicons name="globe-outline" size={16} color={page.isActive ? '#10B981' : '#94A3B8'} />
+                    <Ionicons name="globe-outline" size={15} color={page.isActive ? '#10B981' : '#94A3B8'} />
                   </View>
                   <View style={[styles.pageStatusBadge, page.isActive ? styles.pageStatusActive : styles.pageStatusInactive]}>
-                    <Text style={[styles.pageStatusText, { color: page.isActive ? '#10B981' : '#94A3B8' }]}>{page.statusText}</Text>
+                    <View style={[styles.dotStatus, { backgroundColor: page.isActive ? '#10B981' : '#94A3B8' }]} />
+                    <Text style={[styles.pageStatusText, { color: page.isActive ? '#10B981' : '#94A3B8' }]} numberOfLines={1}>
+                      {pageView === 'grid' ? (page.isActive ? 'Active' : 'Paused') : page.statusText}
+                    </Text>
                   </View>
                 </View>
                 <Text style={[styles.pageTitle, txt]} numberOfLines={1}>{page.title}</Text>
                 <Text style={styles.pageUrl} numberOfLines={1}>{page.displayUrl}</Text>
-                <View style={{ flexDirection: 'row', gap: 6, marginTop: 8 }}>
-                  <Pressable style={styles.pageActionBtn} onPress={() => handleCopyLink(page.url, page.id)}>
-                    <Ionicons name={copiedId === page.id ? 'checkmark' : 'copy-outline'} size={13} color="#0284C7" />
+                <View style={styles.pageActionRow}>
+                  <Pressable style={[styles.pageActionBtn, { flex: 1, justifyContent: 'center' }]} onPress={() => handleCopyLink(page.url, page.id)}>
+                    <Ionicons name={copiedId === page.id ? 'checkmark' : 'copy-outline'} size={12} color="#0284C7" />
                     <Text style={styles.pageActionBtnText}>{copiedId === page.id ? 'Copied' : 'Copy'}</Text>
                   </Pressable>
-                  <Pressable style={styles.pageActionBtn} onPress={() => onOpenModal('sub_manager')}>
-                    <Ionicons name="create-outline" size={13} color="#0284C7" />
+                  <Pressable style={[styles.pageActionBtn, { flex: 1, justifyContent: 'center' }]} onPress={() => onOpenModal('sub_manager')}>
+                    <Ionicons name="create-outline" size={12} color="#0284C7" />
                     <Text style={styles.pageActionBtnText}>Edit</Text>
                   </Pressable>
                 </View>
@@ -251,9 +257,9 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
             </View>
             <View style={{ gap: 8 }}>
               {[
-                { icon: 'person-outline', label: stats.connectedBank.accountHolder, sub: 'Account Holder' },
-                { icon: 'checkmark-circle-outline', label: stats.connectedBank.status, sub: 'KYC Status' },
-                { icon: 'card-outline', label: stats.connectedBank.details, sub: 'Payout Route' },
+                { icon: 'person-outline', label: stats.connectedBank.accountHolder || 'Account Holder', sub: 'Account Holder' },
+                { icon: 'shield-checkmark-outline', label: stats.connectedBank.status || 'Active', sub: 'KYC Status' },
+                { icon: 'card-outline', label: stats.connectedBank.details || 'Direct Bank Settlement (IMPS)', sub: 'Payout Route' },
               ].map((item, i) => (
                 <View key={i} style={styles.kycRow}>
                   <View style={[styles.kycIconCircle, { backgroundColor: 'rgba(16,185,129,0.1)' }]}>
@@ -289,20 +295,36 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
                 ))}
               </View>
             </ScrollView>
-            {filteredTxns.map((tx) => (
-              <View key={tx.id} style={[styles.txnRow, isDark ? styles.txnRowDark : styles.txnRowLight]}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.txnId, txt]} numberOfLines={1}>{tx.razorpay_payment_id}</Text>
-                  <Text style={styles.txnDate}>{tx.dateTime}</Text>
-                </View>
-                <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                  <Text style={[styles.txnAmount, { color: '#10B981' }]}>₹{tx.netPayout}</Text>
-                  <View style={styles.txnStatusBadge}>
-                    <Text style={styles.txnStatusText}>{tx.status}</Text>
-                  </View>
-                </View>
+            {filteredTxns.length === 0 ? (
+              <View style={{ padding: 20, alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="receipt-outline" size={24} color="#64748B" />
+                <Text style={{ color: '#64748B', fontSize: 12, marginTop: 6, fontWeight: '600' }}>No transactions found</Text>
               </View>
-            ))}
+            ) : (
+              filteredTxns.map((tx: any) => {
+                const paymentId = tx.razorpay_payment_id || tx.id || 'Payment';
+                const formattedDate = tx.dateTime || (tx.created_at ? new Date(tx.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent');
+                const amountVal = tx.netPayout ?? tx.amount ?? 0;
+                const statusVal = (tx.status || 'SUCCESS').toUpperCase();
+
+                return (
+                  <View key={tx.id || paymentId} style={[styles.txnRow, isDark ? styles.txnRowDark : styles.txnRowLight]}>
+                    <View style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+                      <Text style={[styles.txnId, txt]} numberOfLines={1}>{paymentId}</Text>
+                      <Text style={styles.txnDate} numberOfLines={1}>{formattedDate}</Text>
+                    </View>
+                    <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                      <Text style={[styles.txnAmount, { color: '#10B981' }]}>₹{amountVal}</Text>
+                      <View style={[styles.txnStatusBadge, statusVal === 'SUCCESS' ? styles.txnStatusSuccess : styles.txnStatusPending]}>
+                        <Text style={[styles.txnStatusText, statusVal === 'SUCCESS' ? { color: '#10B981' } : { color: '#F59E0B' }]}>
+                          {statusVal}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                );
+              })
+            )}
           </View>
         </View>
       )}
@@ -383,16 +405,16 @@ const styles = StyleSheet.create({
   textDark: { color: '#F8FAFC' },
   borderLight: { borderColor: '#E2E8F0' },
   borderDark: { borderColor: '#27272A' },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, borderWidth: 1, marginBottom: 14 },
-  headerTitle: { fontSize: 18, fontWeight: '800' },
-  headerSub: { fontSize: 12, fontWeight: '500', marginTop: 2 },
-  activeBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(16,185,129,0.1)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 16, borderWidth: 1, marginBottom: 14 },
+  headerTitle: { fontSize: 16, fontWeight: '800' },
+  headerSub: { fontSize: 11, fontWeight: '500', marginTop: 2 },
+  activeBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(16,185,129,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 20 },
   dotGreen: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981' },
-  activeBadgeText: { fontSize: 11, fontWeight: '700', color: '#10B981' },
-  newBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#0284C7', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8 },
-  newBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
-  iconBtn: { width: 34, height: 34, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 10, marginBottom: 12 },
+  activeBadgeText: { fontSize: 10, fontWeight: '700', color: '#10B981' },
+  newBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#0284C7', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 8 },
+  newBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
+  iconBtn: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 12, width: '100%' },
   statCard: { width: '48%', padding: 12, borderRadius: 14, borderWidth: 1 },
   statHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   statLabel: { fontSize: 8.5, fontWeight: '800', color: '#94A3B8', letterSpacing: 0.4, flex: 1 },
@@ -416,16 +438,19 @@ const styles = StyleSheet.create({
   searchBar: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, borderWidth: 1, flex: 1 },
   searchInput: { flex: 1, fontSize: 13 },
   viewToggle: { width: 38, height: 38, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  pagesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  pageCardGrid: { width: '48%', padding: 12, borderRadius: 14, borderWidth: 1 },
-  pageCardList: { padding: 14, borderRadius: 14, borderWidth: 1 },
-  pageIconCircle: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  pageStatusBadge: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 8 },
-  pageStatusActive: { backgroundColor: 'rgba(16,185,129,0.1)' },
-  pageStatusInactive: { backgroundColor: 'rgba(148,163,184,0.1)' },
-  pageStatusText: { fontSize: 9, fontWeight: '700' },
-  pageTitle: { fontSize: 13, fontWeight: '700', marginTop: 6 },
+  pagesGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 10, width: '100%' },
+  pageCardGrid: { width: '48.5%', padding: 12, borderRadius: 14, borderWidth: 1, marginBottom: 10 },
+  pageCardList: { padding: 14, borderRadius: 14, borderWidth: 1, marginBottom: 10 },
+  pageCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  pageIconCircle: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  pageStatusBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 6, paddingVertical: 2.5, borderRadius: 6, maxWidth: '65%' },
+  dotStatus: { width: 5, height: 5, borderRadius: 2.5 },
+  pageStatusActive: { backgroundColor: 'rgba(16,185,129,0.12)' },
+  pageStatusInactive: { backgroundColor: 'rgba(148,163,184,0.12)' },
+  pageStatusText: { fontSize: 9.5, fontWeight: '700' },
+  pageTitle: { fontSize: 13, fontWeight: '700', marginTop: 4 },
   pageUrl: { fontSize: 10, color: '#0284C7', marginTop: 2 },
+  pageActionRow: { flexDirection: 'row', gap: 6, marginTop: 10 },
   pageActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(2,132,199,0.1)', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
   pageActionBtnText: { color: '#0284C7', fontSize: 11, fontWeight: '700' },
   primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#0284C7', borderRadius: 12, paddingVertical: 13 },
@@ -453,7 +478,9 @@ const styles = StyleSheet.create({
   txnId: { fontSize: 12, fontWeight: '700' },
   txnDate: { fontSize: 10, color: '#64748B', marginTop: 1 },
   txnAmount: { fontSize: 14, fontWeight: '800' },
-  txnStatusBadge: { backgroundColor: 'rgba(16,185,129,0.12)', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
+  txnStatusBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
+  txnStatusSuccess: { backgroundColor: 'rgba(16,185,129,0.12)' },
+  txnStatusPending: { backgroundColor: 'rgba(245,158,11,0.12)' },
   txnStatusText: { fontSize: 9, fontWeight: '800', color: '#10B981' },
   chanTab: { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
   chanTabActive: { backgroundColor: '#0284C7' },

@@ -3,7 +3,15 @@ import { StyleSheet, Text, View, useColorScheme } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Stop, Line, Text as SvgText, Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 
-export const DashboardAnalyticsCharts: React.FC = () => {
+interface DashboardAnalyticsChartsProps {
+  joinsCount?: number;
+  revenue?: number;
+}
+
+export const DashboardAnalyticsCharts: React.FC<DashboardAnalyticsChartsProps> = ({
+  joinsCount = 0,
+  revenue = 0,
+}) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -22,7 +30,7 @@ export const DashboardAnalyticsCharts: React.FC = () => {
             </Text>
           </View>
           <View style={styles.badgeGreen}>
-            <Text style={styles.badgeGreenText}>20 recent joins</Text>
+            <Text style={styles.badgeGreenText}>{joinsCount} total joins</Text>
           </View>
         </View>
         <Text style={styles.chartSubtitle}>Tracked member joins across your deep invite links.</Text>
@@ -88,7 +96,7 @@ export const DashboardAnalyticsCharts: React.FC = () => {
             </Text>
           </View>
           <View style={styles.badgeBlue}>
-            <Text style={styles.badgeBlueText}>₹0</Text>
+            <Text style={styles.badgeBlueText}>₹{Number(revenue).toLocaleString()}</Text>
           </View>
         </View>
         <Text style={styles.chartSubtitle}>Real payment earnings from your subscription pages.</Text>

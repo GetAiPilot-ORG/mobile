@@ -27,7 +27,6 @@ import { TelegramToolKey } from '../types';
 import {
   AutoforwardModal,
   SubManagerModal,
-  TrackerModal,
   ReportBotModal,
   BroadcastModal,
   AutoApproveModal,
@@ -172,9 +171,9 @@ export const TelegramScreen: React.FC = () => {
           }
         }
 
-        return { totalRevenue: totalRev > 0 ? totalRev : 4, activeSubscribers: activeSubs, pages: pagesData || [], payments: realPayments };
+        return { totalRevenue: totalRev > 0 ? totalRev : 0, activeSubscribers: activeSubs, pages: pagesData || [], payments: realPayments };
       } catch (e) {
-        return { totalRevenue: 4, activeSubscribers: 0, pages: [], payments: [] };
+        return { totalRevenue: 0, activeSubscribers: 0, pages: [], payments: [] };
       }
     },
     staleTime: 30000,
@@ -190,17 +189,10 @@ export const TelegramScreen: React.FC = () => {
   const botsList = trackerBots || summary?.trackerBots || [];
 
   const trackerDash = trackerDashboard?.kpis ? trackerDashboard : {
-    kpis: { totalJoins: 193, todaysJoins: 0, thisMonthJoins: 0, botStarts: 498, pendingJoins: 297, conversionRate: 39 },
-    period: { startDate: 'Sep 04, 2026', endDate: 'Sep 11, 2026', periodJoins: 0, totalTracked: 114050, allTimeActive: 153 },
-    channels: [
-      { channel_id: 'chan-1', channel_name: 'Unknown Channel', total_links: 11, period_joins: 0, joined: 0, left: 0, all_active: 0, links: [{ id: 'l1', title: 'Auto Join Request Link', joins: 0 }] },
-      { channel_id: 'chan-2', channel_name: 'ZERO TO HERO ( TRADING )', total_links: 1, period_joins: 0, joined: 157, left: 4, all_active: 153, links: [{ id: 'l6', title: 'zero to hero 03/04/2026', joins: 157 }] },
-    ],
-    newUsers: [
-      { id: 'u-1', telegram_user_id: '1061985331', name: 'Ritesh', channel_name: 'Trading Guru', bot_username: 'tradingguru02_bot', time_ago: '5min ago', status: 'Bot Start', created_at: new Date(Date.now() - 5 * 60000).toISOString() },
-      { id: 'u-2', telegram_user_id: '6492128140', name: '145118', channel_name: 'zero to hero 03/04/2026', bot_username: 'zero_to_hero_tradbot', time_ago: '5min ago', status: 'Active', created_at: new Date(Date.now() - 5 * 60000).toISOString() },
-      { id: 'u-3', telegram_user_id: '5389658253', name: 'Mariyappan', channel_name: 'zero to hero 03/04/2026', bot_username: 'zero_to_hero_tradbot', time_ago: '7min ago', status: 'Active', created_at: new Date(Date.now() - 7 * 60000).toISOString() },
-    ],
+    kpis: { totalJoins: 0, todaysJoins: 0, thisMonthJoins: 0, botStarts: 0, pendingJoins: 0, conversionRate: 0 },
+    period: { startDate: '', endDate: '', periodJoins: 0, totalTracked: 0, allTimeActive: 0 },
+    channels: [],
+    newUsers: [],
   };
 
   const rawSubPages: any[] =
@@ -226,33 +218,29 @@ export const TelegramScreen: React.FC = () => {
       ? subManagerDashboard.kpis.totalRevenueRaw
       : (typeof supabaseSubData?.totalRevenue === 'number' && supabaseSubData.totalRevenue > 0
           ? supabaseSubData.totalRevenue
-          : 4);
+          : 0);
 
   const TELESUB_STATS = {
     totalRevenue: realRevenue,
     activeSubscribers: subManagerDashboard?.kpis?.activeSubscribers ?? supabaseSubData?.activeSubscribers ?? 0,
-    subscriptionPages: subManagerPages.length || subManagerDashboard?.kpis?.subscriptionPages || supabaseSubData?.pages?.length || 2,
+    subscriptionPages: subManagerPages.length || subManagerDashboard?.kpis?.subscriptionPages || supabaseSubData?.pages?.length || 0,
     botAutomatedAccess: '100%',
     grossSales: realRevenue,
     netCreatorShare: Math.round(realRevenue * 0.9 * 100) / 100,
     availableToWithdraw: Math.round(realRevenue * 0.9 * 100) / 100,
     rollingHold: 0,
-    successfulPaymentsCount: supabaseSubData?.payments?.length || subManagerDashboard?.transactions?.length || 3,
-    clearedBatchesCount: 1,
-    connectedBank: { accountHolder: subManagerDashboard?.financialHub?.bankAccount?.accountName || 'Shwet chourey', status: 'Verified Active', details: 'Razorpay Route connected for 7-day rolling payouts' },
-    botStatus: { botUsername: '@Gapsubmanagerbot', isOnline: true, verifiedChannels: 1 },
-    linkedTelegram: { phone: '+919343418163', isLinked: true },
-    monetizedChannels: [{ id: 'chan-1', title: 'test mb', telegram_chat_id: '-1004318725539', botActive: true }],
-    discoveredChannels: [
-      { id: 'disc-1', title: 'Crypto Signals India VIP', chat_id: '-1001892837192', members: 420 },
-      { id: 'disc-2', title: 'Nifty & BankNifty Option Hub', chat_id: '-1001782394821', members: 1250 },
-      { id: 'disc-3', title: 'Forex Scalping Live Master', chat_id: '-1001672384910', members: 890 },
-    ],
-    transactions: [
-      { id: 'txn-1', razorpay_payment_id: 'pay_Oz9xK1a8B92', dateTime: 'Today, 03:15 PM', grossAmount: 2, platformFee: 0.20, netPayout: 1.80, status: 'SUCCESS' },
-      { id: 'txn-2', razorpay_payment_id: 'pay_Oy8bM2c7C81', dateTime: 'Yesterday, 11:20 AM', grossAmount: 1, platformFee: 0.10, netPayout: 0.90, status: 'SUCCESS' },
-      { id: 'txn-3', razorpay_payment_id: 'pay_Ox7aL3d6D70', dateTime: 'Sep 08, 05:40 PM', grossAmount: 1, platformFee: 0.10, netPayout: 0.90, status: 'SUCCESS' },
-    ],
+    successfulPaymentsCount: supabaseSubData?.payments?.length || subManagerDashboard?.transactions?.length || 0,
+    clearedBatchesCount: 0,
+    connectedBank: {
+      accountHolder: subManagerDashboard?.financialHub?.bankAccount?.accountName || 'Shwet Chourey',
+      status: subManagerDashboard?.financialHub?.bankAccount?.accountName ? 'Connected' : 'Not Connected',
+      details: 'Direct Bank Settlement (IMPS)',
+    },
+    botStatus: { botUsername: subManagerDashboard?.financialHub?.botUsername || '', isOnline: false, verifiedChannels: 0 },
+    linkedTelegram: { phone: '', isLinked: false },
+    monetizedChannels: subManagerDashboard?.monetizedChannels || [],
+    discoveredChannels: subManagerDashboard?.discoveredChannels || [],
+    transactions: supabaseSubData?.payments || subManagerDashboard?.transactions || [],
     pages: subManagerPages,
   };
 
@@ -371,7 +359,6 @@ export const TelegramScreen: React.FC = () => {
       {/* Modals */}
       {activeModal === 'autoforward' && <AutoforwardModal visible={true} onClose={() => setActiveModal(null)} onSubmit={async (data: any) => { return {}; }} isLoading={false} />}
       {activeModal === 'sub_manager' && <SubManagerModal visible={true} onClose={() => setActiveModal(null)} />}
-      {activeModal === 'tracker' && <TrackerModal visible={true} onClose={() => setActiveModal(null)} />}
       {activeModal === 'report_bot' && <ReportBotModal visible={true} onClose={() => setActiveModal(null)} />}
       {activeModal === 'broadcast' && <BroadcastModal visible={true} onClose={() => setActiveModal(null)} />}
       {activeModal === 'auto_approve' && <AutoApproveModal visible={true} onClose={() => setActiveModal(null)} />}

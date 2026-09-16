@@ -239,17 +239,17 @@ export const ReportBotScreen: React.FC<Props> = ({ onOpenModal }) => {
   };
 
   return (
-    <View style={{ flex: 1, paddingBottom: 110 }}>
-      <View style={[styles.container, isDark ? styles.containerDark : styles.containerLight]}>
+    <View style={styles.container}>
+      {/* Top Header Card */}
+      <View style={[styles.topCard, isDark ? styles.cardDark : styles.cardLight]}>
         {/* Top Header */}
         <View style={[styles.header, isDark ? styles.borderDark : styles.borderLight]}>
           <View style={{ flex: 1, paddingRight: 8 }}>
             <Text style={[styles.title, isDark ? styles.textDark : styles.textLight]}>GAP Report Bot</Text>
             <Text style={styles.subtitle} numberOfLines={2}>
-              Convert Telegram trading calls into branded SEBI research PDFs. Complete the bot, channel, and brand setup before posting live calls.
+              Convert Telegram trading calls into branded SEBI research PDFs.
             </Text>
           </View>
-          
         </View>
 
         {/* Action Header Buttons: Start Bot & Refresh Status */}
@@ -276,7 +276,7 @@ export const ReportBotScreen: React.FC<Props> = ({ onOpenModal }) => {
         </View>
 
         {/* 3-Segment Tab Bar & Live Status Bar */}
-        <View style={[styles.tabBarSection, isDark ? styles.borderDark : styles.borderLight]}>
+        <View style={styles.tabBarSection}>
           <View style={styles.tabsRow}>
             <Pressable
               style={[styles.tabPill, activeTab === 'profile' && styles.tabPillActive]}
@@ -310,7 +310,7 @@ export const ReportBotScreen: React.FC<Props> = ({ onOpenModal }) => {
               }}
             >
               <Text style={[styles.tabPillText, activeTab === 'archive' && styles.tabPillTextActive]}>
-                Reports Archive ({dashboard?.reportsCount ?? 0})
+                Archive ({dashboard?.reportsCount ?? 0})
               </Text>
             </Pressable>
           </View>
@@ -331,42 +331,43 @@ export const ReportBotScreen: React.FC<Props> = ({ onOpenModal }) => {
             </View>
           </View>
         </View>
+      </View>
 
-        <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
-          {isLoading ? (
-            <View style={styles.loadingBox}>
-              <ActivityIndicator size="large" color="#0284C7" />
-              <Text style={[styles.loadingText, isDark ? styles.textDark : styles.textLight]}>
-                Loading SEBI Report Bot Suite...
-              </Text>
-            </View>
-          ) : (
-            <>
-              {/* TAB 1: BRAND PROFILE FORM & PDF PREVIEW */}
-              {activeTab === 'profile' && (
-                <>
-                  {/* SEBI Brand Profile Card Header */}
-                  <View style={[styles.formCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={styles.formHeaderRow}>
-                      <View>
-                        <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight]}>
-                          SEBI Brand Profile
-                        </Text>
-                        <Text style={styles.sectionSubtitle}>These details appear on every generated research PDF.</Text>
-                      </View>
-                      <Pressable style={styles.saveBtn} onPress={handleSave} disabled={isSaving}>
-                        {isSaving ? (
-                          <ActivityIndicator size="small" color="#FFFFFF" />
-                        ) : (
-                          <>
-                            <Ionicons name="save-outline" size={14} color="#FFFFFF" />
-                            <Text style={styles.saveBtnText}>Save Settings</Text>
-                          </>
-                        )}
-                      </Pressable>
+      <View style={styles.bodyContent}>
+        {isLoading ? (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator size="large" color="#0284C7" />
+            <Text style={[styles.loadingText, isDark ? styles.textDark : styles.textLight]}>
+              Loading SEBI Report Bot Suite...
+            </Text>
+          </View>
+        ) : (
+          <>
+            {/* TAB 1: BRAND PROFILE FORM & PDF PREVIEW */}
+            {activeTab === 'profile' && (
+              <>
+                {/* SEBI Brand Profile Card Header */}
+                <View style={[styles.formCard, isDark ? styles.cardDark : styles.cardLight]}>
+                  <View style={styles.formHeaderRow}>
+                    <View style={{ flex: 1, paddingRight: 6 }}>
+                      <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight]}>
+                        SEBI Brand Profile
+                      </Text>
+                      <Text style={styles.sectionSubtitle}>These details appear on every generated research PDF.</Text>
                     </View>
+                    <Pressable style={styles.saveBtn} onPress={handleSave} disabled={isSaving}>
+                      {isSaving ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <>
+                          <Ionicons name="save-outline" size={14} color="#FFFFFF" />
+                          <Text style={styles.saveBtnText}>Save</Text>
+                        </>
+                      )}
+                    </Pressable>
+                  </View>
 
-                    {/* SECTION 1: IDENTITY (REQUIRED) */}
+                  {/* SECTION 1: IDENTITY (REQUIRED) */}
                     <Text style={styles.groupHeading}>Identity</Text>
                     <Text style={styles.groupDesc}>Required information for the report header and Hub completion</Text>
 
@@ -538,7 +539,7 @@ export const ReportBotScreen: React.FC<Props> = ({ onOpenModal }) => {
                   {/* 🌟 PDF PREVIEW CARD */}
                   <View style={[styles.previewCard, isDark ? styles.previewCardDark : styles.previewCardLight]}>
                     <View style={styles.previewHeaderRow}>
-                      <View>
+                      <View style={{ flex: 1, paddingRight: 6 }}>
                         <Text style={[styles.previewTitle, isDark ? styles.textDark : styles.textLight]}>
                           PDF Preview
                         </Text>
@@ -627,7 +628,7 @@ export const ReportBotScreen: React.FC<Props> = ({ onOpenModal }) => {
               {activeTab === 'channels' && (
                 <View style={[styles.formCard, isDark ? styles.cardDark : styles.cardLight]}>
                   <View style={styles.formHeaderRow}>
-                    <View>
+                    <View style={{ flex: 1, paddingRight: 6 }}>
                       <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight]}>
                         Mapped Trading Channels
                       </Text>
@@ -724,7 +725,7 @@ export const ReportBotScreen: React.FC<Props> = ({ onOpenModal }) => {
               )}
             </>
           )}
-        </ScrollView>
+        </View>
 
         {/* 🖼️ BRAND LOGO UPLOADER / SELECTOR MODAL WITH GALLERY & CAMERA */}
         <Modal visible={isLogoModalOpen} transparent animationType="fade" onRequestClose={() => setIsLogoModalOpen(false)}>
@@ -833,7 +834,7 @@ export const ReportBotScreen: React.FC<Props> = ({ onOpenModal }) => {
 
         {/* 📑 FULL INTERACTIVE SEBI PDF REPORT VIEWER MODAL */}
         <Modal visible={isPdfPreviewOpen} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setIsPdfPreviewOpen(false)}>
-          <View style={[styles.pdfViewerContainer, isDark ? styles.containerDark : styles.containerLight]}>
+          <View style={[styles.pdfViewerContainer, isDark ? styles.cardDark : styles.cardLight]}>
             {/* Viewer Top Bar */}
             <View style={[styles.pdfViewerHeader, isDark ? styles.borderDark : styles.borderLight]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -983,14 +984,14 @@ export const ReportBotScreen: React.FC<Props> = ({ onOpenModal }) => {
           </View>
         </Modal>
       </View>
-    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  containerLight: { backgroundColor: '#F8FAFC' },
-  containerDark: { backgroundColor: '#0B0F19' },
+  container: { width: '100%', marginBottom: 20 },
+  topCard: { borderRadius: 16, borderWidth: 1, overflow: 'hidden', marginBottom: 14 },
+  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
+  cardDark: { backgroundColor: '#121212', borderColor: '#27272A' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1004,7 +1005,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: '800' },
   textLight: { color: '#0F172A' },
   textDark: { color: '#F8FAFC' },
-  subtitle: { color: '#64748B', fontSize: 11, marginTop: 3, lineHeight: 16 },
+  subtitle: { color: '#64748B', fontSize: 11.5, marginTop: 3, lineHeight: 16 },
   closeBtn: {
     width: 32,
     height: 32,
@@ -1117,8 +1118,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 20,
   },
-  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  cardDark: { backgroundColor: '#121722', borderColor: '#1E2430' },
   formHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

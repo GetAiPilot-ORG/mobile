@@ -123,7 +123,10 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
       </View>
 
       {/* Analytics Charts */}
-      <DashboardAnalyticsCharts />
+      <DashboardAnalyticsCharts
+        joinsCount={summary?.deepLinksCount ?? 0}
+        revenue={summary?.revenue ?? 0}
+      />
 
       {/* Progress Card */}
       <HubProgressCard

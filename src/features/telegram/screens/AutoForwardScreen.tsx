@@ -44,10 +44,10 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
         <View style={styles.heroRow}>
           <View style={styles.heroLeft}>
             <View style={styles.heroIconCircle}>
-              <Ionicons name="flash" size={20} color="#0284C7" />
+              <Ionicons name="flash" size={18} color="#0284C7" />
             </View>
             <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={[styles.heroTitle, txt]} numberOfLines={1}>AutoForward Control</Text>
+              <Text style={[styles.heroTitle, txt]} numberOfLines={1}>AutoForward</Text>
               <View style={styles.activeRow}>
                 <View style={styles.dotGreen} />
                 <Text style={styles.activeText}>System Active</Text>
@@ -61,7 +61,7 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
               Linking.openURL('https://t.me/Gapautoforwardingbot');
             }}
           >
-            <Ionicons name="logo-android" size={15} color="#FFFFFF" />
+            <Ionicons name="logo-android" size={14} color="#FFFFFF" />
             <Text style={styles.openBotBtnText}>Open Bot</Text>
           </Pressable>
         </View>
@@ -260,17 +260,17 @@ const styles = StyleSheet.create({
   textDark: { color: '#F8FAFC' },
   borderLight: { borderColor: '#E2E8F0' },
   borderDark: { borderColor: '#27272A' },
-  heroCard: { padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 14 },
+  heroCard: { padding: 12, borderRadius: 16, borderWidth: 1, marginBottom: 14 },
   heroRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  heroLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  heroIconCircle: { width: 38, height: 38, borderRadius: 10, backgroundColor: 'rgba(2,132,199,0.12)', alignItems: 'center', justifyContent: 'center' },
+  heroLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, paddingRight: 8 },
+  heroIconCircle: { width: 34, height: 34, borderRadius: 8, backgroundColor: 'rgba(2,132,199,0.12)', alignItems: 'center', justifyContent: 'center' },
   heroTitle: { fontSize: 15, fontWeight: '800' },
   activeRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
-  dotGreen: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#10B981' },
+  dotGreen: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981' },
   activeText: { color: '#64748B', fontSize: 11, fontWeight: '600' },
-  openBotBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#0284C7', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8 },
-  openBotBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
-  kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
+  openBotBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#0284C7', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 8 },
+  openBotBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
+  kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 12, width: '100%' },
   kpiCard: { width: '47%', padding: 12, borderRadius: 14, borderWidth: 1 },
   kpiCardActive: { borderColor: '#0284C7', borderWidth: 2 },
   kpiIconCircle: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
