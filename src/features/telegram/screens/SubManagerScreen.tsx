@@ -41,7 +41,8 @@ interface SubManagerScreenProps {
 }
 
 export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpenModal, onRefresh }) => {
-  const isDark = useColorScheme() === 'dark';
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const [subSection, setSubSection] = useState<SubSection>('pages');
   const [txnSearch, setTxnSearch] = useState('');
   const [txnFilter, setTxnFilter] = useState<'All' | 'Success' | 'On Hold'>('All');
@@ -50,7 +51,7 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
   const [pageSearch, setPageSearch] = useState('');
   const [pageView, setPageView] = useState<'grid' | 'list'>('grid');
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [pageActiveMap, setPageActiveMap] = useState<Record<string, boolean>>({ 'page-1': true, 'page-2': true });
+  const [pageActiveMap, setPageActiveMap] = useState<Record<string, boolean>>({});
   const [launchExpanded, setLaunchExpanded] = useState(false);
 
   const card = isDark ? styles.cardDark : styles.cardLight;
@@ -67,14 +68,14 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
     return matchSearch && matchFilter;
   });
 
-  const filteredMonetized = stats.monetizedChannels.filter((ch) =>
-    ch.title.toLowerCase().includes(channelSearch.toLowerCase()) || ch.telegram_chat_id.includes(channelSearch)
+  const filteredMonetized = (stats.monetizedChannels || []).filter((ch) =>
+    (ch.title || ch.channel_name || '').toLowerCase().includes(channelSearch.toLowerCase()) || String(ch.telegram_chat_id || '').includes(channelSearch)
   );
-  const filteredDiscovered = stats.discoveredChannels.filter((ch) =>
-    ch.title.toLowerCase().includes(channelSearch.toLowerCase()) || ch.chat_id.includes(channelSearch)
+  const filteredDiscovered = (stats.discoveredChannels || []).filter((ch) =>
+    (ch.title || ch.channel_name || '').toLowerCase().includes(channelSearch.toLowerCase()) || String(ch.chat_id || '').includes(channelSearch)
   );
-  const filteredPages = stats.pages.filter((pg) =>
-    pg.title.toLowerCase().includes(pageSearch.toLowerCase()) || pg.slug.toLowerCase().includes(pageSearch.toLowerCase())
+  const filteredPages = (stats.pages || []).filter((pg) =>
+    (pg.title || '').toLowerCase().includes(pageSearch.toLowerCase()) || (pg.slug || '').toLowerCase().includes(pageSearch.toLowerCase())
   );
 
   const handleCopyLink = async (url: string, id: string) => {
@@ -347,49 +348,55 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
               <TextInput style={[styles.searchInput, txt]} placeholder="Search channels..." placeholderTextColor="#94A3B8" value={channelSearch} onChangeText={setChannelSearch} />
             </View>
             <View style={{ gap: 10, marginTop: 8 }}>
-              {channelTab === 'monetized' && filteredMonetized.map((ch) => (
-                <View key={ch.id} style={[styles.chanCard, border]}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <View style={styles.chanAvatar}><Text style={styles.chanAvatarText}>{ch.title.charAt(0).toUpperCase()}</Text></View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.chanTitle, txt]} numberOfLines={1}>{ch.title}</Text>
-                      <Text style={styles.chanId}>ID: {ch.telegram_chat_id}</Text>
+              {channelTab === 'monetized' && filteredMonetized.map((ch) => {
+                const titleStr = ch.title || ch.channel_name || 'Channel';
+                return (
+                  <View key={ch.id || String(Math.random())} style={[styles.chanCard, border]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <View style={styles.chanAvatar}><Text style={styles.chanAvatarText}>{titleStr.charAt(0).toUpperCase()}</Text></View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.chanTitle, txt]} numberOfLines={1}>{titleStr}</Text>
+                        <Text style={styles.chanId}>ID: {ch.telegram_chat_id || ch.channel_id || 'N/A'}</Text>
+                      </View>
+                      <View style={styles.botActiveBadge}>
+                        <Ionicons name="checkmark" size={12} color="#10B981" />
+                        <Text style={styles.botActiveBadgeText}>Bot Active</Text>
+                      </View>
                     </View>
-                    <View style={styles.botActiveBadge}>
-                      <Ionicons name="checkmark" size={12} color="#10B981" />
-                      <Text style={styles.botActiveBadgeText}>Bot Active</Text>
+                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+                      <Pressable style={[styles.chanActionBtn, border]} onPress={() => Alert.alert('Status Check', `${titleStr}: Bot active with full admin rights.`)}>
+                        <Ionicons name="sync" size={12} color="#64748B" />
+                        <Text style={[styles.chanActionBtnText, txt]}>Status</Text>
+                      </Pressable>
+                      <Pressable style={[styles.chanActionBtn, border]} onPress={() => Alert.alert('Guide', 'Ensure @Gapsubmanagerbot is Admin.')}>
+                        <Ionicons name="settings-outline" size={12} color="#64748B" />
+                        <Text style={[styles.chanActionBtnText, txt]}>Guide</Text>
+                      </Pressable>
+                      <Pressable style={styles.createPageBtn} onPress={() => onOpenModal('sub_manager')}>
+                        <Text style={styles.createPageBtnText}>Create Page →</Text>
+                      </Pressable>
                     </View>
                   </View>
-                  <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-                    <Pressable style={[styles.chanActionBtn, border]} onPress={() => Alert.alert('Status Check', `${ch.title}: Bot active with full admin rights.`)}>
-                      <Ionicons name="sync" size={12} color="#64748B" />
-                      <Text style={[styles.chanActionBtnText, txt]}>Status</Text>
-                    </Pressable>
-                    <Pressable style={[styles.chanActionBtn, border]} onPress={() => Alert.alert('Guide', 'Ensure @Gapsubmanagerbot is Admin.')}>
-                      <Ionicons name="settings-outline" size={12} color="#64748B" />
-                      <Text style={[styles.chanActionBtnText, txt]}>Guide</Text>
-                    </Pressable>
-                    <Pressable style={styles.createPageBtn} onPress={() => onOpenModal('sub_manager')}>
-                      <Text style={styles.createPageBtnText}>Create Page →</Text>
-                    </Pressable>
-                  </View>
-                </View>
-              ))}
-              {channelTab === 'discovered' && filteredDiscovered.map((disc) => (
-                <View key={disc.id} style={[styles.chanCard, border]}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <View style={[styles.chanAvatar, { backgroundColor: '#F1F5F9' }]}><Text style={[styles.chanAvatarText, { color: '#0284C7' }]}>{disc.title.charAt(0).toUpperCase()}</Text></View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.chanTitle, txt]}>{disc.title}</Text>
-                      <Text style={styles.chanId}>ID: {disc.chat_id} • {disc.members} Members</Text>
+                );
+              })}
+              {channelTab === 'discovered' && filteredDiscovered.map((disc) => {
+                const discTitle = disc.title || disc.channel_name || 'Channel';
+                return (
+                  <View key={disc.id || String(Math.random())} style={[styles.chanCard, border]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <View style={[styles.chanAvatar, { backgroundColor: '#F1F5F9' }]}><Text style={[styles.chanAvatarText, { color: '#0284C7' }]}>{discTitle.charAt(0).toUpperCase()}</Text></View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.chanTitle, txt]}>{discTitle}</Text>
+                        <Text style={styles.chanId}>ID: {disc.chat_id || disc.channel_id || 'N/A'} • {disc.members || 0} Members</Text>
+                      </View>
+                      <Pressable style={styles.createPageBtn} onPress={() => Alert.alert('Activate', `Add @Gapsubmanagerbot as Admin in ${discTitle}.`)}>
+                        <Ionicons name="add" size={13} color="#FFFFFF" />
+                        <Text style={styles.createPageBtnText}>Add Bot</Text>
+                      </Pressable>
                     </View>
-                    <Pressable style={styles.createPageBtn} onPress={() => Alert.alert('Activate', `Add @Gapsubmanagerbot as Admin in ${disc.title}.`)}>
-                      <Ionicons name="add" size={13} color="#FFFFFF" />
-                      <Text style={styles.createPageBtnText}>Add Bot</Text>
-                    </Pressable>
                   </View>
-                </View>
-              ))}
+                );
+              })}
             </View>
           </View>
         </View>
