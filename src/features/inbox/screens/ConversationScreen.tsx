@@ -378,8 +378,8 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
     },
   });
 
-  const headerTopPadding = Platform.OS === 'ios' ? Math.max(insets.top, 44) : 8;
-  const composerBottomPadding = Platform.OS === 'ios' ? Math.max(insets.bottom, 10) : 8;
+  const headerTopPadding = Math.max(insets.top, Platform.OS === 'ios' ? 44 : 12);
+  const composerBottomPadding = Math.max(insets.bottom, 10);
 
   if (isLoading && !conversation) {
     return <ConversationSkeleton />;

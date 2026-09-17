@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,8 @@ import {
   StyleSheet,
   Platform,
   useColorScheme,
-  Animated,
-  LayoutChangeEvent,
+  LayoutAnimation,
+  UIManager,
   Modal,
   TouchableWithoutFeedback,
   ScrollView,
@@ -15,6 +15,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -39,6 +43,22 @@ export interface ProductFloatingBottomBarProps {
   pinPrimaryTabs?: boolean;
 }
 
+const tabSpringAnimation = {
+  duration: 260,
+  create: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+    property: LayoutAnimation.Properties.opacity,
+  },
+  update: {
+    type: LayoutAnimation.Types.spring,
+    springDamping: 0.75,
+  },
+  delete: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+    property: LayoutAnimation.Properties.opacity,
+  },
+};
+
 export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> = ({
   items,
   activeKey,
@@ -55,16 +75,12 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
   const isDark = colorScheme === 'dark';
 
   const [isMoreModalVisible, setIsMoreModalVisible] = useState(false);
-  const [containerWidth, setContainerWidth] = useState(0);
 
   // Bottom floating offset based on safe area
   const bottomOffset = Math.max(insets.bottom, 12);
 
   const hasOverflow = items.length > 5;
 
-  // Dynamic slot computation:
-  // If items > 5 and the user selects an overflow item, dynamically promote it to the visible 4th slot
-  // so the active tool is directly highlighted in the bottom navigation bar.
   let visibleItems: (ProductTabItem | { key: string; label: string; activeIcon: IoniconsName; inactiveIcon: IoniconsName; description?: string })[];
   let overflowItems: ProductTabItem[];
 
@@ -84,7 +100,6 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
     if (!pinPrimaryTabs && !isPrimaryActive && activeItem) {
       // Keep top 3 anchors (e.g. Overview, AutoForward, Tracker), place activeItem at 4th slot
       visibleItems = [...items.slice(0, 3), activeItem, moreTabItem];
-      // All remaining items go into the More menu
       overflowItems = items.filter((item) => !visibleItems.some((v) => v.key === item.key));
     } else {
       visibleItems = [...defaultPrimary, moreTabItem];
@@ -138,6 +153,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
     if (item.key === '__more__') {
       setIsMoreModalVisible(true);
     } else {
+      LayoutAnimation.configureNext(tabSpringAnimation);
       onChangeTab(item.key);
     }
   };
@@ -147,6 +163,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
     setIsMoreModalVisible(false);
+    LayoutAnimation.configureNext(tabSpringAnimation);
     onChangeTab(key);
   };
 
@@ -154,7 +171,6 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
     <>
       <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
         <View
-          onLayout={onContainerLayout}
           style={[
             styles.tabBarContainer,
             isDark ? styles.tabBarContainerDark : styles.tabBarContainerLight,
@@ -187,8 +203,6 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
             const isMoreTab = item.key === '__more__';
             const isFocused = safeActiveIndex === index;
             const iconName = isFocused ? item.activeIcon : item.inactiveIcon;
-            const activeColor = accentColor;
-            const inactiveColor = isDark ? '#8E8E93' : '#6B7280';
 
             return (
               <Pressable
@@ -226,7 +240,50 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
                   >
                     {item.label}
                   </Text>
-                </View>
+                  {'badge' in item && item.badge ? (
+                    <View
+                      style={[
+                        styles.activeBadgeDot,
+                        { backgroundColor: isDark ? '#000000' : '#FFFFFF' },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.activeBadgeText,
+                          { color: isDark ? '#FFFFFF' : '#000000' },
+                        ]}
+                      >
+                        {item.badge}
+                      </Text>
+                    </View>
+                  ) : null}
+                </Pressable>
+              );
+            }
+
+            return (
+              <Pressable
+                key={item.key}
+                accessibilityRole="button"
+                accessibilityState={{ selected: false }}
+                onPress={() => handleTabPress(item)}
+                style={[
+                  styles.inactiveButton,
+                  isDark ? styles.inactiveButtonDark : styles.inactiveButtonLight,
+                ]}
+              >
+                <Ionicons
+                  name={iconName}
+                  size={20}
+                  color={isDark ? '#9CA3AF' : '#64748B'}
+                />
+                {'badge' in item && item.badge ? (
+                  <View style={styles.inactiveBadgeDot}>
+                    <Text style={styles.inactiveBadgeText}>{item.badge}</Text>
+                  </View>
+                ) : isMoreTab && isOverflowActive ? (
+                  <View style={styles.activeMiniDot} />
+                ) : null}
               </Pressable>
             );
           })}
@@ -413,39 +470,76 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tabContent: {
+  activePillDark: {
+    backgroundColor: '#FFFFFF',
+  },
+  activePillLight: {
+    backgroundColor: '#0F172A',
+  },
+  activeLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  activeLabelDark: {
+    color: '#000000',
+  },
+  activeLabelLight: {
+    color: '#FFFFFF',
+  },
+  activeBadgeDot: {
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',
+    marginLeft: 2,
     gap: 3,
   },
-  iconWrapper: {
-    position: 'relative',
+  activeBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  inactiveButton: {
     alignItems: 'center',
     justifyContent: 'center',
+    height: 44,
+    width: 44,
+    borderRadius: 22,
+    position: 'relative',
   },
-  badgeDot: {
+  inactiveButtonDark: {
+    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+  },
+  inactiveButtonLight: {
+    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+  },
+  inactiveBadgeDot: {
     position: 'absolute',
-    top: -3,
-    right: -8,
+    top: 2,
+    right: 2,
     borderRadius: 8,
     minWidth: 14,
     height: 14,
     paddingHorizontal: 3,
+    backgroundColor: '#EF4444',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badgeText: {
+  inactiveBadgeText: {
     color: '#FFFFFF',
     fontSize: 8.5,
     fontWeight: '800',
   },
   activeMiniDot: {
     position: 'absolute',
-    top: -1,
-    right: -4,
+    top: 6,
+    right: 6,
     width: 6,
     height: 6,
     borderRadius: 3,
+    backgroundColor: '#3B82F6',
   },
   tabLabel: {
     fontSize: 10.5,
