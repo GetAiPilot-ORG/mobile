@@ -37,6 +37,10 @@ export interface ProductFloatingBottomBarProps {
   onChangeTab: (key: string) => void;
   accentColor?: string;
   moreMenuTitle?: string;
+  moreTabLabel?: string;
+  moreTabActiveIcon?: IoniconsName;
+  moreTabInactiveIcon?: IoniconsName;
+  pinPrimaryTabs?: boolean;
 }
 
 const tabSpringAnimation = {
@@ -61,6 +65,10 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
   onChangeTab,
   accentColor = '#0A84FF',
   moreMenuTitle = 'More Options',
+  moreTabLabel = 'More',
+  moreTabActiveIcon = 'apps',
+  moreTabInactiveIcon = 'apps-outline',
+  pinPrimaryTabs = false,
 }) => {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
@@ -78,9 +86,9 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
 
   const moreTabItem = {
     key: '__more__',
-    label: 'More',
-    activeIcon: 'grid' as IoniconsName,
-    inactiveIcon: 'grid-outline' as IoniconsName,
+    label: moreTabLabel,
+    activeIcon: moreTabActiveIcon as IoniconsName,
+    inactiveIcon: moreTabInactiveIcon as IoniconsName,
     description: 'All additional tools and services',
   };
 
@@ -89,7 +97,8 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
     const activeItem = items.find((i) => i.key === activeKey);
     const isPrimaryActive = defaultPrimary.some((i) => i.key === activeKey);
 
-    if (!isPrimaryActive && activeItem) {
+    if (!pinPrimaryTabs && !isPrimaryActive && activeItem) {
+      // Keep top 3 anchors (e.g. Overview, AutoForward, Tracker), place activeItem at 4th slot
       visibleItems = [...items.slice(0, 3), activeItem, moreTabItem];
       overflowItems = items.filter((item) => !visibleItems.some((v) => v.key === item.key));
     } else {
@@ -107,6 +116,34 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
     item.key === '__more__' ? isOverflowActive : item.key === activeKey
   );
   const safeActiveIndex = activeIndex >= 0 ? activeIndex : 0;
+
+  // Layout measurement — pill must stay strictly inside its tab slot
+  const paddingHorizontal = 6;
+  const numTabs = visibleItems.length || 4;
+  const availableWidth = Math.max(0, containerWidth - paddingHorizontal * 2);
+  const tabWidth = numTabs > 0 ? availableWidth / numTabs : 0;
+  const pillInset = 4; // inset from each side of the tab slot
+
+  // Spring animation for smooth gliding active pill
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (tabWidth > 0) {
+      Animated.spring(slideAnim, {
+        toValue: safeActiveIndex * tabWidth,
+        tension: 80,
+        friction: 10,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [safeActiveIndex, tabWidth]);
+
+  const onContainerLayout = (event: LayoutChangeEvent) => {
+    const { width } = event.nativeEvent.layout;
+    if (width > 0 && width !== containerWidth) {
+      setContainerWidth(width);
+    }
+  };
 
   const handleTabPress = (item: ProductTabItem | { key: string; label: string; activeIcon: IoniconsName; inactiveIcon: IoniconsName }) => {
     if (Platform.OS !== 'web') {
@@ -139,34 +176,67 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
             isDark ? styles.tabBarContainerDark : styles.tabBarContainerLight,
           ]}
         >
+          {/* Soft Gliding Active Pill */}
+          {tabWidth > 0 && (
+            <Animated.View
+              style={[
+                styles.slidingIndicator,
+                {
+                  width: tabWidth - pillInset * 2,
+                  left: paddingHorizontal + pillInset,
+                  transform: [{ translateX: slideAnim }],
+                },
+              ]}
+              pointerEvents="none"
+            >
+              <View
+                style={[
+                  isDark ? styles.indicatorPillDark : styles.indicatorPillLight,
+                  { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : `${accentColor}14` },
+                ]}
+              />
+            </Animated.View>
+          )}
+
+          {/* Tab Items */}
           {visibleItems.map((item, index) => {
             const isMoreTab = item.key === '__more__';
             const isFocused = safeActiveIndex === index;
             const iconName = isFocused ? item.activeIcon : item.inactiveIcon;
 
-            if (isFocused) {
-              return (
-                <Pressable
-                  key={item.key}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: true }}
-                  onPress={() => handleTabPress(item)}
-                  style={[
-                    styles.activePill,
-                    isDark ? styles.activePillDark : styles.activePillLight,
-                  ]}
-                >
-                  <Ionicons
-                    name={iconName}
-                    size={19}
-                    color={isDark ? '#000000' : '#FFFFFF'}
-                  />
+            return (
+              <Pressable
+                key={item.key}
+                accessibilityRole="button"
+                accessibilityState={isFocused ? { selected: true } : {}}
+                onPress={() => handleTabPress(item)}
+                style={styles.tabItem}
+              >
+                <View style={styles.tabContentAll}>
+                  <View style={styles.iconWrapper}>
+                    <Ionicons
+                      name={iconName}
+                      size={isFocused ? 21 : 20}
+                      color={isFocused ? activeColor : inactiveColor}
+                    />
+                    {'badge' in item && item.badge ? (
+                      <View style={[styles.badgeDot, { backgroundColor: activeColor }]}>
+                        <Text style={styles.badgeText}>{item.badge}</Text>
+                      </View>
+                    ) : isMoreTab && isOverflowActive ? (
+                      <View style={[styles.activeMiniDot, { backgroundColor: activeColor }]} />
+                    ) : null}
+                  </View>
                   <Text
                     style={[
-                      styles.activeLabel,
-                      isDark ? styles.activeLabelDark : styles.activeLabelLight,
+                      styles.tabLabel,
+                      isFocused
+                        ? [styles.tabLabelActive, { color: activeColor }]
+                        : [styles.tabLabelInactive, { color: inactiveColor }],
+                      { maxWidth: tabWidth > 0 ? tabWidth - 10 : 55 },
                     ]}
                     numberOfLines={1}
+                    ellipsizeMode="tail"
                   >
                     {item.label}
                   </Text>
@@ -322,54 +392,83 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
 const styles = StyleSheet.create({
   floatingWrapper: {
     position: 'absolute',
-    left: 16,
-    right: 16,
+    left: 10,
+    right: 10,
     alignItems: 'center',
     zIndex: 9999,
   },
   tabBarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-    height: 52,
-    borderRadius: 26,
-    paddingHorizontal: 4,
-    paddingVertical: 4,
+    width: '100%',
+    maxWidth: 400,
+    height: 58,
+    borderRadius: 29,
+    paddingHorizontal: 6,
     borderWidth: 1,
-    gap: 6,
+    position: 'relative',
+    overflow: 'hidden',
   },
   tabBarContainerLight: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderColor: 'rgba(0, 0, 0, 0.08)',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 18,
-    elevation: 12,
+    shadowRadius: 16,
+    elevation: 8,
   },
   tabBarContainerDark: {
-    backgroundColor: '#121214',
+    backgroundColor: 'rgba(28, 28, 30, 0.95)',
     borderColor: 'rgba(255, 255, 255, 0.12)',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 24,
-    elevation: 14,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 20,
+    elevation: 10,
   },
-  activePill: {
-    flexDirection: 'row',
+  slidingIndicator: {
+    position: 'absolute',
+    top: 6,
+    bottom: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 0,
+  },
+  indicatorPillDark: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 24,
+  },
+  indicatorPillLight: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 24,
+  },
+  tabItem: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 44,
-    paddingHorizontal: 15,
-    borderRadius: 22,
-    gap: 6,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18,
-    shadowRadius: 6,
-    elevation: 5,
+    height: '100%',
+    zIndex: 1,
+  },
+  tabContentAll: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    flexShrink: 1,
+    width: '100%',
+  },
+  tabContentActive: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+    flexShrink: 1,
+    maxWidth: '100%',
+  },
+  tabContentInactive: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   activePillDark: {
     backgroundColor: '#FFFFFF',
@@ -396,6 +495,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 2,
+    gap: 3,
   },
   activeBadgeText: {
     fontSize: 9,
@@ -440,6 +540,17 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     backgroundColor: '#3B82F6',
+  },
+  tabLabel: {
+    fontSize: 10.5,
+    letterSpacing: -0.2,
+    textAlign: 'center',
+  },
+  tabLabelInactive: {
+    fontWeight: '500',
+  },
+  tabLabelActive: {
+    fontWeight: '700',
   },
   modalBackdrop: {
     flex: 1,
