@@ -21,6 +21,7 @@ import {
   openAuthenticatedTemplate,
 } from "../../src/lib/template-deep-link";
 import { colors } from "../../src/theme/colors";
+import { TemplatesListSkeleton } from "../../src/components/skeletonScreen";
 
 export interface SavedBioPage {
   id: string;
@@ -427,10 +428,7 @@ export default function MyDesignScreen() {
       />
 
       {loading ? (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading all your designs...</Text>
-        </View>
+        <TemplatesListSkeleton />
       ) : (
         <FlatList
           data={unifiedList}

@@ -834,7 +834,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   borderLight: { borderBottomColor: '#E2E8F0' },
-  borderDark: { borderBottomColor: '#262C36' },
+  borderDark: { borderBottomColor: '#27272A' },
   headerLeft: { flex: 1 },
   title: { fontSize: 18, fontWeight: '700' },
   textLight: { color: '#0F172A' },
@@ -848,7 +848,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   closeBtnLight: { backgroundColor: '#F1F5F9' },
-  closeBtnDark: { backgroundColor: '#262C36' },
+  closeBtnDark: { backgroundColor: '#27272A' },
 
   scrollArea: { flex: 1 },
   scrollContent: { padding: 16, gap: 14, paddingBottom: 40 },
@@ -876,7 +876,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  cardDark: { backgroundColor: '#161B26', borderColor: '#262C36' },
+  cardDark: { backgroundColor: '#121212', borderColor: '#27272A' },
 
   botCardTop: {
     flexDirection: 'row',
@@ -907,7 +907,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   metaRowLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
-  metaRowDark: { backgroundColor: '#1F2430', borderColor: '#262C36' },
+  metaRowDark: { backgroundColor: '#1F2430', borderColor: '#27272A' },
   metaLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   metaLabel: { fontSize: 11.5, color: '#64748B', fontWeight: '500' },
   metaValue: { fontSize: 12, fontWeight: '600' },
@@ -952,7 +952,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   btnLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
-  btnDark: { backgroundColor: '#1F2430', borderColor: '#262C36' },
+  btnDark: { backgroundColor: '#1F2430', borderColor: '#27272A' },
   actionBtnPrimaryText: { fontSize: 12, fontWeight: '700' },
 
   // Secondary Actions
@@ -1134,7 +1134,7 @@ const styles = StyleSheet.create({
   },
   bubbleAssistantDark: {
     backgroundColor: '#1F2430',
-    borderColor: '#262C36',
+    borderColor: '#27272A',
     borderWidth: 1,
     borderBottomLeftRadius: 2,
   },

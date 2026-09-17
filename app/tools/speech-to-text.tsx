@@ -16,55 +16,6 @@ import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
 import { colors } from '../../src/theme/colors';
 
-interface SampleAudio {
-  id: string;
-  title: string;
-  duration: string;
-  category: string;
-  transcript: string;
-  summary: string[];
-}
-
-const SAMPLE_VOICE_NOTES: SampleAudio[] = [
-  {
-    id: '1',
-    title: 'Customer Support Inquiry',
-    duration: '0:24',
-    category: 'WhatsApp Bot',
-    transcript:
-      'Hello, thank you for reaching out to GetAiPilot customer support. We are confirming that your automated WhatsApp broadcast campaign is scheduled for 4:00 PM today with 2,500 verified phone contacts.',
-    summary: [
-      'WhatsApp campaign scheduled for 4:00 PM today.',
-      'Recipient audience size: 2,500 verified contacts.',
-      'Customer support ticket marked as confirmed.',
-    ],
-  },
-  {
-    id: '2',
-    title: 'Executive Sales Call Notes',
-    duration: '0:45',
-    category: 'GAP CRM',
-    transcript:
-      'The client from Acme Enterprise is looking to migrate their 15-agent sales pipeline from HubSpot to GAP CRM. They requested custom Telesub monetization links and full Supabase database synchronization before the end of Q3.',
-    summary: [
-      'Client: Acme Enterprise (15-agent sales pipeline).',
-      'Migrating from HubSpot to GAP CRM.',
-      'Requested Telesub monetization links & Supabase sync by Q3.',
-    ],
-  },
-  {
-    id: '3',
-    title: 'AI Telecalling Agent Feedback',
-    duration: '0:18',
-    category: 'Voice Pilot',
-    transcript:
-      'Voice pilot agent completed 120 outbound follow-up calls with an 88% pickup rate. 42 qualified leads booked consultation slots automatically.',
-    summary: [
-      'Completed 120 outbound calls with 88% pickup rate.',
-      '42 qualified leads booked direct appointments.',
-    ],
-  },
-];
 
 const LANGUAGES = [
   { code: 'en', label: 'English (US/UK)' },
@@ -127,16 +78,15 @@ export default function SpeechToTextScreen() {
 
       setTimeout(() => {
         setIsProcessing(false);
-        setTranscript(
-          'Hi team, this is our weekly product strategy meeting transcript. We successfully tested the new QR Code Studio and QuickForms with live AI schema generation on iOS and Android.'
-        );
-        setSummaryBullets([
-          'Tested new QR Code Studio across mobile platforms.',
-          'QuickForms live AI schema generation operational on iOS & Android.',
-          'All team deliverables on track for production release.',
-        ]);
+        if (!transcript) {
+          setTranscript('Audio recorded successfully. Tap below to edit, copy, or save your transcript.');
+          setSummaryBullets([
+            'Audio capture completed.',
+            'Ready for AI analysis and export.',
+          ]);
+        }
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }, 1400);
+      }, 1000);
     } else {
       // Start Recording
       setTranscript('');
@@ -146,13 +96,6 @@ export default function SpeechToTextScreen() {
     }
   };
 
-  const handleLoadSample = (sample: SampleAudio) => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setTranscript(sample.transcript);
-    setSummaryBullets(sample.summary);
-    setCopied(false);
-    Alert.alert('Loaded Audio Sample ✨', `Loaded "${sample.title}" (${sample.duration})`);
-  };
 
   const handleCopyText = async () => {
     const textToCopy =
@@ -268,39 +211,6 @@ export default function SpeechToTextScreen() {
           </View>
         </View>
 
-        {/* 1-Tap Sample Audio Notes */}
-        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-          <Text style={[styles.cardHeading, { color: theme.text }]}>Or Test with Sample Voice Notes</Text>
-          <Text style={[styles.cardSubtitle, { color: theme.mutedText }]}>
-            Experience instant AI speech recognition without speaking out loud.
-          </Text>
-
-          <View style={{ gap: 8 }}>
-            {SAMPLE_VOICE_NOTES.map((sample) => (
-              <Pressable
-                key={sample.id}
-                style={[
-                  styles.sampleCard,
-                  { backgroundColor: isDark ? '#141416' : '#F9FAFB', borderColor: theme.cardBorder },
-                ]}
-                onPress={() => handleLoadSample(sample)}
-              >
-                <View style={[styles.samplePlayIcon, { backgroundColor: theme.primarySoft }]}>
-                  <Text style={{ fontSize: 16 }}>▶️</Text>
-                </View>
-
-                <View style={{ flex: 1, marginLeft: 10 }}>
-                  <Text style={[styles.sampleTitle, { color: theme.text }]}>{sample.title}</Text>
-                  <Text style={[styles.sampleCategory, { color: theme.primary }]}>
-                    {sample.category} • {sample.duration}
-                  </Text>
-                </View>
-
-                <Text style={{ color: theme.primary, fontSize: 12, fontWeight: '700' }}>Load ➔</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
 
         {/* ── TRANSCRIPTION & AI SUMMARY RESULTS CARD ──────────────── */}
         {transcript ? (
@@ -465,29 +375,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     textAlign: 'center',
-  },
-  sampleCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  samplePlayIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sampleTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    marginBottom: 2,
-  },
-  sampleCategory: {
-    fontSize: 11,
-    fontWeight: '600',
   },
   outputTabs: {
     flexDirection: 'row',

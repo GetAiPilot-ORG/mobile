@@ -1,24 +1,11 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable, Platform, useColorScheme } from 'react-native';
-import { Image } from 'expo-image';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
-import { colors } from '../theme/colors';
-import * as Haptics from "expo-haptics";
-import { Image } from "expo-image";
-import { useRouter } from "expo-router";
-import React from "react";
-import {
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Image } from 'expo-image';
+import { useRouter, usePathname } from 'expo-router';
+import { useAuthStore } from '../core/store/authStore';
+import React, { useEffect } from 'react';
+import { BackHandler, Platform, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const brandLogo = require("../../assets/images/logo.jpg");
 
@@ -27,31 +14,84 @@ export interface AppTopBarProps {
   subtitle?: string;
   showBack?: boolean;
   rightElement?: React.ReactNode;
+  leftElement?: React.ReactNode;
   onBackPress?: () => void;
+  parentRoute?: string;
 }
+
+/**
+ * Intelligent parent route resolver so sub-screens never fall back blindly to Home screen
+ */
+export const getParentRoute = (pathname: string): string => {
+  if (!pathname) return '/(tabs)';
+
+  // 1. Tool sub-screens -> go to Tools tab
+  if (pathname.startsWith('/tools/')) {
+    return '/(tabs)/tools';
+  }
+
+  // 2. CRM sub-screens -> go to CRM overview or Products tab
+  if (pathname.startsWith('/products/crm/leads/')) {
+    return '/products/crm';
+  }
+  if (pathname.startsWith('/products/crm')) {
+    return '/(tabs)/products';
+  }
+
+  // 3. WhatsApp sub-screens -> go to WhatsApp overview or Products tab
+  if (pathname.startsWith('/products/whatsapp/broadcasts/')) {
+    return '/products/whatsapp';
+  }
+  if (pathname.startsWith('/products/whatsapp/')) {
+    return '/products/whatsapp';
+  }
+  if (pathname.startsWith('/products/whatsapp')) {
+    return '/(tabs)/products';
+  }
+
+  // 4. Other products -> go to Products tab
+  if (
+    pathname.startsWith('/products/voice') ||
+    pathname.startsWith('/products/social') ||
+    pathname.startsWith('/products/telegram') ||
+    pathname.startsWith('/products/')
+  ) {
+    return '/(tabs)/products';
+  }
+
+  // 5. Account sub-screens -> go to Account tab
+  if (pathname.startsWith('/account/')) {
+    return '/(tabs)/account';
+  }
+
+  // 6. Admin sub-screens -> go to Admin tab
+  if (pathname.startsWith('/admin/')) {
+    return '/(tabs)/admin';
+  }
+
+  // 7. Inbox sub-screens -> go to Inbox tab
+  if (pathname.startsWith('/inbox/')) {
+    return '/(tabs)/inbox';
+  }
+
+  return '/(tabs)';
+};
 
 export const AppTopBar: React.FC<AppTopBarProps> = ({
   title,
   subtitle,
   showBack,
   rightElement,
+  leftElement,
   onBackPress,
+  parentRoute,
 }) => {
   const router = useRouter();
+  const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-
-  // const handleBack = () => {
-  //   if (Platform.OS !== 'web') {
-  //     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  //   }
-  //   if (onBackPress) {
-  //     onBackPress();
-  //   } else if (router.canGoBack()) {
-  //     router.back();
-  //   }
-  // };
+  const user = useAuthStore((s) => s.user);
 
   // Auto-detect: Show back button on all sub-pages with title unless explicitly disabled
   const shouldShowBack = showBack !== undefined ? showBack : !!title;
@@ -63,30 +103,54 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
 
     if (onBackPress) {
       onBackPress();
-      console.log("Custom back handler executed");
       return;
     }
 
+    const fallbackParent = parentRoute || getParentRoute(pathname);
+
     if (router.canGoBack()) {
-      console.log("Going back");
       router.back();
     } else {
-      router.replace('/(tabs)');
+      router.replace(fallbackParent as any);
     }
   };
 
-  const topPadding = Math.max(insets.top, 10);
+  // Android hardware back button handler
+  useEffect(() => {
+    if (!shouldShowBack) return;
+
+    const onHardwareBack = () => {
+      handleBack();
+      return true;
+    };
+
+    const sub = BackHandler.addEventListener('hardwareBackPress', onHardwareBack);
+    return () => sub.remove();
+  }, [shouldShowBack, onBackPress, parentRoute, pathname]);
+
+  const handleProfilePress = () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    router.push('/(tabs)/account' as any);
+  };
+
+  const displayName = user?.name || user?.user_metadata?.full_name || user?.email || 'User';
+  const avatarInitial = displayName.charAt(0).toUpperCase() || 'G';
+  const avatarUrl = user?.user_metadata?.avatar_url;
+
+  const topPadding = Math.max(insets.top, 12);
 
   return (
     <View
       style={[
         styles.container,
-        { paddingTop: topPadding, minHeight: 52 + topPadding },
+        { paddingTop: topPadding },
         isDark ? styles.containerDark : styles.containerLight,
       ]}
     >
       <View style={styles.leftSection}>
-        {shouldShowBack && (
+        {shouldShowBack ? (
           <Pressable
             style={({ pressed }) => [
               styles.backButton,
@@ -94,34 +158,47 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
               pressed && styles.backButtonPressed,
             ]}
             onPress={handleBack}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Back"
           >
             <Ionicons
               name="chevron-back"
-              size={22}
-              color={isDark ? '#FFFFFF' : '#007AFF'}
+              size={20}
+              color={isDark ? '#F8FAFC' : '#0F172A'}
             />
           </Pressable>
-        )}
+        ) : leftElement ? (
+          leftElement
+        ) : !title ? (
+          /* Profile Avatar Button on the Left for Home */
+          <Pressable
+            style={({ pressed }) => [
+              styles.profileBtn,
+              isDark ? styles.profileBtnDark : styles.profileBtnLight,
+              pressed && styles.profileBtnPressed,
+            ]}
+            onPress={handleProfilePress}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Profile Account"
+          >
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.profileAvatarImg} contentFit="cover" />
+            ) : (
+              <View style={styles.profileAvatarCircle}>
+                <Text style={styles.profileAvatarText}>{avatarInitial}</Text>
+              </View>
+            )}
+          </Pressable>
+        ) : null}
+
         <View style={styles.titleWrapper}>
           {title ? (
             <Text style={[styles.title, isDark ? styles.titleDark : styles.titleLight]} numberOfLines={1}>
               {title}
             </Text>
-          ) : (
-            <View style={styles.brandRow}>
-              <View style={styles.logoWrapper}>
-                <Image
-                  source={brandLogo}
-                  style={styles.logoImage}
-                  contentFit="cover"
-                />
-              </View>
-              <Text style={[styles.brandText, isDark ? styles.brandTextDark : styles.brandTextLight]}>GetAiPilot</Text>
-            </View>
-          )}
+          ) : null}
           {subtitle && (
             <Text style={[styles.subtitle, isDark ? styles.subtitleDark : styles.subtitleLight]} numberOfLines={1}>
               {subtitle}
@@ -130,7 +207,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
         </View>
       </View>
 
-      {rightElement && <View style={styles.rightSection}>{rightElement}</View>}
+      {rightElement ? <View style={styles.rightSection}>{rightElement}</View> : <View style={styles.rightEmpty} />}
     </View>
   );
 };
@@ -141,15 +218,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingBottom: 10,
+    paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   containerLight: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
+    backgroundColor: '#FFFFFF',
+    borderBottomColor: 'rgba(0, 0, 0, 0.06)',
   },
   containerDark: {
-    backgroundColor: 'rgba(18, 18, 20, 0.95)',
+    backgroundColor: '#000000',
     borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
   leftSection: {
@@ -158,79 +235,117 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: 12,
+    borderWidth: 1,
   },
   backButtonLight: {
-    backgroundColor: 'rgba(0, 122, 255, 0.08)',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
   },
   backButtonDark: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
   },
   backButtonPressed: {
-    opacity: 0.6,
-    transform: [{ scale: 0.95 }],
+    opacity: 0.7,
+    transform: [{ scale: 0.94 }],
+  },
+  profileBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    borderWidth: 1.5,
+  },
+  profileBtnLight: {
+    borderColor: '#E5E7EB',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  profileBtnDark: {
+    borderColor: '#2C2C2E',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  profileBtnPressed: {
+    opacity: 0.75,
+    transform: [{ scale: 0.94 }],
+  },
+  profileAvatarImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 18,
+  },
+  profileAvatarCircle: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 18,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
   titleWrapper: {
     flex: 1,
     justifyContent: 'center',
   },
   title: {
-    fontSize: 17,
+    fontSize: 19,
     fontWeight: '700',
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
   },
   titleLight: {
-    color: '#000000',
+    color: '#0F172A',
   },
   titleDark: {
-    color: "#FFFFFF",
+    color: "#F8FAFC",
   },
   subtitle: {
     fontSize: 12,
-    color: "#6B7280",
     marginTop: 1,
-    letterSpacing: -0.2,
+    letterSpacing: -0.1,
+    fontWeight: '400',
   },
   subtitleLight: {
-    color: '#6B7280',
+    color: '#64748B',
   },
   subtitleDark: {
-    color: "#9CA3AF",
-  },
-  brandRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  logoWrapper: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    overflow: "hidden",
-  },
-  logoImage: {
-    width: "100%",
-    height: "100%",
-  },
-  brandText: {
-    fontSize: 19,
-    fontWeight: "800",
-    color: "#000000",
-    letterSpacing: -0.5,
-  },
-  brandTextLight: {
-    color: '#000000',
-  },
-  brandTextDark: {
-    color: "#FFFFFF",
+    color: "#94A3B8",
   },
   rightSection: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 8,
+  },
+  rightEmpty: {
+    width: 0,
+    height: 0,
   },
 });

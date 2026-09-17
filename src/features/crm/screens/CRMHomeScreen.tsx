@@ -22,16 +22,20 @@ import { ActivityTimelineItem } from '../components/ActivityTimelineItem';
 import { CreateLeadModal } from '../components/CreateLeadModal';
 import { CreateDealModal } from '../components/CreateDealModal';
 import { CreateTaskModal } from '../components/CreateTaskModal';
+import { CrmHomeSkeleton } from '../../../components/skeletonScreen';
 
 interface CRMHomeScreenProps {
   onNavigateTab?: (tabKey: string) => void;
   onSelectLead?: (leadId: string) => void;
   onSelectDeal?: (dealId: string) => void;
+  onBack?: () => void;
 }
 
 export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
   onNavigateTab,
   onSelectLead,
+  onSelectDeal,
+  onBack,
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -70,9 +74,22 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
       >
         {/* Top Header */}
         <View style={styles.headerRow}>
-          <View>
-            <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>CRM Workspace</Text>
-            <Text style={[styles.headerSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Daily sales pipeline & customer actions</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            {onBack ? (
+              <Pressable
+                style={[styles.backBtn, { backgroundColor: isDark ? '#1E2028' : '#F1F5F9' }]}
+                onPress={onBack}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Back"
+              >
+                <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+              </Pressable>
+            ) : null}
+            <View>
+              <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>CRM Workspace</Text>
+              <Text style={[styles.headerSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Daily sales pipeline & customer actions</Text>
+            </View>
           </View>
 
           <View style={styles.quickActionRow}>
@@ -96,10 +113,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
         </View>
 
         {isLoading && !dashboard ? (
-          <View style={styles.loaderBox}>
-            <ActivityIndicator size="large" color="#3B82F6" />
-            <Text style={[styles.loaderText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Loading live CRM metrics...</Text>
-          </View>
+          <CrmHomeSkeleton />
         ) : (
           <>
             {/* KPI Stat Cards Grid */}
@@ -326,6 +340,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 16,
+  },
+  backBtn: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: '#1E2028',
   },
   headerTitle: {
     fontSize: 22,

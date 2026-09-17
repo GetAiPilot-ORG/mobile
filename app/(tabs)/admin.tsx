@@ -20,6 +20,7 @@ import { supabase } from '../../src/lib/supabase';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { SystemProduct, SystemSettings, SystemMaintenanceLog } from '../../src/types/database';
+import { AdminTabSkeleton } from '../../src/components/skeletonScreen';
 
 interface UserProfile {
   id: string;
@@ -568,7 +569,7 @@ export default function AdminScreen() {
             <Text style={styles.sectionTitle}>Product Services & Status</Text>
 
             {loadingProducts ? (
-              <ActivityIndicator color={colors.primary} style={{ marginTop: 20 }} />
+              <AdminTabSkeleton />
             ) : (
               products?.map((item) => {
                 const isUnderMaintenance = Boolean(item.maintenance_enabled) || isGlobalActive;
@@ -655,7 +656,7 @@ export default function AdminScreen() {
             </View>
 
             {loadingUsers ? (
-              <ActivityIndicator color={colors.primary} style={{ marginTop: 20 }} />
+              <AdminTabSkeleton />
             ) : filteredUsers.length > 0 ? (
               filteredUsers.map((u) => {
                 const status = u.account_status || 'active';
@@ -759,7 +760,7 @@ export default function AdminScreen() {
             <Text style={styles.sectionTitle}>Maintenance Activity History</Text>
 
             {loadingLogs ? (
-              <ActivityIndicator color={colors.primary} style={{ marginTop: 20 }} />
+              <AdminTabSkeleton />
             ) : logs && logs.length > 0 ? (
               logs.map((log) => (
                 <View key={log.id} style={styles.logCard}>

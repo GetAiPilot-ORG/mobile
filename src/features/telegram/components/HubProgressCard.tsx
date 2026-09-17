@@ -90,8 +90,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardDark: {
-    backgroundColor: '#161B26',
-    borderColor: '#262C36',
+    backgroundColor: '#121212',
+    borderColor: '#27272A',
   },
   header: {
     flexDirection: 'row',
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressBarBgLight: { backgroundColor: '#E2E8F0' },
-  progressBarBgDark: { backgroundColor: '#262C36' },
+  progressBarBgDark: { backgroundColor: '#27272A' },
   progressBarFill: {
     height: '100%',
     backgroundColor: '#0284C7',

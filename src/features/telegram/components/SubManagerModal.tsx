@@ -28,6 +28,7 @@ interface SubManagerModalProps {
   onSubmit?: (data: any) => Promise<void>;
   isLoading?: boolean;
   chats?: TelegramChat[];
+  initialMode?: 'admin' | 'create';
 }
 
 interface LandingPageItem {
@@ -69,12 +70,13 @@ export const SubManagerModal: React.FC<SubManagerModalProps> = ({
   visible,
   onClose,
   chats = [],
+  initialMode = 'admin',
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
   // View state
-  const [viewMode, setViewMode] = useState<'admin' | 'create'>('admin');
+  const [viewMode, setViewMode] = useState<'admin' | 'create'>(initialMode);
   const [activeTab, setActiveTab] = useState<SubTab>('pages');
   const [isReadinessExpanded, setIsReadinessExpanded] = useState(true);
 
@@ -148,9 +150,10 @@ export const SubManagerModal: React.FC<SubManagerModalProps> = ({
 
   useEffect(() => {
     if (visible) {
+      setViewMode(initialMode);
       fetchDashboard();
     }
-  }, [visible]);
+  }, [visible, initialMode]);
 
   // Form Handlers
   const handleTitleChange = (text: string) => {
@@ -380,7 +383,7 @@ export const SubManagerModal: React.FC<SubManagerModalProps> = ({
             </LinearGradient>
             <View>
               <Text style={[styles.title, isDark ? styles.textDark : styles.textLight]}>
-                {viewMode === 'admin' ? 'GAP Sub Manager' : 'Create Landing Page'}
+                {viewMode === 'admin' ? 'Sub Manager' : 'Create Landing Page'}
               </Text>
               <Text style={styles.subtitle}>
                 {viewMode === 'admin'
@@ -426,200 +429,13 @@ export const SubManagerModal: React.FC<SubManagerModalProps> = ({
         </View>
 
         {viewMode === 'admin' ? (
-          <>
-            {/* 3-Tab Segmented Control (Ultra Clean & Mobile First) */}
-            <View style={[styles.tabBar, isDark ? styles.borderDark : styles.borderLight]}>
-              {[
-                { key: 'pages', label: 'Pages', count: pages.length, icon: 'document-text' },
-                { key: 'revenue', label: 'Revenue & KYC', icon: 'wallet' },
-                { key: 'setup', label: 'Channels & Setup', icon: 'settings' },
-              ].map((t) => {
-                const isSel = activeTab === t.key;
-                return (
-                  <Pressable
-                    key={t.key}
-                    style={[
-                      styles.tabItem,
-                      isSel && (isDark ? styles.tabItemActiveDark : styles.tabItemActiveLight),
-                    ]}
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setActiveTab(t.key as SubTab);
-                    }}
-                  >
-                    <Ionicons
-                      name={t.icon as any}
-                      size={15}
-                      color={isSel ? '#2563EB' : isDark ? '#94A3B8' : '#64748B'}
-                    />
-                    <Text
-                      style={[
-                        styles.tabText,
-                        isDark ? styles.textDark : styles.textLight,
-                        isSel && styles.tabTextActive,
-                      ]}
-                    >
-                      {t.label}
-                    </Text>
-                    {t.count !== undefined && (
-                      <View style={[styles.tabBadge, isSel && styles.tabBadgeActive]}>
-                        <Text
-                          style={[
-                            styles.tabBadgeText,
-                            isSel && { color: '#FFFFFF' },
-                          ]}
-                        >
-                          {t.count}
-                        </Text>
-                      </View>
-                    )}
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            <ScrollView
-              style={styles.scrollBody}
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Collapsible Launch Readiness Stepper Card (Step 1 to 4) */}
-              <View style={[styles.readinessCard, isDark ? styles.cardDark : styles.cardLight]}>
-                <Pressable
-                  style={styles.readinessHeader}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setIsReadinessExpanded(!isReadinessExpanded);
-                  }}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Text style={[styles.readinessTitle, isDark ? styles.textDark : styles.textLight]}>
-                      Launch Readiness
-                    </Text>
-                    <View style={styles.readyBadge}>
-                      <Text style={styles.readyBadgeText}>75% Ready</Text>
-                    </View>
-                  </View>
-                  <Ionicons
-                    name={isReadinessExpanded ? 'chevron-up' : 'chevron-down'}
-                    size={16}
-                    color="#94A3B8"
-                  />
-                </Pressable>
-
-                {isReadinessExpanded && (
-                  <>
-                    {/* Horizontal Interactive Steps (Step 1 to 4) */}
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={styles.stepperScrollRow}
-                    >
-                      {/* Step 1 */}
-                      <Pressable
-                        style={[
-                          styles.stepPillCard,
-                          isDark ? styles.borderDark : styles.borderLight,
-                          { borderColor: isTelegramConnected ? '#10B981' : '#F59E0B' },
-                        ]}
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          setActiveTab('setup');
-                        }}
-                      >
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Text style={styles.stepNumBadge}>STEP 1</Text>
-                          <Text style={[styles.stepStatusBadge, { color: isTelegramConnected ? '#10B981' : '#F59E0B' }]}>
-                            {isTelegramConnected ? 'Active' : 'Pending'}
-                          </Text>
-                        </View>
-                        <Text style={[styles.stepCardTitle, isDark ? styles.textDark : styles.textLight]}>
-                          1. Link Telegram
-                        </Text>
-                        <Text style={styles.stepCardSub}>Owner phone number</Text>
-                      </Pressable>
-
-                      {/* Step 2 */}
-                      <Pressable
-                        style={[
-                          styles.stepPillCard,
-                          isDark ? styles.borderDark : styles.borderLight,
-                          { borderColor: '#10B981' },
-                        ]}
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          setActiveTab('setup');
-                        }}
-                      >
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Text style={styles.stepNumBadge}>STEP 2</Text>
-                          <Text style={[styles.stepStatusBadge, { color: '#10B981' }]}>
-                            {communities.length || 2} Active
-                          </Text>
-                        </View>
-                        <Text style={[styles.stepCardTitle, isDark ? styles.textDark : styles.textLight]}>
-                          2. Bot Admin
-                        </Text>
-                        <Text style={styles.stepCardSub}>@Gpapilotmanagerbot</Text>
-                      </Pressable>
-
-                      {/* Step 3 */}
-                      <Pressable
-                        style={[
-                          styles.stepPillCard,
-                          isDark ? styles.borderDark : styles.borderLight,
-                          { borderColor: '#10B981' },
-                        ]}
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          setBankModalVisible(true);
-                        }}
-                      >
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Text style={styles.stepNumBadge}>STEP 3</Text>
-                          <Text style={[styles.stepStatusBadge, { color: '#10B981' }]}>
-                            Verified
-                          </Text>
-                        </View>
-                        <Text style={[styles.stepCardTitle, isDark ? styles.textDark : styles.textLight]}>
-                          3. Payout KYC
-                        </Text>
-                        <Text style={styles.stepCardSub}>7-day rolling hold</Text>
-                      </Pressable>
-
-                      {/* Step 4 */}
-                      <Pressable
-                        style={[
-                          styles.stepPillCard,
-                          isDark ? styles.borderDark : styles.borderLight,
-                          { borderColor: '#10B981' },
-                        ]}
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          setActiveTab('pages');
-                        }}
-                      >
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Text style={styles.stepNumBadge}>STEP 4</Text>
-                          <Text style={[styles.stepStatusBadge, { color: '#10B981' }]}>
-                            {pages.length} Active
-                          </Text>
-                        </View>
-                        <Text style={[styles.stepCardTitle, isDark ? styles.textDark : styles.textLight]}>
-                          4. Pages
-                        </Text>
-                        <Text style={styles.stepCardSub}>{pages.length} checkouts live</Text>
-                      </Pressable>
-                    </ScrollView>
-                  </>
-                )}
-              </View>
-
-              {/* TAB 1: PAGES (Clean, Primary, Fast) */}
-              {activeTab === 'pages' && (
-                <>
-                  {/* Top Compact Summary Bar */}
-                  <View style={[styles.compactStatBar, isDark ? styles.cardDark : styles.cardLight]}>
+          <ScrollView
+            style={styles.scrollBody}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Top Compact Summary Bar */}
+            <View style={[styles.compactStatBar, isDark ? styles.cardDark : styles.cardLight]}>
                     <View style={styles.compactStatItem}>
                       <Text style={styles.compactStatLabel}>HOSTED PAGES</Text>
                       <Text style={[styles.compactStatVal, isDark ? styles.textDark : styles.textLight]}>
@@ -803,223 +619,7 @@ export const SubManagerModal: React.FC<SubManagerModalProps> = ({
                       ))}
                     </View>
                   )}
-                </>
-              )}
-
-              {/* TAB 2: REVENUE & KYC */}
-              {activeTab === 'revenue' && (
-                <View style={{ gap: 12 }}>
-                  {/* Financial Hero Gradient Card */}
-                  <LinearGradient
-                    colors={isDark ? ['#1E293B', '#0F172A'] : ['#2563EB', '#1D4ED8']}
-                    style={styles.revenueHeroCard}
-                  >
-                    <Text style={styles.revenueHeroLabel}>TOTAL CREATOR EARNINGS</Text>
-                    <Text style={styles.revenueHeroVal}>₹0</Text>
-                    <Text style={styles.revenueHeroSub}>
-                      90% net payout after automated 10% platform fee
-                    </Text>
-
-                    <View style={styles.revenueHeroDivider} />
-
-                    <View style={styles.revenueHeroFooter}>
-                      <View>
-                        <Text style={styles.revenueHeroFooterLabel}>WITHDRAWABLE NOW</Text>
-                        <Text style={styles.revenueHeroFooterVal}>₹0</Text>
-                      </View>
-                      <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={styles.revenueHeroFooterLabel}>7-DAY ROLLING HOLD</Text>
-                        <Text style={styles.revenueHeroFooterVal}>₹0</Text>
-                      </View>
-                    </View>
-                  </LinearGradient>
-
-                  {/* Connected Bank KYC Card */}
-                  <View style={[styles.sectionCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <Ionicons name="shield-checkmark" size={20} color="#10B981" />
-                        <View>
-                          <Text style={[styles.sectionCardTitle, isDark ? styles.textDark : styles.textLight]}>
-                            Bank Account KYC
-                          </Text>
-                          <Text style={styles.sectionCardSub}>Beneficiary: GetAi Pilot</Text>
-                        </View>
-                      </View>
-                      <View style={styles.verifiedActiveBadge}>
-                        <Ionicons name="checkmark-circle" size={12} color="#10B981" />
-                        <Text style={styles.verifiedActiveText}>Verified</Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.bankInfoBox}>
-                      <Text style={styles.bankInfoText}>
-                        Settlements automatically clear to your verified bank account on a 7-day rolling cycle.
-                      </Text>
-                    </View>
-
-                    <Pressable
-                      style={styles.outlineBtn}
-                      onPress={() => setBankModalVisible(true)}
-                    >
-                      <Ionicons name="card-outline" size={15} color="#2563EB" />
-                      <Text style={styles.outlineBtnText}>View Full KYC Details</Text>
-                    </Pressable>
-                  </View>
-                </View>
-              )}
-
-              {/* TAB 3: CHANNELS & SETUP */}
-              {activeTab === 'setup' && (
-                <View style={{ gap: 12 }}>
-                  {/* Launch Readiness 75% Box */}
-                  <View style={[styles.sectionCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                      <Text style={[styles.sectionCardTitle, isDark ? styles.textDark : styles.textLight]}>
-                        Launch Readiness
-                      </Text>
-                      <View style={styles.readyBadge}>
-                        <Text style={styles.readyBadgeText}>75% Ready</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.sectionCardSub}>
-                      Follow these 4 simple steps to start collecting payments.
-                    </Text>
-
-                    <View style={styles.stepperMiniGrid}>
-                      {[
-                        { num: 1, title: 'Link Telegram', status: isTelegramConnected ? 'Active' : 'Pending', active: isTelegramConnected },
-                        { num: 2, title: 'Channel Bot Admin', status: `${communities.length || 2} Active`, active: true },
-                        { num: 3, title: 'Payout Bank KYC', status: 'Verified', active: true },
-                        { num: 4, title: 'Subscription Page', status: `${pages.length} Active`, active: true },
-                      ].map((st) => (
-                        <View
-                          key={st.num}
-                          style={[
-                            styles.stepperMiniItem,
-                            isDark ? styles.borderDark : styles.borderLight,
-                          ]}
-                        >
-                          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                            <Text style={styles.stepperMiniNum}>STEP {st.num}</Text>
-                            <Text
-                              style={[
-                                styles.stepperMiniStatus,
-                                { color: st.active ? '#10B981' : '#F59E0B' },
-                              ]}
-                            >
-                              {st.status}
-                            </Text>
-                          </View>
-                          <Text style={[styles.stepperMiniTitle, isDark ? styles.textDark : styles.textLight]}>
-                            {st.title}
-                          </Text>
-                        </View>
-                      ))}
-                    </View>
-                  </View>
-
-                  {/* Link Telegram Account Box */}
-                  <View style={[styles.sectionCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <Text style={[styles.sectionCardTitle, isDark ? styles.textDark : styles.textLight]}>
-                      Link Telegram Owner Account
-                    </Text>
-                    <Text style={styles.sectionCardSub}>
-                      Connect the phone number that manages your VIP channels to discover groups.
-                    </Text>
-
-                    {!linkOtpSent && !isTelegramConnected ? (
-                      <View style={styles.phoneRow}>
-                        <View style={styles.countryPill}>
-                          <Text style={styles.countryText}>+91</Text>
-                        </View>
-                        <TextInput
-                          style={[styles.phoneInput, isDark ? styles.formInputDark : styles.formInputLight]}
-                          placeholder="Enter 10-digit mobile number"
-                          placeholderTextColor="#94A3B8"
-                          keyboardType="phone-pad"
-                          value={linkPhone}
-                          onChangeText={setLinkPhone}
-                        />
-                        <Pressable
-                          style={[styles.sendOtpBtn, isLinking && { opacity: 0.6 }]}
-                          onPress={handleSendTelegramOtp}
-                          disabled={isLinking}
-                        >
-                          {isLinking ? (
-                            <ActivityIndicator size="small" color="#FFFFFF" />
-                          ) : (
-                            <Text style={styles.sendOtpBtnText}>Send OTP</Text>
-                          )}
-                        </Pressable>
-                      </View>
-                    ) : linkOtpSent && !requiresPassword && !isTelegramConnected ? (
-                      <View style={{ gap: 8, marginTop: 8 }}>
-                        <Text style={styles.otpHint}>Enter the 5-digit code from Telegram:</Text>
-                        <View style={{ flexDirection: 'row', gap: 8 }}>
-                          <TextInput
-                            style={[styles.phoneInput, { flex: 1 }, isDark ? styles.formInputDark : styles.formInputLight]}
-                            placeholder="12345"
-                            placeholderTextColor="#94A3B8"
-                            keyboardType="numeric"
-                            value={linkOtp}
-                            onChangeText={setLinkOtp}
-                          />
-                          <Pressable
-                            style={[styles.sendOtpBtn, isLinking && { opacity: 0.6 }]}
-                            onPress={handleVerifyTelegramOtp}
-                            disabled={isLinking}
-                          >
-                            <Text style={styles.sendOtpBtnText}>Verify OTP</Text>
-                          </Pressable>
-                        </View>
-                      </View>
-                    ) : (
-                      <View style={styles.linkedRow}>
-                        <Ionicons name="checkmark-circle" size={18} color="#10B981" />
-                        <Text style={[styles.linkedText, isDark ? styles.textDark : styles.textLight]}>
-                          Telegram Owner Session Active & Verified
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-
-                  {/* Discovered Channels List */}
-                  <View style={[styles.sectionCard, isDark ? styles.cardDark : styles.cardLight]}>
-                    <Text style={[styles.sectionCardTitle, isDark ? styles.textDark : styles.textLight]}>
-                      Discovered Channels ({communities.length})
-                    </Text>
-                    <Text style={styles.sectionCardSub}>
-                      Channels where @Gpapilotmanagerbot has admin privileges.
-                    </Text>
-
-                    <View style={{ gap: 8, marginTop: 8 }}>
-                      {communities.map((c) => (
-                        <View
-                          key={`comm_${c.id}`}
-                          style={[styles.channelCard, isDark ? styles.borderDark : styles.borderLight]}
-                        >
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
-                            <Ionicons name="megaphone" size={16} color="#2563EB" />
-                            <View style={{ flex: 1 }}>
-                              <Text style={[styles.channelTitle, isDark ? styles.textDark : styles.textLight]}>
-                                {c.title || c.name}
-                              </Text>
-                              <Text style={styles.channelId}>ID: {c.chatId || c.id}</Text>
-                            </View>
-                          </View>
-                          <View style={styles.verifiedActiveBadge}>
-                            <Ionicons name="shield-checkmark" size={12} color="#10B981" />
-                            <Text style={styles.verifiedActiveText}>Bot Active</Text>
-                          </View>
-                        </View>
-                      ))}
-                    </View>
-                  </View>
-                </View>
-              )}
-            </ScrollView>
-          </>
+          </ScrollView>
         ) : (
           /* View 2: Create Landing Page Form */
           <ScrollView

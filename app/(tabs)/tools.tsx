@@ -1,7 +1,6 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -180,10 +179,6 @@ export default function FreeToolsScreen() {
       }
     } catch (error) {
       console.error(`Failed to open ${tool.id}:`, error);
-      Alert.alert(
-        "Unable to open builder",
-        "Please check your connection and try again.",
-      );
     } finally {
       setOpeningToolId(null);
     }

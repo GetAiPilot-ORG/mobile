@@ -162,14 +162,14 @@ export const AutoforwardModal: React.FC<AutoforwardModalProps> = ({
                     >
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.chatTitle, isDark ? styles.textDark : styles.textLight]}>{c.title}</Text>
-                        <Text style={styles.chatMeta}>{c.type.toUpperCase()} • {c.member_count || 0} members</Text>
+                        <Text style={styles.chatMeta}>{c.type ? c.type.charAt(0).toUpperCase() + c.type.slice(1).toLowerCase() : ''} • {c.member_count || 0} members</Text>
                       </View>
                       {selectedSourceChat?.id === c.id && <Ionicons name="checkmark" size={18} color="#0284C7" />}
                     </Pressable>
                   ))
                 )}
                 <View style={{ paddingHorizontal: 12, paddingTop: 8, borderTopWidth: 1, borderTopColor: 'rgba(148,163,184,0.15)' }}>
-                  <Text style={styles.dropdownHeader}>OR ENTER CUSTOM HANDLE</Text>
+                  <Text style={styles.dropdownHeader}>Or enter custom handle</Text>
                   <TextInput
                     style={[styles.customInput, isDark ? styles.inputDark : styles.inputLight]}
                     placeholder="@channel_or_link"
@@ -224,14 +224,14 @@ export const AutoforwardModal: React.FC<AutoforwardModalProps> = ({
                     >
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.chatTitle, isDark ? styles.textDark : styles.textLight]}>{c.title}</Text>
-                        <Text style={styles.chatMeta}>{c.type.toUpperCase()} • {c.member_count || 0} members</Text>
+                        <Text style={styles.chatMeta}>{c.type ? c.type.charAt(0).toUpperCase() + c.type.slice(1).toLowerCase() : ''} • {c.member_count || 0} members</Text>
                       </View>
                       {selectedTargetChat?.id === c.id && <Ionicons name="checkmark" size={18} color="#10B981" />}
                     </Pressable>
                   ))
                 )}
                 <View style={{ paddingHorizontal: 12, paddingTop: 8, borderTopWidth: 1, borderTopColor: 'rgba(148,163,184,0.15)' }}>
-                  <Text style={styles.dropdownHeader}>OR ENTER CUSTOM TARGET</Text>
+                  <Text style={styles.dropdownHeader}>Or enter custom target</Text>
                   <TextInput
                     style={[styles.customInput, isDark ? styles.inputDark : styles.inputLight]}
                     placeholder="@target_channel"
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   borderLight: { borderBottomColor: '#E2E8F0' },
-  borderDark: { borderBottomColor: '#262C36' },
+  borderDark: { borderBottomColor: '#27272A' },
   title: { fontSize: 17, fontWeight: '700' },
   textLight: { color: '#0F172A' },
   textDark: { color: '#F8FAFC' },
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   closeBtnLight: { backgroundColor: '#F1F5F9' },
-  closeBtnDark: { backgroundColor: '#262C36' },
+  closeBtnDark: { backgroundColor: '#27272A' },
   body: { flex: 1 },
   bodyContent: { padding: 16, paddingBottom: 32 },
   errorBanner: {
@@ -469,8 +469,8 @@ const styles = StyleSheet.create({
     color: '#0F172A',
   },
   inputDark: {
-    backgroundColor: '#161B26',
-    borderColor: '#262C36',
+    backgroundColor: '#121212',
+    borderColor: '#27272A',
     color: '#F8FAFC',
   },
   hint: { color: '#94A3B8', fontSize: 11, marginTop: 4 },
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   pillLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  pillDark: { backgroundColor: '#161B26', borderColor: '#262C36' },
+  pillDark: { backgroundColor: '#121212', borderColor: '#27272A' },
   pillActive: { backgroundColor: '#0284C7', borderColor: '#0284C7' },
   delayText: { fontSize: 12, fontWeight: '600' },
   delayTextActive: { color: '#FFFFFF' },
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  cardDark: { backgroundColor: '#161B26', borderColor: '#262C36' },
+  cardDark: { backgroundColor: '#121212', borderColor: '#27272A' },
   switchLabel: { fontSize: 14, fontWeight: '600' },
   switchDesc: { color: '#64748B', fontSize: 12, marginTop: 2 },
   brandingBox: { marginBottom: 16 },

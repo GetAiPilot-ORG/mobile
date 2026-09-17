@@ -129,8 +129,8 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   cardDark: {
-    backgroundColor: '#161B26',
-    borderColor: '#262C36',
+    backgroundColor: '#121212',
+    borderColor: '#27272A',
   },
   cardPressed: {
     opacity: 0.85,

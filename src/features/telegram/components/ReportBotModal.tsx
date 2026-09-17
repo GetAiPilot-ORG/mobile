@@ -1049,7 +1049,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   btnLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  btnDark: { backgroundColor: '#161C28', borderColor: '#262C36' },
+  btnDark: { backgroundColor: '#161C28', borderColor: '#27272A' },
   refreshBtnText: { fontSize: 12, fontWeight: '600' },
 
   // Tabs Section & Status Bar
@@ -1144,11 +1144,10 @@ const styles = StyleSheet.create({
   saveBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
   groupHeading: {
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#0284C7',
     marginBottom: 2,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: -0.1,
   },
   groupDesc: { color: '#64748B', fontSize: 11, marginBottom: 10 },
   row: { flexDirection: 'row' },
@@ -1162,7 +1161,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   inputLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0', color: '#0F172A' },
-  inputDark: { backgroundColor: '#161C28', borderColor: '#262C36', color: '#F8FAFC' },
+  inputDark: { backgroundColor: '#161C28', borderColor: '#27272A', color: '#F8FAFC' },
 
   // Logo Upload Box (Pressable)
   logoUploadBox: {
@@ -1238,7 +1237,7 @@ const styles = StyleSheet.create({
   nativeUploadBtnDark: {
     backgroundColor: '#1E2430',
     borderWidth: 1,
-    borderColor: '#262C36',
+    borderColor: '#27272A',
   },
   nativeUploadBtnTitle: {
     color: '#FFFFFF',
@@ -1347,7 +1346,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   metricBoxLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  metricBoxDark: { backgroundColor: '#121722', borderColor: '#262C36' },
+  metricBoxDark: { backgroundColor: '#121722', borderColor: '#27272A' },
   metricKey: { fontSize: 9, fontWeight: '800', color: '#64748B' },
   metricVal: { fontSize: 13, fontWeight: '800', marginTop: 2 },
   pdfDisclaimerSnippet: {
@@ -1408,7 +1407,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   itemLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
-  itemDark: { backgroundColor: '#161C28', borderColor: '#262C36' },
+  itemDark: { backgroundColor: '#161C28', borderColor: '#27272A' },
   channelIcon: {
     width: 32,
     height: 32,
@@ -1502,7 +1501,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   presetItemLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
-  presetItemDark: { backgroundColor: '#161C28', borderColor: '#262C36' },
+  presetItemDark: { backgroundColor: '#161C28', borderColor: '#27272A' },
   presetItemActive: { borderColor: '#0284C7', backgroundColor: 'rgba(2, 132, 199, 0.12)' },
   presetImage: {
     width: 32,
@@ -1656,11 +1655,10 @@ const styles = StyleSheet.create({
   },
   pdfSectionHeading: {
     fontSize: 12,
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#0284C7',
     marginBottom: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: -0.1,
   },
   pdfSectionBody: {
     fontSize: 11,

@@ -16,6 +16,7 @@ import { useTasks, useCreateTask, useToggleTask, useDeleteTask } from '../hooks/
 import { TaskItem } from '../components/TaskItem';
 import { CreateTaskModal } from '../components/CreateTaskModal';
 import { CRMTask } from '../types';
+import { CrmTaskSkeleton } from '../../../components/skeletonScreen';
 
 const TIMEFRAME_TABS: Array<{ key: 'all' | 'today' | 'upcoming' | 'overdue' | 'completed'; label: string }> = [
   { key: 'today', label: 'Today' },
@@ -25,7 +26,11 @@ const TIMEFRAME_TABS: Array<{ key: 'all' | 'today' | 'upcoming' | 'overdue' | 'c
   { key: 'all', label: 'All Tasks' },
 ];
 
-export const TasksScreen: React.FC = () => {
+interface TasksScreenProps {
+  onBack?: () => void;
+}
+
+export const TasksScreen: React.FC<TasksScreenProps> = ({ onBack }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -55,9 +60,20 @@ export const TasksScreen: React.FC = () => {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Tasks & Follow-ups</Text>
-          <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Daily schedule, reminders & client action items</Text>
+        <View style={styles.headerLeft}>
+          {onBack ? (
+            <Pressable
+              style={[styles.backBtn, { backgroundColor: isDark ? '#1E2028' : '#F1F5F9' }]}
+              onPress={onBack}
+              hitSlop={8}
+            >
+              <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+            </Pressable>
+          ) : null}
+          <View>
+            <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Tasks & Follow-ups</Text>
+            <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Daily schedule, reminders & client action items</Text>
+          </View>
         </View>
 
         <Pressable
@@ -100,10 +116,7 @@ export const TasksScreen: React.FC = () => {
 
       {/* Tasks List */}
       {isLoading && !tasks ? (
-        <View style={styles.loaderBox}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={[styles.loaderText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Loading tasks...</Text>
-        </View>
+        <CrmTaskSkeleton />
       ) : tasks.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="checkbox-outline" size={48} color={isDark ? '#4B5563' : '#CBD5E1'} />
@@ -164,6 +177,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  backBtn: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: '#1E2028',
   },
   title: {
     fontSize: 20,

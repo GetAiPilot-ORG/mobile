@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
   },
   idCardDark: {
     backgroundColor: '#161C28',
-    borderColor: '#262C36',
+    borderColor: '#27272A',
   },
   idLabel: {
     fontSize: 12,
@@ -412,9 +412,8 @@ const styles = StyleSheet.create({
   // Features List
   sectionHeading: {
     fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    fontWeight: '700',
+    letterSpacing: -0.2,
     marginBottom: 12,
   },
   featuresList: {

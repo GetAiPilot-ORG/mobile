@@ -17,6 +17,7 @@ import { AppTopBar } from '../../src/components/AppTopBar';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 import { supabase } from '../../src/lib/supabase';
+import { ActivityScreenSkeleton } from '../../src/components/skeletonScreen';
 
 type WorkspaceKey = 'social' | 'whatsapp' | 'crm' | 'voice' | 'telegram';
 
@@ -38,6 +39,7 @@ export default function ConnectedPlatformsPage() {
 
   const {
     data: platformData,
+    isLoading,
     refetch,
     isRefetching,
   } = useQuery({
@@ -135,18 +137,21 @@ export default function ConnectedPlatformsPage() {
     <AppScreen safeArea={false}>
       <AppTopBar title="Ecosystem Activity" subtitle="Real-time Workspace Telemetry" showBack={false} />
 
-      <ScrollView
-        style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            tintColor={isDark ? '#FFFFFF' : '#0A84FF'}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-      >
+      {isLoading && !platformData ? (
+        <ActivityScreenSkeleton />
+      ) : (
+        <ScrollView
+          style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={refetch}
+              tintColor={isDark ? '#FFFFFF' : '#0A84FF'}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+        >
         {/* Apple Segmented Control */}
         <View style={[styles.segmentedTrack, isDark && styles.segmentedTrackDark]}>
           {PLATFORMS.map((p) => {
@@ -368,6 +373,7 @@ export default function ConnectedPlatformsPage() {
           ))}
         </View>
       </ScrollView>
+      )}
     </AppScreen>
   );
 }

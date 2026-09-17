@@ -1,12 +1,15 @@
-import 'react-native-gesture-handler';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useRouter, useSegments } from 'expo-router';
-import React, { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
+import 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GlobalErrorBoundary } from '../src/components/GlobalErrorBoundary';
+import { OfflineNotice } from '../src/components/OfflineNotice';
+import { LayoutSkeletonScreen } from '../src/components/skeletonScreen';
 import { AuthProvider } from '../src/contexts/AuthContext';
+import { NetworkProvider, useNetwork } from '../src/contexts/NetworkContext';
 import { useAuthStore } from '../src/core/store/authStore';
 
 export const queryClient = new QueryClient({
@@ -78,14 +81,16 @@ function AuthRouteGuard() {
 
 function SplashOverlay() {
   const authStatus = useAuthStore((s) => s.authStatus);
+  const { networkChecked } = useNetwork();
 
-  if (authStatus !== 'hydrating') {
+  // Display layout skeleton while checking network or hydrating authentication state
+  if (networkChecked && authStatus !== 'hydrating') {
     return null;
   }
 
   return (
     <View style={[StyleSheet.absoluteFill, styles.splashContainer]}>
-      <ActivityIndicator size="large" color="#6366f1" />
+      <LayoutSkeletonScreen />
     </View>
   );
 }
@@ -95,34 +100,43 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <GlobalErrorBoundary>
         <SafeAreaProvider>
-          <QueryClientProvider client={queryClient}>
-            <AuthProvider>
-              <AuthRouteGuard />
-              {/* Native Stack for iOS screen transitions & gesture-driven back navigations */}
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  gestureEnabled: true,
-                  fullScreenGestureEnabled: true,
-                  gestureDirection: 'horizontal',
-                  animation: 'default',
-                  animationDuration: 250,
-                }}
-              >
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                <Stack.Screen
-                  name="account/plans"
-                  options={{
+          <NetworkProvider>
+            <QueryClientProvider client={queryClient}>
+              <AuthProvider>
+                <AuthRouteGuard />
+                {/* Native Stack for iOS screen transitions & gesture-driven back navigations */}
+                <Stack
+                  screenOptions={{
                     headerShown: false,
-                    presentation: 'modal',
                     gestureEnabled: true,
+                    fullScreenGestureEnabled: true,
+                    gestureDirection: 'horizontal',
+                    animation: 'default',
+                    animationDuration: 250,
                   }}
-                />
-              </Stack>
-              <SplashOverlay />
-            </AuthProvider>
-          </QueryClientProvider>
+                >
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                  <Stack.Screen
+                    name="account/plans"
+                    options={{
+                      headerShown: false,
+                      presentation: 'modal',
+                      gestureEnabled: true,
+                    }}
+                  />
+                  <Stack.Screen
+                    name="+not-found"
+                    options={{
+                      headerShown: false,
+                    }}
+                  />
+                </Stack>
+                <OfflineNotice />
+                <SplashOverlay />
+              </AuthProvider>
+            </QueryClientProvider>
+          </NetworkProvider>
         </SafeAreaProvider>
       </GlobalErrorBoundary>
     </GestureHandlerRootView>
@@ -131,9 +145,6 @@ export default function RootLayout() {
 
 const styles = StyleSheet.create({
   splashContainer: {
-    backgroundColor: '#020617',
-    justifyContent: 'center',
-    alignItems: 'center',
     zIndex: 99999,
   },
 });

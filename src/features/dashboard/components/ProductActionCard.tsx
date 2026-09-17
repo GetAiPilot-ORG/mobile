@@ -96,9 +96,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   badgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
+    fontSize: 11,
+    fontWeight: '600',
   },
   title: {
     fontSize: 16,
