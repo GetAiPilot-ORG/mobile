@@ -235,11 +235,14 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
     }
   };
 
-  const filteredUsers = (dashboard?.newUsers || []).filter((u) => {
+  const filteredUsers = (dashboard?.newUsers || []).filter((u: any) => {
+    const nameStr = (u.name || u.first_name || '').toLowerCase();
+    const chanStr = (u.channel_name || '').toLowerCase();
+    const q = userSearch.toLowerCase();
     const matchesSearch =
-      u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
-      u.channel_name.toLowerCase().includes(userSearch.toLowerCase()) ||
-      String(u.telegram_user_id).includes(userSearch);
+      nameStr.includes(q) ||
+      chanStr.includes(q) ||
+      String(u.telegram_user_id || '').includes(q);
     const matchesFilter = userStatusFilter === 'All' || u.status === userStatusFilter;
     return matchesSearch && matchesFilter;
   });

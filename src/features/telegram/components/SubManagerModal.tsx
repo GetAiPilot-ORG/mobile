@@ -360,12 +360,14 @@ export const SubManagerModal: React.FC<SubManagerModalProps> = ({
   };
 
   // Filtered pages
-  const filteredPages = pages.filter(
-    (p) =>
-      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.communityName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredPages = pages.filter((p: any) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      (p.title || '').toLowerCase().includes(q) ||
+      (p.slug || '').toLowerCase().includes(q) ||
+      (p.communityName || '').toLowerCase().includes(q)
+    );
+  });
 
   return (
     <Modal
