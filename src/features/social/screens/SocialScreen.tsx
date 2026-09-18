@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   BackHandler,
   RefreshControl,
   ScrollView,
   StyleSheet,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import * as Haptics from 'expo-haptics';
 
 import { AppScreen } from '../../../components/AppScreen';
 import { AppTopBar } from '../../../components/AppTopBar';
@@ -17,22 +17,22 @@ import {
 } from '../../../components/ProductFloatingBottomBar';
 import { apiClient } from '../../../core/api/client';
 import {
-  CreatePostModal,
-  PostDetailsModal,
   AccountsModal,
+  CreatePostModal,
+  InstapilotConversationModal,
+  PostDetailsModal,
+  SocialActivityTab,
+  SocialInboxTab,
   SocialOverviewTab,
   SocialTrendsTab,
-  SocialInboxTab,
-  SocialActivityTab,
-  InstapilotConversationModal,
 } from '../components';
 import {
-  SocialTabType,
-  TrendItem,
   InstapilotConversation,
-  YoutubeChannelAccount,
-  SystemSettings,
+  SocialTabType,
   SystemProductStatus,
+  SystemSettings,
+  TrendItem,
+  YoutubeChannelAccount,
 } from '../types';
 
 const SOCIAL_TABS: ProductTabItem[] = [
@@ -299,26 +299,64 @@ export const SocialScreen: React.FC = () => {
     return [];
   }, [trendsData]);
 
-  // Extract all genuinely connected accounts
+  // Extract all genuinely connected accounts with full merged telemetry
   const connectedList = useMemo(() => {
     const list: any[] = [];
-    const seenIds = new Set<string>();
+    const seenMap = new Map<string, number>();
 
-    const addAccount = (acc: any) => {
-      const id = acc.id || acc.accountId || acc.username || `${acc.provider}_${list.length}`;
-      if (!seenIds.has(id)) {
-        seenIds.add(id);
-        list.push({
-          ...acc,
-          provider: acc.provider || acc.platform || 'channel',
-          username: acc.username || acc.name || '',
-          avatar: acc.profilePicture || acc.profile_picture_url || acc.avatar || null,
-        });
+    const addOrMergeAccount = (acc: any) => {
+      if (!acc) return;
+      const provider = (acc.provider || acc.platform || 'channel').toLowerCase();
+      const username = acc.username || acc.name || '';
+      const id = acc.id || acc.accountId || (username ? `${provider}_${username}` : `${provider}_${list.length}`);
+      const dedupeKey = `${provider}_${username || id}`.toLowerCase();
+
+      const normalized = {
+        ...acc,
+        id,
+        provider,
+        platform: provider,
+        username,
+        name: acc.name || acc.channelTitle || username || provider,
+        account_name: acc.account_name || acc.name || username || provider,
+        avatar: acc.profilePicture || acc.profile_picture_url || acc.thumbnailUrl || acc.avatar || null,
+        profilePicture: acc.profilePicture || acc.profile_picture_url || acc.thumbnailUrl || acc.avatar || null,
+        profile_picture_url: acc.profile_picture_url || acc.profilePicture || acc.avatar || null,
+        followers: acc.followers ?? acc.followers_count ?? acc.followerCount ?? null,
+        followers_count: acc.followers_count ?? acc.followers ?? acc.followerCount ?? null,
+        mediaCount: acc.mediaCount ?? acc.media_count ?? null,
+        media_count: acc.media_count ?? acc.mediaCount ?? null,
+        reach: acc.reach ?? null,
+        topMedia: acc.topMedia || [],
+        tokenExpiry: acc.tokenExpiry || acc.token_expiry || acc.tokenExpiresAt || null,
+        token_expiry: acc.token_expiry || acc.tokenExpiry || acc.tokenExpiresAt || null,
+        status: acc.status || (acc.tokenStatus === 'disconnected' ? 'disconnected' : 'connected'),
+        connected: acc.connected !== false && acc.tokenStatus !== 'disconnected',
+      };
+
+      if (seenMap.has(dedupeKey)) {
+        const existingIdx = seenMap.get(dedupeKey)!;
+        list[existingIdx] = {
+          ...list[existingIdx],
+          ...normalized,
+          avatar: normalized.avatar || list[existingIdx].avatar,
+          profilePicture: normalized.profilePicture || list[existingIdx].profilePicture,
+          followers: normalized.followers ?? list[existingIdx].followers,
+          followers_count: normalized.followers_count ?? list[existingIdx].followers_count,
+          mediaCount: normalized.mediaCount ?? list[existingIdx].mediaCount,
+          media_count: normalized.media_count ?? list[existingIdx].media_count,
+          reach: normalized.reach ?? list[existingIdx].reach,
+          topMedia: normalized.topMedia.length > 0 ? normalized.topMedia : list[existingIdx].topMedia,
+          tokenExpiry: normalized.tokenExpiry || list[existingIdx].tokenExpiry,
+        };
+      } else {
+        seenMap.set(dedupeKey, list.length);
+        list.push(normalized);
       }
     };
 
     if (Array.isArray(accountsData)) {
-      accountsData.forEach(addAccount);
+      accountsData.forEach(addOrMergeAccount);
     } else if (accountsData && typeof accountsData === 'object') {
       const providers = [
         'facebook',
@@ -336,19 +374,19 @@ export const SocialScreen: React.FC = () => {
       for (const p of providers) {
         const arrKey = `${p}Accounts`;
         if (Array.isArray(accountsData[arrKey])) {
-          accountsData[arrKey].forEach((a: any) => addAccount({ ...a, provider: p }));
+          accountsData[arrKey].forEach((a: any) => addOrMergeAccount({ ...a, provider: p }));
         } else if (accountsData[p]?.connected) {
-          addAccount({ ...accountsData[p], provider: p });
+          addOrMergeAccount({ ...accountsData[p], provider: p });
         }
       }
     }
 
     if (Array.isArray(overviewData?.accounts?.accounts)) {
-      overviewData.accounts.accounts.forEach((a: any) => addAccount({ ...a, connected: a.connected !== false }));
+      overviewData.accounts.accounts.forEach((a: any) => addOrMergeAccount({ ...a, connected: a.connected !== false }));
     }
     if (Array.isArray(overviewData?.instagramGrowth?.accounts)) {
       overviewData.instagramGrowth.accounts.forEach((ig: any) =>
-        addAccount({ ...ig, provider: 'instagram', connected: ig.tokenStatus !== 'disconnected' })
+        addOrMergeAccount({ ...ig, provider: 'instagram', connected: ig.tokenStatus !== 'disconnected' })
       );
     }
 
@@ -364,9 +402,9 @@ export const SocialScreen: React.FC = () => {
     queueList.length > 0
       ? queueList.length
       : postsList.filter((p: any) => {
-          const s = (p.status || '').toLowerCase();
-          return s === 'scheduled' || s === 'queued' || s === 'pending';
-        }).length;
+        const s = (p.status || '').toLowerCase();
+        return s === 'scheduled' || s === 'queued' || s === 'pending';
+      }).length;
 
   const totalSentCount = ops.sent && ops.sent > 0 ? Math.max(ops.sent, sentPostsCount) : sentPostsCount;
   const totalScheduledCount =
@@ -381,8 +419,8 @@ export const SocialScreen: React.FC = () => {
     totalCompleted > 0
       ? `${Math.round((totalSentCount / totalCompleted) * 100)}%`
       : totalSentCount > 0
-      ? '100%'
-      : '0%';
+        ? '100%'
+        : '0%';
 
   return (
     <AppScreen>
@@ -425,7 +463,7 @@ export const SocialScreen: React.FC = () => {
               setShowCreateModal(true);
             }}
             onOpenAccountsModal={() => setShowAccountsModal(true)}
-            onSelectPost={setSelectedPost}
+            // onSelectPost={setSelectedPost}
             onNavigateToTab={setActiveTab}
           />
         )}
@@ -445,7 +483,7 @@ export const SocialScreen: React.FC = () => {
 
         {/* TAB 3: SOCIAL INBOX */}
         {activeTab === 'inbox' && (
-          <SocialInboxTab onOpenAccountsModal={() => setShowAccountsModal(true)} />
+          <SocialInboxTab />
         )}
 
         {/* TAB 4: ACTIVITY (Scheduled Queue, Instapilot, YouTube Studio, AutoDM) */}
@@ -458,7 +496,6 @@ export const SocialScreen: React.FC = () => {
               setInitialCaptionForCreate(undefined);
               setShowCreateModal(true);
             }}
-            onOpenAccountsModal={() => setShowAccountsModal(true)}
             onSelectPost={setSelectedPost}
             onCancelPost={async (postId) => {
               await cancelPostMutation.mutateAsync(postId);

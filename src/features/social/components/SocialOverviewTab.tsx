@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import {
+  Alert,
   Image,
   Linking,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -29,7 +31,6 @@ interface SocialOverviewTabProps {
   onChangeRange: (days: number) => void;
   onOpenCreateModal: () => void;
   onOpenAccountsModal: () => void;
-  onSelectPost: (post: any) => void;
   onNavigateToTab: (tab: 'overview' | 'trends' | 'inbox' | 'activity') => void;
 }
 
@@ -61,7 +62,6 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
   onChangeRange,
   onOpenCreateModal,
   onOpenAccountsModal,
-  onSelectPost,
   onNavigateToTab,
 }) => {
   const colorScheme = useColorScheme();
@@ -70,7 +70,43 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
   const ops = overviewData?.operations || {};
   const automation = overviewData?.automation || {};
   const igGrowth = overviewData?.instagramGrowth || {};
-  const igAccount = igGrowth?.accounts?.[0] || null;
+
+  const [selectedIgAccountId, setSelectedIgAccountId] = useState<string | null>(null);
+  const igAccountsList: any[] = useMemo(() => {
+    const list: any[] = [];
+    const seen = new Set<string>();
+    (igGrowth?.accounts || []).forEach((a: any) => {
+      if (a.id && !seen.has(a.id)) {
+        seen.add(a.id);
+        list.push(a);
+      }
+    });
+    connectedList.forEach((c: any) => {
+      const p = (c.provider || c.platform || '').toLowerCase();
+      if (p === 'instagram' && c.id && !seen.has(c.id)) {
+        seen.add(c.id);
+        list.push({
+          id: c.id,
+          username: c.username,
+          profilePicture: c.avatar || c.profilePicture,
+          followers: c.followers ?? 0,
+          mediaCount: c.mediaCount ?? 0,
+          tokenStatus: c.status || 'active',
+          topMedia: c.topMedia || [],
+        });
+      }
+    });
+    return list;
+  }, [igGrowth?.accounts, connectedList]);
+
+  const igAccount = useMemo(() => {
+    if (selectedIgAccountId) {
+      const found = igAccountsList.find((a: any) => a.id === selectedIgAccountId);
+      if (found) return found;
+    }
+    return igAccountsList[0] || null;
+  }, [igAccountsList, selectedIgAccountId]);
+
   const igSummary = igGrowth?.summary || {};
   const topMediaList = igAccount?.topMedia || [];
 
@@ -233,7 +269,7 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              onOpenCreateModal();
+              () => Alert.alert('New Post', 'This feature will be available soon');
             }}
             style={styles.actionBtn}
           >
@@ -290,7 +326,23 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
         )}
       </View>
 
-      {/* 2. Core Telemetry 4-Card Grid */}
+      {/* 2. Top Connected Social Media Accounts (Story / Chips Carousel ON THE TOP) */}
+      <View style={[styles.topConnectedSection, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
+        <View style={styles.topConnectedHeader}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="share-social" size={16} color="#ec4899" />
+            <Text style={[styles.topConnectedTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              Connected Channels ({connectedList.length})
+            </Text>
+          </View>
+          <Pressable onPress={onOpenAccountsModal} style={styles.topManageLink}>
+            <Text style={styles.topManageLinkText}>Manage</Text>
+            <Ionicons name="chevron-forward" size={12} color="#ec4899" />
+          </Pressable>
+        </View>
+      </View>
+
+      {/* 3. Core Telemetry 4-Card Grid */}
       <View style={styles.metricsGrid}>
         <View style={[styles.metricCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
           <View style={styles.metricCardHeader}>
@@ -465,6 +517,57 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
             </View>
           </View>
 
+          {/* Profile Switcher Chips (when multiple Instagram accounts linked) */}
+          {igAccountsList.length > 1 && (
+            <View style={styles.igSwitcherBar}>
+              <Text style={[styles.igSwitcherLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                Select Profile:
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                {igAccountsList.map((acc: any) => {
+                  const isSelected = igAccount?.id === acc.id;
+                  return (
+                    <Pressable
+                      key={acc.id}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setSelectedIgAccountId(acc.id);
+                      }}
+                      style={[
+                        styles.igSwitcherChip,
+                        {
+                          backgroundColor: isSelected
+                            ? '#e1306c'
+                            : isDark
+                              ? '#1e293b'
+                              : '#f1f5f9',
+                          borderColor: isSelected ? '#e1306c' : isDark ? '#334155' : '#cbd5e1',
+                        },
+                      ]}
+                    >
+                      {acc.profilePicture ? (
+                        <Image source={{ uri: acc.profilePicture }} style={styles.igSwitcherAvatar} />
+                      ) : (
+                        <Ionicons name="logo-instagram" size={12} color={isSelected ? '#ffffff' : '#e1306c'} />
+                      )}
+                      <Text
+                        style={[
+                          styles.igSwitcherChipText,
+                          { color: isSelected ? '#ffffff' : isDark ? '#f8fafc' : '#0f172a' },
+                        ]}
+                      >
+                        @{acc.username || 'Account'} ({acc.followers ?? 0})
+                      </Text>
+                      {isSelected && (
+                        <Ionicons name="checkmark-circle" size={12} color="#ffffff" />
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
           {/* IG Stats Row */}
           <View style={styles.igStatsRow}>
             <View style={styles.igStatItem}>
@@ -498,7 +601,7 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
                   <Pressable
                     key={media.id}
                     onPress={() => {
-                      if (media.permalink) Linking.openURL(media.permalink).catch(() => {});
+                      if (media.permalink) Linking.openURL(media.permalink).catch(() => { });
                     }}
                     style={[
                       styles.topMediaCard,
@@ -616,17 +719,7 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
 
       {/* 7. Connected Social Media Accounts (From API: accounts + overviewData) */}
       <View style={[styles.sectionCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
-        <View style={styles.sectionHeader}>
-          <View style={styles.sectionHeaderLeft}>
-            <Ionicons name="share-social" size={18} color="#ec4899" />
-            <Text style={[styles.sectionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-              Connected Accounts & Tokens ({connectedList.length})
-            </Text>
-          </View>
-          <Pressable onPress={onOpenAccountsModal} style={styles.manageLink}>
-            <Text style={styles.manageLinkText}>Manage Channels</Text>
-          </Pressable>
-        </View>
+
 
         {connectedList.length > 0 ? (
           <View style={styles.accountsGrid}>
@@ -734,7 +827,7 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
                   ]}
                   numberOfLines={1}
                 >
-                  {plat.label}
+                  asdasda {plat.label}
                 </Text>
                 <View
                   style={[
@@ -761,172 +854,6 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
             );
           })}
         </View>
-      </View>
-
-      {/* 8. Platform Publishing Distribution Matrix */}
-      {platformStats.length > 0 && (
-        <View style={[styles.sectionCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionHeaderLeft}>
-              <Ionicons name="pie-chart" size={18} color="#ec4899" />
-              <Text style={[styles.sectionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                Publishing Distribution by Channel
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.distributionList}>
-            {platformStats.map((item) => (
-              <View key={item.platform} style={styles.distItem}>
-                <View style={styles.distLabelRow}>
-                  <Text style={[styles.distPlatformName, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                    {item.platform.charAt(0).toUpperCase() + item.platform.slice(1)}
-                  </Text>
-                  <Text style={[styles.distCount, { color: isDark ? '#cbd5e1' : '#64748b' }]}>
-                    {item.count} posts ({item.percent}%)
-                  </Text>
-                </View>
-                <View style={[styles.progressBarBg, { backgroundColor: isDark ? '#1e293b' : '#e2e8f0' }]}>
-                  <View
-                    style={[
-                      styles.progressBarFill,
-                      {
-                        width: `${Math.max(4, item.percent)}%`,
-                        backgroundColor: getPlatformColor(item.platform),
-                      },
-                    ]}
-                  />
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
-
-      {/* 9. Recent Broadcast Activity Section (From API: operations.recentActivity) */}
-      <View style={[styles.sectionCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
-        <View style={styles.sectionHeader}>
-          <View style={styles.sectionHeaderLeft}>
-            <Ionicons name="albums" size={18} color="#3b82f6" />
-            <Text style={[styles.sectionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-              Recent Broadcast Telemetry ({recentActivityList.length})
-            </Text>
-          </View>
-          <Pressable onPress={() => onNavigateToTab('activity')}>
-            <Text style={styles.manageLinkText}>View Queue</Text>
-          </Pressable>
-        </View>
-
-        {recentActivityList.length === 0 ? (
-          <View style={styles.emptyInlineWrap}>
-            <Text style={[styles.emptyInlineText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-              No broadcast history found. Create your first post using the button above.
-            </Text>
-          </View>
-        ) : (
-          recentActivityList.map((post: any) => {
-            const mediaThumb = post.mediaUrl || post.thumbnail_url || post.media_url;
-            const channels = post.channels || post.selected_channels || ['social'];
-            return (
-              <Pressable
-                key={post.id}
-                onPress={() => onSelectPost(post)}
-                style={[styles.postItem, { borderBottomColor: isDark ? '#1e293b' : '#f1f5f9' }]}
-              >
-                {mediaThumb && (
-                  <Image source={{ uri: mediaThumb }} style={styles.recentThumb} />
-                )}
-                <View style={{ flex: 1, paddingHorizontal: mediaThumb ? 10 : 0 }}>
-                  <View style={styles.postChannelsRow}>
-                    {channels.slice(0, 3).map((ch: string, idx: number) => (
-                      <Text key={idx} style={styles.chTagPill}>
-                        {ch.replace(/^.+:/, '').replace(/:.+$/, '')}
-                      </Text>
-                    ))}
-                  </View>
-                  <Text
-                    style={[styles.postCaption, { color: isDark ? '#f8fafc' : '#0f172a' }]}
-                    numberOfLines={2}
-                  >
-                    {post.caption || 'Untitled Broadcast'}
-                  </Text>
-                  <Text style={styles.postMeta}>
-                    {new Date(
-                      post.postedAt || post.posted_at || post.scheduledFor || post.createdAt || '2026-01-01'
-                    ).toLocaleDateString([], {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.badge,
-                    {
-                      backgroundColor:
-                        post.status === 'sent' || post.status === 'published'
-                          ? 'rgba(34, 197, 94, 0.15)'
-                          : post.status === 'failed'
-                            ? 'rgba(239, 68, 68, 0.15)'
-                            : 'rgba(59, 130, 246, 0.15)',
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.badgeText,
-                      {
-                        color:
-                          post.status === 'sent' || post.status === 'published'
-                            ? '#22c55e'
-                            : post.status === 'failed'
-                              ? '#ef4444'
-                              : '#3b82f6',
-                      },
-                    ]}
-                  >
-                    {post.status || 'sent'}
-                  </Text>
-                </View>
-              </Pressable>
-            );
-          })
-        )}
-      </View>
-
-      {/* 10. Quick Access Action Shortcuts Bar */}
-      <View style={styles.shortcutsRow}>
-        <Pressable
-          onPress={() => onNavigateToTab('trends')}
-          style={[styles.shortcutBtn, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}
-        >
-          <Ionicons name="flame" size={18} color="#ec4899" />
-          <Text style={[styles.shortcutBtnText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-            Explore Trends
-          </Text>
-        </Pressable>
-
-        <Pressable
-          onPress={() => onNavigateToTab('inbox')}
-          style={[styles.shortcutBtn, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}
-        >
-          <Ionicons name="chatbubbles" size={18} color="#3b82f6" />
-          <Text style={[styles.shortcutBtnText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-            Social Inbox
-          </Text>
-        </Pressable>
-
-        <Pressable
-          onPress={() => onNavigateToTab('activity')}
-          style={[styles.shortcutBtn, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}
-        >
-          <Ionicons name="pulse" size={18} color="#8b5cf6" />
-          <Text style={[styles.shortcutBtnText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-            Activity Hub
-          </Text>
-        </Pressable>
       </View>
     </View>
   );
@@ -1510,5 +1437,159 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#d97706',
     textDecorationLine: 'underline',
+  },
+  topConnectedSection: {
+    borderRadius: 16,
+    padding: 14,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  topConnectedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  topConnectedTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  topManageLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  topManageLinkText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#ec4899',
+  },
+  topConnectedScroll: {
+    gap: 10,
+    paddingVertical: 2,
+  },
+  topAccountChipCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    borderWidth: 1.5,
+  },
+  topAccountAvatarWrap: {
+    position: 'relative',
+  },
+  topAccountAvatarImg: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+  },
+  topAccountAvatarFallback: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topAccountProviderBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 15,
+    height: 15,
+    borderRadius: 7.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#ffffff',
+  },
+  topAccountLiveDot: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#22c55e',
+    borderWidth: 1.5,
+    borderColor: '#ffffff',
+  },
+  topAccountName: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  topAccountHandle: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 1,
+  },
+  topAccountFollowers: {
+    fontSize: 10,
+    color: '#94a3b8',
+    marginTop: 1,
+  },
+  topAddAccountBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+  },
+  topAddCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(236, 72, 153, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topAddText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  topEmptyWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+  },
+  topEmptyText: {
+    fontSize: 12,
+    flex: 1,
+  },
+  igSwitcherBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  igSwitcherLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  igSwitcherChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  igSwitcherAvatar: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+  },
+  igSwitcherChipText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
 });

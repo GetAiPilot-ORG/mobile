@@ -215,15 +215,38 @@ export async function socialRoutes(fastify: FastifyInstance) {
     return reply.send(entitlements);
   });
 
+  // Helper to extract optional caller credentials
+  const extractDynamicAuth = (req: any) => {
+    const customKey = (req.headers['apikey'] || req.headers['x-supabase-anon-key'] || req.headers['x-anon-key']) as string | undefined;
+    let user: JWTPayload | undefined = req.user as JWTPayload | undefined;
+    if (!user && req.headers?.authorization) {
+      try {
+        const parts = req.headers.authorization.split(' ');
+        if (parts.length === 2 && parts[0] === 'Bearer') {
+          const decoded = (fastify as any).jwt?.decode(parts[1]) as JWTPayload | null;
+          if (decoded && (decoded.user_id || (decoded as any).sub)) {
+            user = {
+              ...decoded,
+              user_id: decoded.user_id || (decoded as any).sub,
+            };
+          }
+        }
+      } catch {}
+    }
+    return { user, customKey };
+  };
+
   // 7. System Settings & Product Health
-  fastify.get('/social/system/settings', async (_request, reply) => {
-    const settings = await SocialAdapter.getSystemSettings();
+  fastify.get('/social/system/settings', async (request, reply) => {
+    const { user, customKey } = extractDynamicAuth(request);
+    const settings = await SocialAdapter.getSystemSettings(user, customKey);
     return reply.send(settings);
   });
 
   fastify.get('/social/system/product', async (request, reply) => {
     const query = request.query as { product_key?: string };
-    const product = await SocialAdapter.getSystemProductStatus(query.product_key || 'social_pilot');
+    const { user, customKey } = extractDynamicAuth(request);
+    const product = await SocialAdapter.getSystemProductStatus(query.product_key || 'social_pilot', user, customKey);
     return reply.send(product);
   });
 

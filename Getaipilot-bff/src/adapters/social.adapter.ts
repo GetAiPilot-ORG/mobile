@@ -73,7 +73,7 @@ export class SocialAdapter {
           return payload.exp * 1000;
         }
       }
-    } catch {}
+    } catch { }
     return Date.now() + 3600 * 1000;
   }
 
@@ -275,7 +275,7 @@ export class SocialAdapter {
       body?: any;
       formData?: FormData;
       params?: Record<string, string | number | boolean | undefined>;
-      user?: JWTPayload | { user_id?: string; organization_id?: string; email?: string; token?: string; [key: string]: any };
+      user?: JWTPayload | { user_id?: string; organization_id?: string; email?: string; token?: string;[key: string]: any };
       headers?: Record<string, string>;
       isRetry?: boolean;
     } = {}
@@ -394,7 +394,7 @@ export class SocialAdapter {
         try {
           const jsonErr = JSON.parse(errorText);
           parsedMessage = jsonErr.error?.message || jsonErr.error || jsonErr.message || errorText;
-        } catch {}
+        } catch { }
 
         const err: any = new Error(parsedMessage);
         // CRITICAL: Prevent upstream 401 from being treated as BFF session expiration
@@ -444,35 +444,63 @@ export class SocialAdapter {
       normalized.push(...raw);
     } else if (typeof raw === 'object') {
       const providers = ['facebook', 'instagram', 'threads', 'youtube', 'linkedin', 'x', 'twitter', 'reddit', 'pinterest', 'googleBusiness'];
+      const seenIds = new Set<string>();
+
       for (const p of providers) {
         const arrKey = `${p}Accounts`;
         if (Array.isArray(raw[arrKey])) {
           raw[arrKey].forEach((acc: any) => {
+            const id = acc.id || acc.accountId || acc.account_id || acc.pageId || acc.page_id || `${p}_${acc.username || normalized.length}`;
+            const dedupeKey = `${p}_${acc.username || id}`;
+            if (!seenIds.has(dedupeKey)) {
+              seenIds.add(dedupeKey);
+              normalized.push({
+                id,
+                platform: p,
+                provider: p,
+                account_name: acc.name || acc.username || acc.channelTitle || p,
+                username: acc.username || acc.name || '',
+                avatar: acc.profilePicture || acc.profile_picture_url || acc.thumbnailUrl || null,
+                profilePicture: acc.profilePicture || acc.profile_picture_url || acc.thumbnailUrl || null,
+                profile_picture_url: acc.profile_picture_url || acc.profilePicture || null,
+                tokenExpiry: acc.tokenExpiry || acc.token_expiry || acc.tokenExpiresAt || null,
+                token_expiry: acc.token_expiry || acc.tokenExpiry || acc.tokenExpiresAt || null,
+                followers: acc.followers ?? acc.followers_count ?? null,
+                followers_count: acc.followers_count ?? acc.followers ?? null,
+                media_count: acc.media_count ?? acc.mediaCount ?? null,
+                status: acc.status || 'connected',
+                connected: acc.connected !== false,
+                raw: acc,
+              });
+            }
+          });
+        }
+        
+        if (raw[p]?.connected) {
+          const acc = raw[p];
+          const id = acc.id || acc.accountId || acc.account_id || acc.page_id || acc.pageId || `${p}_${acc.username || 0}`;
+          const dedupeKey = `${p}_${acc.username || id}`;
+          if (!seenIds.has(dedupeKey)) {
+            seenIds.add(dedupeKey);
             normalized.push({
-              id: acc.id || acc.accountId || acc.pageId || `${p}_${normalized.length}`,
+              id,
               platform: p,
               provider: p,
-              account_name: acc.name || acc.username || acc.channelTitle || p,
+              account_name: acc.name || acc.username || p,
               username: acc.username || acc.name || '',
-              avatar: acc.profilePicture || acc.profile_picture_url || acc.thumbnailUrl || null,
+              avatar: acc.profilePicture || acc.profile_picture_url || null,
+              profilePicture: acc.profilePicture || acc.profile_picture_url || null,
+              profile_picture_url: acc.profile_picture_url || acc.profilePicture || null,
+              tokenExpiry: acc.tokenExpiry || acc.token_expiry || acc.tokenExpiresAt || null,
+              token_expiry: acc.token_expiry || acc.tokenExpiry || acc.tokenExpiresAt || null,
+              followers: acc.followers ?? acc.followers_count ?? null,
+              followers_count: acc.followers_count ?? acc.followers ?? null,
+              media_count: acc.media_count ?? acc.mediaCount ?? null,
               status: acc.status || 'connected',
-              connected: acc.connected !== false,
+              connected: true,
               raw: acc,
             });
-          });
-        } else if (raw[p]?.connected) {
-          const acc = raw[p];
-          normalized.push({
-            id: acc.id || acc.accountId || `${p}_0`,
-            platform: p,
-            provider: p,
-            account_name: acc.name || acc.username || p,
-            username: acc.username || acc.name || '',
-            avatar: acc.profilePicture || acc.profile_picture_url || null,
-            status: acc.status || 'connected',
-            connected: true,
-            raw: acc,
-          });
+          }
         }
       }
     }
@@ -814,39 +842,118 @@ export class SocialAdapter {
     return res.entitlements || res.data || res;
   }
 
-  // --- 8. System Status & Settings ---
-  public static async getSystemSettings() {
-    const supabaseUrl = 'https://uklxlappjcuvdqjvecfh.supabase.co';
-    const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrbHhsYXBwamN1dmRxanZlY2ZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNDcwODMsImV4cCI6MjA4MzcyMzA4M30.v-TvyQrYpttcmCnzT9MkUlBgGXXU3lspZCxCYm-Oil4';
+  /**
+   * Dynamically resolves the Supabase Anon Key and/or Auth Token for different users/tenants.
+   * Order of precedence:
+   * 1. Explicit custom key supplied by caller (e.g. from request headers 'apikey', 'x-anon-key', or 'x-supabase-anon-key')
+   * 2. Dynamic user token resolved via UpstreamSessionService (active session) or Social Supabase token exchange
+   * 3. Tenant-specific anon key stored in user profile / custom settings in Supabase
+   * 4. Environment variable fallback (SOCIAL_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY)
+   */
+  public static async resolveDynamicAnonKey(
+    user?: JWTPayload,
+    customKey?: string
+  ): Promise<{ anonKey: string; authToken?: string; supabaseUrl: string }> {
+    const supabaseUrl = env.SUPABASE_URL || 'https://uklxlappjcuvdqjvecfh.supabase.co';
+    let anonKey = customKey && customKey.trim() ? customKey.trim() : '';
+    let authToken: string | undefined = undefined;
 
-    const resp = await fetch(`${supabaseUrl}/rest/v1/system_settings?select=*`, {
-      headers: {
-        'apikey': anonKey,
-        'Authorization': `Bearer ${anonKey}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    if (!resp.ok) {
-      throw new Error(`Failed to fetch system settings: ${resp.status}`);
+    // 1. If user context is provided, attempt to resolve user-specific dynamic token and custom profile keys
+    if (user) {
+      try {
+        // A. Resolve active Supabase session access token
+        if (user.session_id && user.user_id) {
+          const userAccessToken = await UpstreamSessionService.getSupabaseAccessToken(
+            user.session_id,
+            user.user_id
+          );
+          if (userAccessToken) {
+            authToken = userAccessToken;
+          }
+        }
+
+        // B. Dynamic social token exchange if session token wasn't found
+        if (!authToken) {
+          const socialToken = await this.getSocialSupabaseToken(user.email, user.user_id);
+          if (socialToken) {
+            authToken = socialToken;
+          }
+        }
+
+        // C. Check if tenant has a custom anon key stored in profiles
+        if (!anonKey && user.user_id) {
+          const { data: profile } = await this.hubAdmin
+            .from('profiles')
+            .select('supabase_anon_key, anon_key, custom_keys')
+            .eq('id', user.user_id)
+            .maybeSingle();
+
+          if (profile?.supabase_anon_key) {
+            anonKey = profile.supabase_anon_key;
+          } else if (profile?.anon_key) {
+            anonKey = profile.anon_key;
+          } else if (profile?.custom_keys?.supabase_anon_key) {
+            anonKey = profile.custom_keys.supabase_anon_key;
+          }
+        }
+      } catch (err) {
+        console.warn('[SocialAdapter] Error resolving user-specific dynamic anonKey/token:', err);
+      }
     }
-    return await resp.json();
+
+    // 2. Fallback to environment variables
+    if (!anonKey) {
+      anonKey = env.SOCIAL_SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY;
+    }
+
+    return {
+      anonKey,
+      authToken: authToken || anonKey,
+      supabaseUrl,
+    };
   }
 
-  public static async getSystemProductStatus(productKey = 'social_pilot') {
-    const supabaseUrl = 'https://uklxlappjcuvdqjvecfh.supabase.co';
-    const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrbHhsYXBwamN1dmRxanZlY2ZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNDcwODMsImV4cCI6MjA4MzcyMzA4M30.v-TvyQrYpttcmCnzT9MkUlBgGXXU3lspZCxCYm-Oil4';
+  // --- 8. System Status & Settings ---
+  public static async getSystemSettings(user?: JWTPayload, customKey?: string) {
+    const { anonKey, supabaseUrl } = await this.resolveDynamicAnonKey(user, customKey);
 
-    const resp = await fetch(`${supabaseUrl}/rest/v1/system_products?product_key=eq.${productKey}&select=*`, {
-      headers: {
-        'apikey': anonKey,
-        'Authorization': `Bearer ${anonKey}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    if (!resp.ok) {
-      throw new Error(`Failed to fetch system product status: ${resp.status}`);
+    try {
+      const resp = await fetch(`${supabaseUrl}/rest/v1/system_settings?select=*`, {
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (resp.ok) {
+        return await resp.json();
+      }
+    } catch (e: any) {
+      console.warn('[SOCIAL ADAPTER] Error fetching system_settings:', e?.message);
     }
-    return await resp.json();
+
+    return [{ id: 'default', global_maintenance_enabled: false }];
+  }
+
+  public static async getSystemProductStatus(productKey = 'social_pilot', user?: JWTPayload, customKey?: string) {
+    const { anonKey, supabaseUrl } = await this.resolveDynamicAnonKey(user, customKey);
+
+    try {
+      const resp = await fetch(`${supabaseUrl}/rest/v1/system_products?product_key=eq.${productKey}&select=*`, {
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (resp.ok) {
+        return await resp.json();
+      }
+    } catch (e: any) {
+      console.warn('[SOCIAL ADAPTER] Error fetching system_products:', e?.message);
+    }
+
+    return [{ id: 'default', product_key: productKey, product_name: 'GAP Social Pilot', status: 'operational' }];
   }
 
   // --- 9. YouTube Studio ---

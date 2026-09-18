@@ -1,22 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
-import React, { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Image,
-  KeyboardAvoidingView,
-  Linking,
-  Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
-  useColorScheme,
+  useColorScheme
 } from 'react-native';
 import { apiClient } from '../../../core/api/client';
 import {
@@ -25,9 +21,6 @@ import {
   SocialInboxReplyPayload,
 } from '../types';
 
-interface SocialInboxTabProps {
-  onOpenAccountsModal: () => void;
-}
 
 const QUICK_REPLIES = [
   'Thanks for reaching out! 🙌',
@@ -52,7 +45,7 @@ const formatMessageTime = (dateStr?: string | null) => {
   }
 };
 
-export const SocialInboxTab: React.FC<SocialInboxTabProps> = ({ onOpenAccountsModal }) => {
+export const SocialInboxTab = () => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const queryClient = useQueryClient();
@@ -288,10 +281,6 @@ export const SocialInboxTab: React.FC<SocialInboxTabProps> = ({ onOpenAccountsMo
               />
             </Pressable>
 
-            <Pressable onPress={onOpenAccountsModal} style={styles.channelsBtn}>
-              <Ionicons name="link" size={13} color="#e1306c" />
-              <Text style={styles.channelsBtnText}>Connected</Text>
-            </Pressable>
           </View>
         </View>
 
@@ -468,8 +457,8 @@ export const SocialInboxTab: React.FC<SocialInboxTabProps> = ({ onOpenAccountsMo
                     backgroundColor: isSelected
                       ? 'rgba(225, 48, 108, 0.14)'
                       : isDark
-                      ? '#1e293b'
-                      : '#f1f5f9',
+                        ? '#1e293b'
+                        : '#f1f5f9',
                     borderColor: isSelected ? '#e1306c' : 'transparent',
                   },
                 ]}
@@ -543,8 +532,8 @@ export const SocialInboxTab: React.FC<SocialInboxTabProps> = ({ onOpenAccountsMo
                     borderColor: conv.unread
                       ? '#e1306c'
                       : isDark
-                      ? '#1e293b'
-                      : '#e2e8f0',
+                        ? '#1e293b'
+                        : '#e2e8f0',
                     opacity: pressed ? 0.85 : 1,
                   },
                 ]}
@@ -664,284 +653,6 @@ export const SocialInboxTab: React.FC<SocialInboxTabProps> = ({ onOpenAccountsMo
           })}
         </View>
       )}
-
-      {/* 5. Chat Thread Viewer & Reply Modal */}
-      <Modal
-        visible={Boolean(selectedConversation)}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setSelectedConversation(null)}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={[styles.modalContainer, { backgroundColor: isDark ? '#0b0f19' : '#f8fafc' }]}
-        >
-          {/* Modal Header */}
-          <View
-            style={[
-              styles.modalHeader,
-              {
-                backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                borderBottomColor: isDark ? '#1e293b' : '#e2e8f0',
-              },
-            ]}
-          >
-            <View style={styles.modalHeaderInfo}>
-              <View style={styles.modalAvatarBox}>
-                {selectedConversation?.authorAvatar ? (
-                  <Image source={{ uri: selectedConversation.authorAvatar }} style={styles.modalAvatarImg} />
-                ) : (
-                  <View
-                    style={[
-                      styles.avatarFallback,
-                      {
-                        backgroundColor:
-                          (selectedConversation?.platform || '').toLowerCase() === 'instagram'
-                            ? 'rgba(225, 48, 108, 0.16)'
-                            : 'rgba(24, 119, 242, 0.16)',
-                        width: 36,
-                        height: 36,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.avatarInitial,
-                        {
-                          color:
-                            (selectedConversation?.platform || '').toLowerCase() === 'instagram'
-                              ? '#e1306c'
-                              : '#1877f2',
-                          fontSize: 14,
-                        },
-                      ]}
-                    >
-                      {(selectedConversation?.authorName || 'U').charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
-                )}
-              </View>
-
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.modalTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]} numberOfLines={1}>
-                  {selectedConversation?.authorName || selectedConversation?.authorHandle || 'Contact'}
-                </Text>
-                <Text style={styles.modalSub} numberOfLines={1}>
-                  {selectedConversation?.authorHandle} •{' '}
-                  {(selectedConversation?.platform || 'INSTAGRAM').toUpperCase()}
-                  {selectedConversation?.accountName ? ` • via ${selectedConversation.accountName}` : ''}
-                </Text>
-              </View>
-            </View>
-
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  refetchMessages();
-                }}
-                style={[styles.modalHeaderBtn, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}
-              >
-                <Ionicons name="refresh" size={16} color={isDark ? '#94a3b8' : '#64748b'} />
-              </Pressable>
-
-              <Pressable
-                onPress={() => setSelectedConversation(null)}
-                style={[styles.modalHeaderBtn, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}
-              >
-                <Ionicons name="close" size={18} color={isDark ? '#cbd5e1' : '#64748b'} />
-              </Pressable>
-            </View>
-          </View>
-
-          {/* Delivery Error / Warning Banner */}
-          {Boolean(sendErrorBanner) && (
-            <View style={styles.errorBannerBox}>
-              <Ionicons name="alert-circle" size={18} color="#f43f5e" />
-              <Text style={styles.errorBannerText}>{sendErrorBanner}</Text>
-              <Pressable onPress={() => setSendErrorBanner(null)}>
-                <Ionicons name="close" size={16} color="#f43f5e" />
-              </Pressable>
-            </View>
-          )}
-
-          {/* Messages Feed */}
-          <ScrollView
-            ref={messagesScrollRef}
-            contentContainerStyle={styles.messagesContainer}
-            onContentSizeChange={() => messagesScrollRef.current?.scrollToEnd({ animated: false })}
-          >
-            {/* Conversation Context Pill */}
-            <View style={styles.threadMetaPill}>
-              <Ionicons
-                name={
-                  (selectedConversation?.platform || '').toLowerCase() === 'instagram'
-                    ? 'logo-instagram'
-                    : 'logo-facebook'
-                }
-                size={13}
-                color={
-                  (selectedConversation?.platform || '').toLowerCase() === 'instagram'
-                    ? '#e1306c'
-                    : '#1877f2'
-                }
-              />
-              <Text style={styles.threadMetaText}>
-                Encrypted social thread • Contact ID:{' '}
-                {selectedConversation?.replyRecipientId || selectedConversation?.externalConversationId || 'Live'}
-              </Text>
-            </View>
-
-            {messagesLoading && messages.length === 0 ? (
-              <View style={{ paddingVertical: 30, alignItems: 'center', gap: 8 }}>
-                <ActivityIndicator size="small" color="#e1306c" />
-                <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b' }}>
-                  Loading message history...
-                </Text>
-              </View>
-            ) : messages.length === 0 ? (
-              /* Fallback initial message if thread messages array is empty */
-              <View style={styles.sampleChatBubbleWrap}>
-                <View
-                  style={[
-                    styles.inboundBubble,
-                    { backgroundColor: isDark ? '#1e293b' : '#ffffff', borderColor: isDark ? '#334155' : '#e2e8f0' },
-                  ]}
-                >
-                  <Text style={[styles.bubbleText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                    {selectedConversation?.text || 'Hello! Wanted to connect with you regarding your social post.'}
-                  </Text>
-                  <Text style={styles.bubbleTime}>
-                    {formatMessageTime(selectedConversation?.createdAt)}
-                  </Text>
-                </View>
-              </View>
-            ) : (
-              messages.map((msg, index) => {
-                const isOutbound = msg.isSelf || msg.status === 'sent';
-                return (
-                  <View
-                    key={msg.id || `msg_${index}`}
-                    style={[
-                      styles.bubbleWrap,
-                      isOutbound ? styles.outboundWrap : styles.inboundWrap,
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.chatBubble,
-                        isOutbound
-                          ? styles.outboundBubble
-                          : [
-                              styles.inboundBubble,
-                              {
-                                backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                                borderColor: isDark ? '#334155' : '#e2e8f0',
-                              },
-                            ],
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.bubbleText,
-                          { color: isOutbound ? '#ffffff' : isDark ? '#f8fafc' : '#0f172a' },
-                        ]}
-                      >
-                        {msg.text || (isOutbound ? 'Outbound reply' : 'Inbound message')}
-                      </Text>
-                      <View style={styles.bubbleFooterRow}>
-                        <Text
-                          style={[
-                            styles.bubbleTime,
-                            { color: isOutbound ? 'rgba(255, 255, 255, 0.75)' : '#94a3b8' },
-                          ]}
-                        >
-                          {formatMessageTime(msg.createdAt)}
-                        </Text>
-                        {isOutbound && (
-                          <Ionicons name="checkmark-done" size={12} color="rgba(255, 255, 255, 0.85)" />
-                        )}
-                      </View>
-                    </View>
-                  </View>
-                );
-              })
-            )}
-          </ScrollView>
-
-          {/* Quick Suggestions Chips */}
-          <View style={styles.quickRepliesWrap}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickRepliesScroll}>
-              {QUICK_REPLIES.map((reply, i) => (
-                <Pressable
-                  key={i}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setReplyText(reply);
-                  }}
-                  style={[
-                    styles.quickReplyChip,
-                    {
-                      backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                      borderColor: isDark ? '#334155' : '#e2e8f0',
-                    },
-                  ]}
-                >
-                  <Text style={[styles.quickReplyText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
-                    {reply}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
-
-          {/* Reply Bar */}
-          <View
-            style={[
-              styles.replyBar,
-              {
-                backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                borderTopColor: isDark ? '#1e293b' : '#e2e8f0',
-              },
-            ]}
-          >
-            <TextInput
-              style={[
-                styles.replyInput,
-                {
-                  backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                  color: isDark ? '#f8fafc' : '#0f172a',
-                  borderColor: isDark ? '#334155' : '#cbd5e1',
-                },
-              ]}
-              placeholder={`Reply to ${selectedConversation?.authorHandle || 'contact'}...`}
-              placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
-              value={replyText}
-              onChangeText={setReplyText}
-              multiline
-              maxLength={1000}
-            />
-
-            <Pressable
-              onPress={handleSendReply}
-              disabled={sendReplyMutation.isPending || !replyText.trim()}
-              style={[
-                styles.sendBtn,
-                {
-                  opacity: !replyText.trim() || sendReplyMutation.isPending ? 0.5 : 1,
-                  backgroundColor: '#e1306c',
-                },
-              ]}
-            >
-              {sendReplyMutation.isPending ? (
-                <ActivityIndicator size="small" color="#ffffff" />
-              ) : (
-                <Ionicons name="send" size={16} color="#ffffff" />
-              )}
-            </Pressable>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
     </View>
   );
 };
@@ -1256,45 +967,6 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 6,
     backgroundColor: 'rgba(234, 179, 8, 0.14)',
-  },
-  modalContainer: {
-    flex: 1,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  modalHeaderInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
-  },
-  modalAvatarBox: {},
-  modalAvatarImg: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-  },
-  modalTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  modalSub: {
-    fontSize: 11,
-    color: '#94a3b8',
-    marginTop: 1,
-  },
-  modalHeaderBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   errorBannerBox: {
     flexDirection: 'row',

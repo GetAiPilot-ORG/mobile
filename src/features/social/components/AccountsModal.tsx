@@ -1,17 +1,17 @@
-import React from 'react';
-import {
-  Modal,
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  ScrollView,
-  Image,
-  useColorScheme,
-  Platform,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import React from 'react';
+import {
+  Image,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useColorScheme,
+  View,
+} from 'react-native';
 
 interface AccountsModalProps {
   visible: boolean;
@@ -144,20 +144,7 @@ export const AccountsModal: React.FC<AccountsModalProps> = ({
                       </View>
                     </View>
 
-                    {onDisconnect && (
-                      <Pressable
-                        onPress={() => {
-                          if (Platform.OS !== 'web') {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                          }
-                          onDisconnect(provider, acc.id || acc.account_id);
-                        }}
-                        style={styles.disconnectBtn}
-                        hitSlop={6}
-                      >
-                        <Ionicons name="trash-outline" size={16} color="#EF4444" />
-                      </Pressable>
-                    )}
+
                   </View>
                 );
               })

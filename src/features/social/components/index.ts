@@ -6,3 +6,7 @@ export * from './SocialTrendsTab';
 export * from './SocialInboxTab';
 export * from './SocialActivityTab';
 export * from './InstapilotConversationModal';
+export * from './activity/ActivityQueueSubTab';
+export * from './activity/ActivityInstapilotSubTab';
+export * from './activity/ActivityYouTubeSubTab';
+export * from './activity/ActivityAutoDMSubTab';
