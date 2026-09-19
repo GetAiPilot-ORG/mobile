@@ -541,6 +541,42 @@ export async function authRoutes(fastify: FastifyInstance) {
     return reply.send({ activeDeviceCount: devices.length, devices });
   });
 
+  // POST /mobile/v1/auth/device-sessions/heartbeat
+  // Records an active app presence heartbeat for the current device session.
+  fastify.post('/device-sessions/heartbeat', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const body = (request.body as any) || {};
+    const sessionId = body.sessionId || user.session_id;
+
+    if (!sessionId) {
+      return reply.send({ success: true, touched: false });
+    }
+
+    try {
+      const touched = await HubAdapter.touchDeviceSession(user.user_id, sessionId);
+      return reply.send({ success: true, touched });
+    } catch (err: any) {
+      request.log.warn({ err: err.message }, '[HEARTBEAT] Error touching device session');
+      return reply.send({ success: true, touched: false, warning: err.message });
+    }
+  });
+
+  // GET /mobile/v1/auth/device-sessions/heartbeat
+  fastify.get('/device-sessions/heartbeat', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    if (!user.session_id) {
+      return reply.send({ success: true, touched: false });
+    }
+
+    try {
+      const touched = await HubAdapter.touchDeviceSession(user.user_id, user.session_id);
+      return reply.send({ success: true, touched });
+    } catch (err: any) {
+      request.log.warn({ err: err.message }, '[HEARTBEAT] Error touching device session');
+      return reply.send({ success: true, touched: false, warning: err.message });
+    }
+  });
+
   // DELETE /mobile/v1/auth/device-sessions/:sessionId
   // A user can only sign out another session that belongs to their own account.
   fastify.delete('/device-sessions/:sessionId', { preHandler: [authenticateToken] }, async (request, reply) => {

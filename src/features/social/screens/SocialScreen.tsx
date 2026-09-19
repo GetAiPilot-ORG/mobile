@@ -1,19 +1,13 @@
-import React, { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
+  BackHandler,
   RefreshControl,
   ScrollView,
   StyleSheet,
-  Text,
-  View,
-  Image,
-  useColorScheme,
 } from 'react-native';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 
 import { AppScreen } from '../../../components/AppScreen';
 import { AppTopBar } from '../../../components/AppTopBar';
@@ -21,37 +15,96 @@ import {
   ProductFloatingBottomBar,
   ProductTabItem,
 } from '../../../components/ProductFloatingBottomBar';
-import {
-  SocialPostsSkeleton,
-  SocialScreenSkeleton,
-  SocialTrendsSkeleton,
-} from '../../../components/skeletonScreen';
 import { apiClient } from '../../../core/api/client';
 import {
-  CreatePostModal,
-  PostDetailsModal,
   AccountsModal,
+  CreatePostModal,
+  InstapilotConversationModal,
+  PostDetailsModal,
+  SocialActivityTab,
+  SocialInboxTab,
+  SocialOverviewTab,
+  SocialTrendsTab,
 } from '../components';
-
-type TabType = 'overview' | 'posts' | 'calendar' | 'trends' | 'accounts';
+import {
+  InstapilotConversation,
+  SocialTabType,
+  SystemProductStatus,
+  SystemSettings,
+  TrendItem,
+  YoutubeChannelAccount,
+} from '../types';
 
 const SOCIAL_TABS: ProductTabItem[] = [
-  { key: 'overview', label: 'Overview', activeIcon: 'grid', inactiveIcon: 'grid-outline' },
-  { key: 'posts', label: 'Posts', activeIcon: 'paper-plane', inactiveIcon: 'paper-plane-outline' },
-  { key: 'calendar', label: 'Calendar', activeIcon: 'calendar', inactiveIcon: 'calendar-outline' },
-  { key: 'trends', label: 'Trends', activeIcon: 'flame', inactiveIcon: 'flame-outline' },
-  { key: 'accounts', label: 'Channels', activeIcon: 'share-social', inactiveIcon: 'share-social-outline' },
+  {
+    key: 'overview',
+    label: 'Overview',
+    activeIcon: 'grid',
+    inactiveIcon: 'grid-outline',
+    description: 'Connected social media apps & metrics',
+  },
+  {
+    key: 'trends',
+    label: 'Trend Feed',
+    activeIcon: 'flame',
+    inactiveIcon: 'flame-outline',
+    description: 'Viral trends across YouTube, Reddit & Social',
+  },
+  {
+    key: 'inbox',
+    label: 'Social Inbox',
+    activeIcon: 'chatbubbles',
+    inactiveIcon: 'chatbubbles-outline',
+    description: 'Instagram DMs & Facebook conversations',
+  },
+  {
+    key: 'activity',
+    label: 'Activity',
+    activeIcon: 'pulse',
+    inactiveIcon: 'pulse-outline',
+    description: 'Scheduled Queue, Instapilot, YouTube Studio & AutoDM',
+  },
 ];
 
 export const SocialScreen: React.FC = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const router = useRouter();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [activeTab, setActiveTab] = useState<SocialTabType>('overview');
   const [selectedPost, setSelectedPost] = useState<any | null>(null);
+  const [selectedInstapilotConv, setSelectedInstapilotConv] = useState<InstapilotConversation | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAccountsModal, setShowAccountsModal] = useState(false);
+  const [initialCaptionForCreate, setInitialCaptionForCreate] = useState<string | undefined>(undefined);
+
+  // Hardware Back Handler
+  useEffect(() => {
+    const onHardwareBack = () => {
+      if (selectedInstapilotConv) {
+        setSelectedInstapilotConv(null);
+        return true;
+      }
+      if (selectedPost) {
+        setSelectedPost(null);
+        return true;
+      }
+      if (activeTab !== 'overview') {
+        setActiveTab('overview');
+        return true;
+      }
+      if (router.canGoBack()) {
+        router.back();
+        return true;
+      }
+      router.replace('/(tabs)/products');
+      return true;
+    };
+
+    const sub = BackHandler.addEventListener('hardwareBackPress', onHardwareBack);
+    return () => sub.remove();
+  }, [selectedPost, selectedInstapilotConv, activeTab, router]);
+
+  const [selectedRange, setSelectedRange] = useState<number>(30);
 
   // 1. Overview Telemetry Query
   const {
@@ -59,15 +112,18 @@ export const SocialScreen: React.FC = () => {
     isLoading: overviewLoading,
     refetch: refetchOverview,
     isRefetching: isOverviewRefetching,
+    error: overviewError,
   } = useQuery({
-    queryKey: ['social', 'overview'],
-    queryFn: async () => apiClient.get<any>('/mobile/v1/social/overview'),
+    queryKey: ['social', 'overview', selectedRange],
+    queryFn: async () =>
+      apiClient.get<any>('/mobile/v1/social/overview', {
+        params: { range: selectedRange },
+      }),
   });
 
   // 2. Connected Channels / Accounts Query
   const {
     data: accountsData,
-    isLoading: accountsLoading,
     refetch: refetchAccounts,
   } = useQuery({
     queryKey: ['social', 'accounts'],
@@ -77,7 +133,6 @@ export const SocialScreen: React.FC = () => {
   // 3. Posts History Query
   const {
     data: postsData,
-    isLoading: postsLoading,
     refetch: refetchPosts,
     isRefetching: isPostsRefetching,
   } = useQuery({
@@ -105,7 +160,80 @@ export const SocialScreen: React.FC = () => {
     queryFn: async () => apiClient.get<any[]>('/mobile/v1/social/trends'),
   });
 
+  // 6. Stats Query
+  const { data: statsData, refetch: refetchStats } = useQuery({
+    queryKey: ['social', 'stats'],
+    queryFn: async () => {
+      try {
+        return await apiClient.get<any>('/mobile/v1/social/stats');
+      } catch {
+        return null;
+      }
+    },
+  });
+
+  // 7. Entitlements Query
+  const { data: entitlementsData, refetch: refetchEntitlements } = useQuery({
+    queryKey: ['social', 'entitlements'],
+    queryFn: async () => {
+      try {
+        return await apiClient.get<any>('/mobile/v1/social/entitlements');
+      } catch {
+        return null;
+      }
+    },
+  });
+
+  // 8. Instapilot Inbox Conversations Query (syncs in 5s)
+  const {
+    data: instapilotConversationsData,
+    isLoading: instapilotLoading,
+    refetch: refetchInstapilotConversations,
+  } = useQuery({
+    queryKey: ['social', 'instapilot', 'conversations'],
+    queryFn: async () => apiClient.get<InstapilotConversation[]>('/mobile/v1/social/instapilot/conversations'),
+    refetchInterval: activeTab === 'activity' ? 5000 : false,
+  });
+
+  // 9. System Settings Query
+  const { data: systemSettingsData } = useQuery({
+    queryKey: ['social', 'system', 'settings'],
+    queryFn: async () => apiClient.get<SystemSettings[]>('/mobile/v1/social/system/settings'),
+  });
+
+  // 10. System Product Health Query
+  const { data: systemProductData } = useQuery({
+    queryKey: ['social', 'system', 'product'],
+    queryFn: async () => apiClient.get<SystemProductStatus[]>('/mobile/v1/social/system/product'),
+  });
+
+  // 11. YouTube Studio Accounts & Telemetry Query
+  const {
+    data: youtubeAccountsData,
+    isLoading: youtubeAccountsLoading,
+    refetch: refetchYoutubeAccounts,
+  } = useQuery({
+    queryKey: ['social', 'youtube', 'accounts'],
+    queryFn: async () => apiClient.get<YoutubeChannelAccount[]>('/mobile/v1/social/youtube/accounts'),
+  });
+
   // Mutations
+  const instapilotSyncMutation = useMutation({
+    mutationFn: async () => apiClient.post<{ success: boolean; synced: number }>('/mobile/v1/social/instapilot/sync', {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['social', 'instapilot', 'conversations'] });
+    },
+  });
+
+  const syncMutateAsync = instapilotSyncMutation.mutateAsync;
+  const handleSyncInstapilot = useCallback(async () => {
+    try {
+      await syncMutateAsync();
+    } catch {
+      // Ignore background sync errors
+    }
+  }, [syncMutateAsync]);
+
   const createPostMutation = useMutation({
     mutationFn: async (payload: any) => apiClient.post('/mobile/v1/social/posts', payload),
     onSuccess: () => {
@@ -157,107 +285,142 @@ export const SocialScreen: React.FC = () => {
       refetchPosts(),
       refetchQueue(),
       refetchTrends(),
+      refetchStats(),
+      refetchEntitlements(),
     ]);
   };
 
   const ops = overviewData?.operations || {};
   const postsList = Array.isArray(postsData) ? postsData : [];
   const queueList = Array.isArray(queueData) ? queueData : [];
-  const trendsList = Array.isArray(trendsData) ? trendsData : [];
+  const trendsList: TrendItem[] = useMemo(() => {
+    if (Array.isArray(trendsData)) return trendsData;
+    if (Array.isArray((trendsData as any)?.items)) return (trendsData as any).items;
+    return [];
+  }, [trendsData]);
 
-  // Extract all genuinely connected accounts
-  const connectedList = React.useMemo(() => {
+  // Extract all genuinely connected accounts with full merged telemetry
+  const connectedList = useMemo(() => {
+    const list: any[] = [];
+    const seenMap = new Map<string, number>();
+
+    const addOrMergeAccount = (acc: any) => {
+      if (!acc) return;
+      const provider = (acc.provider || acc.platform || 'channel').toLowerCase();
+      const username = acc.username || acc.name || '';
+      const id = acc.id || acc.accountId || (username ? `${provider}_${username}` : `${provider}_${list.length}`);
+      const dedupeKey = `${provider}_${username || id}`.toLowerCase();
+
+      const normalized = {
+        ...acc,
+        id,
+        provider,
+        platform: provider,
+        username,
+        name: acc.name || acc.channelTitle || username || provider,
+        account_name: acc.account_name || acc.name || username || provider,
+        avatar: acc.profilePicture || acc.profile_picture_url || acc.thumbnailUrl || acc.avatar || null,
+        profilePicture: acc.profilePicture || acc.profile_picture_url || acc.thumbnailUrl || acc.avatar || null,
+        profile_picture_url: acc.profile_picture_url || acc.profilePicture || acc.avatar || null,
+        followers: acc.followers ?? acc.followers_count ?? acc.followerCount ?? null,
+        followers_count: acc.followers_count ?? acc.followers ?? acc.followerCount ?? null,
+        mediaCount: acc.mediaCount ?? acc.media_count ?? null,
+        media_count: acc.media_count ?? acc.mediaCount ?? null,
+        reach: acc.reach ?? null,
+        topMedia: acc.topMedia || [],
+        tokenExpiry: acc.tokenExpiry || acc.token_expiry || acc.tokenExpiresAt || null,
+        token_expiry: acc.token_expiry || acc.tokenExpiry || acc.tokenExpiresAt || null,
+        status: acc.status || (acc.tokenStatus === 'disconnected' ? 'disconnected' : 'connected'),
+        connected: acc.connected !== false && acc.tokenStatus !== 'disconnected',
+      };
+
+      if (seenMap.has(dedupeKey)) {
+        const existingIdx = seenMap.get(dedupeKey)!;
+        list[existingIdx] = {
+          ...list[existingIdx],
+          ...normalized,
+          avatar: normalized.avatar || list[existingIdx].avatar,
+          profilePicture: normalized.profilePicture || list[existingIdx].profilePicture,
+          followers: normalized.followers ?? list[existingIdx].followers,
+          followers_count: normalized.followers_count ?? list[existingIdx].followers_count,
+          mediaCount: normalized.mediaCount ?? list[existingIdx].mediaCount,
+          media_count: normalized.media_count ?? list[existingIdx].media_count,
+          reach: normalized.reach ?? list[existingIdx].reach,
+          topMedia: normalized.topMedia.length > 0 ? normalized.topMedia : list[existingIdx].topMedia,
+          tokenExpiry: normalized.tokenExpiry || list[existingIdx].tokenExpiry,
+        };
+      } else {
+        seenMap.set(dedupeKey, list.length);
+        list.push(normalized);
+      }
+    };
+
     if (Array.isArray(accountsData)) {
-      return accountsData.map((a: any) => ({
-        ...a,
-        provider: a.provider || a.platform || 'channel',
-      }));
-    }
-    if (accountsData && typeof accountsData === 'object') {
-      const list: any[] = [];
-      const providers = ['facebook', 'instagram', 'threads', 'youtube', 'linkedin', 'x', 'pinterest', 'reddit', 'bluesky', 'mastodon', 'googleBusiness'];
+      accountsData.forEach(addOrMergeAccount);
+    } else if (accountsData && typeof accountsData === 'object') {
+      const providers = [
+        'facebook',
+        'instagram',
+        'threads',
+        'youtube',
+        'linkedin',
+        'x',
+        'pinterest',
+        'reddit',
+        'bluesky',
+        'mastodon',
+        'googleBusiness',
+      ];
       for (const p of providers) {
         const arrKey = `${p}Accounts`;
-        if (Array.isArray(accountsData[arrKey]) && accountsData[arrKey].length > 0) {
-          list.push(...accountsData[arrKey].map((a: any) => ({ ...a, provider: a.provider || a.platform || p })));
+        if (Array.isArray(accountsData[arrKey])) {
+          accountsData[arrKey].forEach((a: any) => addOrMergeAccount({ ...a, provider: p }));
         } else if (accountsData[p]?.connected) {
-          list.push({ ...accountsData[p], provider: accountsData[p].provider || accountsData[p].platform || p });
+          addOrMergeAccount({ ...accountsData[p], provider: p });
         }
       }
-      return list;
     }
-    return [];
-  }, [accountsData]);
+
+    if (Array.isArray(overviewData?.accounts?.accounts)) {
+      overviewData.accounts.accounts.forEach((a: any) => addOrMergeAccount({ ...a, connected: a.connected !== false }));
+    }
+    if (Array.isArray(overviewData?.instagramGrowth?.accounts)) {
+      overviewData.instagramGrowth.accounts.forEach((ig: any) =>
+        addOrMergeAccount({ ...ig, provider: 'instagram', connected: ig.tokenStatus !== 'disconnected' })
+      );
+    }
+
+    return list;
+  }, [accountsData, overviewData]);
 
   const sentPostsCount = postsList.filter((p: any) => {
     const s = (p.status || '').toLowerCase();
     return s === 'sent' || s === 'published' || s === 'completed' || s === 'success' || s === 'delivered';
   }).length;
 
-  const scheduledPostsCount = queueList.length > 0
-    ? queueList.length
-    : postsList.filter((p: any) => {
+  const scheduledPostsCount =
+    queueList.length > 0
+      ? queueList.length
+      : postsList.filter((p: any) => {
         const s = (p.status || '').toLowerCase();
         return s === 'scheduled' || s === 'queued' || s === 'pending';
       }).length;
 
-  const totalSentCount = (ops.sent && ops.sent > 0) ? Math.max(ops.sent, sentPostsCount) : sentPostsCount;
-  const totalScheduledCount = (ops.scheduled && ops.scheduled > 0) ? Math.max(ops.scheduled, scheduledPostsCount) : scheduledPostsCount;
-  const totalFailedCount = (ops.failed && ops.failed > 0) ? ops.failed : postsList.filter((p: any) => (p.status || '').toLowerCase() === 'failed').length;
+  const totalSentCount = ops.sent && ops.sent > 0 ? Math.max(ops.sent, sentPostsCount) : sentPostsCount;
+  const totalScheduledCount =
+    ops.scheduled && ops.scheduled > 0 ? Math.max(ops.scheduled, scheduledPostsCount) : scheduledPostsCount;
+  const totalFailedCount =
+    ops.failed && ops.failed > 0
+      ? ops.failed
+      : postsList.filter((p: any) => (p.status || '').toLowerCase() === 'failed').length;
 
   const totalCompleted = totalSentCount + totalFailedCount;
-  const computedSuccessRate = totalCompleted > 0
-    ? `${Math.round((totalSentCount / totalCompleted) * 100)}%`
-    : (totalSentCount > 0 ? '100%' : '0%');
-  const recentActivityList = (ops.recentActivity && ops.recentActivity.length > 0 ? ops.recentActivity : postsList).slice(0, 5);
-
-  const getPlatformIconName = (provider?: string) => {
-    switch (provider?.toLowerCase()) {
-      case 'facebook':
-        return 'logo-facebook';
-      case 'instagram':
-        return 'logo-instagram';
-      case 'threads':
-        return 'at-circle';
-      case 'youtube':
-        return 'logo-youtube';
-      case 'linkedin':
-        return 'logo-linkedin';
-      case 'x':
-      case 'twitter':
-        return 'logo-twitter';
-      case 'reddit':
-        return 'logo-reddit';
-      case 'pinterest':
-        return 'logo-pinterest';
-      default:
-        return 'globe-outline';
-    }
-  };
-
-  const getPlatformColor = (provider?: string) => {
-    switch (provider?.toLowerCase()) {
-      case 'facebook':
-        return '#1877f2';
-      case 'instagram':
-        return '#e1306c';
-      case 'threads':
-        return '#000000';
-      case 'youtube':
-        return '#ff0000';
-      case 'linkedin':
-        return '#0a66c2';
-      case 'x':
-      case 'twitter':
-        return '#000000';
-      case 'reddit':
-        return '#ff4500';
-      case 'pinterest':
-        return '#e60023';
-      default:
-        return '#ec4899';
-    }
-  };
+  const computedSuccessRate =
+    totalCompleted > 0
+      ? `${Math.round((totalSentCount / totalCompleted) * 100)}%`
+      : totalSentCount > 0
+        ? '100%'
+        : '0%';
 
   return (
     <AppScreen>
@@ -275,459 +438,95 @@ export const SocialScreen: React.FC = () => {
           />
         }
       >
-        {/* TAB 1: OVERVIEW */}
+        {/* TAB 1: OVERVIEW WITH CONNECTED SOCIAL MEDIA APPS */}
         {activeTab === 'overview' && (
-          overviewLoading && !overviewData ? (
-            <SocialScreenSkeleton />
-          ) : (
-          <View>
-            {/* Quick Action Banner */}
-            <View style={[styles.actionBanner, { backgroundColor: isDark ? '#1e1b4b' : '#fdf2f8' }]}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.actionTitle, { color: isDark ? '#f472b6' : '#be185d' }]}>
-                  Broadcast Engine Ready
-                </Text>
-                <Text style={[styles.actionSub, { color: isDark ? '#cbd5e1' : '#64748b' }]}>
-                  {connectedList.length > 0
-                    ? `${connectedList.length} connected channel${connectedList.length === 1 ? '' : 's'} active across your workspace.`
-                    : 'Publish or schedule posts across Instagram, Facebook, YouTube, LinkedIn and Threads.'}
-                </Text>
-              </View>
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  setShowCreateModal(true);
-                }}
-                style={styles.actionBtn}
-              >
-                <Ionicons name="add" size={18} color="#ffffff" />
-                <Text style={styles.actionBtnText}>New Post</Text>
-              </Pressable>
-            </View>
-
-            {/* Overview Metrics Cards */}
-            <View style={styles.metricsGrid}>
-              <View style={[styles.metricCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
-                <Ionicons name="send" size={18} color="#22c55e" />
-                <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                  {totalSentCount}
-                </Text>
-                <Text style={styles.metricLabel}>Published</Text>
-              </View>
-
-              <View style={[styles.metricCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
-                <Ionicons name="time" size={18} color="#3b82f6" />
-                <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                  {totalScheduledCount}
-                </Text>
-                <Text style={styles.metricLabel}>Scheduled</Text>
-              </View>
-
-              <View style={[styles.metricCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
-                <Ionicons name="checkmark-done-circle" size={18} color="#ec4899" />
-                <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                  {ops.successRate != null ? `${ops.successRate}%` : computedSuccessRate}
-                </Text>
-                <Text style={styles.metricLabel}>Success Rate</Text>
-              </View>
-            </View>
-
-            {/* Connected Channels Summary Card */}
-            <View style={[styles.sectionCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionHeaderLeft}>
-                  <Ionicons name="share-social" size={18} color="#ec4899" />
-                  <Text style={[styles.sectionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                    Connected Channels ({connectedList.length})
-                  </Text>
-                </View>
-                <Pressable
-                  onPress={() => setShowAccountsModal(true)}
-                  style={styles.manageLink}
-                >
-                  <Text style={styles.manageLinkText}>Manage</Text>
-                </Pressable>
-              </View>
-
-              {connectedList.length === 0 ? (
-                <View style={styles.emptyInlineWrap}>
-                  <Ionicons name="link-outline" size={20} color={isDark ? '#475569' : '#94a3b8'} />
-                  <Text style={[styles.emptyInlineText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-                    No active channels connected. Tap Manage to link Instagram, Facebook, Threads or YouTube.
-                  </Text>
-                </View>
-              ) : (
-                <View style={styles.channelsPillsRow}>
-                  {connectedList.map((acc: any, idx: number) => {
-                    const provider = acc.provider || acc.platform || 'channel';
-                    const name = acc.username || acc.name || acc.channelTitle || provider;
-                    const avatarUrl = acc.profilePicture || acc.profile_picture_url;
-                    return (
-                      <View
-                        key={acc.id || idx}
-                        style={[
-                          styles.platformPill,
-                          {
-                            backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                            borderColor: isDark ? '#334155' : '#e2e8f0',
-                            borderWidth: 1,
-                          },
-                        ]}
-                      >
-                        {avatarUrl ? (
-                          <Image source={{ uri: avatarUrl }} style={styles.pillAvatar} />
-                        ) : (
-                          <Ionicons
-                            name={getPlatformIconName(provider) as any}
-                            size={14}
-                            color={getPlatformColor(provider)}
-                          />
-                        )}
-                        <View style={{ maxWidth: 120 }}>
-                          <Text
-                            style={[styles.platformText, { color: isDark ? '#f8fafc' : '#0f172a' }]}
-                            numberOfLines={1}
-                          >
-                            {name}
-                          </Text>
-                          <Text style={styles.pillSubText}>
-                            {provider ? provider.charAt(0).toUpperCase() + provider.slice(1).toLowerCase() : ''}
-                          </Text>
-                        </View>
-                        <View style={styles.liveDot} />
-                      </View>
-                    );
-                  })}
-                </View>
-              )}
-            </View>
-
-            {/* Recent Broadcasts */}
-            <View style={[styles.sectionCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionHeaderLeft}>
-                  <Ionicons name="albums" size={18} color="#3b82f6" />
-                  <Text style={[styles.sectionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                    Recent Activity ({recentActivityList.length})
-                  </Text>
-                </View>
-                <Pressable onPress={() => setActiveTab('posts')}>
-                  <Text style={styles.manageLinkText}>View All</Text>
-                </Pressable>
-              </View>
-
-              {recentActivityList.length === 0 ? (
-                <View style={styles.emptyInlineWrap}>
-                  <Text style={[styles.emptyInlineText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-                    No broadcast history yet. Create your first post above.
-                  </Text>
-                </View>
-              ) : (
-                recentActivityList.map((post: any) => {
-                  const mediaThumb = post.thumbnail_url || post.media_url;
-                  return (
-                    <Pressable
-                      key={post.id}
-                      onPress={() => setSelectedPost(post)}
-                      style={[styles.postItem, { borderBottomColor: isDark ? '#1e293b' : '#f1f5f9' }]}
-                    >
-                      {mediaThumb && (
-                        <Image source={{ uri: mediaThumb }} style={styles.recentThumb} />
-                      )}
-                      <View style={{ flex: 1, paddingHorizontal: mediaThumb ? 10 : 0 }}>
-                        <Text
-                          style={[styles.postCaption, { color: isDark ? '#f8fafc' : '#0f172a' }]}
-                          numberOfLines={2}
-                        >
-                          {post.caption || 'Untitled Broadcast'}
-                        </Text>
-                        <Text style={styles.postMeta}>
-                          {new Date(post.posted_at || post.scheduled_for || post.created_at || Date.now()).toLocaleDateString([], {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </Text>
-                      </View>
-                      <View
-                        style={[
-                          styles.badge,
-                          {
-                            backgroundColor:
-                              post.status === 'sent' || post.status === 'published'
-                                ? 'rgba(34, 197, 94, 0.15)'
-                                : post.status === 'failed'
-                                  ? 'rgba(239, 68, 68, 0.15)'
-                                  : 'rgba(59, 130, 246, 0.15)',
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.badgeText,
-                            {
-                              color:
-                                post.status === 'sent' || post.status === 'published'
-                                  ? '#22c55e'
-                                  : post.status === 'failed'
-                                    ? '#ef4444'
-                                    : '#3b82f6',
-                            },
-                          ]}
-                        >
-                          {post.status || 'sent'}
-                        </Text>
-                      </View>
-                    </Pressable>
-                  );
-                })
-              )}
-            </View>
-          </View>
-          )
+          <SocialOverviewTab
+            overviewLoading={overviewLoading}
+            overviewError={overviewError}
+            onRetryOverview={refetchOverview}
+            overviewData={overviewData}
+            statsData={statsData}
+            entitlementsData={entitlementsData}
+            connectedList={connectedList}
+            postsList={postsList}
+            queueList={queueList}
+            totalSentCount={totalSentCount}
+            totalScheduledCount={totalScheduledCount}
+            computedSuccessRate={computedSuccessRate}
+            selectedRange={selectedRange}
+            onChangeRange={(days) => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSelectedRange(days);
+            }}
+            onOpenCreateModal={() => {
+              setInitialCaptionForCreate(undefined);
+              setShowCreateModal(true);
+            }}
+            onOpenAccountsModal={() => setShowAccountsModal(true)}
+            // onSelectPost={setSelectedPost}
+            onNavigateToTab={setActiveTab}
+          />
         )}
 
-        {/* TAB 2: POSTS */}
-        {activeTab === 'posts' && (
-          <View>
-            <View style={styles.tabHeaderRow}>
-              <Text style={[styles.tabHeading, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                Broadcast Posts ({postsList.length})
-              </Text>
-              <Pressable
-                onPress={() => setShowCreateModal(true)}
-                style={styles.smallCreateBtn}
-              >
-                <Ionicons name="add" size={16} color="#ffffff" />
-                <Text style={styles.smallCreateBtnText}>Create</Text>
-              </Pressable>
-            </View>
-
-            {postsLoading ? (
-              <SocialPostsSkeleton />
-            ) : postsList.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Ionicons name="newspaper-outline" size={40} color={isDark ? '#475569' : '#94a3b8'} />
-                <Text style={[styles.emptyTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                  No Broadcast Posts Found
-                </Text>
-                <Text style={[styles.emptyDesc, { color: isDark ? '#64748b' : '#94a3b8' }]}>
-                  Create your first social media broadcast now.
-                </Text>
-              </View>
-            ) : (
-              postsList.map((post: any) => (
-                <Pressable
-                  key={post.id}
-                  onPress={() => setSelectedPost(post)}
-                  style={[styles.fullPostCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}
-                >
-                  <View style={styles.postTop}>
-                    <View style={styles.postChannels}>
-                      {(post.selected_channels || ['social']).map((ch: string, i: number) => (
-                        <Text key={i} style={styles.chTag}>
-                          {ch.replace(/^.+:/, '')}
-                        </Text>
-                      ))}
-                    </View>
-                    <View
-                      style={[
-                        styles.badge,
-                        {
-                          backgroundColor:
-                            post.status === 'sent' || post.status === 'published'
-                              ? 'rgba(34, 197, 94, 0.15)'
-                              : post.status === 'failed'
-                                ? 'rgba(239, 68, 68, 0.15)'
-                                : 'rgba(59, 130, 246, 0.15)',
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.badgeText,
-                          {
-                            color:
-                              post.status === 'sent' || post.status === 'published'
-                                ? '#22c55e'
-                                : post.status === 'failed'
-                                  ? '#ef4444'
-                                  : '#3b82f6',
-                          },
-                        ]}
-                      >
-                        {post.status || 'sent'}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <Text
-                    style={[styles.postFullCaption, { color: isDark ? '#e2e8f0' : '#1e293b' }]}
-                    numberOfLines={3}
-                  >
-                    {post.caption || 'No caption provided.'}
-                  </Text>
-
-                  {(post.thumbnail_url || post.media_url) && (
-                    <Image
-                      source={{ uri: post.thumbnail_url || post.media_url }}
-                      style={styles.postThumb}
-                      resizeMode="cover"
-                    />
-                  )}
-
-                  <View style={styles.postBottom}>
-                    <Text style={styles.postDate}>
-                      {new Date(post.posted_at || post.scheduled_for || post.created_at || Date.now()).toLocaleDateString([], {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </Text>
-                    <Ionicons name="chevron-forward" size={16} color="#64748b" />
-                  </View>
-                </Pressable>
-              ))
-            )}
-          </View>
-        )}
-
-        {/* TAB 3: CALENDAR */}
-        {activeTab === 'calendar' && (
-          <View>
-            <View style={styles.tabHeaderRow}>
-              <Text style={[styles.tabHeading, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                Scheduled Queue ({queueList.length})
-              </Text>
-              <Pressable
-                onPress={() => setShowCreateModal(true)}
-                style={styles.smallCreateBtn}
-              >
-                <Ionicons name="calendar" size={16} color="#ffffff" />
-                <Text style={styles.smallCreateBtnText}>Schedule</Text>
-              </Pressable>
-            </View>
-
-            {queueList.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Ionicons name="time-outline" size={40} color={isDark ? '#475569' : '#94a3b8'} />
-                <Text style={[styles.emptyTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                  No Pending Scheduled Posts
-                </Text>
-                <Text style={[styles.emptyDesc, { color: isDark ? '#64748b' : '#94a3b8' }]}>
-                  Schedule future posts to maintain an active multi-channel presence.
-                </Text>
-              </View>
-            ) : (
-              queueList.map((item: any) => (
-                <Pressable
-                  key={item.id}
-                  onPress={() => setSelectedPost(item)}
-                  style={[styles.fullPostCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}
-                >
-                  <View style={styles.postTop}>
-                    <View style={styles.postChannels}>
-                      {(item.selected_channels || ['social']).map((ch: string, i: number) => (
-                        <Text key={i} style={styles.chTag}>
-                          {ch}
-                        </Text>
-                      ))}
-                    </View>
-                    <View style={[styles.badge, { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}>
-                      <Text style={[styles.badgeText, { color: '#3b82f6' }]}>
-                        {item.status || 'scheduled'}
-                      </Text>
-                    </View>
-                  </View>
-                  <Text
-                    style={[styles.postFullCaption, { color: isDark ? '#e2e8f0' : '#1e293b' }]}
-                    numberOfLines={2}
-                  >
-                    {item.caption}
-                  </Text>
-                  <Text style={[styles.scheduledDateText, { color: '#ec4899' }]}>
-                    ⏰ Scheduled for: {new Date(item.scheduled_for).toLocaleString()}
-                  </Text>
-                </Pressable>
-              ))
-            )}
-          </View>
-        )}
-
-        {/* TAB 4: TRENDS */}
+        {/* TAB 2: TREND FEED */}
         {activeTab === 'trends' && (
-          <View>
-            <View style={styles.tabHeaderRow}>
-              <Text style={[styles.tabHeading, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                Viral Inspiration Feed
-              </Text>
-            </View>
+          <SocialTrendsTab
+            trendsLoading={trendsLoading}
+            trendsList={trendsList}
+            onRefreshTrends={refetchTrends}
+            onUseTrendInPost={(trend) => {
+              setInitialCaptionForCreate(trend.title || trend.caption || '');
+              setShowCreateModal(true);
+            }}
+          />
+        )}
 
-            {trendsLoading ? (
-              <SocialTrendsSkeleton />
-            ) : trendsList.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Ionicons name="flame-outline" size={40} color={isDark ? '#475569' : '#94a3b8'} />
-                <Text style={[styles.emptyTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                  Trending Feed Loading
-                </Text>
-                <Text style={[styles.emptyDesc, { color: isDark ? '#64748b' : '#94a3b8' }]}>
-                  Fetching real-time trending content across YouTube, Reddit and social feeds.
-                </Text>
-              </View>
-            ) : (
-              trendsList.map((trend: any, idx: number) => (
-                <View
-                  key={trend.id || idx}
-                  style={[styles.trendCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}
-                >
-                  <View style={styles.trendHeader}>
-                    <Text style={styles.trendSource}>
-                      {trend.source_platform || trend.platform || 'YouTube'}
-                    </Text>
-                    <Ionicons name="trending-up" size={16} color="#ec4899" />
-                  </View>
-                  <Text
-                    style={[styles.trendTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}
-                    numberOfLines={2}
-                  >
-                    {trend.title || trend.caption || 'Trending viral topic'}
-                  </Text>
-                  {trend.thumbnail_url && (
-                    <Image
-                      source={{ uri: trend.thumbnail_url }}
-                      style={styles.trendImage}
-                      resizeMode="cover"
-                    />
-                  )}
-                  {trend.metrics && (
-                    <View style={styles.trendMetricsRow}>
-                      {trend.metrics.views != null && (
-                        <Text style={styles.trendMetricText}>
-                          👁️ {Number(trend.metrics.views).toLocaleString()} Views
-                        </Text>
-                      )}
-                      {trend.metrics.likes != null && (
-                        <Text style={styles.trendMetricText}>
-                          ❤️ {Number(trend.metrics.likes).toLocaleString()} Likes
-                        </Text>
-                      )}
-                    </View>
-                  )}
-                </View>
-              ))
-            )}
-          </View>
+        {/* TAB 3: SOCIAL INBOX */}
+        {activeTab === 'inbox' && (
+          <SocialInboxTab />
+        )}
+
+        {/* TAB 4: ACTIVITY (Scheduled Queue, Instapilot, YouTube Studio, AutoDM) */}
+        {activeTab === 'activity' && (
+          <SocialActivityTab
+            queueLoading={queueLoading}
+            queueList={queueList}
+            connectedAccounts={connectedList}
+            onOpenCreateModal={() => {
+              setInitialCaptionForCreate(undefined);
+              setShowCreateModal(true);
+            }}
+            onSelectPost={setSelectedPost}
+            onCancelPost={async (postId) => {
+              await cancelPostMutation.mutateAsync(postId);
+            }}
+            onRetryPost={async (postId) => {
+              await retryPostMutation.mutateAsync(postId);
+            }}
+            instapilotConversations={instapilotConversationsData || []}
+            instapilotLoading={instapilotLoading}
+            isSyncingInstapilot={instapilotSyncMutation.isPending}
+            onSyncInstapilot={handleSyncInstapilot}
+            onSelectInstapilotConv={setSelectedInstapilotConv}
+            systemSettings={systemSettingsData}
+            systemProduct={systemProductData}
+            youtubeAccounts={youtubeAccountsData || []}
+            youtubeAccountsLoading={youtubeAccountsLoading}
+            onRefreshYoutubeAccounts={refetchYoutubeAccounts}
+          />
         )}
       </ScrollView>
 
       {/* Modals */}
       <CreatePostModal
+        key={showCreateModal ? (initialCaptionForCreate || 'modal_open') : 'modal_closed'}
         visible={showCreateModal}
         connectedAccounts={accountsData || []}
-        onClose={() => setShowCreateModal(false)}
+        initialCaption={initialCaptionForCreate}
+        onClose={() => {
+          setShowCreateModal(false);
+          setInitialCaptionForCreate(undefined);
+        }}
         onSubmit={async (payload) => {
           await createPostMutation.mutateAsync(payload);
         }}
@@ -762,16 +561,18 @@ export const SocialScreen: React.FC = () => {
         isLoading={disconnectAccountMutation.isPending}
       />
 
+      <InstapilotConversationModal
+        visible={Boolean(selectedInstapilotConv)}
+        conversation={selectedInstapilotConv}
+        onClose={() => setSelectedInstapilotConv(null)}
+      />
+
       {/* Floating Home-Style Product Bottom Navigation Bar */}
       <ProductFloatingBottomBar
         items={SOCIAL_TABS}
         activeKey={activeTab}
         onChangeTab={(key) => {
-          if (key === 'accounts') {
-            setShowAccountsModal(true);
-          } else {
-            setActiveTab(key as TabType);
-          }
+          setActiveTab(key as SocialTabType);
         }}
         accentColor="#EC4899"
         moreMenuTitle="SocialPilot Menu"
@@ -786,316 +587,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
+    paddingTop: 8,
     paddingBottom: 130,
-  },
-  tabBar: {
-    flexDirection: 'row',
-    marginHorizontal: 16,
-    marginVertical: 12,
-    backgroundColor: 'rgba(148, 163, 184, 0.1)',
-    borderRadius: 12,
-    padding: 4,
-  },
-  tabItem: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabItemActive: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  tabText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  actionBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 16,
-  },
-  actionTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  actionSub: {
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  actionBtn: {
-    backgroundColor: '#ec4899',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  actionBtnText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  metricsGrid: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 16,
-  },
-  metricCard: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-    gap: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.15)',
-  },
-  metricNum: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  metricLabel: {
-    fontSize: 11,
-    color: '#64748b',
-    fontWeight: '500',
-    letterSpacing: -0.1,
-  },
-  sectionCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.15)',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  manageLink: {
-    paddingHorizontal: 4,
-  },
-  manageLinkText: {
-    color: '#ec4899',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  channelsPillsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  platformPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  pillAvatar: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-  },
-  pillSubText: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: '#94a3b8',
-    letterSpacing: 0.5,
-  },
-  emptyInlineWrap: {
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  emptyInlineText: {
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#22c55e',
-  },
-  platformText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  recentThumb: {
-    width: 44,
-    height: 44,
-    borderRadius: 8,
-    backgroundColor: '#000',
-  },
-  postItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-  },
-  postCaption: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  postMeta: {
-    fontSize: 11,
-    color: '#64748b',
-  },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  badgeText: {
-    fontSize: 10.5,
-    fontWeight: '600',
-  },
-  tabHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  tabHeading: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  smallCreateBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#ec4899',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  smallCreateBtnText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-    gap: 8,
-  },
-  emptyTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginTop: 6,
-  },
-  emptyDesc: {
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  fullPostCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.15)',
-  },
-  postTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  postChannels: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  chTag: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#ec4899',
-  },
-  postFullCaption: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 10,
-  },
-  postThumb: {
-    height: 140,
-    borderRadius: 10,
-    marginBottom: 10,
-    backgroundColor: '#000',
-  },
-  postBottom: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  postDate: {
-    fontSize: 11,
-    color: '#64748b',
-  },
-  scheduledDateText: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginTop: 4,
-  },
-  trendCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.15)',
-  },
-  trendHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  trendSource: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#ec4899',
-  },
-  trendTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    lineHeight: 18,
-    marginBottom: 8,
-  },
-  trendImage: {
-    height: 150,
-    borderRadius: 10,
-    marginBottom: 8,
-    backgroundColor: '#000',
-  },
-  trendMetricsRow: {
-    flexDirection: 'row',
-    gap: 14,
-  },
-  trendMetricText: {
-    fontSize: 11,
-    color: '#64748b',
-    fontWeight: '600',
   },
 });
