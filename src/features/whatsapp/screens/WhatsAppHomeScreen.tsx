@@ -189,11 +189,11 @@ export const WhatsAppHomeScreen: React.FC = () => {
 
       {activeTab === 'home' && (
         <View style={styles.safeArea}>
-          {/* iOS Standard Header with Circular Back Button */}
+          {/* Standard Safe Header with Circular Back Button */}
           <View
             style={[
               styles.header,
-              { paddingTop: Platform.OS === 'ios' ? Math.max(insets.top, 44) : 8 },
+              { paddingTop: Math.max(insets.top, Platform.OS === 'ios' ? 44 : 12) },
               isDark ? styles.headerDark : styles.headerLight,
             ]}
           >
@@ -256,37 +256,47 @@ export const WhatsAppHomeScreen: React.FC = () => {
               {/* Cloud Wallet & Usage Card */}
               <UsageCard usage={usage} isConnected={isConnected} />
 
+              {/* Section Header: Overview & Capabilities */}
+              <View style={styles.sectionHeaderRow}>
+                <Text style={[styles.sectionTitle, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+                  Overview & Capabilities
+                </Text>
+              </View>
+
               {/* Metrics 2x2 Grid */}
-              <Text style={[styles.sectionTitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>Overview & Capabilities</Text>
-              <View style={styles.grid}>
-                <WhatsAppMetricCard
-                  label="Contacts"
-                  value={totalContactsCount.toLocaleString()}
-                  subtext="Synchronized audience"
-                  ioniconsName="people"
-                  iconColor="#A855F7"
-                />
-                <WhatsAppMetricCard
-                  label="Templates"
-                  value={approvedTemplatesCount}
-                  subtext="Approved by Meta"
-                  ioniconsName="document-text"
-                  iconColor="#3B82F6"
-                />
-                <WhatsAppMetricCard
-                  label="Broadcasts"
-                  value={totalBroadcastsCount}
-                  subtext="Campaigns executed"
-                  ioniconsName="megaphone"
-                  iconColor="#F43F5E"
-                />
-                <WhatsAppMetricCard
-                  label="Delivery Rate"
-                  value={deliveryRate}
-                  subtext="Cloud SLA"
-                  ioniconsName="flash"
-                  iconColor="#F59E0B"
-                />
+              <View style={styles.gridContainer}>
+                <View style={styles.gridRow}>
+                  <WhatsAppMetricCard
+                    label="Contacts"
+                    value={totalContactsCount.toLocaleString()}
+                    subtext="Synchronized audience"
+                    ioniconsName="people"
+                    iconColor="#A855F7"
+                  />
+                  <WhatsAppMetricCard
+                    label="Templates"
+                    value={approvedTemplatesCount}
+                    subtext="Approved by Meta"
+                    ioniconsName="document-text"
+                    iconColor="#3B82F6"
+                  />
+                </View>
+                <View style={styles.gridRow}>
+                  <WhatsAppMetricCard
+                    label="Broadcasts"
+                    value={totalBroadcastsCount}
+                    subtext="Campaigns executed"
+                    ioniconsName="megaphone"
+                    iconColor="#F43F5E"
+                  />
+                  <WhatsAppMetricCard
+                    label="Delivery Rate"
+                    value={deliveryRate}
+                    subtext="Cloud SLA"
+                    ioniconsName="flash"
+                    iconColor="#F59E0B"
+                  />
+                </View>
               </View>
 
               {/* Section Header: Product Navigation */}
@@ -518,19 +528,21 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   sectionHeaderRow: {
+    marginTop: 12,
     marginBottom: 8,
-    marginTop: 8,
   },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '600',
     letterSpacing: -0.2,
   },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  gridContainer: {
     gap: 10,
     marginBottom: 12,
+  },
+  gridRow: {
+    flexDirection: 'row',
+    gap: 10,
   },
   actionsList: {
     gap: 10,

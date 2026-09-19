@@ -32,6 +32,10 @@ interface ChatMessage {
   isError?: boolean;
 }
 
+import { useQuery } from '@tanstack/react-query';
+import { telegramSupabase } from '../api/telegramSupabase';
+import { useAuthStore } from '../../../core/store/authStore';
+
 interface ChatUser {
   id: string;
   name: string;
@@ -40,7 +44,8 @@ interface ChatUser {
 }
 
 export const ChatBotScreen: React.FC<Props> = () => {
-  const isDark = useColorScheme() === 'dark';
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const card = isDark ? styles.cardDark : styles.cardLight;
   const txt = isDark ? styles.textDark : styles.textLight;
@@ -53,52 +58,29 @@ export const ChatBotScreen: React.FC<Props> = () => {
   const [isChatsDrawerOpen, setIsChatsDrawerOpen] = useState(false);
   const [isApiKeyVisible, setIsApiKeyVisible] = useState(false);
 
-  // Config Form State (Screenshot 1)
-  const [supportBotName, setSupportBotName] = useState('Metabull Universe');
-  const [botUsername, setBotUsername] = useState('@MBUsalesbot');
-  const [systemPrompt, setSystemPrompt] = useState(
-    'You are a MetaBull Universe sales consultant on WhatsApp/Telegram.\n\nPRIMARY GOAL:\nNeed → quick qualification → genuine interest → Name → WhatsApp Number → team handoff.'
-  );
+  // Config Form State
+  const [supportBotName, setSupportBotName] = useState('');
+  const [botUsername, setBotUsername] = useState('');
+  const [systemPrompt, setSystemPrompt] = useState('');
   const [knowledgeTab, setKnowledgeTab] = useState<'text' | 'images'>('text');
-  const [knowledgeBaseText, setKnowledgeBaseText] = useState(
-    '### RUNTIME RESPONSE EXECUTION RULES\n\n* Always start with a friendly greeting.\n* Use emojis to match emotion and context.\n* Space out information with lists or bullets.\n* Keep messages concise and visually appealing.\n* Reflect real human typing styles.\n\n...'
-  );
-  const [pdfDocuments, setPdfDocuments] = useState<{ id: string; name: string; status: string }[]>([
-    { id: 'pdf-1', name: 'Business/Channel Info', status: 'TRAINED' },
-  ]);
-  const [apiKey, setApiKey] = useState('sk-proj-9481948194819481948194819481');
+  const [knowledgeBaseText, setKnowledgeBaseText] = useState('');
+  const [pdfDocuments, setPdfDocuments] = useState<{ id: string; name: string; status: string }[]>([]);
+  const [apiKey, setApiKey] = useState('');
+
+  // Fetch real data
+  const { data: allData, isLoading } = useQuery({
+    queryKey: ['telegram_all_data'],
+    queryFn: telegramSupabase.getSummary,
+  });
+  const bots = allData?.loadedChatbots || [];
 
   // Live Chat Reviewer State (Screenshot 2)
-  const [chatUsers, setChatUsers] = useState<ChatUser[]>([
-    { id: 'u1', name: 'Shwet', telegramUserId: '2093321330' },
-    { id: 'u2', name: 'Godfather 📌', telegramUserId: '2067422183' },
-    { id: 'u3', name: 'Ritesh Bhagwat', telegramUserId: '6141059281' },
-    { id: 'u4', name: 'ID: 372239670', telegramUserId: '372239670' },
-    { id: 'u5', name: 'MetaBull Universe', telegramUserId: '1373898411' },
-  ]);
-  const [activeUser, setActiveUser] = useState<ChatUser>(chatUsers[0]);
+  const [chatUsers, setChatUsers] = useState<ChatUser[]>([]);
+  const [activeUser, setActiveUser] = useState<ChatUser | null>(null);
+  const [chatMessages, setChatMessages] = useState<Record<string, ChatMessage[]>>({});
 
-  const [chatMessages, setChatMessages] = useState<Record<string, ChatMessage[]>>({
-    '2093321330': [
-      { id: 'm1', sender: 'user', text: 'Hi', time: '10:51 AM' },
-      { id: 'm2', sender: 'bot', text: 'Hey there! 😊 How can I assist you today?', time: '10:51 AM' },
-      { id: 'm3', sender: 'user', text: 'hi', time: '11:10 AM' },
-      { id: 'm4', sender: 'bot', text: 'Hello! How can I help you today? 😊', time: '11:10 AM' },
-      { id: 'm5', sender: 'user', text: 'Can you give me the list of your services', time: '04:40 PM' },
-      {
-        id: 'm6',
-        sender: 'system',
-        text: '⚠️ Setup Error: The provided LLM API key is invalid or has expired. Please update it in the dashboard dashboard.',
-        time: '04:40 PM',
-        isError: true,
-      },
-      { id: 'm7', sender: 'user', text: 'Hi', time: '04:45 PM' },
-      { id: 'm8', sender: 'bot', text: 'Hey there! 😊 How can I assist you today?', time: '04:45 PM' },
-      { id: 'm9', sender: 'user', text: 'Tum kya kya karte ho', time: '04:46 PM' },
-    ],
-  });
-
-  // Query live chat messages from Supabase if available
+  // When opening a bot's chats, we might want to fetch its specific messages
+  // For now, we will fetch global bot messages or just leave it empty if no messages are found
   useEffect(() => {
     const fetchLiveChatData = async () => {
       try {
@@ -139,7 +121,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
           }
         }
       } catch (err) {
-        // Fallback to default state
+        // Ignored
       }
     };
     fetchLiveChatData();
@@ -156,6 +138,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
   };
 
   const handleCopyChat = async () => {
+    if (!activeUser) return;
     const messages = chatMessages[activeUser.telegramUserId] || [];
     const formatted = messages
       .map((m) => `[${m.time}] ${m.sender === 'user' ? activeUser.name : 'Bot'}: ${m.text}`)
@@ -166,6 +149,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
   };
 
   const handleResetChat = () => {
+    if (!activeUser) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setChatMessages((prev) => ({
       ...prev,
@@ -202,132 +186,163 @@ export const ChatBotScreen: React.FC<Props> = () => {
         </Pressable>
       </View>
 
-      {/* Bot Card (Screenshot 3) */}
-      <View style={[styles.botCard, card]}>
-        {/* Bot Card Header */}
-        <View style={styles.botCardHeader}>
-          <View style={styles.botIconWrapper}>
-            <Ionicons name="hardware-chip" size={24} color="#0284C7" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.botName, txt]}>{supportBotName}</Text>
-            <Text style={styles.botUsername}>{botUsername}</Text>
-          </View>
+      {/* Bot Cards list from Supabase */}
+      {isLoading ? (
+        <View style={{ padding: 20, alignItems: 'center' }}>
+          <ActivityIndicator size="small" color="#0284C7" />
         </View>
-
-        {/* Specs Table */}
-        <View style={[styles.specsTable, isDark ? styles.specsTableDark : styles.specsTableLight]}>
-          <View style={styles.specRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-              <Ionicons name="person-circle-outline" size={14} color="#64748B" />
-              <Text style={styles.specLabel}>Support Name</Text>
-            </View>
-            <Text style={[styles.specValue, txt]}>{supportBotName}</Text>
-          </View>
-
-          <View style={styles.specRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-              <Ionicons name="settings-outline" size={14} color="#64748B" />
-              <Text style={styles.specLabel}>Model API</Text>
-            </View>
-            <Text style={[styles.specValue, txt]}>OpenAI</Text>
-          </View>
-
-          <View style={[styles.specRow, { borderBottomWidth: 0 }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-              <Ionicons name="document-text-outline" size={14} color="#64748B" />
-              <Text style={styles.specLabel}>Knowledge Base</Text>
-            </View>
-            <Text style={[styles.specValueLink, { color: '#0284C7' }]}>Multimedia Kn...</Text>
-          </View>
-        </View>
-
-        {/* Status and Action Buttons */}
-        <View style={styles.cardActionsRow}>
-          <View style={styles.listeningBadge}>
-            <View style={styles.dotGreen} />
-            <Text style={styles.listeningText}>
-              {isBotListening ? 'LISTENING' : 'PAUSED'}
-            </Text>
-          </View>
-
-          <Pressable style={styles.openLinkBtn} onPress={handleOpenBotLink}>
-            <Text style={styles.openLinkText}>Open Bot Link</Text>
-            <Ionicons name="open-outline" size={13} color="#0284C7" />
-          </Pressable>
-        </View>
-
-        {/* Chats & Reset Buttons */}
-        <View style={styles.mainActionsRow}>
+      ) : bots.length === 0 ? (
+        <View style={{ padding: 24, alignItems: 'center', backgroundColor: isDark ? '#1E2430' : '#F8FAFC', borderRadius: 16, borderWidth: 1, borderColor: border.borderColor }}>
+          <Ionicons name="chatbubbles-outline" size={32} color="#0284C7" style={{ marginBottom: 10 }} />
+          <Text style={[styles.mainTitle, txt, { fontSize: 18, marginBottom: 6 }]}>No ChatBots Connected</Text>
+          <Text style={[styles.mainSub, { textAlign: 'center', marginBottom: 16 }]}>Connect an AI assistant to handle your Telegram bot's user queries automatically.</Text>
           <Pressable
-            style={styles.chatsBtn}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setIsChatsDrawerOpen(true);
-            }}
-          >
-            <Ionicons name="chatbubbles" size={15} color="#0284C7" />
-            <Text style={styles.chatsBtnText}>Chats</Text>
-          </Pressable>
-
-          <Pressable
-            style={styles.resetHistoryBtn}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              Alert.alert('Reset History', 'Are you sure you want to clear the full chat history?', [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Reset',
-                  style: 'destructive',
-                  onPress: () => {
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    Alert.alert('History Cleared', 'Bot conversation history has been reset.');
-                  },
-                },
-              ]);
-            }}
-          >
-            <Ionicons name="refresh" size={15} color="#D97706" />
-            <Text style={styles.resetHistoryText}>Reset History</Text>
-          </Pressable>
-        </View>
-
-        {/* Footer Actions: Edit | Pause | Delete */}
-        <View style={styles.cardFooterRow}>
-          <Pressable
-            style={[styles.footerBtn, isDark ? styles.footerBtnDark : styles.footerBtnLight]}
+            style={styles.connectBotBtn}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setIsConfigModalOpen(true);
             }}
           >
-            <Text style={[styles.footerBtnText, txt]}>Edit</Text>
-          </Pressable>
-
-          <Pressable
-            style={[styles.footerBtn, isDark ? styles.footerBtnDark : styles.footerBtnLight]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setIsBotListening((prev) => !prev);
-            }}
-          >
-            <Text style={[styles.footerBtnText, txt]}>{isBotListening ? 'Pause' : 'Resume'}</Text>
-          </Pressable>
-
-          <Pressable
-            style={[styles.footerBtn, isDark ? styles.footerBtnDark : styles.footerBtnLight]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              Alert.alert('Delete Bot', 'Are you sure you want to remove this bot?', [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Delete', style: 'destructive' },
-              ]);
-            }}
-          >
-            <Text style={[styles.footerBtnText, { color: '#EF4444' }]}>Delete</Text>
+            <Ionicons name="add" size={16} color="#FFFFFF" />
+            <Text style={styles.connectBotBtnText}>Connect a Bot</Text>
           </Pressable>
         </View>
-      </View>
+      ) : (
+        bots.map((bot: any) => (
+          <View key={bot.id} style={[styles.botCard, card]}>
+            {/* Bot Card Header */}
+            <View style={styles.botCardHeader}>
+              <View style={styles.botIconWrapper}>
+                <Ionicons name="hardware-chip" size={24} color="#0284C7" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.botName, txt]}>{bot.support_name || bot.bot_name}</Text>
+                <Text style={styles.botUsername}>@{bot.bot_username || 'unknown_bot'}</Text>
+              </View>
+            </View>
+
+            {/* Specs Table */}
+            <View style={[styles.specsTable, isDark ? styles.specsTableDark : styles.specsTableLight]}>
+              <View style={styles.specRow}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                  <Ionicons name="person-circle-outline" size={14} color="#64748B" />
+                  <Text style={styles.specLabel}>Support Name</Text>
+                </View>
+                <Text style={[styles.specValue, txt]}>{bot.support_name || 'Support'}</Text>
+              </View>
+
+              <View style={styles.specRow}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                  <Ionicons name="settings-outline" size={14} color="#64748B" />
+                  <Text style={styles.specLabel}>Model API</Text>
+                </View>
+                <Text style={[styles.specValue, txt]}>{bot.provider || 'OpenAI'}</Text>
+              </View>
+
+              <View style={[styles.specRow, { borderBottomWidth: 0 }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                  <Ionicons name="document-text-outline" size={14} color="#64748B" />
+                  <Text style={styles.specLabel}>Knowledge Base</Text>
+                </View>
+                <Text style={[styles.specValueLink, { color: '#0284C7' }]}>{bot.knowledge_base_name || 'General KB'}</Text>
+              </View>
+            </View>
+
+            {/* Status and Action Buttons */}
+            <View style={styles.cardActionsRow}>
+              <View style={styles.listeningBadge}>
+                <View style={styles.dotGreen} />
+                <Text style={styles.listeningText}>
+                  {bot.status === 'active' ? 'LISTENING' : 'PAUSED'}
+                </Text>
+              </View>
+
+              <Pressable style={styles.openLinkBtn} onPress={() => {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                Linking.openURL(`https://t.me/${bot.bot_username || ''}`);
+              }}>
+                <Text style={styles.openLinkText}>Open Bot Link</Text>
+                <Ionicons name="open-outline" size={13} color="#0284C7" />
+              </Pressable>
+            </View>
+
+            {/* Chats & Reset Buttons */}
+            <View style={styles.mainActionsRow}>
+              <Pressable
+                style={styles.chatsBtn}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setIsChatsDrawerOpen(true);
+                }}
+              >
+                <Ionicons name="chatbubbles" size={15} color="#0284C7" />
+                <Text style={styles.chatsBtnText}>Chats</Text>
+              </Pressable>
+
+              <Pressable
+                style={styles.resetHistoryBtn}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  Alert.alert('Reset History', 'Are you sure you want to clear the full chat history?', [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Reset',
+                      style: 'destructive',
+                      onPress: () => {
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        Alert.alert('History Cleared', 'Bot conversation history has been reset.');
+                      },
+                    },
+                  ]);
+                }}
+              >
+                <Ionicons name="refresh" size={15} color="#D97706" />
+                <Text style={styles.resetHistoryText}>Reset History</Text>
+              </Pressable>
+            </View>
+
+            {/* Footer Actions: Edit | Pause | Delete */}
+            <View style={styles.cardFooterRow}>
+              <Pressable
+                style={[styles.footerBtn, isDark ? styles.footerBtnDark : styles.footerBtnLight]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setSupportBotName(bot.support_name || '');
+                  setBotUsername(`@${bot.bot_username || ''}`);
+                  setSystemPrompt(bot.business_info || '');
+                  setApiKey(bot.api_key || '');
+                  setIsConfigModalOpen(true);
+                }}
+              >
+                <Text style={[styles.footerBtnText, txt]}>Edit</Text>
+              </Pressable>
+
+              <Pressable
+                style={[styles.footerBtn, isDark ? styles.footerBtnDark : styles.footerBtnLight]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  Alert.alert('Status Update', 'Bot paused/resumed.');
+                }}
+              >
+                <Text style={[styles.footerBtnText, txt]}>{bot.status === 'active' ? 'Pause' : 'Resume'}</Text>
+              </Pressable>
+
+              <Pressable
+                style={[styles.footerBtn, isDark ? styles.footerBtnDark : styles.footerBtnLight]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  Alert.alert('Delete Bot', 'Are you sure you want to remove this bot?', [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Delete', style: 'destructive' },
+                  ]);
+                }}
+              >
+                <Text style={[styles.footerBtnText, { color: '#EF4444' }]}>Delete</Text>
+              </Pressable>
+            </View>
+          </View>
+        ))
+      )}
 
       {/* ────────────────────────────────────────────────────────────────────────
           MODAL 1: LIVE CHAT REVIEWER DRAWER (Screenshot 2)
@@ -360,7 +375,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
             <Text style={styles.activeUsersLabel}>ACTIVE USERS ({chatUsers.length})</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
               {chatUsers.map((u) => {
-                const isSelected = activeUser.telegramUserId === u.telegramUserId;
+                const isSelected = activeUser?.telegramUserId === u.telegramUserId;
                 return (
                   <Pressable
                     key={u.id}
@@ -375,10 +390,10 @@ export const ChatBotScreen: React.FC<Props> = () => {
                     }}
                   >
                     <View style={styles.userAvatarMini}>
-                      <Text style={styles.userAvatarText}>{u.name.charAt(0).toUpperCase()}</Text>
+                      <Text style={styles.userAvatarText}>{(u.name || 'User').charAt(0).toUpperCase()}</Text>
                     </View>
                     <View>
-                      <Text style={[styles.userPillName, txt, isSelected && { color: '#0284C7' }]}>{u.name}</Text>
+                      <Text style={[styles.userPillName, txt, isSelected && { color: '#0284C7' }]}>{u.name || 'User'}</Text>
                       <Text style={styles.userPillId}>ID: {u.telegramUserId}</Text>
                     </View>
                   </Pressable>
@@ -390,8 +405,8 @@ export const ChatBotScreen: React.FC<Props> = () => {
           {/* Chat Messages Area */}
           <View style={styles.chatHeader}>
             <View>
-              <Text style={[styles.chatTargetName, txt]}>{activeUser.name}</Text>
-              <Text style={styles.chatTargetId}>User ID: {activeUser.telegramUserId}</Text>
+              <Text style={[styles.chatTargetName, txt]}>{activeUser?.name || 'Loading...'}</Text>
+              <Text style={styles.chatTargetId}>User ID: {activeUser?.telegramUserId || '---'}</Text>
             </View>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <Pressable style={styles.chatActionBtn} onPress={handleCopyChat}>
@@ -406,7 +421,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
           </View>
 
           <ScrollView style={styles.chatStream} contentContainerStyle={{ padding: 16, gap: 12 }}>
-            {(chatMessages[activeUser.telegramUserId] || []).map((msg) => {
+            {activeUser ? (chatMessages[activeUser.telegramUserId] || []).map((msg) => {
               if (msg.isError) {
                 return (
                   <View key={msg.id} style={styles.errorBubble}>
@@ -441,7 +456,11 @@ export const ChatBotScreen: React.FC<Props> = () => {
                   </View>
                 </View>
               );
-            })}
+            }) : (
+              <View style={{ alignItems: 'center', padding: 20 }}>
+                <Text style={styles.modalHeaderSub}>No active users found.</Text>
+              </View>
+            )}
           </ScrollView>
 
           {/* Prompt Refine Training Banner */}

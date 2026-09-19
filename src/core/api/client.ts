@@ -126,7 +126,7 @@ class ApiClient {
 
       return await response.json();
     } catch (error: any) {
-      if (__DEV__ && !error?.message?.includes('Not authenticated')) {
+      if (__DEV__ && !error?.message?.includes('Not authenticated') && !endpoint.includes('heartbeat')) {
         console.warn(`[ApiClient] Request to ${endpoint} failed:`, error?.message);
       }
       throw error;
