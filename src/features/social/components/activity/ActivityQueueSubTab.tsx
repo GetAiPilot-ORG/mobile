@@ -14,6 +14,7 @@ import {
   useColorScheme,
 } from 'react-native';
 import { getChannelMeta, getStatusMeta } from './socialActivityHelpers';
+import { openSocialHandoff } from '../../utils/socialHandoff';
 
 export interface ActivityQueueSubTabProps {
   queueLoading: boolean;
@@ -68,7 +69,7 @@ export const ActivityQueueSubTab: React.FC<ActivityQueueSubTabProps> = ({
             Pending publications automatically firing across channels
           </Text>
         </View>
-        <Pressable onPress={() => Alert.alert('Schedule', 'This feature will be available soon')} style={styles.primaryActionBtn}>
+        <Pressable onPress={() => openSocialHandoff('schedule')} style={styles.primaryActionBtn}>
           <Ionicons name="calendar-outline" size={14} color="#ffffff" />
           <Text style={styles.primaryActionBtnText}>Schedule</Text>
         </Pressable>
@@ -169,7 +170,7 @@ export const ActivityQueueSubTab: React.FC<ActivityQueueSubTabProps> = ({
               <Text style={styles.emptyActionBtnText}>Show All Posts</Text>
             </Pressable>
           ) : (
-            <Pressable onPress={() => Alert.alert("Schedule", "This feature will be available soon")} style={styles.emptyActionBtn}>
+            <Pressable onPress={() => openSocialHandoff('schedule')} style={styles.emptyActionBtn}>
               <Text style={styles.emptyActionBtnText}>Schedule a Post</Text>
             </Pressable>
           )}

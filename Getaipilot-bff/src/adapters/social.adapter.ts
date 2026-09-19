@@ -59,7 +59,8 @@ export class SocialAdapter {
   private static socialSupabase: SupabaseClient | null = env.SOCIAL_SUPABASE_SERVICE_ROLE_KEY
     ? createClient(env.SOCIAL_SUPABASE_URL, env.SOCIAL_SUPABASE_SERVICE_ROLE_KEY as string)
     : null;
-  private static tokenCache = new Map<string, { token: string; expiresAt: number }>();
+  private static tokenCache = new Map<string, { token: string; refreshToken?: string; expiresAt: number }>();
+  private static activeTokenResolutions = new Map<string, Promise<string | null>>();
 
   /**
    * Reads JWT exp claim and returns expiration in milliseconds
@@ -90,26 +91,51 @@ export class SocialAdapter {
   }
 
   /**
+   * Validates that a JWT was genuinely issued by the SocialPilot Supabase instance
+   * (https://oqaysrnncwbtrujnxsdo.supabase.co/auth/v1) and has not expired.
+   */
+  public static isSocialSupabaseToken(token?: string | null): boolean {
+    if (!token || typeof token !== 'string') return false;
+    try {
+      const parts = token.split('.');
+      if (parts.length >= 2) {
+        const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+        const isSocialIss =
+          (typeof payload.iss === 'string' && payload.iss.includes('oqaysrnncwbtrujnxsdo')) ||
+          (typeof payload.ref === 'string' && payload.ref.includes('oqaysrnncwbtrujnxsdo'));
+        const isNotExpired = typeof payload.exp === 'number' ? payload.exp * 1000 > Date.now() + 60_000 : true;
+        return Boolean(isSocialIss && isNotExpired);
+      }
+    } catch {
+      return false;
+    }
+    return false;
+  }
+
+  /**
    * Allows dynamic invalidation of cached SocialPilot token
    */
   public static invalidateToken(emailOrUserId?: string): void {
     if (emailOrUserId) {
       this.tokenCache.delete(emailOrUserId);
+      this.activeTokenResolutions.delete(emailOrUserId);
     } else {
       this.tokenCache.clear();
+      this.activeTokenResolutions.clear();
     }
   }
 
   /**
    * Sets a dynamic token directly into cache
    */
-  public static setDynamicToken(emailOrUserId: string, token: string): void {
+  public static setDynamicToken(emailOrUserId: string, token: string, refreshToken?: string): void {
     const expiresAt = this.getJwtExpiryMs(token);
-    this.tokenCache.set(emailOrUserId, { token, expiresAt });
+    this.tokenCache.set(emailOrUserId, { token, refreshToken, expiresAt });
   }
 
   /**
-   * Generates or retrieves a valid access token dynamically for the live SocialPilot backend
+   * Generates or retrieves a valid access token dynamically for the live SocialPilot backend.
+   * Utilizes a single-flight mutex to prevent concurrent token refresh race conditions.
    */
   private static async getSocialSupabaseToken(
     email?: string,
@@ -121,132 +147,165 @@ export class SocialAdapter {
     const cacheKey = email || userId || '';
     if (!forceFresh) {
       const cached = this.tokenCache.get(cacheKey);
-      if (cached && this.isJwtValidAndNotExpired(cached.token)) {
+      if (cached && this.isSocialSupabaseToken(cached.token)) {
         return cached.token;
       }
     }
 
-    try {
-      let targetEmail = email;
-      if (!targetEmail && userId) {
-        const { data: p } = await this.hubAdmin
-          .from('profiles')
-          .select('email')
-          .eq('id', userId)
-          .maybeSingle();
-        targetEmail = p?.email;
+    // Coalesce concurrent requests into a single in-flight resolution promise
+    if (this.activeTokenResolutions.has(cacheKey)) {
+      console.log('[SOCIAL ADAPTER] Joining in-flight SocialPilot token resolution for', cacheKey);
+      return this.activeTokenResolutions.get(cacheKey)!;
+    }
 
-        if (!targetEmail) {
-          const { data: userRes } = await this.hubAdmin.auth.admin.getUserById(userId);
-          targetEmail = userRes?.user?.email;
+    const resolutionPromise = (async (): Promise<string | null> => {
+      try {
+        let targetEmail = email;
+        if (!targetEmail && userId) {
+          const { data: p } = await this.hubAdmin
+            .from('profiles')
+            .select('email')
+            .eq('id', userId)
+            .maybeSingle();
+          targetEmail = p?.email;
+
+          if (!targetEmail) {
+            const { data: userRes } = await this.hubAdmin.auth.admin.getUserById(userId);
+            targetEmail = userRes?.user?.email;
+          }
         }
-      }
 
-      if (!targetEmail) return null;
+        if (!targetEmail) return null;
 
-      // 1. Direct SocialPilot Supabase admin resolution if service role key configured
-      if (this.socialSupabase) {
-        const { data: linkData, error: linkErr } = await this.socialSupabase.auth.admin.generateLink({
+        // 1. Direct SocialPilot Supabase admin resolution if service role key configured
+        if (this.socialSupabase) {
+          const { data: linkData, error: linkErr } = await this.socialSupabase.auth.admin.generateLink({
+            type: 'magiclink',
+            email: targetEmail,
+          });
+
+          let socialHash =
+            (linkData as any)?.properties?.hashed_token ||
+            (linkData as any)?.hashed_token;
+
+          if (!socialHash && ((linkData as any)?.properties?.action_link || (linkData as any)?.action_link)) {
+            try {
+              const u = new URL((linkData as any)?.properties?.action_link || (linkData as any)?.action_link);
+              socialHash = u.searchParams.get('token');
+            } catch {}
+          }
+
+          if (!linkErr && socialHash) {
+            const { data: sessionData, error: sessionErr } = await this.socialSupabase.auth.verifyOtp({
+              token_hash: socialHash,
+              type: 'email',
+            });
+
+            if (!sessionErr && sessionData?.session?.access_token) {
+              const token = sessionData.session.access_token;
+              const refreshToken = sessionData.session.refresh_token;
+              const expiresAt = this.getJwtExpiryMs(token);
+              this.tokenCache.set(cacheKey, { token, refreshToken, expiresAt });
+              return token;
+            }
+          }
+        }
+
+        // 2. Hub SSO Bridge exchange flow with api.getaipilot.in
+        const { data: hubLinkData, error: hubLinkErr } = await this.hubAdmin.auth.admin.generateLink({
           type: 'magiclink',
           email: targetEmail,
         });
 
-        if (!linkErr && (linkData as any)?.properties?.hashed_token) {
-          const { data: sessionData, error: sessionErr } = await this.socialSupabase.auth.verifyOtp({
-            token_hash: (linkData as any).properties.hashed_token,
-            type: 'email',
+        let hubTokenHash =
+          hubLinkData?.properties?.hashed_token ||
+          (hubLinkData as any)?.hashed_token;
+
+        if (!hubTokenHash && (hubLinkData?.properties?.action_link || (hubLinkData as any)?.action_link)) {
+          try {
+            const u = new URL(hubLinkData?.properties?.action_link || (hubLinkData as any)?.action_link);
+            hubTokenHash = u.searchParams.get('token');
+          } catch {}
+        }
+
+        if (!hubLinkErr && hubTokenHash) {
+          const hubVerifyRes = await fetch(`${env.SUPABASE_URL}/auth/v1/verify`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              apikey: env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify({
+              type: 'magiclink',
+              token_hash: hubTokenHash,
+            }),
           });
 
-          if (!sessionErr && sessionData?.session?.access_token) {
-            const token = sessionData.session.access_token;
-            const expiresAt = this.getJwtExpiryMs(token);
-            this.tokenCache.set(cacheKey, { token, expiresAt });
-            return token;
-          }
-        }
-      }
+          if (hubVerifyRes.ok) {
+            const hubSession: any = await hubVerifyRes.json();
+            const hubUserToken = hubSession?.access_token;
 
-      // 2. Hub SSO Bridge exchange flow with api.getaipilot.in
-      const { data: hubLinkData, error: hubLinkErr } = await this.hubAdmin.auth.admin.generateLink({
-        type: 'magiclink',
-        email: targetEmail,
-      });
+            if (hubUserToken) {
+              const ssoEdgeRes = await fetch(`${env.SUPABASE_URL}/functions/v1/social-sso`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${hubUserToken}`,
+                },
+                body: JSON.stringify({ dmpilot_url: 'https://social.getaipilot.in' }),
+              });
 
-      if (!hubLinkErr && hubLinkData?.properties?.hashed_token) {
-        const hubVerifyRes = await fetch(`${env.SUPABASE_URL}/auth/v1/verify`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify({
-            type: 'magiclink',
-            token_hash: hubLinkData.properties.hashed_token,
-          }),
-        });
+              if (ssoEdgeRes.ok) {
+                const ssoEdgeData: any = await ssoEdgeRes.json();
+                if (ssoEdgeData?.launch_url) {
+                  const launchUrl = new URL(ssoEdgeData.launch_url);
+                  const ssoJwt = launchUrl.searchParams.get('token');
 
-        if (hubVerifyRes.ok) {
-          const hubSession: any = await hubVerifyRes.json();
-          const hubUserToken = hubSession?.access_token;
+                  if (ssoJwt) {
+                    const exchangeRes = await fetch(`${this.baseUrl}/api/auth/sso`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ token: ssoJwt }),
+                    });
 
-          if (hubUserToken) {
-            const ssoEdgeRes = await fetch(`${env.SUPABASE_URL}/functions/v1/social-sso`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${hubUserToken}`,
-              },
-              body: JSON.stringify({ dmpilot_url: 'https://social.getaipilot.in' }),
-            });
+                    if (exchangeRes.ok) {
+                      const exchangeData: any = await exchangeRes.json();
+                      if (exchangeData?.magic_link_url) {
+                        const magicUrl = new URL(exchangeData.magic_link_url);
+                        const socialTokenHash = magicUrl.searchParams.get('token');
+                        if (socialTokenHash) {
+                          const socialOtpType = magicUrl.searchParams.get('type') || 'magiclink';
+                          const socialApiKey = env.SOCIAL_SUPABASE_ANON_KEY || env.SOCIAL_SUPABASE_SERVICE_ROLE_KEY || '';
+                          if (!socialApiKey) {
+                            console.warn('[SOCIAL ADAPTER] Warning: Neither SOCIAL_SUPABASE_ANON_KEY nor SOCIAL_SUPABASE_SERVICE_ROLE_KEY is set in .env');
+                          }
 
-            if (ssoEdgeRes.ok) {
-              const ssoEdgeData: any = await ssoEdgeRes.json();
-              if (ssoEdgeData?.launch_url) {
-                const launchUrl = new URL(ssoEdgeData.launch_url);
-                const ssoJwt = launchUrl.searchParams.get('token');
+                          const socialVerifyRes = await fetch(`${env.SOCIAL_SUPABASE_URL}/auth/v1/verify`, {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              apikey: socialApiKey,
+                            },
+                            body: JSON.stringify({
+                              type: socialOtpType,
+                              token_hash: socialTokenHash,
+                            }),
+                          });
 
-                if (ssoJwt) {
-                  const exchangeRes = await fetch(`${this.baseUrl}/api/auth/sso`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: ssoJwt }),
-                  });
-
-                  if (exchangeRes.ok) {
-                    const exchangeData: any = await exchangeRes.json();
-                    if (exchangeData?.magic_link_url) {
-                      const magicUrl = new URL(exchangeData.magic_link_url);
-                      const socialTokenHash = magicUrl.searchParams.get('token');
-                      if (socialTokenHash) {
-                        const socialOtpType = magicUrl.searchParams.get('type') || 'signup';
-                        const socialApiKey = env.SOCIAL_SUPABASE_ANON_KEY || env.SOCIAL_SUPABASE_SERVICE_ROLE_KEY || '';
-                        if (!socialApiKey) {
-                          console.warn('[SOCIAL ADAPTER] Warning: Neither SOCIAL_SUPABASE_ANON_KEY nor SOCIAL_SUPABASE_SERVICE_ROLE_KEY is set in .env');
-                        }
-
-                        const socialVerifyRes = await fetch(`${env.SOCIAL_SUPABASE_URL}/auth/v1/verify`, {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json',
-                            apikey: socialApiKey,
-                          },
-                          body: JSON.stringify({
-                            type: socialOtpType,
-                            token_hash: socialTokenHash,
-                          }),
-                        });
-
-                        if (socialVerifyRes.ok) {
-                          const socialSession: any = await socialVerifyRes.json();
-                          const socialAccessToken = socialSession?.access_token;
-                          if (socialAccessToken) {
-                            const expiresAt = this.getJwtExpiryMs(socialAccessToken);
-                            this.tokenCache.set(cacheKey, {
-                              token: socialAccessToken,
-                              expiresAt,
-                            });
-                            console.log('[SOCIAL ADAPTER] Issued & dynamically cached live SocialPilot token for', targetEmail);
-                            return socialAccessToken;
+                          if (socialVerifyRes.ok) {
+                            const socialSession: any = await socialVerifyRes.json();
+                            const socialAccessToken = socialSession?.access_token;
+                            const socialRefreshToken = socialSession?.refresh_token;
+                            if (socialAccessToken) {
+                              const expiresAt = this.getJwtExpiryMs(socialAccessToken);
+                              this.tokenCache.set(cacheKey, {
+                                token: socialAccessToken,
+                                refreshToken: socialRefreshToken,
+                                expiresAt,
+                              });
+                              console.log('[SOCIAL ADAPTER] Issued & dynamically cached live SocialPilot token for', targetEmail);
+                              return socialAccessToken;
+                            }
                           }
                         }
                       }
@@ -257,16 +316,131 @@ export class SocialAdapter {
             }
           }
         }
+      } catch (err: any) {
+        console.warn('[SOCIAL ADAPTER] Error obtaining SocialPilot Supabase token:', err.message);
+      } finally {
+        this.activeTokenResolutions.delete(cacheKey);
       }
-    } catch (err: any) {
-      console.warn('[SOCIAL ADAPTER] Error obtaining SocialPilot Supabase token:', err.message);
-    }
 
-    return null;
+      return null;
+    })();
+
+    this.activeTokenResolutions.set(cacheKey, resolutionPromise);
+    return await resolutionPromise;
   }
 
   /**
-   * Centralized HTTP requester to the real upstream SocialPilot backend
+   * Returns a fully authenticated SSO Web URL for SocialPilot
+   * Targets supported:
+   * - 'new-post' | '/dashboard' -> https://social.getaipilot.in/dashboard
+   * - 'schedule' | '/dashboard/queue' -> https://social.getaipilot.in/dashboard/queue
+   * - 'builder' | '/dashboard/instapilot?mode=builder' -> https://social.getaipilot.in/dashboard/instapilot?mode=builder
+   * - 'upload-short' | 'compose' | '/dashboard/compose' -> https://social.getaipilot.in/dashboard/compose
+   * - 'new-automation' | '/dashboard/auto-dm/automations/new' -> https://social.getaipilot.in/dashboard/auto-dm/automations/new
+   */
+  public static async getSocialHandoffUrl(
+    user: JWTPayload,
+    target: string = 'new-post'
+  ): Promise<string> {
+    const SOCIAL_BASE = 'https://social.getaipilot.in';
+
+    let path = '/dashboard';
+    switch (target) {
+      case 'new-post':
+      case '/dashboard':
+        path = '/dashboard';
+        break;
+      case 'schedule':
+      case 'queue':
+      case '/dashboard/queue':
+        path = '/dashboard/queue';
+        break;
+      case 'builder':
+      case 'instapilot':
+      case '/dashboard/instapilot?mode=builder':
+        path = '/dashboard/instapilot?mode=builder';
+        break;
+      case 'upload-short':
+      case 'compose':
+      case '/dashboard/compose':
+        path = '/dashboard/compose';
+        break;
+      case 'new-automation':
+      case 'automation':
+      case '/dashboard/auto-dm/automations/new':
+        path = '/dashboard/auto-dm/automations/new';
+        break;
+      default:
+        path = target.startsWith('/') ? target : `/${target}`;
+    }
+
+    try {
+      const email = user.email;
+      if (email) {
+        const { data: hubLinkData, error: hubLinkErr } = await this.hubAdmin.auth.admin.generateLink({
+          type: 'magiclink',
+          email,
+        });
+
+        let hubTokenHash =
+          hubLinkData?.properties?.hashed_token ||
+          (hubLinkData as any)?.hashed_token;
+
+        if (!hubTokenHash && (hubLinkData?.properties?.action_link || (hubLinkData as any)?.action_link)) {
+          try {
+            const u = new URL(hubLinkData?.properties?.action_link || (hubLinkData as any)?.action_link);
+            hubTokenHash = u.searchParams.get('token');
+          } catch {}
+        }
+
+        if (!hubLinkErr && hubTokenHash) {
+          const hubVerifyRes = await fetch(`${env.SUPABASE_URL}/auth/v1/verify`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              apikey: env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify({
+              type: 'magiclink',
+              token_hash: hubTokenHash,
+            }),
+          });
+
+          if (hubVerifyRes.ok) {
+            const hubSession: any = await hubVerifyRes.json();
+            const hubUserToken = hubSession?.access_token;
+
+            if (hubUserToken) {
+              const ssoEdgeRes = await fetch(`${env.SUPABASE_URL}/functions/v1/social-sso`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${hubUserToken}`,
+                },
+                body: JSON.stringify({ dmpilot_url: `${SOCIAL_BASE}${path}` }),
+              });
+
+              if (ssoEdgeRes.ok) {
+                const ssoEdgeData: any = await ssoEdgeRes.json();
+                if (ssoEdgeData?.launch_url) {
+                  return ssoEdgeData.launch_url;
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (err: any) {
+      console.warn('[SOCIAL ADAPTER] Error generating SSO handoff URL:', err.message);
+    }
+
+    return `${SOCIAL_BASE}${path}`;
+  }
+
+  /**
+   * Universal Upstream Request Broker
+   * Routes all API calls to the live SocialPilot backend (https://api.getaipilot.in).
+   * Authenticates requests strictly with a valid SocialPilot Supabase token (oqaysrnncwbtrujnxsdo).
    */
   private static async requestUpstream<T>(
     endpoint: string,
@@ -284,7 +458,6 @@ export class SocialAdapter {
     const userId = user?.user_id || (user as any)?.id || 'system';
     const orgId = user?.organization_id || (user as any)?.orgId || userId || 'default';
     const email = (user as any)?.email;
-    const sessionId = (user as any)?.session_id as string | undefined;
 
     // 1. Check for dynamic token passed in request headers or user context
     let authToken: string | null =
@@ -294,38 +467,24 @@ export class SocialAdapter {
       (user as any)?.socialToken ||
       null;
 
-    if (authToken && this.isJwtValidAndNotExpired(authToken)) {
-      console.log('[SOCIAL ADAPTER] Using explicitly provided dynamic social token for user', email || userId);
+    if (authToken && this.isSocialSupabaseToken(authToken)) {
+      console.log('[SOCIAL ADAPTER] Using explicitly provided dynamic Social token for user', email || userId);
     } else {
       authToken = null;
 
-      // 2. Try UpstreamSessionService for active user session if valid
-      if (sessionId || userId) {
-        try {
-          const sessionToken = await UpstreamSessionService.getSupabaseAccessToken(sessionId, userId);
-          if (sessionToken && this.isJwtValidAndNotExpired(sessionToken)) {
-            authToken = sessionToken;
-          }
-        } catch (sessionErr: any) {
-          console.warn('[SOCIAL ADAPTER] Could not retrieve upstream Supabase token:', sessionErr?.message);
-        }
+      // 2. Dynamically resolve or refresh SocialPilot Supabase token with single-flight mutex
+      const socialToken = await this.getSocialSupabaseToken(email, userId, isRetry /* forceFresh on retry */);
+      if (socialToken) {
+        authToken = socialToken;
+        console.log('[SOCIAL ADAPTER] Dynamically resolved SocialPilot token for', email || userId);
       }
+    }
 
-      // 3. Dynamically resolve or refresh SocialPilot Supabase token
-      if (!authToken || !this.isJwtValidAndNotExpired(authToken)) {
-        const socialToken = await this.getSocialSupabaseToken(email, userId, isRetry /* forceFresh on retry */);
-        if (socialToken) {
-          authToken = socialToken;
-          console.log('[SOCIAL ADAPTER] Dynamically resolved SocialPilot token for', email || userId);
-        } else if (!authToken) {
-          // 4. Fallback: generate signed internal bearer token for SocialPilot
-          authToken = createInternalBffToken(
-            { user_id: userId, email, organization_id: orgId },
-            this.secret
-          );
-          console.log('[SOCIAL ADAPTER] Using internal BFF token for user', userId);
-        }
-      }
+    if (!authToken) {
+      const authErr: any = new Error('Could not establish an authenticated SocialPilot session for user');
+      authErr.statusCode = 502;
+      authErr.code = 'SOCIAL_UPSTREAM_AUTH_FAILED';
+      throw authErr;
     }
 
     // Build URL with query params
@@ -475,7 +634,7 @@ export class SocialAdapter {
             }
           });
         }
-        
+
         if (raw[p]?.connected) {
           const acc = raw[p];
           const id = acc.id || acc.accountId || acc.account_id || acc.page_id || acc.pageId || `${p}_${acc.username || 0}`;

@@ -13,6 +13,7 @@ import {
   useColorScheme,
 } from 'react-native';
 import { SocialScreenSkeleton } from '../../../components/skeletonScreen';
+import { openSocialHandoff } from '../utils/socialHandoff';
 
 interface SocialOverviewTabProps {
   overviewLoading: boolean;
@@ -269,7 +270,7 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              () => Alert.alert('New Post', 'This feature will be available soon');
+              openSocialHandoff('new-post');
             }}
             style={styles.actionBtn}
           >

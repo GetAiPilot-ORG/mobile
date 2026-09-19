@@ -313,4 +313,21 @@ export async function socialRoutes(fastify: FastifyInstance) {
     const media = await SocialAdapter.getAutoDMInstagramMedia(user, query);
     return reply.send(media);
   });
+
+  // 10. SocialPilot Authenticated SSO Web Handoff URL
+  fastify.post('/social/sso-url', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const body = (request.body || {}) as { target?: string; redirectPath?: string };
+    const target = body.target || body.redirectPath || 'new-post';
+    const ssoUrl = await SocialAdapter.getSocialHandoffUrl(user, target);
+    return reply.send({ success: true, ssoUrl });
+  });
+
+  fastify.get('/social/sso-url', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const query = (request.query || {}) as { target?: string; redirectPath?: string };
+    const target = query.target || query.redirectPath || 'new-post';
+    const ssoUrl = await SocialAdapter.getSocialHandoffUrl(user, target);
+    return reply.send({ success: true, ssoUrl });
+  });
 }

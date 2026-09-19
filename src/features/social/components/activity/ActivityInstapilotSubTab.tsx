@@ -13,7 +13,9 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { InstapilotConversation } from '../../types';
+import { openSocialHandoff } from '../../utils/socialHandoff';
 
 export interface ActivityInstapilotSubTabProps {
   connectedAccounts: any[];
@@ -155,9 +157,9 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
         <Pressable
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            Alert.alert("Coming Soon", "Instapilot Builder is coming soon!");
+            openSocialHandoff('builder');
           }} style={[styles.brandBadge, { backgroundColor: '#e1306c' }]}>
-          <Text style={[styles.brandBadgeText, { color: '#ddd8daff' }]}>Builder</Text>
+          <Text style={[styles.brandBadgeText, { color: '#ffffff' }]}>Builder</Text>
         </Pressable>
       </View>
 
@@ -654,9 +656,12 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
               {generatedCaption}
             </Text>
             <Pressable
-              onPress={() => {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                Alert.alert("Feature Coming Soon", "This feature will be available soon")
+              onPress={async () => {
+                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                if (generatedCaption) {
+                  await Clipboard.setStringAsync(generatedCaption);
+                }
+                await openSocialHandoff('upload-short');
               }}
               style={styles.useInPostBtn}
             >

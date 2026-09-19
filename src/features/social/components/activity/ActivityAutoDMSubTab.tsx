@@ -27,6 +27,7 @@ import { AutoDMAutomationsView } from './autodm/AutoDMAutomationsView';
 import { AutoDMContactsView } from './autodm/AutoDMContactsView';
 import { AutoDMMediaPreviewModal } from './autodm/AutoDMMediaPreviewModal';
 import { AutoDMProfileView } from './autodm/AutoDMProfileView';
+import { openSocialHandoff } from '../../utils/socialHandoff';
 
 export interface ActivityAutoDMSubTabProps {
   connectedAccounts?: any[];
@@ -421,6 +422,7 @@ export const ActivityAutoDMSubTab: React.FC<ActivityAutoDMSubTabProps> = ({
         <Pressable
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            openSocialHandoff('new-automation');
           }}
           style={[styles.primaryActionBtn, { backgroundColor: '#3b82f6' }]}
         >

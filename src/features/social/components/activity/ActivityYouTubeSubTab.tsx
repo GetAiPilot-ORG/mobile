@@ -19,6 +19,7 @@ import {
   YoutubeChannelAccount,
   YoutubeVideoItem,
 } from '../../types';
+import { openSocialHandoff } from '../../utils/socialHandoff';
 
 export interface ActivityYouTubeSubTabProps {
   youtubeAccounts?: YoutubeChannelAccount[];
@@ -173,7 +174,7 @@ export const ActivityYouTubeSubTab: React.FC<ActivityYouTubeSubTabProps> = ({
         <Pressable
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            Alert.alert("Upload Short", "This feature will be available soon")
+            openSocialHandoff('upload-short');
           }}
           style={[styles.primaryActionBtn, { backgroundColor: '#ff0000' }]}
         >
@@ -562,7 +563,7 @@ export const ActivityYouTubeSubTab: React.FC<ActivityYouTubeSubTabProps> = ({
                   <Pressable
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      Alert.alert("Composer", "This feature will be available soon")
+                      openSocialHandoff('upload-short');
                     }}
                     style={[styles.ytWatchActionBtn, { borderColor: 'rgba(59, 130, 246, 0.3)' }]}
                   >

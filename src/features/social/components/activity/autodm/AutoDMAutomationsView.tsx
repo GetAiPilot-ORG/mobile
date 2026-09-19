@@ -12,6 +12,7 @@ import {
   useColorScheme,
 } from 'react-native';
 import { AutoDMAccount, AutoDMAutomationItem } from '../../../types';
+import { openSocialHandoff } from '../../../utils/socialHandoff';
 
 export interface AutoDMAutomationsViewProps {
   dynamicAutomations: AutoDMAutomationItem[];
@@ -499,7 +500,10 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
             Create keyword triggers to automatically comment back and send instant Instagram DMs.
           </Text>
           <Pressable
-            onPress={() => { }}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              openSocialHandoff('new-automation');
+            }}
             style={[styles.primaryActionBtn, { backgroundColor: '#3b82f6', marginTop: 6 }]}
           >
             <Ionicons name="add" size={14} color="#ffffff" />
