@@ -3,6 +3,7 @@ import jwt from '@fastify/jwt';
 import websocket from '@fastify/websocket';
 import Fastify from 'fastify';
 import { env } from './config/env.js';
+// Trigger reload for SOCIAL_SERVICE_URL update
 import { authRoutes } from './routes/auth.routes.js';
 import { billingRoutes } from './routes/billing.routes.js';
 import { crmRoutes } from './routes/crm.routes.js';

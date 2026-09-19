@@ -8,6 +8,15 @@ export async function socialRoutes(fastify: FastifyInstance) {
   // Log BFF Auth diagnostics after authentication middleware
   fastify.addHook('preHandler', async (request) => {
     const user = request.user as any;
+    if (user) {
+      const dynamicToken =
+        (request.headers['x-social-token'] as string) ||
+        (request.headers['x-socialpilot-token'] as string) ||
+        undefined;
+      if (dynamicToken) {
+        user.social_token = dynamicToken;
+      }
+    }
     console.log('[SOCIAL BFF AUTH]', {
       route: request.url,
       bffAuthenticated: Boolean(request.user),
@@ -17,6 +26,7 @@ export async function socialRoutes(fastify: FastifyInstance) {
         user?.orgId ||
         user?.organization_id
       ),
+      hasDynamicSocialToken: Boolean(user?.social_token),
     });
   });
 
@@ -66,6 +76,59 @@ export async function socialRoutes(fastify: FastifyInstance) {
     const user = request.user as JWTPayload;
     const stats = await SocialAdapter.getStats(user);
     return reply.send(stats);
+  });
+
+  // 3.5. InstaPilot Inbox Sync & Conversations
+  fastify.post('/social/instapilot/sync', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const result = await SocialAdapter.syncInstapilotInbox(user);
+    return reply.send(result);
+  });
+
+  fastify.get('/social/instapilot/conversations', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const result = await SocialAdapter.getInstapilotConversations(user);
+    return reply.send(result);
+  });
+
+  // 3.6. Social Inbox (Conversations, Messages, Read, Reply)
+  fastify.get('/social/inbox/conversations', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const query = request.query as { limit?: string };
+    const limit = query.limit ? parseInt(query.limit, 10) : 50;
+    const items = await SocialAdapter.getSocialInboxConversations(user, limit);
+    return reply.send({ success: true, items });
+  });
+
+  fastify.get('/social/inbox/conversations/:id/messages', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { id } = request.params as { id: string };
+    const query = request.query as { limit?: string };
+    const limit = query.limit ? parseInt(query.limit, 10) : 50;
+    const messages = await SocialAdapter.getSocialInboxMessages(user, id, limit);
+    return reply.send({ success: true, messages });
+  });
+
+  fastify.post('/social/inbox/conversations/:id/read', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { id } = request.params as { id: string };
+    const result = await SocialAdapter.markSocialInboxConversationRead(user, id);
+    return reply.send(result);
+  });
+
+  fastify.post('/social/inbox/reply', { preHandler: [authenticateToken, requirePermission('social.post')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const body = request.body as {
+      platform: string;
+      accountId?: string;
+      commentId?: string;
+      recipientId?: string;
+      postId?: string | null;
+      text: string;
+      conversationDatabaseId?: string;
+    };
+    const result = await SocialAdapter.sendSocialInboxReply(user, body);
+    return reply.send(result);
   });
 
   // 4. Create, Schedule, Update, Cancel, Retry, Delete Post
@@ -123,6 +186,20 @@ export async function socialRoutes(fastify: FastifyInstance) {
     return reply.send(result);
   });
 
+  // Media Upload from Mobile
+  const uploadMediaSchema = z.object({
+    fileData: z.string().min(1, 'fileData is required'),
+    fileName: z.string().optional(),
+    contentType: z.string().optional(),
+  });
+
+  fastify.post('/social/media/upload', { preHandler: [authenticateToken, requirePermission('social.post')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const body = uploadMediaSchema.parse(request.body);
+    const result = await SocialAdapter.uploadMedia(user, body);
+    return reply.status(201).send(result);
+  });
+
   // 5. Trend Feed
   fastify.get('/social/trends', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
     const user = request.user as JWTPayload;
@@ -136,5 +213,121 @@ export async function socialRoutes(fastify: FastifyInstance) {
     const user = request.user as JWTPayload;
     const entitlements = await SocialAdapter.getEntitlements(user);
     return reply.send(entitlements);
+  });
+
+  // Helper to extract optional caller credentials
+  const extractDynamicAuth = (req: any) => {
+    const customKey = (req.headers['apikey'] || req.headers['x-supabase-anon-key'] || req.headers['x-anon-key']) as string | undefined;
+    let user: JWTPayload | undefined = req.user as JWTPayload | undefined;
+    if (!user && req.headers?.authorization) {
+      try {
+        const parts = req.headers.authorization.split(' ');
+        if (parts.length === 2 && parts[0] === 'Bearer') {
+          const decoded = (fastify as any).jwt?.decode(parts[1]) as JWTPayload | null;
+          if (decoded && (decoded.user_id || (decoded as any).sub)) {
+            user = {
+              ...decoded,
+              user_id: decoded.user_id || (decoded as any).sub,
+            };
+          }
+        }
+      } catch {}
+    }
+    return { user, customKey };
+  };
+
+  // 7. System Settings & Product Health
+  fastify.get('/social/system/settings', async (request, reply) => {
+    const { user, customKey } = extractDynamicAuth(request);
+    const settings = await SocialAdapter.getSystemSettings(user, customKey);
+    return reply.send(settings);
+  });
+
+  fastify.get('/social/system/product', async (request, reply) => {
+    const query = request.query as { product_key?: string };
+    const { user, customKey } = extractDynamicAuth(request);
+    const product = await SocialAdapter.getSystemProductStatus(query.product_key || 'social_pilot', user, customKey);
+    return reply.send(product);
+  });
+
+  // 8. YouTube Studio Accounts
+  fastify.get('/social/youtube/accounts', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const accounts = await SocialAdapter.getYouTubeAccounts(user);
+    return reply.send(accounts);
+  });
+
+  // 9. AutoDM Routes (Status, Daily Metrics, Automations)
+  fastify.get('/social/autodm/status', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const status = await SocialAdapter.getAutoDMStatus(user);
+    return reply.send(status);
+  });
+
+  fastify.get('/social/autodm/daily-metrics', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const query = request.query as { instagramAccountId?: string; startDate?: string };
+    const metrics = await SocialAdapter.getAutoDMDailyMetrics(user, query);
+    return reply.send(metrics);
+  });
+
+  fastify.get('/social/autodm/automations', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const query = request.query as { instagramAccountId?: string };
+    const automations = await SocialAdapter.getAutoDMAutomations(user, query);
+    return reply.send(automations);
+  });
+
+  fastify.patch('/social/autodm/automations/:id', { preHandler: [authenticateToken, requirePermission('social.post')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { id } = request.params as { id: string };
+    const body = request.body as Record<string, any>;
+    const result = await SocialAdapter.updateAutoDMAutomation(user, id, body);
+    return reply.send(result);
+  });
+
+  fastify.post('/social/autodm/automations', { preHandler: [authenticateToken, requirePermission('social.post')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const body = request.body as Record<string, any>;
+    const result = await SocialAdapter.createAutoDMAutomation(user, body);
+    return reply.status(201).send(result);
+  });
+
+  fastify.delete('/social/autodm/automations/:id', { preHandler: [authenticateToken, requirePermission('social.post')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { id } = request.params as { id: string };
+    const result = await SocialAdapter.deleteAutoDMAutomation(user, id);
+    return reply.send(result);
+  });
+
+  fastify.get('/social/autodm/contacts', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const query = request.query as { instagramAccountId?: string };
+    const contacts = await SocialAdapter.getAutoDMContacts(user, query);
+    return reply.send(contacts);
+  });
+
+  fastify.get('/social/autodm/instagram-media', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const query = request.query as { instagramAccountId?: string; limit?: number };
+    const media = await SocialAdapter.getAutoDMInstagramMedia(user, query);
+    return reply.send(media);
+  });
+
+  // 10. SocialPilot Authenticated SSO Web Handoff URL
+  fastify.post('/social/sso-url', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const body = (request.body || {}) as { target?: string; redirectPath?: string };
+    const target = body.target || body.redirectPath || 'new-post';
+    const ssoUrl = await SocialAdapter.getSocialHandoffUrl(user, target);
+    return reply.send({ success: true, ssoUrl });
+  });
+
+  fastify.get('/social/sso-url', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const query = (request.query || {}) as { target?: string; redirectPath?: string };
+    const target = query.target || query.redirectPath || 'new-post';
+    const ssoUrl = await SocialAdapter.getSocialHandoffUrl(user, target);
+    return reply.send({ success: true, ssoUrl });
   });
 }

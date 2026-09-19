@@ -26,6 +26,7 @@ const envSchema = z.object({
   VOICE_SUPABASE_URL: z.string().url().default('https://gkyilicraflkgcfgqypc.supabase.co'),
   VOICE_SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   SOCIAL_SUPABASE_URL: z.string().url().default('https://oqaysrnncwbtrujnxsdo.supabase.co'),
+  SOCIAL_SUPABASE_ANON_KEY: z.string().optional(),
   SOCIAL_SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   TOKEN_ENCRYPTION_KEY: z.string().optional(),
   WEB_APP_URL: z.string().url().default('https://getaipilot.in'),
