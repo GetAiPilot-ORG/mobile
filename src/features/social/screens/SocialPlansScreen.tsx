@@ -15,6 +15,7 @@ import {
 import { AppScreen } from '../../../components/AppScreen';
 import { AppTopBar } from '../../../components/AppTopBar';
 import { apiClient } from '../../../core/api/client';
+import { useRazorpay } from '../../../contexts/RazorpayContext';
 import { BillingInterval, SocialPlan } from '../types';
 
 const BILLING_INTERVALS: { key: BillingInterval; label: string; discountBadge?: string }[] = [
@@ -117,6 +118,7 @@ export const SocialPlansScreen: React.FC = () => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const queryClient = useQueryClient();
+  const { openRazorpayCheckout } = useRazorpay();
 
   // 1. Fetch Entitlements
   const { data: entitlementsData, isLoading: entitlementsLoading } = useQuery({
@@ -219,29 +221,43 @@ export const SocialPlansScreen: React.FC = () => {
       return;
     }
 
-    Alert.alert(
-      `Activate ${plan.name} Plan?`,
-      `Would you like to switch to ${plan.name} (${intervalObj?.label} billing · ₹${price}/month)? Your new workspace limits will take effect immediately.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm & Activate',
-          onPress: async () => {
-            try {
+    if (plan.id === 'free') {
+      Alert.alert(
+        'Switch to Free Plan?',
+        'Would you like to switch to the Free plan? Workspace quotas will adjust accordingly.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Confirm Switch',
+            onPress: async () => {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              Alert.alert(
-                'Plan Activated',
-                `Your workspace has been upgraded to ${plan.name}. New limits are now active across your channels.`
-              );
+              Alert.alert('Plan Updated', 'You are now on the Free Plan.');
               await queryClient.invalidateQueries({ queryKey: ['social', 'entitlements'] });
               await queryClient.invalidateQueries({ queryKey: ['social', 'plans'] });
-            } catch (err: any) {
-              Alert.alert('Error', err?.message || 'Failed to update plan.');
-            }
+              await queryClient.invalidateQueries({ queryKey: ['platform-subscription'] });
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+      return;
+    }
+
+    // Launch global Razorpay checkout for paid plans (Starter, Growth)
+    openRazorpayCheckout({
+      amount: price,
+      currency: 'INR',
+      product: 'social',
+      planId: plan.id,
+      planName: `SocialPilot ${plan.name}`,
+      billingInterval: selectedInterval,
+      description: `${plan.name} Tier (${intervalObj?.label} Billing)`,
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({ queryKey: ['social', 'entitlements'] });
+        await queryClient.invalidateQueries({ queryKey: ['social', 'plans'] });
+        await queryClient.invalidateQueries({ queryKey: ['platform-subscription'] });
+        await queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      },
+    });
   };
 
   return (

@@ -54,5 +54,12 @@ export async function billingRoutes(fastify: FastifyInstance) {
     const billing = await HubAdapter.getBillingStatus(user.user_id);
     return reply.send(billing);
   });
+
+  // GET /mobile/v1/billing/plans (Public & Authenticated Ecosystem Pricing Plans)
+  fastify.get('/billing/plans', async (request, reply) => {
+    const q = request.query as { category?: string };
+    const plans = await HubAdapter.getPricingPlans(q?.category);
+    return reply.send({ success: true, data: plans });
+  });
 }
 

@@ -10,6 +10,7 @@ import { OfflineNotice } from '../src/components/OfflineNotice';
 import { LayoutSkeletonScreen } from '../src/components/skeletonScreen';
 import { AuthProvider } from '../src/contexts/AuthContext';
 import { NetworkProvider, useNetwork } from '../src/contexts/NetworkContext';
+import { RazorpayProvider } from '../src/contexts/RazorpayContext';
 import { useAuthStore } from '../src/core/store/authStore';
 
 export const queryClient = new QueryClient({
@@ -103,46 +104,48 @@ export default function RootLayout() {
           <NetworkProvider>
             <QueryClientProvider client={queryClient}>
               <AuthProvider>
-                <AuthRouteGuard />
-                {/* Native Stack for iOS screen transitions & gesture-driven back navigations */}
-                <Stack
-                  screenOptions={{
-                    headerShown: false,
-                    gestureEnabled: true,
-                    fullScreenGestureEnabled: true,
-                    gestureDirection: 'horizontal',
-                    animation: 'default',
-                    animationDuration: 250,
-                  }}
-                >
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                  <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
-                  <Stack.Screen name="(auth)/signup" options={{ headerShown: false }} />
-                  <Stack.Screen name="(auth)/forgot-password" options={{ headerShown: false }} />
-                  <Stack.Screen
-                    name="account/plans"
-                    options={{
-                      headerShown: false,
-                      presentation: 'modal',
-                      gestureEnabled: true,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="products/social/plans"
-                    options={{
+                <RazorpayProvider>
+                  <AuthRouteGuard />
+                  {/* Native Stack for iOS screen transitions & gesture-driven back navigations */}
+                  <Stack
+                    screenOptions={{
                       headerShown: false,
                       gestureEnabled: true,
+                      fullScreenGestureEnabled: true,
+                      gestureDirection: 'horizontal',
+                      animation: 'default',
+                      animationDuration: 250,
                     }}
-                  />
-                  <Stack.Screen
-                    name="+not-found"
-                    options={{
-                      headerShown: false,
-                    }}
-                  />
-                </Stack>
-                <OfflineNotice />
-                <SplashOverlay />
+                  >
+                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                    <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
+                    <Stack.Screen name="(auth)/signup" options={{ headerShown: false }} />
+                    <Stack.Screen name="(auth)/forgot-password" options={{ headerShown: false }} />
+                    <Stack.Screen
+                      name="account/plans"
+                      options={{
+                        headerShown: false,
+                        presentation: 'modal',
+                        gestureEnabled: true,
+                      }}
+                    />
+                    <Stack.Screen
+                      name="products/social/plans"
+                      options={{
+                        headerShown: false,
+                        gestureEnabled: true,
+                      }}
+                    />
+                    <Stack.Screen
+                      name="+not-found"
+                      options={{
+                        headerShown: false,
+                      }}
+                    />
+                  </Stack>
+                  <OfflineNotice />
+                  <SplashOverlay />
+                </RazorpayProvider>
               </AuthProvider>
             </QueryClientProvider>
           </NetworkProvider>
