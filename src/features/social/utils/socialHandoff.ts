@@ -31,7 +31,10 @@ export const SOCIAL_TOOL_KEYS: Record<SocialHandoffTarget, string> = {
  * Seamlessly opens SocialPilot in the user's mobile browser with an authenticated SSO session.
  * Automatically deep-links to the exact tool/screen requested.
  */
-export async function openSocialHandoff(target: SocialHandoffTarget): Promise<void> {
+export async function openSocialHandoff(
+  target: SocialHandoffTarget,
+  customWebAppUrl?: string,
+): Promise<void> {
   try {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   } catch {}
@@ -40,6 +43,7 @@ export async function openSocialHandoff(target: SocialHandoffTarget): Promise<vo
 
   // 1. Primary: Generate SSO handoff consumed in getaipilot.in (/auth/handoff)
   try {
+    const webAppUrl = customWebAppUrl || 'https://getaipilot.in';
     const { data, error } = await supabase.functions.invoke<{
       targetUrl: string;
       redirectPath?: string;
@@ -48,7 +52,7 @@ export async function openSocialHandoff(target: SocialHandoffTarget): Promise<vo
       body: {
         targetTool: SOCIAL_TOOL_KEYS[target],
         clientId: SOCIAL_TOOL_KEYS[target],
-        webAppUrl: 'https://getaipilot.in',
+        webAppUrl,
       },
     });
 

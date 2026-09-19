@@ -268,7 +268,11 @@ async function resolveSocialSsoUrl(email: string, redirectPath: string): Promise
       email,
     });
 
-    if (hubLinkErr || !hubLinkData?.properties?.hashed_token) {
+    const hubToken =
+      (hubLinkData as any)?.properties?.hashed_token ||
+      (hubLinkData as any)?.hashed_token;
+
+    if (hubLinkErr || !hubToken) {
       return directFallback;
     }
 
@@ -280,7 +284,7 @@ async function resolveSocialSsoUrl(email: string, redirectPath: string): Promise
       },
       body: JSON.stringify({
         type: "magiclink",
-        token_hash: hubLinkData.properties.hashed_token,
+        token_hash: hubToken,
       }),
     });
 
@@ -294,14 +298,14 @@ async function resolveSocialSsoUrl(email: string, redirectPath: string): Promise
       return directFallback;
     }
 
-    // 2. Call social-sso edge function
+    // 2. Call social-sso edge function with base origin ALWAYS (never subpaths!)
     const ssoEdgeRes = await fetch(`${SUPABASE_URL}/functions/v1/social-sso`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${hubUserToken}`,
       },
-      body: JSON.stringify({ dmpilot_url: cleanRedirect }),
+      body: JSON.stringify({ dmpilot_url: SOCIAL_WEB_APP_URL }),
     });
 
     if (!ssoEdgeRes.ok) {
@@ -335,38 +339,14 @@ async function resolveSocialSsoUrl(email: string, redirectPath: string): Promise
       return ssoEdgeData.launch_url;
     }
 
-    const magicUrl = new URL(exchangeData.magic_link_url);
-    const socialTokenHash = magicUrl.searchParams.get("token");
-    const socialOtpType = magicUrl.searchParams.get("type") || "signup";
-    if (!socialTokenHash) {
-      return ssoEdgeData.launch_url;
+    // 4. Customize redirect_to on the magic_link_url to target the exact requested screen!
+    try {
+      const magicUrl = new URL(exchangeData.magic_link_url);
+      magicUrl.searchParams.set("redirect_to", cleanRedirect);
+      return magicUrl.toString();
+    } catch {
+      return exchangeData.magic_link_url;
     }
-
-    // 4. Verify OTP on Social Supabase to obtain authenticated access & refresh tokens
-    const socialVerifyRes = await fetch(`${SOCIAL_SUPABASE_URL}/auth/v1/verify`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: SOCIAL_SUPABASE_ANON_KEY,
-      },
-      body: JSON.stringify({
-        type: socialOtpType,
-        token_hash: socialTokenHash,
-      }),
-    });
-
-    if (socialVerifyRes.ok) {
-      const socialSession: any = await socialVerifyRes.json();
-      if (socialSession?.access_token && socialSession?.refresh_token) {
-        return `${cleanRedirect}#access_token=${encodeURIComponent(
-          socialSession.access_token,
-        )}&refresh_token=${encodeURIComponent(
-          socialSession.refresh_token,
-        )}&token_type=bearer`;
-      }
-    }
-
-    return ssoEdgeData.launch_url;
   } catch (err) {
     console.warn("[web-handoff] resolveSocialSsoUrl error:", err);
     return directFallback;
