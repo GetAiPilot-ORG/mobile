@@ -184,6 +184,24 @@ export const SocialScreen: React.FC = () => {
     },
   });
 
+  // 7.1 Plans Query
+  const {
+    data: plansData,
+    isLoading: plansLoading,
+    refetch: refetchPlans,
+  } = useQuery({
+    queryKey: ['social', 'plans'],
+    queryFn: async () => {
+      try {
+        const res = await apiClient.get<any>('/mobile/v1/social/plans');
+        return res?.plans || (Array.isArray(res) ? res : null);
+      } catch {
+        return null;
+      }
+    },
+    staleTime: 15 * 60 * 1000,
+  });
+
   // 8. Instapilot Inbox Conversations Query (syncs in 5s)
   const {
     data: instapilotConversationsData,
@@ -260,14 +278,6 @@ export const SocialScreen: React.FC = () => {
     },
   });
 
-  const deletePostMutation = useMutation({
-    mutationFn: async (postId: string) => apiClient.delete(`/mobile/v1/social/posts/${postId}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['social', 'posts'] });
-      setSelectedPost(null);
-    },
-  });
-
   const disconnectAccountMutation = useMutation({
     mutationFn: async (payload: { provider: string; accountId?: string }) =>
       apiClient.post('/mobile/v1/social/accounts/disconnect', payload),
@@ -287,6 +297,7 @@ export const SocialScreen: React.FC = () => {
       refetchTrends(),
       refetchStats(),
       refetchEntitlements(),
+      refetchPlans(),
     ]);
   };
 
@@ -447,6 +458,9 @@ export const SocialScreen: React.FC = () => {
             overviewData={overviewData}
             statsData={statsData}
             entitlementsData={entitlementsData}
+            plansData={plansData}
+            plansLoading={plansLoading}
+            onRetryPlans={refetchPlans}
             connectedList={connectedList}
             postsList={postsList}
             queueList={queueList}
@@ -492,6 +506,7 @@ export const SocialScreen: React.FC = () => {
             queueLoading={queueLoading}
             queueList={queueList}
             connectedAccounts={connectedList}
+            entitlementsData={entitlementsData}
             onOpenCreateModal={() => {
               setInitialCaptionForCreate(undefined);
               setShowCreateModal(true);
@@ -531,6 +546,8 @@ export const SocialScreen: React.FC = () => {
           await createPostMutation.mutateAsync(payload);
         }}
         isLoading={createPostMutation.isPending}
+        entitlementsData={entitlementsData}
+        queueCount={queueList.length}
       />
 
       <PostDetailsModal
@@ -543,12 +560,7 @@ export const SocialScreen: React.FC = () => {
         onRetry={async (id) => {
           await retryPostMutation.mutateAsync(id);
         }}
-        onDelete={async (id) => {
-          await deletePostMutation.mutateAsync(id);
-        }}
-        isActionLoading={
-          cancelPostMutation.isPending || retryPostMutation.isPending || deletePostMutation.isPending
-        }
+        isActionLoading={cancelPostMutation.isPending || retryPostMutation.isPending}
       />
 
       <AccountsModal

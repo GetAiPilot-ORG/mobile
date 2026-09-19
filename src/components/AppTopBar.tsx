@@ -49,6 +49,11 @@ export const getParentRoute = (pathname: string): string => {
     return '/(tabs)/products';
   }
 
+  // 3.5 Social sub-screens -> go to Social overview
+  if (pathname.startsWith('/products/social/plans')) {
+    return '/products/social';
+  }
+
   // 4. Other products -> go to Products tab
   if (
     pathname.startsWith('/products/voice') ||

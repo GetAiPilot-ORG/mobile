@@ -128,6 +128,13 @@ export default function RootLayout() {
                     }}
                   />
                   <Stack.Screen
+                    name="products/social/plans"
+                    options={{
+                      headerShown: false,
+                      gestureEnabled: true,
+                    }}
+                  />
+                  <Stack.Screen
                     name="+not-found"
                     options={{
                       headerShown: false,

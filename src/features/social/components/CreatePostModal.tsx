@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import {
   Modal,
@@ -16,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { apiClient } from '../../../core/api/client';
+import { openSocialHandoff } from '../utils/socialHandoff';
 
 interface CreatePostModalProps {
   visible: boolean;
@@ -31,6 +33,8 @@ interface CreatePostModalProps {
     postType?: string;
   }) => Promise<void>;
   isLoading: boolean;
+  entitlementsData?: any;
+  queueCount?: number;
 }
 
 interface UploadedMediaItem {
@@ -58,9 +62,12 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   onClose,
   onSubmit,
   isLoading,
+  entitlementsData,
+  queueCount = 0,
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const router = useRouter();
 
   const [caption, setCaption] = useState(initialCaption || '');
   const [selectedChannels, setSelectedChannels] = useState<string[]>(['instagram']);
@@ -208,9 +215,33 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
       setError('Please select at least one publishing channel.');
       return;
     }
-    if (postMode === 'schedule' && !scheduledDate.trim()) {
-      setError('Please enter a scheduled date/time (e.g. 2026-09-16T18:00:00Z).');
-      return;
+    if (postMode === 'schedule') {
+      if (!scheduledDate.trim()) {
+        setError('Please enter a scheduled date/time (e.g. 2026-09-16T18:00:00Z).');
+        return;
+      }
+      const queueLimit = entitlementsData?.limits?.scheduled_queue ?? 10;
+      const isUnlimitedQueue = queueLimit >= 1000000;
+      if (!isUnlimitedQueue && queueCount >= queueLimit) {
+        const pName = entitlementsData?.plan?.name || 'Free';
+        setError(`Plan queue limit reached (${queueCount}/${queueLimit}). Upgrade to schedule more.`);
+        Alert.alert(
+          'Queue Limit Reached',
+          `Your ${pName} plan allows up to ${queueLimit} scheduled posts in queue. Upgrade to Starter or Growth for unlimited queue publications.`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Upgrade Plan',
+              onPress: () => {
+                onClose();
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push('/products/social/plans' as any);
+              },
+            },
+          ]
+        );
+        return;
+      }
     }
 
     try {

@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Image,
   Linking,
@@ -14,6 +16,7 @@ import {
 } from 'react-native';
 import { SocialScreenSkeleton } from '../../../components/skeletonScreen';
 import { openSocialHandoff } from '../utils/socialHandoff';
+import { BillingInterval, SocialPlan } from '../types';
 
 interface SocialOverviewTabProps {
   overviewLoading: boolean;
@@ -22,6 +25,9 @@ interface SocialOverviewTabProps {
   overviewData: any;
   statsData?: any;
   entitlementsData?: any;
+  plansData?: any;
+  plansLoading?: boolean;
+  onRetryPlans?: () => void;
   connectedList: any[];
   postsList: any[];
   queueList: any[];
@@ -34,6 +40,102 @@ interface SocialOverviewTabProps {
   onOpenAccountsModal: () => void;
   onNavigateToTab: (tab: 'overview' | 'trends' | 'inbox' | 'activity') => void;
 }
+
+const BILLING_INTERVALS: { key: BillingInterval; label: string; discountBadge?: string }[] = [
+  { key: 'month', label: 'Monthly' },
+  { key: 'quarterly', label: 'Quarterly', discountBadge: '10% OFF' },
+  { key: 'six_months', label: '6 Months', discountBadge: '20% OFF' },
+  { key: 'year', label: 'Yearly', discountBadge: '30% OFF' },
+];
+
+const DEFAULT_PLANS: SocialPlan[] = [
+  {
+    id: 'free',
+    name: 'Free',
+    tagline: 'Best for getting started & exploring social automation',
+    prices: { month: 0, year: 0 },
+    features: {
+      publishing: true,
+      scheduling: true,
+      analytics: true,
+      autodm: true,
+      approval_workflow: false,
+      api: false,
+      priority_support: false,
+    },
+    limits: {
+      social_accounts: 3,
+      scheduled_queue: 10,
+      team_members: 1,
+      history_days: 7,
+      autodm_accounts: 3,
+      autodm_automations: 1,
+      autodm_replies_per_month: 50,
+      contacts: 100,
+    },
+  },
+  {
+    id: 'slite',
+    name: 'Starter',
+    tagline: 'For growing creators, influencers & brand channels',
+    isPopular: true,
+    prices: {
+      month: 999,
+      quarterly: 899.1,
+      six_months: 799.2,
+      year: 699.3,
+    },
+    features: {
+      publishing: true,
+      scheduling: true,
+      analytics: true,
+      autodm: true,
+      approval_workflow: false,
+      api: false,
+      priority_support: true,
+    },
+    limits: {
+      social_accounts: 10,
+      scheduled_queue: 1000000,
+      team_members: 1,
+      history_days: 90,
+      autodm_accounts: 10,
+      autodm_automations: 1000000,
+      autodm_replies_per_month: 1000000,
+      contacts: 1000000,
+    },
+  },
+  {
+    id: 'sgrowth',
+    name: 'Growth',
+    tagline: 'Full agency firepower, unlimited queue & multi-seat team access',
+    prices: {
+      month: 1999,
+      quarterly: 1799.1,
+      six_months: 1599.2,
+      year: 1399.3,
+    },
+    features: {
+      publishing: true,
+      scheduling: true,
+      analytics: true,
+      autodm: true,
+      approval_workflow: true,
+      api: true,
+      priority_support: true,
+    },
+    limits: {
+      social_accounts: 30,
+      scheduled_queue: 1000000,
+      team_members: 10,
+      history_days: 365,
+      autodm_accounts: 30,
+      autodm_automations: 1000000,
+      autodm_replies_per_month: 1000000,
+      contacts: 1000000,
+    },
+  },
+];
 
 const SUPPORTED_PLATFORMS = [
   { key: 'instagram', label: 'Instagram', icon: 'logo-instagram', color: '#e1306c' },
@@ -53,6 +155,9 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
   overviewData,
   statsData,
   entitlementsData,
+  plansData,
+  plansLoading,
+  onRetryPlans,
   connectedList,
   postsList,
   queueList,
@@ -67,6 +172,7 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const router = useRouter();
 
   const ops = overviewData?.operations || {};
   const automation = overviewData?.automation || {};
@@ -213,8 +319,96 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
   }, [postsList, ops.recentActivity]);
 
   const nextScheduledPost = queueList.length > 0 ? queueList[0] : ops.nextScheduled;
-  const maxChannelsAllowed = entitlementsData?.maxChannels || 10;
-  const planName = entitlementsData?.planName || entitlementsData?.plan?.name || 'GAP Pro Multi-Channel';
+
+  const currentPlanId = entitlementsData?.plan?.id || entitlementsData?.subscription?.plan_id || 'free';
+  const currentPlanName = entitlementsData?.plan?.name || (currentPlanId === 'sgrowth' ? 'Growth' : currentPlanId === 'slite' ? 'Starter' : 'Free');
+  const limits = entitlementsData?.limits || {
+    social_accounts: 3,
+    scheduled_queue: 10,
+    team_members: 1,
+    history_days: 7,
+    autodm_accounts: 3,
+    autodm_automations: 1,
+    autodm_replies_per_month: 50,
+    contacts: 100,
+  };
+  const maxChannelsAllowed = limits.social_accounts || entitlementsData?.maxChannels || 10;
+  const scheduledQueueLimit = limits.scheduled_queue || 10;
+  const isUnlimitedQueue = scheduledQueueLimit >= 1000000;
+  const autodmRulesLimit = limits.autodm_automations || 1;
+  const isUnlimitedAutoDM = autodmRulesLimit >= 1000000;
+  const repliesLimit = limits.autodm_replies_per_month || 50;
+  const isUnlimitedReplies = repliesLimit >= 1000000;
+  const historyDaysLimit = limits.history_days || 7;
+  const subscription = entitlementsData?.subscription;
+  const repliesUsed = entitlementsData?.usage?.autodm_replies_per_month?.used || 0;
+
+  const [selectedInterval, setSelectedInterval] = useState<BillingInterval>(
+    (subscription?.billing_interval as BillingInterval) || 'quarterly'
+  );
+
+  const activePlans: SocialPlan[] = useMemo(() => {
+    const rawPlans = Array.isArray(plansData) ? plansData : plansData?.plans;
+    if (Array.isArray(rawPlans) && rawPlans.length > 0) {
+      return rawPlans.map((p: any) => {
+        const matchingDef = DEFAULT_PLANS.find((d) => d.id === p.id);
+        return {
+          id: p.id,
+          name: p.name || matchingDef?.name || p.id,
+          tagline: p.tagline || matchingDef?.tagline || '',
+          isPopular: p.isPopular ?? matchingDef?.isPopular ?? false,
+          prices: {
+            month: p.prices?.month ?? matchingDef?.prices?.month ?? 0,
+            quarterly: p.prices?.quarterly ?? matchingDef?.prices?.quarterly,
+            six_months: p.prices?.six_months ?? matchingDef?.prices?.six_months,
+            year: p.prices?.year ?? matchingDef?.prices?.year,
+          },
+          features: {
+            publishing: p.features?.publishing ?? true,
+            scheduling: p.features?.scheduling ?? true,
+            analytics: p.features?.analytics ?? true,
+            autodm: p.features?.autodm ?? true,
+            approval_workflow: p.features?.approval_workflow ?? false,
+            api: p.features?.api ?? false,
+            priority_support: p.features?.priority_support ?? false,
+          },
+          limits: {
+            social_accounts: p.limits?.social_accounts ?? matchingDef?.limits?.social_accounts ?? 3,
+            scheduled_queue: p.limits?.scheduled_queue ?? matchingDef?.limits?.scheduled_queue ?? 10,
+            team_members: p.limits?.team_members ?? matchingDef?.limits?.team_members ?? 1,
+            history_days: p.limits?.history_days ?? matchingDef?.limits?.history_days ?? 7,
+            autodm_accounts: p.limits?.autodm_accounts ?? matchingDef?.limits?.autodm_accounts ?? 3,
+            autodm_automations: p.limits?.autodm_automations ?? matchingDef?.limits?.autodm_automations ?? 1,
+            autodm_replies_per_month: p.limits?.autodm_replies_per_month ?? matchingDef?.limits?.autodm_replies_per_month ?? 50,
+            contacts: p.limits?.contacts ?? matchingDef?.limits?.contacts ?? 100,
+          },
+        };
+      });
+    }
+    return DEFAULT_PLANS;
+  }, [plansData]);
+
+  const handleConnectChannel = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (connectedList.length >= maxChannelsAllowed) {
+      Alert.alert(
+        'Channel Limit Reached',
+        `You have reached your limit of ${maxChannelsAllowed} channels on the ${currentPlanName} plan. Upgrade your plan to link more social accounts.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Upgrade Plan',
+            onPress: () => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push('/products/social/plans' as any);
+            },
+          },
+        ]
+      );
+      return;
+    }
+    openSocialHandoff('new-post');
+  };
 
   if (overviewLoading && !overviewData) {
     return <SocialScreenSkeleton />;
@@ -279,15 +473,36 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
           </Pressable>
         </View>
 
-        {/* Range Pill Selector */}
+        {/* Range Pill Selector with Plan History Limit Enforcement */}
         <View style={styles.rangeRow}>
           <Text style={[styles.rangeLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>Period:</Text>
           {[7, 30, 90].map((days) => {
             const isActive = selectedRange === days;
+            const isLocked = days > historyDaysLimit;
             return (
               <Pressable
                 key={days}
-                onPress={() => onChangeRange(days)}
+                onPress={() => {
+                  if (isLocked) {
+                    Alert.alert(
+                      'Extended History Locked',
+                      `The ${days}-day analytics telemetry requires Starter (90 days) or Growth (365 days) plan. Your current ${currentPlanName} plan includes up to ${historyDaysLimit} days of history.`,
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Upgrade Plan',
+                          onPress: () => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            router.push('/products/social/plans' as any);
+                          },
+                        },
+                      ]
+                    );
+                    return;
+                  }
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  onChangeRange(days);
+                }}
                 style={[
                   styles.rangePill,
                   {
@@ -296,17 +511,27 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
                       : isDark
                         ? '#1e293b'
                         : '#f1f5f9',
+                    opacity: isLocked ? 0.7 : 1,
                   },
                 ]}
               >
-                <Text
-                  style={[
-                    styles.rangePillText,
-                    { color: isActive ? '#ffffff' : isDark ? '#cbd5e1' : '#475569' },
-                  ]}
-                >
-                  Last {days}d
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  {isLocked && (
+                    <Ionicons
+                      name="lock-closed"
+                      size={10}
+                      color={isActive ? '#ffffff' : isDark ? '#94a3b8' : '#64748b'}
+                    />
+                  )}
+                  <Text
+                    style={[
+                      styles.rangePillText,
+                      { color: isActive ? '#ffffff' : isDark ? '#cbd5e1' : '#475569' },
+                    ]}
+                  >
+                    Last {days}d
+                  </Text>
+                </View>
               </Pressable>
             );
           })}
@@ -327,7 +552,8 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
         )}
       </View>
 
-      {/* 2. Top Connected Social Media Accounts (Story / Chips Carousel ON THE TOP) */}
+
+      {/* 3. Top Connected Social Media Accounts (Story / Chips Carousel ON THE TOP) */}
       <View style={[styles.topConnectedSection, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
         <View style={styles.topConnectedHeader}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -341,14 +567,121 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
             <Ionicons name="chevron-forward" size={12} color="#ec4899" />
           </Pressable>
         </View>
+
+        {connectedList.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.topConnectedScroll}
+          >
+            {connectedList.map((acc: any, idx: number) => {
+              const provider = acc.provider || acc.platform || 'channel';
+              const name = acc.username || acc.name || acc.channelTitle || provider;
+              const avatarUrl = acc.profilePicture || acc.profile_picture_url || acc.avatar;
+              const followers = acc.followers || acc.followerCount || acc.raw?.followers;
+              const pColor = getPlatformColor(provider);
+              const pIcon = getPlatformIconName(provider);
+
+              return (
+                <Pressable
+                  key={acc.id || idx}
+                  onPress={onOpenAccountsModal}
+                  style={[
+                    styles.topAccountChipCard,
+                    {
+                      backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                      borderColor: isDark ? '#334155' : '#e2e8f0',
+                    },
+                  ]}
+                >
+                  <View style={styles.topAccountAvatarWrap}>
+                    {avatarUrl ? (
+                      <Image source={{ uri: avatarUrl }} style={styles.topAccountAvatarImg} />
+                    ) : (
+                      <View
+                        style={[
+                          styles.topAccountAvatarFallback,
+                          { backgroundColor: `${pColor}20` },
+                        ]}
+                      >
+                        <Ionicons name={pIcon as any} size={18} color={pColor} />
+                      </View>
+                    )}
+                    <View style={[styles.topAccountProviderBadge, { backgroundColor: pColor }]}>
+                      <Ionicons name={pIcon as any} size={8} color="#ffffff" />
+                    </View>
+                    <View style={styles.topAccountLiveDot} />
+                  </View>
+
+                  <View style={{ maxWidth: 120 }}>
+                    <Text
+                      style={[styles.topAccountName, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+                      numberOfLines={1}
+                    >
+                      {name}
+                    </Text>
+                    <Text
+                      style={[styles.topAccountHandle, { color: pColor }]}
+                      numberOfLines={1}
+                    >
+                      {provider.toUpperCase()}
+                    </Text>
+                    {followers != null && (
+                      <Text style={styles.topAccountFollowers} numberOfLines={1}>
+                        {Number(followers).toLocaleString()} followers
+                      </Text>
+                    )}
+                  </View>
+                </Pressable>
+              );
+            })}
+
+            {/* Connect More Channels CTA */}
+            <Pressable
+              onPress={handleConnectChannel}
+              style={[
+                styles.topAddAccountBtn,
+                {
+                  borderColor: isDark ? '#334155' : '#cbd5e1',
+                  backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                },
+              ]}
+            >
+              <View style={styles.topAddCircle}>
+                <Ionicons name="add" size={16} color="#ec4899" />
+              </View>
+              <Text style={[styles.topAddText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                Connect
+              </Text>
+            </Pressable>
+          </ScrollView>
+        ) : (
+          <View style={styles.topEmptyWrap}>
+            <Ionicons name="link-outline" size={18} color={isDark ? '#94a3b8' : '#64748b'} />
+            <Text style={[styles.topEmptyText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+              No channels connected yet. Tap Manage to link Instagram, YouTube, X, or Facebook.
+            </Text>
+          </View>
+        )}
       </View>
 
-      {/* 3. Core Telemetry 4-Card Grid */}
+      {/* 4. Core Telemetry 4-Card Grid */}
       <View style={styles.metricsGrid}>
-        <View style={[styles.metricCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
+        <View
+          style={[
+            styles.metricCard,
+            {
+              backgroundColor: isDark ? '#0f172a' : '#ffffff',
+              borderColor: isDark ? '#1e293b' : '#f1f5f9',
+              borderWidth: 1,
+            },
+          ]}
+        >
           <View style={styles.metricCardHeader}>
-            <Ionicons name="send" size={16} color="#22c55e" />
-            <Text style={styles.metricCardTag}>Sent</Text>
+            <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: 'rgba(34, 197, 94, 0.12)', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="send" size={15} color="#22c55e" />
+            </View>
+            <Text style={[styles.metricCardTag, { color: '#22c55e' }]}>Sent</Text>
           </View>
           <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
             {ops.sent != null ? ops.sent : totalSentCount}
@@ -360,10 +693,19 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
 
         <Pressable
           onPress={() => onNavigateToTab('activity')}
-          style={[styles.metricCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}
+          style={[
+            styles.metricCard,
+            {
+              backgroundColor: isDark ? '#0f172a' : '#ffffff',
+              borderColor: isDark ? '#1e293b' : '#f1f5f9',
+              borderWidth: 1,
+            },
+          ]}
         >
           <View style={styles.metricCardHeader}>
-            <Ionicons name="time" size={16} color="#3b82f6" />
+            <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: 'rgba(59, 130, 246, 0.12)', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="time" size={15} color="#3b82f6" />
+            </View>
             <Text style={[styles.metricCardTag, { color: '#3b82f6' }]}>Queue</Text>
           </View>
           <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
@@ -372,9 +714,20 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
           <Text style={styles.metricLabel}>Pending Queue</Text>
         </Pressable>
 
-        <View style={[styles.metricCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
+        <View
+          style={[
+            styles.metricCard,
+            {
+              backgroundColor: isDark ? '#0f172a' : '#ffffff',
+              borderColor: isDark ? '#1e293b' : '#f1f5f9',
+              borderWidth: 1,
+            },
+          ]}
+        >
           <View style={styles.metricCardHeader}>
-            <Ionicons name="checkmark-done-circle" size={16} color="#ec4899" />
+            <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: 'rgba(236, 72, 153, 0.12)', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="checkmark-done-circle" size={15} color="#ec4899" />
+            </View>
             <Text style={[styles.metricCardTag, { color: '#ec4899' }]}>Health</Text>
           </View>
           <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
@@ -383,9 +736,20 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
           <Text style={styles.metricLabel}>Delivery Rate</Text>
         </View>
 
-        <View style={[styles.metricCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
+        <View
+          style={[
+            styles.metricCard,
+            {
+              backgroundColor: isDark ? '#0f172a' : '#ffffff',
+              borderColor: isDark ? '#1e293b' : '#f1f5f9',
+              borderWidth: 1,
+            },
+          ]}
+        >
           <View style={styles.metricCardHeader}>
-            <Ionicons name="people" size={16} color="#8b5cf6" />
+            <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: 'rgba(139, 92, 246, 0.12)', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="people" size={15} color="#8b5cf6" />
+            </View>
             <Text style={[styles.metricCardTag, { color: '#8b5cf6' }]}>Audience</Text>
           </View>
           <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
@@ -636,22 +1000,42 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
         </View>
       )}
 
-      {/* 5. Workspace Quota & Entitlements Card */}
+      {/* 5. Workspace Quota & Active Plan Card */}
       <View style={[styles.sectionCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
         <View style={styles.sectionHeader}>
           <View style={styles.sectionHeaderLeft}>
             <Ionicons name="shield-checkmark" size={18} color="#ec4899" />
             <Text style={[styles.sectionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-              Workspace Quota & Plan
+              Workspace Quota & Active Plan
             </Text>
           </View>
-          <View style={[styles.planBadge, { backgroundColor: 'rgba(236, 72, 153, 0.15)' }]}>
-            <Text style={styles.planBadgeText}>{planName.toUpperCase()}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={[styles.planBadge, { backgroundColor: 'rgba(236, 72, 153, 0.15)' }]}>
+              <Text style={styles.planBadgeText}>{currentPlanName.toUpperCase()}</Text>
+            </View>
+            <View style={[styles.statusPill, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
+              <View style={[styles.liveDot, { backgroundColor: '#22c55e' }]} />
+              <Text style={[styles.statusPillText, { color: '#22c55e' }]}>
+                {subscription?.status ? subscription.status.toUpperCase() : 'ACTIVE'}
+              </Text>
+            </View>
           </View>
         </View>
 
-        <View style={styles.quotaRow}>
-          <View style={{ flex: 1 }}>
+        {subscription?.current_period_end && (
+          <View style={[styles.quotaMetaRow, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
+            <Ionicons name="calendar-outline" size={13} color={isDark ? '#94a3b8' : '#64748b'} />
+            <Text style={[styles.quotaMetaText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+              Renews {new Date(subscription.current_period_end).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+              {subscription.billing_interval ? ` · ${subscription.billing_interval.toUpperCase()}` : ''}
+            </Text>
+          </View>
+        )}
+
+        {/* Quota Progress Telemetry Grid */}
+        <View style={styles.quotaGrid}>
+          {/* Meter 1: Channels */}
+          <View style={styles.quotaGridItem}>
             <View style={styles.quotaLabelRow}>
               <Text style={[styles.quotaTitle, { color: isDark ? '#cbd5e1' : '#475569' }]}>
                 Channels Connected
@@ -666,13 +1050,442 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
                   styles.progressBarFill,
                   {
                     width: `${Math.min(100, Math.round((connectedList.length / maxChannelsAllowed) * 100))}%`,
-                    backgroundColor: '#ec4899',
+                    backgroundColor: connectedList.length >= maxChannelsAllowed ? '#ef4444' : '#ec4899',
+                  },
+                ]}
+              />
+            </View>
+          </View>
+
+          {/* Meter 2: Scheduled Queue */}
+          <View style={styles.quotaGridItem}>
+            <View style={styles.quotaLabelRow}>
+              <Text style={[styles.quotaTitle, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                Scheduled Queue Capacity
+              </Text>
+              <Text style={[styles.quotaVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                {queueList.length} / {isUnlimitedQueue ? 'Unlimited' : `${scheduledQueueLimit} Max`}
+              </Text>
+            </View>
+            <View style={[styles.progressBarBg, { backgroundColor: isDark ? '#1e293b' : '#e2e8f0' }]}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  {
+                    width: isUnlimitedQueue ? '15%' : `${Math.min(100, Math.round((queueList.length / scheduledQueueLimit) * 100))}%`,
+                    backgroundColor: '#3b82f6',
+                  },
+                ]}
+              />
+            </View>
+          </View>
+
+          {/* Meter 3: AutoDM Automations */}
+          <View style={styles.quotaGridItem}>
+            <View style={styles.quotaLabelRow}>
+              <Text style={[styles.quotaTitle, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                AutoDM Active Automations
+              </Text>
+              <Text style={[styles.quotaVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                {isUnlimitedAutoDM ? 'Unlimited' : `${autodmRulesLimit} Rule Max`}
+              </Text>
+            </View>
+            <View style={[styles.progressBarBg, { backgroundColor: isDark ? '#1e293b' : '#e2e8f0' }]}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  {
+                    width: isUnlimitedAutoDM ? '20%' : '100%',
+                    backgroundColor: '#8b5cf6',
+                  },
+                ]}
+              />
+            </View>
+          </View>
+
+          {/* Meter 4: Monthly Replies */}
+          <View style={styles.quotaGridItem}>
+            <View style={styles.quotaLabelRow}>
+              <Text style={[styles.quotaTitle, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                Monthly AutoDM Replies
+              </Text>
+              <Text style={[styles.quotaVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                {repliesUsed} / {isUnlimitedReplies ? 'Unlimited' : `${repliesLimit} /mo`}
+              </Text>
+            </View>
+            <View style={[styles.progressBarBg, { backgroundColor: isDark ? '#1e293b' : '#e2e8f0' }]}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  {
+                    width: isUnlimitedReplies ? '10%' : `${Math.min(100, Math.round((repliesUsed / repliesLimit) * 100))}%`,
+                    backgroundColor: '#10b981',
                   },
                 ]}
               />
             </View>
           </View>
         </View>
+
+        {/* Compare All Plans In-App Screen Action */}
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.push('/products/social/plans' as any);
+          }}
+          style={[styles.manageBillingLinkBtn, { borderColor: isDark ? '#334155' : '#e2e8f0' }]}
+        >
+          <Ionicons name="sparkles" size={15} color="#ec4899" />
+          <Text style={styles.manageBillingLinkText}>Compare All Plans & Upgrades</Text>
+          <Ionicons name="chevron-forward" size={15} color="#ec4899" />
+        </Pressable>
+      </View>
+
+      {/* 5.1 Interactive Pricing & Plans Showcase Section */}
+      <View style={[styles.sectionCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionHeaderLeft}>
+            <Ionicons name="pricetags" size={18} color="#ec4899" />
+            <View>
+              <Text style={[styles.sectionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                SocialPilot Plans & Pricing
+              </Text>
+              <Text style={[styles.pricingSectionSub, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                Scale your channels, automated queue, & AI growth
+              </Text>
+            </View>
+          </View>
+          {plansLoading && <ActivityIndicator size="small" color="#ec4899" />}
+        </View>
+
+        {/* Billing Interval Selector Bar */}
+        <View style={styles.billingIntervalBar}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.billingIntervalScroll}>
+            {BILLING_INTERVALS.map((inv) => {
+              const isSelected = selectedInterval === inv.key;
+              return (
+                <Pressable
+                  key={inv.key}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setSelectedInterval(inv.key);
+                  }}
+                  style={[
+                    styles.billingIntervalPill,
+                    {
+                      backgroundColor: isSelected
+                        ? '#ec4899'
+                        : isDark
+                          ? '#1e293b'
+                          : '#f1f5f9',
+                      borderColor: isSelected ? '#ec4899' : 'transparent',
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.billingIntervalText,
+                      { color: isSelected ? '#ffffff' : isDark ? '#cbd5e1' : '#475569' },
+                    ]}
+                  >
+                    {inv.label}
+                  </Text>
+                  {Boolean(inv.discountBadge) && (
+                    <View
+                      style={[
+                        styles.intervalDiscountBadge,
+                        { backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : 'rgba(34, 197, 94, 0.15)' },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.intervalDiscountText,
+                          { color: isSelected ? '#ffffff' : '#22c55e' },
+                        ]}
+                      >
+                        {inv.discountBadge}
+                      </Text>
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {/* Horizontal Plans Comparison Carousel */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.plansCarouselContent}
+          decelerationRate="fast"
+          snapToInterval={296}
+        >
+          {activePlans.map((plan) => {
+            const isCurrent = currentPlanId === plan.id;
+            const price = selectedInterval === 'month'
+              ? plan.prices.month
+              : (plan.prices[selectedInterval] ?? plan.prices.month);
+            const originalPrice = plan.prices.month;
+            const hasDiscount = selectedInterval !== 'month' && originalPrice > price;
+
+            return (
+              <View
+                key={plan.id}
+                style={[
+                  styles.pricingPlanCard,
+                  {
+                    backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                    borderColor: isCurrent
+                      ? '#22c55e'
+                      : plan.isPopular
+                        ? '#ec4899'
+                        : isDark
+                          ? '#334155'
+                          : '#e2e8f0',
+                  },
+                ]}
+              >
+                {/* Popular / Current Badges */}
+                <View style={styles.planCardBadgeRow}>
+                  {plan.isPopular && (
+                    <View style={styles.popularBadge}>
+                      <Ionicons name="flash" size={10} color="#ffffff" />
+                      <Text style={styles.popularBadgeText}>MOST POPULAR</Text>
+                    </View>
+                  )}
+                  {isCurrent && (
+                    <View style={styles.currentActivePlanBadge}>
+                      <Ionicons name="checkmark-circle" size={11} color="#ffffff" />
+                      <Text style={styles.currentActivePlanBadgeText}>ACTIVE PLAN</Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Plan Title & Tagline */}
+                <Text style={[styles.planCardName, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                  {plan.name}
+                </Text>
+                <Text style={[styles.planCardTagline, { color: isDark ? '#94a3b8' : '#64748b' }]} numberOfLines={2}>
+                  {plan.tagline}
+                </Text>
+
+                {/* Price Display */}
+                <View style={styles.priceContainer}>
+                  {plan.id === 'free' ? (
+                    <View style={styles.priceAmountRow}>
+                      <Text style={[styles.priceCurrency, { color: isDark ? '#f8fafc' : '#0f172a' }]}>₹</Text>
+                      <Text style={[styles.priceNumber, { color: isDark ? '#f8fafc' : '#0f172a' }]}>0</Text>
+                      <Text style={[styles.pricePeriod, { color: isDark ? '#94a3b8' : '#64748b' }]}>/ month</Text>
+                    </View>
+                  ) : (
+                    <View>
+                      <View style={styles.priceAmountRow}>
+                        <Text style={[styles.priceCurrency, { color: isDark ? '#f8fafc' : '#0f172a' }]}>₹</Text>
+                        <Text style={[styles.priceNumber, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                          {Math.round(price)}
+                        </Text>
+                        <Text style={[styles.pricePeriod, { color: isDark ? '#94a3b8' : '#64748b' }]}>/ mo</Text>
+                        {hasDiscount && (
+                          <Text style={styles.priceOriginalStrike}>
+                            ₹{originalPrice}
+                          </Text>
+                        )}
+                      </View>
+                      <Text style={[styles.priceBilledNote, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                        {selectedInterval === 'month'
+                          ? 'Billed monthly'
+                          : `Billed ${BILLING_INTERVALS.find(b => b.key === selectedInterval)?.label.toLowerCase()}`}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Plan Action CTA */}
+                {isCurrent ? (
+                  <View style={styles.activePlanStaticBtn}>
+                    <Ionicons name="checkmark-circle" size={15} color="#22c55e" />
+                    <Text style={styles.activePlanStaticBtnText}>Current Active Tier</Text>
+                  </View>
+                ) : (
+                  <Pressable
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      router.push('/products/social/plans' as any);
+                    }}
+                    style={[
+                      styles.upgradePlanActionBtn,
+                      { backgroundColor: plan.id === 'sgrowth' ? '#8b5cf6' : '#ec4899' },
+                    ]}
+                  >
+                    <Ionicons name="sparkles" size={14} color="#ffffff" />
+                    <Text style={styles.upgradePlanActionBtnText}>
+                      {plan.id === 'free' ? 'Choose Free' : `Upgrade to ${plan.name}`}
+                    </Text>
+                  </Pressable>
+                )}
+
+                <View style={[styles.planDivider, { backgroundColor: isDark ? '#334155' : '#e2e8f0' }]} />
+
+                {/* Core Limits Overview */}
+                <Text style={[styles.featuresSectionTitle, { color: isDark ? '#cbd5e1' : '#334155' }]}>
+                  WORKSPACE LIMITS
+                </Text>
+                <View style={styles.limitsList}>
+                  <View style={styles.limitRow}>
+                    <Ionicons name="apps-outline" size={13} color="#ec4899" />
+                    <Text style={[styles.limitLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                      Channels:
+                    </Text>
+                    <Text style={[styles.limitVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                      {plan.limits.social_accounts} Accounts
+                    </Text>
+                  </View>
+
+                  <View style={styles.limitRow}>
+                    <Ionicons name="calendar-outline" size={13} color="#3b82f6" />
+                    <Text style={[styles.limitLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                      Scheduled Queue:
+                    </Text>
+                    <Text style={[styles.limitVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                      {plan.limits.scheduled_queue >= 1000000 ? 'Unlimited' : `${plan.limits.scheduled_queue} Posts`}
+                    </Text>
+                  </View>
+
+                  <View style={styles.limitRow}>
+                    <Ionicons name="chatbubbles-outline" size={13} color="#8b5cf6" />
+                    <Text style={[styles.limitLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                      AutoDM Automations:
+                    </Text>
+                    <Text style={[styles.limitVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                      {plan.limits.autodm_automations >= 1000000 ? 'Unlimited' : `${plan.limits.autodm_automations} Rule`}
+                    </Text>
+                  </View>
+
+                  <View style={styles.limitRow}>
+                    <Ionicons name="send-outline" size={13} color="#10b981" />
+                    <Text style={[styles.limitLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                      Monthly Replies:
+                    </Text>
+                    <Text style={[styles.limitVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                      {plan.limits.autodm_replies_per_month >= 1000000 ? 'Unlimited' : `${plan.limits.autodm_replies_per_month} /mo`}
+                    </Text>
+                  </View>
+
+                  <View style={styles.limitRow}>
+                    <Ionicons name="people-outline" size={13} color="#f59e0b" />
+                    <Text style={[styles.limitLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                      Audience Contacts:
+                    </Text>
+                    <Text style={[styles.limitVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                      {plan.limits.contacts >= 1000000 ? 'Unlimited' : `${plan.limits.contacts} Contacts`}
+                    </Text>
+                  </View>
+
+                  <View style={styles.limitRow}>
+                    <Ionicons name="time-outline" size={13} color="#06b6d4" />
+                    <Text style={[styles.limitLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                      Analytics History:
+                    </Text>
+                    <Text style={[styles.limitVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                      {plan.limits.history_days} Days
+                    </Text>
+                  </View>
+
+                  <View style={styles.limitRow}>
+                    <Ionicons name="person-circle-outline" size={13} color="#ec4899" />
+                    <Text style={[styles.limitLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                      Team Seats:
+                    </Text>
+                    <Text style={[styles.limitVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                      {plan.limits.team_members} Member{plan.limits.team_members > 1 ? 's' : ''}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={[styles.planDivider, { backgroundColor: isDark ? '#334155' : '#e2e8f0' }]} />
+
+                {/* Feature Checklist */}
+                <Text style={[styles.featuresSectionTitle, { color: isDark ? '#cbd5e1' : '#334155' }]}>
+                  CAPABILITIES
+                </Text>
+                <View style={styles.featureChecksList}>
+                  <View style={styles.featureCheckItem}>
+                    <Ionicons name="checkmark-circle" size={14} color="#22c55e" />
+                    <Text style={[styles.featureCheckText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                      Multi-Channel Publishing
+                    </Text>
+                  </View>
+
+                  <View style={styles.featureCheckItem}>
+                    <Ionicons name="checkmark-circle" size={14} color="#22c55e" />
+                    <Text style={[styles.featureCheckText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                      Scheduled Reel & Video Posts
+                    </Text>
+                  </View>
+
+                  <View style={styles.featureCheckItem}>
+                    <Ionicons name="checkmark-circle" size={14} color="#22c55e" />
+                    <Text style={[styles.featureCheckText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                      Keyword-Triggered AutoDM
+                    </Text>
+                  </View>
+
+                  <View style={styles.featureCheckItem}>
+                    <Ionicons
+                      name={plan.features.approval_workflow ? 'checkmark-circle' : 'close-circle'}
+                      size={14}
+                      color={plan.features.approval_workflow ? '#22c55e' : isDark ? '#64748b' : '#94a3b8'}
+                    />
+                    <Text
+                      style={[
+                        styles.featureCheckText,
+                        {
+                          color: plan.features.approval_workflow
+                            ? isDark ? '#cbd5e1' : '#475569'
+                            : isDark ? '#64748b' : '#94a3b8',
+                        },
+                      ]}
+                    >
+                      Approval Workflows
+                    </Text>
+                  </View>
+
+                  <View style={styles.featureCheckItem}>
+                    <Ionicons
+                      name={plan.features.api ? 'checkmark-circle' : 'close-circle'}
+                      size={14}
+                      color={plan.features.api ? '#22c55e' : isDark ? '#64748b' : '#94a3b8'}
+                    />
+                    <Text
+                      style={[
+                        styles.featureCheckText,
+                        {
+                          color: plan.features.api
+                            ? isDark ? '#cbd5e1' : '#475569'
+                            : isDark ? '#64748b' : '#94a3b8',
+                        },
+                      ]}
+                    >
+                      Developer API Access
+                    </Text>
+                  </View>
+
+                  <View style={styles.featureCheckItem}>
+                    <Ionicons
+                      name={plan.features.priority_support ? 'checkmark-circle' : 'checkmark-circle-outline'}
+                      size={14}
+                      color={plan.features.priority_support ? '#22c55e' : '#3b82f6'}
+                    />
+                    <Text style={[styles.featureCheckText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                      {plan.features.priority_support ? 'Priority 24/7 Support' : 'Standard Support'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            );
+          })}
+        </ScrollView>
       </View>
 
       {/* 6. Next Scheduled Broadcast Spotlight (if pending queue exists) */}
@@ -720,7 +1533,18 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
 
       {/* 7. Connected Social Media Accounts (From API: accounts + overviewData) */}
       <View style={[styles.sectionCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
-
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionHeaderLeft}>
+            <Ionicons name="apps" size={18} color="#ec4899" />
+            <Text style={[styles.sectionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              Linked Channel Details
+            </Text>
+          </View>
+          <Pressable onPress={onOpenAccountsModal} style={styles.topManageLink}>
+            <Text style={styles.topManageLinkText}>Manage</Text>
+            <Ionicons name="chevron-forward" size={12} color="#ec4899" />
+          </Pressable>
+        </View>
 
         {connectedList.length > 0 ? (
           <View style={styles.accountsGrid}>
@@ -828,7 +1652,7 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
                   ]}
                   numberOfLines={1}
                 >
-                  asdasda {plat.label}
+                  {plat.label}
                 </Text>
                 <View
                   style={[
@@ -874,6 +1698,7 @@ const styles = StyleSheet.create({
     elevation: 1,
     gap: 12,
   },
+
   headerTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1592,5 +2417,240 @@ const styles = StyleSheet.create({
   igSwitcherChipText: {
     fontSize: 11,
     fontWeight: '700',
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  statusPillText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  quotaMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  quotaMetaText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  quotaGrid: {
+    gap: 12,
+  },
+  quotaGridItem: {
+    gap: 4,
+  },
+  manageBillingLinkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 6,
+  },
+  manageBillingLinkText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#ec4899',
+  },
+  pricingSectionSub: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  billingIntervalBar: {
+    marginVertical: 4,
+  },
+  billingIntervalScroll: {
+    gap: 8,
+    paddingVertical: 2,
+  },
+  billingIntervalPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  billingIntervalText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  intervalDiscountBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  intervalDiscountText: {
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  plansCarouselContent: {
+    gap: 14,
+    paddingVertical: 8,
+  },
+  pricingPlanCard: {
+    width: 282,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    padding: 16,
+    gap: 12,
+  },
+  planCardBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 20,
+  },
+  popularBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#ec4899',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  popularBadgeText: {
+    color: '#ffffff',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  currentActivePlanBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#16a34a',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  currentActivePlanBadgeText: {
+    color: '#ffffff',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  planCardName: {
+    fontSize: 20,
+    fontWeight: '900',
+  },
+  planCardTagline: {
+    fontSize: 12,
+    lineHeight: 16,
+    minHeight: 32,
+  },
+  priceContainer: {
+    paddingVertical: 4,
+  },
+  priceAmountRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 2,
+  },
+  priceCurrency: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  priceNumber: {
+    fontSize: 30,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  pricePeriod: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  priceOriginalStrike: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#94a3b8',
+    textDecorationLine: 'line-through',
+    marginLeft: 8,
+  },
+  priceBilledNote: {
+    fontSize: 11,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  activePlanStaticBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#22c55e',
+  },
+  activePlanStaticBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#16a34a',
+  },
+  upgradePlanActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  upgradePlanActionBtnText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  planDivider: {
+    height: 1,
+  },
+  featuresSectionTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  limitsList: {
+    gap: 7,
+  },
+  limitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  limitLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    flex: 1,
+  },
+  limitVal: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  featureChecksList: {
+    gap: 7,
+  },
+  featureCheckItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  featureCheckText: {
+    fontSize: 11,
+    fontWeight: '500',
   },
 });

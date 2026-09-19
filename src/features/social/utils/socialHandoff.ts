@@ -9,7 +9,8 @@ export type SocialHandoffTarget =
   | 'schedule'
   | 'builder'
   | 'upload-short'
-  | 'new-automation';
+  | 'new-automation'
+  | 'billing';
 
 export const SOCIAL_TARGET_URLS: Record<SocialHandoffTarget, string> = {
   'new-post': 'https://social.getaipilot.in/dashboard',
@@ -17,6 +18,7 @@ export const SOCIAL_TARGET_URLS: Record<SocialHandoffTarget, string> = {
   'builder': 'https://social.getaipilot.in/dashboard/instapilot?mode=builder',
   'upload-short': 'https://social.getaipilot.in/dashboard/compose',
   'new-automation': 'https://social.getaipilot.in/dashboard/auto-dm/automations/new',
+  'billing': 'https://social.getaipilot.in/dashboard/settings?tab=billing',
 };
 
 export const SOCIAL_TOOL_KEYS: Record<SocialHandoffTarget, string> = {
@@ -25,6 +27,7 @@ export const SOCIAL_TOOL_KEYS: Record<SocialHandoffTarget, string> = {
   'builder': 'social-builder',
   'upload-short': 'social-compose',
   'new-automation': 'social-automation',
+  'billing': 'social-billing',
 };
 
 /**

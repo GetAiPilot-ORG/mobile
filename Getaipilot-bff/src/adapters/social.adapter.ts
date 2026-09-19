@@ -1022,6 +1022,11 @@ export class SocialAdapter {
     return res.entitlements || res.data || res;
   }
 
+  public static async getPlans(user?: JWTPayload) {
+    const res: any = await this.requestUpstream('/api/billing/plans', { user });
+    return res.plans ? res : { success: true, plans: res };
+  }
+
   /**
    * Dynamically resolves the Supabase Anon Key and/or Auth Token for different users/tenants.
    * Order of precedence:

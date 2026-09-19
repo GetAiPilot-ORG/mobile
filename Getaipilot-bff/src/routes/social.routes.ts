@@ -215,6 +215,13 @@ export async function socialRoutes(fastify: FastifyInstance) {
     return reply.send(entitlements);
   });
 
+  // 6.1 Billing Plans
+  fastify.get('/social/plans', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const plans = await SocialAdapter.getPlans(user);
+    return reply.send(plans);
+  });
+
   // Helper to extract optional caller credentials
   const extractDynamicAuth = (req: any) => {
     const customKey = (req.headers['apikey'] || req.headers['x-supabase-anon-key'] || req.headers['x-anon-key']) as string | undefined;

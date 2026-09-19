@@ -415,3 +415,71 @@ export interface SocialInboxReplyPayload {
   conversationDatabaseId?: string;
 }
 
+export type BillingInterval = 'month' | 'quarterly' | 'six_months' | 'year';
+
+export interface SocialPlanPrices {
+  month: number;
+  quarterly?: number;
+  six_months?: number;
+  year?: number;
+}
+
+export interface SocialPlanFeatures {
+  publishing: boolean;
+  scheduling: boolean;
+  analytics: boolean;
+  autodm: boolean;
+  approval_workflow: boolean;
+  api: boolean;
+  priority_support: boolean;
+}
+
+export interface SocialPlanLimits {
+  social_accounts: number;
+  scheduled_queue: number;
+  team_members: number;
+  history_days: number;
+  autodm_accounts: number;
+  autodm_automations: number;
+  autodm_replies_per_month: number;
+  contacts: number;
+}
+
+export interface SocialPlan {
+  id: string; // 'free' | 'slite' | 'sgrowth'
+  name: string; // 'Free' | 'Starter' | 'Growth'
+  prices: SocialPlanPrices;
+  features: SocialPlanFeatures;
+  limits: SocialPlanLimits;
+  tagline?: string;
+  isPopular?: boolean;
+}
+
+export interface SocialEntitlements {
+  plan?: {
+    id: string;
+    name: string;
+  };
+  subscription?: {
+    plan_id: string;
+    source: string;
+    status: string;
+    billing_interval: string;
+    current_period_end?: string;
+    cancel_at_period_end?: boolean;
+    grace_period_ends_at?: string | null;
+    interval_months?: number;
+  };
+  features?: SocialPlanFeatures;
+  limits?: SocialPlanLimits;
+  usage?: {
+    autodm_replies_per_month?: {
+      metric: string;
+      used: number;
+      period_start?: string;
+      period_end?: string;
+    };
+  };
+}
+
+

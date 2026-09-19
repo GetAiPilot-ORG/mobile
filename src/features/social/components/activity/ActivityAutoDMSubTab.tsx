@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
   Alert,
@@ -31,13 +32,16 @@ import { openSocialHandoff } from '../../utils/socialHandoff';
 
 export interface ActivityAutoDMSubTabProps {
   connectedAccounts?: any[];
+  entitlementsData?: any;
 }
 
 export const ActivityAutoDMSubTab: React.FC<ActivityAutoDMSubTabProps> = ({
   connectedAccounts = [],
+  entitlementsData,
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
@@ -251,15 +255,6 @@ export const ActivityAutoDMSubTab: React.FC<ActivityAutoDMSubTabProps> = ({
     },
   });
 
-  const deleteAutomationMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return apiClient.delete<{ success: boolean }>(`/mobile/v1/social/autodm/automations/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['social', 'autodm', 'automations', activeInstagramAccountId] });
-    },
-  });
-
   // Modals & Rule Form State
   const [selectedMediaPost, setSelectedMediaPost] = useState<AutoDMInstagramMediaItem | null>(null);
   const [newRuleName, setNewRuleName] = useState('');
@@ -300,20 +295,6 @@ export const ActivityAutoDMSubTab: React.FC<ActivityAutoDMSubTabProps> = ({
       instagram_account_id: activeInstagramAccountId,
       is_active: true,
     });
-  };
-
-  const handleDeleteRule = (id: string) => {
-    Alert.alert('Delete Automation', 'Are you sure you want to delete this AutoDM automation?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          deleteAutomationMutation.mutate(id);
-        },
-      },
-    ]);
   };
 
   const handleTriggerAutoDMForMedia = (media: AutoDMInstagramMediaItem) => {
@@ -407,6 +388,38 @@ export const ActivityAutoDMSubTab: React.FC<ActivityAutoDMSubTabProps> = ({
     return { sent, seen, clicks, leads, followers };
   }, [autodmMetricsData]);
 
+  const planName = entitlementsData?.plan?.name || 'Free';
+  const automationLimit = entitlementsData?.limits?.autodm_automations ?? 1;
+  const isUnlimitedAutomations = automationLimit >= 1000000;
+  const automationsCount = dynamicAutomations.length;
+  const isAutomationsFull = !isUnlimitedAutomations && automationsCount >= automationLimit;
+
+  const repliesLimit = entitlementsData?.limits?.autodm_replies_per_month ?? 50;
+  const isUnlimitedReplies = repliesLimit >= 1000000;
+  const repliesUsed = entitlementsData?.usage?.autodm_replies_per_month?.used ?? 0;
+
+  const handleNewAutomationPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (isAutomationsFull) {
+      Alert.alert(
+        'Automation Limit Reached',
+        `Your ${planName} plan allows up to ${automationLimit} active automation rule. Upgrade to Starter or Growth to create unlimited automated DM campaigns.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Upgrade Plan',
+            onPress: () => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push('/products/social/plans' as any);
+            },
+          },
+        ]
+      );
+      return;
+    }
+    openSocialHandoff('new-automation');
+  };
+
   return (
     <View style={styles.subContent}>
       {/* Header Action Row */}
@@ -420,16 +433,69 @@ export const ActivityAutoDMSubTab: React.FC<ActivityAutoDMSubTabProps> = ({
           </Text>
         </View>
         <Pressable
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            openSocialHandoff('new-automation');
-          }}
+          onPress={handleNewAutomationPress}
           style={[styles.primaryActionBtn, { backgroundColor: '#3b82f6' }]}
         >
           <Ionicons name="add" size={16} color="#ffffff" />
           <Text style={styles.primaryActionBtnText}>New Automation</Text>
         </Pressable>
       </View>
+
+      {/* Plan Quota Banner */}
+      {!isUnlimitedAutomations && (
+        <View
+          style={[
+            styles.autodmQuotaBanner,
+            {
+              backgroundColor: isAutomationsFull
+                ? isDark ? 'rgba(239, 68, 68, 0.15)' : '#fef2f2'
+                : isDark ? 'rgba(59, 130, 246, 0.1)' : '#eff6ff',
+              borderColor: isAutomationsFull ? '#ef4444' : isDark ? '#1e3a8a' : '#bfdbfe',
+            },
+          ]}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+            <Ionicons
+              name={isAutomationsFull ? 'alert-circle' : 'information-circle'}
+              size={18}
+              color={isAutomationsFull ? '#ef4444' : '#3b82f6'}
+            />
+            <View style={{ flex: 1 }}>
+              <Text
+                style={[
+                  styles.autodmQuotaTitle,
+                  { color: isAutomationsFull ? '#ef4444' : isDark ? '#93c5fd' : '#1d4ed8' },
+                ]}
+              >
+                {isAutomationsFull
+                  ? `Automations Limit Reached (${automationsCount}/${automationLimit})`
+                  : `Plan Quota: ${automationsCount}/${automationLimit} rule · ${repliesUsed}/${isUnlimitedReplies ? '∞' : repliesLimit} monthly replies`}
+              </Text>
+              <Text
+                style={[
+                  styles.autodmQuotaSub,
+                  { color: isAutomationsFull ? (isDark ? '#fca5a5' : '#b91c1c') : (isDark ? '#cbd5e1' : '#475569') },
+                ]}
+              >
+                {isAutomationsFull
+                  ? `Your ${planName} plan is capped at ${automationLimit} automation. Upgrade for unlimited rules & replies.`
+                  : `${planName} tier allows ${automationLimit} active keyword-to-DM trigger.`}
+              </Text>
+            </View>
+          </View>
+          {isAutomationsFull && (
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push('/products/social/plans' as any);
+              }}
+              style={styles.autodmUpgradeBtn}
+            >
+              <Text style={styles.autodmUpgradeBtnText}>Upgrade</Text>
+            </Pressable>
+          )}
+        </View>
+      )}
 
       {/* 1. ALL CONNECTED INSTAGRAM ACCOUNTS ON TOP (Account Switcher) */}
       <View style={styles.topAccountsSection}>
@@ -723,7 +789,6 @@ export const ActivityAutoDMSubTab: React.FC<ActivityAutoDMSubTabProps> = ({
           isLoading={autodmAutomationsLoading}
           activeAutoDMAccount={activeAutoDMAccount}
           onToggleRule={handleToggleRule}
-          onDeleteRule={handleDeleteRule}
         />
       )}
 
@@ -800,6 +865,36 @@ const styles = StyleSheet.create({
   primaryActionBtnText: {
     color: '#ffffff',
     fontSize: 12,
+    fontWeight: '800',
+  },
+  autodmQuotaBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 12,
+    marginBottom: 10,
+  },
+  autodmQuotaTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  autodmQuotaSub: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  autodmUpgradeBtn: {
+    backgroundColor: '#3b82f6',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  autodmUpgradeBtnText: {
+    color: '#ffffff',
+    fontSize: 11,
     fontWeight: '800',
   },
   autodmAccountCard: {
