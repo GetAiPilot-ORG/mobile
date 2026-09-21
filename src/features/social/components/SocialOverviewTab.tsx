@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Image,
   Linking,
@@ -10,18 +12,23 @@ import {
   StyleSheet,
   Text,
   View,
-  useColorScheme,
+  useColorScheme
 } from 'react-native';
 import { SocialScreenSkeleton } from '../../../components/skeletonScreen';
+import { BillingInterval, SocialPlan } from '../types';
 import { openSocialHandoff } from '../utils/socialHandoff';
 
 interface SocialOverviewTabProps {
   overviewLoading: boolean;
+  overviewRefetching?: boolean;
   overviewError?: any;
   onRetryOverview?: () => void;
   overviewData: any;
   statsData?: any;
   entitlementsData?: any;
+  plansData?: any;
+  plansLoading?: boolean;
+  onRetryPlans?: () => void;
   connectedList: any[];
   postsList: any[];
   queueList: any[];
@@ -34,6 +41,102 @@ interface SocialOverviewTabProps {
   onOpenAccountsModal: () => void;
   onNavigateToTab: (tab: 'overview' | 'trends' | 'inbox' | 'activity') => void;
 }
+
+const BILLING_INTERVALS: { key: BillingInterval; label: string; discountBadge?: string }[] = [
+  { key: 'month', label: 'Monthly' },
+  { key: 'quarterly', label: 'Quarterly', discountBadge: '10% OFF' },
+  { key: 'six_months', label: '6 Months', discountBadge: '20% OFF' },
+  { key: 'year', label: 'Yearly', discountBadge: '30% OFF' },
+];
+
+const DEFAULT_PLANS: SocialPlan[] = [
+  {
+    id: 'free',
+    name: 'Free',
+    tagline: 'Best for getting started & exploring social automation',
+    prices: { month: 0, year: 0 },
+    features: {
+      publishing: true,
+      scheduling: true,
+      analytics: true,
+      autodm: true,
+      approval_workflow: false,
+      api: false,
+      priority_support: false,
+    },
+    limits: {
+      social_accounts: 3,
+      scheduled_queue: 10,
+      team_members: 1,
+      history_days: 7,
+      autodm_accounts: 3,
+      autodm_automations: 1,
+      autodm_replies_per_month: 50,
+      contacts: 100,
+    },
+  },
+  {
+    id: 'slite',
+    name: 'Starter',
+    tagline: 'For growing creators, influencers & brand channels',
+    isPopular: true,
+    prices: {
+      month: 999,
+      quarterly: 899.1,
+      six_months: 799.2,
+      year: 699.3,
+    },
+    features: {
+      publishing: true,
+      scheduling: true,
+      analytics: true,
+      autodm: true,
+      approval_workflow: false,
+      api: false,
+      priority_support: true,
+    },
+    limits: {
+      social_accounts: 10,
+      scheduled_queue: 1000000,
+      team_members: 1,
+      history_days: 90,
+      autodm_accounts: 10,
+      autodm_automations: 1000000,
+      autodm_replies_per_month: 1000000,
+      contacts: 1000000,
+    },
+  },
+  {
+    id: 'sgrowth',
+    name: 'Growth',
+    tagline: 'Full agency firepower, unlimited queue & multi-seat team access',
+    prices: {
+      month: 1999,
+      quarterly: 1799.1,
+      six_months: 1599.2,
+      year: 1399.3,
+    },
+    features: {
+      publishing: true,
+      scheduling: true,
+      analytics: true,
+      autodm: true,
+      approval_workflow: true,
+      api: true,
+      priority_support: true,
+    },
+    limits: {
+      social_accounts: 30,
+      scheduled_queue: 1000000,
+      team_members: 10,
+      history_days: 365,
+      autodm_accounts: 30,
+      autodm_automations: 1000000,
+      autodm_replies_per_month: 1000000,
+      contacts: 1000000,
+    },
+  },
+];
 
 const SUPPORTED_PLATFORMS = [
   { key: 'instagram', label: 'Instagram', icon: 'logo-instagram', color: '#e1306c' },
@@ -48,11 +151,15 @@ const SUPPORTED_PLATFORMS = [
 
 export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
   overviewLoading,
+  overviewRefetching = false,
   overviewError,
   onRetryOverview,
   overviewData,
   statsData,
   entitlementsData,
+  plansData,
+  plansLoading,
+  onRetryPlans,
   connectedList,
   postsList,
   queueList,
@@ -67,10 +174,44 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const router = useRouter();
 
   const ops = overviewData?.operations || {};
   const automation = overviewData?.automation || {};
   const igGrowth = overviewData?.instagramGrowth || {};
+
+  const publishingTrend: Array<{ date: string; sent: number; scheduled: number; failed: number }> = useMemo(() => {
+    return Array.isArray(overviewData?.publishingTrend) ? overviewData.publishingTrend : [];
+  }, [overviewData?.publishingTrend]);
+
+  const trendStats = useMemo(() => {
+    let sent = 0;
+    let scheduled = 0;
+    let failed = 0;
+    let activeDays = 0;
+    let maxDayCount = 0;
+
+    publishingTrend.forEach((item) => {
+      const s = item.sent || 0;
+      const sch = item.scheduled || 0;
+      const f = item.failed || 0;
+      const totalDay = s + sch + f;
+      sent += s;
+      scheduled += sch;
+      failed += f;
+      if (totalDay > 0) activeDays++;
+      if (totalDay > maxDayCount) maxDayCount = totalDay;
+    });
+
+    return {
+      sent,
+      scheduled,
+      failed,
+      total: sent + scheduled + failed,
+      activeDays,
+      maxDayCount: Math.max(maxDayCount, 1),
+    };
+  }, [publishingTrend]);
 
   const [selectedIgAccountId, setSelectedIgAccountId] = useState<string | null>(null);
   const igAccountsList: any[] = useMemo(() => {
@@ -213,8 +354,53 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
   }, [postsList, ops.recentActivity]);
 
   const nextScheduledPost = queueList.length > 0 ? queueList[0] : ops.nextScheduled;
-  const maxChannelsAllowed = entitlementsData?.maxChannels || 10;
-  const planName = entitlementsData?.planName || entitlementsData?.plan?.name || 'GAP Pro Multi-Channel';
+
+  const currentPlanId = entitlementsData?.plan?.id || entitlementsData?.subscription?.plan_id || 'free';
+  const currentPlanName = entitlementsData?.plan?.name || (currentPlanId === 'sgrowth' ? 'Growth' : currentPlanId === 'slite' ? 'Starter' : 'Free');
+  const limits = entitlementsData?.limits || {
+    social_accounts: 3,
+    scheduled_queue: 10,
+    team_members: 1,
+    history_days: 7,
+    autodm_accounts: 3,
+    autodm_automations: 1,
+    autodm_replies_per_month: 50,
+    contacts: 100,
+  };
+  const maxChannelsAllowed = limits.social_accounts || entitlementsData?.maxChannels || 10;
+  const scheduledQueueLimit = limits.scheduled_queue || 10;
+  const isUnlimitedQueue = scheduledQueueLimit >= 1000000;
+  const autodmRulesLimit = limits.autodm_automations || 1;
+  const isUnlimitedAutoDM = autodmRulesLimit >= 1000000;
+  const repliesLimit = limits.autodm_replies_per_month || 50;
+  const isUnlimitedReplies = repliesLimit >= 1000000;
+  const historyDaysLimit = limits.history_days || 7;
+  const subscription = entitlementsData?.subscription;
+  const repliesUsed = entitlementsData?.usage?.autodm_replies_per_month?.used || 0;
+
+
+
+  const handleConnectChannel = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (connectedList.length >= maxChannelsAllowed) {
+      Alert.alert(
+        'Channel Limit Reached',
+        `You have reached your limit of ${maxChannelsAllowed} channels on the ${currentPlanName} plan. Upgrade your plan to link more social accounts.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Upgrade Plan',
+            onPress: () => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push('/products/social/plans' as any);
+            },
+          },
+        ]
+      );
+      return;
+    }
+    openSocialHandoff('new-post');
+  };
 
   if (overviewLoading && !overviewData) {
     return <SocialScreenSkeleton />;
@@ -279,15 +465,36 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
           </Pressable>
         </View>
 
-        {/* Range Pill Selector */}
+        {/* Range Pill Selector with Plan History Limit Enforcement */}
         <View style={styles.rangeRow}>
           <Text style={[styles.rangeLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>Period:</Text>
           {[7, 30, 90].map((days) => {
             const isActive = selectedRange === days;
+            const isLocked = days > historyDaysLimit;
             return (
               <Pressable
                 key={days}
-                onPress={() => onChangeRange(days)}
+                onPress={() => {
+                  if (isLocked) {
+                    Alert.alert(
+                      'Extended History Locked',
+                      `The ${days}-day analytics telemetry requires Starter (90 days) or Growth (365 days) plan. Your current ${currentPlanName} plan includes up to ${historyDaysLimit} days of history.`,
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Upgrade Plan',
+                          onPress: () => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            router.push('/products/social/plans' as any);
+                          },
+                        },
+                      ]
+                    );
+                    return;
+                  }
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  onChangeRange(days);
+                }}
                 style={[
                   styles.rangePill,
                   {
@@ -296,17 +503,27 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
                       : isDark
                         ? '#1e293b'
                         : '#f1f5f9',
+                    opacity: isLocked ? 0.7 : 1,
                   },
                 ]}
               >
-                <Text
-                  style={[
-                    styles.rangePillText,
-                    { color: isActive ? '#ffffff' : isDark ? '#cbd5e1' : '#475569' },
-                  ]}
-                >
-                  Last {days}d
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  {isLocked && (
+                    <Ionicons
+                      name="lock-closed"
+                      size={10}
+                      color={isActive ? '#ffffff' : isDark ? '#94a3b8' : '#64748b'}
+                    />
+                  )}
+                  <Text
+                    style={[
+                      styles.rangePillText,
+                      { color: isActive ? '#ffffff' : isDark ? '#cbd5e1' : '#475569' },
+                    ]}
+                  >
+                    Last {days}d
+                  </Text>
+                </View>
               </Pressable>
             );
           })}
@@ -327,7 +544,8 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
         )}
       </View>
 
-      {/* 2. Top Connected Social Media Accounts (Story / Chips Carousel ON THE TOP) */}
+
+      {/* 3. Top Connected Social Media Accounts (Story / Chips Carousel ON THE TOP) */}
       <View style={[styles.topConnectedSection, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
         <View style={styles.topConnectedHeader}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -341,57 +559,486 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
             <Ionicons name="chevron-forward" size={12} color="#ec4899" />
           </Pressable>
         </View>
+
+        {connectedList.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.topConnectedScroll}
+          >
+            {connectedList.map((acc: any, idx: number) => {
+              const provider = acc.provider || acc.platform || 'channel';
+              const name = acc.username || acc.name || acc.channelTitle || provider;
+              const avatarUrl = acc.profilePicture || acc.profile_picture_url || acc.avatar;
+              const followers = acc.followers || acc.followerCount || acc.raw?.followers;
+              const pColor = getPlatformColor(provider);
+              const pIcon = getPlatformIconName(provider);
+
+              return (
+                <Pressable
+                  key={acc.id || idx}
+                  onPress={onOpenAccountsModal}
+                  style={[
+                    styles.topAccountChipCard,
+                    {
+                      backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                      borderColor: isDark ? '#334155' : '#e2e8f0',
+                    },
+                  ]}
+                >
+                  <View style={styles.topAccountAvatarWrap}>
+                    {avatarUrl ? (
+                      <Image source={{ uri: avatarUrl }} style={styles.topAccountAvatarImg} />
+                    ) : (
+                      <View
+                        style={[
+                          styles.topAccountAvatarFallback,
+                          { backgroundColor: `${pColor}20` },
+                        ]}
+                      >
+                        <Ionicons name={pIcon as any} size={18} color={pColor} />
+                      </View>
+                    )}
+                    <View style={[styles.topAccountProviderBadge, { backgroundColor: pColor }]}>
+                      <Ionicons name={pIcon as any} size={8} color="#ffffff" />
+                    </View>
+                    <View style={styles.topAccountLiveDot} />
+                  </View>
+
+                  <View style={{ maxWidth: 120 }}>
+                    <Text
+                      style={[styles.topAccountName, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+                      numberOfLines={1}
+                    >
+                      {name}
+                    </Text>
+                    <Text
+                      style={[styles.topAccountHandle, { color: pColor }]}
+                      numberOfLines={1}
+                    >
+                      {provider.toUpperCase()}
+                    </Text>
+                    {followers != null && (
+                      <Text style={styles.topAccountFollowers} numberOfLines={1}>
+                        {Number(followers).toLocaleString()} followers
+                      </Text>
+                    )}
+                  </View>
+                </Pressable>
+              );
+            })}
+
+            {/* Connect More Channels CTA */}
+            <Pressable
+              onPress={handleConnectChannel}
+              style={[
+                styles.topAddAccountBtn,
+                {
+                  borderColor: isDark ? '#334155' : '#cbd5e1',
+                  backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                },
+              ]}
+            >
+              <View style={styles.topAddCircle}>
+                <Ionicons name="add" size={16} color="#ec4899" />
+              </View>
+              <Text style={[styles.topAddText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                Connect
+              </Text>
+            </Pressable>
+          </ScrollView>
+        ) : (
+          <View style={styles.topEmptyWrap}>
+            <Ionicons name="link-outline" size={18} color={isDark ? '#94a3b8' : '#64748b'} />
+            <Text style={[styles.topEmptyText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+              No channels connected yet. Tap Manage to link Instagram, YouTube, X, or Facebook.
+            </Text>
+          </View>
+        )}
       </View>
 
-      {/* 3. Core Telemetry 4-Card Grid */}
-      <View style={styles.metricsGrid}>
-        <View style={[styles.metricCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
-          <View style={styles.metricCardHeader}>
-            <Ionicons name="send" size={16} color="#22c55e" />
-            <Text style={styles.metricCardTag}>Sent</Text>
+      {/* 4. Operations Overview (From API: /api/dashboard/overview?range={range}&instagramAccountId=all) */}
+      <View style={[styles.sectionCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
+        {/* Operations Header with Period / Range Switcher */}
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionHeaderLeft}>
+            <View style={[styles.sectionHeaderIconWrap, { backgroundColor: 'rgba(236, 72, 153, 0.12)' }]}>
+              <Ionicons name="pulse" size={18} color="#ec4899" />
+            </View>
+            <View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={[styles.sectionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                  Operations
+                </Text>
+                {overviewRefetching && (
+                  <ActivityIndicator size="small" color="#ec4899" />
+                )}
+              </View>
+              <Text style={[styles.sectionSub, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                Telemetry for Last {selectedRange} Days
+              </Text>
+            </View>
           </View>
-          <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-            {ops.sent != null ? ops.sent : totalSentCount}
-          </Text>
-          <Text style={styles.metricLabel}>
-            Published {ops.totalPostsDelta != null && `(${ops.totalPostsDelta >= 0 ? '+' : ''}${ops.totalPostsDelta}Δ)`}
-          </Text>
+
+          {/* Quick Range Switcher Pills directly in the Operations section */}
+          <View style={styles.opsRangeRow}>
+            {[7, 30, 90].map((days) => {
+              const isActive = selectedRange === days;
+              const isLocked = days > historyDaysLimit;
+              return (
+                <Pressable
+                  key={days}
+                  onPress={() => {
+                    if (isLocked) {
+                      Alert.alert(
+                        'Extended History Locked',
+                        `The ${days}-day analytics telemetry requires Starter (90 days) or Growth (365 days) plan. Your current ${currentPlanName} plan includes up to ${historyDaysLimit} days of history.`,
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Upgrade Plan',
+                            onPress: () => {
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                              router.push('/products/social/plans' as any);
+                            },
+                          },
+                        ]
+                      );
+                      return;
+                    }
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onChangeRange(days);
+                  }}
+                  style={[
+                    styles.opsRangePill,
+                    {
+                      backgroundColor: isActive
+                        ? '#ec4899'
+                        : isDark
+                          ? '#1e293b'
+                          : '#f1f5f9',
+                      borderColor: isActive ? '#ec4899' : isDark ? '#334155' : '#e2e8f0',
+                      opacity: isLocked ? 0.6 : 1,
+                    },
+                  ]}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                    {isLocked && (
+                      <Ionicons
+                        name="lock-closed"
+                        size={9}
+                        color={isActive ? '#ffffff' : isDark ? '#94a3b8' : '#64748b'}
+                      />
+                    )}
+                    <Text
+                      style={[
+                        styles.opsRangePillText,
+                        { color: isActive ? '#ffffff' : isDark ? '#cbd5e1' : '#475569' },
+                      ]}
+                    >
+                      {days}D
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
 
-        <Pressable
-          onPress={() => onNavigateToTab('activity')}
-          style={[styles.metricCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}
+        {/* Operations 8-Card Telemetry Grid */}
+        <View style={styles.metricsGrid}>
+          {/* 1. Total Posts */}
+          <View
+            style={[
+              styles.metricCard,
+              {
+                backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                borderColor: isDark ? '#334155' : '#e2e8f0',
+                borderWidth: 1,
+              },
+            ]}
+          >
+            <View style={styles.metricCardHeader}>
+              <View style={[styles.metricIconWrap, { backgroundColor: 'rgba(99, 102, 241, 0.12)' }]}>
+                <Ionicons name="layers" size={15} color="#6366f1" />
+              </View>
+              <Text style={[styles.metricCardTag, { color: '#6366f1' }]}>Total Posts</Text>
+            </View>
+            <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              {ops.totalPosts != null ? ops.totalPosts : (ops.sent || 0) + (ops.scheduled || 0) + (ops.failed || 0) + (ops.processing || 0)}
+            </Text>
+            <View style={styles.metricDeltaRow}>
+              {ops.totalPostsDelta != null && ops.totalPostsDelta !== 0 ? (
+                <View
+                  style={[
+                    styles.deltaBadge,
+                    { backgroundColor: ops.totalPostsDelta > 0 ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)' },
+                  ]}
+                >
+                  <Ionicons
+                    name={ops.totalPostsDelta > 0 ? 'arrow-up' : 'arrow-down'}
+                    size={10}
+                    color={ops.totalPostsDelta > 0 ? '#22c55e' : '#ef4444'}
+                  />
+                  <Text
+                    style={[
+                      styles.deltaBadgeText,
+                      { color: ops.totalPostsDelta > 0 ? '#22c55e' : '#ef4444' },
+                    ]}
+                  >
+                    {ops.totalPostsDelta > 0 ? `+${ops.totalPostsDelta}` : ops.totalPostsDelta}Δ
+                  </Text>
+                </View>
+              ) : (
+                <Text style={[styles.metricLabel, { fontSize: 10 }]}>0Δ vs prev</Text>
+              )}
+              {ops.previousTotalPosts != null && ops.previousTotalPosts > 0 && (
+                <Text style={[styles.metricLabel, { fontSize: 10, marginLeft: 4 }]}>
+                  ({ops.previousTotalPosts} prev)
+                </Text>
+              )}
+            </View>
+          </View>
+
+          {/* 2. Published / Sent */}
+          <View
+            style={[
+              styles.metricCard,
+              {
+                backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                borderColor: isDark ? '#334155' : '#e2e8f0',
+                borderWidth: 1,
+              },
+            ]}
+          >
+            <View style={styles.metricCardHeader}>
+              <View style={[styles.metricIconWrap, { backgroundColor: 'rgba(34, 197, 94, 0.12)' }]}>
+                <Ionicons name="checkmark-done-circle" size={15} color="#22c55e" />
+              </View>
+              <Text style={[styles.metricCardTag, { color: '#22c55e' }]}>Sent</Text>
+            </View>
+            <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              {ops.sent != null ? ops.sent : totalSentCount}
+            </Text>
+            <Text style={styles.metricLabel}>Delivered to channels</Text>
+          </View>
+
+          {/* 3. Scheduled */}
+          <View
+            style={[
+              styles.metricCard,
+              {
+                backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                borderColor: isDark ? '#334155' : '#e2e8f0',
+                borderWidth: 1,
+              },
+            ]}
+          >
+            <View style={styles.metricCardHeader}>
+              <View style={[styles.metricIconWrap, { backgroundColor: 'rgba(59, 130, 246, 0.12)' }]}>
+                <Ionicons name="calendar" size={15} color="#3b82f6" />
+              </View>
+              <Text style={[styles.metricCardTag, { color: '#3b82f6' }]}>Scheduled</Text>
+            </View>
+            <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              {ops.scheduled != null ? ops.scheduled : totalScheduledCount}
+            </Text>
+            <Text style={styles.metricLabel}>Queued broadcasts</Text>
+          </View>
+
+          {/* 4. Pending Queue */}
+          <Pressable
+            onPress={() => onNavigateToTab('activity')}
+            style={[
+              styles.metricCard,
+              {
+                backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                borderColor: isDark ? '#334155' : '#e2e8f0',
+                borderWidth: 1,
+              },
+            ]}
+          >
+            <View style={styles.metricCardHeader}>
+              <View style={[styles.metricIconWrap, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
+                <Ionicons name="time" size={15} color="#f59e0b" />
+              </View>
+              <Text style={[styles.metricCardTag, { color: '#f59e0b' }]}>In Queue</Text>
+            </View>
+            <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              {ops.queueCount != null ? ops.queueCount : queueList.length}
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+              <Text style={styles.metricLabel}>Ready in Queue</Text>
+              <Ionicons name="chevron-forward" size={11} color="#94a3b8" />
+            </View>
+          </Pressable>
+          {/* 6. Failed */}
+          <View
+            style={[
+              styles.metricCard,
+              {
+                backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                borderColor: isDark ? '#334155' : '#e2e8f0',
+                borderWidth: 1,
+              },
+            ]}
+          >
+            <View style={styles.metricCardHeader}>
+              <View style={[styles.metricIconWrap, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]}>
+                <Ionicons name="alert-circle" size={15} color="#ef4444" />
+              </View>
+              <Text style={[styles.metricCardTag, { color: '#ef4444' }]}>Failed</Text>
+            </View>
+            <Text style={[styles.metricNum, { color: (ops.failed || 0) > 0 ? '#ef4444' : isDark ? '#f8fafc' : '#0f172a' }]}>
+              {ops.failed ?? 0}
+            </Text>
+            <Text style={styles.metricLabel}>Delivery issues</Text>
+          </View>
+
+          {/* 7. Success Rate */}
+          <View
+            style={[
+              styles.metricCard,
+              {
+                backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                borderColor: isDark ? '#334155' : '#e2e8f0',
+                borderWidth: 1,
+              },
+            ]}
+          >
+            <View style={styles.metricCardHeader}>
+              <View style={[styles.metricIconWrap, { backgroundColor: 'rgba(236, 72, 153, 0.12)' }]}>
+                <Ionicons name="shield-checkmark" size={15} color="#ec4899" />
+              </View>
+              <Text style={[styles.metricCardTag, { color: '#ec4899' }]}>Health</Text>
+            </View>
+            <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              {ops.successRate != null ? `${ops.successRate}%` : computedSuccessRate}
+            </Text>
+            <Text style={styles.metricLabel}>Delivery Rate</Text>
+          </View>
+        </View>
+
+        {/* Publishing Activity Trend across the Selected Range */}
+        <View
+          style={[
+            styles.opsTrendCard,
+            {
+              backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+              borderColor: isDark ? '#334155' : '#e2e8f0',
+            },
+          ]}
         >
-          <View style={styles.metricCardHeader}>
-            <Ionicons name="time" size={16} color="#3b82f6" />
-            <Text style={[styles.metricCardTag, { color: '#3b82f6' }]}>Queue</Text>
+          <View style={styles.opsTrendHeader}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Ionicons name="bar-chart" size={15} color="#ec4899" />
+              <Text style={[styles.opsTrendTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                Publishing Trend ({selectedRange}d)
+              </Text>
+            </View>
+            <View style={styles.opsTrendStatsRow}>
+              <View style={styles.opsTrendStatItem}>
+                <View style={[styles.opsTrendDot, { backgroundColor: '#22c55e' }]} />
+                <Text style={styles.opsTrendStatText}>Sent: {trendStats.sent}</Text>
+              </View>
+              <View style={styles.opsTrendStatItem}>
+                <View style={[styles.opsTrendDot, { backgroundColor: '#3b82f6' }]} />
+                <Text style={styles.opsTrendStatText}>Scheduled: {trendStats.scheduled}</Text>
+              </View>
+              {trendStats.failed > 0 && (
+                <View style={styles.opsTrendStatItem}>
+                  <View style={[styles.opsTrendDot, { backgroundColor: '#ef4444' }]} />
+                  <Text style={styles.opsTrendStatText}>Failed: {trendStats.failed}</Text>
+                </View>
+              )}
+            </View>
           </View>
-          <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-            {ops.queueCount != null ? ops.queueCount : totalScheduledCount}
-          </Text>
-          <Text style={styles.metricLabel}>Pending Queue</Text>
-        </Pressable>
 
-        <View style={[styles.metricCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
-          <View style={styles.metricCardHeader}>
-            <Ionicons name="checkmark-done-circle" size={16} color="#ec4899" />
-            <Text style={[styles.metricCardTag, { color: '#ec4899' }]}>Health</Text>
-          </View>
-          <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-            {ops.successRate != null ? `${ops.successRate}%` : computedSuccessRate}
-          </Text>
-          <Text style={styles.metricLabel}>Delivery Rate</Text>
-        </View>
+          {/* Visual Bars / Distribution */}
+          {publishingTrend.length > 0 ? (
+            selectedRange === 7 ? (
+              <View style={styles.trendBarsRow}>
+                {publishingTrend.map((dayItem, index) => {
+                  const dayTotal = (dayItem.sent || 0) + (dayItem.scheduled || 0) + (dayItem.failed || 0);
+                  const barHeightPct = trendStats.maxDayCount > 0 ? Math.max(12, Math.round((dayTotal / trendStats.maxDayCount) * 100)) : 12;
+                  const dateObj = new Date(dayItem.date);
+                  const dayLabel = isNaN(dateObj.getTime())
+                    ? `D${index + 1}`
+                    : dateObj.toLocaleDateString([], { weekday: 'narrow' });
 
-        <View style={[styles.metricCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
-          <View style={styles.metricCardHeader}>
-            <Ionicons name="people" size={16} color="#8b5cf6" />
-            <Text style={[styles.metricCardTag, { color: '#8b5cf6' }]}>Audience</Text>
-          </View>
-          <Text style={[styles.metricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-            {totalAudienceCount}
-          </Text>
-          <Text style={styles.metricLabel}>Total Followers</Text>
+                  return (
+                    <View key={dayItem.date || index} style={styles.trendBarCol}>
+                      <View style={[styles.trendBarTrack, { backgroundColor: isDark ? '#334155' : '#e2e8f0' }]}>
+                        <View
+                          style={[
+                            styles.trendBarFill,
+                            {
+                              height: `${barHeightPct}%`,
+                              backgroundColor: (dayItem.failed || 0) > 0
+                                ? '#ef4444'
+                                : (dayItem.sent || 0) > 0
+                                  ? '#22c55e'
+                                  : (dayItem.scheduled || 0) > 0
+                                    ? '#3b82f6'
+                                    : isDark
+                                      ? '#475569'
+                                      : '#cbd5e1',
+                            },
+                          ]}
+                        />
+                      </View>
+                      <Text style={[styles.trendBarLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                        {dayLabel}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            ) : (
+              <View style={styles.trendDistributionWrap}>
+                <View style={styles.trendDistributionTrack}>
+                  {publishingTrend.slice(0, 30).map((d, i) => {
+                    const hasActivity = (d.sent || 0) + (d.scheduled || 0) + (d.failed || 0) > 0;
+                    return (
+                      <View
+                        key={d.date || i}
+                        style={[
+                          styles.trendDistributionPill,
+                          {
+                            backgroundColor: hasActivity
+                              ? (d.failed || 0) > 0
+                                ? '#ef4444'
+                                : (d.sent || 0) > 0
+                                  ? '#22c55e'
+                                  : '#3b82f6'
+                              : isDark
+                                ? '#334155'
+                                : '#e2e8f0',
+                          },
+                        ]}
+                      />
+                    );
+                  })}
+                </View>
+                <View style={styles.trendDistributionFooter}>
+                  <Text style={[styles.trendDistributionText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                    {trendStats.activeDays > 0
+                      ? `${trendStats.activeDays} active publishing day${trendStats.activeDays === 1 ? '' : 's'} in this ${selectedRange}d window`
+                      : `No publishing activity in this ${selectedRange}d period`}
+                  </Text>
+                  <Pressable onPress={onOpenCreateModal} hitSlop={6}>
+                    <Text style={styles.trendScheduleAction}>+ New Post</Text>
+                  </Pressable>
+                </View>
+              </View>
+            )
+          ) : (
+            <View style={styles.trendEmptyWrap}>
+              <Text style={[styles.trendEmptyText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                No publishing activity recorded in this period.
+              </Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -636,22 +1283,42 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
         </View>
       )}
 
-      {/* 5. Workspace Quota & Entitlements Card */}
+      {/* 5. Workspace Quota & Active Plan Card */}
       <View style={[styles.sectionCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
         <View style={styles.sectionHeader}>
           <View style={styles.sectionHeaderLeft}>
             <Ionicons name="shield-checkmark" size={18} color="#ec4899" />
             <Text style={[styles.sectionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-              Workspace Quota & Plan
+              Workspace Quota & Active Plan
             </Text>
           </View>
-          <View style={[styles.planBadge, { backgroundColor: 'rgba(236, 72, 153, 0.15)' }]}>
-            <Text style={styles.planBadgeText}>{planName.toUpperCase()}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={[styles.planBadge, { backgroundColor: 'rgba(236, 72, 153, 0.15)' }]}>
+              <Text style={styles.planBadgeText}>{currentPlanName.toUpperCase()}</Text>
+            </View>
+            <View style={[styles.statusPill, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
+              <View style={[styles.liveDot, { backgroundColor: '#22c55e' }]} />
+              <Text style={[styles.statusPillText, { color: '#22c55e' }]}>
+                {subscription?.status ? subscription.status.toUpperCase() : 'ACTIVE'}
+              </Text>
+            </View>
           </View>
         </View>
 
-        <View style={styles.quotaRow}>
-          <View style={{ flex: 1 }}>
+        {subscription?.current_period_end && (
+          <View style={[styles.quotaMetaRow, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
+            <Ionicons name="calendar-outline" size={13} color={isDark ? '#94a3b8' : '#64748b'} />
+            <Text style={[styles.quotaMetaText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+              Renews {new Date(subscription.current_period_end).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+              {subscription.billing_interval ? ` · ${subscription.billing_interval.toUpperCase()}` : ''}
+            </Text>
+          </View>
+        )}
+
+        {/* Quota Progress Telemetry Grid */}
+        <View style={styles.quotaGrid}>
+          {/* Meter 1: Channels */}
+          <View style={styles.quotaGridItem}>
             <View style={styles.quotaLabelRow}>
               <Text style={[styles.quotaTitle, { color: isDark ? '#cbd5e1' : '#475569' }]}>
                 Channels Connected
@@ -666,13 +1333,95 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
                   styles.progressBarFill,
                   {
                     width: `${Math.min(100, Math.round((connectedList.length / maxChannelsAllowed) * 100))}%`,
-                    backgroundColor: '#ec4899',
+                    backgroundColor: connectedList.length >= maxChannelsAllowed ? '#ef4444' : '#ec4899',
+                  },
+                ]}
+              />
+            </View>
+          </View>
+
+          {/* Meter 2: Scheduled Queue */}
+          <View style={styles.quotaGridItem}>
+            <View style={styles.quotaLabelRow}>
+              <Text style={[styles.quotaTitle, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                Scheduled Queue Capacity
+              </Text>
+              <Text style={[styles.quotaVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                {queueList.length} / {isUnlimitedQueue ? 'Unlimited' : `${scheduledQueueLimit} Max`}
+              </Text>
+            </View>
+            <View style={[styles.progressBarBg, { backgroundColor: isDark ? '#1e293b' : '#e2e8f0' }]}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  {
+                    width: isUnlimitedQueue ? '15%' : `${Math.min(100, Math.round((queueList.length / scheduledQueueLimit) * 100))}%`,
+                    backgroundColor: '#3b82f6',
+                  },
+                ]}
+              />
+            </View>
+          </View>
+
+          {/* Meter 3: AutoDM Automations */}
+          <View style={styles.quotaGridItem}>
+            <View style={styles.quotaLabelRow}>
+              <Text style={[styles.quotaTitle, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                AutoDM Active Automations
+              </Text>
+              <Text style={[styles.quotaVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                {isUnlimitedAutoDM ? 'Unlimited' : `${autodmRulesLimit} Rule Max`}
+              </Text>
+            </View>
+            <View style={[styles.progressBarBg, { backgroundColor: isDark ? '#1e293b' : '#e2e8f0' }]}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  {
+                    width: isUnlimitedAutoDM ? '20%' : '100%',
+                    backgroundColor: '#8b5cf6',
+                  },
+                ]}
+              />
+            </View>
+          </View>
+
+          {/* Meter 4: Monthly Replies */}
+          <View style={styles.quotaGridItem}>
+            <View style={styles.quotaLabelRow}>
+              <Text style={[styles.quotaTitle, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                Monthly AutoDM Replies
+              </Text>
+              <Text style={[styles.quotaVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                {repliesUsed} / {isUnlimitedReplies ? 'Unlimited' : `${repliesLimit} /mo`}
+              </Text>
+            </View>
+            <View style={[styles.progressBarBg, { backgroundColor: isDark ? '#1e293b' : '#e2e8f0' }]}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  {
+                    width: isUnlimitedReplies ? '10%' : `${Math.min(100, Math.round((repliesUsed / repliesLimit) * 100))}%`,
+                    backgroundColor: '#10b981',
                   },
                 ]}
               />
             </View>
           </View>
         </View>
+
+        {/* Compare All Plans In-App Screen Action */}
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.push('/products/social/plans' as any);
+          }}
+          style={[styles.manageBillingLinkBtn, { borderColor: isDark ? '#334155' : '#e2e8f0' }]}
+        >
+          <Ionicons name="sparkles" size={15} color="#ec4899" />
+          <Text style={styles.manageBillingLinkText}>Compare All Plans & Upgrades</Text>
+          <Ionicons name="chevron-forward" size={15} color="#ec4899" />
+        </Pressable>
       </View>
 
       {/* 6. Next Scheduled Broadcast Spotlight (if pending queue exists) */}
@@ -720,7 +1469,18 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
 
       {/* 7. Connected Social Media Accounts (From API: accounts + overviewData) */}
       <View style={[styles.sectionCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
-
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionHeaderLeft}>
+            <Ionicons name="apps" size={18} color="#ec4899" />
+            <Text style={[styles.sectionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              Linked Channel Details
+            </Text>
+          </View>
+          <Pressable onPress={onOpenAccountsModal} style={styles.topManageLink}>
+            <Text style={styles.topManageLinkText}>Manage</Text>
+            <Ionicons name="chevron-forward" size={12} color="#ec4899" />
+          </Pressable>
+        </View>
 
         {connectedList.length > 0 ? (
           <View style={styles.accountsGrid}>
@@ -828,7 +1588,7 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
                   ]}
                   numberOfLines={1}
                 >
-                  asdasda {plat.label}
+                  {plat.label}
                 </Text>
                 <View
                   style={[
@@ -874,6 +1634,7 @@ const styles = StyleSheet.create({
     elevation: 1,
     gap: 12,
   },
+
   headerTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -909,6 +1670,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    marginTop: -50
   },
   actionBtnText: {
     color: '#ffffff',
@@ -970,6 +1732,161 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     color: '#94a3b8',
+  },
+  metricDeltaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  deltaBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  deltaBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  metricIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionHeaderIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionSub: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  opsRangeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  opsRangePill: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  opsRangePillText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  opsTrendCard: {
+    marginTop: 14,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 10,
+  },
+  opsTrendHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  opsTrendTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  opsTrendStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  opsTrendStatItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  opsTrendDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  opsTrendStatText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#94a3b8',
+  },
+  trendBarsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    height: 60,
+    paddingTop: 8,
+    gap: 4,
+  },
+  trendBarCol: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+    height: '100%',
+    justifyContent: 'flex-end',
+  },
+  trendBarTrack: {
+    width: 14,
+    height: 42,
+    borderRadius: 4,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+  },
+  trendBarFill: {
+    width: '100%',
+    borderRadius: 4,
+  },
+  trendBarLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  trendDistributionWrap: {
+    gap: 8,
+    paddingTop: 4,
+  },
+  trendDistributionTrack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    height: 14,
+  },
+  trendDistributionPill: {
+    flex: 1,
+    height: 8,
+    borderRadius: 3,
+  },
+  trendDistributionFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  trendDistributionText: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  trendScheduleAction: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#ec4899',
+  },
+  trendEmptyWrap: {
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  trendEmptyText: {
+    fontSize: 11,
+    textAlign: 'center',
   },
   sectionCard: {
     padding: 16,
@@ -1592,5 +2509,240 @@ const styles = StyleSheet.create({
   igSwitcherChipText: {
     fontSize: 11,
     fontWeight: '700',
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  statusPillText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  quotaMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  quotaMetaText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  quotaGrid: {
+    gap: 12,
+  },
+  quotaGridItem: {
+    gap: 4,
+  },
+  manageBillingLinkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 6,
+  },
+  manageBillingLinkText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#ec4899',
+  },
+  pricingSectionSub: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  billingIntervalBar: {
+    marginVertical: 4,
+  },
+  billingIntervalScroll: {
+    gap: 8,
+    paddingVertical: 2,
+  },
+  billingIntervalPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  billingIntervalText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  intervalDiscountBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  intervalDiscountText: {
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  plansCarouselContent: {
+    gap: 14,
+    paddingVertical: 8,
+  },
+  pricingPlanCard: {
+    width: 282,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    padding: 16,
+    gap: 12,
+  },
+  planCardBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 20,
+  },
+  popularBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#ec4899',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  popularBadgeText: {
+    color: '#ffffff',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  currentActivePlanBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#16a34a',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  currentActivePlanBadgeText: {
+    color: '#ffffff',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  planCardName: {
+    fontSize: 20,
+    fontWeight: '900',
+  },
+  planCardTagline: {
+    fontSize: 12,
+    lineHeight: 16,
+    minHeight: 32,
+  },
+  priceContainer: {
+    paddingVertical: 4,
+  },
+  priceAmountRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 2,
+  },
+  priceCurrency: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  priceNumber: {
+    fontSize: 30,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  pricePeriod: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  priceOriginalStrike: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#94a3b8',
+    textDecorationLine: 'line-through',
+    marginLeft: 8,
+  },
+  priceBilledNote: {
+    fontSize: 11,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  activePlanStaticBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#22c55e',
+  },
+  activePlanStaticBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#16a34a',
+  },
+  upgradePlanActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  upgradePlanActionBtnText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  planDivider: {
+    height: 1,
+  },
+  featuresSectionTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  limitsList: {
+    gap: 7,
+  },
+  limitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  limitLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    flex: 1,
+  },
+  limitVal: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  featureChecksList: {
+    gap: 7,
+  },
+  featureCheckItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  featureCheckText: {
+    fontSize: 11,
+    fontWeight: '500',
   },
 });

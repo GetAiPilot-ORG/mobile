@@ -36,7 +36,7 @@ export async function socialRoutes(fastify: FastifyInstance) {
     const query = request.query as { range?: string; instagramAccountId?: string };
     const overview = await SocialAdapter.getOverview(user, {
       range: query.range ? parseInt(query.range) : undefined,
-      instagramAccountId: query.instagramAccountId,
+      instagramAccountId: query.instagramAccountId || 'all',
     });
     return reply.send(overview);
   });
@@ -213,6 +213,13 @@ export async function socialRoutes(fastify: FastifyInstance) {
     const user = request.user as JWTPayload;
     const entitlements = await SocialAdapter.getEntitlements(user);
     return reply.send(entitlements);
+  });
+
+  // 6.1 Billing Plans
+  fastify.get('/social/plans', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const plans = await SocialAdapter.getPlans(user);
+    return reply.send(plans);
   });
 
   // Helper to extract optional caller credentials

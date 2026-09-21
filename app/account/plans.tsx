@@ -1,431 +1,517 @@
-import React, { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
+import React, { useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
+  ActivityIndicator,
   Alert,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
   useColorScheme,
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
+import { useRazorpay } from '../../src/contexts/RazorpayContext';
+import {
+  CATEGORY_META,
+  PlanCategory,
+  PricingPlan,
+  PricingService,
+} from '../../src/core/pricing/pricingService';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 
-const TIERS = [
-  {
-    id: 'starter',
-    name: 'GAP Core',
-    subtitle: 'Essential AI Automations for Creators & SMBs',
-    monthlyPrice: 2499,
-    annualPrice: 1999,
-    badge: 'Popular',
-    badgeColor: '#10B981',
-    features: [
-      { text: '1 Active Telegram Auto-Forwarder', highlight: true },
-      { text: 'WhatsApp Meta Cloud API Gateway (5k msgs/mo)', highlight: false },
-      { text: '500 Free AI Telecalling Voice Minutes', highlight: false },
-      { text: 'Smart CRM (Up to 250 Active Leads)', highlight: false },
-      { text: '10 Growth Automation Tools Included', highlight: true },
-      { text: 'Standard 24h Ticket Support', highlight: false },
-    ],
-    quotas: [
-      { label: 'Voice Minutes', value: '500 min/mo' },
-      { label: 'WhatsApp Msgs', value: '5,000 /mo' },
-      { label: 'CRM Leads', value: '250 Max' },
-    ],
-  },
-  {
-    id: 'pro',
-    name: 'GAP Pro Max',
-    subtitle: 'Full Enterprise Scale with Multi-Engine Sync',
-    monthlyPrice: 5999,
-    annualPrice: 4799,
-    badge: 'Enterprise Choice',
-    badgeColor: '#00D2B4',
-    features: [
-      { text: 'Unlimited Telegram Channel Forwarders & Bots', highlight: true },
-      { text: 'WhatsApp Mass Broadcasts & Webhook Triggers', highlight: true },
-      { text: '2,500 Autonomous AI Telecaller Voice Minutes', highlight: true },
-      { text: 'Omnichannel Social Pilot Sync (6 Networks)', highlight: true },
-      { text: 'Smart CRM Unlimited Leads & Pipelines', highlight: false },
-      { text: 'Custom Bio & High-Conversion Landing Pages', highlight: false },
-      { text: 'Dedicated 1-on-1 WhatsApp Priority Support', highlight: true },
-    ],
-    quotas: [
-      { label: 'Voice Minutes', value: '2,500 min/mo' },
-      { label: 'WhatsApp Msgs', value: 'Unlimited' },
-      { label: 'Forwarding Bots', value: 'Unlimited' },
-    ],
-  },
-  {
-    id: 'custom',
-    name: 'Custom Enterprise',
-    subtitle: 'Dedicated Cloud Infrastructure & Custom AI LLM Finetuning',
-    monthlyPrice: null,
-    annualPrice: null,
-    badge: 'Dedicated SLA',
-    badgeColor: '#8B5CF6',
-    features: [
-      { text: 'Dedicated Supabase & Redis Infrastructure', highlight: true },
-      { text: 'Custom Fine-Tuned Voice Models & Prompt Engineering', highlight: true },
-      { text: 'Unlimited Multi-Tenant Agent Accounts', highlight: true },
-      { text: 'Direct CPaaS Carrier Trunking (India/Global)', highlight: false },
-      { text: 'Custom Security & SSO Auth Integration', highlight: false },
-      { text: '99.99% Uptime SLA Guarantee', highlight: true },
-    ],
-    quotas: [
-      { label: 'Voice Minutes', value: 'Custom Quota' },
-      { label: 'Dedicated Account', value: 'Assigned Eng.' },
-      { label: 'SLA Support', value: '< 15 min' },
-    ],
-  },
+const CATEGORIES: { key: PlanCategory; label: string; icon: string }[] = [
+  { key: 'all', label: 'All Plans', icon: 'apps' },
+  { key: 'calling', label: 'Voice AI', icon: 'call' },
+  { key: 'social', label: 'Social Pilot', icon: 'share-social' },
+  { key: 'whatsapp', label: 'WhatsApp', icon: 'logo-whatsapp' },
+  { key: 'telegram', label: 'Telegram', icon: 'paper-plane' },
+  { key: 'crm', label: 'Smart CRM', icon: 'people' },
 ];
 
-export default function PlansPricingScreen() {
+export default function OverallPricingScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const queryClient = useQueryClient();
+  const { openRazorpayCheckout } = useRazorpay();
 
-  const { planLabel } = usePlatformSubscription();
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
-  const [selectedTier, setSelectedTier] = useState<string>('pro');
+  const {
+    planLabel,
+    subscriptionStatus,
+    expiresAt,
+    refresh: refreshSub,
+  } = usePlatformSubscription();
 
-  const handleCycleChange = (cycle: 'monthly' | 'annual') => {
+  const [selectedCategory, setSelectedCategory] = useState<PlanCategory>('all');
+  const [selectedDuration, setSelectedDuration] = useState<'all' | 'monthly' | 'yearly'>('all');
+
+  // Query active plans from public.pricing_plans
+  const {
+    data: plans = [],
+    isLoading,
+    isRefetching,
+    refetch,
+  } = useQuery<PricingPlan[]>({
+    queryKey: ['ecosystem-pricing-plans', selectedCategory],
+    queryFn: () => PricingService.getPlans(selectedCategory),
+    staleTime: 60 * 1000,
+  });
+
+  const onRefresh = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setBillingCycle(cycle);
+    await Promise.all([refetch(), refreshSub()]);
   };
 
-  const handleSelectTier = (tierId: string) => {
+  // Filter by duration if user selects specific duration tab
+  const filteredPlans = useMemo(() => {
+    if (selectedDuration === 'all') return plans;
+    return plans.filter((p) => {
+      const d = (p.duration || 'monthly').toLowerCase();
+      if (selectedDuration === 'monthly') return d.includes('month');
+      if (selectedDuration === 'yearly') return d.includes('year') || d.includes('annual');
+      return true;
+    });
+  }, [plans, selectedDuration]);
+
+  const handleSelectPlan = (plan: PricingPlan) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setSelectedTier(tierId);
-  };
+    const amountInRupees = Math.round(plan.amount / 100);
+    const planDisplayName = plan.plan_label || plan.plan_name;
 
-  const handleUpgrade = (tierName: string) => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert(
-      'Plan Upgrade Request',
-      `You selected ${tierName} (${billingCycle === 'annual' ? 'Billed Annually' : 'Billed Monthly'}). A GetAIPilot billing specialist will activate your enterprise quota within minutes.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Proceed to Activate',
-          onPress: () => {
-            Alert.alert('Request Received', 'Your upgrade request has been queued. Verification link sent to your email.');
-          },
-        },
-      ]
-    );
+    openRazorpayCheckout({
+      amount: amountInRupees,
+      currency: plan.currency || 'INR',
+      product: plan.category || 'ecosystem',
+      planId: plan.id,
+      planName: `GetAiPilot - ${planDisplayName}`,
+      billingInterval: plan.duration?.toLowerCase().includes('year') ? 'year' : 'month',
+      description: plan.description || `${planDisplayName} Subscription`,
+      onSuccess: async () => {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert(
+          'Subscription Activated! 🎉',
+          `Your subscription to ${planDisplayName} has been confirmed. Quotas are active in your workspace.`,
+          [{ text: 'Great!' }]
+        );
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['platform-subscription'] }),
+          queryClient.invalidateQueries({ queryKey: ['ecosystem-pricing-plans'] }),
+          queryClient.invalidateQueries({ queryKey: ['social', 'entitlements'] }),
+          queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+        ]);
+      },
+    });
   };
 
   return (
     <AppScreen safeArea={false} backgroundColor={isDark ? '#000000' : '#F8FAFC'}>
-      <AppTopBar title="Plans & Quotas" subtitle="Enterprise Subscriptions & Scaling" showBack={true} />
+      <AppTopBar
+        title="Overall Pricing & Plans"
+        subtitle="GetAiPilot Ecosystem Subscriptions"
+        showBack={true}
+      />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Active Status Glass Banner */}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={onRefresh}
+            tintColor="#0A84FF"
+          />
+        }
+      >
+        {/* 1. Active Workspace Subscription Status Card */}
         <View
           style={[
             styles.statusBanner,
             {
-              backgroundColor: isDark ? '#071612' : '#ECFDF5',
-              borderColor: isDark ? '#10B98144' : '#A7F3D0',
+              backgroundColor: isDark ? '#06131d' : '#eff6ff',
+              borderColor: isDark ? '#1e3a8a44' : '#bfdbfe',
             },
           ]}
         >
-          <View
-            style={[
-              styles.statusGlow,
-              { backgroundColor: isDark ? '#10B98118' : 'rgba(16, 185, 129, 0.08)' },
-            ]}
-          />
           <View style={styles.statusHeader}>
             <View
               style={[
                 styles.activePill,
-                { backgroundColor: isDark ? '#10B98122' : '#D1FAE5' },
+                { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.2)' : '#dcfce7' },
               ]}
             >
               <View style={styles.activeDot} />
-              <Text style={styles.activePillText}>ACTIVE SUBSCRIPTION</Text>
+              <Text style={styles.activePillText}>
+                {subscriptionStatus ? subscriptionStatus.toUpperCase() : 'ACTIVE WORKSPACE'}
+              </Text>
             </View>
-            <Text style={[styles.planStatusDate, { color: isDark ? '#9CA3AF' : '#059669' }]}>
-              Renews 1st of next month
+            <Text style={[styles.planStatusDate, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+              {expiresAt
+                ? `Renews ${new Date(expiresAt).toLocaleDateString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}`
+                : 'Active Tier'}
             </Text>
           </View>
-          <Text style={[styles.statusPlanName, { color: isDark ? '#FFFFFF' : '#065F46' }]}>
-            {planLabel || 'GAP Pro Max (Active)'}
+
+          <Text style={[styles.statusPlanName, { color: isDark ? '#FFFFFF' : '#0f172a' }]}>
+            {planLabel || 'GAP Pro Max'}
           </Text>
-          <Text style={[styles.statusPlanDesc, { color: isDark ? '#D1D5DB' : '#047857' }]}>
-            All 5 automation engines & 10 growth utilities operating at unrestricted speed.
+          <Text style={[styles.statusPlanDesc, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+            Full multi-engine access enabled: Voice AI, Social Pilot, WhatsApp, Telegram & Smart CRM.
           </Text>
         </View>
 
-        {/* Billing Cycle Toggle */}
+        {/* 2. Category Selector Pills (Scrollable) */}
+        <View style={styles.categorySection}>
+          <Text style={[styles.sectionLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+            FILTER BY PRODUCT CATEGORY
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryScroll}
+          >
+            {CATEGORIES.map((cat) => {
+              const isSelected = selectedCategory === cat.key;
+              const meta = CATEGORY_META[cat.key];
+              return (
+                <Pressable
+                  key={cat.key}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setSelectedCategory(cat.key);
+                  }}
+                  style={[
+                    styles.categoryPill,
+                    {
+                      backgroundColor: isSelected
+                        ? meta.color
+                        : isDark
+                        ? '#0f172a'
+                        : '#ffffff',
+                      borderColor: isSelected
+                        ? meta.color
+                        : isDark
+                        ? '#1e293b'
+                        : '#e2e8f0',
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={cat.icon as any}
+                    size={14}
+                    color={isSelected ? '#ffffff' : meta.color}
+                  />
+                  <Text
+                    style={[
+                      styles.categoryPillText,
+                      {
+                        color: isSelected ? '#ffffff' : isDark ? '#f1f5f9' : '#1e293b',
+                        fontWeight: isSelected ? '800' : '600',
+                      },
+                    ]}
+                  >
+                    {cat.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {/* 3. Duration Selector (Monthly vs Yearly) */}
         <View
           style={[
-            styles.toggleContainer,
+            styles.durationBar,
             {
-              backgroundColor: isDark ? '#12151A' : '#E2E8F0',
-              borderColor: isDark ? '#1F242F' : '#CBD5E1',
+              backgroundColor: isDark ? '#0f172a' : '#f1f5f9',
+              borderColor: isDark ? '#1e293b' : '#e2e8f0',
             },
           ]}
         >
           <Pressable
             style={[
-              styles.toggleBtn,
-              billingCycle === 'annual' && {
-                backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: isDark ? 0 : 0.08,
-                shadowRadius: 2,
-                elevation: 1,
-              },
+              styles.durationTab,
+              selectedDuration === 'all' && (isDark ? styles.durationTabActiveDark : styles.durationTabActive),
             ]}
-            onPress={() => handleCycleChange('annual')}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSelectedDuration('all');
+            }}
           >
             <Text
               style={[
-                styles.toggleBtnText,
-                { color: isDark ? '#9CA3AF' : '#64748B' },
-                billingCycle === 'annual' && {
-                  color: isDark ? '#FFFFFF' : '#0F172A',
-                  fontWeight: '700',
-                },
+                styles.durationTabText,
+                { color: selectedDuration === 'all' ? (isDark ? '#fff' : '#0f172a') : '#64748b' },
               ]}
             >
-              Annual (Save 20%)
+              All Durations
             </Text>
-            <View style={styles.saveBadge}>
-              <Text style={styles.saveBadgeText}>SAVE 20%</Text>
-            </View>
           </Pressable>
+
           <Pressable
             style={[
-              styles.toggleBtn,
-              billingCycle === 'monthly' && {
-                backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: isDark ? 0 : 0.08,
-                shadowRadius: 2,
-                elevation: 1,
-              },
+              styles.durationTab,
+              selectedDuration === 'monthly' && (isDark ? styles.durationTabActiveDark : styles.durationTabActive),
             ]}
-            onPress={() => handleCycleChange('monthly')}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSelectedDuration('monthly');
+            }}
           >
             <Text
               style={[
-                styles.toggleBtnText,
-                { color: isDark ? '#9CA3AF' : '#64748B' },
-                billingCycle === 'monthly' && {
-                  color: isDark ? '#FFFFFF' : '#0F172A',
-                  fontWeight: '700',
-                },
+                styles.durationTabText,
+                { color: selectedDuration === 'monthly' ? (isDark ? '#fff' : '#0f172a') : '#64748b' },
               ]}
             >
               Monthly
             </Text>
           </Pressable>
+
+          <Pressable
+            style={[
+              styles.durationTab,
+              selectedDuration === 'yearly' && (isDark ? styles.durationTabActiveDark : styles.durationTabActive),
+            ]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSelectedDuration('yearly');
+            }}
+          >
+            <Text
+              style={[
+                styles.durationTabText,
+                { color: selectedDuration === 'yearly' ? (isDark ? '#fff' : '#0f172a') : '#64748b' },
+              ]}
+            >
+              Annual (Save 20%+)
+            </Text>
+          </Pressable>
         </View>
 
-        {/* Tier Cards */}
-        <View style={styles.tiersList}>
-          {TIERS.map((tier) => {
-            const isCurrent = selectedTier === tier.id;
-            const price = billingCycle === 'annual' ? tier.annualPrice : tier.monthlyPrice;
+        {/* 4. Plans Grid / List */}
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#0A84FF" />
+            <Text style={[styles.loadingText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+              Loading verified pricing plans...
+            </Text>
+          </View>
+        ) : filteredPlans.length === 0 ? (
+          <View style={[styles.emptyContainer, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
+            <Ionicons name="pricetags-outline" size={40} color="#94a3b8" />
+            <Text style={[styles.emptyTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              No Plans in this Category
+            </Text>
+            <Text style={[styles.emptyDesc, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+              Try selecting "All Plans" to view all ecosystem automation tiers.
+            </Text>
+            <Pressable
+              onPress={() => setSelectedCategory('all')}
+              style={styles.emptyBtn}
+            >
+              <Text style={styles.emptyBtnText}>View All Plans</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.plansList}>
+            {filteredPlans.map((plan) => {
+              const catKey = (plan.category || 'all').toLowerCase();
+              const meta = CATEGORY_META[catKey] || CATEGORY_META.all;
+              const formattedPrice = PricingService.formatPrice(plan.amount, plan.currency);
+              const formattedDuration = PricingService.formatDuration(plan.duration || 'monthly');
+              const isPopular = Boolean(plan.is_popular);
 
-            return (
-              <Pressable
-                key={tier.id}
-                style={[
-                  styles.tierCard,
-                  {
-                    backgroundColor: isDark
-                      ? isCurrent
-                        ? '#0F161A'
-                        : '#0D1117'
-                      : isCurrent
-                      ? '#F0FDF4'
-                      : '#FFFFFF',
-                    borderColor: isCurrent
-                      ? isDark
-                        ? '#10B98188'
-                        : '#10B981'
-                      : isDark
-                      ? '#1F242F'
-                      : '#E2E8F0',
-                  },
-                ]}
-                onPress={() => handleSelectTier(tier.id)}
-              >
-                {/* Header */}
-                <View style={styles.tierTopRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.tierTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
-                      {tier.name}
-                    </Text>
-                    <Text style={[styles.tierSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
-                      {tier.subtitle}
-                    </Text>
-                  </View>
-                  <View
-                    style={[
-                      styles.badgePill,
-                      {
-                        backgroundColor: `${tier.badgeColor}22`,
-                        borderColor: `${tier.badgeColor}55`,
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.badgeText, { color: tier.badgeColor }]}>{tier.badge}</Text>
-                  </View>
-                </View>
-
-                {/* Price Display */}
-                <View style={styles.priceRow}>
-                  {price !== null ? (
-                    <>
-                      <Text style={styles.priceCurrency}>₹</Text>
-                      <Text style={[styles.priceValue, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
-                        {price.toLocaleString()}
-                      </Text>
-                      <Text style={[styles.pricePeriod, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
-                        / month
-                      </Text>
-                    </>
-                  ) : (
-                    <Text style={styles.customPriceText}>Custom SLA Quote</Text>
-                  )}
-                </View>
-
-                {/* Quota Strip */}
+              return (
                 <View
+                  key={plan.id}
                   style={[
-                    styles.quotaStrip,
+                    styles.planCard,
                     {
-                      backgroundColor: isDark ? '#161B22' : '#F8FAFC',
-                      borderColor: isDark ? '#21262D' : '#E2E8F0',
-                      borderWidth: 1,
+                      backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                      borderColor: isPopular
+                        ? meta.color
+                        : isDark
+                        ? '#1e293b'
+                        : '#e2e8f0',
+                      borderWidth: isPopular ? 2 : 1,
                     },
                   ]}
                 >
-                  {tier.quotas.map((q, idx) => (
-                    <View key={idx} style={styles.quotaBox}>
-                      <Text style={[styles.quotaVal, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
-                        {q.value}
-                      </Text>
-                      <Text style={[styles.quotaLbl, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
-                        {q.label}
+                  {/* Popular Ribbon / Badge */}
+                  <View style={styles.cardTopRow}>
+                    <View
+                      style={[
+                        styles.categoryBadge,
+                        { backgroundColor: `${meta.color}20` },
+                      ]}
+                    >
+                      <Ionicons name={meta.icon as any} size={11} color={meta.color} />
+                      <Text style={[styles.categoryBadgeText, { color: meta.color }]}>
+                        {meta.label.toUpperCase()}
                       </Text>
                     </View>
-                  ))}
-                </View>
 
-                <View
-                  style={[
-                    styles.tierDivider,
-                    { backgroundColor: isDark ? '#21262D' : '#E2E8F0' },
-                  ]}
-                />
-
-                {/* Features List */}
-                <View style={styles.featuresList}>
-                  {tier.features.map((feat, fIdx) => (
-                    <View key={fIdx} style={styles.featureItem}>
-                      <View
-                        style={[
-                          styles.checkCircle,
-                          {
-                            backgroundColor: feat.highlight
-                              ? isDark
-                                ? '#10B98125'
-                                : '#D1FAE5'
-                              : isDark
-                              ? '#1F242F'
-                              : '#F1F5F9',
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.checkIcon,
-                            { color: feat.highlight ? '#10B981' : isDark ? '#9CA3AF' : '#64748B' },
-                          ]}
-                        >
-                          ✓
-                        </Text>
+                    {isPopular && (
+                      <View style={[styles.popularBadge, { backgroundColor: meta.color }]}>
+                        <Ionicons name="sparkles" size={10} color="#ffffff" />
+                        <Text style={styles.popularBadgeText}>MOST POPULAR</Text>
                       </View>
-                      <Text
-                        style={[
-                          styles.featureText,
-                          {
-                            color: feat.highlight
-                              ? isDark
-                                ? '#F3F4F6'
-                                : '#0F172A'
-                              : isDark
-                              ? '#9CA3AF'
-                              : '#64748B',
-                            fontWeight: feat.highlight ? '600' : '400',
-                          },
-                        ]}
-                      >
-                        {feat.text}
+                    )}
+                  </View>
+
+                  {/* Plan Name & Tagline */}
+                  <View style={styles.planHeader}>
+                    <Text style={[styles.planTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                      {plan.plan_label || plan.plan_name}
+                    </Text>
+                    {plan.description ? (
+                      <Text style={[styles.planDescription, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                        {plan.description}
+                      </Text>
+                    ) : null}
+                  </View>
+
+                  {/* Pricing Box */}
+                  <View style={[styles.priceBox, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
+                    <View style={styles.priceRow}>
+                      <Text style={[styles.priceAmount, { color: isDark ? '#ffffff' : '#0f172a' }]}>
+                        {formattedPrice}
+                      </Text>
+                      <Text style={[styles.priceDuration, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                        {formattedDuration}
                       </Text>
                     </View>
-                  ))}
-                </View>
+                    {plan.billing_note ? (
+                      <Text style={[styles.billingNote, { color: meta.color }]}>
+                        {plan.billing_note}
+                      </Text>
+                    ) : null}
+                  </View>
 
-                {/* Action CTA */}
-                <Pressable
-                  style={[
-                    styles.upgradeBtn,
-                    isCurrent
-                      ? styles.upgradeBtnPrimary
-                      : [
-                          styles.upgradeBtnOutline,
-                          {
-                            borderColor: isDark ? '#374151' : '#CBD5E1',
-                            backgroundColor: isDark ? 'transparent' : '#FFFFFF',
-                          },
-                        ],
-                  ]}
-                  onPress={() => handleUpgrade(tier.name)}
-                >
-                  <Text
+                  {/* Quotas Spotlight Row (if quotas exist) */}
+                  {(Boolean(plan.included_call_minutes) ||
+                    Boolean(plan.included_numbers) ||
+                    Boolean(plan.included_channels)) && (
+                    <View style={styles.quotasRow}>
+                      {Boolean(plan.included_call_minutes) && (
+                        <View style={[styles.quotaTag, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+                          <Ionicons name="mic" size={12} color="#8b5cf6" />
+                          <Text style={[styles.quotaTagText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                            {plan.included_call_minutes} AI Mins
+                          </Text>
+                        </View>
+                      )}
+                      {Boolean(plan.extra_call_rate_paise) && (
+                        <View style={[styles.quotaTag, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+                          <Ionicons name="pricetag" size={12} color="#8b5cf6" />
+                          <Text style={[styles.quotaTagText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                            ₹{plan.extra_call_rate_paise! / 100}/min extra
+                          </Text>
+                        </View>
+                      )}
+                      {Boolean(plan.included_numbers) && (
+                        <View style={[styles.quotaTag, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+                          <Ionicons name="call" size={12} color="#25d366" />
+                          <Text style={[styles.quotaTagText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                            {plan.included_numbers} Number
+                          </Text>
+                        </View>
+                      )}
+                      {Boolean(plan.included_channels) && (
+                        <View style={[styles.quotaTag, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+                          <Ionicons name="share-social" size={12} color="#ec4899" />
+                          <Text style={[styles.quotaTagText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                            {plan.included_channels} Channels
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+
+                  {/* Feature Checklist */}
+                  {Array.isArray(plan.features) && plan.features.length > 0 && (
+                    <View style={styles.featuresList}>
+                      {plan.features.map((feat, idx) => (
+                        <View key={idx} style={styles.featureItem}>
+                          <Ionicons name="checkmark-circle" size={15} color="#10B981" />
+                          <Text
+                            style={[
+                              styles.featureText,
+                              { color: isDark ? '#e2e8f0' : '#334155' },
+                            ]}
+                          >
+                            {feat}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Action Button: Subscribe with Razorpay */}
+                  <Pressable
+                    onPress={() => handleSelectPlan(plan)}
                     style={[
-                      styles.upgradeBtnText,
-                      !isCurrent && { color: isDark ? '#FFFFFF' : '#0F172A' },
+                      styles.subscribeBtn,
+                      {
+                        backgroundColor: meta.color,
+                        shadowColor: meta.color,
+                      },
                     ]}
                   >
-                    {tier.id === 'custom' ? 'Talk to Enterprise Team →' : `Upgrade to ${tier.name} →`}
-                  </Text>
-                </Pressable>
-              </Pressable>
-            );
-          })}
-        </View>
+                    <Ionicons name="shield-checkmark" size={16} color="#ffffff" />
+                    <Text style={styles.subscribeBtnText}>
+                      Subscribe · {formattedPrice}
+                    </Text>
+                    <Ionicons name="arrow-forward" size={15} color="#ffffff" />
+                  </Pressable>
+                </View>
+              );
+            })}
+          </View>
+        )}
 
-        {/* Security & Guarantee Note */}
-        <View
-          style={[
-            styles.guaranteeBox,
-            {
-              backgroundColor: isDark ? '#0D1117' : '#FFFFFF',
-              borderColor: isDark ? '#1F242F' : '#E2E8F0',
-            },
-          ]}
-        >
-          <Text style={styles.guaranteeIcon}>🛡️</Text>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.guaranteeTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
-              Bank-Grade 256-Bit SSL Encryption
-            </Text>
-            <Text style={[styles.guaranteeSub, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
-              Cancel or adjust quotas anytime. Enterprise invoices include GST compliance and instant billing receipt downloads.
-            </Text>
+        {/* 5. Trust & Security Badges */}
+        <View style={[styles.trustCard, { backgroundColor: isDark ? '#0f172a' : '#f8fafc' }]}>
+          <View style={styles.trustItem}>
+            <Ionicons name="lock-closed" size={18} color="#10B981" />
+            <View>
+              <Text style={[styles.trustTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                256-Bit SSL Encrypted
+              </Text>
+              <Text style={[styles.trustDesc, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                Secured by Razorpay Payments & Banking Standards
+              </Text>
+            </View>
+          </View>
+          <View style={styles.trustItem}>
+            <Ionicons name="flash" size={18} color="#0A84FF" />
+            <View>
+              <Text style={[styles.trustTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                Instant Automated Provisioning
+              </Text>
+              <Text style={[styles.trustDesc, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                Quotas unlock immediately upon UPI or Card capture
+              </Text>
+            </View>
+          </View>
+          <View style={styles.trustItem}>
+            <Ionicons name="receipt" size={18} color="#8B5CF6" />
+            <View>
+              <Text style={[styles.trustTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                GST Invoices Available
+              </Text>
+              <Text style={[styles.trustDesc, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                Add your business GSTIN in Account Settings
+              </Text>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -435,38 +521,29 @@ export default function PlansPricingScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    padding: 16,
-    paddingBottom: 100,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 120,
+    gap: 16,
   },
   statusBanner: {
-    borderRadius: 22,
-    padding: 20,
-    marginBottom: 20,
+    padding: 16,
+    borderRadius: 16,
     borderWidth: 1,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  statusGlow: {
-    position: 'absolute',
-    top: -50,
-    right: -50,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
+    gap: 8,
   },
   statusHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
   },
   activePill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 99,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   activeDot: {
     width: 6,
@@ -475,200 +552,263 @@ const styles = StyleSheet.create({
     backgroundColor: '#10B981',
   },
   activePillText: {
-    fontSize: 10.5,
-    fontWeight: '800',
     color: '#10B981',
-    letterSpacing: 0.8,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   planStatusDate: {
     fontSize: 11,
+    fontWeight: '600',
   },
   statusPlanName: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '900',
-    letterSpacing: -0.3,
+    letterSpacing: -0.5,
   },
   statusPlanDesc: {
-    fontSize: 13,
-    marginTop: 6,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 17,
   },
-  toggleContainer: {
+  categorySection: {
+    gap: 8,
+  },
+  sectionLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  categoryScroll: {
+    gap: 8,
+    paddingVertical: 2,
+  },
+  categoryPill: {
     flexDirection: 'row',
-    borderRadius: 14,
-    padding: 4,
-    marginBottom: 20,
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
     borderWidth: 1,
   },
-  toggleBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: 11,
-    gap: 6,
+  categoryPillText: {
+    fontSize: 12,
   },
-  toggleBtnText: {
+  durationBar: {
+    flexDirection: 'row',
+    borderRadius: 12,
+    padding: 3,
+    borderWidth: 1,
+  },
+  durationTab: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 9,
+  },
+  durationTabActive: {
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  durationTabActiveDark: {
+    backgroundColor: '#1e293b',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  durationTabText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  loadingContainer: {
+    paddingVertical: 48,
+    alignItems: 'center',
+    gap: 12,
+  },
+  loadingText: {
     fontSize: 13,
     fontWeight: '600',
   },
-  saveBadge: {
-    backgroundColor: '#10B98122',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
+  emptyContainer: {
+    padding: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    gap: 8,
+    textAlign: 'center',
   },
-  saveBadgeText: {
-    fontSize: 9.5,
+  emptyTitle: {
+    fontSize: 16,
     fontWeight: '800',
-    color: '#10B981',
+    marginTop: 6,
   },
-  tiersList: {
+  emptyDesc: {
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 17,
+  },
+  emptyBtn: {
+    marginTop: 8,
+    backgroundColor: '#0A84FF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  emptyBtnText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  plansList: {
     gap: 16,
   },
-  tierCard: {
-    borderRadius: 22,
-    padding: 20,
-    borderWidth: 1,
+  planCard: {
+    borderRadius: 20,
+    padding: 18,
+    gap: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  tierTopRow: {
+  cardTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 12,
+    alignItems: 'center',
   },
-  tierTitle: {
-    fontSize: 19,
-    fontWeight: '900',
-    letterSpacing: -0.2,
-  },
-  tierSubtitle: {
-    fontSize: 12,
-    marginTop: 3,
-    lineHeight: 16,
-  },
-  badgePill: {
+  categoryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
-    borderWidth: 1,
   },
-  badgeText: {
-    fontSize: 10.5,
+  categoryBadgeText: {
+    fontSize: 10,
     fontWeight: '800',
-    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  popularBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  popularBadgeText: {
+    color: '#ffffff',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  planHeader: {
+    gap: 4,
+  },
+  planTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  planDescription: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  priceBox: {
+    padding: 14,
+    borderRadius: 12,
+    gap: 4,
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    marginTop: 14,
-    marginBottom: 14,
+    gap: 4,
   },
-  priceCurrency: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#10B981',
-    marginRight: 2,
-  },
-  priceValue: {
+  priceAmount: {
     fontSize: 32,
     fontWeight: '900',
-    letterSpacing: -0.5,
+    letterSpacing: -1,
   },
-  pricePeriod: {
+  priceDuration: {
     fontSize: 13,
-    marginLeft: 6,
+    fontWeight: '600',
   },
-  customPriceText: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#8B5CF6',
+  billingNote: {
+    fontSize: 11,
+    fontWeight: '700',
   },
-  quotaStrip: {
+  quotasRow: {
     flexDirection: 'row',
-    borderRadius: 12,
-    padding: 10,
-    marginBottom: 16,
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 6,
   },
-  quotaBox: {
-    flex: 1,
+  quotaTag: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
-  quotaVal: {
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  quotaLbl: {
-    fontSize: 9.5,
-    marginTop: 2,
-  },
-  tierDivider: {
-    height: 1,
-    marginBottom: 16,
+  quotaTagText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   featuresList: {
-    gap: 10,
-    marginBottom: 20,
+    gap: 8,
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-  },
-  checkCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkIcon: {
-    fontSize: 11,
-    fontWeight: '900',
+    gap: 8,
   },
   featureText: {
-    fontSize: 13,
+    fontSize: 12,
+    fontWeight: '500',
     flex: 1,
-    lineHeight: 18,
+    lineHeight: 16,
   },
-  upgradeBtn: {
-    paddingVertical: 14,
-    borderRadius: 14,
+  subscribeBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  upgradeBtnPrimary: {
-    backgroundColor: '#10B981',
-  },
-  upgradeBtnOutline: {
-    borderWidth: 1,
-  },
-  upgradeBtnText: {
-    color: '#000000',
+  subscribeBtnText: {
+    color: '#ffffff',
     fontSize: 14,
     fontWeight: '800',
   },
-  guaranteeBox: {
+  trustCard: {
+    padding: 16,
+    borderRadius: 16,
+    gap: 14,
+    marginTop: 8,
+  },
+  trustItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    borderRadius: 18,
-    padding: 16,
-    marginTop: 24,
-    borderWidth: 1,
+    gap: 12,
   },
-  guaranteeIcon: {
-    fontSize: 26,
+  trustTitle: {
+    fontSize: 12,
+    fontWeight: '700',
   },
-  guaranteeTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  guaranteeSub: {
-    fontSize: 11.5,
-    marginTop: 3,
-    lineHeight: 16,
+  trustDesc: {
+    fontSize: 11,
+    marginTop: 1,
   },
 });
