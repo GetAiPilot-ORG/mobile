@@ -18,11 +18,13 @@ type AfSection = 'mappings' | 'filters' | 'blocked' | 'delays' | 'headers';
 
 interface AutoForwardScreenProps {
   forwardRules: any[];
+  summary?: any;
   onOpenModal: (key: TelegramToolKey) => void;
 }
 
-export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRules, onOpenModal }) => {
-  const isDark = useColorScheme() === 'dark';
+export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRules, summary, onOpenModal }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const [afSection, setAfSection] = useState<AfSection>('mappings');
   const [selectedDelay, setSelectedDelay] = useState(0);
 
@@ -30,11 +32,32 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
   const txt = isDark ? styles.textDark : styles.textLight;
   const border = isDark ? styles.borderDark : styles.borderLight;
 
+  const dbFilters = summary?.loadedFilters || [];
+  const dbBlacklist = summary?.loadedBlacklist || [];
+  const dbSettings = summary?.loadedForwardSettings || null;
+
+  const filtersList = dbFilters.length > 0
+    ? dbFilters.map((f: any) => ({ from: f.keyword || f.find_text || f.word || '', to: f.replacement || f.replace_text || f.replace_with || '' }))
+    : forwardRules.flatMap(r => r.keywords_filter || []).map((f: string) => {
+        const parts = f.split('->');
+        return { from: parts[0] || f, to: parts[1] || '' };
+      });
+
+  const filtersCount = filtersList.length;
+
+  const blacklistList = dbBlacklist.length > 0
+    ? dbBlacklist.map((b: any) => b.word || b.keyword || b.blacklisted_word).filter(Boolean)
+    : [...new Set(forwardRules.flatMap(r => r.blacklist_keywords || []))];
+
+  const blockedCount = blacklistList.length;
+
+  const delaySec = dbSettings?.delay_seconds ?? Math.max(...forwardRules.map(r => r.delay_seconds || 0), 0);
+
   const kpis = [
     { key: 'mappings', label: 'Active Mappings', value: (forwardRules || []).length, icon: 'arrow-redo', color: '#0284C7', bg: 'rgba(2,132,199,0.12)' },
-    { key: 'filters', label: 'Text Filters', value: 0, icon: 'filter-outline', color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
-    { key: 'blocked', label: 'Blocked Words', value: 0, icon: 'shield-outline', color: '#EF4444', bg: 'rgba(239,68,68,0.12)' },
-    { key: 'delays', label: 'Delay (sec)', value: 0, icon: 'time-outline', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
+    { key: 'filters', label: 'Text Filters', value: filtersCount, icon: 'filter-outline', color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
+    { key: 'blocked', label: 'Blocked Words', value: blockedCount, icon: 'shield-outline', color: '#EF4444', bg: 'rgba(239,68,68,0.12)' },
+    { key: 'delays', label: 'Delay (sec)', value: delaySec, icon: 'time-outline', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
   ];
 
   return (
@@ -86,7 +109,7 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
         ))}
         <StatCard
           label="TEXT ACTIONS"
-          value="None"
+          value={forwardRules.some(r => r.header || r.footer) ? "Configured" : "None"}
           icon="text-outline"
           color="#10B981"
           bg="rgba(16,185,129,0.12)"
@@ -113,24 +136,35 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.sectionTitle, txt]}>Active Routing Rules</Text>
-              <Text style={styles.sectionSub}>{Math.max((forwardRules || []).length, 2)} source-to-target forwarding channels configured</Text>
+              <Text style={styles.sectionSub}>{(forwardRules || []).length} source-to-target forwarding channels configured</Text>
             </View>
           </View>
           <View style={{ gap: 8, marginTop: 8 }}>
-            {(forwardRules || []).map((rule, idx) => (
-              <View key={`rule_${rule.id || idx}`} style={[styles.mappingRow, isDark ? styles.mappingRowDark : styles.mappingRowLight]}>
-                <View style={styles.mappingLeft}>
-                  <View style={styles.mappingArrow}>
-                    <Ionicons name="arrow-redo" size={12} color="#0284C7" />
-                  </View>
-                  <Text style={[styles.mappingSource, txt]} numberOfLines={1}>{rule.source_chat_title || 'Source Channel'}</Text>
-                </View>
-                <Ionicons name="arrow-forward" size={14} color="#94A3B8" style={{ marginHorizontal: 8 }} />
-                <View style={[styles.targetBadge, isDark ? styles.targetBadgeDark : styles.targetBadgeLight]}>
-                  <Text style={[styles.targetBadgeText, txt]} numberOfLines={1}>{rule.target_chat_title || 'Target Channel'}</Text>
-                </View>
+            {(forwardRules || []).length === 0 ? (
+              <View style={{ padding: 16, alignItems: 'center' }}>
+                <Ionicons name="git-compare-outline" size={24} color="#64748B" style={{ marginBottom: 6 }} />
+                <Text style={{ fontSize: 12, color: '#64748B', fontWeight: '600' }}>No active forwarding rules configured.</Text>
               </View>
-            ))}
+            ) : (
+              (forwardRules || []).map((rule, idx) => {
+                const sourceLabel = rule.source_chat_title || rule.sender_name || (rule.sender_id ? `id:${rule.sender_id}` : 'Source Channel');
+                const targetLabel = rule.target_chat_title || (Array.isArray(rule.receivers_names) && rule.receivers_names.length > 0 ? rule.receivers_names.join(', ') : (Array.isArray(rule.receivers) && rule.receivers.length > 0 ? rule.receivers.map((r: any) => `id:${r}`).join(', ') : 'Target Channel'));
+                return (
+                  <View key={`rule_${rule.id || idx}`} style={[styles.mappingRow, isDark ? styles.mappingRowDark : styles.mappingRowLight]}>
+                    <View style={styles.mappingLeft}>
+                      <View style={styles.mappingArrow}>
+                        <Ionicons name="arrow-redo" size={12} color="#0284C7" />
+                      </View>
+                      <Text style={[styles.mappingSource, txt]} numberOfLines={1}>{sourceLabel}</Text>
+                    </View>
+                    <Ionicons name="arrow-forward" size={14} color="#94A3B8" style={{ marginHorizontal: 8 }} />
+                    <View style={[styles.targetBadge, isDark ? styles.targetBadgeDark : styles.targetBadgeLight]}>
+                      <Text style={[styles.targetBadgeText, txt]} numberOfLines={1}>{targetLabel}</Text>
+                    </View>
+                  </View>
+                );
+              })
+            )}
           </View>
         </View>
       )}
@@ -148,17 +182,17 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
             </View>
           </View>
           <View style={{ gap: 8, marginTop: 8 }}>
-            {[
-              { from: 't.me/old_channel', to: 't.me/TradingGuruVIP' },
-              { from: '@competitor_bot', to: '@GetAiPilotBot' },
-              { from: 'Call 9876543210', to: 'Visit getaipilot.in' },
-            ].map((item, idx) => (
-              <View key={idx} style={[styles.filterItem, border]}>
-                <Text style={styles.filterFrom}>{item.from}</Text>
-                <Ionicons name="arrow-forward" size={14} color="#94A3B8" />
-                <Text style={styles.filterTo}>{item.to}</Text>
-              </View>
-            ))}
+            {filtersList.length === 0 ? (
+              <Text style={{ fontSize: 12, color: '#64748B', padding: 10 }}>No filters configured.</Text>
+            ) : (
+              filtersList.map((item: any, idx: number) => (
+                <View key={idx} style={[styles.filterItem, border]}>
+                  <Text style={styles.filterFrom}>{item.from}</Text>
+                  {item.to ? <Ionicons name="arrow-forward" size={14} color="#94A3B8" /> : null}
+                  {item.to ? <Text style={styles.filterTo}>{item.to}</Text> : null}
+                </View>
+              ))
+            )}
           </View>
           <Pressable style={[styles.primaryBtn, { marginTop: 12 }]} onPress={() => onOpenModal('autoforward')}>
             <Ionicons name="add" size={15} color="#FFFFFF" />
@@ -180,12 +214,16 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
             </View>
           </View>
           <View style={styles.chipsWrap}>
-            {['spam', 'forex scam', '100x pump', 'wa.me/', 'dm for paid', 'free giveaway', 'binance scam'].map((chip, idx) => (
-              <View key={idx} style={styles.blockedChip}>
-                <Text style={styles.blockedChipText}>{chip}</Text>
-                <Ionicons name="close-circle" size={12} color="#EF4444" />
-              </View>
-            ))}
+            {blacklistList.length === 0 ? (
+              <Text style={{ fontSize: 12, color: '#64748B', padding: 10 }}>No blocked keywords.</Text>
+            ) : (
+              blacklistList.map((chip: string, idx: number) => (
+                <View key={idx} style={styles.blockedChip}>
+                  <Text style={styles.blockedChipText}>{chip}</Text>
+                  <Ionicons name="close-circle" size={12} color="#EF4444" />
+                </View>
+              ))
+            )}
           </View>
           <Pressable style={[styles.primaryBtn, { marginTop: 12 }]} onPress={() => onOpenModal('autoforward')}>
             <Ionicons name="add" size={15} color="#FFFFFF" />
@@ -207,7 +245,7 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
             </View>
           </View>
           <View style={[styles.delayBigBox, isDark ? styles.delayBoxDark : styles.delayBoxLight]}>
-            <Text style={[styles.delayBigNumber, txt]}>{selectedDelay}</Text>
+            <Text style={[styles.delayBigNumber, txt]}>{delaySec}</Text>
             <Text style={styles.delayBigLabel}>seconds delay active</Text>
           </View>
           <View style={styles.delayPresetsRow}>
@@ -239,9 +277,19 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
             </View>
           </View>
           <View style={styles.previewBox}>
-            <Text style={{ fontSize: 11, fontWeight: '700', color: '#0284C7', marginBottom: 4 }}>🔥 [VIP SIGNAL ALERT - FORWARDED]</Text>
-            <Text style={styles.previewText}>Buy BankNifty 51,200 CE at 340-350 | Target 420 | SL 290. Strict trailing.</Text>
-            <Text style={{ fontSize: 10, fontWeight: '600', color: '#10B981', marginTop: 4 }}>📈 Verified by SEBI Analyst • Powered by @GetAiPilot</Text>
+            {(() => {
+              const ruleWithHeader = forwardRules.find(r => r.header);
+              const ruleWithFooter = forwardRules.find(r => r.footer);
+              const header = dbSettings?.header_text || ruleWithHeader?.header || '(No custom header configured)';
+              const footer = dbSettings?.footer_text || ruleWithFooter?.footer || '(No custom footer configured)';
+              return (
+                <>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#0284C7', marginBottom: 4 }}>{header}</Text>
+                  <Text style={styles.previewText}>Buy BankNifty 51,200 CE at 340-350 | Target 420 | SL 290. Strict trailing.</Text>
+                  <Text style={{ fontSize: 10, fontWeight: '600', color: '#10B981', marginTop: 4 }}>{footer}</Text>
+                </>
+              );
+            })()}
           </View>
           <Pressable style={[styles.primaryBtn, { marginTop: 4 }]} onPress={() => onOpenModal('autoforward')}>
             <Ionicons name="create-outline" size={15} color="#FFFFFF" />

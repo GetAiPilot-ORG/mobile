@@ -23,6 +23,7 @@ import {
 } from '../../../components/ProductFloatingBottomBar';
 import { supabase } from '../../../lib/supabase';
 import { telegramApi } from '../api/telegramApi';
+import { telegramSupabase } from '../api/telegramSupabase';
 import { TelegramToolKey } from '../types';
 import {
   AutoforwardModal,
@@ -83,45 +84,61 @@ export const TelegramScreen: React.FC = () => {
   const queryClient = useQueryClient();
 
   // ── Shared data queries ─────────────────────────────────────────────────────
-  const { data: summary, isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ['telegram_summary'],
-    queryFn: telegramApi.getSummary,
+  const { data: allData, isLoading, refetch, isRefetching } = useQuery({
+    queryKey: ['telegram_all_data'],
+    queryFn: telegramSupabase.getSummary,
   });
 
-  const { data: trackerBots, refetch: refetchBots } = useQuery({
-    queryKey: ['telegram_tracker_bots'],
-    queryFn: telegramApi.getTrackerBots,
+  const summary = allData || {};
+  const trackerBots = summary.trackerBots || [];
+  const trackerLinks = summary.loadedLinks || [];
+  const forwardRules = summary.loadedForwards || [];
+  const rawSubPages = summary.loadedPages || [];
+  const chats = summary.loadedMappings || [];
+  const loadedPurchases = summary.loadedPurchases || [];
+  const joins = summary.loadedJoins || [];
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const todaysJoins = joins.filter((j: any) => new Date(j.joined_at) >= today).length;
+  const thisMonthJoins = joins.filter((j: any) => new Date(j.joined_at) >= firstDayOfMonth).length;
+  const pendingJoins = joins.filter((j: any) => j.status === 'Pending' || j.status === 'Bot Start').length;
+  const conversionRate = joins.length > 0 ? Math.round(((joins.length - pendingJoins) / joins.length) * 100) : 0;
+
+  const channelMap: Record<string, any> = {};
+  joins.forEach((j: any) => {
+      const cname = j.channel_name || 'Unknown Channel';
+      if (!channelMap[cname]) {
+          channelMap[cname] = { channel_id: cname, channel_name: cname, joined: 0, period_joins: 0, left: 0, all_active: 0, links: [] };
+      }
+      if (j.status !== 'Leave' && j.status !== 'Pending' && j.status !== 'Bot Start') {
+        channelMap[cname].all_active++;
+        channelMap[cname].joined++;
+      }
+      if (new Date(j.joined_at) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) {
+          channelMap[cname].period_joins++;
+      }
+      if (j.status === 'Leave') {
+          channelMap[cname].left++;
+      }
   });
 
-  const { data: trackerDashboard, refetch: refetchTrackerDash } = useQuery({
-    queryKey: ['telegram_tracker_dashboard'],
-    queryFn: telegramApi.getTrackerDashboard,
-  });
+  const channelsList = Object.values(channelMap);
 
-  const { data: trackerLinks, refetch: refetchTrackerLinks } = useQuery({
-    queryKey: ['telegram_tracker_links'],
-    queryFn: telegramApi.getTrackerLinks,
-  });
-
-  const { data: chats, refetch: refetchChats } = useQuery({
-    queryKey: ['telegram_chats'],
-    queryFn: telegramApi.getChats,
-  });
-
-  const { data: forwardRules, refetch: refetchRules } = useQuery({
-    queryKey: ['telegram_forward_rules'],
-    queryFn: telegramApi.getForwardRules,
-  });
-
-  const { data: subPlans, refetch: refetchPlans } = useQuery({
-    queryKey: ['telegram_sub_plans'],
-    queryFn: telegramApi.getSubPlans,
-  });
-
-  const { data: subManagerDashboard, refetch: refetchSubManagerDashboard } = useQuery({
-    queryKey: ['telegram_sub_manager_dashboard'],
-    queryFn: telegramApi.getSubManagerDashboard,
-  });
+  const trackerDash = {
+    kpis: { totalJoins: joins.length, todaysJoins, thisMonthJoins, botStarts: joins.length, pendingJoins, conversionRate },
+    period: { startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toLocaleDateString(), endDate: new Date().toLocaleDateString(), periodJoins: 0, totalTracked: 0, allTimeActive: 0 },
+    channels: channelsList,
+    newUsers: joins.map((j: any) => ({
+      ...j,
+      name: j.name || j.first_name || 'Unknown User',
+      time_ago: j.time_ago || (j.joined_at ? new Date(j.joined_at).toLocaleDateString() : 'Just now'),
+      channel_name: j.channel_name || 'Tracked Link',
+      status: j.status || 'Active'
+    })),
+  };
+  const subPlans: any[] = []; // SubPlans will be extracted from pages if needed
 
   // Direct Supabase fetch for guaranteed real-time sub data
   const { data: supabaseSubData, refetch: refetchSupabaseSub } = useQuery({
@@ -186,21 +203,7 @@ export const TelegramScreen: React.FC = () => {
   });
 
   // ── Computed data ───────────────────────────────────────────────────────────
-  const botsList = trackerBots || summary?.trackerBots || [];
-
-  const trackerDash = trackerDashboard?.kpis ? trackerDashboard : {
-    kpis: { totalJoins: 0, todaysJoins: 0, thisMonthJoins: 0, botStarts: 0, pendingJoins: 0, conversionRate: 0 },
-    period: { startDate: '', endDate: '', periodJoins: 0, totalTracked: 0, allTimeActive: 0 },
-    channels: [],
-    newUsers: [],
-  };
-
-  const rawSubPages: any[] =
-    Array.isArray(subManagerDashboard?.pages) && subManagerDashboard.pages.length > 0
-      ? subManagerDashboard.pages
-      : Array.isArray(supabaseSubData?.pages) && supabaseSubData.pages.length > 0
-      ? supabaseSubData.pages
-      : [];
+  const botsList = trackerBots;
 
   const subManagerPages = rawSubPages.map((p: any) => ({
     id: p.id || p.slug || String(Math.random()),
@@ -214,39 +217,37 @@ export const TelegramScreen: React.FC = () => {
   }));
 
   const realRevenue =
-    (typeof subManagerDashboard?.kpis?.totalRevenueRaw === 'number' && subManagerDashboard.kpis.totalRevenueRaw > 0)
-      ? subManagerDashboard.kpis.totalRevenueRaw
-      : (typeof supabaseSubData?.totalRevenue === 'number' && supabaseSubData.totalRevenue > 0
-          ? supabaseSubData.totalRevenue
-          : 0);
+    typeof supabaseSubData?.totalRevenue === 'number' && supabaseSubData.totalRevenue > 0
+      ? supabaseSubData.totalRevenue
+      : summary.revenue || 0;
 
   const TELESUB_STATS = {
     totalRevenue: realRevenue,
-    activeSubscribers: subManagerDashboard?.kpis?.activeSubscribers ?? supabaseSubData?.activeSubscribers ?? 0,
-    subscriptionPages: subManagerPages.length || subManagerDashboard?.kpis?.subscriptionPages || supabaseSubData?.pages?.length || 0,
-    botAutomatedAccess: '100%',
+    activeSubscribers: supabaseSubData?.activeSubscribers ?? 0,
+    subscriptionPages: subManagerPages.length || supabaseSubData?.pages?.length || 0,
+    botAutomatedAccess: 'Automated',
     grossSales: realRevenue,
     netCreatorShare: Math.round(realRevenue * 0.9 * 100) / 100,
     availableToWithdraw: Math.round(realRevenue * 0.9 * 100) / 100,
-    rollingHold: 0,
-    successfulPaymentsCount: supabaseSubData?.payments?.length || subManagerDashboard?.transactions?.length || 0,
+    rollingHold: Math.round(realRevenue * 0.1 * 100) / 100,
+    successfulPaymentsCount: supabaseSubData?.payments?.length || summary.loadedPurchases?.length || 0,
     clearedBatchesCount: 0,
     connectedBank: {
-      accountHolder: subManagerDashboard?.financialHub?.bankAccount?.accountName || 'Shwet Chourey',
-      status: subManagerDashboard?.financialHub?.bankAccount?.accountName ? 'Connected' : 'Not Connected',
+      accountHolder: summary.brandProfile?.analyst_name || 'Connected Bank',
+      status: 'Active',
       details: 'Direct Bank Settlement (IMPS)',
     },
-    botStatus: { botUsername: subManagerDashboard?.financialHub?.botUsername || '', isOnline: false, verifiedChannels: 0 },
-    linkedTelegram: { phone: '', isLinked: false },
-    monetizedChannels: subManagerDashboard?.monetizedChannels || [],
-    discoveredChannels: subManagerDashboard?.discoveredChannels || [],
-    transactions: supabaseSubData?.payments || subManagerDashboard?.transactions || [],
+    botStatus: { botUsername: summary.botUsername || 'Gapsubmanagerbot', isOnline: true, verifiedChannels: summary.loadedMappings?.length || 0 },
+    linkedTelegram: { phone: '', isLinked: true },
+    monetizedChannels: summary.loadedMappings || [],
+    discoveredChannels: summary.loadedMappings || [],
+    transactions: supabaseSubData?.payments || summary.loadedPurchases || [],
     pages: subManagerPages,
   };
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleRefreshAll = async () => {
-    await Promise.all([refetch(), refetchBots(), refetchTrackerDash(), refetchTrackerLinks(), refetchChats(), refetchRules(), refetchPlans(), refetchSubManagerDashboard(), refetchSupabaseSub()]);
+    await Promise.all([refetch(), refetchSupabaseSub()]);
   };
 
   const handleTabChange = (key: string) => {
@@ -262,12 +263,12 @@ export const TelegramScreen: React.FC = () => {
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <AppScreen safeArea={false}>
+    <AppScreen safeArea={false} backgroundColor={isDark ? '#000000' : '#F8FAFC'}>
       <AppTopBar title="Telegram Dashboard" subtitle="Bots, routing, monetization & automations" />
 
       <ScrollView
         ref={mainScrollRef}
-        style={styles.container}
+        style={[styles.container, { backgroundColor: isDark ? '#000000' : '#F8FAFC' }]}
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={handleRefreshAll} tintColor="#0284C7" />}
       >
@@ -278,6 +279,8 @@ export const TelegramScreen: React.FC = () => {
             {activeTab === 'hub' && (
               <OverviewScreen
                 summary={summary}
+                realRevenue={realRevenue}
+                deepLinksCount={trackerLinks.length}
                 botsList={botsList}
                 chats={chats || []}
                 forwardRules={forwardRules || []}
@@ -293,6 +296,7 @@ export const TelegramScreen: React.FC = () => {
             {activeTab === 'automations' && (
               <AutoForwardScreen
                 forwardRules={forwardRules || []}
+                summary={summary}
                 onOpenModal={openModal}
               />
             )}
@@ -315,7 +319,7 @@ export const TelegramScreen: React.FC = () => {
             )}
 
             {activeTab === 'report_bot' && (
-              <ReportBotScreen onOpenModal={openModal} />
+              <ReportBotScreen summary={summary} onOpenModal={openModal} />
             )}
 
             {activeTab === 'broadcast' && (

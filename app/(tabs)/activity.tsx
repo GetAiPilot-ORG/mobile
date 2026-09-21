@@ -135,7 +135,12 @@ export default function ConnectedPlatformsPage() {
 
   return (
     <AppScreen safeArea={false}>
-      <AppTopBar title="Ecosystem Activity" subtitle="Real-time Workspace Telemetry" showBack={false} />
+      <AppTopBar
+        title="Ecosystem Activity"
+        subtitle="Real-time Workspace Telemetry"
+        showBack={false}
+        showPlanBadge={true}
+      />
 
       {isLoading && !platformData ? (
         <ActivityScreenSkeleton />

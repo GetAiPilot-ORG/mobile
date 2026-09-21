@@ -16,7 +16,25 @@ type TargetTool =
   | "quick-forms"
   | "web"
   | "web-app"
+  | "social-post"
+  | "social-dashboard"
+  | "social-new-post"
+  | "social-schedule"
+  | "social-queue"
+  | "social-builder"
+  | "social-instapilot"
+  | "social-compose"
+  | "social-upload-short"
+  | "social-automation"
+  | "social-auto-dm-new"
+  | "social"
   | string;
+
+const SOCIAL_WEB_APP_URL = "https://social.getaipilot.in";
+const SOCIAL_SUPABASE_URL = "https://oqaysrnncwbtrujnxsdo.supabase.co";
+const SOCIAL_SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYXlzcm5uY3didHJ1am54c2RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2NzkzMDcsImV4cCI6MjA4MzI1NTMwN30.ijLQ4PvBuL9BtuDnNfjQeRh12Q1MPInbI_Tvj1mvOd8";
+const SOCIAL_API_BASE_URL = "https://api.getaipilot.in";
 
 interface RequestBody {
   action?: "create" | "consume";
@@ -193,8 +211,145 @@ function buildRedirectPath(
       return "/dashboard";
     }
 
+    case "social-post":
+    case "social-dashboard":
+    case "social-new-post": {
+      return "https://social.getaipilot.in/dashboard";
+    }
+
+    case "social-schedule":
+    case "social-queue": {
+      return "https://social.getaipilot.in/dashboard/queue";
+    }
+
+    case "social-builder":
+    case "social-instapilot": {
+      return "https://social.getaipilot.in/dashboard/instapilot?mode=builder";
+    }
+
+    case "social-compose":
+    case "social-upload-short": {
+      return "https://social.getaipilot.in/dashboard/compose";
+    }
+
+    case "social-automation":
+    case "social-auto-dm-new": {
+      return "https://social.getaipilot.in/dashboard/auto-dm/automations/new";
+    }
+
     default:
-      return "/free-tools/dashboard";
+      return targetTool.startsWith("social")
+        ? "https://social.getaipilot.in/dashboard"
+        : "/free-tools/dashboard";
+  }
+}
+
+function isSocialTarget(targetTool: string, webAppUrl?: string): boolean {
+  if (typeof targetTool === "string" && targetTool.toLowerCase().startsWith("social")) {
+    return true;
+  }
+  if (typeof webAppUrl === "string" && webAppUrl.toLowerCase().includes("social.getaipilot.in")) {
+    return true;
+  }
+  return false;
+}
+
+async function resolveSocialSsoUrl(email: string, redirectPath: string): Promise<string> {
+  const cleanRedirect = redirectPath.startsWith("http")
+    ? redirectPath
+    : `${SOCIAL_WEB_APP_URL}${redirectPath.startsWith("/") ? "" : "/"}${redirectPath}`;
+
+  const directFallback = cleanRedirect;
+
+  try {
+    // 1. Generate Hub magic link to establish hub session
+    const { data: hubLinkData, error: hubLinkErr } = await supabaseAdmin.auth.admin.generateLink({
+      type: "magiclink",
+      email,
+    });
+
+    const hubToken =
+      (hubLinkData as any)?.properties?.hashed_token ||
+      (hubLinkData as any)?.hashed_token;
+
+    if (hubLinkErr || !hubToken) {
+      return directFallback;
+    }
+
+    const hubVerifyRes = await fetch(`${SUPABASE_URL}/auth/v1/verify`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({
+        type: "magiclink",
+        token_hash: hubToken,
+      }),
+    });
+
+    if (!hubVerifyRes.ok) {
+      return directFallback;
+    }
+
+    const hubSession: any = await hubVerifyRes.json();
+    const hubUserToken = hubSession?.access_token;
+    if (!hubUserToken) {
+      return directFallback;
+    }
+
+    // 2. Call social-sso edge function with base origin ALWAYS (never subpaths!)
+    const ssoEdgeRes = await fetch(`${SUPABASE_URL}/functions/v1/social-sso`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${hubUserToken}`,
+      },
+      body: JSON.stringify({ dmpilot_url: SOCIAL_WEB_APP_URL }),
+    });
+
+    if (!ssoEdgeRes.ok) {
+      return directFallback;
+    }
+
+    const ssoEdgeData: any = await ssoEdgeRes.json();
+    if (!ssoEdgeData?.launch_url) {
+      return directFallback;
+    }
+
+    const launchUrl = new URL(ssoEdgeData.launch_url);
+    const ssoJwt = launchUrl.searchParams.get("token");
+    if (!ssoJwt) {
+      return ssoEdgeData.launch_url;
+    }
+
+    // 3. Exchange with api.getaipilot.in/api/auth/sso
+    const exchangeRes = await fetch(`${SOCIAL_API_BASE_URL}/api/auth/sso`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: ssoJwt }),
+    });
+
+    if (!exchangeRes.ok) {
+      return ssoEdgeData.launch_url;
+    }
+
+    const exchangeData: any = await exchangeRes.json();
+    if (!exchangeData?.magic_link_url) {
+      return ssoEdgeData.launch_url;
+    }
+
+    // 4. Customize redirect_to on the magic_link_url to target the exact requested screen!
+    try {
+      const magicUrl = new URL(exchangeData.magic_link_url);
+      magicUrl.searchParams.set("redirect_to", cleanRedirect);
+      return magicUrl.toString();
+    } catch {
+      return exchangeData.magic_link_url;
+    }
+  } catch (err) {
+    console.warn("[web-handoff] resolveSocialSsoUrl error:", err);
+    return directFallback;
   }
 }
 
@@ -304,8 +459,8 @@ async function createHandoff(
   }
 
   /*
-   * Target URL: Uses /auth/handoff which securely consumes the code
-   * and auto-establishes the Supabase session in the web browser.
+   * Target URL: Uses /auth/handoff on getaipilot.in which securely consumes
+   * the code and auto-establishes the Supabase session in the web browser.
    */
   const handoffUrl = new URL("/auth/handoff", webAppBaseUrl);
   handoffUrl.searchParams.set("code", code);
@@ -344,23 +499,51 @@ async function consumeHandoff(body: RequestBody): Promise<Response> {
   }
 
   const codeHash = await sha256(code);
+  let handoff: any = null;
 
   const { data, error } = await supabaseAdmin.rpc("consume_web_handoff_code", {
     input_code_hash: codeHash,
   });
 
-  if (error || !data?.[0]) {
-    return jsonResponse({ error: "Invalid, expired, or used SSO code." }, 401);
+  if (!error && data?.[0]) {
+    handoff = data[0];
+  } else {
+    if (error) {
+      console.warn("[web-handoff] consume_web_handoff_code RPC warning:", error.message);
+    }
+    const nowIso = new Date().toISOString();
+    const { data: directData, error: directErr } = await supabaseAdmin
+      .from("web_handoff_codes")
+      .update({ consumed_at: nowIso })
+      .eq("code_hash", codeHash)
+      .is("consumed_at", null)
+      .gt("expires_at", nowIso)
+      .select("*")
+      .maybeSingle();
+
+    if (directData) {
+      handoff = directData;
+    } else if (directErr) {
+      console.error("[web-handoff] direct table update fallback error:", directErr);
+    }
   }
 
-  const handoff = data[0];
-  const quickFormMatch = handoff.redirect_path.match(
+  if (!handoff) {
+    return jsonResponse({ error: "Invalid, expired, or used SSO code." }, 401);
+  }
+  const quickFormMatch = handoff.redirect_path?.match(
     /^\/free-tools\/quick-forms\/builder\/([A-Za-z0-9_-]+)$/,
   );
 
+  // 1. If this was a SocialPilot handoff, resolve live social SSO credentials first
+  let socialSsoUrl: string | null = null;
+  if (isSocialTarget(handoff.target_tool, handoff.redirect_path)) {
+    socialSsoUrl = await resolveSocialSsoUrl(handoff.email, handoff.redirect_path);
+  }
+
   /*
-   * Generate an authenticated Supabase Magic Link / OTP token
-   * so the browser can immediately verify and establish the Supabase Auth session.
+   * 2. Generate an authenticated Supabase Magic Link / OTP token
+   * AFTER internal verification so the browser token remains 100% fresh and unconsumed.
    */
   let tokenHash: string | null = null;
   let emailOtp: string | null = null;
@@ -373,10 +556,19 @@ async function consumeHandoff(body: RequestBody): Promise<Response> {
         email: handoff.email,
       });
 
-    if (!linkError && linkData?.properties) {
-      tokenHash = linkData.properties.hashed_token ?? null;
-      emailOtp = linkData.properties.email_otp ?? null;
-      actionLink = linkData.properties.action_link ?? null;
+    if (!linkError && linkData) {
+      tokenHash =
+        (linkData as any).properties?.hashed_token ??
+        (linkData as any).hashed_token ??
+        null;
+      emailOtp =
+        (linkData as any).properties?.email_otp ??
+        (linkData as any).email_otp ??
+        null;
+      actionLink =
+        (linkData as any).properties?.action_link ??
+        (linkData as any).action_link ??
+        null;
     } else if (linkError) {
       console.warn("[web-handoff] generateLink error in consume:", linkError.message);
     }
@@ -393,6 +585,8 @@ async function consumeHandoff(body: RequestBody): Promise<Response> {
     },
 
     tokenHash,
+    authTokenHash: tokenHash,
+    auth_token_hash: tokenHash,
     emailOtp,
     actionLink,
 
@@ -403,6 +597,9 @@ async function consumeHandoff(body: RequestBody): Promise<Response> {
     quickFormId: quickFormMatch?.[1] ?? null,
 
     redirectPath: handoff.redirect_path,
+    targetUrl: handoff.redirect_path,
+    socialSsoUrl,
+    launchUrl: socialSsoUrl,
   });
 }
 

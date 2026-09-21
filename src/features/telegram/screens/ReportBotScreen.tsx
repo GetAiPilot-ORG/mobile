@@ -19,10 +19,12 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 
+import { supabase } from '../../../lib/supabase';
+import { telegramSupabase } from '../api/telegramSupabase';
 import { telegramApi } from '../api/telegramApi';
 import { ReportBotBrandProfile, TelegramToolKey } from '../types';
 
-interface Props { onOpenModal: (key: TelegramToolKey) => void; }
+interface Props { summary?: any; onOpenModal: (key: TelegramToolKey) => void; }
 
 type ReportBotTab = 'profile' | 'channels' | 'archive';
 
@@ -53,7 +55,7 @@ const LOGO_PRESETS = [
   },
 ];
 
-export const ReportBotScreen: React.FC<Props> = ({ onOpenModal }) => {
+export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const queryClient = useQueryClient();
@@ -61,17 +63,17 @@ export const ReportBotScreen: React.FC<Props> = ({ onOpenModal }) => {
   const [activeTab, setActiveTab] = useState<ReportBotTab>('profile');
 
   // Form State
-  const [advisoryFirm, setAdvisoryFirm] = useState('No Brand');
-  const [researchAnalyst, setResearchAnalyst] = useState('SEBI');
-  const [sebiRegistration, setSebiRegistration] = useState('INH010600090');
-  const [website, setWebsite] = useState('getaipilot.com');
-  const [email, setEmail] = useState('research@example.com');
-  const [officeAddress, setOfficeAddress] = useState('e.g. Kallam, Latur, Maharashtra');
+  const [advisoryFirm, setAdvisoryFirm] = useState('');
+  const [researchAnalyst, setResearchAnalyst] = useState('');
+  const [sebiRegistration, setSebiRegistration] = useState('');
+  const [website, setWebsite] = useState('');
+  const [email, setEmail] = useState('');
+  const [officeAddress, setOfficeAddress] = useState('');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [page1Disclaimer, setPage1Disclaimer] = useState('Add short SEBI/risk disclaimer for the first page.');
-  const [page2Disclosure, setPage2Disclosure] = useState('Optional disclosure content.');
-  const [page3Conflicts, setPage3Conflicts] = useState('Optional conflict of interest content.');
-  const [page4Policy, setPage4Policy] = useState('Optional risk and policy content.');
+  const [page1Disclaimer, setPage1Disclaimer] = useState('');
+  const [page2Disclosure, setPage2Disclosure] = useState('');
+  const [page3Conflicts, setPage3Conflicts] = useState('');
+  const [page4Policy, setPage4Policy] = useState('');
 
   // Modal Dialog States
   const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
@@ -80,35 +82,90 @@ export const ReportBotScreen: React.FC<Props> = ({ onOpenModal }) => {
   const [isPickingImage, setIsPickingImage] = useState(false);
 
   // Fetch Live Data
-  const { data: dashboard, isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ['telegram_report_bot_dashboard'],
-    queryFn: telegramApi.getReportBotDashboard,
+  const { data: allData, isLoading, refetch, isRefetching } = useQuery({
+    queryKey: ['telegram_all_data'],
+    queryFn: telegramSupabase.getSummary,
     enabled: true,
   });
 
+  const activeData = summary || allData;
+
+  const dashboard = {
+    brandProfile: activeData?.loadedBrand ? {
+      advisoryFirm: activeData.loadedBrand.brand_name,
+      researchAnalyst: activeData.loadedBrand.analyst_name,
+      sebiRegistration: activeData.loadedBrand.sebi_registration,
+      website: activeData.loadedBrand.website_url,
+      email: activeData.loadedBrand.email_address,
+      officeAddress: activeData.loadedBrand.office_address,
+      logoUrl: activeData.loadedBrand.logo_url,
+      page1Disclaimer: activeData.loadedBrand.disclaimer_text,
+      page2Disclosure: activeData.loadedBrand.disclaimer_page_2,
+      page3Conflicts: activeData.loadedBrand.disclaimer_page_3,
+      page4Policy: activeData.loadedBrand.disclaimer_page_4,
+    } : null,
+    channels: activeData?.loadedMappings || [],
+    reports: activeData?.loadedReports?.map((r: any) => ({
+      id: r.id,
+      title: `${r.symbol || 'Report'} - ${r.direction || 'BUY'}`,
+      callType: r.direction,
+      entry: r.entry_price,
+      target: r.targets,
+      stopLoss: r.stop_loss,
+      pdfUrl: r.pdf_url
+    })) || [],
+    channelsCount: (activeData?.loadedMappings || []).length,
+    reportsCount: (activeData?.loadedReports || []).length,
+    botUrl: 'https://t.me/ResearchReport233_bot'
+  };
+
   useEffect(() => {
-    if (dashboard?.brandProfile) {
-      const p = dashboard.brandProfile;
-      if (p.advisoryFirm) setAdvisoryFirm(p.advisoryFirm);
-      if (p.researchAnalyst) setResearchAnalyst(p.researchAnalyst);
-      if (p.sebiRegistration) setSebiRegistration(p.sebiRegistration);
-      if (p.website) setWebsite(p.website);
-      if (p.email) setEmail(p.email);
-      if (p.officeAddress) setOfficeAddress(p.officeAddress);
-      if (p.logoUrl !== undefined) setLogoUrl(p.logoUrl);
-      if (p.page1Disclaimer) setPage1Disclaimer(p.page1Disclaimer);
-      if (p.page2Disclosure !== undefined) setPage2Disclosure(p.page2Disclosure || '');
-      if (p.page3Conflicts !== undefined) setPage3Conflicts(p.page3Conflicts || '');
-      if (p.page4Policy !== undefined) setPage4Policy(p.page4Policy || '');
+    if (activeData?.loadedBrand) {
+      const b = activeData.loadedBrand;
+      setAdvisoryFirm(b.brand_name || '');
+      setResearchAnalyst(b.analyst_name || '');
+      setSebiRegistration(b.sebi_registration || '');
+      setWebsite(b.website_url || '');
+      setEmail(b.email_address || '');
+      setOfficeAddress(b.office_address || '');
+      setLogoUrl(b.logo_url || null);
+      setPage1Disclaimer(b.disclaimer_text || '');
+      setPage2Disclosure(b.disclaimer_page_2 || '');
+      setPage3Conflicts(b.disclaimer_page_3 || '');
+      setPage4Policy(b.disclaimer_page_4 || '');
     }
-  }, [dashboard]);
+  }, [activeData?.loadedBrand]); // Depend on allData.loadedBrand to prevent infinite re-renders since dashboard is redefined
 
   // Save Settings Mutation
   const { mutateAsync: saveSettings, isPending: isSaving } = useMutation({
-    mutationFn: (profile: Partial<ReportBotBrandProfile>) => telegramApi.saveReportBotSettings(profile),
+    mutationFn: async (profile: Partial<ReportBotBrandProfile>) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      
+      const payload = {
+        user_id: user.id,
+        brand_name: profile.advisoryFirm || '',
+        analyst_name: profile.researchAnalyst || '',
+        sebi_registration: profile.sebiRegistration || '',
+        website_url: profile.website || '',
+        email_address: profile.email || '',
+        office_address: profile.officeAddress || '',
+        logo_url: profile.logoUrl || '',
+        disclaimer_text: profile.page1Disclaimer || '',
+        disclaimer_page_2: profile.page2Disclosure || '',
+        disclaimer_page_3: profile.page3Conflicts || '',
+        disclaimer_page_4: profile.page4Policy || '',
+        is_active: true,
+        updated_at: new Date().toISOString(),
+      };
+      
+      const { error } = await supabase.from('tg_brand_settings').upsert(payload, { onConflict: 'user_id' });
+      if (error) throw error;
+      return true;
+    },
     onSuccess: () => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      queryClient.invalidateQueries({ queryKey: ['telegram_report_bot_dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['telegram_all_data'] });
       Alert.alert('Settings Saved', 'Your SEBI Brand Profile has been successfully updated.');
     },
     onError: (err: any) => {
@@ -653,16 +710,16 @@ export const ReportBotScreen: React.FC<Props> = ({ onOpenModal }) => {
                       </Pressable>
                     </View>
                   ) : (
-                    (dashboard?.channels || []).map((ch, idx) => (
+                    (dashboard?.channels || []).map((ch: any, idx: number) => (
                       <View key={`ch_${ch.id || idx}`} style={[styles.channelItem, isDark ? styles.itemDark : styles.itemLight]}>
                         <View style={styles.channelIcon}>
                           <Ionicons name="megaphone" size={16} color="#0284C7" />
                         </View>
                         <View style={{ flex: 1 }}>
                           <Text style={[styles.channelName, isDark ? styles.textDark : styles.textLight]}>
-                            {ch.name}
+                            {ch.channel_name || ch.name || 'Telegram Channel'}
                           </Text>
-                          <Text style={styles.channelStatus}>● Active Listener</Text>
+                          <Text style={styles.channelStatus}>{ch.channel_id ? `ID: ${ch.channel_id}` : ''} ● {ch.status || 'Active'}</Text>
                         </View>
                         <Ionicons name="checkmark-circle" size={18} color="#10B981" />
                       </View>
@@ -696,7 +753,7 @@ export const ReportBotScreen: React.FC<Props> = ({ onOpenModal }) => {
                       </Text>
                     </View>
                   ) : (
-                    (dashboard?.reports || []).map((rep) => (
+                    (dashboard?.reports || []).map((rep: any) => (
                       <View key={rep.id} style={[styles.reportItem, isDark ? styles.itemDark : styles.itemLight]}>
                         <View style={styles.reportIconCircle}>
                           <Ionicons name="document-text" size={18} color="#EF4444" />
@@ -706,17 +763,21 @@ export const ReportBotScreen: React.FC<Props> = ({ onOpenModal }) => {
                             {rep.title}
                           </Text>
                           <Text style={styles.reportItemMeta}>
-                            Call: {rep.callType} • Entry: {rep.entry} • Target: {rep.target} • SL: {rep.stopLoss}
+                            Call: {rep.callType || 'BUY'} • Entry: {rep.entry || '-'} • Target: {rep.target || '-'} • SL: {rep.stopLoss || '-'}
                           </Text>
                         </View>
                         <Pressable
                           style={styles.downloadBtn}
                           onPress={() => {
                             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                            setIsPdfPreviewOpen(true);
+                            if (rep.pdfUrl) {
+                              Linking.openURL(rep.pdfUrl);
+                            } else {
+                              setIsPdfPreviewOpen(true);
+                            }
                           }}
                         >
-                          <Ionicons name="eye-outline" size={16} color="#0284C7" />
+                          <Ionicons name={rep.pdfUrl ? "download-outline" : "eye-outline"} size={16} color="#0284C7" />
                         </Pressable>
                       </View>
                     ))
