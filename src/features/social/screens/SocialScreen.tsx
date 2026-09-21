@@ -117,7 +117,7 @@ export const SocialScreen: React.FC = () => {
     queryKey: ['social', 'overview', selectedRange],
     queryFn: async () =>
       apiClient.get<any>('/mobile/v1/social/overview', {
-        params: { range: selectedRange },
+        params: { range: selectedRange, instagramAccountId: 'all' },
       }),
   });
 
@@ -453,6 +453,7 @@ export const SocialScreen: React.FC = () => {
         {activeTab === 'overview' && (
           <SocialOverviewTab
             overviewLoading={overviewLoading}
+            overviewRefetching={isOverviewRefetching}
             overviewError={overviewError}
             onRetryOverview={refetchOverview}
             overviewData={overviewData}

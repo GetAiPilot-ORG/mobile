@@ -608,7 +608,7 @@ export class SocialAdapter {
       user: userObj,
       params: {
         range: query?.range || 30,
-        instagramAccountId: query?.instagramAccountId,
+        instagramAccountId: query?.instagramAccountId || 'all',
       },
     });
   }

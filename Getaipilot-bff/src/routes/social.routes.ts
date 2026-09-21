@@ -36,7 +36,7 @@ export async function socialRoutes(fastify: FastifyInstance) {
     const query = request.query as { range?: string; instagramAccountId?: string };
     const overview = await SocialAdapter.getOverview(user, {
       range: query.range ? parseInt(query.range) : undefined,
-      instagramAccountId: query.instagramAccountId,
+      instagramAccountId: query.instagramAccountId || 'all',
     });
     return reply.send(overview);
   });
