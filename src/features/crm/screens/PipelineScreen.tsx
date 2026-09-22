@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,11 +7,13 @@ import {
   Pressable,
   ScrollView,
   RefreshControl,
-  ActivityIndicator,
+  TextInput,
   useColorScheme,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useDeals, useCreateDeal, useUpdateDealStage } from '../hooks/useDeals';
 import { DealCard } from '../components/DealCard';
 import { CreateDealModal } from '../components/CreateDealModal';
@@ -19,40 +21,130 @@ import { StageSelectorSheet } from '../components/StageSelectorSheet';
 import { CRMDeal, DealStage } from '../types';
 import { CrmPipelineSkeleton } from '../../../components/skeletonScreen';
 
-const STAGE_CONFIGS: Array<{ key: string; label: string; color: string }> = [
-  { key: 'all', label: 'All Stages', color: '#6B7280' },
-  { key: 'lead', label: 'Lead', color: '#6B7280' },
-  { key: 'qualified', label: 'Qualified', color: '#3B82F6' },
-  { key: 'proposal', label: 'Proposal', color: '#D97706' },
-  { key: 'negotiation', label: 'Negotiation', color: '#8B5CF6' },
-  { key: 'closed_won', label: 'Closed Won', color: '#10B981' },
-  { key: 'closed_lost', label: 'Closed Lost', color: '#EF4444' },
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const COLUMN_WIDTH = Math.min(SCREEN_WIDTH * 0.82, 320);
+
+const KANBAN_STAGES: Array<{ key: DealStage; label: string; color: string; bg: string }> = [
+  { key: 'lead', label: 'Lead', color: '#6B7280', bg: 'rgba(107, 114, 128, 0.12)' },
+  { key: 'qualified', label: 'Qualified', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.12)' },
+  { key: 'proposal', label: 'Proposal', color: '#D97706', bg: 'rgba(217, 119, 6, 0.12)' },
+  { key: 'negotiation', label: 'Negotiation', color: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.12)' },
+  { key: 'closed_won', label: 'Closed Won', color: '#10B981', bg: 'rgba(16, 185, 129, 0.12)' },
+  { key: 'closed_lost', label: 'Closed Lost', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.12)' },
 ];
+
+const NEXT_STAGE_MAP: Record<DealStage, DealStage | null> = {
+  lead: 'qualified',
+  qualified: 'proposal',
+  proposal: 'negotiation',
+  negotiation: 'closed_won',
+  closed_won: null,
+  closed_lost: null,
+};
+
+function formatCurrency(val: number): string {
+  if (!val || isNaN(val)) return '₹0';
+  if (val >= 10000000) return `₹${(val / 10000000).toFixed(1)}Cr`;
+  if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
+  if (val >= 1000) return `₹${(val / 1000).toFixed(0)}k`;
+  return `₹${val.toLocaleString()}`;
+}
 
 interface PipelineScreenProps {
   onBack?: () => void;
+  onSelectDeal?: (dealId: string) => void;
 }
 
-export const PipelineScreen: React.FC<PipelineScreenProps> = ({ onBack }) => {
+export const PipelineScreen: React.FC<PipelineScreenProps> = ({ onBack, onSelectDeal }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const [selectedStage, setSelectedStage] = useState<string>('all');
-  const [showAddDeal, setShowAddDeal] = useState(false);
+  const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
+  const [selectedStageFilter, setSelectedStageFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [showAddDeal, setShowAddDeal] = useState<boolean>(false);
+  const [defaultStageForAdd, setDefaultStageForAdd] = useState<DealStage>('lead');
   const [selectedDealForStage, setSelectedDealForStage] = useState<CRMDeal | null>(null);
 
-  const { data: deals = [], isLoading, isRefetching, refetch } = useDeals({
-    stage: selectedStage !== 'all' ? selectedStage : undefined,
-  });
-
+  const { data: allDeals = [], isLoading, isRefetching, refetch } = useDeals();
   const createDeal = useCreateDeal();
   const updateDealStage = useUpdateDealStage();
 
-  // Aggregate values
-  const totalValue = deals.reduce((sum, d) => sum + (Number(d.value) || 0), 0);
-  const wonValue = deals
-    .filter((d) => d.stage === 'closed_won')
-    .reduce((sum, d) => sum + (Number(d.value) || 0), 0);
+  // Search filtered deals
+  const filteredDeals = useMemo(() => {
+    return allDeals.filter((d) => {
+      const matchesSearch =
+        !searchQuery.trim() ||
+        d.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        d.contact?.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        d.contact?.last_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        d.contact?.company?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesStage =
+        selectedStageFilter === 'all' || d.stage === selectedStageFilter;
+
+      return matchesSearch && matchesStage;
+    });
+  }, [allDeals, searchQuery, selectedStageFilter]);
+
+  // Aggregate KPI metrics
+  const totalPipelineValue = useMemo(() => {
+    return allDeals.reduce((sum, d) => sum + (Number(d.value) || 0), 0);
+  }, [allDeals]);
+
+  const wonValue = useMemo(() => {
+    return allDeals
+      .filter((d) => d.stage === 'closed_won')
+      .reduce((sum, d) => sum + (Number(d.value) || 0), 0);
+  }, [allDeals]);
+
+  const wonCount = useMemo(() => {
+    return allDeals.filter((d) => d.stage === 'closed_won').length;
+  }, [allDeals]);
+
+  // Group deals by stage for Kanban Board
+  const stageGroups = useMemo(() => {
+    const groups: Record<DealStage, CRMDeal[]> = {
+      lead: [],
+      qualified: [],
+      proposal: [],
+      negotiation: [],
+      closed_won: [],
+      closed_lost: [],
+    };
+
+    allDeals.forEach((deal) => {
+      if (searchQuery.trim()) {
+        const matches =
+          deal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          deal.contact?.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          deal.contact?.last_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          deal.contact?.company?.toLowerCase().includes(searchQuery.toLowerCase());
+        if (!matches) return;
+      }
+      if (groups[deal.stage]) {
+        groups[deal.stage].push(deal);
+      }
+    });
+
+    return groups;
+  }, [allDeals, searchQuery]);
+
+  const handleAdvanceStage = (deal: CRMDeal) => {
+    const nextStage = NEXT_STAGE_MAP[deal.stage];
+    if (nextStage) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      updateDealStage.mutate({ id: deal.id, stage: nextStage });
+    } else {
+      setSelectedDealForStage(deal);
+    }
+  };
+
+  const handleOpenAddDeal = (stage: DealStage = 'lead') => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setDefaultStageForAdd(stage);
+    setShowAddDeal(true);
+  };
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
@@ -69,93 +161,118 @@ export const PipelineScreen: React.FC<PipelineScreenProps> = ({ onBack }) => {
             </Pressable>
           ) : null}
           <View>
-            <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Pipeline & Deals</Text>
-            <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Track revenue, stages & win rates</Text>
+            <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Sales Pipeline</Text>
+            <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+              {allDeals.length} active deals • {formatCurrency(totalPipelineValue)}
+            </Text>
           </View>
         </View>
 
-        <Pressable
-          style={styles.addBtn}
-          onPress={() => setShowAddDeal(true)}
-          hitSlop={8}
-        >
-          <Ionicons name="add" size={18} color="#FFFFFF" />
-          <Text style={styles.addBtnText}>New Deal</Text>
-        </Pressable>
+        <View style={styles.headerRight}>
+          {/* Board / List Toggle */}
+          <View style={[styles.toggleContainer, { backgroundColor: isDark ? '#1E2028' : '#F1F5F9' }]}>
+            <Pressable
+              style={[styles.toggleBtn, viewMode === 'board' && styles.toggleBtnActive]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                setViewMode('board');
+              }}
+            >
+              <Ionicons
+                name="grid-outline"
+                size={16}
+                color={viewMode === 'board' ? '#FFFFFF' : isDark ? '#9CA3AF' : '#64748B'}
+              />
+            </Pressable>
+            <Pressable
+              style={[styles.toggleBtn, viewMode === 'list' && styles.toggleBtnActive]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                setViewMode('list');
+              }}
+            >
+              <Ionicons
+                name="list-outline"
+                size={16}
+                color={viewMode === 'list' ? '#FFFFFF' : isDark ? '#9CA3AF' : '#64748B'}
+              />
+            </Pressable>
+          </View>
+
+          {/* New Deal Button */}
+          <Pressable
+            style={styles.addBtn}
+            onPress={() => handleOpenAddDeal('lead')}
+            hitSlop={8}
+          >
+            <Ionicons name="add" size={18} color="#FFFFFF" />
+            <Text style={styles.addBtnText}>Deal</Text>
+          </Pressable>
+        </View>
       </View>
 
       {/* Summary KPI Banner */}
-      <View style={[styles.kpiBanner, { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' }]}>
+      <View
+        style={[
+          styles.kpiBanner,
+          { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+        ]}
+      >
         <View style={styles.kpiCol}>
-          <Text style={[styles.kpiLabel, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Pipeline Value</Text>
-          <Text style={[styles.kpiValue, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>₹{totalValue.toLocaleString()}</Text>
+          <Text style={[styles.kpiLabel, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Total Pipeline</Text>
+          <Text style={[styles.kpiValue, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+            {formatCurrency(totalPipelineValue)}
+          </Text>
         </View>
         <View style={[styles.kpiDivider, { backgroundColor: isDark ? '#262A34' : '#E2E8F0' }]} />
         <View style={styles.kpiCol}>
-          <Text style={[styles.kpiLabel, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Total Deals</Text>
-          <Text style={[styles.kpiValue, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>{deals.length}</Text>
+          <Text style={[styles.kpiLabel, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Deals Won</Text>
+          <Text style={[styles.kpiValue, { color: '#10B981' }]}>
+            {formatCurrency(wonValue)}
+          </Text>
+        </View>
+        <View style={[styles.kpiDivider, { backgroundColor: isDark ? '#262A34' : '#E2E8F0' }]} />
+        <View style={styles.kpiCol}>
+          <Text style={[styles.kpiLabel, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Win Ratio</Text>
+          <Text style={[styles.kpiValue, { color: '#3B82F6' }]}>
+            {allDeals.length > 0 ? `${Math.round((wonCount / allDeals.length) * 100)}%` : '0%'}
+          </Text>
         </View>
       </View>
 
-      {/* Stage Selector Chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.stageScroll}
-        contentContainerStyle={styles.stageScrollContent}
+      {/* Search Input Bar */}
+      <View
+        style={[
+          styles.searchBar,
+          { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+        ]}
       >
-        {STAGE_CONFIGS.map((s) => {
-          const isSelected = selectedStage === s.key;
-          return (
-            <Pressable
-              key={s.key}
-              style={[
-                styles.stageChip,
-                { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' },
-                isSelected && (isDark ? styles.stageChipSelectedDark : styles.stageChipSelectedLight),
-              ]}
-              onPress={() => setSelectedStage(s.key)}
-            >
-              {s.key !== 'all' ? (
-                <View style={[styles.stageDot, { backgroundColor: s.color }]} />
-              ) : null}
-              <Text style={[styles.stageText, { color: isDark ? '#9CA3AF' : '#64748B' }, isSelected && { color: s.color, fontWeight: '700' }]}>
-                {s.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-
-      {/* Deals List */}
-      {isLoading && !deals ? (
-        <CrmPipelineSkeleton />
-      ) : deals.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="briefcase-outline" size={48} color={isDark ? '#4B5563' : '#CBD5E1'} />
-          <Text style={[styles.emptyTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>No deals in this stage</Text>
-          <Text style={[styles.emptySubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
-            {selectedStage !== 'all'
-              ? `No deals currently in the ${selectedStage} stage.`
-              : 'Add your first sales deal to populate the pipeline.'}
-          </Text>
-          <Pressable style={styles.emptyBtn} onPress={() => setShowAddDeal(true)}>
-            <Text style={styles.emptyBtnText}>+ Add First Deal</Text>
+        <Ionicons name="search" size={16} color={isDark ? '#6B7280' : '#94A3B8'} />
+        <TextInput
+          style={[styles.searchInput, { color: isDark ? '#FFFFFF' : '#0F172A' }]}
+          placeholder="Filter deals by title or client..."
+          placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery ? (
+          <Pressable onPress={() => setSearchQuery('')} hitSlop={6}>
+            <Ionicons name="close-circle" size={16} color={isDark ? '#6B7280' : '#94A3B8'} />
           </Pressable>
-        </View>
-      ) : (
-        <FlatList
-          data={deals}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <DealCard
-              deal={item}
-              onPress={() => {}}
-              onStageChange={() => setSelectedDealForStage(item)}
-            />
-          )}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
+        ) : null}
+      </View>
+
+      {/* Main Content: Kanban Board vs List View */}
+      {isLoading && !allDeals ? (
+        <CrmPipelineSkeleton />
+      ) : viewMode === 'board' ? (
+        /* HORIZONTAL SWIPEABLE KANBAN BOARD */
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          snapToInterval={COLUMN_WIDTH + 14}
+          decelerationRate="fast"
+          contentContainerStyle={styles.boardScrollContent}
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
@@ -164,16 +281,168 @@ export const PipelineScreen: React.FC<PipelineScreenProps> = ({ onBack }) => {
               colors={['#3B82F6']}
             />
           }
-        />
+        >
+          {KANBAN_STAGES.map((stageCfg) => {
+            const stageDeals = stageGroups[stageCfg.key] || [];
+            const stageTotal = stageDeals.reduce((sum, d) => sum + (Number(d.value) || 0), 0);
+
+            return (
+              <View
+                key={stageCfg.key}
+                style={[
+                  styles.kanbanColumn,
+                  { backgroundColor: isDark ? '#14161C' : '#F1F5F9', borderColor: isDark ? '#222630' : '#E2E8F0' },
+                ]}
+              >
+                {/* Column Header */}
+                <View style={[styles.columnHeader, { borderBottomColor: isDark ? '#222630' : '#E2E8F0' }]}>
+                  <View style={styles.columnHeaderLeft}>
+                    <View style={[styles.stageDot, { backgroundColor: stageCfg.color }]} />
+                    <Text style={[styles.columnTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                      {stageCfg.label}
+                    </Text>
+                    <View style={[styles.countBadge, { backgroundColor: stageCfg.bg }]}>
+                      <Text style={[styles.countBadgeText, { color: stageCfg.color }]}>
+                        {stageDeals.length}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={[styles.columnTotalText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+                      {formatCurrency(stageTotal)}
+                    </Text>
+                    <Pressable
+                      style={[styles.addDealInStageBtn, { backgroundColor: isDark ? '#262A34' : '#FFFFFF' }]}
+                      onPress={() => handleOpenAddDeal(stageCfg.key)}
+                      hitSlop={6}
+                    >
+                      <Ionicons name="add" size={14} color={stageCfg.color} />
+                    </Pressable>
+                  </View>
+                </View>
+
+                {/* Column Deal Cards Scroll */}
+                <ScrollView
+                  style={styles.columnCardsScroll}
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={styles.columnCardsContainer}
+                >
+                  {stageDeals.length === 0 ? (
+                    <View style={styles.emptyColumn}>
+                      <Ionicons name="folder-open-outline" size={28} color={isDark ? '#4B5563' : '#CBD5E1'} />
+                      <Text style={[styles.emptyColumnText, { color: isDark ? '#6B7280' : '#94A3B8' }]}>
+                        No deals in {stageCfg.label.toLowerCase()}
+                      </Text>
+                    </View>
+                  ) : (
+                    stageDeals.map((deal) => {
+                      const nextStageKey = NEXT_STAGE_MAP[deal.stage];
+                      return (
+                        <View key={deal.id} style={styles.kanbanCardWrapper}>
+                          <DealCard
+                            deal={deal}
+                            onPress={() => onSelectDeal?.(deal.id)}
+                            onStageChange={() => setSelectedDealForStage(deal)}
+                          />
+
+                          {/* Quick 1-Tap Advance Stage Button */}
+                          {nextStageKey ? (
+                            <Pressable
+                              style={[
+                                styles.advanceStageBtn,
+                                {
+                                  backgroundColor: isDark ? '#1E222B' : '#EFF6FF',
+                                  borderColor: isDark ? '#2D323F' : '#DBEAFE',
+                                },
+                              ]}
+                              onPress={() => handleAdvanceStage(deal)}
+                            >
+                              <Text style={styles.advanceStageText}>Move to {nextStageKey.replace('_', ' ')}</Text>
+                              <Ionicons name="arrow-forward" size={12} color="#3B82F6" />
+                            </Pressable>
+                          ) : null}
+                        </View>
+                      );
+                    })
+                  )}
+                </ScrollView>
+              </View>
+            );
+          })}
+        </ScrollView>
+      ) : (
+        /* LIST VIEW */
+        <View style={styles.listContainer}>
+          {/* Stage Selector Chips */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.stageScroll}
+            contentContainerStyle={styles.stageScrollContent}
+          >
+            {[{ key: 'all', label: 'All Stages', color: '#6B7280' }, ...KANBAN_STAGES].map((s) => {
+              const isSelected = selectedStageFilter === s.key;
+              return (
+                <Pressable
+                  key={s.key}
+                  style={[
+                    styles.stageChip,
+                    { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+                    isSelected && (isDark ? styles.stageChipSelectedDark : styles.stageChipSelectedLight),
+                  ]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                    setSelectedStageFilter(s.key);
+                  }}
+                >
+                  {s.key !== 'all' ? <View style={[styles.stageDot, { backgroundColor: s.color }]} /> : null}
+                  <Text
+                    style={[
+                      styles.stageText,
+                      { color: isDark ? '#9CA3AF' : '#64748B' },
+                      isSelected && { color: s.color, fontWeight: '700' },
+                    ]}
+                  >
+                    {s.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          <FlatList
+            data={filteredDeals}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <DealCard
+                deal={item}
+                onPress={() => onSelectDeal?.(item.id)}
+                onStageChange={() => setSelectedDealForStage(item)}
+              />
+            )}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefetching}
+                onRefresh={refetch}
+                tintColor="#3B82F6"
+                colors={['#3B82F6']}
+              />
+            }
+          />
+        </View>
       )}
 
       {/* Modals */}
       <CreateDealModal
         visible={showAddDeal}
-        defaultStage={selectedStage !== 'all' ? (selectedStage as DealStage) : 'lead'}
+        defaultStage={defaultStageForAdd}
         onClose={() => setShowAddDeal(false)}
         onSubmit={async (deal) => {
           await createDeal.mutateAsync(deal);
+          setShowAddDeal(false);
         }}
         isLoading={createDeal.isPending}
       />
@@ -196,7 +465,6 @@ export const PipelineScreen: React.FC<PipelineScreenProps> = ({ onBack }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0F1015',
   },
   header: {
     flexDirection: 'row',
@@ -209,22 +477,39 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    flex: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   backBtn: {
-    padding: 6,
-    borderRadius: 8,
-    backgroundColor: '#1E2028',
+    padding: 8,
+    borderRadius: 10,
   },
   title: {
-    color: '#FFFFFF',
     fontSize: 20,
     fontWeight: '700',
     letterSpacing: -0.3,
   },
   subtitle: {
-    color: '#9CA3AF',
     fontSize: 12,
     marginTop: 2,
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 3,
+    borderRadius: 8,
+  },
+  toggleBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  toggleBtnActive: {
+    backgroundColor: '#3B82F6',
   },
   addBtn: {
     flexDirection: 'row',
@@ -243,34 +528,143 @@ const styles = StyleSheet.create({
   kpiBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#181A20',
     marginHorizontal: 16,
-    marginBottom: 12,
+    marginBottom: 10,
     borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderWidth: 1,
-    borderColor: '#262A34',
   },
   kpiCol: {
     flex: 1,
   },
   kpiLabel: {
-    color: '#9CA3AF',
     fontSize: 11,
     fontWeight: '500',
   },
   kpiValue: {
-    color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     marginTop: 2,
   },
   kpiDivider: {
     width: 1,
-    height: 28,
-    backgroundColor: '#262A34',
-    marginHorizontal: 12,
+    height: 24,
+    marginHorizontal: 10,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    height: 42,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+  },
+  boardScrollContent: {
+    paddingHorizontal: 16,
+    paddingRight: 32,
+    gap: 14,
+    paddingBottom: 24,
+  },
+  kanbanColumn: {
+    width: COLUMN_WIDTH,
+    borderRadius: 18,
+    borderWidth: 1,
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    maxHeight: '100%',
+  },
+  columnHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  columnHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  stageDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  columnTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  countBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  countBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  columnTotalText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  addDealInStageBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  columnCardsScroll: {
+    flex: 1,
+  },
+  columnCardsContainer: {
+    padding: 12,
+    paddingBottom: 40,
+    gap: 10,
+  },
+  kanbanCardWrapper: {
+    position: 'relative',
+  },
+  advanceStageBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: -4,
+    marginBottom: 6,
+  },
+  advanceStageText: {
+    color: '#3B82F6',
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  emptyColumn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    gap: 6,
+  },
+  emptyColumnText: {
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  listContainer: {
+    flex: 1,
   },
   stageScroll: {
     maxHeight: 44,
@@ -286,9 +680,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#181A20',
     borderWidth: 1,
-    borderColor: '#262A34',
     gap: 6,
   },
   stageChipSelectedDark: {
@@ -299,11 +691,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#EFF6FF',
     borderColor: '#3B82F6',
   },
-  stageDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
   stageText: {
     fontSize: 12,
     fontWeight: '500',
@@ -311,42 +698,5 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 16,
     paddingBottom: 40,
-  },
-  loaderBox: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loaderText: {
-    fontSize: 13,
-    marginTop: 12,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: 12,
-  },
-  emptySubtitle: {
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: 6,
-    marginBottom: 20,
-  },
-  emptyBtn: {
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  emptyBtnText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
   },
 });

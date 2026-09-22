@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { CRMTask, TaskPriority } from '../types';
 import { useMembers } from '../hooks/useMembers';
 import { useContacts } from '../hooks/useContacts';
+import { DatePickerField } from '../../../components/DatePickerModal';
 
 interface CreateTaskModalProps {
   visible: boolean;
@@ -187,24 +188,13 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
               </View>
             </View>
 
-            {/* Due Date */}
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Due Date (YYYY-MM-DD)</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: isDark ? '#121316' : '#F8FAFC',
-                    borderColor: isDark ? '#262A34' : '#CBD5E1',
-                    color: isDark ? '#FFFFFF' : '#0F172A',
-                  },
-                ]}
-                placeholder={new Date().toISOString().split('T')[0]}
-                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
-                value={dueDate}
-                onChangeText={setDueDate}
-              />
-            </View>
+            {/* Due Date Picker */}
+            <DatePickerField
+              label="Due Date"
+              value={dueDate}
+              onChangeDate={setDueDate}
+              placeholder="Pick a due date..."
+            />
 
             {/* Link Contact */}
             {contactsData?.contacts && contactsData.contacts.length > 0 ? (
