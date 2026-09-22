@@ -10,6 +10,7 @@ interface CrmStatCardProps {
   icon: keyof typeof Ionicons.glyphMap;
   gradientColors: [string, string];
   trend?: string;
+  progress?: number;
   onPress?: () => void;
 }
 
@@ -20,6 +21,7 @@ export const CrmStatCard: React.FC<CrmStatCardProps> = ({
   icon,
   gradientColors,
   trend,
+  progress,
   onPress,
 }) => {
   return (
@@ -56,6 +58,12 @@ export const CrmStatCard: React.FC<CrmStatCardProps> = ({
           <Text style={styles.sub} numberOfLines={1}>
             {sub}
           </Text>
+        ) : null}
+
+        {typeof progress === 'number' ? (
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressBar, { width: `${Math.min(Math.max(progress * 100, 4), 100)}%` }]} />
+          </View>
         ) : null}
       </LinearGradient>
     </Pressable>
@@ -128,5 +136,17 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: 'rgba(255, 255, 255, 0.6)',
     marginTop: 2,
+  },
+  progressTrack: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    marginTop: 10,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    borderRadius: 2,
+    backgroundColor: '#10B981',
   },
 });
