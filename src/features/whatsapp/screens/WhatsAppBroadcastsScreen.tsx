@@ -9,10 +9,10 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 import { WhatsAppBroadcastsSkeleton } from '../../../components/skeletonScreen';
 import { BroadcastCard } from '../components';
@@ -26,8 +26,7 @@ interface WhatsAppBroadcastsScreenProps {
 
 export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> = ({ onBack }) => {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
 
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedBroadcast, setSelectedBroadcast] = useState<WhatsAppBroadcast | null>(null);

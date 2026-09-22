@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, useColorScheme } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '../../src/contexts/ThemeContext';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
 import { ProductCard } from '../../src/components/ProductCard';
@@ -12,8 +13,7 @@ import { ProductsSkeleton } from '../../src/components/skeletonScreen';
 
 export default function ProductsScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
   const { hasWhatsApp, hasTelegram, hasVoice, hasSocial, hasCRM, refresh } =
     usePlatformSubscription();
   const [isRefreshing, setIsRefreshing] = React.useState(false);

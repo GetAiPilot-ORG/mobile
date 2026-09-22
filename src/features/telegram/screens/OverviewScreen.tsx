@@ -5,11 +5,11 @@ import {
   StyleSheet,
   Text,
   View,
-  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 import { HubProgressCard, ToolCard, DashboardAnalyticsCharts } from '../components';
 import { StatCard } from '../components/ui/StatCard';
@@ -53,8 +53,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
   onNavigate,
   onOpenModal,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState<TelegramCategory>('all');
 
   const hub = summary?.hub || { totalModules: 8, completedModules: 8, tools: [] };

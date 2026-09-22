@@ -11,10 +11,10 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 import {
   ProductFloatingBottomBar,
@@ -67,8 +67,7 @@ const WHATSAPP_TABS: ProductTabItem[] = [
 
 export const WhatsAppHomeScreen: React.FC = () => {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<WhatsAppTab>('home');
   const [showAccountSwitcher, setShowAccountSwitcher] = useState<boolean>(false);

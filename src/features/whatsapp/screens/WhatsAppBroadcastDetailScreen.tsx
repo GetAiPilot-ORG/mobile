@@ -6,13 +6,13 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 import { useWhatsAppBroadcasts } from '../hooks/useWhatsAppBroadcasts';
 import { WhatsAppBroadcast } from '../types';
@@ -30,8 +30,7 @@ export const WhatsAppBroadcastDetailScreen: React.FC<WhatsAppBroadcastDetailScre
   onBack,
 }) => {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
 
   const handleBack = () => {
     if (Platform.OS !== 'web') {

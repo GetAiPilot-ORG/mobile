@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 export type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -23,8 +24,7 @@ export const WhatsAppMetricCard: React.FC<WhatsAppMetricCardProps> = ({
   iconColor = '#22C55E',
   trend,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
 
   return (
     <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>

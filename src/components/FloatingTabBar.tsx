@@ -5,13 +5,13 @@ import {
   Pressable,
   StyleSheet,
   Platform,
-  useColorScheme,
   LayoutAnimation,
   UIManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { useTheme } from '../contexts/ThemeContext';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -73,8 +73,7 @@ const tabSpringAnimation = {
 
 export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
 
   // Bottom floating offset based on safe area
   const bottomOffset = Math.max(insets.bottom, 12);

@@ -11,10 +11,10 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  useColorScheme,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 import { WhatsAppTemplatesSkeleton } from '../../../components/skeletonScreen';
 import { TemplateCard } from '../components';
@@ -26,8 +26,7 @@ interface WhatsAppTemplatesScreenProps {
 
 export const WhatsAppTemplatesScreen: React.FC<WhatsAppTemplatesScreenProps> = ({ onBack }) => {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
 
   const handleBack = () => {
     if (Platform.OS !== 'web') {

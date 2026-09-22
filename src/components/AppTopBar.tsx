@@ -3,8 +3,9 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useRouter, usePathname } from 'expo-router';
 import { useAuthStore } from '../core/store/authStore';
+import { useTheme } from '../contexts/ThemeContext';
 import React, { useEffect } from 'react';
-import { BackHandler, Platform, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { BackHandler, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { usePlatformSubscription } from '../hooks/usePlatformSubscription';
@@ -98,8 +99,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
   const user = useAuthStore((s) => s.user);
 
   // Auto-detect: Show back button on all sub-pages with title unless explicitly disabled
@@ -184,7 +184,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
             <Ionicons
               name="chevron-back"
               size={20}
-              color={isDark ? '#F8FAFC' : '#0F172A'}
+              color={isDark ? '#FFFFFF' : '#000000'}
             />
           </Pressable>
         ) : leftElement ? (
@@ -381,10 +381,10 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   titleLight: {
-    color: '#0F172A',
+    color: '#000000',
   },
   titleDark: {
-    color: "#F8FAFC",
+    color: "#FFFFFF",
   },
   subtitle: {
     fontSize: 12,
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   subtitleDark: {
-    color: "#94A3B8",
+    color: "#8E8E93",
   },
   rightSection: {
     flexDirection: "row",

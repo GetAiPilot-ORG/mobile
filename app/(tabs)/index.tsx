@@ -13,9 +13,9 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  useColorScheme,
   View,
 } from "react-native";
+import { useTheme } from "../../src/contexts/ThemeContext";
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
 import { useAuth } from "../../src/contexts/AuthContext";
@@ -41,8 +41,7 @@ interface DeviceSessionsResponse {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
   const { user } = useAuth();
   const {
     planLabel,
