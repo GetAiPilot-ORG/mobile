@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -22,6 +23,7 @@ export interface ActivityQueueSubTabProps {
   onSelectPost: (post: any) => void;
   onCancelPost: (postId: string) => Promise<void>;
   onRetryPost?: (postId: string) => Promise<void>;
+  entitlementsData?: any;
 }
 
 export const ActivityQueueSubTab: React.FC<ActivityQueueSubTabProps> = ({
@@ -30,9 +32,11 @@ export const ActivityQueueSubTab: React.FC<ActivityQueueSubTabProps> = ({
   onSelectPost,
   onCancelPost,
   onRetryPost,
+  entitlementsData,
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const router = useRouter();
   const [queueStatusFilter, setQueueStatusFilter] = useState<'ALL' | 'scheduled' | 'sent' | 'failed'>('ALL');
 
   const rawQueueList = Array.isArray(queueList) ? queueList : (queueList as any)?.broadcasts || [];
@@ -58,6 +62,33 @@ export const ActivityQueueSubTab: React.FC<ActivityQueueSubTabProps> = ({
     return true;
   });
 
+  const queueLimit = entitlementsData?.limits?.scheduled_queue ?? 10;
+  const isUnlimitedQueue = queueLimit >= 1000000;
+  const isQueueFull = !isUnlimitedQueue && queueCounts.scheduled >= queueLimit;
+  const planName = entitlementsData?.plan?.name || (queueLimit > 10 ? 'Growth' : 'Free');
+
+  const handleSchedulePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (isQueueFull) {
+      Alert.alert(
+        'Queue Limit Reached',
+        `Your ${planName} plan allows up to ${queueLimit} scheduled posts in queue. Upgrade to Starter or Growth to schedule unlimited publications.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Upgrade Plan',
+            onPress: () => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push('/products/social/plans' as any);
+            },
+          },
+        ]
+      );
+      return;
+    }
+    openSocialHandoff('schedule');
+  };
+
   return (
     <View style={styles.subContent}>
       <View style={styles.headerActionRow}>
@@ -69,11 +100,67 @@ export const ActivityQueueSubTab: React.FC<ActivityQueueSubTabProps> = ({
             Pending publications automatically firing across channels
           </Text>
         </View>
-        <Pressable onPress={() => openSocialHandoff('schedule')} style={styles.primaryActionBtn}>
+        <Pressable onPress={handleSchedulePress} style={styles.primaryActionBtn}>
           <Ionicons name="calendar-outline" size={14} color="#ffffff" />
           <Text style={styles.primaryActionBtnText}>Schedule</Text>
         </Pressable>
       </View>
+
+      {/* Plan Queue Quota Banner */}
+      {!isUnlimitedQueue && (
+        <View
+          style={[
+            styles.queueQuotaBanner,
+            {
+              backgroundColor: isQueueFull
+                ? isDark ? 'rgba(239, 68, 68, 0.15)' : '#fef2f2'
+                : isDark ? 'rgba(59, 130, 246, 0.1)' : '#eff6ff',
+              borderColor: isQueueFull ? '#ef4444' : isDark ? '#1e3a8a' : '#bfdbfe',
+            },
+          ]}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+            <Ionicons
+              name={isQueueFull ? 'alert-circle' : 'information-circle'}
+              size={18}
+              color={isQueueFull ? '#ef4444' : '#3b82f6'}
+            />
+            <View style={{ flex: 1 }}>
+              <Text
+                style={[
+                  styles.queueQuotaTitle,
+                  { color: isQueueFull ? '#ef4444' : isDark ? '#93c5fd' : '#1d4ed8' },
+                ]}
+              >
+                {isQueueFull
+                  ? `Plan Queue Limit Reached (${queueCounts.scheduled}/${queueLimit})`
+                  : `Queue Quota: ${queueCounts.scheduled}/${queueLimit} scheduled posts`}
+              </Text>
+              <Text
+                style={[
+                  styles.queueQuotaSub,
+                  { color: isQueueFull ? (isDark ? '#fca5a5' : '#b91c1c') : (isDark ? '#cbd5e1' : '#475569') },
+                ]}
+              >
+                {isQueueFull
+                  ? `Upgrade from ${planName} plan for unlimited scheduled broadcast queue.`
+                  : `${planName} tier allows ${queueLimit} posts queued simultaneously.`}
+              </Text>
+            </View>
+          </View>
+          {isQueueFull && (
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push('/products/social/plans' as any);
+              }}
+              style={styles.queueUpgradeBtn}
+            >
+              <Text style={styles.queueUpgradeBtnText}>Upgrade</Text>
+            </Pressable>
+          )}
+        </View>
+      )}
 
       {/* Status Bar at Top of the List */}
       <View style={styles.statusFilterContainer}>
@@ -397,6 +484,36 @@ const styles = StyleSheet.create({
   primaryActionBtnText: {
     color: '#ffffff',
     fontSize: 12,
+    fontWeight: '800',
+  },
+  queueQuotaBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 12,
+    marginBottom: 10,
+  },
+  queueQuotaTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  queueQuotaSub: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  queueUpgradeBtn: {
+    backgroundColor: '#ec4899',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  queueUpgradeBtnText: {
+    color: '#ffffff',
+    fontSize: 11,
     fontWeight: '800',
   },
   statusFilterContainer: {

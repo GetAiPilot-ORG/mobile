@@ -276,7 +276,7 @@ export default function HomeScreen() {
   return (
     <AppScreen safeArea={false}>
       {/* Top Header */}
-      <AppTopBar />
+      <AppTopBar showPlanBadge={true} />
 
       <ScrollView
         style={[
@@ -503,6 +503,91 @@ export default function HomeScreen() {
             )}
           </View>
           <Ionicons name="chevron-forward" size={17} color="#8E8E93" />
+        </Pressable>
+
+        {/* Overall Ecosystem Pricing & Upgrades Tile */}
+        <Pressable
+          style={[
+            styles.pricingTile,
+            isDark ? styles.pricingTileDark : styles.pricingTileLight,
+          ]}
+          onPress={() => {
+            triggerHaptic();
+            router.push('/account/plans' as any);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Explore overall pricing plans and ecosystem quotas"
+        >
+          <View style={styles.pricingTileHeader}>
+            <View style={styles.pricingTileBadgeRow}>
+              <View
+                style={[
+                  styles.pricingBadge,
+                  { backgroundColor: isDark ? 'rgba(10, 132, 255, 0.2)' : '#e0f2fe' },
+                ]}
+              >
+                <Ionicons name="sparkles" size={11} color="#0A84FF" />
+                <Text style={styles.pricingBadgeText}>ECOSYSTEM PRICING</Text>
+              </View>
+              <View
+                style={[
+                  styles.pricingSaveBadge,
+                  { backgroundColor: 'rgba(236, 72, 153, 0.15)' },
+                ]}
+              >
+                <Text style={styles.pricingSaveBadgeText}>FROM ₹799/MO</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={isDark ? '#94a3b8' : '#64748b'} />
+          </View>
+
+          <View style={styles.pricingTileBody}>
+            <Text style={[styles.pricingTileTitle, isDark && styles.pricingTileTitleDark]}>
+              Scale Your Automation Fleet
+            </Text>
+            <Text style={[styles.pricingTileDesc, isDark && styles.pricingTileDescDark]}>
+              Voice AI Calling · Social Pilot · WhatsApp · Telegram · Smart CRM
+            </Text>
+          </View>
+
+          {/* Pricing Quick Snapshot Pills */}
+          <View style={styles.pricingPillRow}>
+            <View style={[styles.pricePill, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+              <Ionicons name="call" size={11} color="#8b5cf6" />
+              <Text style={[styles.pricePillText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                Voice AI ₹1,499
+              </Text>
+            </View>
+            <View style={[styles.pricePill, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+              <Ionicons name="share-social" size={11} color="#ec4899" />
+              <Text style={[styles.pricePillText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                Social ₹999
+              </Text>
+            </View>
+            <View style={[styles.pricePill, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+              <Ionicons name="logo-whatsapp" size={11} color="#25d366" />
+              <Text style={[styles.pricePillText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                WA ₹999
+              </Text>
+            </View>
+            <View style={[styles.pricePill, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+              <Ionicons name="people" size={11} color="#f59e0b" />
+              <Text style={[styles.pricePillText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                CRM ₹799
+              </Text>
+            </View>
+          </View>
+
+          {/* Bottom Action Strip */}
+          <View style={[styles.pricingActionStrip, { borderTopColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+            <Text style={[styles.pricingActionStripText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+              Compare all plans, quotas & features
+            </Text>
+            <View style={styles.pricingActionStripBtn}>
+              <Text style={styles.pricingActionStripBtnText}>View Plans</Text>
+              <Ionicons name="arrow-forward" size={12} color="#0A84FF" />
+            </View>
+          </View>
         </Pressable>
 
         {/* iOS Native Segmented Filter Bar */}
@@ -1073,5 +1158,124 @@ const styles = StyleSheet.create({
   },
   hairlineDividerDark: {
     backgroundColor: "#262C36",
+  },
+  pricingTile: {
+    borderRadius: 16,
+    padding: 14,
+    gap: 10,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  pricingTileLight: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E2E8F0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  pricingTileDark: {
+    backgroundColor: "#0F172A",
+    borderColor: "#1E293B",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  pricingTileHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  pricingTileBadgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  pricingBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  pricingBadgeText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#0A84FF",
+    letterSpacing: 0.5,
+  },
+  pricingSaveBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  pricingSaveBadgeText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#EC4899",
+    letterSpacing: 0.5,
+  },
+  pricingTileBody: {
+    gap: 2,
+  },
+  pricingTileTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#0F172A",
+    letterSpacing: -0.2,
+  },
+  pricingTileTitleDark: {
+    color: "#F8FAFC",
+  },
+  pricingTileDesc: {
+    fontSize: 11.5,
+    color: "#64748B",
+  },
+  pricingTileDescDark: {
+    color: "#94A3B8",
+  },
+  pricingPillRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 2,
+  },
+  pricePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 7,
+  },
+  pricePillText: {
+    fontSize: 10.5,
+    fontWeight: "700",
+  },
+  pricingActionStrip: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingTop: 8,
+    borderTopWidth: 1,
+    marginTop: 2,
+  },
+  pricingActionStripText: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  pricingActionStripBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+  },
+  pricingActionStripBtnText: {
+    fontSize: 11.5,
+    fontWeight: "700",
+    color: "#0A84FF",
   },
 });

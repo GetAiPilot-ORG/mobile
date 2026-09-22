@@ -199,6 +199,7 @@ export default function FreeToolsScreen() {
         title="Free Tools Hub"
         subtitle="Complete Utility Inventory (10 Tools)"
         showBack={false}
+        showPlanBadge={true}
       />
 
       <ScrollView

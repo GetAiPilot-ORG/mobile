@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Modal,
   View,
@@ -12,6 +12,8 @@ import {
   Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 
 interface PostDetailsModalProps {
   visible: boolean;
@@ -19,7 +21,6 @@ interface PostDetailsModalProps {
   onClose: () => void;
   onRetry?: (postId: string) => Promise<void>;
   onCancel?: (postId: string) => Promise<void>;
-  onDelete?: (postId: string) => Promise<void>;
   isActionLoading?: boolean;
 }
 
@@ -29,11 +30,11 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
   onClose,
   onRetry,
   onCancel,
-  onDelete,
   isActionLoading,
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const [copiedCaption, setCopiedCaption] = useState(false);
 
   if (!post) return null;
 
@@ -144,10 +145,40 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
               </View>
             )}
 
-            {/* Caption */}
-            <Text style={[styles.captionTitle, { color: isDark ? '#cbd5e1' : '#334155' }]}>
-              Caption
-            </Text>
+            {/* Caption Header with Copy Action */}
+            <View style={styles.captionHeaderRow}>
+              <Text style={[styles.captionTitle, { color: isDark ? '#cbd5e1' : '#334155' }]}>
+                Caption
+              </Text>
+              {Boolean(post.caption) && (
+                <Pressable
+                  onPress={async () => {
+                    await Clipboard.setStringAsync(post.caption || '');
+                    try {
+                      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    } catch {}
+                    setCopiedCaption(true);
+                    setTimeout(() => setCopiedCaption(false), 2000);
+                  }}
+                  style={[styles.copyBtn, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}
+                  hitSlop={8}
+                >
+                  <Ionicons
+                    name={copiedCaption ? 'checkmark' : 'copy-outline'}
+                    size={13}
+                    color={copiedCaption ? '#22c55e' : isDark ? '#94a3b8' : '#64748b'}
+                  />
+                  <Text
+                    style={[
+                      styles.copyBtnText,
+                      { color: copiedCaption ? '#22c55e' : isDark ? '#94a3b8' : '#64748b' },
+                    ]}
+                  >
+                    {copiedCaption ? 'Copied' : 'Copy'}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
             <View style={[styles.captionCard, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
               <Text style={[styles.captionText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
                 {post.caption || 'No caption provided.'}
@@ -199,10 +230,8 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
                         onPress={() => Linking.openURL(post.youtube_shorts_url || post.youtube_url)}
                         style={styles.openPlatformBtn}
                       >
-                        <Ionicons name="play-circle-outline" size={15} color="#ef4444" />
-                        <Text style={[styles.openPlatformText, { color: '#ef4444' }]}>
-                          {post.youtube_shorts_url ? 'Watch YouTube Short' : 'Watch on YouTube'}
-                        </Text>
+                        <Ionicons name="open-outline" size={15} color="#ef4444" />
+                        <Text style={[styles.openPlatformText, { color: '#ef4444' }]}>View on YouTube</Text>
                       </Pressable>
                     )}
                   </View>
@@ -403,16 +432,21 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
               </Pressable>
             )}
 
-            {onDelete && (
-              <Pressable
-                onPress={() => onDelete(post.id)}
-                disabled={isActionLoading}
-                style={[styles.actionBtn, styles.deleteBtn]}
-              >
-                <Ionicons name="trash" size={16} color="#ef4444" />
-                <Text style={styles.deleteBtnText}>Delete</Text>
-              </Pressable>
-            )}
+            <Pressable
+              onPress={onClose}
+              style={[
+                styles.actionBtn,
+                styles.closeSecondaryBtn,
+                {
+                  backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
+                  borderColor: isDark ? '#334155' : '#e2e8f0',
+                },
+              ]}
+            >
+              <Text style={[styles.closeSecondaryBtnText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                Close
+              </Text>
+            </Pressable>
           </View>
         </View>
       </View>
@@ -637,18 +671,33 @@ const styles = StyleSheet.create({
   cancelPostBtn: {
     backgroundColor: '#eab308',
   },
-  deleteBtn: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.2)',
+  captionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
   },
-  actionBtnText: {
-    color: '#ffffff',
+  copyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  copyBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  closeSecondaryBtn: {
+    borderWidth: 1,
+  },
+  closeSecondaryBtnText: {
     fontSize: 13,
     fontWeight: '700',
   },
-  deleteBtnText: {
-    color: '#ef4444',
+  actionBtnText: {
+    color: '#ffffff',
     fontSize: 13,
     fontWeight: '700',
   },

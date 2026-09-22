@@ -158,8 +158,11 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             openSocialHandoff('builder');
-          }} style={[styles.brandBadge, { backgroundColor: '#e1306c' }]}>
-          <Text style={[styles.brandBadgeText, { color: '#ffffff' }]}>Builder</Text>
+          }}
+          style={[styles.primaryActionBtn, { backgroundColor: '#e1306c' }]}
+        >
+          <Ionicons name="sparkles" size={14} color="#ffffff" />
+          <Text style={styles.primaryActionBtnText}>Builder</Text>
         </Pressable>
       </View>
 
@@ -698,13 +701,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-  brandBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+  primaryActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#e1306c',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    alignSelf: 'center',
   },
-  brandBadgeText: {
-    fontSize: 11,
+  primaryActionBtnText: {
+    color: '#ffffff',
+    fontSize: 12,
     fontWeight: '800',
   },
   card: {

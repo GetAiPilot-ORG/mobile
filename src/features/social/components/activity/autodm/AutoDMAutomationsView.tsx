@@ -19,7 +19,6 @@ export interface AutoDMAutomationsViewProps {
   isLoading: boolean;
   activeAutoDMAccount?: AutoDMAccount;
   onToggleRule: (id: string, currentActive?: boolean) => void;
-  onDeleteRule: (id: string) => void;
 }
 
 export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
@@ -27,7 +26,6 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
   isLoading,
   activeAutoDMAccount,
   onToggleRule,
-  onDeleteRule,
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -451,7 +449,7 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                   </View>
                 </View>
 
-                {/* Card Footer Actions */}
+                {/* Card Footer */}
                 <View style={styles.autodmItemFooter}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Ionicons name="shield-checkmark" size={13} color="#16a34a" />
@@ -460,20 +458,35 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                     </Text>
                   </View>
 
-                  <Pressable
-                    onPress={() => onDeleteRule(item.id)}
-                    style={[
-                      styles.autodmActionBtn,
-                      {
-                        backgroundColor: 'rgba(239, 68, 68, 0.08)',
-                        borderColor: 'rgba(239, 68, 68, 0.25)',
-                      },
-                    ]}
-                    hitSlop={8}
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 4,
+                      paddingHorizontal: 8,
+                      paddingVertical: 3,
+                      borderRadius: 6,
+                      backgroundColor: item.is_active ? 'rgba(34, 197, 94, 0.12)' : isDark ? '#334155' : '#e2e8f0',
+                    }}
                   >
-                    <Ionicons name="trash-outline" size={13} color="#ef4444" />
-                    <Text style={[styles.autodmActionBtnText, { color: '#ef4444' }]}>Delete</Text>
-                  </Pressable>
+                    <View
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: 3,
+                        backgroundColor: item.is_active ? '#22c55e' : '#94a3b8',
+                      }}
+                    />
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        fontWeight: '700',
+                        color: item.is_active ? '#22c55e' : isDark ? '#94a3b8' : '#64748b',
+                      }}
+                    >
+                      {item.is_active ? 'Active' : 'Paused'}
+                    </Text>
+                  </View>
                 </View>
               </View>
             );

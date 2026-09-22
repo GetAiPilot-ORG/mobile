@@ -9,7 +9,8 @@ export type SocialHandoffTarget =
   | 'schedule'
   | 'builder'
   | 'upload-short'
-  | 'new-automation';
+  | 'new-automation'
+  | 'billing';
 
 export const SOCIAL_TARGET_URLS: Record<SocialHandoffTarget, string> = {
   'new-post': 'https://social.getaipilot.in/dashboard',
@@ -17,6 +18,7 @@ export const SOCIAL_TARGET_URLS: Record<SocialHandoffTarget, string> = {
   'builder': 'https://social.getaipilot.in/dashboard/instapilot?mode=builder',
   'upload-short': 'https://social.getaipilot.in/dashboard/compose',
   'new-automation': 'https://social.getaipilot.in/dashboard/auto-dm/automations/new',
+  'billing': 'https://social.getaipilot.in/dashboard/settings?tab=billing',
 };
 
 export const SOCIAL_TOOL_KEYS: Record<SocialHandoffTarget, string> = {
@@ -25,13 +27,17 @@ export const SOCIAL_TOOL_KEYS: Record<SocialHandoffTarget, string> = {
   'builder': 'social-builder',
   'upload-short': 'social-compose',
   'new-automation': 'social-automation',
+  'billing': 'social-billing',
 };
 
 /**
  * Seamlessly opens SocialPilot in the user's mobile browser with an authenticated SSO session.
  * Automatically deep-links to the exact tool/screen requested.
  */
-export async function openSocialHandoff(target: SocialHandoffTarget): Promise<void> {
+export async function openSocialHandoff(
+  target: SocialHandoffTarget,
+  customWebAppUrl?: string,
+): Promise<void> {
   try {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   } catch {}
@@ -40,6 +46,7 @@ export async function openSocialHandoff(target: SocialHandoffTarget): Promise<vo
 
   // 1. Primary: Generate SSO handoff consumed in getaipilot.in (/auth/handoff)
   try {
+    const webAppUrl = customWebAppUrl || 'https://getaipilot.in';
     const { data, error } = await supabase.functions.invoke<{
       targetUrl: string;
       redirectPath?: string;
@@ -48,7 +55,7 @@ export async function openSocialHandoff(target: SocialHandoffTarget): Promise<vo
       body: {
         targetTool: SOCIAL_TOOL_KEYS[target],
         clientId: SOCIAL_TOOL_KEYS[target],
-        webAppUrl: 'https://getaipilot.in',
+        webAppUrl,
       },
     });
 

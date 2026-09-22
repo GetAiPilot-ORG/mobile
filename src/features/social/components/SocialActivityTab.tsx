@@ -22,6 +22,7 @@ export interface SocialActivityTabProps {
   onSelectPost: (post: any) => void;
   onCancelPost: (postId: string) => Promise<void>;
   onRetryPost?: (postId: string) => Promise<void>;
+  entitlementsData?: any;
   instapilotConversations?: InstapilotConversation[];
   instapilotLoading?: boolean;
   isSyncingInstapilot?: boolean;
@@ -42,6 +43,7 @@ export const SocialActivityTab: React.FC<SocialActivityTabProps> = ({
   onSelectPost,
   onCancelPost,
   onRetryPost,
+  entitlementsData,
   instapilotConversations = [],
   instapilotLoading = false,
   isSyncingInstapilot = false,
@@ -189,6 +191,7 @@ export const SocialActivityTab: React.FC<SocialActivityTabProps> = ({
         <ActivityQueueSubTab
           queueLoading={queueLoading}
           queueList={queueList}
+          entitlementsData={entitlementsData}
           onSelectPost={onSelectPost}
           onCancelPost={onCancelPost}
           onRetryPost={onRetryPost}
@@ -221,6 +224,7 @@ export const SocialActivityTab: React.FC<SocialActivityTabProps> = ({
       {activeSubTab === 'autodm' && (
         <ActivityAutoDMSubTab
           connectedAccounts={connectedAccounts}
+          entitlementsData={entitlementsData}
         />
       )}
     </View>
