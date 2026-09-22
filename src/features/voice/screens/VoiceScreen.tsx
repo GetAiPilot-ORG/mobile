@@ -6,12 +6,12 @@ import {
   ScrollView,
   RefreshControl,
   Pressable,
-  useColorScheme,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { AppScreen } from '../../../components/AppScreen';
 import { AppTopBar } from '../../../components/AppTopBar';
 import {
@@ -38,8 +38,7 @@ const VOICE_TABS: ProductTabItem[] = [
 ];
 
 export const VoiceScreen: React.FC = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
   const queryClient = useQueryClient();
 
   const [activeSection, setActiveSection] = useState<VoiceSectionKey>('overview');

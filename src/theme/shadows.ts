@@ -20,4 +20,11 @@ export const shadows = {
     shadowRadius: 6,
     elevation: 2,
   },
+  tabActive: {
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
 };

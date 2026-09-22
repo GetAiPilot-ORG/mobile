@@ -5,9 +5,9 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from "react-native";
+import { useTheme } from "../../src/contexts/ThemeContext";
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
 import { SearchInput } from "../../src/components/SearchInput";
@@ -151,8 +151,7 @@ const CATEGORIES = ["All", "Templates", "Messaging", "Utilities", "AI Audio"];
 
 export default function FreeToolsScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [openingToolId, setOpeningToolId] = useState<string | null>(null);

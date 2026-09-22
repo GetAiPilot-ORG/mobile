@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, useColorScheme } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useTheme } from '../contexts/ThemeContext';
 import { colors } from '../theme/colors';
 
 interface ToolCardProps {
@@ -19,8 +20,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({
   badge,
   onPress,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
 
   return (
     <Pressable style={[styles.card, isDark && styles.cardDark]} onPress={onPress}>

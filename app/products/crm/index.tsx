@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { BackHandler, StyleSheet, useColorScheme, View } from 'react-native';
+import { BackHandler, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '../../../src/contexts/ThemeContext';
 import { CRMHomeScreen } from '../../../src/features/crm/screens/CRMHomeScreen';
 import { LeadListScreen } from '../../../src/features/crm/screens/LeadListScreen';
 import { LeadDetailScreen } from '../../../src/features/crm/screens/LeadDetailScreen';
@@ -66,8 +67,7 @@ const CRM_TABS: ProductTabItem[] = [
 
 export default function CRMIndexRoute() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
   const [activeTab, setActiveTab] = useState<CRMTab>('home');
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 

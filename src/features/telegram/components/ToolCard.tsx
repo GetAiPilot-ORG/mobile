@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, useColorScheme } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { TelegramHubTool } from '../types';
 
 interface ToolCardProps {
@@ -25,39 +26,38 @@ const TOOL_VISUAL_MAP: Record<string, ToolVisualConfig> = {
     icon: 'share-social',
   },
   autoforward: {
-    gradient: ['#0EA5E9', '#0284C7'],
-    icon: 'paper-plane',
+    gradient: ['#EC4899', '#D946EF'],
+    icon: 'git-compare-outline',
   },
   sub_manager: {
-    gradient: ['#F43F5E', '#DB2777'],
-    icon: 'wallet',
+    gradient: ['#F59E0B', '#D97706'],
+    icon: 'card',
   },
   report_bot: {
-    gradient: ['#10B981', '#047857'],
+    gradient: ['#EF4444', '#DC2626'],
     icon: 'shield-checkmark',
   },
   broadcast: {
-    gradient: ['#F59E0B', '#D97706'],
+    gradient: ['#10B981', '#059669'],
     icon: 'megaphone',
   },
   auto_approve: {
-    gradient: ['#14B8A6', '#0F766E'],
-    icon: 'checkmark-circle',
+    gradient: ['#06B6D4', '#0891B2'],
+    icon: 'checkmark-circle-outline',
   },
   chatbot: {
     gradient: ['#6366F1', '#4F46E5'],
-    icon: 'hardware-chip',
+    icon: 'chatbubbles',
   },
 };
 
 const DEFAULT_VISUAL: ToolVisualConfig = {
-  gradient: ['#0284C7', '#0369A1'],
-  icon: 'apps',
+  gradient: ['#64748B', '#475569'],
+  icon: 'cube-outline',
 };
 
 export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
 
   const visual = TOOL_VISUAL_MAP[tool.key] || DEFAULT_VISUAL;
 

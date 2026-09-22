@@ -1,6 +1,7 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../../../contexts/ThemeContext';
 
 interface StatCardProps {
   label: string;
@@ -14,7 +15,7 @@ interface StatCardProps {
 }
 
 export const StatCard: React.FC<StatCardProps> = ({ label, value, icon, color, bg, sub, onPress, isRevenue }) => {
-  const isDark = useColorScheme() === 'dark';
+  const { isDark } = useTheme();
   const txt = isDark ? styles.textDark : styles.textLight;
 
   return (

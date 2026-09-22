@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, TextInput, StyleSheet, Pressable, Text, useColorScheme } from 'react-native';
+import { View, TextInput, StyleSheet, Pressable, Text } from 'react-native';
+import { useTheme } from '../contexts/ThemeContext';
 import { colors } from '../theme/colors';
 
 interface SearchInputProps {
@@ -15,8 +16,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   placeholder = 'Search...',
   onClear,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
 
   return (
     <View style={[styles.container, isDark && styles.containerDark]}>
