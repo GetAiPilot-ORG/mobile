@@ -5,7 +5,6 @@ import {
   Pressable,
   StyleSheet,
   Platform,
-  useColorScheme,
   LayoutAnimation,
   UIManager,
   Modal,
@@ -17,6 +16,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { useTheme } from '../contexts/ThemeContext';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -73,8 +73,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
   pinPrimaryTabs = false,
 }) => {
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
 
   const [containerWidth, setContainerWidth] = useState(0);
   const [isMoreModalVisible, setIsMoreModalVisible] = useState(false);
@@ -83,7 +82,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
   const bottomOffset = Math.max(insets.bottom, 12);
 
   const activeColor = accentColor;
-  const inactiveColor = isDark ? '#94A3B8' : '#64748B';
+  const inactiveColor = isDark ? '#8E8E93' : '#64748B';
 
   const hasOverflow = items.length > 5;
 
@@ -485,8 +484,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0, 0, 0, 0.1)',
   },
   popupCardDark: {
-    backgroundColor: '#1E1E24',
-    borderColor: 'rgba(255, 255, 255, 0.14)',
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
   },
   popupHeader: {
     flexDirection: 'row',
@@ -534,7 +533,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F1F5F9',
   },
   borderDark: {
-    borderBottomColor: '#2D2D38',
+    borderBottomColor: '#2C2C2E',
   },
   popupItemActiveLight: {
     backgroundColor: 'rgba(0, 122, 255, 0.06)',
@@ -558,13 +557,13 @@ const styles = StyleSheet.create({
   },
   popupItemDesc: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#8E8E93',
     marginTop: 1,
   },
   textLight: {
     color: '#0F172A',
   },
   textDark: {
-    color: '#F8FAFC',
+    color: '#FFFFFF',
   },
 });

@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, View, Pressable, Linking, Platform, useColorScheme } from 'react-native';
+import { StyleSheet, Text, View, Pressable, Linking, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { WhatsAppTemplate } from '../types';
 
 interface TemplateCardProps {
@@ -44,8 +45,7 @@ function formatDate(template: WhatsAppTemplate): string {
 }
 
 export const TemplateCard: React.FC<TemplateCardProps> = ({ template, onSelect, onPress }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
 
   const isApproved = template.status === 'APPROVED';
   const isPending = template.status === 'PENDING';

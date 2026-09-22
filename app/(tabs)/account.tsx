@@ -17,9 +17,9 @@ import {
   Switch,
   Text,
   TextInput,
-  useColorScheme,
   View,
 } from 'react-native';
+import { useTheme } from '../../src/contexts/ThemeContext';
 import { AppScreen } from '../../src/components/AppScreen';
 import { DeviceSessionsSkeleton } from '../../src/components/skeletonScreen';
 import { useAuth } from '../../src/contexts/AuthContext';
@@ -105,8 +105,7 @@ const TABS: { id: AccountTab; label: string }[] = [
 export default function AccountScreen() {
   const router = useRouter();
   const { tab } = useLocalSearchParams<{ tab?: string }>();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
   const { user, signOut } = useAuth();
   const { isAdmin, planLabel, isActive, plan } = usePlatformSubscription();
   const queryClient = useQueryClient();

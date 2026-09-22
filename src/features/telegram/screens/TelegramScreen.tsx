@@ -10,10 +10,10 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
-  useColorScheme,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 import { AppScreen } from '../../../components/AppScreen';
 import { AppTopBar } from '../../../components/AppTopBar';
@@ -73,8 +73,7 @@ const TELEGRAM_TABS: ProductTabItem[] = [
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export const TelegramScreen: React.FC = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
 
   const [activeTab, setActiveTab] = useState<TelegramTab>('hub');
   const [activeModal, setActiveModal] = useState<TelegramToolKey | null>(null);

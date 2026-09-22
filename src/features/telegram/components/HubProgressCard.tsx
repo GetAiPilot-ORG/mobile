@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, useColorScheme } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 interface HubProgressCardProps {
   total: number;
@@ -16,8 +17,7 @@ export const HubProgressCard: React.FC<HubProgressCardProps> = ({
   onRefresh,
   isRefreshing,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
   const percentage = Math.round((completed / (total || 1)) * 100);
 
   const handleRefresh = () => {
