@@ -37,7 +37,10 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
   const dbSettings = summary?.loadedForwardSettings || null;
 
   const filtersList = dbFilters.length > 0
-    ? dbFilters.map((f: any) => ({ from: f.keyword || f.find_text || f.word || '', to: f.replacement || f.replace_text || f.replace_with || '' }))
+    ? dbFilters.map((f: any) => ({
+        from: f.from_name || f.keyword || f.find_text || f.word || '',
+        to: f.to_name || f.replacement || f.replace_text || f.replace_with || '',
+      }))
     : forwardRules.flatMap(r => r.keywords_filter || []).map((f: string) => {
         const parts = f.split('->');
         return { from: parts[0] || f, to: parts[1] || '' };
@@ -46,7 +49,7 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
   const filtersCount = filtersList.length;
 
   const blacklistList = dbBlacklist.length > 0
-    ? dbBlacklist.map((b: any) => b.word || b.keyword || b.blacklisted_word).filter(Boolean)
+    ? dbBlacklist.map((b: any) => b.word || b.word_lower || b.keyword || b.blacklisted_word).filter(Boolean)
     : [...new Set(forwardRules.flatMap(r => r.blacklist_keywords || []))];
 
   const blockedCount = blacklistList.length;
