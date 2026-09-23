@@ -1,29 +1,28 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-  StyleSheet,
-  Text,
-  View,
+  Alert,
   FlatList,
   Pressable,
   RefreshControl,
-  ActivityIndicator,
-  Alert,
+  StyleSheet,
+  Text,
   useColorScheme,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useTasks, useCreateTask, useToggleTask, useDeleteTask } from '../hooks/useTasks';
-import { TaskItem } from '../components/TaskItem';
-import { CreateTaskModal } from '../components/CreateTaskModal';
-import { CRMTask } from '../types';
 import { CrmTaskSkeleton } from '../../../components/skeletonScreen';
+import { CreateTaskModal } from '../components/CreateTaskModal';
+import { TaskItem } from '../components/TaskItem';
+import { useCreateTask, useDeleteTask, useTasks, useToggleTask } from '../hooks/useTasks';
+import { CRMTask } from '../types';
 
 const TIMEFRAME_TABS: Array<{ key: 'all' | 'today' | 'upcoming' | 'overdue' | 'completed'; label: string }> = [
+  { key: 'all', label: 'All Tasks' },
   { key: 'today', label: 'Today' },
   { key: 'upcoming', label: 'Upcoming' },
   { key: 'overdue', label: 'Overdue' },
-  { key: 'completed', label: 'Completed' },
-  { key: 'all', label: 'All Tasks' },
+  { key: 'completed', label: 'Completed' }
 ];
 
 interface TasksScreenProps {

@@ -26,12 +26,14 @@ const envSchema = z.object({
   VOICE_SUPABASE_URL: z.string().url().default('https://gkyilicraflkgcfgqypc.supabase.co'),
   VOICE_SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   SOCIAL_SUPABASE_URL: z.string().url().default('https://oqaysrnncwbtrujnxsdo.supabase.co'),
+  SOCIAL_SUPABASE_ANON_KEY: z.string().optional(),
   SOCIAL_SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   TOKEN_ENCRYPTION_KEY: z.string().optional(),
   WEB_APP_URL: z.string().url().default('https://getaipilot.in'),
   WEBVIEW_AUTH_CODE_TTL_SECONDS: z.coerce.number().int().min(30).max(600).default(300),
+  RAZORPAY_KEY_ID: z.string().default(''),
+  RAZORPAY_KEY_SECRET: z.string().default(''),
+  REDIS_URL: z.string().default('redis://127.0.0.1:6379'),
 });
 
 export const env = envSchema.parse(process.env);
-
-

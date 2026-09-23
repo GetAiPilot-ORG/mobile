@@ -606,4 +606,27 @@ export class HubAdapter {
       currency: payment?.currency || 'INR',
     };
   }
+
+  /**
+   * Fetches active ecosystem pricing plans from public.pricing_plans
+   */
+  public static async getPricingPlans(category?: string) {
+    const client = this.adminClient;
+    let query = client
+      .from('pricing_plans')
+      .select('*')
+      .eq('is_active', true)
+      .order('amount', { ascending: true });
+
+    if (category && category !== 'all') {
+      query = query.eq('category', category);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.warn('[HubAdapter] getPricingPlans error:', error.message);
+      return [];
+    }
+    return data || [];
+  }
 }

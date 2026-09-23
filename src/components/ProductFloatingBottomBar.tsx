@@ -1,20 +1,26 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   Pressable,
   StyleSheet,
   Platform,
-  useColorScheme,
-  Animated,
-  LayoutChangeEvent,
+  LayoutAnimation,
+  UIManager,
   Modal,
   TouchableWithoutFeedback,
   ScrollView,
+  Animated,
+  LayoutChangeEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { useTheme } from '../contexts/ThemeContext';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -39,6 +45,22 @@ export interface ProductFloatingBottomBarProps {
   pinPrimaryTabs?: boolean;
 }
 
+const tabSpringAnimation = {
+  duration: 260,
+  create: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+    property: LayoutAnimation.Properties.opacity,
+  },
+  update: {
+    type: LayoutAnimation.Types.spring,
+    springDamping: 0.75,
+  },
+  delete: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+    property: LayoutAnimation.Properties.opacity,
+  },
+};
+
 export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> = ({
   items,
   activeKey,
@@ -51,20 +73,19 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
   pinPrimaryTabs = false,
 }) => {
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
 
-  const [isMoreModalVisible, setIsMoreModalVisible] = useState(false);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [isMoreModalVisible, setIsMoreModalVisible] = useState(false);
 
   // Bottom floating offset based on safe area
   const bottomOffset = Math.max(insets.bottom, 12);
 
+  const activeColor = accentColor;
+  const inactiveColor = isDark ? '#8E8E93' : '#64748B';
+
   const hasOverflow = items.length > 5;
 
-  // Dynamic slot computation:
-  // If items > 5 and the user selects an overflow item, dynamically promote it to the visible 4th slot
-  // so the active tool is directly highlighted in the bottom navigation bar.
   let visibleItems: (ProductTabItem | { key: string; label: string; activeIcon: IoniconsName; inactiveIcon: IoniconsName; description?: string })[];
   let overflowItems: ProductTabItem[];
 
@@ -82,9 +103,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
     const isPrimaryActive = defaultPrimary.some((i) => i.key === activeKey);
 
     if (!pinPrimaryTabs && !isPrimaryActive && activeItem) {
-      // Keep top 3 anchors (e.g. Overview, AutoForward, Tracker), place activeItem at 4th slot
       visibleItems = [...items.slice(0, 3), activeItem, moreTabItem];
-      // All remaining items go into the More menu
       overflowItems = items.filter((item) => !visibleItems.some((v) => v.key === item.key));
     } else {
       visibleItems = [...defaultPrimary, moreTabItem];
@@ -95,21 +114,18 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
     overflowItems = [];
   }
 
-  // Determine which visible tab is active
   const isOverflowActive = overflowItems.some((item) => item.key === activeKey);
   const activeIndex = visibleItems.findIndex((item) =>
     item.key === '__more__' ? isOverflowActive : item.key === activeKey
   );
   const safeActiveIndex = activeIndex >= 0 ? activeIndex : 0;
 
-  // Layout measurement — pill must stay strictly inside its tab slot
   const paddingHorizontal = 6;
   const numTabs = visibleItems.length || 4;
   const availableWidth = Math.max(0, containerWidth - paddingHorizontal * 2);
   const tabWidth = numTabs > 0 ? availableWidth / numTabs : 0;
-  const pillInset = 4; // inset from each side of the tab slot
+  const pillInset = 4;
 
-  // Spring animation for smooth gliding active pill
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -138,6 +154,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
     if (item.key === '__more__') {
       setIsMoreModalVisible(true);
     } else {
+      LayoutAnimation.configureNext(tabSpringAnimation);
       onChangeTab(item.key);
     }
   };
@@ -147,6 +164,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
     setIsMoreModalVisible(false);
+    LayoutAnimation.configureNext(tabSpringAnimation);
     onChangeTab(key);
   };
 
@@ -187,8 +205,6 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
             const isMoreTab = item.key === '__more__';
             const isFocused = safeActiveIndex === index;
             const iconName = isFocused ? item.activeIcon : item.inactiveIcon;
-            const activeColor = accentColor;
-            const inactiveColor = isDark ? '#8E8E93' : '#6B7280';
 
             return (
               <Pressable
@@ -353,7 +369,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   tabBarContainerLight: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: 'rgba(255, 255, 255, 0.96)',
     borderColor: 'rgba(0, 0, 0, 0.08)',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
@@ -402,22 +418,6 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     width: '100%',
   },
-  tabContentActive: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 3,
-    flexShrink: 1,
-    maxWidth: '100%',
-  },
-  tabContentInactive: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 3,
-  },
   iconWrapper: {
     position: 'relative',
     alignItems: 'center',
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
   },
   badgeDot: {
     position: 'absolute',
-    top: -3,
+    top: -4,
     right: -8,
     borderRadius: 8,
     minWidth: 14,
@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
   },
   activeMiniDot: {
     position: 'absolute',
-    top: -1,
+    top: -2,
     right: -4,
     width: 6,
     height: 6,
@@ -484,8 +484,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0, 0, 0, 0.1)',
   },
   popupCardDark: {
-    backgroundColor: '#1E1E24',
-    borderColor: 'rgba(255, 255, 255, 0.14)',
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
   },
   popupHeader: {
     flexDirection: 'row',
@@ -533,7 +533,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F1F5F9',
   },
   borderDark: {
-    borderBottomColor: '#2D2D38',
+    borderBottomColor: '#2C2C2E',
   },
   popupItemActiveLight: {
     backgroundColor: 'rgba(0, 122, 255, 0.06)',
@@ -557,13 +557,13 @@ const styles = StyleSheet.create({
   },
   popupItemDesc: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#8E8E93',
     marginTop: 1,
   },
   textLight: {
     color: '#0F172A',
   },
   textDark: {
-    color: '#F8FAFC',
+    color: '#FFFFFF',
   },
 });

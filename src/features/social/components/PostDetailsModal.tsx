@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Modal,
   View,
@@ -9,8 +9,10 @@ import {
   Image,
   useColorScheme,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 
 interface PostDetailsModalProps {
@@ -19,7 +21,6 @@ interface PostDetailsModalProps {
   onClose: () => void;
   onRetry?: (postId: string) => Promise<void>;
   onCancel?: (postId: string) => Promise<void>;
-  onDelete?: (postId: string) => Promise<void>;
   isActionLoading?: boolean;
 }
 
@@ -29,11 +30,11 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
   onClose,
   onRetry,
   onCancel,
-  onDelete,
   isActionLoading,
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const [copiedCaption, setCopiedCaption] = useState(false);
 
   if (!post) return null;
 
@@ -63,6 +64,38 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
     ? post.channels
     : ['social'];
 
+  const displayDate = post.scheduled_for
+    ? `Scheduled for: ${new Date(post.scheduled_for).toLocaleString([], {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })}`
+    : post.posted_at
+    ? `Published: ${new Date(post.posted_at).toLocaleString([], {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })}`
+    : post.created_at
+    ? `Created: ${new Date(post.created_at).toLocaleString([], {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })}`
+    : 'Draft';
+
+  const failureError =
+    post.last_error ||
+    post.youtube_error ||
+    post.instagram_error ||
+    post.facebook_error ||
+    post.x_error ||
+    post.error_message ||
+    post.failure_reason;
+
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
@@ -77,12 +110,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
                 </Text>
               </View>
               <Text style={[styles.headerDate, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-                {new Date(post.posted_at || post.scheduled_for || post.created_at || Date.now()).toLocaleDateString([], {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                {displayDate}
               </Text>
             </View>
             <Pressable onPress={onClose} style={styles.closeBtn}>
@@ -117,15 +145,210 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
               </View>
             )}
 
-            {/* Caption */}
-            <Text style={[styles.captionTitle, { color: isDark ? '#cbd5e1' : '#334155' }]}>
-              Caption
-            </Text>
+            {/* Caption Header with Copy Action */}
+            <View style={styles.captionHeaderRow}>
+              <Text style={[styles.captionTitle, { color: isDark ? '#cbd5e1' : '#334155' }]}>
+                Caption
+              </Text>
+              {Boolean(post.caption) && (
+                <Pressable
+                  onPress={async () => {
+                    await Clipboard.setStringAsync(post.caption || '');
+                    try {
+                      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    } catch {}
+                    setCopiedCaption(true);
+                    setTimeout(() => setCopiedCaption(false), 2000);
+                  }}
+                  style={[styles.copyBtn, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}
+                  hitSlop={8}
+                >
+                  <Ionicons
+                    name={copiedCaption ? 'checkmark' : 'copy-outline'}
+                    size={13}
+                    color={copiedCaption ? '#22c55e' : isDark ? '#94a3b8' : '#64748b'}
+                  />
+                  <Text
+                    style={[
+                      styles.copyBtnText,
+                      { color: copiedCaption ? '#22c55e' : isDark ? '#94a3b8' : '#64748b' },
+                    ]}
+                  >
+                    {copiedCaption ? 'Copied' : 'Copy'}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
             <View style={[styles.captionCard, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
               <Text style={[styles.captionText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
                 {post.caption || 'No caption provided.'}
               </Text>
             </View>
+
+            {/* Platform Delivery Outcomes */}
+            {(post.youtube_url ||
+              post.youtube_shorts_url ||
+              post.instagram_url ||
+              post.facebook_url ||
+              post.x_url ||
+              post.youtube_error ||
+              post.instagram_error ||
+              post.facebook_error ||
+              post.x_error) && (
+              <View style={styles.deliverySection}>
+                <Text style={[styles.captionTitle, { color: isDark ? '#cbd5e1' : '#334155', marginBottom: 8 }]}>
+                  Platform Delivery Outcomes
+                </Text>
+
+                {/* YouTube */}
+                {(post.youtube_url || post.youtube_shorts_url || post.youtube_video_id || post.youtube_error) && (
+                  <View style={[styles.deliveryTile, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
+                    <View style={styles.deliveryHeader}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Ionicons name="logo-youtube" size={16} color="#ef4444" />
+                        <Text style={[styles.deliveryTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>YouTube</Text>
+                      </View>
+                      {post.youtube_success || post.youtube_url ? (
+                        <View style={[styles.deliveryBadge, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
+                          <Ionicons name="checkmark-circle" size={12} color="#22c55e" />
+                          <Text style={[styles.deliveryBadgeText, { color: '#22c55e' }]}>Published</Text>
+                        </View>
+                      ) : post.youtube_error ? (
+                        <View style={[styles.deliveryBadge, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
+                          <Ionicons name="alert-circle" size={12} color="#ef4444" />
+                          <Text style={[styles.deliveryBadgeText, { color: '#ef4444' }]}>Failed</Text>
+                        </View>
+                      ) : null}
+                    </View>
+
+                    {post.youtube_error && (
+                      <Text style={styles.deliveryErrorText}>{post.youtube_error}</Text>
+                    )}
+
+                    {(post.youtube_url || post.youtube_shorts_url) && (
+                      <Pressable
+                        onPress={() => Linking.openURL(post.youtube_shorts_url || post.youtube_url)}
+                        style={styles.openPlatformBtn}
+                      >
+                        <Ionicons name="open-outline" size={15} color="#ef4444" />
+                        <Text style={[styles.openPlatformText, { color: '#ef4444' }]}>View on YouTube</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                )}
+
+                {/* Instagram */}
+                {(post.instagram_url || post.instagram_post_id || post.instagram_error) && (
+                  <View style={[styles.deliveryTile, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
+                    <View style={styles.deliveryHeader}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Ionicons name="logo-instagram" size={16} color="#e1306c" />
+                        <Text style={[styles.deliveryTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Instagram</Text>
+                      </View>
+                      {post.instagram_success || post.instagram_url ? (
+                        <View style={[styles.deliveryBadge, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
+                          <Ionicons name="checkmark-circle" size={12} color="#22c55e" />
+                          <Text style={[styles.deliveryBadgeText, { color: '#22c55e' }]}>Published</Text>
+                        </View>
+                      ) : post.instagram_error ? (
+                        <View style={[styles.deliveryBadge, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
+                          <Ionicons name="alert-circle" size={12} color="#ef4444" />
+                          <Text style={[styles.deliveryBadgeText, { color: '#ef4444' }]}>Failed</Text>
+                        </View>
+                      ) : null}
+                    </View>
+
+                    {post.instagram_error && (
+                      <Text style={styles.deliveryErrorText}>{post.instagram_error}</Text>
+                    )}
+
+                    {post.instagram_url && (
+                      <Pressable
+                        onPress={() => Linking.openURL(post.instagram_url)}
+                        style={styles.openPlatformBtn}
+                      >
+                        <Ionicons name="open-outline" size={15} color="#e1306c" />
+                        <Text style={[styles.openPlatformText, { color: '#e1306c' }]}>View on Instagram</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                )}
+
+                {/* Facebook */}
+                {(post.facebook_url || post.facebook_post_id || post.facebook_error) && (
+                  <View style={[styles.deliveryTile, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
+                    <View style={styles.deliveryHeader}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Ionicons name="logo-facebook" size={16} color="#1877f2" />
+                        <Text style={[styles.deliveryTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Facebook</Text>
+                      </View>
+                      {post.facebook_success || post.facebook_url ? (
+                        <View style={[styles.deliveryBadge, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
+                          <Ionicons name="checkmark-circle" size={12} color="#22c55e" />
+                          <Text style={[styles.deliveryBadgeText, { color: '#22c55e' }]}>Published</Text>
+                        </View>
+                      ) : post.facebook_error ? (
+                        <View style={[styles.deliveryBadge, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
+                          <Ionicons name="alert-circle" size={12} color="#ef4444" />
+                          <Text style={[styles.deliveryBadgeText, { color: '#ef4444' }]}>Failed</Text>
+                        </View>
+                      ) : null}
+                    </View>
+
+                    {post.facebook_error && (
+                      <Text style={styles.deliveryErrorText}>{post.facebook_error}</Text>
+                    )}
+
+                    {post.facebook_url && (
+                      <Pressable
+                        onPress={() => Linking.openURL(post.facebook_url)}
+                        style={styles.openPlatformBtn}
+                      >
+                        <Ionicons name="open-outline" size={15} color="#1877f2" />
+                        <Text style={[styles.openPlatformText, { color: '#1877f2' }]}>View on Facebook</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                )}
+
+                {/* X / Twitter */}
+                {(post.x_url || post.x_post_id || post.x_error) && (
+                  <View style={[styles.deliveryTile, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
+                    <View style={styles.deliveryHeader}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Ionicons name="logo-twitter" size={16} color="#38bdf8" />
+                        <Text style={[styles.deliveryTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>X (Twitter)</Text>
+                      </View>
+                      {post.x_success || post.x_url ? (
+                        <View style={[styles.deliveryBadge, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
+                          <Ionicons name="checkmark-circle" size={12} color="#22c55e" />
+                          <Text style={[styles.deliveryBadgeText, { color: '#22c55e' }]}>Published</Text>
+                        </View>
+                      ) : post.x_error ? (
+                        <View style={[styles.deliveryBadge, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
+                          <Ionicons name="alert-circle" size={12} color="#ef4444" />
+                          <Text style={[styles.deliveryBadgeText, { color: '#ef4444' }]}>Failed</Text>
+                        </View>
+                      ) : null}
+                    </View>
+
+                    {post.x_error && (
+                      <Text style={styles.deliveryErrorText}>{post.x_error}</Text>
+                    )}
+
+                    {post.x_url && (
+                      <Pressable
+                        onPress={() => Linking.openURL(post.x_url)}
+                        style={styles.openPlatformBtn}
+                      >
+                        <Ionicons name="open-outline" size={15} color="#38bdf8" />
+                        <Text style={[styles.openPlatformText, { color: '#38bdf8' }]}>View on X</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                )}
+              </View>
+            )}
 
             {/* Live Metrics if available */}
             {(post.youtube_views != null || post.metrics?.views != null || post.metrics?.likes != null) && (
@@ -166,7 +389,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
                 <View style={{ flex: 1 }}>
                   <Text style={styles.errorTitle}>Publishing Failed</Text>
                   <Text style={styles.errorDesc}>
-                    {post.error_message || post.failure_reason || 'Provider rejected request.'}
+                    {failureError || 'Provider rejected request.'}
                   </Text>
                 </View>
               </View>
@@ -209,16 +432,21 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
               </Pressable>
             )}
 
-            {onDelete && (
-              <Pressable
-                onPress={() => onDelete(post.id)}
-                disabled={isActionLoading}
-                style={[styles.actionBtn, styles.deleteBtn]}
-              >
-                <Ionicons name="trash" size={16} color="#ef4444" />
-                <Text style={styles.deleteBtnText}>Delete</Text>
-              </Pressable>
-            )}
+            <Pressable
+              onPress={onClose}
+              style={[
+                styles.actionBtn,
+                styles.closeSecondaryBtn,
+                {
+                  backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
+                  borderColor: isDark ? '#334155' : '#e2e8f0',
+                },
+              ]}
+            >
+              <Text style={[styles.closeSecondaryBtnText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                Close
+              </Text>
+            </Pressable>
           </View>
         </View>
       </View>
@@ -354,6 +582,53 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -0.1,
   },
+  deliverySection: {
+    marginBottom: 14,
+    gap: 8,
+  },
+  deliveryTile: {
+    borderRadius: 12,
+    padding: 12,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.1)',
+  },
+  deliveryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  deliveryTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  deliveryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  deliveryBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  deliveryErrorText: {
+    fontSize: 11,
+    color: '#ef4444',
+    lineHeight: 16,
+  },
+  openPlatformBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingTop: 4,
+  },
+  openPlatformText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -396,18 +671,33 @@ const styles = StyleSheet.create({
   cancelPostBtn: {
     backgroundColor: '#eab308',
   },
-  deleteBtn: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.2)',
+  captionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
   },
-  actionBtnText: {
-    color: '#ffffff',
+  copyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  copyBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  closeSecondaryBtn: {
+    borderWidth: 1,
+  },
+  closeSecondaryBtnText: {
     fontSize: 13,
     fontWeight: '700',
   },
-  deleteBtnText: {
-    color: '#ef4444',
+  actionBtnText: {
+    color: '#ffffff',
     fontSize: 13,
     fontWeight: '700',
   },

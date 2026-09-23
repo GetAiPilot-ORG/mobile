@@ -1,3 +1,4 @@
+import '../src/global.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
@@ -10,6 +11,8 @@ import { OfflineNotice } from '../src/components/OfflineNotice';
 import { LayoutSkeletonScreen } from '../src/components/skeletonScreen';
 import { AuthProvider } from '../src/contexts/AuthContext';
 import { NetworkProvider, useNetwork } from '../src/contexts/NetworkContext';
+import { RazorpayProvider } from '../src/contexts/RazorpayContext';
+import { ThemeProvider, useTheme } from '../src/contexts/ThemeContext';
 import { useAuthStore } from '../src/core/store/authStore';
 
 export const queryClient = new QueryClient({
@@ -95,6 +98,20 @@ function SplashOverlay() {
   );
 }
 
+function RootThemedContainer({ children }: { children: React.ReactNode }) {
+  const { isDark } = useTheme();
+  return (
+    <View
+      style={[
+        styles.rootContainer,
+        { backgroundColor: isDark ? '#000000' : '#F8F9FA' },
+      ]}
+    >
+      {children}
+    </View>
+  );
+}
+
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -102,39 +119,54 @@ export default function RootLayout() {
         <SafeAreaProvider>
           <NetworkProvider>
             <QueryClientProvider client={queryClient}>
-              <AuthProvider>
-                <AuthRouteGuard />
-                {/* Native Stack for iOS screen transitions & gesture-driven back navigations */}
-                <Stack
-                  screenOptions={{
-                    headerShown: false,
-                    gestureEnabled: true,
-                    fullScreenGestureEnabled: true,
-                    gestureDirection: 'horizontal',
-                    animation: 'default',
-                    animationDuration: 250,
-                  }}
-                >
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                  <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                  <Stack.Screen
-                    name="account/plans"
-                    options={{
-                      headerShown: false,
-                      presentation: 'modal',
-                      gestureEnabled: true,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="+not-found"
-                    options={{
-                      headerShown: false,
-                    }}
-                  />
-                </Stack>
-                <OfflineNotice />
-                <SplashOverlay />
-              </AuthProvider>
+              <ThemeProvider>
+                <RootThemedContainer>
+                  <AuthProvider>
+                    <RazorpayProvider>
+                      <AuthRouteGuard />
+                      {/* Native Stack for iOS screen transitions & gesture-driven back navigations */}
+                      <Stack
+                        screenOptions={{
+                          headerShown: false,
+                          gestureEnabled: true,
+                          fullScreenGestureEnabled: true,
+                          gestureDirection: 'horizontal',
+                          animation: 'default',
+                          animationDuration: 250,
+                        }}
+                      >
+                        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                        <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
+                        <Stack.Screen name="(auth)/signup" options={{ headerShown: false }} />
+                        <Stack.Screen name="(auth)/forgot-password" options={{ headerShown: false }} />
+                        <Stack.Screen
+                          name="account/plans"
+                          options={{
+                            headerShown: false,
+                            presentation: 'modal',
+                            gestureEnabled: true,
+                          }}
+                        />
+                        <Stack.Screen
+                          name="products/social/plans"
+                          options={{
+                            headerShown: false,
+                            gestureEnabled: true,
+                          }}
+                        />
+                        <Stack.Screen
+                          name="+not-found"
+                          options={{
+                            headerShown: false,
+                          }}
+                        />
+                      </Stack>
+                      <OfflineNotice />
+                      <SplashOverlay />
+                    </RazorpayProvider>
+                  </AuthProvider>
+                </RootThemedContainer>
+              </ThemeProvider>
             </QueryClientProvider>
           </NetworkProvider>
         </SafeAreaProvider>
@@ -144,6 +176,9 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
+  rootContainer: {
+    flex: 1,
+  },
   splashContainer: {
     zIndex: 99999,
   },

@@ -1,17 +1,21 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   Pressable,
   StyleSheet,
   Platform,
-  useColorScheme,
-  Animated,
-  LayoutChangeEvent,
+  LayoutAnimation,
+  UIManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { useTheme } from '../contexts/ThemeContext';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -51,10 +55,25 @@ export interface FloatingTabBarProps {
   insets?: any;
 }
 
+const tabSpringAnimation = {
+  duration: 260,
+  create: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+    property: LayoutAnimation.Properties.opacity,
+  },
+  update: {
+    type: LayoutAnimation.Types.spring,
+    springDamping: 0.75,
+  },
+  delete: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+    property: LayoutAnimation.Properties.opacity,
+  },
+};
+
 export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
 
   // Bottom floating offset based on safe area
   const bottomOffset = Math.max(insets.bottom, 12);
@@ -72,61 +91,14 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
     visibleRoutes.findIndex((r: any) => r.name === currentRouteName)
   );
 
-  // Layout measurement for mathematical symmetry
-  const [containerWidth, setContainerWidth] = useState(0);
-  const paddingHorizontal = 6;
-  const numTabs = visibleRoutes.length || 4;
-  const availableWidth = Math.max(0, containerWidth - paddingHorizontal * 2);
-  const tabWidth = numTabs > 0 ? availableWidth / numTabs : 0;
-
-  // Spring animation for the smooth gliding active capsule pill
-  const slideAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (tabWidth > 0) {
-      Animated.spring(slideAnim, {
-        toValue: activeVisibleIndex * tabWidth,
-        tension: 90,
-        friction: 11,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [activeVisibleIndex, tabWidth]);
-
-  const onContainerLayout = (event: LayoutChangeEvent) => {
-    const { width } = event.nativeEvent.layout;
-    if (width > 0 && width !== containerWidth) {
-      setContainerWidth(width);
-    }
-  };
-
   return (
     <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
       <View
-        onLayout={onContainerLayout}
         style={[
           styles.tabBarContainer,
           isDark ? styles.tabBarContainerDark : styles.tabBarContainerLight,
         ]}
       >
-        {/* Soft Gliding Active Capsule Pill */}
-        {tabWidth > 0 && (
-          <Animated.View
-            style={[
-              styles.slidingIndicator,
-              {
-                width: tabWidth - 4,
-                left: paddingHorizontal + 2,
-                transform: [{ translateX: slideAnim }],
-              },
-            ]}
-            pointerEvents="none"
-          >
-            <View style={isDark ? styles.indicatorPillDark : styles.indicatorPillLight} />
-          </Animated.View>
-        )}
-
-        {/* Symmetric Tab Items */}
         {visibleRoutes.map((route: { key: string; name: string }, index: number) => {
           const descriptor = descriptors[route.key];
           const options = descriptor ? descriptor.options : ({} as any);
@@ -137,6 +109,8 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
             if (Platform.OS !== 'web') {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
+
+            LayoutAnimation.configureNext(tabSpringAnimation);
 
             const event = navigation.emit({
               type: 'tabPress',
@@ -157,38 +131,59 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
           };
 
           const iconName = isFocused ? config.activeIcon : config.inactiveIcon;
-          const activeColor = isDark ? '#38BDF8' : '#0055D4';
-          const inactiveColor = isDark ? '#94A3B8' : '#0F172A';
 
-          return (
-            <Pressable
-              key={route.key}
-              accessibilityRole="button"
-              accessibilityState={isFocused ? { selected: true } : {}}
-              accessibilityLabel={options.tabBarAccessibilityLabel}
-              testID={options.tabBarButtonTestID}
-              onPress={onPress}
-              onLongPress={onLongPress}
-              style={styles.tabItem}
-            >
-              <View style={styles.tabContent}>
+          if (isFocused) {
+            return (
+              <Pressable
+                key={route.key}
+                accessibilityRole="button"
+                accessibilityState={{ selected: true }}
+                accessibilityLabel={options.tabBarAccessibilityLabel}
+                testID={options.tabBarButtonTestID}
+                onPress={onPress}
+                onLongPress={onLongPress}
+                style={[
+                  styles.activePill,
+                  isDark ? styles.activePillDark : styles.activePillLight,
+                ]}
+              >
                 <Ionicons
                   name={iconName}
-                  size={isFocused ? 22 : 21}
-                  color={isFocused ? activeColor : inactiveColor}
+                  size={19}
+                  color={isDark ? '#000000' : '#FFFFFF'}
                 />
                 <Text
                   style={[
-                    styles.tabLabel,
-                    isFocused
-                      ? [styles.tabLabelActive, { color: activeColor }]
-                      : [styles.tabLabelInactive, { color: inactiveColor }],
+                    styles.activeLabel,
+                    isDark ? styles.activeLabelDark : styles.activeLabelLight,
                   ]}
                   numberOfLines={1}
                 >
                   {config.label}
                 </Text>
-              </View>
+              </Pressable>
+            );
+          }
+
+          return (
+            <Pressable
+              key={route.key}
+              accessibilityRole="button"
+              accessibilityState={{ selected: false }}
+              accessibilityLabel={options.tabBarAccessibilityLabel}
+              testID={options.tabBarButtonTestID}
+              onPress={onPress}
+              onLongPress={onLongPress}
+              style={[
+                styles.inactiveButton,
+                isDark ? styles.inactiveButtonDark : styles.inactiveButtonLight,
+              ]}
+            >
+              <Ionicons
+                name={iconName}
+                size={20}
+                color={isDark ? '#9CA3AF' : '#64748B'}
+              />
             </Pressable>
           );
         })}
@@ -200,81 +195,83 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
 const styles = StyleSheet.create({
   floatingWrapper: {
     position: 'absolute',
-    left: 20,
-    right: 20,
+    left: 16,
+    right: 16,
     alignItems: 'center',
     zIndex: 9999,
   },
   tabBarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
-    maxWidth: 390,
-    height: 62,
-    borderRadius: 31,
-    paddingHorizontal: 6,
+    justifyContent: 'center',
+    alignSelf: 'center',
+    height: 52,
+    borderRadius: 26,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
     borderWidth: 1,
-    position: 'relative',
+    gap: 6,
   },
   tabBarContainerLight: {
     backgroundColor: '#FFFFFF',
     borderColor: 'rgba(0, 0, 0, 0.08)',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.1,
     shadowRadius: 18,
-    elevation: 10,
-  },
-  tabBarContainerDark: {
-    backgroundColor: '#161922',
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.45,
-    shadowRadius: 22,
     elevation: 12,
   },
-  slidingIndicator: {
-    position: 'absolute',
-    top: 5,
-    bottom: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1,
+  tabBarContainerDark: {
+    backgroundColor: '#121214',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+    elevation: 14,
   },
-  indicatorPillDark: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 26,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  indicatorPillLight: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 26,
-    backgroundColor: 'rgba(0, 0, 0, 0.06)',
-  },
-  tabItem: {
-    flex: 1,
+  activePill: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: '100%',
-    zIndex: 2,
+    height: 44,
+    paddingHorizontal: 15,
+    borderRadius: 22,
+    gap: 6,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    elevation: 5,
   },
-  tabContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
+  activePillDark: {
+    backgroundColor: '#FFFFFF',
   },
-  tabLabel: {
-    fontSize: 11,
+  activePillLight: {
+    backgroundColor: '#0F172A',
+  },
+  activeLabel: {
+    fontSize: 13,
+    fontWeight: '700',
     letterSpacing: -0.2,
   },
-  tabLabelInactive: {
-    fontWeight: '500',
+  activeLabelDark: {
+    color: '#000000',
   },
-  tabLabelActive: {
-    fontWeight: '700',
+  activeLabelLight: {
+    color: '#FFFFFF',
+  },
+  inactiveButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+    width: 44,
+    borderRadius: 22,
+  },
+  inactiveButtonDark: {
+    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+  },
+  inactiveButtonLight: {
+    backgroundColor: 'rgba(0, 0, 0, 0.04)',
   },
 });
-

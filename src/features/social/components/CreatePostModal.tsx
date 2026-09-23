@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -9,13 +10,19 @@ import {
   useColorScheme,
   ActivityIndicator,
   ScrollView,
+  Image,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
+import { apiClient } from '../../../core/api/client';
+import { openSocialHandoff } from '../utils/socialHandoff';
 
 interface CreatePostModalProps {
   visible: boolean;
   connectedAccounts: any[];
+  initialCaption?: string;
   onClose: () => void;
   onSubmit: (payload: {
     caption: string;
@@ -26,6 +33,17 @@ interface CreatePostModalProps {
     postType?: string;
   }) => Promise<void>;
   isLoading: boolean;
+  entitlementsData?: any;
+  queueCount?: number;
+}
+
+interface UploadedMediaItem {
+  localUri: string;
+  publicUrl: string;
+  type: 'image' | 'video';
+  fileName?: string;
+  fileSize?: number;
+  duration?: number;
 }
 
 const AVAILABLE_CHANNELS = [
@@ -40,26 +58,151 @@ const AVAILABLE_CHANNELS = [
 export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   visible,
   connectedAccounts,
+  initialCaption,
   onClose,
   onSubmit,
   isLoading,
+  entitlementsData,
+  queueCount = 0,
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const router = useRouter();
 
-  const [caption, setCaption] = useState('');
+  const [caption, setCaption] = useState(initialCaption || '');
   const [selectedChannels, setSelectedChannels] = useState<string[]>(['instagram']);
-  const [mediaUrlInput, setMediaUrlInput] = useState('');
+  const [attachedMedia, setAttachedMedia] = useState<UploadedMediaItem[]>([]);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [uploadStatusText, setUploadStatusText] = useState('');
   const [postMode, setPostMode] = useState<'now' | 'schedule'>('now');
   const [scheduledDate, setScheduledDate] = useState('');
-  const [postType, setPostType] = useState('post');
+  const [postType] = useState('post');
   const [error, setError] = useState<string | null>(null);
+
+  // Sync initialCaption when opened or updated
+  useEffect(() => {
+    if (initialCaption != null) {
+      setCaption(initialCaption);
+    }
+  }, [initialCaption]);
 
   const toggleChannel = (channelKey: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedChannels((prev) =>
       prev.includes(channelKey) ? prev.filter((k) => k !== channelKey) : [...prev, channelKey]
     );
+  };
+
+  const processAndUploadAsset = async (asset: ImagePicker.ImagePickerAsset) => {
+    setIsUploadingMedia(true);
+    setUploadStatusText('Uploading from device to CDN...');
+    setError(null);
+
+    try {
+      const isVideo =
+        asset.type === 'video' ||
+        (asset.mimeType && asset.mimeType.startsWith('video/')) ||
+        (asset.uri && (asset.uri.endsWith('.mp4') || asset.uri.endsWith('.mov')));
+
+      const mimeType = asset.mimeType || (isVideo ? 'video/mp4' : 'image/jpeg');
+      const base64Data = asset.base64
+        ? `data:${mimeType};base64,${asset.base64}`
+        : asset.uri;
+
+      const uploadRes = await apiClient.post<{
+        success: boolean;
+        publicUrl: string;
+        fileName: string;
+        size: number;
+      }>('/mobile/v1/social/media/upload', {
+        fileData: base64Data,
+        fileName: asset.fileName || (isVideo ? `video_${Date.now()}.mp4` : `photo_${Date.now()}.jpg`),
+        contentType: mimeType,
+      });
+
+      if (uploadRes?.publicUrl) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setAttachedMedia((prev) => [
+          ...prev,
+          {
+            localUri: asset.uri,
+            publicUrl: uploadRes.publicUrl,
+            type: isVideo ? 'video' : 'image',
+            fileName: uploadRes.fileName,
+            fileSize: uploadRes.size,
+            duration: asset.duration || undefined,
+          },
+        ]);
+      } else {
+        throw new Error('Upload succeeded but no public URL was returned.');
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Failed to upload selected media.');
+    } finally {
+      setIsUploadingMedia(false);
+      setUploadStatusText('');
+    }
+  };
+
+  const handlePickFromGallery = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setError(null);
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert(
+          'Permission Needed',
+          'Please allow photo and video library access to select media from your mobile device.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images', 'videos'],
+        allowsEditing: true,
+        quality: 0.8,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await processAndUploadAsset(result.assets[0]);
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Could not pick media from gallery.');
+    }
+  };
+
+  const handleCaptureCamera = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setError(null);
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert(
+          'Permission Needed',
+          'Please allow camera access to capture a photo or video directly from your phone.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images', 'videos'],
+        allowsEditing: true,
+        quality: 0.8,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await processAndUploadAsset(result.assets[0]);
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Could not capture photo or video.');
+    }
+  };
+
+  const handleRemoveMedia = (index: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setAttachedMedia((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handlePublish = async () => {
@@ -72,9 +215,33 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
       setError('Please select at least one publishing channel.');
       return;
     }
-    if (postMode === 'schedule' && !scheduledDate.trim()) {
-      setError('Please enter a scheduled date/time (e.g. 2026-09-09T10:00:00Z).');
-      return;
+    if (postMode === 'schedule') {
+      if (!scheduledDate.trim()) {
+        setError('Please enter a scheduled date/time (e.g. 2026-09-16T18:00:00Z).');
+        return;
+      }
+      const queueLimit = entitlementsData?.limits?.scheduled_queue ?? 10;
+      const isUnlimitedQueue = queueLimit >= 1000000;
+      if (!isUnlimitedQueue && queueCount >= queueLimit) {
+        const pName = entitlementsData?.plan?.name || 'Free';
+        setError(`Plan queue limit reached (${queueCount}/${queueLimit}). Upgrade to schedule more.`);
+        Alert.alert(
+          'Queue Limit Reached',
+          `Your ${pName} plan allows up to ${queueLimit} scheduled posts in queue. Upgrade to Starter or Growth for unlimited queue publications.`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Upgrade Plan',
+              onPress: () => {
+                onClose();
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push('/products/social/plans' as any);
+              },
+            },
+          ]
+        );
+        return;
+      }
     }
 
     try {
@@ -82,13 +249,13 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
       await onSubmit({
         caption: caption.trim(),
         selectedChannels,
-        mediaUrls: mediaUrlInput.trim() ? [mediaUrlInput.trim()] : [],
+        mediaUrls: attachedMedia.map((m) => m.publicUrl),
         isScheduled: postMode === 'schedule',
         scheduledAt: postMode === 'schedule' ? scheduledDate.trim() : undefined,
         postType,
       });
       setCaption('');
-      setMediaUrlInput('');
+      setAttachedMedia([]);
       setScheduledDate('');
       onClose();
     } catch (e: any) {
@@ -185,25 +352,136 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
               onChangeText={setCaption}
             />
 
-            {/* Media URL */}
-            <Text style={[styles.label, { color: isDark ? '#cbd5e1' : '#334155', marginTop: 14 }]}>
-              Media URL (Optional Image or Video)
-            </Text>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                  color: isDark ? '#f8fafc' : '#0f172a',
-                  borderColor: isDark ? '#334155' : '#e2e8f0',
-                },
-              ]}
-              placeholder="https://example.com/media.jpg"
-              placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
-              value={mediaUrlInput}
-              onChangeText={setMediaUrlInput}
-              autoCapitalize="none"
-            />
+            {/* Media Upload from Mobile Device */}
+            <View style={styles.mediaSectionHeader}>
+              <Text style={[styles.label, { color: isDark ? '#cbd5e1' : '#334155' }]}>
+                Media Attachments (Photos & Videos)
+              </Text>
+              {attachedMedia.length > 0 && (
+                <Text style={styles.mediaCountBadge}>
+                  {attachedMedia.length} attached
+                </Text>
+              )}
+            </View>
+
+            {/* Attached Media Cards */}
+            {attachedMedia.map((item, idx) => (
+              <View
+                key={`${item.publicUrl}_${idx}`}
+                style={[
+                  styles.attachedMediaCard,
+                  {
+                    backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                    borderColor: isDark ? '#334155' : '#e2e8f0',
+                  },
+                ]}
+              >
+                <Image
+                  source={{ uri: item.localUri || item.publicUrl }}
+                  style={styles.mediaThumb}
+                  resizeMode="cover"
+                />
+                <View style={styles.mediaInfo}>
+                  <View style={styles.mediaTypeRow}>
+                    <View
+                      style={[
+                        styles.mediaTypeBadge,
+                        {
+                          backgroundColor:
+                            item.type === 'video'
+                              ? 'rgba(239, 68, 68, 0.15)'
+                              : 'rgba(16, 185, 129, 0.15)',
+                        },
+                      ]}
+                    >
+                      <Ionicons
+                        name={item.type === 'video' ? 'videocam' : 'image'}
+                        size={12}
+                        color={item.type === 'video' ? '#ef4444' : '#10b981'}
+                      />
+                      <Text
+                        style={[
+                          styles.mediaTypeText,
+                          { color: item.type === 'video' ? '#ef4444' : '#10b981' },
+                        ]}
+                      >
+                        {item.type.toUpperCase()}
+                        {item.duration ? ` • ${Math.round(item.duration)}s` : ''}
+                      </Text>
+                    </View>
+                    <Text style={styles.uploadStatusOk}>✓ Uploaded to CDN</Text>
+                  </View>
+                  <Text
+                    style={[styles.mediaFileName, { color: isDark ? '#cbd5e1' : '#475569' }]}
+                    numberOfLines={1}
+                  >
+                    {item.fileName || 'Attached media item'}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => handleRemoveMedia(idx)}
+                  style={styles.removeMediaBtn}
+                  hitSlop={8}
+                >
+                  <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                </Pressable>
+              </View>
+            ))}
+
+            {/* Uploading Spinner */}
+            {isUploadingMedia && (
+              <View
+                style={[
+                  styles.uploadingBox,
+                  {
+                    backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
+                    borderColor: isDark ? '#334155' : '#e2e8f0',
+                  },
+                ]}
+              >
+                <ActivityIndicator size="small" color="#ec4899" />
+                <Text style={[styles.uploadingText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                  {uploadStatusText || 'Uploading media from device...'}
+                </Text>
+              </View>
+            )}
+
+            {/* Device Picker Buttons */}
+            {attachedMedia.length < 4 && !isUploadingMedia && (
+              <View style={styles.uploadActionRow}>
+                <Pressable
+                  onPress={handlePickFromGallery}
+                  style={[
+                    styles.uploadPickerBtn,
+                    {
+                      backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                      borderColor: isDark ? '#334155' : '#cbd5e1',
+                    },
+                  ]}
+                >
+                  <Ionicons name="images" size={18} color="#ec4899" />
+                  <Text style={[styles.uploadPickerBtnText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                    Upload from Gallery
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={handleCaptureCamera}
+                  style={[
+                    styles.uploadPickerBtn,
+                    {
+                      backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                      borderColor: isDark ? '#334155' : '#cbd5e1',
+                    },
+                  ]}
+                >
+                  <Ionicons name="camera" size={18} color="#3b82f6" />
+                  <Text style={[styles.uploadPickerBtnText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                    Take Photo
+                  </Text>
+                </Pressable>
+              </View>
+            )}
 
             {/* Publish Timing */}
             <Text style={[styles.label, { color: isDark ? '#cbd5e1' : '#334155', marginTop: 14 }]}>
@@ -271,7 +549,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                       borderColor: isDark ? '#334155' : '#e2e8f0',
                     },
                   ]}
-                  placeholder={new Date(Date.now() + 4 * 3600000).toISOString()}
+                  placeholder="2026-09-16T18:00:00Z"
                   placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
                   value={scheduledDate}
                   onChangeText={setScheduledDate}
@@ -298,8 +576,8 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
             <Pressable
               onPress={handlePublish}
-              disabled={isLoading}
-              style={[styles.submitBtn, isLoading && { opacity: 0.6 }]}
+              disabled={isLoading || isUploadingMedia}
+              style={[styles.submitBtn, (isLoading || isUploadingMedia) && { opacity: 0.6 }]}
             >
               {isLoading ? (
                 <ActivityIndicator color="#ffffff" size="small" />
@@ -354,19 +632,19 @@ const styles = StyleSheet.create({
   iconWrap: {
     width: 36,
     height: 36,
-    borderRadius: 10,
-    justifyContent: 'center',
+    borderRadius: 18,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     fontSize: 18,
     fontWeight: '800',
   },
   closeBtn: {
-    padding: 6,
+    padding: 4,
   },
   scrollBody: {
-    maxHeight: 460,
+    maxHeight: 520,
   },
   label: {
     fontSize: 13,
@@ -384,25 +662,119 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 10,
+    borderRadius: 20,
     borderWidth: 1.5,
   },
   channelChipText: {
     fontSize: 12,
   },
   textArea: {
-    borderRadius: 12,
     borderWidth: 1,
+    borderRadius: 12,
     padding: 12,
     fontSize: 14,
-    minHeight: 90,
+    minHeight: 100,
     textAlignVertical: 'top',
   },
   input: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+  },
+  mediaSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 14,
+    marginBottom: 8,
+  },
+  mediaCountBadge: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#ec4899',
+  },
+  attachedMediaCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
     borderRadius: 12,
     borderWidth: 1,
+    marginBottom: 8,
+    gap: 10,
+  },
+  mediaThumb: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: '#cbd5e1',
+  },
+  mediaInfo: {
+    flex: 1,
+    gap: 4,
+  },
+  mediaTypeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  mediaTypeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  mediaTypeText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  uploadStatusOk: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#10b981',
+  },
+  mediaFileName: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  removeMediaBtn: {
+    padding: 6,
+  },
+  uploadingBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     padding: 12,
-    fontSize: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  uploadingText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  uploadActionRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 6,
+  },
+  uploadPickerBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+  },
+  uploadPickerBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   modeRow: {
     flexDirection: 'row',
@@ -413,18 +785,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 6,
     paddingVertical: 10,
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'transparent',
   },
   modeBtnActive: {
-    borderColor: '#ec4899',
-    backgroundColor: 'rgba(236, 72, 153, 0.1)',
+    backgroundColor: 'rgba(236, 72, 153, 0.15)',
   },
   modeBtnText: {
     fontSize: 13,
+    fontWeight: '600',
     color: '#64748b',
   },
   errorBox: {
@@ -433,29 +803,28 @@ const styles = StyleSheet.create({
     gap: 6,
     backgroundColor: 'rgba(239, 68, 68, 0.1)',
     padding: 10,
-    borderRadius: 10,
-    marginTop: 12,
+    borderRadius: 8,
+    marginTop: 10,
   },
   errorText: {
     color: '#ef4444',
     fontSize: 12,
-    flex: 1,
+    fontWeight: '600',
   },
   footer: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 18,
+    marginTop: 16,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(148, 163, 184, 0.1)',
+    borderTopColor: 'rgba(148, 163, 184, 0.15)',
   },
   cancelBtn: {
     flex: 1,
-    paddingVertical: 13,
-    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'transparent',
+    paddingVertical: 12,
+    borderRadius: 12,
   },
   cancelBtnText: {
     fontSize: 14,
@@ -463,13 +832,13 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     flex: 2,
-    backgroundColor: '#ec4899',
-    paddingVertical: 13,
-    borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    backgroundColor: '#ec4899',
+    paddingVertical: 12,
+    borderRadius: 12,
   },
   submitBtnText: {
     color: '#ffffff',

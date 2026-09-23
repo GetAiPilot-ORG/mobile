@@ -3,6 +3,7 @@ import jwt from '@fastify/jwt';
 import websocket from '@fastify/websocket';
 import Fastify from 'fastify';
 import { env } from './config/env.js';
+// Trigger reload for SOCIAL_SERVICE_URL update
 import { authRoutes } from './routes/auth.routes.js';
 import { billingRoutes } from './routes/billing.routes.js';
 import { crmRoutes } from './routes/crm.routes.js';
@@ -12,6 +13,7 @@ import { redirectRoutes } from './routes/redirect.routes.js';
 import { socialRoutes } from './routes/social.routes.js';
 import { telegramRoutes } from './routes/telegram.routes.js';
 import { voiceRoutes } from './routes/voice.routes.js';
+import { paymentRoutes } from './routes/payment.routes.js';
 import { webviewRoutes } from './routes/webview.routes.js';
 import { whatsappRoutes } from './routes/whatsapp.routes.js';
 import { WebSocketService } from './services/websocket.service.js';
@@ -99,6 +101,7 @@ async function main() {
   await app.register(socialRoutes, { prefix: '/mobile/v1' });
   await app.register(telegramRoutes, { prefix: '/mobile/v1' });
   await app.register(billingRoutes, { prefix: '/mobile/v1' });
+  await app.register(paymentRoutes, { prefix: '/mobile/v1' });
   await app.register(webviewRoutes, { prefix: '/mobile/v1' });
   await app.register(redirectRoutes);
 

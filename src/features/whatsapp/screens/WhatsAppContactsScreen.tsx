@@ -12,10 +12,10 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  useColorScheme,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 import { CrmListSkeleton } from '../../../components/skeletonScreen';
 import { useAuthStore } from '../../../core/store/authStore';
@@ -36,8 +36,7 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
   onOpenChat,
 }) => {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
   const user = useAuthStore((s) => s.user);
 
   const [searchQuery, setSearchQuery] = useState('');

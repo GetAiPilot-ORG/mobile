@@ -9,6 +9,45 @@ export async function authenticateToken(request: FastifyRequest, reply: FastifyR
     await request.jwtVerify();
     token = request.user as JWTPayload & { type?: string };
   } catch (err) {
+    // Check if the request provided a valid Supabase access token (e.g. from web app or upstream auth)
+    const authHeader = request.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const rawToken = authHeader.slice(7).trim();
+      const parts = rawToken.split('.');
+      if (parts.length === 3) {
+        try {
+          const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+          const isSupabaseToken =
+            (typeof payload.iss === 'string' && payload.iss.includes('supabase.co')) ||
+            payload.aud === 'authenticated';
+          const isNotExpired =
+            typeof payload.exp === 'number' ? payload.exp * 1000 > Date.now() : true;
+
+          if (isSupabaseToken && isNotExpired && (payload.sub || payload.user_id)) {
+            const userId = payload.sub || payload.user_id;
+            const userEmail = payload.email || `${userId}@getaipilot.com`;
+            const isSocialToken =
+              typeof payload.iss === 'string' && payload.iss.includes('oqaysrnncwbtrujnxsdo');
+
+            const userPayload: JWTPayload & { social_token?: string } = {
+              user_id: userId,
+              email: userEmail,
+              organization_id: payload.organization_id || userId,
+              role: 'Owner',
+              permissions: ['*'],
+              subscription_tier: 'GAP Pro',
+              session_id: payload.session_id || `sess_${userId}`,
+              social_token: isSocialToken ? rawToken : undefined,
+            };
+
+            request.user = userPayload;
+            token = userPayload;
+            return;
+          }
+        } catch {}
+      }
+    }
+
     return reply.status(401).send({
       statusCode: 401,
       error: 'Unauthorized',

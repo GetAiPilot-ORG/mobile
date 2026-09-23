@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import FormData from 'form-data';
 import { FastifyInstance } from 'fastify';
-import fetch from 'node-fetch';
 import { authenticateToken } from '../middleware/auth.middleware.js';
 import { JWTPayload } from '../types/index.js';
 import { env } from '../config/env.js';
@@ -24,7 +23,7 @@ export async function toolsRoutes(fastify: FastifyInstance) {
     const audioBuffer = Buffer.from(audioBase64, 'base64');
     const form = new FormData();
     form.append('file', audioBuffer, {
-      filename: ecording.,
+      filename: 'recording.m4a',
       contentType: mimeType,
     });
     form.append('model', 'whisper-1');
@@ -33,7 +32,7 @@ export async function toolsRoutes(fastify: FastifyInstance) {
 
     const whisperRes = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
-      headers: { Authorization: Bearer , ...form.getHeaders() },
+      headers: { Authorization: `Bearer ${openaiKey}`, ...form.getHeaders() },
       body: form as any,
     });
 
@@ -50,7 +49,7 @@ export async function toolsRoutes(fastify: FastifyInstance) {
     try {
       const summaryRes = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
-        headers: { Authorization: Bearer , 'Content-Type': 'application/json' },
+        headers: { Authorization: `Bearer ${openaiKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'gpt-4o-mini',
           messages: [
@@ -72,7 +71,7 @@ export async function toolsRoutes(fastify: FastifyInstance) {
     const supabase = getSupabase();
     const { data: saved, error: dbErr } = await supabase
       .from('speech_transcriptions')
-      .insert({ organization_id: user.organization_id, user_id: user.sub, transcript, summary_bullets: summaryBullets, language, created_at: new Date().toISOString() })
+      .insert({ organization_id: user.organization_id, user_id: user.user_id, transcript, summary_bullets: summaryBullets, language, created_at: new Date().toISOString() })
       .select().single();
 
     if (dbErr) fastify.log.warn('[Tools] DB insert failed: ' + dbErr.message);

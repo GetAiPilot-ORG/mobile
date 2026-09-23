@@ -20,13 +20,14 @@ interface Props {
 }
 
 export const AutoApproveScreen: React.FC<Props> = () => {
-  const isDark = useColorScheme() === 'dark';
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const user = useAuthStore((s) => s.user);
 
   const telegramUserId =
     (user as any)?.telegram_user_id ||
     (user as any)?.user_metadata?.telegram_user_id ||
-    '2093321330';
+    null;
 
   const card = isDark ? styles.cardDark : styles.cardLight;
   const txt = isDark ? styles.textDark : styles.textLight;

@@ -3,9 +3,12 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useRouter, usePathname } from 'expo-router';
 import { useAuthStore } from '../core/store/authStore';
+import { useTheme } from '../contexts/ThemeContext';
 import React, { useEffect } from 'react';
-import { BackHandler, Platform, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { BackHandler, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { usePlatformSubscription } from '../hooks/usePlatformSubscription';
 
 const brandLogo = require("../../assets/images/logo.jpg");
 
@@ -17,6 +20,7 @@ export interface AppTopBarProps {
   leftElement?: React.ReactNode;
   onBackPress?: () => void;
   parentRoute?: string;
+  showPlanBadge?: boolean;
 }
 
 /**
@@ -47,6 +51,11 @@ export const getParentRoute = (pathname: string): string => {
   }
   if (pathname.startsWith('/products/whatsapp')) {
     return '/(tabs)/products';
+  }
+
+  // 3.5 Social sub-screens -> go to Social overview
+  if (pathname.startsWith('/products/social/plans')) {
+    return '/products/social';
   }
 
   // 4. Other products -> go to Products tab
@@ -85,16 +94,26 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
   leftElement,
   onBackPress,
   parentRoute,
+  showPlanBadge,
 }) => {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
   const user = useAuthStore((s) => s.user);
 
   // Auto-detect: Show back button on all sub-pages with title unless explicitly disabled
   const shouldShowBack = showBack !== undefined ? showBack : !!title;
+
+  const { planLabel, isActive } = usePlatformSubscription();
+  const displayPlanBadge = showPlanBadge !== undefined ? showPlanBadge : (!title && !shouldShowBack);
+
+  const handlePlanBadgePress = () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    router.push('/account/plans' as any);
+  };
 
   const handleBack = () => {
     if (Platform.OS !== "web") {
@@ -165,7 +184,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
             <Ionicons
               name="chevron-back"
               size={20}
-              color={isDark ? '#F8FAFC' : '#0F172A'}
+              color={isDark ? '#FFFFFF' : '#000000'}
             />
           </Pressable>
         ) : leftElement ? (
@@ -207,7 +226,47 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
         </View>
       </View>
 
-      {rightElement ? <View style={styles.rightSection}>{rightElement}</View> : <View style={styles.rightEmpty} />}
+      {rightElement ? (
+        <View style={styles.rightSection}>{rightElement}</View>
+      ) : displayPlanBadge ? (
+        <View style={styles.rightSection}>
+          <Pressable
+            onPress={handlePlanBadgePress}
+            style={({ pressed }) => [
+              styles.planBadge,
+              isDark ? styles.planBadgeDark : styles.planBadgeLight,
+              pressed && styles.planBadgePressed,
+            ]}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={`Current workspace plan: ${planLabel || 'Free'}. Tap to view and upgrade plans`}
+          >
+            <View
+              style={[
+                styles.planDot,
+                { backgroundColor: isActive ? '#10B981' : '#F59E0B' },
+              ]}
+            />
+            <Ionicons name="sparkles" size={11} color={isActive ? '#0A84FF' : '#F59E0B'} />
+            <Text
+              style={[
+                styles.planBadgeText,
+                isDark ? styles.planBadgeTextDark : styles.planBadgeTextLight,
+              ]}
+              numberOfLines={1}
+            >
+              {planLabel || 'Free Plan'}
+            </Text>
+            <Ionicons
+              name="chevron-forward"
+              size={11}
+              color={isDark ? '#94A3B8' : '#64748B'}
+            />
+          </Pressable>
+        </View>
+      ) : (
+        <View style={styles.rightEmpty} />
+      )}
     </View>
   );
 };
@@ -322,10 +381,10 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   titleLight: {
-    color: '#0F172A',
+    color: '#000000',
   },
   titleDark: {
-    color: "#F8FAFC",
+    color: "#FFFFFF",
   },
   subtitle: {
     fontSize: 12,
@@ -337,7 +396,7 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   subtitleDark: {
-    color: "#94A3B8",
+    color: "#8E8E93",
   },
   rightSection: {
     flexDirection: "row",
@@ -347,5 +406,53 @@ const styles = StyleSheet.create({
   rightEmpty: {
     width: 0,
     height: 0,
+  },
+  planBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5.5,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  planBadgeLight: {
+    backgroundColor: 'rgba(10, 132, 255, 0.08)',
+    borderColor: 'rgba(10, 132, 255, 0.2)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  planBadgeDark: {
+    backgroundColor: 'rgba(10, 132, 255, 0.15)',
+    borderColor: 'rgba(10, 132, 255, 0.3)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  planBadgePressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.95 }],
+  },
+  planDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  planBadgeText: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+    maxWidth: 120,
+  },
+  planBadgeTextLight: {
+    color: '#0A84FF',
+  },
+  planBadgeTextDark: {
+    color: '#38BDF8',
   },
 });

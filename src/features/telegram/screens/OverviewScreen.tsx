@@ -5,11 +5,11 @@ import {
   StyleSheet,
   Text,
   View,
-  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 import { HubProgressCard, ToolCard, DashboardAnalyticsCharts } from '../components';
 import { StatCard } from '../components/ui/StatCard';
@@ -26,6 +26,8 @@ const CATEGORIES: { key: TelegramCategory; label: string; icon: string }[] = [
 
 interface OverviewScreenProps {
   summary: any;
+  realRevenue: number;
+  deepLinksCount: number;
   botsList: any[];
   chats: any[];
   forwardRules: any[];
@@ -39,6 +41,8 @@ interface OverviewScreenProps {
 
 export const OverviewScreen: React.FC<OverviewScreenProps> = ({
   summary,
+  realRevenue,
+  deepLinksCount,
   botsList,
   chats,
   forwardRules,
@@ -49,7 +53,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
   onNavigate,
   onOpenModal,
 }) => {
-  const isDark = useColorScheme() === 'dark';
+  const { isDark } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState<TelegramCategory>('all');
 
   const hub = summary?.hub || { totalModules: 8, completedModules: 8, tools: [] };
@@ -100,12 +104,12 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
         {/* 6 KPI Cards */}
         <View style={[styles.metricsGrid, isDark ? styles.borderDark : styles.borderLight, { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }]}>
           {[
-            { label: 'TRACKED BOTS', value: summary?.trackedBotsCount ?? botsList.length, color: '#0284C7', icon: 'hardware-chip-outline', bg: 'rgba(2,132,199,0.12)', tab: 'bots', sub: 'Connected bots' },
-            { label: 'CHANNELS', value: summary?.channelsCount ?? (chats || []).length, color: '#10B981', icon: 'megaphone-outline', bg: 'rgba(16,185,129,0.12)', tab: 'bots', sub: 'Mapped channels' },
-            { label: 'DEEP LINKS', value: summary?.deepLinksCount ?? 0, color: '#06B6D4', icon: 'link-outline', bg: 'rgba(6,182,212,0.12)', tab: 'bots', sub: 'Tracked join links' },
+            { label: 'TRACKED BOTS', value: botsList.length, color: '#0284C7', icon: 'hardware-chip-outline', bg: 'rgba(2,132,199,0.12)', tab: 'bots', sub: 'Connected bots' },
+            { label: 'CHANNELS', value: (chats || []).length, color: '#10B981', icon: 'megaphone-outline', bg: 'rgba(16,185,129,0.12)', tab: 'bots', sub: 'Mapped channels' },
+            { label: 'DEEP LINKS', value: deepLinksCount, color: '#06B6D4', icon: 'link-outline', bg: 'rgba(6,182,212,0.12)', tab: 'bots', sub: 'Tracked join links' },
             { label: 'FORWARDS', value: (forwardRules || []).length, color: '#8B5CF6', icon: 'git-compare-outline', bg: 'rgba(139,92,246,0.12)', tab: 'automations', sub: 'Active rules' },
-            { label: 'SUB PAGES', value: subManagerPages.length || summary?.teleSubPagesCount || (subPlans || []).length, color: '#EC4899', icon: 'wallet-outline', bg: 'rgba(236,72,153,0.12)', tab: 'sub_manager', sub: 'Monetized pages' },
-            { label: 'REVENUE', value: `₹${(summary?.revenue ?? 0).toLocaleString()}`, color: '#F59E0B', icon: 'cash-outline', bg: 'rgba(245,158,11,0.12)', tab: 'sub_manager', sub: 'Total collected', isRevenue: true },
+            { label: 'SUB PAGES', value: subManagerPages.length || (subPlans || []).length, color: '#EC4899', icon: 'wallet-outline', bg: 'rgba(236,72,153,0.12)', tab: 'sub_manager', sub: 'Monetized pages' },
+            { label: 'REVENUE', value: `₹${(realRevenue ?? 0).toLocaleString()}`, color: '#F59E0B', icon: 'cash-outline', bg: 'rgba(245,158,11,0.12)', tab: 'sub_manager', sub: 'Total collected', isRevenue: true },
           ].map((m, i) => (
             <StatCard
               key={i}
@@ -124,8 +128,8 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
 
       {/* Analytics Charts */}
       <DashboardAnalyticsCharts
-        joinsCount={summary?.deepLinksCount ?? 0}
-        revenue={summary?.revenue ?? 0}
+        joinsCount={deepLinksCount}
+        revenue={realRevenue}
       />
 
       {/* Progress Card */}

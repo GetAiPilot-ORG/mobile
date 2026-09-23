@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 export type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -23,14 +24,13 @@ export const WhatsAppMetricCard: React.FC<WhatsAppMetricCardProps> = ({
   iconColor = '#22C55E',
   trend,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
 
   return (
     <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
       {/* Top row with Label & Icon badge */}
       <View style={styles.topRow}>
-        <Text style={[styles.label, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+        <Text style={[styles.label, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]} numberOfLines={1}>
           {label}
         </Text>
         <View style={[styles.iconCircle, { backgroundColor: `${iconColor}15` }]}>
@@ -43,19 +43,19 @@ export const WhatsAppMetricCard: React.FC<WhatsAppMetricCardProps> = ({
       </View>
 
       {/* Value */}
-      <Text style={[styles.value, isDark ? styles.textLight : styles.textDark]}>
+      <Text style={[styles.value, isDark ? styles.textLight : styles.textDark]} numberOfLines={1}>
         {value}
       </Text>
 
       {/* Subtext */}
       {subtext ? (
-        <Text style={[styles.subtext, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+        <Text style={[styles.subtext, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]} numberOfLines={1}>
           {subtext}
         </Text>
       ) : null}
 
       {/* Optional Trend */}
-      {trend ? <Text style={styles.trend}>{trend}</Text> : null}
+      {trend ? <Text style={styles.trend} numberOfLines={1}>{trend}</Text> : null}
     </View>
   );
 };
@@ -65,8 +65,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 14,
     flex: 1,
-    minWidth: '47%',
     borderWidth: 1,
+    justifyContent: 'space-between',
   },
   cardDark: {
     backgroundColor: '#1C1C1E',
