@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Platform,
   LayoutAnimation,
-  UIManager,
   Modal,
   TouchableWithoutFeedback,
   ScrollView,
@@ -17,10 +16,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 export type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 

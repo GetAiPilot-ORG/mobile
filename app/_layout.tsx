@@ -114,7 +114,7 @@ function RootThemedContainer({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, flexDirection: 'column', width: '100%' }}>
       <GlobalErrorBoundary>
         <SafeAreaProvider>
           <NetworkProvider>
@@ -178,6 +178,8 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   rootContainer: {
     flex: 1,
+    flexDirection: 'column',
+    width: '100%',
   },
   splashContainer: {
     zIndex: 99999,
