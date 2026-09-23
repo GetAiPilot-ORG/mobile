@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { FloatingTabBar } from '../../src/components/FloatingTabBar';
+import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 
 export default function TabLayout() {
   const { user, profile } = useAuth();
@@ -67,6 +68,12 @@ export default function TabLayout() {
         options={{
           title: 'Admin',
           href: (isAdmin ? '/(tabs)/admin' : null) as any,
+        }}
+      />
+      <Tabs.Screen
+        name="crm"
+        options={{
+          href: null, // Hidden from bottom tab bar — accessed via /products/crm or Dashboard
         }}
       />
     </Tabs>

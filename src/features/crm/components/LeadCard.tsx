@@ -7,7 +7,9 @@ interface LeadCardProps {
   lead: CRMContact;
   onPress: () => void;
   onQuickCall?: () => void;
+  onQuickWhatsApp?: () => void;
   onQuickEmail?: () => void;
+  dealValue?: string | number;
 }
 
 const STATUS_CONFIG: Partial<Record<ContactStatus, { label: string; bg: string; text: string; dot: string }>> = {
@@ -20,7 +22,14 @@ const STATUS_CONFIG: Partial<Record<ContactStatus, { label: string; bg: string; 
   archived: { label: 'Archived', bg: 'rgba(156, 163, 175, 0.15)', text: '#6B7280', dot: '#6B7280' },
 };
 
-export const LeadCard: React.FC<LeadCardProps> = ({ lead, onPress, onQuickCall, onQuickEmail }) => {
+export const LeadCard: React.FC<LeadCardProps> = ({
+  lead,
+  onPress,
+  onQuickCall,
+  onQuickWhatsApp,
+  onQuickEmail,
+  dealValue,
+}) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -39,6 +48,17 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onPress, onQuickCall, 
     }
   };
 
+  const handleWhatsApp = () => {
+    if (onQuickWhatsApp) {
+      onQuickWhatsApp();
+    } else if (lead.phone) {
+      const cleanNumber = lead.phone.replace(/[^0-9+]/g, '');
+      Linking.openURL(`https://wa.me/${cleanNumber.replace('+', '')}`).catch(() => {
+        Linking.openURL(`whatsapp://send?phone=${cleanNumber}`);
+      });
+    }
+  };
+
   const handleEmail = () => {
     if (onQuickEmail) {
       onQuickEmail();
@@ -46,6 +66,17 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onPress, onQuickCall, 
       Linking.openURL(`mailto:${lead.email}`);
     }
   };
+
+  // Format deal value display if provided or present on lead
+  const formattedValue = dealValue != null
+    ? typeof dealValue === 'number'
+      ? dealValue >= 100000
+        ? `₹${(dealValue / 100000).toFixed(1)}L`
+        : `₹${dealValue.toLocaleString()}`
+      : String(dealValue)
+    : (lead as any).lead_value
+      ? `₹${Number((lead as any).lead_value).toLocaleString()}`
+      : null;
 
   return (
     <Pressable
@@ -57,9 +88,9 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onPress, onQuickCall, 
       onPress={onPress}
     >
       <View style={styles.header}>
-        <View style={[styles.avatar, { backgroundColor: isDark ? '#2B303C' : '#E2E8F0' }]}>
-          <Text style={[styles.avatarText, { color: isDark ? '#F3F4F6' : '#1E293B' }]}>
-            {(lead.first_name?.[0] || 'L').toUpperCase()}
+        <View style={[styles.avatar, { backgroundColor: isDark ? '#262A34' : '#E2E8F0' }]}>
+          <Text style={[styles.avatarText, { color: isDark ? '#F8FAFC' : '#1E293B' }]}>
+            {(lead.first_name?.[0] || lead.name?.[0] || 'L').toUpperCase()}
             {(lead.last_name?.[0] || '').toUpperCase()}
           </Text>
         </View>
@@ -75,34 +106,43 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onPress, onQuickCall, 
           ) : null}
         </View>
 
-        <View style={[styles.statusBadge, { backgroundColor: statusCfg.bg }]}>
-          <View style={[styles.statusDot, { backgroundColor: statusCfg.dot }]} />
-          <Text style={[styles.statusText, { color: statusCfg.text }]}>{statusCfg.label}</Text>
+        <View style={{ alignItems: 'flex-end', gap: 4 }}>
+          {formattedValue && (
+            <View style={[styles.dealBadge, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7' }]}>
+              <Text style={styles.dealBadgeText}>{formattedValue}</Text>
+            </View>
+          )}
+          <View style={[styles.statusBadge, { backgroundColor: statusCfg.bg }]}>
+            <View style={[styles.statusDot, { backgroundColor: statusCfg.dot }]} />
+            <Text style={[styles.statusText, { color: statusCfg.text }]}>{statusCfg.label}</Text>
+          </View>
         </View>
       </View>
 
-      {/* Meta Row */}
-      <View style={[styles.metaRow, { borderTopColor: isDark ? '#222630' : '#F1F5F9' }]}>
-        {lead.phone ? (
-          <View style={styles.metaItem}>
-            <Ionicons name="call-outline" size={13} color={isDark ? '#9CA3AF' : '#64748B'} />
-            <Text style={[styles.metaText, { color: isDark ? '#9CA3AF' : '#64748B' }]} numberOfLines={1}>
-              {lead.phone}
-            </Text>
-          </View>
-        ) : null}
+      {/* Meta Contact Information */}
+      {(lead.phone || lead.email) ? (
+        <View style={[styles.metaRow, { borderTopColor: isDark ? '#222630' : '#F1F5F9' }]}>
+          {lead.phone ? (
+            <View style={styles.metaItem}>
+              <Ionicons name="call-outline" size={13} color={isDark ? '#9CA3AF' : '#64748B'} />
+              <Text style={[styles.metaText, { color: isDark ? '#9CA3AF' : '#64748B' }]} numberOfLines={1}>
+                {lead.phone}
+              </Text>
+            </View>
+          ) : null}
 
-        {lead.email ? (
-          <View style={styles.metaItem}>
-            <Ionicons name="mail-outline" size={13} color={isDark ? '#9CA3AF' : '#64748B'} />
-            <Text style={[styles.metaText, { color: isDark ? '#9CA3AF' : '#64748B' }]} numberOfLines={1}>
-              {lead.email}
-            </Text>
-          </View>
-        ) : null}
-      </View>
+          {lead.email ? (
+            <View style={styles.metaItem}>
+              <Ionicons name="mail-outline" size={13} color={isDark ? '#9CA3AF' : '#64748B'} />
+              <Text style={[styles.metaText, { color: isDark ? '#9CA3AF' : '#64748B' }]} numberOfLines={1}>
+                {lead.email}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+      ) : null}
 
-      {/* Footer: Assignee & Action Buttons */}
+      {/* Footer: Assignee & 1-Tap Quick Touchpoints */}
       <View style={[styles.footer, { borderTopColor: isDark ? '#222630' : '#F1F5F9' }]}>
         <View style={styles.assigneeBlock}>
           <Ionicons name="person-circle-outline" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
@@ -114,22 +154,34 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onPress, onQuickCall, 
         <View style={styles.actionButtons}>
           {lead.phone ? (
             <Pressable
-              style={[styles.actionBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              style={[styles.touchpointBtn, { backgroundColor: isDark ? 'rgba(37, 211, 102, 0.15)' : '#DCFCE7' }]}
+              onPress={handleWhatsApp}
+              hitSlop={6}
+            >
+              <Ionicons name="logo-whatsapp" size={15} color="#25D366" />
+            </Pressable>
+          ) : null}
+
+          {lead.phone ? (
+            <Pressable
+              style={[styles.touchpointBtn, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#D1FAE5' }]}
               onPress={handleCall}
-              hitSlop={8}
+              hitSlop={6}
             >
               <Ionicons name="call" size={14} color="#10B981" />
             </Pressable>
           ) : null}
+
           {lead.email ? (
             <Pressable
-              style={[styles.actionBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              style={[styles.touchpointBtn, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#DBEAFE' }]}
               onPress={handleEmail}
-              hitSlop={8}
+              hitSlop={6}
             >
               <Ionicons name="mail" size={14} color="#3B82F6" />
             </Pressable>
           ) : null}
+
           <View style={styles.chevron}>
             <Ionicons name="chevron-forward" size={16} color={isDark ? '#6B7280' : '#94A3B8'} />
           </View>
@@ -254,6 +306,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  dealBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  dealBadgeText: {
+    color: '#D97706',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  touchpointBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   actionBtn: {
     width: 30,

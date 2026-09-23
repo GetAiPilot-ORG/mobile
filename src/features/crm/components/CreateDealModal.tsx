@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { CRMDeal, DealStage } from '../types';
 import { useMembers } from '../hooks/useMembers';
 import { useContacts } from '../hooks/useContacts';
+import { DatePickerField } from '../../../components/DatePickerModal';
 
 interface CreateDealModalProps {
   visible: boolean;
@@ -258,16 +259,14 @@ export const CreateDealModal: React.FC<CreateDealModalProps> = ({
               </View>
             ) : null}
 
-            {/* Expected Close & Probability */}
+            {/* Expected Close Date Picker & Probability */}
             <View style={styles.row}>
-              <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Expected Close (YYYY-MM-DD)</Text>
-                <TextInput
-                  style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
-                  placeholder="2026-09-30"
-                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <DatePickerField
+                  label="Expected Close"
                   value={expectedCloseDate}
-                  onChangeText={setExpectedCloseDate}
+                  onChangeDate={setExpectedCloseDate}
+                  placeholder="Pick date..."
                 />
               </View>
               <View style={[styles.inputGroup, { flex: 1 }]}>
