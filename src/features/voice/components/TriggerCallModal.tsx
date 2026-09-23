@@ -16,6 +16,8 @@ import * as Haptics from 'expo-haptics';
 interface TriggerCallModalProps {
   visible: boolean;
   assistants: any[];
+  initialPhone?: string;
+  initialName?: string;
   onClose: () => void;
   onSubmit: (payload: {
     customerNumber: string;
@@ -28,6 +30,8 @@ interface TriggerCallModalProps {
 export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
   visible,
   assistants,
+  initialPhone = '',
+  initialName = '',
   onClose,
   onSubmit,
   isLoading,
@@ -35,12 +39,19 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const [phone, setPhone] = useState('');
-  const [name, setName] = useState('');
+  const [phone, setPhone] = useState(initialPhone);
+  const [name, setName] = useState(initialName);
   const [selectedAssistantId, setSelectedAssistantId] = useState<string>(
     assistants[0]?.id || ''
   );
   const [error, setError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (visible) {
+      if (initialPhone) setPhone(initialPhone);
+      if (initialName) setName(initialName);
+    }
+  }, [visible, initialPhone, initialName]);
 
   // Sync default assistant when available
   React.useEffect(() => {
