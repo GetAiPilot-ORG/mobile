@@ -577,4 +577,222 @@ export async function crmRoutes(fastify: FastifyInstance) {
       return reply.status(500).send({ statusCode: 500, message: err.message });
     }
   });
+
+  // ── Organization ────────────────────────────────────────────────────────────
+
+  fastify.get('/crm/organization', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    try {
+      const org = await CRMService.getOrganization(user);
+      return reply.send(org);
+    } catch (err: any) {
+      return reply.status(500).send({ statusCode: 500, message: err.message });
+    }
+  });
+
+  // ── Invoices ────────────────────────────────────────────────────────────────
+
+  fastify.get('/crm/invoices', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { status, contact_id, limit, offset } = request.query as any;
+    try {
+      const result = await CRMService.getInvoices(user, { status, contact_id, limit: limit ? Number(limit) : undefined, offset: offset ? Number(offset) : undefined });
+      return reply.send(result);
+    } catch (err: any) {
+      return reply.status(500).send({ statusCode: 500, message: err.message });
+    }
+  });
+
+  fastify.get('/crm/invoices/:id', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { id } = request.params as { id: string };
+    try {
+      const invoice = await CRMService.getInvoiceById(user, id);
+      if (!invoice) return reply.status(404).send({ statusCode: 404, message: 'Invoice not found' });
+      return reply.send(invoice);
+    } catch (err: any) {
+      return reply.status(500).send({ statusCode: 500, message: err.message });
+    }
+  });
+
+  fastify.post('/crm/invoices', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    try {
+      const invoice = await CRMService.createInvoice(user, request.body as any);
+      return reply.status(201).send(invoice);
+    } catch (err: any) {
+      return reply.status(500).send({ statusCode: 500, message: err.message });
+    }
+  });
+
+  fastify.patch('/crm/invoices/:id', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { id } = request.params as { id: string };
+    try {
+      const invoice = await CRMService.updateInvoice(user, id, request.body as any);
+      return reply.send(invoice);
+    } catch (err: any) {
+      return reply.status(500).send({ statusCode: 500, message: err.message });
+    }
+  });
+
+  fastify.delete('/crm/invoices/:id', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { id } = request.params as { id: string };
+    try {
+      await CRMService.deleteInvoice(user, id);
+      return reply.send({ success: true, id });
+    } catch (err: any) {
+      return reply.status(500).send({ statusCode: 500, message: err.message });
+    }
+  });
+
+  // ── Quotations ──────────────────────────────────────────────────────────────
+
+  fastify.get('/crm/quotations', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { status, contact_id, limit } = request.query as any;
+    try {
+      const result = await CRMService.getQuotations(user, { status, contact_id, limit: limit ? Number(limit) : undefined });
+      return reply.send(result);
+    } catch (err: any) {
+      return reply.status(500).send({ statusCode: 500, message: err.message });
+    }
+  });
+
+  fastify.get('/crm/quotations/:id', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { id } = request.params as { id: string };
+    try {
+      const q = await CRMService.getQuotationById(user, id);
+      if (!q) return reply.status(404).send({ statusCode: 404, message: 'Quotation not found' });
+      return reply.send(q);
+    } catch (err: any) {
+      return reply.status(500).send({ statusCode: 500, message: err.message });
+    }
+  });
+
+  fastify.post('/crm/quotations', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    try {
+      const q = await CRMService.createQuotation(user, request.body as any);
+      return reply.status(201).send(q);
+    } catch (err: any) {
+      return reply.status(500).send({ statusCode: 500, message: err.message });
+    }
+  });
+
+  fastify.patch('/crm/quotations/:id', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { id } = request.params as { id: string };
+    try {
+      const q = await CRMService.updateQuotation(user, id, request.body as any);
+      return reply.send(q);
+    } catch (err: any) {
+      return reply.status(500).send({ statusCode: 500, message: err.message });
+    }
+  });
+
+  fastify.delete('/crm/quotations/:id', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { id } = request.params as { id: string };
+    try {
+      await CRMService.deleteQuotation(user, id);
+      return reply.send({ success: true, id });
+    } catch (err: any) {
+      return reply.status(500).send({ statusCode: 500, message: err.message });
+    }
+  });
+
+  // ── Billing Profiles (Client Profiles) ──────────────────────────────────────
+
+  fastify.get('/crm/billing-profiles', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { contact_id, limit } = request.query as any;
+    try {
+      const result = await CRMService.getBillingProfiles(user, { contact_id, limit: limit ? Number(limit) : undefined });
+      return reply.send(result);
+    } catch (err: any) {
+      return reply.status(500).send({ statusCode: 500, message: err.message });
+    }
+  });
+
+  fastify.get('/crm/billing-profiles/:id', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { id } = request.params as { id: string };
+    try {
+      const profile = await CRMService.getBillingProfileById(user, id);
+      if (!profile) return reply.status(404).send({ statusCode: 404, message: 'Billing profile not found' });
+      return reply.send(profile);
+    } catch (err: any) {
+      return reply.status(500).send({ statusCode: 500, message: err.message });
+    }
+  });
+
+  fastify.post('/crm/billing-profiles', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    try {
+      const profile = await CRMService.createBillingProfile(user, request.body as any);
+      return reply.status(201).send(profile);
+    } catch (err: any) {
+      return reply.status(500).send({ statusCode: 500, message: err.message });
+    }
+  });
+
+  fastify.patch('/crm/billing-profiles/:id', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { id } = request.params as { id: string };
+    try {
+      const profile = await CRMService.updateBillingProfile(user, id, request.body as any);
+      return reply.send(profile);
+    } catch (err: any) {
+      return reply.status(500).send({ statusCode: 500, message: err.message });
+    }
+  });
+
+  fastify.delete('/crm/billing-profiles/:id', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { id } = request.params as { id: string };
+    try {
+      await CRMService.deleteBillingProfile(user, id);
+      return reply.send({ success: true, id });
+    } catch (err: any) {
+      return reply.status(500).send({ statusCode: 500, message: err.message });
+    }
+  });
+
+  // ── Payments ────────────────────────────────────────────────────────────────
+
+  fastify.get('/crm/payments', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { invoice_id, limit, offset } = request.query as any;
+    try {
+      const result = await CRMService.getPayments(user, { invoice_id, limit: limit ? Number(limit) : undefined, offset: offset ? Number(offset) : undefined });
+      return reply.send(result);
+    } catch (err: any) {
+      return reply.status(500).send({ statusCode: 500, message: err.message });
+    }
+  });
+
+  fastify.post('/crm/payments', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    try {
+      const payment = await CRMService.createPayment(user, request.body as any);
+      return reply.status(201).send(payment);
+    } catch (err: any) {
+      return reply.status(500).send({ statusCode: 500, message: err.message });
+    }
+  });
+
+  fastify.delete('/crm/payments/:id', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { id } = request.params as { id: string };
+    try {
+      await CRMService.deletePayment(user, id);
+      return reply.send({ success: true, id });
+    } catch (err: any) {
+      return reply.status(500).send({ statusCode: 500, message: err.message });
+    }
+  });
 }
+

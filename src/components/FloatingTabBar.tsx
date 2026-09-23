@@ -36,6 +36,17 @@ const TAB_CONFIG: Record<string, TabItemConfig> = {
     activeIcon: 'chatbubbles',
     inactiveIcon: 'chatbubbles-outline',
   },
+
+  team: {
+    label: 'Team',
+    activeIcon: 'people',
+    inactiveIcon: 'people-outline',
+  },
+  planner: {
+    label: 'Planner',
+    activeIcon: 'calendar',
+    inactiveIcon: 'calendar-outline',
+  },
   tools: {
     label: 'Tools',
     activeIcon: 'telescope',
@@ -45,6 +56,11 @@ const TAB_CONFIG: Record<string, TabItemConfig> = {
     label: 'Activity',
     activeIcon: 'pulse',
     inactiveIcon: 'pulse-outline',
+  },
+  communication: {
+    label: 'Connect',
+    activeIcon: 'mail',
+    inactiveIcon: 'mail-outline',
   },
 };
 
