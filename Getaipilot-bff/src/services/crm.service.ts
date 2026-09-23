@@ -255,4 +255,110 @@ export class CRMService {
     const ctx = await CRMRepository.resolveCrmContext(user);
     return await CRMRepository.deleteActivity(ctx.crmOrgId, id);
   }
+
+  // ── Organization ────────────────────────────────────────────────────────────
+
+  public static async getOrganization(user: JWTPayload): Promise<any> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.getOrganization(ctx.crmOrgId);
+  }
+
+  // ── Invoices ────────────────────────────────────────────────────────────────
+
+  public static async getInvoices(user: JWTPayload, filters: any = {}): Promise<any> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.getInvoices(ctx.crmOrgId, filters);
+  }
+
+  public static async getInvoiceById(user: JWTPayload, id: string): Promise<any> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.getInvoiceById(ctx.crmOrgId, id);
+  }
+
+  public static async createInvoice(user: JWTPayload, data: any): Promise<any> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.createInvoice(ctx.crmOrgId, data);
+  }
+
+  public static async updateInvoice(user: JWTPayload, id: string, patch: any): Promise<any> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.updateInvoice(ctx.crmOrgId, id, patch);
+  }
+
+  public static async deleteInvoice(user: JWTPayload, id: string): Promise<boolean> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.deleteInvoice(ctx.crmOrgId, id);
+  }
+
+  // ── Quotations ──────────────────────────────────────────────────────────────
+
+  public static async getQuotations(user: JWTPayload, filters: any = {}): Promise<any> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.getQuotations(ctx.crmOrgId, filters);
+  }
+
+  public static async getQuotationById(user: JWTPayload, id: string): Promise<any> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.getQuotationById(ctx.crmOrgId, id);
+  }
+
+  public static async createQuotation(user: JWTPayload, data: any): Promise<any> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.createQuotation(ctx.crmOrgId, data);
+  }
+
+  public static async updateQuotation(user: JWTPayload, id: string, patch: any): Promise<any> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.updateQuotation(ctx.crmOrgId, id, patch);
+  }
+
+  public static async deleteQuotation(user: JWTPayload, id: string): Promise<boolean> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.deleteQuotation(ctx.crmOrgId, id);
+  }
+
+  // ── Billing Profiles ────────────────────────────────────────────────────────
+
+  public static async getBillingProfiles(user: JWTPayload, filters: any = {}): Promise<any> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.getBillingProfiles(ctx.crmOrgId, filters);
+  }
+
+  public static async getBillingProfileById(user: JWTPayload, id: string): Promise<any> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.getBillingProfileById(ctx.crmOrgId, id);
+  }
+
+  public static async createBillingProfile(user: JWTPayload, data: any): Promise<any> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.createBillingProfile(ctx.crmOrgId, data);
+  }
+
+  public static async updateBillingProfile(user: JWTPayload, id: string, patch: any): Promise<any> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.updateBillingProfile(ctx.crmOrgId, id, patch);
+  }
+
+  public static async deleteBillingProfile(user: JWTPayload, id: string): Promise<boolean> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.deleteBillingProfile(ctx.crmOrgId, id);
+  }
+
+  // ── Payments ────────────────────────────────────────────────────────────────
+
+  public static async getPayments(user: JWTPayload, filters: any = {}): Promise<any> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.getPayments(ctx.crmOrgId, filters);
+  }
+
+  public static async createPayment(user: JWTPayload, data: any): Promise<any> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.createPayment(ctx.crmOrgId, data);
+  }
+
+  public static async deletePayment(user: JWTPayload, id: string): Promise<boolean> {
+    const ctx = await CRMRepository.resolveCrmContext(user);
+    return await CRMRepository.deletePayment(ctx.crmOrgId, id);
+  }
 }
+
