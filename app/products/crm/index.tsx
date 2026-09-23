@@ -1,16 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { BackHandler, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTheme } from '../../../src/contexts/ThemeContext';
-import { CRMHomeScreen } from '../../../src/features/crm/screens/CRMHomeScreen';
-import { LeadListScreen } from '../../../src/features/crm/screens/LeadListScreen';
-import { LeadDetailScreen } from '../../../src/features/crm/screens/LeadDetailScreen';
-import { PipelineScreen } from '../../../src/features/crm/screens/PipelineScreen';
-import { TasksScreen } from '../../../src/features/crm/screens/TasksScreen';
-import { ContactsScreen } from '../../../src/features/crm/screens/ContactsScreen';
-import { ActivitiesScreen } from '../../../src/features/crm/screens/ActivitiesScreen';
-import { CRMMoreScreen } from '../../../src/features/crm/screens/CRMMoreScreen';
-import { BackHandler, StyleSheet, useColorScheme, View } from "react-native";
+import { useEffect, useState } from 'react';
+import { BackHandler, StyleSheet, useColorScheme, View } from 'react-native';
 import {
   ProductFloatingBottomBar,
   ProductTabItem,
@@ -63,7 +53,6 @@ const CRM_TABS: ProductTabItem[] = [
 
 export default function CRMIndexRoute() {
   const router = useRouter();
-  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const [activeTab, setActiveTab] = useState<CRMTab>("overview");
