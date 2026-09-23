@@ -7,8 +7,10 @@ import { authStorage } from '../storage/authStorage';
  * Physical LAN device (via Expo Metro host), and Production env.
  */
 export function resolveBffBaseUrl(): string {
-  if (process.env.EXPO_PUBLIC_BFF_URL) {
-    return process.env.EXPO_PUBLIC_BFF_URL;
+  const customUrl = process.env.EXPO_PUBLIC_BFF_URL;
+  // If an active custom URL is configured and not the undeployed placeholder
+  if (customUrl && !customUrl.includes('bff.getaipilot.in')) {
+    return customUrl;
   }
 
   if (Platform.OS === 'web') {

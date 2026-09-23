@@ -6,16 +6,11 @@ import {
   StyleSheet,
   Platform,
   LayoutAnimation,
-  UIManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -45,6 +40,11 @@ const TAB_CONFIG: Record<string, TabItemConfig> = {
     label: 'Activity',
     activeIcon: 'pulse',
     inactiveIcon: 'pulse-outline',
+  },
+  admin: {
+    label: 'Admin',
+    activeIcon: 'shield-checkmark',
+    inactiveIcon: 'shield-checkmark-outline',
   },
 };
 

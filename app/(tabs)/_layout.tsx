@@ -59,7 +59,7 @@ export default function TabLayout() {
         name="admin"
         options={{
           title: 'Admin',
-          href: (isAdmin ? '/admin' : null) as any,
+          href: (isAdmin ? '/(tabs)/admin' : null) as any,
         }}
       />
     </Tabs>

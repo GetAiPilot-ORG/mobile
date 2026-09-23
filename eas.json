@@ -7,18 +7,24 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_APP_ENV": "development"
+        "EXPO_PUBLIC_APP_ENV": "development",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://uklxlappjcuvdqjvecfh.supabase.co",
+        "EXPO_PUBLIC_BFF_URL": "https://bff.getaipilot.in"
       }
     },
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_APP_ENV": "preview"
+        "EXPO_PUBLIC_APP_ENV": "preview",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://uklxlappjcuvdqjvecfh.supabase.co",
+        "EXPO_PUBLIC_BFF_URL": "https://bff.getaipilot.in"
       }
     },
     "production": {
       "env": {
-        "EXPO_PUBLIC_APP_ENV": "production"
+        "EXPO_PUBLIC_APP_ENV": "production",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://uklxlappjcuvdqjvecfh.supabase.co",
+        "EXPO_PUBLIC_BFF_URL": "https://bff.getaipilot.in"
       }
     }
   },
