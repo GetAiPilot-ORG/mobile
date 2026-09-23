@@ -703,6 +703,7 @@ export class CRMRepository {
     return true;
   }
 
+
   // ── Team Members ───────────────────────────────────────────────────────────
 
   public static async getMembers(orgId: string): Promise<CRMMember[]> {
@@ -716,4 +717,480 @@ export class CRMRepository {
     if (error) throw error;
     return data || [];
   }
+
+  public static async getMembersFull(orgId: string): Promise<any[]> {
+    const { data, error } = await crmSupabase
+      .from('crm_members')
+      .select('*')
+      .eq('org_id', orgId)
+      .eq('is_deleted', false)
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  public static async getMemberById(orgId: string, id: string): Promise<any | null> {
+    const { data, error } = await crmSupabase
+      .from('crm_members')
+      .select('*')
+      .eq('org_id', orgId)
+      .eq('id', id)
+      .eq('is_deleted', false)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  }
+
+  public static async createMember(orgId: string, memberData: any): Promise<any> {
+    const { data, error } = await crmSupabase
+      .from('crm_members')
+      .insert({ ...memberData, org_id: orgId })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  public static async updateMember(orgId: string, id: string, patch: any): Promise<any> {
+    const { data, error } = await crmSupabase
+      .from('crm_members')
+      .update({ ...patch, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('org_id', orgId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  public static async deleteMember(orgId: string, id: string): Promise<boolean> {
+    const { error } = await crmSupabase
+      .from('crm_members')
+      .update({ is_deleted: true, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('org_id', orgId);
+
+    if (error) throw error;
+    return true;
+  }
+
+  // ── Organization ───────────────────────────────────────────────────────────
+
+  public static async getOrganization(orgId: string): Promise<any | null> {
+    const { data, error } = await crmSupabase
+      .from('organizations')
+      .select('*, plan:crm_plans(id, name, emoji, tagline, price_min, price_max, price_display)')
+      .eq('id', orgId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  }
+
+  // ── Invoices ───────────────────────────────────────────────────────────────
+
+  public static async getInvoices(orgId: string, filters: { status?: string; contact_id?: string; limit?: number; offset?: number } = {}): Promise<{ invoices: any[]; total_count: number }> {
+    let query = crmSupabase
+      .from('crm_invoices')
+      .select('*, contact:crm_contacts(id, first_name, last_name, email, phone, company)', { count: 'exact' })
+      .eq('org_id', orgId);
+
+    if (filters.status) query = query.eq('status', filters.status);
+    if (filters.contact_id) query = query.eq('contact_id', filters.contact_id);
+    query = query.order('created_at', { ascending: false }).limit(filters.limit || 50);
+    if (filters.offset) query = query.range(filters.offset, filters.offset + (filters.limit || 50) - 1);
+
+    const { data, count, error } = await query;
+    if (error) throw error;
+    return { invoices: data || [], total_count: count || 0 };
+  }
+
+  public static async getInvoiceById(orgId: string, id: string): Promise<any | null> {
+    const { data, error } = await crmSupabase
+      .from('crm_invoices')
+      .select('*, items:crm_invoice_items(*), contact:crm_contacts(id, first_name, last_name, email, phone, company)')
+      .eq('org_id', orgId)
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  }
+
+  public static async createInvoice(orgId: string, data: any): Promise<any> {
+    const { data: created, error } = await crmSupabase
+      .from('crm_invoices')
+      .insert({ ...data, org_id: orgId })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return created;
+  }
+
+  public static async updateInvoice(orgId: string, id: string, patch: any): Promise<any> {
+    const { data, error } = await crmSupabase
+      .from('crm_invoices')
+      .update({ ...patch, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('org_id', orgId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  public static async deleteInvoice(orgId: string, id: string): Promise<boolean> {
+    const { error } = await crmSupabase
+      .from('crm_invoices')
+      .update({ status: 'CANCELLED', updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('org_id', orgId);
+
+    if (error) throw error;
+    return true;
+  }
+
+  // ── Quotations ─────────────────────────────────────────────────────────────
+
+  public static async getQuotations(orgId: string, filters: { status?: string; contact_id?: string; limit?: number; offset?: number } = {}): Promise<{ quotations: any[]; total_count: number }> {
+    let query = crmSupabase
+      .from('crm_quotations')
+      .select('*, contact:crm_contacts(id, first_name, last_name, email, company)', { count: 'exact' })
+      .eq('org_id', orgId);
+
+    if (filters.status) query = query.eq('status', filters.status);
+    if (filters.contact_id) query = query.eq('contact_id', filters.contact_id);
+    query = query.order('created_at', { ascending: false }).limit(filters.limit || 50);
+
+    const { data, count, error } = await query;
+    if (error) throw error;
+    return { quotations: data || [], total_count: count || 0 };
+  }
+
+  public static async getQuotationById(orgId: string, id: string): Promise<any | null> {
+    const { data, error } = await crmSupabase
+      .from('crm_quotations')
+      .select('*, items:crm_quotation_items(*), contact:crm_contacts(id, first_name, last_name, email, company)')
+      .eq('org_id', orgId)
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  }
+
+  public static async createQuotation(orgId: string, data: any): Promise<any> {
+    const { data: created, error } = await crmSupabase
+      .from('crm_quotations')
+      .insert({ ...data, org_id: orgId })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return created;
+  }
+
+  public static async updateQuotation(orgId: string, id: string, patch: any): Promise<any> {
+    const { data, error } = await crmSupabase
+      .from('crm_quotations')
+      .update({ ...patch, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('org_id', orgId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  public static async deleteQuotation(orgId: string, id: string): Promise<boolean> {
+    const { error } = await crmSupabase
+      .from('crm_quotations')
+      .delete()
+      .eq('id', id)
+      .eq('org_id', orgId);
+
+    if (error) throw error;
+    return true;
+  }
+
+  // ── Billing Profiles (Client Profiles) ────────────────────────────────────
+
+  public static async getBillingProfiles(orgId: string, filters: { contact_id?: string; limit?: number } = {}): Promise<{ profiles: any[]; total_count: number }> {
+    let query = crmSupabase
+      .from('crm_billing_profiles')
+      .select('*, contact:crm_contacts(id, first_name, last_name, email, company)', { count: 'exact' })
+      .eq('org_id', orgId)
+      .eq('is_deleted', false);
+
+    if (filters.contact_id) query = query.eq('contact_id', filters.contact_id);
+    query = query.order('created_at', { ascending: false }).limit(filters.limit || 50);
+
+    const { data, count, error } = await query;
+    if (error) throw error;
+    return { profiles: data || [], total_count: count || 0 };
+  }
+
+  public static async getBillingProfileById(orgId: string, id: string): Promise<any | null> {
+    const { data, error } = await crmSupabase
+      .from('crm_billing_profiles')
+      .select('*, contact:crm_contacts(id, first_name, last_name, email, company)')
+      .eq('org_id', orgId)
+      .eq('id', id)
+      .eq('is_deleted', false)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  }
+
+  public static async createBillingProfile(orgId: string, data: any): Promise<any> {
+    const { data: created, error } = await crmSupabase
+      .from('crm_billing_profiles')
+      .insert({ ...data, org_id: orgId })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return created;
+  }
+
+  public static async updateBillingProfile(orgId: string, id: string, patch: any): Promise<any> {
+    const { data, error } = await crmSupabase
+      .from('crm_billing_profiles')
+      .update({ ...patch, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('org_id', orgId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  public static async deleteBillingProfile(orgId: string, id: string): Promise<boolean> {
+    const { error } = await crmSupabase
+      .from('crm_billing_profiles')
+      .update({ is_deleted: true, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('org_id', orgId);
+
+    if (error) throw error;
+    return true;
+  }
+
+  // ── Payments ───────────────────────────────────────────────────────────────
+
+  public static async getPayments(orgId: string, filters: { invoice_id?: string; limit?: number; offset?: number } = {}): Promise<{ payments: any[]; total_count: number }> {
+    let query = crmSupabase
+      .from('crm_payments')
+      .select('*, invoice:crm_invoices(id, invoice_number, total_amount, status)', { count: 'exact' })
+      .eq('org_id', orgId);
+
+    if (filters.invoice_id) query = query.eq('invoice_id', filters.invoice_id);
+    query = query.order('payment_date', { ascending: false }).limit(filters.limit || 50);
+
+    const { data, count, error } = await query;
+    if (error) throw error;
+    return { payments: data || [], total_count: count || 0 };
+  }
+
+  public static async createPayment(orgId: string, data: any): Promise<any> {
+    const { data: created, error } = await crmSupabase
+      .from('crm_payments')
+      .insert({ ...data, org_id: orgId })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return created;
+  }
+
+  public static async deletePayment(orgId: string, id: string): Promise<boolean> {
+    const { error } = await crmSupabase
+      .from('crm_payments')
+      .delete()
+      .eq('id', id)
+      .eq('org_id', orgId);
+
+    if (error) throw error;
+    return true;
+  }
+
+  // ── Attendance ─────────────────────────────────────────────────────────────
+
+  public static async getAttendanceRecords(orgId: string, filters: { member_id?: string; date_from?: string; date_to?: string; status?: string; limit?: number } = {}): Promise<{ records: any[]; total_count: number }> {
+    let query = crmSupabase
+      .from('attendance_records')
+      .select('*, member:crm_members(id, name, email, role)', { count: 'exact' })
+      .eq('org_id', orgId);
+
+    if (filters.member_id) query = query.eq('member_id', filters.member_id);
+    if (filters.status) query = query.eq('status', filters.status);
+    if (filters.date_from) query = query.gte('attendance_date', filters.date_from);
+    if (filters.date_to) query = query.lte('attendance_date', filters.date_to);
+    query = query.order('attendance_date', { ascending: false }).limit(filters.limit || 50);
+
+    const { data, count, error } = await query;
+    if (error) throw error;
+    return { records: data || [], total_count: count || 0 };
+  }
+
+  public static async createAttendanceRecord(orgId: string, data: any): Promise<any> {
+    const { data: created, error } = await crmSupabase
+      .from('attendance_records')
+      .insert({ ...data, org_id: orgId, is_manual: true })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return created;
+  }
+
+  public static async updateAttendanceRecord(orgId: string, id: string, patch: any): Promise<any> {
+    const { data, error } = await crmSupabase
+      .from('attendance_records')
+      .update({ ...patch, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('org_id', orgId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  public static async deleteAttendanceRecord(orgId: string, id: string): Promise<boolean> {
+    const { error } = await crmSupabase
+      .from('attendance_records')
+      .delete()
+      .eq('id', id)
+      .eq('org_id', orgId);
+
+    if (error) throw error;
+    return true;
+  }
+
+  // ── Leave Requests ─────────────────────────────────────────────────────────
+
+  public static async getLeaveRequests(orgId: string, filters: { member_id?: string; status?: string; leave_type?: string; limit?: number } = {}): Promise<{ requests: any[]; total_count: number }> {
+    let query = crmSupabase
+      .from('leave_requests')
+      .select('*, member:crm_members(id, name, email, role)', { count: 'exact' })
+      .eq('org_id', orgId);
+
+    if (filters.member_id) query = query.eq('member_id', filters.member_id);
+    if (filters.status) query = query.eq('status', filters.status);
+    if (filters.leave_type) query = query.eq('leave_type', filters.leave_type);
+    query = query.order('created_at', { ascending: false }).limit(filters.limit || 50);
+
+    const { data, count, error } = await query;
+    if (error) throw error;
+    return { requests: data || [], total_count: count || 0 };
+  }
+
+  public static async createLeaveRequest(orgId: string, data: any): Promise<any> {
+    const { data: created, error } = await crmSupabase
+      .from('leave_requests')
+      .insert({ ...data, org_id: orgId })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return created;
+  }
+
+  public static async updateLeaveRequest(orgId: string, id: string, patch: any): Promise<any> {
+    const { data, error } = await crmSupabase
+      .from('leave_requests')
+      .update({ ...patch, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('org_id', orgId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  public static async deleteLeaveRequest(orgId: string, id: string): Promise<boolean> {
+    const { error } = await crmSupabase
+      .from('leave_requests')
+      .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('org_id', orgId);
+
+    if (error) throw error;
+    return true;
+  }
+
+  // ── Presence ───────────────────────────────────────────────────────────────
+
+  public static async getPresenceLogs(orgId: string, filters: { member_id?: string; limit?: number } = {}): Promise<any[]> {
+    let query = crmSupabase
+      .from('crm_presence_logs')
+      .select('*, member:crm_members(id, name, email, role)')
+      .eq('org_id', orgId);
+
+    if (filters.member_id) query = query.eq('member_id', filters.member_id);
+    query = query.order('logged_at', { ascending: false }).limit(filters.limit || 100);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  }
+
+  // ── Holidays ───────────────────────────────────────────────────────────────
+
+  public static async getHolidays(orgId: string): Promise<any[]> {
+    const now = new Date().toISOString().split('T')[0];
+    const { data, error } = await crmSupabase
+      .from('company_holidays')
+      .select('*')
+      .eq('org_id', orgId)
+      .gte('holiday_date', now)
+      .order('holiday_date', { ascending: true })
+      .limit(50);
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  // ── Birthdays ──────────────────────────────────────────────────────────────
+
+  public static async getUpcomingBirthdays(orgId: string): Promise<any[]> {
+    const { data, error } = await crmSupabase
+      .from('crm_members')
+      .select('id, name, email, role, birthday')
+      .eq('org_id', orgId)
+      .eq('is_active', true)
+      .eq('is_deleted', false)
+      .not('birthday', 'is', null);
+
+    if (error) throw error;
+
+    // Sort by upcoming birthday (month/day) regardless of year
+    const today = new Date();
+    const sorted = (data || [])
+      .map((m: any) => {
+        if (!m.birthday) return null;
+        const bday = new Date(m.birthday);
+        const nextBday = new Date(today.getFullYear(), bday.getMonth(), bday.getDate());
+        if (nextBday < today) nextBday.setFullYear(today.getFullYear() + 1);
+        const daysUntil = Math.ceil((nextBday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        return { ...m, next_birthday: nextBday.toISOString().split('T')[0], days_until: daysUntil };
+      })
+      .filter(Boolean)
+      .sort((a: any, b: any) => a.days_until - b.days_until)
+      .slice(0, 20);
+
+    return sorted;
+  }
 }
+

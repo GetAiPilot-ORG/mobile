@@ -14,6 +14,7 @@ import { socialRoutes } from './routes/social.routes.js';
 import { telegramRoutes } from './routes/telegram.routes.js';
 import { voiceRoutes } from './routes/voice.routes.js';
 import { paymentRoutes } from './routes/payment.routes.js';
+import { teamRoutes } from './routes/team.routes.js';
 import { webviewRoutes } from './routes/webview.routes.js';
 import { whatsappRoutes } from './routes/whatsapp.routes.js';
 import { WebSocketService } from './services/websocket.service.js';
@@ -102,6 +103,7 @@ async function main() {
   await app.register(telegramRoutes, { prefix: '/mobile/v1' });
   await app.register(billingRoutes, { prefix: '/mobile/v1' });
   await app.register(paymentRoutes, { prefix: '/mobile/v1' });
+  await app.register(teamRoutes, { prefix: '/mobile/v1' });
   await app.register(webviewRoutes, { prefix: '/mobile/v1' });
   await app.register(redirectRoutes);
 
