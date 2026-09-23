@@ -10,10 +10,10 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
-  useColorScheme,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 import { AppScreen } from '../../../components/AppScreen';
 import { AppTopBar } from '../../../components/AppTopBar';
@@ -73,8 +73,7 @@ const TELEGRAM_TABS: ProductTabItem[] = [
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export const TelegramScreen: React.FC = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
 
   const [activeTab, setActiveTab] = useState<TelegramTab>('hub');
   const [activeModal, setActiveModal] = useState<TelegramToolKey | null>(null);
@@ -101,105 +100,62 @@ export const TelegramScreen: React.FC = () => {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const todaysJoins = joins.filter((j: any) => new Date(j.joined_at) >= today).length;
-  const thisMonthJoins = joins.filter((j: any) => new Date(j.joined_at) >= firstDayOfMonth).length;
-  const pendingJoins = joins.filter((j: any) => j.status === 'Pending' || j.status === 'Bot Start').length;
-  const conversionRate = joins.length > 0 ? Math.round(((joins.length - pendingJoins) / joins.length) * 100) : 0;
+  const todaysJoins = joins.filter((j: any) => new Date(j.joined_at || j.created_at) >= today).length;
+  const thisMonthJoins = joins.filter((j: any) => new Date(j.joined_at || j.created_at) >= firstDayOfMonth).length;
+  const pendingJoins = joins.filter((j: any) => j.status === 'Pending' || j.status === 'Bot Start' || (!j.joined_channel && !j.left_channel)).length;
+  const activeJoins = joins.filter((j: any) => (j.joined_channel && !j.left_channel) || j.status === 'Active' || j.status === 'joined').length;
+  const conversionRate = joins.length > 0 ? Math.round((activeJoins / joins.length) * 100) : 0;
 
   const channelMap: Record<string, any> = {};
   joins.forEach((j: any) => {
-      const cname = j.channel_name || 'Unknown Channel';
-      if (!channelMap[cname]) {
-          channelMap[cname] = { channel_id: cname, channel_name: cname, joined: 0, period_joins: 0, left: 0, all_active: 0, links: [] };
-      }
-      if (j.status !== 'Leave' && j.status !== 'Pending' && j.status !== 'Bot Start') {
-        channelMap[cname].all_active++;
-        channelMap[cname].joined++;
-      }
-      if (new Date(j.joined_at) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) {
-          channelMap[cname].period_joins++;
-      }
-      if (j.status === 'Leave') {
-          channelMap[cname].left++;
-      }
+    const cname = j.channel_name || 'Tracked Channel';
+    if (!channelMap[cname]) {
+      channelMap[cname] = { channel_id: cname, channel_name: cname, joined: 0, period_joins: 0, left: 0, all_active: 0, links: [] };
+    }
+    if (j.left_channel || j.status === 'Leave' || j.status === 'leaved') {
+      channelMap[cname].left++;
+    } else if (j.joined_channel || j.status === 'Active' || j.status === 'joined') {
+      channelMap[cname].all_active++;
+      channelMap[cname].joined++;
+    }
+    if (new Date(j.joined_at || j.created_at) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) {
+      channelMap[cname].period_joins++;
+    }
   });
 
   const channelsList = Object.values(channelMap);
 
   const trackerDash = {
-    kpis: { totalJoins: joins.length, todaysJoins, thisMonthJoins, botStarts: joins.length, pendingJoins, conversionRate },
-    period: { startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toLocaleDateString(), endDate: new Date().toLocaleDateString(), periodJoins: 0, totalTracked: 0, allTimeActive: 0 },
+    kpis: {
+      totalJoins: joins.length,
+      todaysJoins,
+      thisMonthJoins,
+      botStarts: joins.length,
+      pendingJoins,
+      conversionRate,
+    },
+    period: {
+      startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+      endDate: new Date().toLocaleDateString(),
+      periodJoins: joins.filter((j: any) => new Date(j.joined_at || j.created_at) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length,
+      totalTracked: joins.length,
+      allTimeActive: activeJoins,
+    },
     channels: channelsList,
     newUsers: joins.map((j: any) => ({
       ...j,
-      name: j.name || j.first_name || 'Unknown User',
+      name: j.name || j.first_name || j.telegram_first_name || (j.telegram_username ? `@${j.telegram_username}` : 'Telegram User'),
       time_ago: j.time_ago || (j.joined_at ? new Date(j.joined_at).toLocaleDateString() : 'Just now'),
       channel_name: j.channel_name || 'Tracked Link',
-      status: j.status || 'Active'
+      status: j.left_channel || j.status === 'leaved' ? 'Leave' : (j.joined_channel || j.status === 'joined' ? 'Active' : (j.status || 'Active')),
     })),
   };
-  const subPlans: any[] = []; // SubPlans will be extracted from pages if needed
-
-  // Direct Supabase fetch for guaranteed real-time sub data
-  const { data: supabaseSubData, refetch: refetchSupabaseSub } = useQuery({
-    queryKey: ['telegram_supabase_sub_stats'],
-    queryFn: async () => {
-      try {
-        const { data: pagesData } = await supabase
-          .from('tg_landing_pages')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        const pageIds = (pagesData || []).map((p: any) => p.id).filter(Boolean);
-        let totalRev = 0;
-        let activeSubs = 0;
-        let realPayments: any[] = [];
-
-        if (pageIds.length > 0) {
-          const { data: payments } = await supabase
-            .from('payments')
-            .select('id, amount, currency, status, created_at, landing_page_id, razorpay_payment_id')
-            .in('landing_page_id', pageIds)
-            .eq('status', 'success');
-
-          if (payments && payments.length > 0) {
-            realPayments = payments;
-            totalRev = payments.reduce((sum, p: any) => sum + (Number(p.amount) || 0), 0);
-          }
-
-          const { count: activeCount } = await supabase
-            .from('tg_channel_subscriptions')
-            .select('id', { count: 'exact', head: true })
-            .in('landing_page_id', pageIds)
-            .eq('status', 'active')
-            .not('telegram_user_id', 'is', null);
-
-          activeSubs = activeCount || 0;
-        }
-
-        if (totalRev === 0) {
-          const { data: allPmts } = await supabase
-            .from('payments')
-            .select('id, amount, currency, status, created_at, landing_page_id, razorpay_payment_id')
-            .eq('status', 'success');
-          if (allPmts && allPmts.length > 0) {
-            realPayments = allPmts;
-            totalRev = allPmts.reduce((sum, p: any) => sum + (Number(p.amount) || 0), 0);
-          }
-        }
-
-        return { totalRevenue: totalRev > 0 ? totalRev : 0, activeSubscribers: activeSubs, pages: pagesData || [], payments: realPayments };
-      } catch (e) {
-        return { totalRevenue: 0, activeSubscribers: 0, pages: [], payments: [] };
-      }
-    },
-    staleTime: 30000,
-  });
+  const subPlans: any[] = [];
 
   // ── Mutations ───────────────────────────────────────────────────────────────
   const { mutateAsync: sendBroadcast, isPending: isBroadcasting } = useMutation({
     mutationFn: telegramApi.sendBroadcast,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['telegram_summary'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['telegram_all_data'] }),
   });
 
   // ── Computed data ───────────────────────────────────────────────────────────
@@ -207,47 +163,45 @@ export const TelegramScreen: React.FC = () => {
 
   const subManagerPages = rawSubPages.map((p: any) => ({
     id: p.id || p.slug || String(Math.random()),
-    title: p.title || 'Untitled Page',
+    title: p.title || p.page_title || p.form_data?.channelTitle || 'Untitled Page',
     slug: p.slug || '',
     url: p.url || `https://tg.getaipilot.in/p/${p.slug || ''}`,
     displayUrl: p.displayUrl || `getaipilot.in/p/${p.slug || ''}`,
-    members: p.memberCount ?? p.members ?? 0,
-    statusText: p.isActive !== false ? 'Accepting Subscriptions' : 'Paused',
-    isActive: p.isActive !== false,
+    members: p.subscribers_count ?? p.memberCount ?? p.members ?? 0,
+    statusText: p.is_active !== false && p.isActive !== false ? 'Accepting Subscriptions' : 'Paused',
+    isActive: p.is_active !== false && p.isActive !== false,
   }));
 
-  const realRevenue =
-    typeof supabaseSubData?.totalRevenue === 'number' && supabaseSubData.totalRevenue > 0
-      ? supabaseSubData.totalRevenue
-      : summary.revenue || 0;
+  const realRevenue = summary.revenue || 0;
+  const activeSubscribersCount = summary.activeSubscribers || 0;
 
   const TELESUB_STATS = {
     totalRevenue: realRevenue,
-    activeSubscribers: supabaseSubData?.activeSubscribers ?? 0,
-    subscriptionPages: subManagerPages.length || supabaseSubData?.pages?.length || 0,
+    activeSubscribers: activeSubscribersCount,
+    subscriptionPages: subManagerPages.length,
     botAutomatedAccess: 'Automated',
     grossSales: realRevenue,
     netCreatorShare: Math.round(realRevenue * 0.9 * 100) / 100,
     availableToWithdraw: Math.round(realRevenue * 0.9 * 100) / 100,
     rollingHold: Math.round(realRevenue * 0.1 * 100) / 100,
-    successfulPaymentsCount: supabaseSubData?.payments?.length || summary.loadedPurchases?.length || 0,
+    successfulPaymentsCount: loadedPurchases.length,
     clearedBatchesCount: 0,
     connectedBank: {
-      accountHolder: summary.brandProfile?.analyst_name || 'Connected Bank',
+      accountHolder: summary.loadedBrand?.analyst_name || 'Connected Bank',
       status: 'Active',
       details: 'Direct Bank Settlement (IMPS)',
     },
-    botStatus: { botUsername: summary.botUsername || 'Gapsubmanagerbot', isOnline: true, verifiedChannels: summary.loadedMappings?.length || 0 },
-    linkedTelegram: { phone: '', isLinked: true },
-    monetizedChannels: summary.loadedMappings || [],
-    discoveredChannels: summary.loadedMappings || [],
-    transactions: supabaseSubData?.payments || summary.loadedPurchases || [],
+    botStatus: { botUsername: summary.botUsername || 'Gapsubmanagerbot', isOnline: true, verifiedChannels: chats.length },
+    linkedTelegram: { phone: '', isLinked: !!summary.telegramUserId },
+    monetizedChannels: chats,
+    discoveredChannels: chats,
+    transactions: loadedPurchases,
     pages: subManagerPages,
   };
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleRefreshAll = async () => {
-    await Promise.all([refetch(), refetchSupabaseSub()]);
+    await refetch();
   };
 
   const handleTabChange = (key: string) => {
@@ -272,7 +226,7 @@ export const TelegramScreen: React.FC = () => {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={handleRefreshAll} tintColor="#0284C7" />}
       >
-        {isLoading ? (
+        {isLoading && !allData ? (
           <ActivityIndicator size="large" color="#0284C7" style={{ marginTop: 40 }} />
         ) : (
           <>

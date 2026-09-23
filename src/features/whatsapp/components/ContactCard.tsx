@@ -1,6 +1,7 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { WhatsAppContact } from '../types';
 
 interface ContactCardProps {
@@ -12,8 +13,7 @@ export const ContactCard: React.FC<ContactCardProps> = ({
   contact,
   onOpenChat,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
 
   const initial = (contact.name || contact.phone || 'W').charAt(0).toUpperCase();
 

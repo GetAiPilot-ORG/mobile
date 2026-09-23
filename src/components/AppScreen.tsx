@@ -1,13 +1,15 @@
 import React from 'react';
-import { View, StyleProp, ViewStyle, useColorScheme } from 'react-native';
+import { View, StyleProp, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '../theme/colors';
+import { useTheme } from '../contexts/ThemeContext';
 
-interface AppScreenProps {
+export interface AppScreenProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   safeArea?: boolean | 'top' | 'bottom';
   backgroundColor?: string;
+  padding?: boolean;
+  className?: string;
 }
 
 export function AppScreen({
@@ -15,12 +17,13 @@ export function AppScreen({
   style,
   safeArea = false,
   backgroundColor,
+  padding = false,
+  className = '',
 }: AppScreenProps) {
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark, colors } = useTheme();
 
-  const defaultBg = backgroundColor || (isDark ? colors.backgroundDark : colors.background);
+  const defaultBg = backgroundColor || colors.background;
 
   let paddingTop = 0;
   let paddingBottom = 0;
@@ -33,11 +36,17 @@ export function AppScreen({
     paddingBottom = insets.bottom;
   }
 
+  const bgClass = isDark ? 'bg-[#000000]' : 'bg-[#F8F9FA]';
+  const paddingClass = padding ? 'p-lg' : '';
+
   return (
     <View
+      className={`flex-1 flex-col w-full ${bgClass} ${paddingClass} ${className}`}
       style={[
         {
           flex: 1,
+          flexDirection: 'column',
+          width: '100%',
           backgroundColor: defaultBg,
           paddingTop,
           paddingBottom,

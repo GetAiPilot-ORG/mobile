@@ -3,12 +3,30 @@ const TEMPLATE_ROUTES = new Map([
   ["/tools/landing-templates", "/tools/landing-templates"],
   ["/free-tools/bio-templates", "/tools/bio-templates"],
   ["/free-tools/landing-templates", "/tools/landing-templates"],
-  //   ["/bio-templates", "/tools/bio-templates"],
-  //   ["/landing-templates", "/tools/landing-templates"],
 ]);
 
 function normalizePath(path: string): string {
-  const url = new URL(path, "getaipilot://app");
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  const url = new URL(cleanPath, "getaipilot://app");
+
+  // 1. Auth Deep-Link Routes (Magic Link, OAuth, Password Reset)
+  if (url.pathname === "/auth/callback" || url.pathname === "/auth/reset-password") {
+    const params = new URLSearchParams(url.search);
+    if (url.hash && url.hash.length > 1) {
+      const hashParams = new URLSearchParams(url.hash.substring(1));
+      hashParams.forEach((val, key) => {
+        params.set(key, val);
+      });
+    }
+    const query = params.toString();
+    const targetRoute =
+      url.pathname === "/auth/reset-password"
+        ? "/(auth)/reset-password"
+        : "/(auth)/callback";
+    return query ? `${targetRoute}?${query}` : targetRoute;
+  }
+
+  // 2. Templates and Tools Deep Links
   const route = TEMPLATE_ROUTES.get(url.pathname);
   const landingBuilderMatch = url.pathname.match(
     /^\/free-tools\/landing-templates\/([^/]+)\/?$/,
@@ -44,3 +62,4 @@ export function redirectSystemPath({ path }: { path: string }) {
     return "/(tabs)/tools";
   }
 }
+

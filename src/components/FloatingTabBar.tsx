@@ -5,17 +5,12 @@ import {
   Pressable,
   StyleSheet,
   Platform,
-  useColorScheme,
   LayoutAnimation,
-  UIManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+import { useTheme } from '../contexts/ThemeContext';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -57,6 +52,10 @@ const TAB_CONFIG: Record<string, TabItemConfig> = {
     activeIcon: 'pulse',
     inactiveIcon: 'pulse-outline',
   },
+  admin: {
+    label: 'Admin',
+    activeIcon: 'shield-checkmark',
+    inactiveIcon: 'shield-checkmark-outline',
   communication: {
     label: 'Connect',
     activeIcon: 'mail',
@@ -89,8 +88,7 @@ const tabSpringAnimation = {
 
 export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
 
   // Bottom floating offset based on safe area
   const bottomOffset = Math.max(insets.bottom, 12);

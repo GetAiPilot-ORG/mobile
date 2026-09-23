@@ -1,9 +1,55 @@
-:root {
-  --font-display:
-    Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,
-    Segoe UI Symbol, Noto Color Emoji;
-  --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
-  --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
-  --font-serif: Georgia, 'Times New Roman', serif;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .card-base {
+    @apply bg-surface border border-border rounded-xl;
+  }
+
+  .btn-base {
+    @apply rounded-xl items-center justify-center;
+  }
+
+  .btn-primary {
+    @apply btn-base bg-primary;
+  }
+
+  .btn-secondary {
+    @apply btn-base bg-surface border border-border;
+  }
+
+  .btn-destructive {
+    @apply btn-base bg-destructive;
+  }
+
+  .btn-ghost {
+    @apply btn-base bg-transparent;
+  }
+
+  .input-base {
+    @apply rounded-xl px-4 py-3 bg-surface border border-border;
+  }
+
+  .input-filled {
+    @apply rounded-xl px-4 py-3 bg-surface-grouped border-0;
+  }
+}
+
+@layer utilities {
+  .flex-center {
+    @apply flex-row items-center justify-center;
+  }
+
+  .flex-between {
+    @apply flex-row items-center justify-between;
+  }
+
+  .safe-area-top {
+    @apply pt-4;
+  }
+
+  .safe-area-bottom {
+    @apply pb-4;
+  }
 }
