@@ -1,9 +1,16 @@
 import { Tabs } from 'expo-router';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
+import { useAuth } from '../../src/contexts/AuthContext';
 import { FloatingTabBar } from '../../src/components/FloatingTabBar';
 
 export default function TabLayout() {
-  const { isAdmin } = usePlatformSubscription();
+  const { user, profile } = useAuth();
+  const userRole = (user?.role || profile?.role || '').toLowerCase();
+  const isAdmin = Boolean(
+    userRole === 'admin' ||
+    (user as any)?.is_admin === true ||
+    profile?.is_admin === true
+  );
 
   return (
     <Tabs

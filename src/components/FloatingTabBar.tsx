@@ -11,6 +11,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
+import { usePlatformSubscription } from '../hooks/usePlatformSubscription';
+import { useAuth } from '../contexts/AuthContext';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -74,15 +76,35 @@ const tabSpringAnimation = {
 export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
+  const { user, profile } = useAuth();
+  const { isAdmin: isPlatformAdmin } = usePlatformSubscription();
+
+  const userRole = (user?.role || profile?.role || '').toLowerCase();
+  const isAdmin = Boolean(
+    userRole === 'admin' ||
+    (user as any)?.is_admin === true ||
+    profile?.is_admin === true
+  );
 
   // Bottom floating offset based on safe area
   const bottomOffset = Math.max(insets.bottom, 12);
 
-  // Filter visible routes: strictly the 4 main tabs (Home, Inbox, Tools, Activity)
+  // Filter visible routes: Home, Inbox, Tools, Activity, and Admin ONLY for admin users
   const visibleRoutes = state.routes.filter((route: any) => {
     const descriptor = descriptors[route.key];
     const options = descriptor ? descriptor.options : {};
-    return options.href !== null && !!TAB_CONFIG[route.name] && route.name !== 'products';
+
+    // Explicitly hide products, account, fleet from bottom bar
+    if (route.name === 'products' || route.name === 'account' || route.name === 'fleet') {
+      return false;
+    }
+
+    // Admin tab (shield-checkmark) should ONLY show when the user is admin
+    if (route.name === 'admin') {
+      return Boolean(isAdmin);
+    }
+
+    return options.href !== null && !!TAB_CONFIG[route.name];
   });
 
   const currentRouteName = state.routes[state.index]?.name;
