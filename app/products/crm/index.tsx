@@ -1,10 +1,10 @@
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BackHandler, StyleSheet, useColorScheme, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import {
   ProductFloatingBottomBar,
   ProductTabItem,
-} from "../../../src/components/ProductFloatingBottomBar";
+} from '../../../src/components/ProductFloatingBottomBar';
 import { CRMDashboardScreen } from "../../../src/features/crm/screens/CRMDashboardScreen";
 import { GoogleCalendarScreen } from "../../../src/features/crm/screens/GoogleCalendarScreen";
 import { CommunicationScreen } from "../../../src/features/team/screens/CommunicationScreen";

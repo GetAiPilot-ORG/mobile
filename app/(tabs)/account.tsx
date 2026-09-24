@@ -129,7 +129,7 @@ export default function AccountScreen() {
         toValue: activeTabIndex * tabPillWidth,
         tension: 68,
         friction: 9,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }).start();
     }
   }, [activeTabIndex, tabPillWidth]);
@@ -742,7 +742,6 @@ export default function AccountScreen() {
                 },
                 isDark ? styles.slidingTabPillDark : styles.slidingTabPillLight,
               ]}
-              pointerEvents="none"
             />
           )}
 
@@ -1781,6 +1780,7 @@ const styles = StyleSheet.create({
     bottom: 4,
     borderRadius: 10,
     zIndex: 1,
+    pointerEvents: 'none' as any,
   },
   slidingTabPillLight: {
     backgroundColor: '#FFFFFF',
