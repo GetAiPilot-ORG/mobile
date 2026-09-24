@@ -1,17 +1,16 @@
-import React from 'react';
-import {
-  Modal,
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  ScrollView,
-  useColorScheme,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import React from 'react';
+import {
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useColorScheme,
+  View
+} from 'react-native';
 import { VoiceCampaign } from '../api/voiceApi';
 
 interface CampaignDetailsModalProps {
@@ -195,7 +194,7 @@ export const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({
               <View style={styles.configContent}>
                 <Text style={styles.metaLabel}>DEDICATED CALLER NUMBER</Text>
                 <Text style={[styles.configValue, isDark && styles.textDark]}>
-                  {campaign.phone_number || '+91 80 4735 9000 (Dedicated Pro Line)'}
+                  {campaign.phone_number}
                 </Text>
               </View>
             </View>

@@ -51,3 +51,20 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storageKey: "getaipilot-auth-token",
   },
 });
+
+const voicePilotUrl =
+  process.env.EXPO_PUBLIC_VOICE_PILOT_SUPABASE_URL ||
+  "https://gkyilicraflkgcfgqypc.supabase.co";
+const voicePilotKey =
+  process.env.EXPO_PUBLIC_VOICE_PILOT_SUPABASE_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdreWlsaWNyYWZsa2djZmdxeXBjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NjA4Mzc0NiwiZXhwIjoyMTAxNjU5NzQ2fQ.DYf3RkJp3F8WFPNio6XiUVCYv2Fc7WztfKeLwI4N3eI";
+
+export const voicePilotSupabase = createClient(voicePilotUrl, voicePilotKey, {
+  auth: {
+    storage: safeStorage,
+    autoRefreshToken: isClient,
+    persistSession: isClient,
+    detectSessionInUrl: false,
+    storageKey: "voicepilot-auth-token",
+  },
+});

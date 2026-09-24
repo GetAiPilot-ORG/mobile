@@ -9,3 +9,5 @@ export * from './EditCampaignModal';
 export * from './CreateContactModal';
 export * from './EditContactModal';
 export * from './ContactDetailsModal';
+export * from './AssignAssistantModal';
+export * from './TopUpCreditsModal';

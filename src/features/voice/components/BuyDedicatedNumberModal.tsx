@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
-import {
-  Modal,
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  ScrollView,
-  useColorScheme,
-  ActivityIndicator,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import React, { useState } from 'react';
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useColorScheme,
+  View,
+} from 'react-native';
+import { getColors } from '../../../theme/colors';
 
 interface BuyDedicatedNumberModalProps {
   visible: boolean;
@@ -28,7 +29,8 @@ export const BuyDedicatedNumberModal: React.FC<BuyDedicatedNumberModalProps> = (
   isLoading,
 }) => {
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
+  const colors = getColors(isDark);
 
   const [selectedNumber, setSelectedNumber] = useState<string>(
     availableNumbers[0]?.phone_number || '+91 80 4735 9101'
@@ -59,7 +61,7 @@ export const BuyDedicatedNumberModal: React.FC<BuyDedicatedNumberModalProps> = (
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View style={[styles.container, isDark ? styles.containerDark : styles.containerLight]}>
+      <View style={[styles.container, { backgroundColor: isDark ? colors.background : colors.surface }]}>
         {/* Header */}
         <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
           <View>
@@ -181,7 +183,6 @@ export const BuyDedicatedNumberModal: React.FC<BuyDedicatedNumberModalProps> = (
 const styles = StyleSheet.create({
   container: { flex: 1 },
   containerLight: { backgroundColor: '#F2F2F7' },
-  containerDark: { backgroundColor: '#020617' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

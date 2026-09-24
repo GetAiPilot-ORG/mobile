@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -151,10 +151,10 @@ export default function OverallPricingScreen() {
             <Text style={[styles.planStatusDate, { color: isDark ? '#94a3b8' : '#64748b' }]}>
               {expiresAt
                 ? `Renews ${new Date(expiresAt).toLocaleDateString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}`
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}`
                 : 'Active Tier'}
             </Text>
           </View>
@@ -193,13 +193,13 @@ export default function OverallPricingScreen() {
                       backgroundColor: isSelected
                         ? meta.color
                         : isDark
-                        ? '#0f172a'
-                        : '#ffffff',
+                          ? '#0f172a'
+                          : '#ffffff',
                       borderColor: isSelected
                         ? meta.color
                         : isDark
-                        ? '#1e293b'
-                        : '#e2e8f0',
+                          ? '#1e293b'
+                          : '#e2e8f0',
                     },
                   ]}
                 >
@@ -223,77 +223,6 @@ export default function OverallPricingScreen() {
               );
             })}
           </ScrollView>
-        </View>
-
-        {/* 3. Duration Selector (Monthly vs Yearly) */}
-        <View
-          style={[
-            styles.durationBar,
-            {
-              backgroundColor: isDark ? '#0f172a' : '#f1f5f9',
-              borderColor: isDark ? '#1e293b' : '#e2e8f0',
-            },
-          ]}
-        >
-          <Pressable
-            style={[
-              styles.durationTab,
-              selectedDuration === 'all' && (isDark ? styles.durationTabActiveDark : styles.durationTabActive),
-            ]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setSelectedDuration('all');
-            }}
-          >
-            <Text
-              style={[
-                styles.durationTabText,
-                { color: selectedDuration === 'all' ? (isDark ? '#fff' : '#0f172a') : '#64748b' },
-              ]}
-            >
-              All Durations
-            </Text>
-          </Pressable>
-
-          <Pressable
-            style={[
-              styles.durationTab,
-              selectedDuration === 'monthly' && (isDark ? styles.durationTabActiveDark : styles.durationTabActive),
-            ]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setSelectedDuration('monthly');
-            }}
-          >
-            <Text
-              style={[
-                styles.durationTabText,
-                { color: selectedDuration === 'monthly' ? (isDark ? '#fff' : '#0f172a') : '#64748b' },
-              ]}
-            >
-              Monthly
-            </Text>
-          </Pressable>
-
-          <Pressable
-            style={[
-              styles.durationTab,
-              selectedDuration === 'yearly' && (isDark ? styles.durationTabActiveDark : styles.durationTabActive),
-            ]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setSelectedDuration('yearly');
-            }}
-          >
-            <Text
-              style={[
-                styles.durationTabText,
-                { color: selectedDuration === 'yearly' ? (isDark ? '#fff' : '#0f172a') : '#64748b' },
-              ]}
-            >
-              Annual (Save 20%+)
-            </Text>
-          </Pressable>
         </View>
 
         {/* 4. Plans Grid / List */}
@@ -339,8 +268,8 @@ export default function OverallPricingScreen() {
                       borderColor: isPopular
                         ? meta.color
                         : isDark
-                        ? '#1e293b'
-                        : '#e2e8f0',
+                          ? '#1e293b'
+                          : '#e2e8f0',
                       borderWidth: isPopular ? 2 : 1,
                     },
                   ]}
@@ -400,41 +329,41 @@ export default function OverallPricingScreen() {
                   {(Boolean(plan.included_call_minutes) ||
                     Boolean(plan.included_numbers) ||
                     Boolean(plan.included_channels)) && (
-                    <View style={styles.quotasRow}>
-                      {Boolean(plan.included_call_minutes) && (
-                        <View style={[styles.quotaTag, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
-                          <Ionicons name="mic" size={12} color="#8b5cf6" />
-                          <Text style={[styles.quotaTagText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
-                            {plan.included_call_minutes} AI Mins
-                          </Text>
-                        </View>
-                      )}
-                      {Boolean(plan.extra_call_rate_paise) && (
-                        <View style={[styles.quotaTag, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
-                          <Ionicons name="pricetag" size={12} color="#8b5cf6" />
-                          <Text style={[styles.quotaTagText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
-                            ₹{plan.extra_call_rate_paise! / 100}/min extra
-                          </Text>
-                        </View>
-                      )}
-                      {Boolean(plan.included_numbers) && (
-                        <View style={[styles.quotaTag, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
-                          <Ionicons name="call" size={12} color="#25d366" />
-                          <Text style={[styles.quotaTagText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
-                            {plan.included_numbers} Number
-                          </Text>
-                        </View>
-                      )}
-                      {Boolean(plan.included_channels) && (
-                        <View style={[styles.quotaTag, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
-                          <Ionicons name="share-social" size={12} color="#ec4899" />
-                          <Text style={[styles.quotaTagText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
-                            {plan.included_channels} Channels
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  )}
+                      <View style={styles.quotasRow}>
+                        {Boolean(plan.included_call_minutes) && (
+                          <View style={[styles.quotaTag, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+                            <Ionicons name="mic" size={12} color="#8b5cf6" />
+                            <Text style={[styles.quotaTagText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                              {plan.included_call_minutes} AI Mins
+                            </Text>
+                          </View>
+                        )}
+                        {Boolean(plan.extra_call_rate_paise) && (
+                          <View style={[styles.quotaTag, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+                            <Ionicons name="pricetag" size={12} color="#8b5cf6" />
+                            <Text style={[styles.quotaTagText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                              ₹{plan.extra_call_rate_paise! / 100}/min extra
+                            </Text>
+                          </View>
+                        )}
+                        {Boolean(plan.included_numbers) && (
+                          <View style={[styles.quotaTag, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+                            <Ionicons name="call" size={12} color="#25d366" />
+                            <Text style={[styles.quotaTagText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                              {plan.included_numbers} Number
+                            </Text>
+                          </View>
+                        )}
+                        {Boolean(plan.included_channels) && (
+                          <View style={[styles.quotaTag, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+                            <Ionicons name="share-social" size={12} color="#ec4899" />
+                            <Text style={[styles.quotaTagText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                              {plan.included_channels} Channels
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    )}
 
                   {/* Feature Checklist */}
                   {Array.isArray(plan.features) && plan.features.length > 0 && (
@@ -477,43 +406,6 @@ export default function OverallPricingScreen() {
             })}
           </View>
         )}
-
-        {/* 5. Trust & Security Badges */}
-        <View style={[styles.trustCard, { backgroundColor: isDark ? '#0f172a' : '#f8fafc' }]}>
-          <View style={styles.trustItem}>
-            <Ionicons name="lock-closed" size={18} color="#10B981" />
-            <View>
-              <Text style={[styles.trustTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                256-Bit SSL Encrypted
-              </Text>
-              <Text style={[styles.trustDesc, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-                Secured by Razorpay Payments & Banking Standards
-              </Text>
-            </View>
-          </View>
-          <View style={styles.trustItem}>
-            <Ionicons name="flash" size={18} color="#0A84FF" />
-            <View>
-              <Text style={[styles.trustTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                Instant Automated Provisioning
-              </Text>
-              <Text style={[styles.trustDesc, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-                Quotas unlock immediately upon UPI or Card capture
-              </Text>
-            </View>
-          </View>
-          <View style={styles.trustItem}>
-            <Ionicons name="receipt" size={18} color="#8B5CF6" />
-            <View>
-              <Text style={[styles.trustTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                GST Invoices Available
-              </Text>
-              <Text style={[styles.trustDesc, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-                Add your business GSTIN in Account Settings
-              </Text>
-            </View>
-          </View>
-        </View>
       </ScrollView>
     </AppScreen>
   );

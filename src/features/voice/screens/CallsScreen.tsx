@@ -1,24 +1,26 @@
+import { getColors } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  RefreshControl,
-  Pressable,
-  TextInput,
   ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
   useColorScheme,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { voiceApi, DedicatedNumber, KycStatusResponse, VoiceCall, VoiceAssistant } from '../api/voiceApi';
+import { DedicatedNumber, KycStatusResponse, voiceApi, VoiceAssistant, VoiceCall } from '../api/voiceApi';
 import { CallDetailsModal, KycRequestModal, TriggerCallModal } from '../components';
 
 export const CallsScreen: React.FC = () => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const colors = getColors(isDark);
   const queryClient = useQueryClient();
 
   const [selectedCall, setSelectedCall] = useState<VoiceCall | null>(null);
@@ -168,7 +170,7 @@ export const CallsScreen: React.FC = () => {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.numVal, isDark && styles.textDark]}>
-              {dedicatedNumber?.phone_number || '+91 80 4735 9000'}
+              {dedicatedNumber?.phone_number}
             </Text>
             <Text style={styles.numSub}>
               Assigned: {dedicatedNumber?.assistants?.name || 'Sales Representative Bot'}
@@ -312,8 +314,8 @@ export const CallsScreen: React.FC = () => {
                         call.status === 'completed'
                           ? 'rgba(48, 209, 88, 0.12)'
                           : call.status === 'failed'
-                          ? 'rgba(239, 68, 68, 0.12)'
-                          : 'rgba(245, 158, 11, 0.12)',
+                            ? 'rgba(239, 68, 68, 0.12)'
+                            : 'rgba(245, 158, 11, 0.12)',
                     },
                   ]}
                 >
@@ -324,8 +326,8 @@ export const CallsScreen: React.FC = () => {
                       call.status === 'completed'
                         ? '#30D158'
                         : call.status === 'failed'
-                        ? '#EF4444'
-                        : '#F59E0B'
+                          ? '#EF4444'
+                          : '#F59E0B'
                     }
                   />
                 </View>
@@ -383,6 +385,7 @@ export const CallsScreen: React.FC = () => {
 
       <KycRequestModal
         visible={isKycModalOpen}
+        kycData={kycData}
         onClose={() => setIsKycModalOpen(false)}
         onSubmit={async (payload) => {
           await kycMutation.mutateAsync(payload);
@@ -406,7 +409,7 @@ export const CallsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   containerLight: { backgroundColor: '#F2F2F7' },
-  containerDark: { backgroundColor: '#020617' },
+  containerDark: { backgroundColor: '#000000' },
   contentContainer: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 130, gap: 14 },
   card: { borderRadius: 16, padding: 16, borderWidth: 1 },
   cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },

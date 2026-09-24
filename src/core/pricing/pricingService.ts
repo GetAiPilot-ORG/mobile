@@ -236,28 +236,14 @@ export const DEFAULT_FALLBACK_PLANS: PricingPlan[] = [
 
 export class PricingService {
   /**
-   * Fetches all active pricing plans from BFF, with Supabase fallback
+   * Fetches all active pricing plans directly from Supabase `pricing_plans` table
    */
   public static async getPlans(category?: string): Promise<PricingPlan[]> {
-    // 1. Primary: BFF Endpoint
-    try {
-      const res = await apiClient.get<{ success: boolean; data: PricingPlan[] }>(
-        '/mobile/v1/billing/plans',
-        { params: category && category !== 'all' ? { category } : undefined }
-      );
-      if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-        return res.data;
-      }
-    } catch (err) {
-      console.warn('[PricingService] BFF plans query error, attempting Supabase fallback:', err);
-    }
-
-    // 2. Fallback: Direct Supabase Client
+    // 1. Primary: Direct Supabase Client Query
     try {
       let query = supabase
         .from('pricing_plans')
         .select('*')
-        .eq('is_active', true)
         .order('amount', { ascending: true });
 
       if (category && category !== 'all') {
@@ -268,8 +254,24 @@ export class PricingService {
       if (!error && data && data.length > 0) {
         return data as PricingPlan[];
       }
+      if (error) {
+        console.warn('[PricingService] Supabase pricing_plans error:', error);
+      }
     } catch (sbErr) {
       console.warn('[PricingService] Supabase client plans query error:', sbErr);
+    }
+
+    // 2. Secondary Fallback: BFF Endpoint
+    try {
+      const res = await apiClient.get<{ success: boolean; data: PricingPlan[] }>(
+        '/mobile/v1/billing/plans',
+        { params: category && category !== 'all' ? { category } : undefined }
+      );
+      if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+    } catch (err) {
+      console.warn('[PricingService] BFF plans query error:', err);
     }
 
     // 3. Fallback: Curated Offline Default Plans

@@ -1,19 +1,20 @@
+import { getColors } from '@/theme';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { BackHandler, StyleSheet, View } from 'react-native';
+import { BackHandler, StyleSheet, useColorScheme, View } from 'react-native';
 import { AppScreen } from '../../../components/AppScreen';
 import { AppTopBar } from '../../../components/AppTopBar';
 import {
   ProductFloatingBottomBar,
   ProductTabItem,
 } from '../../../components/ProductFloatingBottomBar';
-import { useTheme } from '../../../contexts/ThemeContext';
 import { CallsScreen } from './CallsScreen';
 import { CampaignsScreen } from './CampaignsScreen';
 import { ContactsScreen } from './ContactsScreen';
+import { PhoneNumbersScreen } from './PhoneNumbersScreen';
 import { VoiceOverviewScreen } from './VoiceOverviewScreen';
 
-type VoiceTabKey = 'overview' | 'calls' | 'campaigns' | 'contacts';
+type VoiceTabKey = 'overview' | 'numbers' | 'calls' | 'campaigns' | 'contacts';
 
 const VOICE_TABS: ProductTabItem[] = [
   {
@@ -21,14 +22,21 @@ const VOICE_TABS: ProductTabItem[] = [
     label: 'Overview',
     activeIcon: 'grid',
     inactiveIcon: 'grid-outline',
-    description: 'Dashboard & Dedicated Numbers',
+    description: 'Dashboard & Telemetry',
+  },
+  {
+    key: 'numbers',
+    label: 'Numbers',
+    activeIcon: 'keypad',
+    inactiveIcon: 'keypad-outline',
+    description: 'Virtual lines & assistant routing',
   },
   {
     key: 'calls',
     label: 'Calls',
     activeIcon: 'call',
     inactiveIcon: 'call-outline',
-    description: 'Dedicated number, KYC & call logs',
+    description: 'Dedicated caller ID & logs',
   },
   {
     key: 'campaigns',
@@ -48,7 +56,9 @@ const VOICE_TABS: ProductTabItem[] = [
 
 export const VoiceScreen: React.FC = () => {
   const router = useRouter();
-  const { isDark } = useTheme();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+  const colors = getColors(isDark);
   const [activeTab, setActiveTab] = useState<VoiceTabKey>('overview');
 
   useEffect(() => {
@@ -80,7 +90,7 @@ export const VoiceScreen: React.FC = () => {
       <View
         style={[
           styles.container,
-          { backgroundColor: isDark ? '#020617' : '#F2F2F7' },
+          { backgroundColor: colors.background },
         ]}
       >
         <View style={styles.screenContainer}>
@@ -89,6 +99,7 @@ export const VoiceScreen: React.FC = () => {
               onNavigateTab={(tab) => setActiveTab(tab)}
             />
           )}
+          {activeTab === 'numbers' && <PhoneNumbersScreen />}
           {activeTab === 'calls' && <CallsScreen />}
           {activeTab === 'campaigns' && <CampaignsScreen />}
           {activeTab === 'contacts' && <ContactsScreen />}
