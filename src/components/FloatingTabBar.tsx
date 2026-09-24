@@ -1,15 +1,15 @@
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import React from 'react';
 import {
-  View,
-  Text,
+  LayoutAnimation,
+  Platform,
   Pressable,
   StyleSheet,
-  Platform,
-  LayoutAnimation,
+  Text,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
 import { usePlatformSubscription } from '../hooks/usePlatformSubscription';
 import { useAuth } from '../contexts/AuthContext';
@@ -57,7 +57,8 @@ const TAB_CONFIG: Record<string, TabItemConfig> = {
   admin: {
     label: 'Admin',
     activeIcon: 'shield-checkmark',
-    inactiveIcon: 'shield-checkmark-outline',
+    inactiveIcon: 'shield-checkmark-outline'
+  },
   communication: {
     label: 'Connect',
     activeIcon: 'mail',

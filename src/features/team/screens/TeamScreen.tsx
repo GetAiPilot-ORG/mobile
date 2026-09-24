@@ -360,11 +360,6 @@ export function TeamScreen() {
 
     refetchPresence();
   };
-
-  // ─────────────────────────────────────────────
-  // Members
-  // ─────────────────────────────────────────────
-
   const renderMember = ({
     item,
   }: {
@@ -499,11 +494,6 @@ export function TeamScreen() {
       </View>
     );
   };
-
-  // ─────────────────────────────────────────────
-  // Attendance
-  // ─────────────────────────────────────────────
-
   const renderAttendance = ({
     item,
   }: {
@@ -614,11 +604,6 @@ export function TeamScreen() {
       </View>
     );
   };
-
-  // ─────────────────────────────────────────────
-  // Leave
-  // ─────────────────────────────────────────────
-
   const renderLeave = ({
     item,
   }: {
@@ -740,10 +725,6 @@ export function TeamScreen() {
     );
   };
 
-  // ─────────────────────────────────────────────
-  // Presence
-  // ─────────────────────────────────────────────
-
   const renderPresence = ({
     item,
   }: {
@@ -851,11 +832,6 @@ export function TeamScreen() {
       </View>
     );
   };
-
-  // ─────────────────────────────────────────────
-  // Header button
-  // ─────────────────────────────────────────────
-
   const addBtnConfig: Record<
     TabType,
     {
@@ -884,11 +860,7 @@ export function TeamScreen() {
     },
   };
 
-  const btnConf = addBtnConfig[activeTab];
-
-  // ─────────────────────────────────────────────
-  // Current list
-  // ─────────────────────────────────────────────
+  const btnConf = addBtnConfig[activeTab]
 
   const listData =
     activeTab === 'members'
