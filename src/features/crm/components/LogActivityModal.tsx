@@ -10,10 +10,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityType, CRMActivity } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 interface LogActivityModalProps {
   visible: boolean;
@@ -40,8 +40,8 @@ export const LogActivityModal: React.FC<LogActivityModalProps> = ({
   defaultDealId,
   isLoading,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [type, setType] = useState<ActivityType>('note');
   const [subject, setSubject] = useState('');

@@ -8,7 +8,6 @@ import {
   Pressable,
   RefreshControl,
   ActivityIndicator,
-  useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +15,7 @@ import { useContacts, useCreateContact } from '../hooks/useContacts';
 import { LeadCard } from '../components/LeadCard';
 import { CreateLeadModal } from '../components/CreateLeadModal';
 import { CrmListSkeleton } from '../../../components/skeletonScreen';
+import { useTheme, getColors } from '@/theme';
 
 interface ContactsScreenProps {
   onSelectContact: (contactId: string) => void;
@@ -23,8 +23,8 @@ interface ContactsScreenProps {
 }
 
 export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onSelectContact, onBack }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [search, setSearch] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);

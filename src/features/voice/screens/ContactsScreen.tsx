@@ -8,7 +8,6 @@ import {
   Pressable,
   TextInput,
   ActivityIndicator,
-  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -21,12 +20,13 @@ import {
   TriggerCallModal,
   CallDetailsModal,
 } from '../components';
+import { useTheme, getColors } from '@/theme';
 
 type ContactFilter = 'all' | 'called' | 'uncalled';
 
 export const ContactsScreen: React.FC = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const queryClient = useQueryClient();
 
   const [searchQuery, setSearchQuery] = useState('');

@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, useColorScheme, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, FlatList, Pressable, StyleSheet, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { teamApi } from '../api/team.api';
 import { BirthdayEntry, CompanyHoliday } from '../../crm/types';
+import { useTheme, getColors } from '@/theme';
 
 type TabType = 'birthdays' | 'holidays';
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export function PlannerScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const [activeTab, setActiveTab] = useState<TabType>('birthdays');
 
   const bg = isDark ? '#0F1015' : '#F8FAFC';

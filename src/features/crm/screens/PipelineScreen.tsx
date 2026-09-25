@@ -8,7 +8,6 @@ import {
   ScrollView,
   RefreshControl,
   TextInput,
-  useColorScheme,
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,6 +19,7 @@ import { CreateDealModal } from '../components/CreateDealModal';
 import { StageSelectorSheet } from '../components/StageSelectorSheet';
 import { CRMDeal, DealStage } from '../types';
 import { CrmPipelineSkeleton } from '../../../components/skeletonScreen';
+import { useTheme, getColors } from '@/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COLUMN_WIDTH = Math.min(SCREEN_WIDTH * 0.82, 320);
@@ -56,8 +56,8 @@ interface PipelineScreenProps {
 }
 
 export const PipelineScreen: React.FC<PipelineScreenProps> = ({ onBack, onSelectDeal }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
   const [selectedStageFilter, setSelectedStageFilter] = useState<string>('all');

@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -9,7 +9,6 @@ import {
   StyleSheet,
   Text,
   View,
-  useColorScheme,
 } from "react-native";
 
 import { openAuthenticatedTemplate } from "@/lib/template-deep-link";
@@ -17,6 +16,7 @@ import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
 import { supabase } from "../../src/lib/supabase";
 import { QuickFormsSkeleton } from "../../src/components/skeletonScreen";
+import { useTheme, getColors } from "@/theme";
 
 interface QuickForm {
   id: string;
@@ -32,8 +32,9 @@ interface QuickForm {
 }
 
 export default function SimpleQuickFormsScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   const [forms, setForms] = useState<QuickForm[]>([]);
   const [loading, setLoading] = useState(true);
@@ -349,263 +350,265 @@ export default function SimpleQuickFormsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
+function createStyles(colors: ReturnType<typeof getColors>, isDark: boolean) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      paddingHorizontal: 16,
+    },
 
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-  },
+    loadingContainer: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 12,
+    },
 
-  loadingText: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
+    loadingText: {
+      fontSize: 14,
+      color: colors.mutedForeground,
+    },
 
-  loadingTextDark: {
-    color: "#8E8E93",
-  },
+    loadingTextDark: {
+      color: colors.mutedForeground,
+    },
 
-  emptyContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    paddingBottom: 80,
-  },
+    emptyContainer: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 24,
+      paddingBottom: 80,
+    },
 
-  emptyIcon: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#EAF3FF",
-    marginBottom: 20,
-  },
+    emptyIcon: {
+      width: 76,
+      height: 76,
+      borderRadius: 38,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.accentSoft,
+      marginBottom: 20,
+    },
 
-  emptyIconDark: {
-    backgroundColor: "#1C2A3A",
-  },
+    emptyIconDark: {
+      backgroundColor: colors.accentSoft,
+    },
 
-  emptyTitle: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#111827",
-  },
+    emptyTitle: {
+      fontSize: 24,
+      fontWeight: "800",
+      color: colors.foreground,
+    },
 
-  emptyTitleDark: {
-    color: "#FFFFFF",
-  },
+    emptyTitleDark: {
+      color: colors.foreground,
+    },
 
-  emptyDescription: {
-    marginTop: 10,
-    fontSize: 14,
-    lineHeight: 21,
-    color: "#6B7280",
-    textAlign: "center",
-    maxWidth: 360,
-  },
+    emptyDescription: {
+      marginTop: 10,
+      fontSize: 14,
+      lineHeight: 21,
+      color: colors.mutedForeground,
+      textAlign: "center",
+      maxWidth: 360,
+    },
 
-  emptyDescriptionDark: {
-    color: "#8E8E93",
-  },
+    emptyDescriptionDark: {
+      color: colors.mutedForeground,
+    },
 
-  createButton: {
-    marginTop: 24,
-    minHeight: 50,
-    paddingHorizontal: 22,
-    borderRadius: 14,
-    backgroundColor: "#0A84FF",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
+    createButton: {
+      marginTop: 24,
+      minHeight: 50,
+      paddingHorizontal: 22,
+      borderRadius: 14,
+      backgroundColor: colors.primary,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+    },
 
-  createButtonText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "700",
-  },
+    createButtonText: {
+      color: colors.primaryForeground,
+      fontSize: 15,
+      fontWeight: "700",
+    },
 
-  topActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 16,
-  },
+    topActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 16,
+    },
 
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#111827",
-  },
+    sectionTitle: {
+      fontSize: 20,
+      fontWeight: "800",
+      color: colors.foreground,
+    },
 
-  sectionTitleDark: {
-    color: "#FFFFFF",
-  },
+    sectionTitleDark: {
+      color: colors.foreground,
+    },
 
-  smallCreateButton: {
-    minHeight: 40,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    backgroundColor: "#0A84FF",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
+    smallCreateButton: {
+      minHeight: 40,
+      paddingHorizontal: 14,
+      borderRadius: 12,
+      backgroundColor: colors.primary,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
 
-  smallCreateText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "700",
-  },
+    smallCreateText: {
+      color: colors.primaryForeground,
+      fontSize: 13,
+      fontWeight: "700",
+    },
 
-  listContent: {
-    paddingBottom: 120,
-  },
+    listContent: {
+      paddingBottom: 120,
+    },
 
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    padding: 16,
-    marginBottom: 12,
-  },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 16,
+      marginBottom: 12,
+    },
 
-  cardDark: {
-    backgroundColor: "#1C1C1E",
-    borderColor: "#2C2C2E",
-  },
+    cardDark: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+    },
 
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+    cardHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
 
-  iconContainer: {
-    width: 46,
-    height: 46,
-    borderRadius: 13,
-    backgroundColor: "#EAF3FF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+    iconContainer: {
+      width: 46,
+      height: 46,
+      borderRadius: 13,
+      backgroundColor: colors.accentSoft,
+      alignItems: "center",
+      justifyContent: "center",
+    },
 
-  iconContainerDark: {
-    backgroundColor: "#263A4D",
-  },
+    iconContainerDark: {
+      backgroundColor: colors.accentSoft,
+    },
 
-  titleContainer: {
-    flex: 1,
-    marginLeft: 12,
-    marginRight: 8,
-  },
+    titleContainer: {
+      flex: 1,
+      marginLeft: 12,
+      marginRight: 8,
+    },
 
-  formTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#111827",
-  },
+    formTitle: {
+      fontSize: 16,
+      fontWeight: "800",
+      color: colors.foreground,
+    },
 
-  formTitleDark: {
-    color: "#FFFFFF",
-  },
+    formTitleDark: {
+      color: colors.foreground,
+    },
 
-  updatedText: {
-    marginTop: 4,
-    fontSize: 12,
-    color: "#9CA3AF",
-  },
+    updatedText: {
+      marginTop: 4,
+      fontSize: 12,
+      color: colors.mutedForeground,
+    },
 
-  updatedTextDark: {
-    color: "#8E8E93",
-  },
+    updatedTextDark: {
+      color: colors.mutedForeground,
+    },
 
-  statusBadge: {
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 20,
-    backgroundColor: "#E8F8EE",
-  },
+    statusBadge: {
+      paddingHorizontal: 9,
+      paddingVertical: 5,
+      borderRadius: 20,
+      backgroundColor: colors.successSoft,
+    },
 
-  statusText: {
-    color: "#15803D",
-    fontSize: 11,
-    fontWeight: "700",
-    textTransform: "capitalize",
-  },
+    statusText: {
+      color: colors.success,
+      fontSize: 11,
+      fontWeight: "700",
+      textTransform: "capitalize",
+    },
 
-  description: {
-    marginTop: 14,
-    fontSize: 13,
-    lineHeight: 19,
-    color: "#6B7280",
-  },
+    description: {
+      marginTop: 14,
+      fontSize: 13,
+      lineHeight: 19,
+      color: colors.mutedForeground,
+    },
 
-  descriptionDark: {
-    color: "#8E8E93",
-  },
+    descriptionDark: {
+      color: colors.mutedForeground,
+    },
 
-  actions: {
-    flexDirection: "row",
-    marginTop: 16,
-    gap: 10,
-  },
+    actions: {
+      flexDirection: "row",
+      marginTop: 16,
+      gap: 10,
+    },
 
-  editButton: {
-    flex: 1,
-    minHeight: 42,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 7,
-  },
+    editButton: {
+      flex: 1,
+      minHeight: 42,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 7,
+    },
 
-  editButtonDark: {
-    borderColor: "#3A3A3C",
-  },
+    editButtonDark: {
+      borderColor: colors.border,
+    },
 
-  editButtonText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#111827",
-  },
+    editButtonText: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.foreground,
+    },
 
-  editButtonTextDark: {
-    color: "#FFFFFF",
-  },
+    editButtonTextDark: {
+      color: colors.foreground,
+    },
 
-  deleteButton: {
-    flex: 1,
-    minHeight: 42,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#FECACA",
-    backgroundColor: "#FEF2F2",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 7,
-  },
+    deleteButton: {
+      flex: 1,
+      minHeight: 42,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.destructiveSoft,
+      backgroundColor: colors.destructiveSoft,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 7,
+    },
 
-  deleteText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#DC2626",
-  },
+    deleteText: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.destructive,
+    },
 
-  disabledButton: {
-    opacity: 0.5,
-  },
-});
+    disabledButton: {
+      opacity: 0.5,
+    },
+  });
+}

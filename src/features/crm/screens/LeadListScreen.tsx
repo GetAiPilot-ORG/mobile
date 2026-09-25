@@ -8,7 +8,6 @@ import {
   Pressable,
   RefreshControl,
   ActivityIndicator,
-  useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +17,7 @@ import { CreateLeadModal } from '../components/CreateLeadModal';
 import { CrmFilterSheet } from '../components/CrmFilterSheet';
 import { ContactStatus } from '../types';
 import { CrmListSkeleton } from '../../../components/skeletonScreen';
+import { useTheme, getColors } from '@/theme';
 
 interface LeadListScreenProps {
   onSelectLead: (leadId: string) => void;
@@ -33,8 +33,8 @@ const STATUS_TABS: Array<{ key: string; label: string }> = [
 ];
 
 export const LeadListScreen: React.FC<LeadListScreenProps> = ({ onSelectLead, onBack }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');

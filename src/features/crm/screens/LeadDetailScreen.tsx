@@ -8,7 +8,6 @@ import {
   Linking,
   TextInput,
   Alert,
-  useColorScheme,
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,6 +25,7 @@ import { CreateDealModal } from '../components/CreateDealModal';
 import { CreateTaskModal } from '../components/CreateTaskModal';
 import { LogActivityModal } from '../components/LogActivityModal';
 import { LeadDetailSkeleton } from '../../../components/skeletonScreen';
+import { useTheme, getColors } from '@/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -58,8 +58,8 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
   onBack,
   onSelectDeal,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const { data: lead, isLoading, refetch } = useLead(leadId);
   const updateLead = useUpdateLead();

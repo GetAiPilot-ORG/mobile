@@ -8,9 +8,9 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from 'react-native';
+import { useTheme } from '../../../contexts/ThemeContext';
 import {
   BillingTransactions,
   DedicatedNumber,
@@ -25,8 +25,7 @@ interface VoiceOverviewScreenProps {
 }
 
 export const VoiceOverviewScreen: React.FC<VoiceOverviewScreenProps> = ({ onNavigateTab }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark, colors } = useTheme();
   const queryClient = useQueryClient();
 
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
@@ -329,12 +328,12 @@ export const VoiceOverviewScreen: React.FC<VoiceOverviewScreenProps> = ({ onNavi
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  containerLight: { backgroundColor: '#F8FAFC' },
-  containerDark: { backgroundColor: '#020617' },
+  containerLight: { backgroundColor: '#F8F9FA' },
+  containerDark: { backgroundColor: '#000000' },
   contentContainer: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 120, gap: 14 },
   
-  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  cardDark: { backgroundColor: '#0F172A', borderColor: '#1E293B' },
+  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E5E7EB' },
+  cardDark: { backgroundColor: '#1C1C1E', borderColor: '#2C2C2E' },
 
   heroCard: {
     borderRadius: 16,
@@ -407,8 +406,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
   },
-  secondaryBtnLight: { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' },
-  secondaryBtnDark: { backgroundColor: '#1E293B', borderWidth: 1, borderColor: '#334155' },
+  secondaryBtnLight: { backgroundColor: '#F2F4F7', borderWidth: 1, borderColor: '#E5E7EB' },
+  secondaryBtnDark: { backgroundColor: '#2C2C2E', borderWidth: 1, borderColor: '#3A3A3C' },
   secondaryBtnText: {
     fontSize: 13,
     fontWeight: '700',
@@ -500,5 +499,5 @@ const styles = StyleSheet.create({
   subPrice: { fontSize: 14, fontWeight: '800', color: '#8B5CF6' },
   subRenew: { fontSize: 10, color: '#64748B' },
 
-  textDark: { color: '#F8FAFC' },
+  textDark: { color: '#FFFFFF' },
 });

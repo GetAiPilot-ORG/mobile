@@ -7,10 +7,10 @@ import {
   Pressable,
   StyleSheet,
   ActivityIndicator,
-  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTheme, getColors } from '@/theme';
 
 interface TelegramConnectModalProps {
   visible: boolean;
@@ -33,8 +33,8 @@ export const TelegramConnectModal: React.FC<TelegramConnectModalProps> = ({
   isConnected,
   connectedPhone,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [step, setStep] = useState<'phone' | 'otp' | 'password'>(isConnected ? 'phone' : 'phone');
   const [phone, setPhone] = useState('');

@@ -9,11 +9,11 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { TelegramChat, CreateForwardRulePayload } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 interface AutoforwardModalProps {
   visible: boolean;
@@ -32,8 +32,8 @@ export const AutoforwardModal: React.FC<AutoforwardModalProps> = ({
   chats = [],
   onRefreshChats,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [selectedSourceChat, setSelectedSourceChat] = useState<TelegramChat | null>(null);
   const [selectedTargetChat, setSelectedTargetChat] = useState<TelegramChat | null>(null);

@@ -1,5 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  Ionicons } from '@expo/vector-icons';
+import { useMutation,
+  useQuery,
+  useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -10,7 +13,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,6 +23,7 @@ import {
   LeaveRequest,
 } from '../../crm/types';
 import { teamApi } from '../api/team.api';
+import { useTheme, getColors } from '@/theme';
 
 type TabType =
   | 'members'
@@ -108,8 +111,8 @@ const ATTENDANCE_STATUS_COLOR: Record<
 };
 
 export function TeamScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [activeTab, setActiveTab] =
     useState<TabType>('members');

@@ -1,7 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
 import {
   FlatList,
   Platform,
@@ -10,33 +10,37 @@ import {
   StyleSheet,
   Text,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '../../../contexts/ThemeContext';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useTheme } from "../../../contexts/ThemeContext";
 
-import { WhatsAppBroadcastsSkeleton } from '../../../components/skeletonScreen';
-import { BroadcastCard } from '../components';
-import { useWhatsAppBroadcasts } from '../hooks/useWhatsAppBroadcasts';
-import { WhatsAppBroadcast } from '../types';
-import { WhatsAppBroadcastDetailScreen } from './WhatsAppBroadcastDetailScreen';
+import { getColors } from "@/theme";
+import { WhatsAppBroadcastsSkeleton } from "../../../components/skeletonScreen";
+import { BroadcastCard } from "../components";
+import { useWhatsAppBroadcasts } from "../hooks/useWhatsAppBroadcasts";
+import { WhatsAppBroadcast } from "../types";
+import { WhatsAppBroadcastDetailScreen } from "./WhatsAppBroadcastDetailScreen";
 
 interface WhatsAppBroadcastsScreenProps {
   onBack?: () => void;
 }
 
-export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> = ({ onBack }) => {
+export const WhatsAppBroadcastsScreen: React.FC<
+  WhatsAppBroadcastsScreenProps
+> = ({ onBack }) => {
   const router = useRouter();
   const { isDark } = useTheme();
-
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [selectedBroadcast, setSelectedBroadcast] = useState<WhatsAppBroadcast | null>(null);
+  const color = getColors(isDark);
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [selectedBroadcast, setSelectedBroadcast] =
+    useState<WhatsAppBroadcast | null>(null);
 
   const { data, isLoading, refetch, isRefetching } = useWhatsAppBroadcasts({
-    status: selectedStatus !== 'all' ? selectedStatus : undefined,
+    status: selectedStatus !== "all" ? selectedStatus : undefined,
   });
 
   const handleBack = () => {
-    if (Platform.OS !== 'web') {
+    if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     if (onBack) {
@@ -44,12 +48,12 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
     } else if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace('/products/whatsapp');
+      router.replace("/products/whatsapp");
     }
   };
 
   const handleStatusSelect = (tab: string) => {
-    if (Platform.OS !== 'web') {
+    if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setSelectedStatus(tab);
@@ -65,16 +69,24 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
   }
 
   const broadcasts = data?.broadcasts || [];
-  const statusTabs = ['all', 'completed', 'queued', 'scheduled'];
+  const statusTabs = ["all", "completed", "queued", "scheduled"];
 
   return (
     <SafeAreaView
-      edges={['top', 'left', 'right']}
-      style={[styles.safeArea, { backgroundColor: isDark ? '#000000' : '#F8F9FA' }]}
+      edges={["top", "left", "right"]}
+      style={[
+        styles.safeArea,
+        { backgroundColor: isDark ? "#000000" : "#F8F9FA" },
+      ]}
     >
       <View style={styles.container}>
         {/* Header matching Overview Tab */}
-        <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
+        <View
+          style={[
+            styles.header,
+            isDark ? styles.headerDark : styles.headerLight,
+          ]}
+        >
           <Pressable
             style={({ pressed }) => [
               styles.backButton,
@@ -89,10 +101,15 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
             <Ionicons
               name="chevron-back"
               size={20}
-              color={isDark ? '#F8FAFC' : '#0F172A'}
+              color={isDark ? "#F8FAFC" : "#0F172A"}
             />
           </Pressable>
-          <Text style={[styles.title, isDark ? styles.titleDark : styles.titleLight]}>
+          <Text
+            style={[
+              styles.title,
+              isDark ? styles.titleDark : styles.titleLight,
+            ]}
+          >
             Broadcast Campaigns
           </Text>
         </View>
@@ -108,7 +125,10 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
               style={({ pressed }) => [
                 styles.filterChip,
                 isDark ? styles.filterChipDark : styles.filterChipLight,
-                isSelected && (isDark ? styles.filterChipActiveDark : styles.filterChipActiveLight),
+                isSelected &&
+                  (isDark
+                    ? styles.filterChipActiveDark
+                    : styles.filterChipActiveLight),
                 pressed && styles.filterChipPressed,
               ]}
               onPress={() => handleStatusSelect(tab)}
@@ -116,8 +136,13 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
               <Text
                 style={[
                   styles.filterChipText,
-                  isDark ? styles.filterChipTextDark : styles.filterChipTextLight,
-                  isSelected && (isDark ? styles.filterChipTextActiveDark : styles.filterChipTextActiveLight),
+                  isDark
+                    ? styles.filterChipTextDark
+                    : styles.filterChipTextLight,
+                  isSelected &&
+                    (isDark
+                      ? styles.filterChipTextActiveDark
+                      : styles.filterChipTextActiveLight),
                 ]}
               >
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -129,7 +154,6 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
 
       {/* Broadcasts List */}
       {isLoading && !data ? (
-
         <WhatsAppBroadcastsSkeleton />
       ) : (
         <FlatList
@@ -143,11 +167,22 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
           )}
           contentContainerStyle={styles.listContent}
           refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={isDark ? '#FFFFFF' : '#0A84FF'} />
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={refetch}
+              tintColor={isDark ? "#FFFFFF" : "#0A84FF"}
+            />
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={[styles.emptyText, { color: isDark ? '#94A3B8' : '#64748B' }]}>No broadcast campaigns found</Text>
+              <Text
+                style={[
+                  styles.emptyText,
+                  { color: isDark ? "#94A3B8" : "#64748B" },
+                ]}
+              >
+                No broadcast campaigns found
+              </Text>
             </View>
           }
         />
@@ -164,47 +199,47 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerDark: {
-    backgroundColor: '#000000',
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: "#000000",
+    borderBottomColor: "rgba(255, 255, 255, 0.08)",
   },
   headerLight: {
-    backgroundColor: '#FFFFFF',
-    borderBottomColor: 'rgba(0, 0, 0, 0.06)',
+    backgroundColor: "#FFFFFF",
+    borderBottomColor: "rgba(0, 0, 0, 0.06)",
   },
   headerLeftRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
     borderWidth: 1,
   },
   backButtonLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E5E7EB',
-    shadowColor: '#000000',
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E5E7EB",
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 6,
     elevation: 3,
   },
   backButtonDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
-    shadowColor: '#000000',
+    backgroundColor: "#1C1C1E",
+    borderColor: "#2C2C2E",
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
@@ -216,17 +251,17 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: -0.4,
   },
   titleLight: {
-    color: '#0F172A',
+    color: "#0F172A",
   },
   titleDark: {
-    color: '#F8FAFC',
+    color: "#F8FAFC",
   },
   filterRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 8,
@@ -238,42 +273,42 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   filterChipDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
+    backgroundColor: "#1C1C1E",
+    borderColor: "#2C2C2E",
   },
   filterChipLight: {
-    backgroundColor: '#F2F2F7',
-    borderColor: '#E5E7EB',
+    backgroundColor: "#F2F2F7",
+    borderColor: "#E5E7EB",
   },
   filterChipActiveDark: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
+    borderColor: "#FFFFFF",
   },
   filterChipActiveLight: {
-    backgroundColor: '#000000',
-    borderColor: '#000000',
+    backgroundColor: "#000000",
+    borderColor: "#000000",
   },
   filterChipPressed: {
     opacity: 0.8,
   },
   filterChipText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
     letterSpacing: -0.1,
   },
   filterChipTextDark: {
-    color: '#8E8E93',
+    color: "#8E8E93",
   },
   filterChipTextLight: {
-    color: '#6B7280',
+    color: "#6B7280",
   },
   filterChipTextActiveDark: {
-    color: '#000000',
-    fontWeight: '700',
+    color: "#000000",
+    fontWeight: "700",
   },
   filterChipTextActiveLight: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: "#FFFFFF",
+    fontWeight: "700",
   },
   listContent: {
     padding: 16,
@@ -281,8 +316,8 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingText: {
     fontSize: 13,
@@ -290,7 +325,7 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     padding: 40,
-    alignItems: 'center',
+    alignItems: "center",
   },
   emptyText: {
     fontSize: 14,

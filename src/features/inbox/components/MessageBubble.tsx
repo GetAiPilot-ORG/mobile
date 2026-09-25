@@ -1,16 +1,17 @@
 import React from 'react';
-import { StyleSheet, Text, View, Pressable, Linking, useColorScheme } from 'react-native';
+import { StyleSheet, Text, View, Pressable, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NormalizedMessage } from '../types';
 import { useAuthStore } from '../../../core/store/authStore';
+import { useTheme, getColors } from '@/theme';
 
 interface MessageBubbleProps {
   message: NormalizedMessage;
 }
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const user = useAuthStore((s) => s.user);
   const currentUserId = user?.id;

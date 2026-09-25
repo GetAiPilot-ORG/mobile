@@ -1,6 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
+import {
+  Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import React, { useMemo, useState } from 'react';
+import React,
+  { useMemo,
+  useState } from 'react';
 import {
   Alert,
   Image,
@@ -11,7 +14,6 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
 import {
   SystemProductStatus,
@@ -20,6 +22,7 @@ import {
   YoutubeVideoItem,
 } from '../../types';
 import { openSocialHandoff } from '../../utils/socialHandoff';
+import { useTheme, getColors } from '@/theme';
 
 export interface ActivityYouTubeSubTabProps {
   youtubeAccounts?: YoutubeChannelAccount[];
@@ -38,8 +41,8 @@ export const ActivityYouTubeSubTab: React.FC<ActivityYouTubeSubTabProps> = ({
   systemSettings = [],
   systemProduct = [],
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [youtubeCategory, setYoutubeCategory] = useState<'All' | 'Videos' | 'Shorts' | 'Scheduled' | 'Playlists'>('All');
   const [youtubeSearch, setYoutubeSearch] = useState('');

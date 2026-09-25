@@ -48,7 +48,7 @@ const VOICE_TABS: ProductTabItem[] = [
 
 export const VoiceScreen: React.FC = () => {
   const router = useRouter();
-  const { isDark } = useTheme();
+  const { isDark, colors } = useTheme();
   const [activeTab, setActiveTab] = useState<VoiceTabKey>("overview");
 
   useEffect(() => {
@@ -83,7 +83,7 @@ export const VoiceScreen: React.FC = () => {
       <View
         style={[
           styles.container,
-          { backgroundColor: isDark ? "#020617" : "#F2F2F7" },
+          { backgroundColor: colors.background },
         ]}
       >
         <View style={styles.screenContainer}>

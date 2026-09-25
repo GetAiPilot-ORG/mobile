@@ -1,9 +1,10 @@
 import React from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable, useColorScheme } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useMembers } from '../hooks/useMembers';
 import { useCrmDashboard } from '../hooks/useCrmDashboard';
+import { useTheme, getColors } from '@/theme';
 
 interface CRMMoreScreenProps {
   onSelectSection: (section: 'contacts' | 'activities') => void;
@@ -11,8 +12,8 @@ interface CRMMoreScreenProps {
 }
 
 export const CRMMoreScreen: React.FC<CRMMoreScreenProps> = ({ onSelectSection, onBack }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const { data: members = [] } = useMembers();
   const { data: dashboard } = useCrmDashboard();

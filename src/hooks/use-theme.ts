@@ -1,2 +1,2 @@
-export { useTheme, ThemeProvider } from '../contexts/ThemeContext';
-export type { ThemeMode, ThemeContextType } from '../contexts/ThemeContext';
+export { useTheme, ThemeProvider, getColors } from '../contexts/ThemeContext';
+export type { ThemeMode, ThemeContextType, AppColors } from '../contexts/ThemeContext';

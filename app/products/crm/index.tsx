@@ -1,6 +1,11 @@
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { BackHandler, StyleSheet, useColorScheme, View } from 'react-native';
+import {
+  useRouter } from 'expo-router';
+import { useEffect,
+  useState } from 'react';
+import { BackHandler,
+  StyleSheet,
+  View,
+} from 'react-native';
 import {
   ProductFloatingBottomBar,
   ProductTabItem,
@@ -10,6 +15,7 @@ import { GoogleCalendarScreen } from "../../../src/features/crm/screens/GoogleCa
 import { CommunicationScreen } from "../../../src/features/team/screens/CommunicationScreen";
 import { PlannerScreen } from "../../../src/features/team/screens/PlannerScreen";
 import { TeamScreen } from "../../../src/features/team/screens/TeamScreen";
+import { useTheme, getColors } from '@/theme';
 
 type CRMTab = "overview" | "team" | "planner" | "calendar" | "communication";
 
@@ -53,8 +59,8 @@ const CRM_TABS: ProductTabItem[] = [
 
 export default function CRMIndexRoute() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const [activeTab, setActiveTab] = useState<CRMTab>("overview");
 
   useEffect(() => {

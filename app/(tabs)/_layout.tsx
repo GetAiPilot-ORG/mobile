@@ -1,8 +1,10 @@
 import { Tabs } from "expo-router";
 import { FloatingTabBar } from "../../src/components/FloatingTabBar";
 import { useAuth } from "../../src/contexts/AuthContext";
+import { useTheme } from "../../src/contexts/ThemeContext";
 
 export default function TabLayout() {
+  const { colors } = useTheme();
   const { user, profile } = useAuth();
   const userRole = (user?.role || profile?.role || "").toLowerCase();
   const isAdmin = Boolean(
@@ -17,6 +19,7 @@ export default function TabLayout() {
       tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,
+        sceneStyle: { backgroundColor: colors.background },
       }}
     >
       <Tabs.Screen
@@ -47,14 +50,6 @@ export default function TabLayout() {
         name="activity"
         options={{
           title: "Activity",
-        }}
-      />
-
-      <Tabs.Screen
-        name="admin"
-        options={{
-          title: "Admin",
-          href: (isAdmin ? "/(tabs)/admin" : null) as any,
         }}
       />
     </Tabs>

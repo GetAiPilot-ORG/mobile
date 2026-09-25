@@ -8,13 +8,13 @@ import {
   ScrollView,
   ActivityIndicator,
   Linking,
-  useColorScheme,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { telegramApi } from '../api/telegramApi';
+import { useTheme, getColors } from '@/theme';
 
 interface AutoApproveModalProps {
   visible: boolean;
@@ -26,8 +26,8 @@ export const AutoApproveModal: React.FC<AutoApproveModalProps> = ({
   visible,
   onClose,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const { data: status, isLoading } = useQuery({
     queryKey: ['telegram_auto_approve_status'],

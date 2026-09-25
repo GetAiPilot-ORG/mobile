@@ -2,7 +2,10 @@ import React, { createContext, useContext, useEffect, useState, useMemo } from '
 import { Appearance, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme as useNativeWindColorScheme } from 'nativewind';
+import * as SystemUI from 'expo-system-ui';
 import { getColors, AppColors } from '../theme/colors';
+
+export { getColors, AppColors };
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 
@@ -12,6 +15,8 @@ export interface ThemeContextType {
   isDark: boolean;
   tailwindClass: 'light' | 'dark';
   colors: AppColors;
+  color: AppColors;
+  getColors: (isDark?: boolean) => AppColors;
   setThemeMode: (mode: ThemeMode) => Promise<void>;
   toggleTheme: () => Promise<void>;
 }
@@ -25,12 +30,16 @@ const defaultIsDark = (() => {
   return Appearance.getColorScheme() === 'dark';
 })();
 
+const defaultColors = getColors(defaultIsDark);
+
 const ThemeContext = createContext<ThemeContextType>({
   themeMode: 'system',
   theme: defaultIsDark ? 'dark' : 'light',
   isDark: defaultIsDark,
   tailwindClass: defaultIsDark ? 'dark' : 'light',
-  colors: getColors(defaultIsDark),
+  colors: defaultColors,
+  color: defaultColors,
+  getColors: (dark?: boolean) => getColors(dark !== undefined ? dark : defaultIsDark),
   setThemeMode: async () => {},
   toggleTheme: async () => {},
 });
@@ -112,19 +121,27 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Synchronize Web document and body for uniform browser canvas
   useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      const bg = isDark ? '#41444B' : '#DFD8C8';
       if (isDark) {
         document.documentElement.classList.add('dark');
         document.documentElement.classList.remove('light');
         document.documentElement.setAttribute('data-theme', 'dark');
-        document.documentElement.style.backgroundColor = '#000000';
-        document.body.style.backgroundColor = '#000000';
       } else {
         document.documentElement.classList.add('light');
         document.documentElement.classList.remove('dark');
         document.documentElement.setAttribute('data-theme', 'light');
-        document.documentElement.style.backgroundColor = '#F8F9FA';
-        document.body.style.backgroundColor = '#F8F9FA';
       }
+      document.documentElement.style.backgroundColor = bg;
+      document.body.style.backgroundColor = bg;
+    }
+  }, [isDark]);
+
+  // Synchronize SystemUI background color on native platforms
+  useEffect(() => {
+    try {
+      SystemUI.setBackgroundColorAsync(isDark ? '#41444B' : '#DFD8C8');
+    } catch (e) {
+      // safe fallback
     }
   }, [isDark]);
 
@@ -132,7 +149,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     try {
       if (Appearance && typeof (Appearance as any).setColorScheme === 'function') {
-        (Appearance as any).setColorScheme(activeTheme);
+        if (themeMode === 'system') {
+          (Appearance as any).setColorScheme(null);
+        } else {
+          (Appearance as any).setColorScheme(activeTheme);
+        }
       }
     } catch (e) {
       // safe fallback
@@ -169,6 +190,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       isDark,
       tailwindClass: activeTheme,
       colors,
+      color: colors,
+      getColors: (dark?: boolean) => getColors(dark !== undefined ? dark : isDark),
       setThemeMode,
       toggleTheme,
     }),

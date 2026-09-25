@@ -1,7 +1,8 @@
 import React from 'react';
-import { StyleSheet, Text, View, Pressable, useColorScheme } from 'react-native';
+import { StyleSheet, Text, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CRMDeal, DealStage } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 interface DealCardProps {
   deal: CRMDeal;
@@ -19,8 +20,8 @@ const STAGE_CONFIG: Record<DealStage, { label: string; color: string; bg: string
 };
 
 export const DealCard: React.FC<DealCardProps> = ({ deal, onPress, onStageChange }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const stageCfg = STAGE_CONFIG[deal.stage] || STAGE_CONFIG.lead;
   const currencySymbol = deal.currency === 'INR' ? '₹' : '$';

@@ -7,13 +7,13 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { TelegramToolKey } from '../types';
 import { StatCard } from '../components/ui/StatCard';
+import { useTheme, getColors } from '@/theme';
 
 type TrackerSection = 'joins' | 'connect' | 'links';
 
@@ -25,8 +25,8 @@ interface TrackerScreenProps {
 }
 
 export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerDash, trackerLinks, onOpenModal }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const [trackerSection, setTrackerSection] = useState<TrackerSection>('joins');
   const [userSearch, setUserSearch] = useState('');
   const [userFilter, setUserFilter] = useState<'All' | 'Active' | 'Bot Start' | 'Leave' | 'Pending'>('All');

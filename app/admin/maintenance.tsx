@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
-import { colors } from '../../src/theme/colors';
+import { useTheme, getColors, AppColors } from '@/theme';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 import { supabase } from '../../src/lib/supabase';
@@ -23,6 +23,10 @@ import { SystemProduct, SystemSettings, SystemMaintenanceLog } from '../../src/t
 import { AdminTabSkeleton } from '../../src/components/skeletonScreen';
 
 export default function AdminMaintenanceScreen() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const { user } = useAuth();
   const { isAdmin } = usePlatformSubscription();
   const queryClient = useQueryClient();
@@ -487,7 +491,7 @@ export default function AdminMaintenanceScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingBottom: 40,

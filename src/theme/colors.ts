@@ -1,182 +1,400 @@
-export const colors = {
-  // Core iOS Brand Tokens (GetAiPilot)
-  primary: '#0084FF', // iOS System Electric Blue
-  primaryHover: '#0070D8',
-  primaryForeground: '#FFFFFF',
-  primaryMuted: '#EBF5FF',
+export const getColors = (isDark: boolean = false) => ({
+  // =========================================================
+  // BRAND
+  // =========================================================
 
-  // Accents & Highlights
-  accent: '#0084FF',
-  accentForeground: '#FFFFFF',
-  accentSoft: 'rgba(0, 132, 255, 0.12)',
+  primary: "#CABFAB",
+  primaryHover: "#B9AE95",
+  primaryPressed: "#A99E87",
+  primaryForeground: "#41444B",
+  primaryMuted: isDark ? "#3E3B35" : "#F0ECE3",
 
-  // Surfaces & Layout
-  background: '#F8F9FA', // Clean iOS light canvas
-  backgroundDark: '#000000', // Deep iOS OLED dark canvas
-  canvas: '#F8F9FA',
-  canvasDark: '#000000',
-  surface: '#FFFFFF',
-  surfaceDark: '#1C1C1E',
-  surfaceGrouped: '#F2F4F7', // iOS Grouped tableview background
-  surfaceElevated: '#FFFFFF',
-  surfaceElevatedDark: '#1C1C1E',
-  foreground: '#000000', // Crisp primary text
-  foregroundDark: '#FFFFFF', // Clean white primary text
+  accent: "#CABFAB",
+  accentHover: "#B9AE95",
+  accentForeground: "#41444B",
 
-  // Cards & Modals
-  card: '#FFFFFF',
-  cardDark: '#1C1C1E',
-  cardBorder: '#E5E7EB',
-  cardBorderDark: '#2C2C2E',
-  cardShell: '#F2F4F7',
-  cardShellDark: '#1C1C1E',
-  cardShellBorder: '#E5E7EB',
-  cardShellBorderDark: '#2C2C2E',
-  cardForeground: '#000000',
-  cardForegroundDark: '#FFFFFF',
-  border: '#E5E7EB',
-  borderDark: '#2C2C2E',
-
-  // Functional Colors
-  destructive: '#DC2626',
-  destructiveForeground: '#FFFFFF',
-  destructiveSoft: 'rgba(220, 38, 38, 0.1)',
-
-  success: '#16A34A',
-  successForeground: '#FFFFFF',
-  successSoft: 'rgba(22, 163, 74, 0.12)',
-
-  warning: '#F59E0B',
-  warningForeground: '#FFFFFF',
-  warningSoft: 'rgba(245, 158, 11, 0.12)',
-
-  muted: '#F2F4F7',
-  mutedDark: '#1C1C1E',
-  mutedForeground: '#6B7280',
-
-  secondary: '#F2F4F7',
-  secondaryForeground: '#000000',
-
-  // Product Hub Specific Accents
-  products: {
-    whatsapp: '#25D366',
-    whatsappDark: '#075E54',
-    whatsappSoft: 'rgba(37, 211, 102, 0.12)',
-
-    telegram: '#229ED9',
-    telegramDark: '#0088CC',
-    telegramSoft: 'rgba(34, 158, 217, 0.12)',
-
-    voice: '#8B5CF6',
-    voiceDark: '#6D28D9',
-    voiceSoft: 'rgba(139, 92, 246, 0.12)',
-
-    social: '#E1306C',
-    socialDark: '#C13584',
-    socialSoft: 'rgba(225, 48, 108, 0.12)',
-
-    crm: '#F59E0B',
-    crmDark: '#B45309',
-    crmSoft: 'rgba(245, 158, 11, 0.12)',
-  },
-};
-
-
-
-
-export const getColors = (isDark: boolean) => ({
-  // Core Brand Tokens
-  primary: '#0084FF',
-  primaryHover: '#0070D8',
-  primaryForeground: '#FFFFFF',
-  primaryMuted: isDark ? '#0B2942' : '#EBF5FF',
-
-  // Accents & Highlights
-  accent: '#0084FF',
-  accentForeground: '#FFFFFF',
   accentSoft: isDark
-    ? 'rgba(0, 132, 255, 0.18)'
-    : 'rgba(0, 132, 255, 0.12)',
+    ? "rgba(202, 191, 171, 0.16)"
+    : "rgba(202, 191, 171, 0.22)",
 
-  // Surfaces & Layout
-  background: isDark ? '#000000' : '#F8F9FA',
-  canvas: isDark ? '#000000' : '#F8F9FA',
+  // =========================================================
+  // BACKGROUND
+  // =========================================================
 
-  surface: isDark ? '#1C1C1E' : '#FFFFFF',
-  surfaceGrouped: isDark ? '#1C1C1E' : '#F2F4F7',
-  surfaceElevated: isDark ? '#1C1C1E' : '#FFFFFF',
+  background: isDark ? "#41444B" : "#DFD8C8",
+  canvas: isDark ? "#41444B" : "#DFD8C8",
 
-  foreground: isDark ? '#FFFFFF' : '#000000',
+  backgroundSecondary: isDark ? "#3A3D43" : "#E8E2D5",
+  backgroundTertiary: isDark ? "#52575D" : "#F0ECE3",
 
-  // Cards & Modals
-  card: isDark ? '#1C1C1E' : '#FFFFFF',
-  cardBorder: isDark ? '#2C2C2E' : '#E5E7EB',
+  // Compatibility aliases
+  backgroundDark: "#41444B",
+  backgroundLight: "#DFD8C8",
+  canvasDark: "#41444B",
+  canvasLight: "#DFD8C8",
 
-  cardShell: isDark ? '#1C1C1E' : '#F2F4F7',
-  cardShellBorder: isDark ? '#2C2C2E' : '#E5E7EB',
+  // =========================================================
+  // SURFACES
+  // =========================================================
 
-  cardForeground: isDark ? '#FFFFFF' : '#000000',
+  surface: isDark ? "#52575D" : "#F4F0E8",
+  surfaceSecondary: isDark ? "#494E54" : "#EAE4D8",
+  surfaceTertiary: isDark ? "#5A5F65" : "#DFD8C8",
 
-  border: isDark ? '#2C2C2E' : '#E5E7EB',
+  surfaceGrouped: isDark ? "#3A3D43" : "#EAE4D8",
+  surfaceElevated: isDark ? "#52575D" : "#F8F5EF",
 
-  // Functional Colors
-  destructive: '#DC2626',
-  destructiveForeground: '#FFFFFF',
+  surfaceHover: isDark ? "#5A5F65" : "#E8E2D5",
+  surfacePressed: isDark ? "#62676D" : "#DDD5C6",
+
+  surfaceDark: "#52575D",
+  surfaceLight: "#F4F0E8",
+
+  // =========================================================
+  // TEXT
+  // =========================================================
+
+  text: isDark ? "#F7F3EA" : "#41444B",
+  mutedText: isDark ? "#C6C0B5" : "#6B7076",
+
+  foreground: isDark ? "#F7F3EA" : "#41444B",
+  foregroundDark: "#F7F3EA",
+  foregroundLight: "#41444B",
+
+  textPrimary: isDark ? "#F7F3EA" : "#41444B",
+  textSecondary: isDark ? "#DFD8C8" : "#52575D",
+  textTertiary: isDark ? "#C6C0B5" : "#6B7076",
+  textMuted: isDark ? "#AAA79F" : "#777B80",
+
+  textDisabled: isDark ? "#777B80" : "#A5A7A9",
+
+  textInverse: isDark ? "#41444B" : "#F7F3EA",
+
+  // =========================================================
+  // CARDS
+  // =========================================================
+
+  card: isDark ? "#52575D" : "#F8F5EF",
+  cardBackground: isDark ? "#52575D" : "#F8F5EF",
+  cardDark: "#52575D",
+  cardLight: "#F8F5EF",
+  cardForeground: isDark ? "#F7F3EA" : "#41444B",
+
+  cardBorder: isDark ? "#686D72" : "#D2CABA",
+  cardBorderDark: "#686D72",
+  cardBorderLight: "#D2CABA",
+
+  cardHover: isDark ? "#5A5F65" : "#F1ECE3",
+
+  cardShell: isDark ? "#3A3D43" : "#EAE4D8",
+  cardShellBorder: isDark ? "#52575D" : "#D2CABA",
+
+  // =========================================================
+  // BORDERS
+  // =========================================================
+
+  border: isDark ? "#686D72" : "#D2CABA",
+  borderDark: "#686D72",
+
+  borderLight: isDark ? "#5A5F65" : "#E5DFD4",
+
+  borderStrong: isDark ? "#777B80" : "#B9B0A0",
+
+  divider: isDark ? "#5A5F65" : "#D8D0C2",
+
+  focusBorder: "#CABFAB",
+
+  // =========================================================
+  // INPUTS
+  // =========================================================
+
+  input: isDark ? "#52575D" : "#F8F5EF",
+
+  inputBackground: isDark ? "#52575D" : "#F8F5EF",
+
+  inputForeground: isDark ? "#F7F3EA" : "#41444B",
+
+  inputPlaceholder: isDark ? "#AAA79F" : "#8A8D91",
+
+  inputBorder: isDark ? "#686D72" : "#D2CABA",
+
+  inputBorderFocus: "#CABFAB",
+
+  inputDisabled: isDark ? "#3A3D43" : "#EAE4D8",
+
+  inputDisabledText: isDark ? "#777B80" : "#A5A7A9",
+
+  // =========================================================
+  // PRIMARY BUTTON
+  // =========================================================
+
+  buttonPrimary: "#CABFAB",
+  buttonPrimaryHover: "#B9AE95",
+  buttonPrimaryPressed: "#A99E87",
+  buttonPrimaryForeground: "#41444B",
+
+  // =========================================================
+  // SECONDARY BUTTON
+  // =========================================================
+
+  buttonSecondary: isDark ? "#52575D" : "#EAE4D8",
+
+  buttonSecondaryHover: isDark ? "#5A5F65" : "#DFD8C8",
+
+  buttonSecondaryPressed: isDark ? "#686D72" : "#D4CCBD",
+
+  buttonSecondaryForeground: isDark ? "#F7F3EA" : "#41444B",
+
+  // =========================================================
+  // GHOST BUTTON
+  // =========================================================
+
+  buttonGhost: "transparent",
+
+  buttonGhostHover: isDark
+    ? "rgba(223, 216, 200, 0.10)"
+    : "rgba(65, 68, 75, 0.06)",
+
+  buttonGhostPressed: isDark
+    ? "rgba(223, 216, 200, 0.16)"
+    : "rgba(65, 68, 75, 0.10)",
+
+  buttonGhostForeground: isDark ? "#DFD8C8" : "#41444B",
+
+  // =========================================================
+  // DISABLED
+  // =========================================================
+
+  buttonDisabled: isDark ? "#3A3D43" : "#E1DBD0",
+
+  buttonDisabledForeground: isDark ? "#777B80" : "#A5A7A9",
+
+  // =========================================================
+  // SUCCESS
+  // =========================================================
+
+  success: "#4F8A68",
+  successHover: "#417456",
+  successForeground: "#FFFFFF",
+
+  successSoft: isDark ? "rgba(79, 138, 104, 0.20)" : "rgba(79, 138, 104, 0.12)",
+
+  // =========================================================
+  // WARNING
+  // =========================================================
+
+  warning: "#B8863B",
+  warningHover: "#9C702E",
+  warningForeground: "#FFFFFF",
+
+  warningSoft: isDark ? "rgba(184, 134, 59, 0.20)" : "rgba(184, 134, 59, 0.12)",
+
+  // =========================================================
+  // ERROR / DESTRUCTIVE
+  // =========================================================
+
+  destructive: "#B85C5C",
+  destructiveHover: "#994848",
+  destructivePressed: "#803B3B",
+  destructiveForeground: "#FFFFFF",
+
   destructiveSoft: isDark
-    ? 'rgba(220, 38, 38, 0.18)'
-    : 'rgba(220, 38, 38, 0.1)',
+    ? "rgba(184, 92, 92, 0.20)"
+    : "rgba(184, 92, 92, 0.12)",
 
-  success: '#16A34A',
-  successForeground: '#FFFFFF',
-  successSoft: isDark
-    ? 'rgba(22, 163, 74, 0.18)'
-    : 'rgba(22, 163, 74, 0.12)',
+  // =========================================================
+  // INFO
+  // =========================================================
 
-  warning: '#F59E0B',
-  warningForeground: '#FFFFFF',
-  warningSoft: isDark
-    ? 'rgba(245, 158, 11, 0.18)'
-    : 'rgba(245, 158, 11, 0.12)',
+  info: "#647D8C",
+  infoHover: "#536A78",
+  infoForeground: "#FFFFFF",
 
-  muted: isDark ? '#1C1C1E' : '#F2F4F7',
+  infoSoft: isDark ? "rgba(100, 125, 140, 0.20)" : "rgba(100, 125, 140, 0.12)",
 
-  mutedForeground: isDark ? '#98989D' : '#6B7280',
+  // =========================================================
+  // MUTED
+  // =========================================================
 
-  secondary: isDark ? '#1C1C1E' : '#F2F4F7',
-  secondaryForeground: isDark ? '#FFFFFF' : '#000000',
+  muted: isDark ? "#52575D" : "#EAE4D8",
 
-  // Product Hub Specific Accents
+  mutedHover: isDark ? "#5A5F65" : "#DFD8C8",
+
+  mutedForeground: isDark ? "#C6C0B5" : "#6B7076",
+
+  secondary: isDark ? "#52575D" : "#EAE4D8",
+
+  secondaryHover: isDark ? "#5A5F65" : "#DFD8C8",
+
+  secondaryForeground: isDark ? "#F7F3EA" : "#41444B",
+
+  // =========================================================
+  // LINKS
+  // =========================================================
+
+  link: "#9B8F70",
+  linkHover: "#7F7459",
+  linkVisited: "#776B86",
+
+  // =========================================================
+  // TABS
+  // =========================================================
+
+  tabBackground: isDark ? "#3A3D43" : "#EAE4D8",
+
+  tabActive: "#CABFAB",
+
+  tabActiveBackground: isDark
+    ? "rgba(202, 191, 171, 0.16)"
+    : "rgba(202, 191, 171, 0.30)",
+
+  tabInactive: isDark ? "#C6C0B5" : "#6B7076",
+
+  tabBorder: isDark ? "#52575D" : "#D2CABA",
+
+  // =========================================================
+  // NAVIGATION
+  // =========================================================
+
+  navigationBackground: isDark ? "#41444B" : "#F8F5EF",
+
+  navigationBorder: isDark ? "#52575D" : "#D2CABA",
+
+  navigationActive: "#CABFAB",
+
+  navigationInactive: isDark ? "#AAA79F" : "#777B80",
+
+  // =========================================================
+  // BADGES
+  // =========================================================
+
+  badgePrimary: isDark
+    ? "rgba(202, 191, 171, 0.18)"
+    : "rgba(202, 191, 171, 0.30)",
+
+  badgePrimaryText: isDark ? "#DFD8C8" : "#625B4C",
+
+  badgeSuccess: isDark
+    ? "rgba(79, 138, 104, 0.20)"
+    : "rgba(79, 138, 104, 0.12)",
+
+  badgeSuccessText: isDark ? "#8FC3A4" : "#417456",
+
+  badgeWarning: isDark
+    ? "rgba(184, 134, 59, 0.20)"
+    : "rgba(184, 134, 59, 0.12)",
+
+  badgeWarningText: isDark ? "#E0B86E" : "#8A652D",
+
+  badgeDanger: isDark ? "rgba(184, 92, 92, 0.20)" : "rgba(184, 92, 92, 0.12)",
+
+  badgeDangerText: isDark ? "#E59A9A" : "#994848",
+
+  badgeNeutral: isDark ? "#52575D" : "#EAE4D8",
+
+  badgeNeutralText: isDark ? "#DFD8C8" : "#52575D",
+
+  // =========================================================
+  // MODAL / OVERLAY
+  // =========================================================
+
+  overlay: isDark ? "rgba(0, 0, 0, 0.70)" : "rgba(65, 68, 75, 0.35)",
+
+  modalBackground: isDark ? "#52575D" : "#F8F5EF",
+
+  modalBorder: isDark ? "#686D72" : "#D2CABA",
+
+  modalTitle: isDark ? "#F7F3EA" : "#41444B",
+
+  modalDescription: isDark ? "#DFD8C8" : "#6B7076",
+
+  // =========================================================
+  // SKELETON
+  // =========================================================
+
+  skeleton: isDark ? "#52575D" : "#D8D1C4",
+
+  skeletonHighlight: isDark ? "#686D72" : "#E8E2D5",
+
+  // =========================================================
+  // ICONS
+  // =========================================================
+
+  iconPrimary: isDark ? "#F7F3EA" : "#41444B",
+
+  iconSecondary: isDark ? "#DFD8C8" : "#52575D",
+
+  iconMuted: isDark ? "#8C9094" : "#8A8D91",
+
+  iconActive: "#CABFAB",
+
+  iconSuccess: "#4F8A68",
+
+  iconWarning: "#B8863B",
+
+  iconDanger: "#B85C5C",
+
+  iconInfo: "#647D8C",
+
+  // =========================================================
+  // STATUS
+  // =========================================================
+
+  online: "#4F8A68",
+  offline: "#8A8D91",
+  busy: "#B8863B",
+  error: "#B85C5C",
+
+  // =========================================================
+  // SPECIAL
+  // =========================================================
+
+  selection: isDark ? "rgba(202, 191, 171, 0.25)" : "rgba(202, 191, 171, 0.35)",
+
+  ripple: isDark ? "rgba(223, 216, 200, 0.10)" : "rgba(65, 68, 75, 0.06)",
+
+  shadow: isDark ? "rgba(0, 0, 0, 0.35)" : "rgba(65, 68, 75, 0.12)",
+
+  transparent: "transparent",
+
+  // =========================================================
+  // PRODUCT COLORS
+  // =========================================================
+
   products: {
-    whatsapp: '#25D366',
-    whatsappDark: '#075E54',
+    whatsapp: "#25D366",
+    whatsappDark: "#075E54",
     whatsappSoft: isDark
-      ? 'rgba(37, 211, 102, 0.18)'
-      : 'rgba(37, 211, 102, 0.12)',
+      ? "rgba(37, 211, 102, 0.18)"
+      : "rgba(37, 211, 102, 0.10)",
 
-    telegram: '#229ED9',
-    telegramDark: '#0088CC',
+    telegram: "#229ED9",
+    telegramDark: "#0088CC",
     telegramSoft: isDark
-      ? 'rgba(34, 158, 217, 0.18)'
-      : 'rgba(34, 158, 217, 0.12)',
+      ? "rgba(34, 158, 217, 0.18)"
+      : "rgba(34, 158, 217, 0.10)",
 
-    voice: '#8B5CF6',
-    voiceDark: '#6D28D9',
-    voiceSoft: isDark
-      ? 'rgba(139, 92, 246, 0.18)'
-      : 'rgba(139, 92, 246, 0.12)',
+    voice: "#8B5CF6",
+    voiceDark: "#6D28D9",
+    voiceSoft: isDark ? "rgba(139, 92, 246, 0.18)" : "rgba(139, 92, 246, 0.10)",
 
-    social: '#E1306C',
-    socialDark: '#C13584',
+    social: "#E1306C",
+    socialDark: "#C13584",
     socialSoft: isDark
-      ? 'rgba(225, 48, 108, 0.18)'
-      : 'rgba(225, 48, 108, 0.12)',
+      ? "rgba(225, 48, 108, 0.18)"
+      : "rgba(225, 48, 108, 0.10)",
 
-    crm: '#F59E0B',
-    crmDark: '#B45309',
-    crmSoft: isDark
-      ? 'rgba(245, 158, 11, 0.18)'
-      : 'rgba(245, 158, 11, 0.12)',
+    crm: "#B8863B",
+    crmDark: "#8A652D",
+    crmSoft: isDark ? "rgba(184, 134, 59, 0.18)" : "rgba(184, 134, 59, 0.10)",
   },
 });
-
 export type AppColors = ReturnType<typeof getColors>;
+export type ThemeColors = AppColors;
+
+/**
+ * Static colors default (light theme) for non-reactive fallback usages.
+ * Always prefer useTheme() and getColors(isDark) for dynamic runtime theme switching.
+ */
+export const colors = getColors(false);
+

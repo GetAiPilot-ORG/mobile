@@ -1,4 +1,5 @@
-import { Ionicons } from "@expo/vector-icons";
+import {
+  Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useCallback } from "react";
@@ -9,12 +10,12 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { teamApi } from "../../team/api/team.api";
 import { crmApi } from "../api/crm.api";
+import { useTheme, getColors } from '@/theme';
 
 const WEB_APP_URL = "https://getaipilot.in";
 
@@ -82,8 +83,8 @@ interface CRMDashboardScreenProps {
 }
 
 export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProps = {}) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const router = useRouter();
 
   const {

@@ -8,13 +8,13 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { TelegramToolKey } from '../types';
 import { StatCard } from '../components/ui/StatCard';
+import { useTheme, getColors } from '@/theme';
 
 type SubSection = 'pages' | 'revenue' | 'channels';
 
@@ -41,8 +41,8 @@ interface SubManagerScreenProps {
 }
 
 export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpenModal, onRefresh }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const [subSection, setSubSection] = useState<SubSection>('pages');
   const [txnSearch, setTxnSearch] = useState('');
   const [txnFilter, setTxnFilter] = useState<'All' | 'Success' | 'On Hold'>('All');
