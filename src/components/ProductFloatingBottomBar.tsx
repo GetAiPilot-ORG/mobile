@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Platform,
   LayoutAnimation,
-  UIManager,
   Modal,
   TouchableWithoutFeedback,
   ScrollView,
@@ -17,10 +16,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 export type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -134,7 +129,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
         toValue: safeActiveIndex * tabWidth,
         tension: 80,
         friction: 10,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }).start();
     }
   }, [safeActiveIndex, tabWidth]);
@@ -170,7 +165,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
 
   return (
     <>
-      <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
+      <View style={[styles.floatingWrapper, { bottom: bottomOffset }]}>
         <View
           onLayout={onContainerLayout}
           style={[
@@ -189,7 +184,6 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
                   transform: [{ translateX: slideAnim }],
                 },
               ]}
-              pointerEvents="none"
             >
               <View
                 style={[
@@ -355,6 +349,7 @@ const styles = StyleSheet.create({
     right: 10,
     alignItems: 'center',
     zIndex: 9999,
+    pointerEvents: 'box-none' as any,
   },
   tabBarContainer: {
     flexDirection: 'row',
@@ -393,6 +388,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 0,
+    pointerEvents: 'none' as any,
   },
   indicatorPillDark: {
     width: '100%',

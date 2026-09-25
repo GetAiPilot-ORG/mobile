@@ -1,180 +1,112 @@
 import React, { useState, useEffect } from 'react';
-import { BackHandler, StyleSheet, View } from 'react-native';
+import { BackHandler, StyleSheet, useColorScheme, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTheme } from '../../../src/contexts/ThemeContext';
-import { CRMHomeScreen } from '../../../src/features/crm/screens/CRMHomeScreen';
-import { LeadListScreen } from '../../../src/features/crm/screens/LeadListScreen';
-import { LeadDetailScreen } from '../../../src/features/crm/screens/LeadDetailScreen';
-import { PipelineScreen } from '../../../src/features/crm/screens/PipelineScreen';
-import { TasksScreen } from '../../../src/features/crm/screens/TasksScreen';
-import { ContactsScreen } from '../../../src/features/crm/screens/ContactsScreen';
-import { ActivitiesScreen } from '../../../src/features/crm/screens/ActivitiesScreen';
-import { CRMMoreScreen } from '../../../src/features/crm/screens/CRMMoreScreen';
 import {
   ProductFloatingBottomBar,
   ProductTabItem,
 } from '../../../src/components/ProductFloatingBottomBar';
+import { CRMDashboardScreen } from "../../../src/features/crm/screens/CRMDashboardScreen";
+import { GoogleCalendarScreen } from "../../../src/features/crm/screens/GoogleCalendarScreen";
+import { CommunicationScreen } from "../../../src/features/team/screens/CommunicationScreen";
+import { PlannerScreen } from "../../../src/features/team/screens/PlannerScreen";
+import { TeamScreen } from "../../../src/features/team/screens/TeamScreen";
 
-type CRMTab = 'home' | 'leads' | 'pipeline' | 'tasks' | 'contacts' | 'activities' | 'more';
+type CRMTab = "overview" | "team" | "planner" | "calendar" | "communication";
 
 const CRM_TABS: ProductTabItem[] = [
   {
-    key: 'home',
-    label: 'Home',
-    activeIcon: 'home',
-    inactiveIcon: 'home-outline',
+    key: "overview",
+    label: "Overview",
+    activeIcon: "grid",
+    inactiveIcon: "grid-outline",
+    description: "CRM dashboard, stats & quick access",
   },
   {
-    key: 'leads',
-    label: 'Leads',
-    activeIcon: 'people',
-    inactiveIcon: 'people-outline',
+    key: "team",
+    label: "Team",
+    activeIcon: "people",
+    inactiveIcon: "people-outline",
+    description: "Members, attendance, leave & presence",
   },
   {
-    key: 'pipeline',
-    label: 'Pipeline',
-    activeIcon: 'briefcase',
-    inactiveIcon: 'briefcase-outline',
+    key: "planner",
+    label: "Planner",
+    activeIcon: "calendar",
+    inactiveIcon: "calendar-outline",
+    description: "Upcoming birthdays & company holidays",
   },
   {
-    key: 'tasks',
-    label: 'Tasks',
-    activeIcon: 'checkbox',
-    inactiveIcon: 'checkbox-outline',
+    key: "calendar",
+    label: "Calendar",
+    activeIcon: "calendar-clear",
+    inactiveIcon: "calendar-clear-outline",
+    description: "Google Calendar integration",
   },
   {
-    key: 'contacts',
-    label: 'Contacts',
-    activeIcon: 'book',
-    inactiveIcon: 'book-outline',
-    description: 'All organization contacts & clients',
-  },
-  {
-    key: 'activities',
-    label: 'Activities',
-    activeIcon: 'pulse',
-    inactiveIcon: 'pulse-outline',
-    description: 'Calls, meetings, emails & note logs',
-  },
-  {
-    key: 'more',
-    label: 'Team & Hub',
-    activeIcon: 'grid',
-    inactiveIcon: 'grid-outline',
-    description: 'Team directory & advanced features',
+    key: "communication",
+    label: "Communication",
+    activeIcon: "mail",
+    inactiveIcon: "mail-outline",
+    description: "Email, team chat & work from home",
   },
 ];
 
 export default function CRMIndexRoute() {
   const router = useRouter();
-  const { isDark } = useTheme();
-  const [activeTab, setActiveTab] = useState<CRMTab>('home');
-  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+  const [activeTab, setActiveTab] = useState<CRMTab>("overview");
 
   useEffect(() => {
     const onHardwareBack = () => {
-      if (selectedLeadId) {
-        setSelectedLeadId(null);
-        return true;
-      }
-      if (activeTab !== 'home') {
-        setActiveTab('home');
+      if (activeTab !== "overview") {
+        setActiveTab("overview");
         return true;
       }
       if (router.canGoBack()) {
         router.back();
         return true;
       }
-      router.replace('/(tabs)/products');
+      router.replace("/(tabs)/products");
       return true;
     };
 
-    const sub = BackHandler.addEventListener('hardwareBackPress', onHardwareBack);
-    return () => sub.remove();
-  }, [selectedLeadId, activeTab]);
-
-  // If a lead is selected, show LeadDetailScreen
-  if (selectedLeadId) {
-    return (
-      <LeadDetailScreen
-        leadId={selectedLeadId}
-        onBack={() => setSelectedLeadId(null)}
-      />
+    const sub = BackHandler.addEventListener(
+      "hardwareBackPress",
+      onHardwareBack
     );
-  }
+    return () => sub.remove();
+  }, [activeTab]);
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: isDark ? "#0F1015" : "#F8FAFC" },
+      ]}
+    >
       <View style={styles.screenContainer}>
-        {activeTab === 'home' && (
-          <CRMHomeScreen
-            onNavigateTab={(tab) => {
-              if (
-                tab === 'leads' ||
-                tab === 'pipeline' ||
-                tab === 'tasks' ||
-                tab === 'contacts' ||
-                tab === 'activities' ||
-                tab === 'more'
-              ) {
-                setActiveTab(tab as CRMTab);
-              }
-            }}
-            onSelectLead={(id) => setSelectedLeadId(id)}
-            onBack={() => {
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace('/(tabs)/products');
-              }
+        {activeTab === "overview" && (
+          <CRMDashboardScreen
+            onNavigateSection={(section) => {
+              if (section === "team") setActiveTab("team");
+              else if (section === "planner") setActiveTab("planner");
+              else if (section === "communication") setActiveTab("communication");
             }}
           />
         )}
-
-        {activeTab === 'leads' && (
-          <LeadListScreen
-            onSelectLead={(id) => setSelectedLeadId(id)}
-            onBack={() => setActiveTab('home')}
-          />
-        )}
-
-        {activeTab === 'pipeline' && (
-          <PipelineScreen onBack={() => setActiveTab('home')} />
-        )}
-
-        {activeTab === 'tasks' && (
-          <TasksScreen onBack={() => setActiveTab('home')} />
-        )}
-
-        {activeTab === 'contacts' && (
-          <ContactsScreen
-            onSelectContact={(id) => setSelectedLeadId(id)}
-            onBack={() => setActiveTab('home')}
-          />
-        )}
-
-        {activeTab === 'activities' && (
-          <ActivitiesScreen onBack={() => setActiveTab('home')} />
-        )}
-
-        {activeTab === 'more' && (
-          <CRMMoreScreen
-            onSelectSection={(section) => {
-              if (section === 'contacts') setActiveTab('contacts');
-              else if (section === 'activities') setActiveTab('activities');
-            }}
-            onBack={() => setActiveTab('home')}
-          />
-        )}
+        {activeTab === "team" && <TeamScreen />}
+        {activeTab === "planner" && <PlannerScreen />}
+        {activeTab === "calendar" && <GoogleCalendarScreen />}
+        {activeTab === "communication" && <CommunicationScreen />}
       </View>
 
-      {/* Floating Home-Style Product Bottom Navigation Bar */}
       <ProductFloatingBottomBar
         items={CRM_TABS}
         activeKey={activeTab}
         onChangeTab={(key) => setActiveTab(key as CRMTab)}
         accentColor="#3B82F6"
-        moreMenuTitle="CRM Tools & Management"
+        moreMenuTitle="CRM Navigation"
       />
     </View>
   );

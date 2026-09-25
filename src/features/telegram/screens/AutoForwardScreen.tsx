@@ -1,18 +1,17 @@
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import {
-  Alert,
   Linking,
   Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
-  useColorScheme,
+  useColorScheme
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { TelegramToolKey } from '../types';
 import { StatCard } from '../components/ui/StatCard';
+import { TelegramToolKey } from '../types';
 
 type AfSection = 'mappings' | 'filters' | 'blocked' | 'delays' | 'headers';
 
@@ -37,16 +36,19 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
   const dbSettings = summary?.loadedForwardSettings || null;
 
   const filtersList = dbFilters.length > 0
-    ? dbFilters.map((f: any) => ({ from: f.keyword || f.find_text || f.word || '', to: f.replacement || f.replace_text || f.replace_with || '' }))
+    ? dbFilters.map((f: any) => ({
+        from: f.from_name || f.keyword || f.find_text || f.word || '',
+        to: f.to_name || f.replacement || f.replace_text || f.replace_with || '',
+      }))
     : forwardRules.flatMap(r => r.keywords_filter || []).map((f: string) => {
-        const parts = f.split('->');
-        return { from: parts[0] || f, to: parts[1] || '' };
-      });
+      const parts = f.split('->');
+      return { from: parts[0] || f, to: parts[1] || '' };
+    });
 
   const filtersCount = filtersList.length;
 
   const blacklistList = dbBlacklist.length > 0
-    ? dbBlacklist.map((b: any) => b.word || b.keyword || b.blacklisted_word).filter(Boolean)
+    ? dbBlacklist.map((b: any) => b.word || b.word_lower || b.keyword || b.blacklisted_word).filter(Boolean)
     : [...new Set(forwardRules.flatMap(r => r.blacklist_keywords || []))];
 
   const blockedCount = blacklistList.length;
@@ -120,12 +122,6 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
           }}
         />
       </View>
-
-      {/* New Rule Button */}
-      <Pressable style={styles.primaryBtn} onPress={() => onOpenModal('autoforward')}>
-        <Ionicons name="add" size={16} color="#FFFFFF" />
-        <Text style={styles.primaryBtnText}>Configure New Forwarding Rule</Text>
-      </Pressable>
 
       {/* MAPPINGS */}
       {afSection === 'mappings' && (

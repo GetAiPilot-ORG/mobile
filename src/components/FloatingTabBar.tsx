@@ -1,21 +1,18 @@
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import React from 'react';
 import {
-  View,
-  Text,
+  LayoutAnimation,
+  Platform,
   Pressable,
   StyleSheet,
-  Platform,
-  LayoutAnimation,
-  UIManager,
+  Text,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+import { usePlatformSubscription } from '../hooks/usePlatformSubscription';
+import { useAuth } from '../contexts/AuthContext';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -36,6 +33,17 @@ const TAB_CONFIG: Record<string, TabItemConfig> = {
     activeIcon: 'chatbubbles',
     inactiveIcon: 'chatbubbles-outline',
   },
+
+  team: {
+    label: 'Team',
+    activeIcon: 'people',
+    inactiveIcon: 'people-outline',
+  },
+  planner: {
+    label: 'Planner',
+    activeIcon: 'calendar',
+    inactiveIcon: 'calendar-outline',
+  },
   tools: {
     label: 'Tools',
     activeIcon: 'telescope',
@@ -45,6 +53,16 @@ const TAB_CONFIG: Record<string, TabItemConfig> = {
     label: 'Activity',
     activeIcon: 'pulse',
     inactiveIcon: 'pulse-outline',
+  },
+  admin: {
+    label: 'Admin',
+    activeIcon: 'shield-checkmark',
+    inactiveIcon: 'shield-checkmark-outline'
+  },
+  communication: {
+    label: 'Connect',
+    activeIcon: 'mail',
+    inactiveIcon: 'mail-outline',
   },
 };
 
@@ -74,15 +92,35 @@ const tabSpringAnimation = {
 export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
+  const { user, profile } = useAuth();
+  const { isAdmin: isPlatformAdmin } = usePlatformSubscription();
+
+  const userRole = (user?.role || profile?.role || '').toLowerCase();
+  const isAdmin = Boolean(
+    userRole === 'admin' ||
+    (user as any)?.is_admin === true ||
+    profile?.is_admin === true
+  );
 
   // Bottom floating offset based on safe area
   const bottomOffset = Math.max(insets.bottom, 12);
 
-  // Filter visible routes: strictly the 4 main tabs (Home, Inbox, Tools, Activity)
+  // Filter visible routes: Home, Inbox, Tools, Activity, and Admin ONLY for admin users
   const visibleRoutes = state.routes.filter((route: any) => {
     const descriptor = descriptors[route.key];
     const options = descriptor ? descriptor.options : {};
-    return options.href !== null && !!TAB_CONFIG[route.name] && route.name !== 'products';
+
+    // Explicitly hide products, account, fleet from bottom bar
+    if (route.name === 'products' || route.name === 'account' || route.name === 'fleet') {
+      return false;
+    }
+
+    // Admin tab (shield-checkmark) should ONLY show when the user is admin
+    if (route.name === 'admin') {
+      return Boolean(isAdmin);
+    }
+
+    return options.href !== null && !!TAB_CONFIG[route.name];
   });
 
   const currentRouteName = state.routes[state.index]?.name;
@@ -92,7 +130,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   );
 
   return (
-    <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
+    <View style={[styles.floatingWrapper, { bottom: bottomOffset }]}>
       <View
         style={[
           styles.tabBarContainer,
@@ -199,6 +237,7 @@ const styles = StyleSheet.create({
     right: 16,
     alignItems: 'center',
     zIndex: 9999,
+    pointerEvents: 'box-none' as any,
   },
   tabBarContainer: {
     flexDirection: 'row',

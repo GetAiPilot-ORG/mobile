@@ -408,7 +408,7 @@ export class HubAdapter {
       role = 'Agent';
     }
 
-    const isAdmin = role === 'Admin' || role === 'Owner';
+    const isAdmin = role === 'Admin' || Boolean(profile?.is_admin);
     const organizationId = member?.organization_id || profile?.organization_id || `org_${userId.slice(0, 8)}`;
     const subscriptionTier = subscription?.plan_label || subscription?.plan_id || profile?.subscription || 'Growth Pro Plan';
 
@@ -526,7 +526,7 @@ export class HubAdapter {
       };
     }
 
-    const isAdmin = Boolean(profile?.is_admin || profile?.role === 'owner' || profile?.role === 'admin');
+    const isAdmin = Boolean(profile?.is_admin || profile?.role === 'admin' || profile?.role === 'Admin');
 
     return {
       sub,

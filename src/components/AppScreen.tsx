@@ -41,10 +41,12 @@ export function AppScreen({
 
   return (
     <View
-      className={`flex-1 ${bgClass} ${paddingClass} ${className}`}
+      className={`flex-1 flex-col w-full ${bgClass} ${paddingClass} ${className}`}
       style={[
         {
           flex: 1,
+          flexDirection: 'column',
+          width: '100%',
           backgroundColor: defaultBg,
           paddingTop,
           paddingBottom,

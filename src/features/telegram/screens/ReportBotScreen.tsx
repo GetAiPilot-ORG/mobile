@@ -81,11 +81,11 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false);
   const [isPickingImage, setIsPickingImage] = useState(false);
 
-  // Fetch Live Data
+  // Fetch Live Data only if not passed from parent
   const { data: allData, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['telegram_all_data'],
     queryFn: telegramSupabase.getSummary,
-    enabled: true,
+    enabled: !summary,
   });
 
   const activeData = summary || allData;
@@ -391,7 +391,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
       </View>
 
       <View style={styles.bodyContent}>
-        {isLoading ? (
+        {isLoading && !activeData ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator size="large" color="#0284C7" />
             <Text style={[styles.loadingText, isDark ? styles.textDark : styles.textLight]}>

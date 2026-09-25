@@ -156,7 +156,29 @@ export async function voiceRoutes(fastify: FastifyInstance) {
     return reply.status(201).send(campaign);
   });
 
-  // 6. Phone Numbers
+  fastify.put('/voice/campaigns/:id', { preHandler: [authenticateToken, requirePermission('voice.outbound')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { id } = request.params as { id: string };
+    const campaign = await VoiceAdapter.updateCampaign(user, id, request.body as any);
+    return reply.send(campaign);
+  });
+
+  fastify.delete('/voice/campaigns/:id', { preHandler: [authenticateToken, requirePermission('voice.outbound')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { id } = request.params as { id: string };
+    const result = await VoiceAdapter.deleteCampaign(user, id);
+    return reply.send(result);
+  });
+
+  fastify.post('/voice/campaigns/:id/status', { preHandler: [authenticateToken, requirePermission('voice.outbound')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { id } = request.params as { id: string };
+    const { status } = (request.body || {}) as { status: string };
+    const result = await VoiceAdapter.updateCampaignStatus(user, id, status);
+    return reply.send(result);
+  });
+
+  // 6. Phone Numbers & KYC
   fastify.get('/voice/numbers', { preHandler: [authenticateToken, requirePermission('voice.read')] }, async (request, reply) => {
     const user = request.user as JWTPayload;
     const numbers = await VoiceAdapter.getPhoneNumbers(user);
@@ -175,9 +197,27 @@ export async function voiceRoutes(fastify: FastifyInstance) {
     return reply.send(result);
   });
 
+  fastify.post('/voice/numbers/claim', { preHandler: [authenticateToken, requirePermission('voice.outbound')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const result = await VoiceAdapter.buyPhoneNumber(user, request.body as any);
+    return reply.send(result);
+  });
+
   fastify.put('/voice/numbers/assign', { preHandler: [authenticateToken, requirePermission('voice.outbound')] }, async (request, reply) => {
     const user = request.user as JWTPayload;
     const result = await VoiceAdapter.assignPhoneNumber(user, request.body as any);
+    return reply.send(result);
+  });
+
+  fastify.get('/voice/kyc', { preHandler: [authenticateToken, requirePermission('voice.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const kyc = await VoiceAdapter.getKycStatus(user);
+    return reply.send(kyc);
+  });
+
+  fastify.post('/voice/kyc/request', { preHandler: [authenticateToken, requirePermission('voice.outbound')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const result = await VoiceAdapter.submitKycRequest(user, request.body as any);
     return reply.send(result);
   });
 
@@ -188,16 +228,50 @@ export async function voiceRoutes(fastify: FastifyInstance) {
     return reply.send(contacts);
   });
 
+  fastify.get('/voice/contacts/:id', { preHandler: [authenticateToken, requirePermission('voice.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { id } = request.params as { id: string };
+    const contact = await VoiceAdapter.getContactDetails(user, id);
+    return reply.send(contact);
+  });
+
   fastify.post('/voice/contacts', { preHandler: [authenticateToken, requirePermission('voice.outbound')] }, async (request, reply) => {
     const user = request.user as JWTPayload;
     const result = await VoiceAdapter.createContact(user, request.body as any);
     return reply.status(201).send(result);
   });
 
-  // 8. Usage & Wallet
+  fastify.put('/voice/contacts/:id', { preHandler: [authenticateToken, requirePermission('voice.outbound')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { id } = request.params as { id: string };
+    const result = await VoiceAdapter.updateContact(user, id, request.body as any);
+    return reply.send(result);
+  });
+
+  fastify.delete('/voice/contacts/:id', { preHandler: [authenticateToken, requirePermission('voice.outbound')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const { id } = request.params as { id: string };
+    const result = await VoiceAdapter.deleteContact(user, id);
+    return reply.send(result);
+  });
+
+  // 8. Usage, Analytics & Billing
   fastify.get('/voice/usage', { preHandler: [authenticateToken, requirePermission('voice.read')] }, async (request, reply) => {
     const user = request.user as JWTPayload;
     const usage = await VoiceAdapter.getUsage(user);
     return reply.send(usage);
   });
+
+  fastify.get('/voice/analytics', { preHandler: [authenticateToken, requirePermission('voice.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const analytics = await VoiceAdapter.getAnalytics(user);
+    return reply.send(analytics);
+  });
+
+  fastify.get('/voice/billing/transactions', { preHandler: [authenticateToken, requirePermission('voice.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const transactions = await VoiceAdapter.getBillingTransactions(user);
+    return reply.send(transactions);
+  });
 }
+
