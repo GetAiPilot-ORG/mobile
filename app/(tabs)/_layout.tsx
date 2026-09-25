@@ -1,6 +1,7 @@
-import { Tabs } from "expo-router";
-import { FloatingTabBar } from "../../src/components/FloatingTabBar";
-import { useAuth } from "../../src/contexts/AuthContext";
+import { Tabs } from 'expo-router';
+import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { FloatingTabBar } from '../../src/components/FloatingTabBar';
 
 export default function TabLayout() {
   const { user, profile } = useAuth();
@@ -53,8 +54,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="admin"
         options={{
-          title: "Admin",
-          href: (isAdmin ? "/(tabs)/admin" : null) as any,
+          title: 'Admin',
+          href: (isAdmin ? '/(tabs)/admin' : null) as any,
         }}
       />
     </Tabs>

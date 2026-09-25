@@ -338,8 +338,8 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
             <Text style={[s.statLabel, { color: sub }]}>Team Active</Text>
             <Text style={[s.statExtra, { color: sub }]}>
               {teamActivity
-                ? `${teamActivity.wfhToday} WFH`
-                : `of ${teamActivity?.totalMembers ?? 0} total`}
+                ? `${teamActivity.wfhToday} WFH · of ${teamActivity.totalMembers} total`
+                : `${stats?.teamCount ?? 0} total`}
             </Text>
           </View>
         </View>
