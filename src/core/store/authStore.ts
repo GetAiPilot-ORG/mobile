@@ -1,9 +1,9 @@
-import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { create } from "zustand";
+import { getDeviceLoginInfo } from "../../lib/device-session";
 import { supabase } from "../../lib/supabase";
 import { apiClient } from "../api/client";
 import { authStorage } from "../storage/authStorage";
-import { getDeviceLoginInfo } from "../../lib/device-session";
 
 const CACHED_USER_KEY = "@gap_cached_user";
 
@@ -41,7 +41,11 @@ interface AuthState {
   isLoading: boolean;
   authStatus: AuthStatus;
   login: (email: string, password?: string) => Promise<void>;
-  syncSession: (session: { access_token: string; refresh_token?: string; user?: any }) => Promise<void>;
+  syncSession: (session: {
+    access_token: string;
+    refresh_token?: string;
+    user?: any;
+  }) => Promise<void>;
   logout: () => Promise<void>;
   loadSession: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
@@ -79,6 +83,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
           email,
           password,
         });
+
+        console.log("[AuthStore] Supabase auth response:", supabaseAuth);
         if (supabaseAuth.error) throw supabaseAuth.error;
 
         const device = await getDeviceLoginInfo();
@@ -94,11 +100,14 @@ export const useAuthStore = create<AuthState>((set, get) => {
             { skipAuth: true },
           );
         } catch (bffErr: any) {
-          if (__DEV__) console.warn("[AuthStore] BFF login fallback:", bffErr?.message);
+          if (__DEV__)
+            console.warn("[AuthStore] BFF login fallback:", bffErr?.message);
         }
 
-        const accessToken = bffData?.accessToken || supabaseAuth.data.session?.access_token;
-        const refreshToken = bffData?.refreshToken || supabaseAuth.data.session?.refresh_token;
+        const accessToken =
+          bffData?.accessToken || supabaseAuth.data.session?.access_token;
+        const refreshToken =
+          bffData?.refreshToken || supabaseAuth.data.session?.refresh_token;
 
         if (accessToken) {
           await authStorage.setTokens(accessToken, refreshToken);
@@ -107,14 +116,18 @@ export const useAuthStore = create<AuthState>((set, get) => {
         const userObj: User = bffData?.user || {
           id: supabaseAuth.data.user?.id || "user",
           email: supabaseAuth.data.user?.email || email,
-          name: supabaseAuth.data.user?.user_metadata?.full_name || email.split("@")[0],
+          name:
+            supabaseAuth.data.user?.user_metadata?.full_name ||
+            email.split("@")[0],
           role: "Agent",
           organizationId: "",
           permissions: ["*"],
           user_metadata: supabaseAuth.data.user?.user_metadata,
         };
 
-        AsyncStorage.setItem(CACHED_USER_KEY, JSON.stringify(userObj)).catch(() => {});
+        AsyncStorage.setItem(CACHED_USER_KEY, JSON.stringify(userObj)).catch(
+          () => {},
+        );
 
         set({
           user: userObj,
@@ -129,18 +142,29 @@ export const useAuthStore = create<AuthState>((set, get) => {
       }
     },
 
-    syncSession: async (session: { access_token: string; refresh_token?: string; user?: any }) => {
+    syncSession: async (session: {
+      access_token: string;
+      refresh_token?: string;
+      user?: any;
+    }) => {
       set({ isLoading: true });
       try {
         if (session.access_token) {
-          await authStorage.setTokens(session.access_token, session.refresh_token);
+          await authStorage.setTokens(
+            session.access_token,
+            session.refresh_token,
+          );
         }
 
         let meData: any = null;
         try {
           meData = await apiClient.get<any>("/mobile/v1/auth/me");
         } catch (e) {
-          if (__DEV__) console.warn("[AuthStore] BFF /auth/me unavailable during syncSession:", e);
+          if (__DEV__)
+            console.warn(
+              "[AuthStore] BFF /auth/me unavailable during syncSession:",
+              e,
+            );
         }
 
         const fallbackUser = session.user;
@@ -156,14 +180,19 @@ export const useAuthStore = create<AuthState>((set, get) => {
           : {
               id: fallbackUser?.id || "user",
               email: fallbackUser?.email || "",
-              name: fallbackUser?.user_metadata?.full_name || fallbackUser?.email?.split("@")[0] || "User",
+              name:
+                fallbackUser?.user_metadata?.full_name ||
+                fallbackUser?.email?.split("@")[0] ||
+                "User",
               role: (fallbackUser?.app_metadata?.role as any) || "Agent",
               organizationId: "",
               permissions: ["*"],
               user_metadata: fallbackUser?.user_metadata,
             };
 
-        AsyncStorage.setItem(CACHED_USER_KEY, JSON.stringify(userObj)).catch(() => {});
+        AsyncStorage.setItem(CACHED_USER_KEY, JSON.stringify(userObj)).catch(
+          () => {},
+        );
 
         set({
           user: userObj,
@@ -220,7 +249,9 @@ export const useAuthStore = create<AuthState>((set, get) => {
             organizationId: me.organizationId,
             permissions: me.permissions,
           };
-          AsyncStorage.setItem(CACHED_USER_KEY, JSON.stringify(userObj)).catch(() => {});
+          AsyncStorage.setItem(CACHED_USER_KEY, JSON.stringify(userObj)).catch(
+            () => {},
+          );
           set({
             user: userObj,
             tenantMapping: me.tenantMapping,
@@ -252,7 +283,9 @@ export const useAuthStore = create<AuthState>((set, get) => {
           }
 
           // Network failure or offline: attempt to restore cached user or Supabase session
-          const cachedUserStr = await AsyncStorage.getItem(CACHED_USER_KEY).catch(() => null);
+          const cachedUserStr = await AsyncStorage.getItem(
+            CACHED_USER_KEY,
+          ).catch(() => null);
           if (cachedUserStr) {
             try {
               const cachedUser = JSON.parse(cachedUserStr);
@@ -268,13 +301,16 @@ export const useAuthStore = create<AuthState>((set, get) => {
           }
 
           // Check if Supabase session is still valid locally
-          const { data: sbSessionData } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+          const { data: sbSessionData } = await supabase.auth
+            .getSession()
+            .catch(() => ({ data: { session: null } }));
           if (sbSessionData?.session?.user) {
             const u = sbSessionData.session.user;
             const restoredUser: User = {
               id: u.id,
               email: u.email || "",
-              name: u.user_metadata?.full_name || u.email?.split("@")[0] || "User",
+              name:
+                u.user_metadata?.full_name || u.email?.split("@")[0] || "User",
               role: "Agent",
               organizationId: "",
               permissions: ["*"],
