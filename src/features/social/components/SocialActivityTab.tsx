@@ -1,7 +1,14 @@
-import { Ionicons } from '@expo/vector-icons';
+import {
+  Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import React,
+  { useState } from 'react';
+import { Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import {
   ActivitySubTab,
   InstapilotConversation,
@@ -13,6 +20,7 @@ import { ActivityAutoDMSubTab } from './activity/ActivityAutoDMSubTab';
 import { ActivityInstapilotSubTab } from './activity/ActivityInstapilotSubTab';
 import { ActivityQueueSubTab } from './activity/ActivityQueueSubTab';
 import { ActivityYouTubeSubTab } from './activity/ActivityYouTubeSubTab';
+import { useTheme, getColors } from '@/theme';
 
 export interface SocialActivityTabProps {
   queueLoading: boolean;
@@ -55,8 +63,8 @@ export const SocialActivityTab: React.FC<SocialActivityTabProps> = ({
   youtubeAccountsLoading = false,
   onRefreshYoutubeAccounts,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const [activeSubTab, setActiveSubTab] = useState<ActivitySubTab>('queue');
 
   return (

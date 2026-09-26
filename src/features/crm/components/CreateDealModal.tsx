@@ -10,13 +10,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CRMDeal, DealStage } from '../types';
 import { useMembers } from '../hooks/useMembers';
 import { useContacts } from '../hooks/useContacts';
 import { DatePickerField } from '../../../components/DatePickerModal';
+import { useTheme, getColors } from '@/theme';
 
 interface CreateDealModalProps {
   visible: boolean;
@@ -44,8 +44,8 @@ export const CreateDealModal: React.FC<CreateDealModalProps> = ({
   defaultStage = 'lead',
   isLoading,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [title, setTitle] = useState('');
   const [value, setValue] = useState('');

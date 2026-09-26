@@ -1,7 +1,9 @@
 
-import { Ionicons } from '@expo/vector-icons';
+import {
+  Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import React, { useMemo } from 'react';
+import React,
+  { useMemo } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -10,17 +12,17 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { crmApi } from '../api/crm.api';
+import { useTheme, getColors } from '@/theme';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
 export function GoogleCalendarScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   /*
    * --------------------------------------------------------------------------

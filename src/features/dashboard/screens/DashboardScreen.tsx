@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import {
+  useQuery } from '@tanstack/react-query';
 import React from 'react';
 import {
   ActivityIndicator,
@@ -7,7 +8,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,10 +20,11 @@ import {
   UsageMeterCard,
 } from '../components';
 import { DashboardSkeleton } from '../../../components/skeletonScreen';
+import { useTheme, getColors } from '@/theme';
 
 export const DashboardScreen: React.FC = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 

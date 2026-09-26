@@ -7,7 +7,6 @@ import {
   Pressable,
   TextInput,
   ScrollView,
-  useColorScheme,
   ActivityIndicator,
   Alert,
   Image,
@@ -23,6 +22,7 @@ import {
   TelegramTrackerDashboardData,
   TelegramTrackerNewUser,
 } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 interface TrackerModalProps {
   visible: boolean;
@@ -32,8 +32,8 @@ interface TrackerModalProps {
 type TrackerTab = 'connect' | 'links' | 'joins';
 
 export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [activeTab, setActiveTab] = useState<TrackerTab>('joins');
   const [loading, setLoading] = useState(false);

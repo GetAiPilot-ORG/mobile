@@ -1,7 +1,8 @@
 import React from 'react';
-import { StyleSheet, Text, View, Pressable, Linking, useColorScheme } from 'react-native';
+import { StyleSheet, Text, View, Pressable, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CRMContact, ContactStatus } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 interface LeadCardProps {
   lead: CRMContact;
@@ -30,8 +31,8 @@ export const LeadCard: React.FC<LeadCardProps> = ({
   onQuickEmail,
   dealValue,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const statusCfg = STATUS_CONFIG[lead.status] || {
     label: lead.status || 'Lead',

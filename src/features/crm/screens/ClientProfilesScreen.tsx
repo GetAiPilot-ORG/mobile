@@ -1,16 +1,17 @@
 import React from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, useColorScheme, Linking, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, Pressable, StyleSheet, Linking, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { crmApi } from '../api/crm.api';
 import { CRMBillingProfile } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 const WEB_APP_URL = 'https://getaipilot.in';
 
 export function ClientProfilesScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const { data, isLoading, isRefetching, refetch } = useQuery({
     queryKey: ['crm-billing-profiles'],

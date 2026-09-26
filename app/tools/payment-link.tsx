@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,9 +12,13 @@ import {
 } from 'react-native';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
-import { colors } from '../../src/theme/colors';
+import { useTheme, getColors, AppColors } from '@/theme';
 
 export default function PaymentLinkGeneratorScreen() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [upiId, setUpiId] = useState('getaipilot@upi');
   const [payeeName, setPayeeName] = useState('GetAIPilot Hub');
   const [amount, setAmount] = useState('');
@@ -132,7 +136,7 @@ export default function PaymentLinkGeneratorScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingBottom: 40,

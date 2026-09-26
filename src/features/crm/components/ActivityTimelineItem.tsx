@@ -1,7 +1,8 @@
 import React from 'react';
-import { StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityType, CRMActivity } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 interface ActivityTimelineItemProps {
   activity: CRMActivity;
@@ -22,8 +23,8 @@ const TYPE_CONFIG: Partial<Record<ActivityType, { icon: keyof typeof Ionicons.gl
 };
 
 export const ActivityTimelineItem: React.FC<ActivityTimelineItemProps> = ({ activity, isLast }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const typeCfg = TYPE_CONFIG[activity.type] || {
     icon: 'document-text' as const,

@@ -2,13 +2,14 @@ import React from 'react';
 import { StyleSheet, Text, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useCrmTheme } from '../hooks/useCrmTheme';
 
 interface CrmStatCardProps {
   label: string;
   value: string | number;
   sub?: string;
   icon: keyof typeof Ionicons.glyphMap;
-  gradientColors: [string, string];
+  gradientColors?: [string, string];
   trend?: string;
   progress?: number;
   onPress?: () => void;
@@ -24,6 +25,9 @@ export const CrmStatCard: React.FC<CrmStatCardProps> = ({
   progress,
   onPress,
 }) => {
+  const { gradient } = useCrmTheme();
+  const activeGradient = gradientColors || gradient;
+
   return (
     <Pressable
       style={({ pressed }) => [styles.container, pressed && styles.pressed]}
@@ -31,7 +35,7 @@ export const CrmStatCard: React.FC<CrmStatCardProps> = ({
       disabled={!onPress}
     >
       <LinearGradient
-        colors={gradientColors}
+        colors={activeGradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradient}

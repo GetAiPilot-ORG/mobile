@@ -1,5 +1,7 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useRef } from "react";
+import {
+  Ionicons } from "@expo/vector-icons";
+import { useEffect,
+  useRef } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -7,9 +9,9 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from "react-native";
+import { useTheme, getColors } from '@/theme';
 
 interface NetworkStatusScreenProps {
   onRetry?: () => void;
@@ -17,7 +19,8 @@ interface NetworkStatusScreenProps {
 }
 
 export function NetworkStatusScreen({ onRetry, isChecking = false }: NetworkStatusScreenProps) {
-  const isDark = useColorScheme() === "dark";
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const scale = useRef(new Animated.Value(0.85)).current;
   const opacity = useRef(new Animated.Value(0)).current;

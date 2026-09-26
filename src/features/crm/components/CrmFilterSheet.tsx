@@ -1,7 +1,8 @@
 import React from 'react';
-import { StyleSheet, Text, View, Modal, Pressable, ScrollView, useColorScheme } from 'react-native';
+import { StyleSheet, Text, View, Modal, Pressable, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useMembers } from '../hooks/useMembers';
+import { useTheme, getColors } from '@/theme';
 
 interface CrmFilterSheetProps {
   visible: boolean;
@@ -28,8 +29,8 @@ export const CrmFilterSheet: React.FC<CrmFilterSheetProps> = ({
   onReset,
   onClose,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [tempStatus, setTempStatus] = React.useState(selectedStatus);
   const [tempAssignee, setTempAssignee] = React.useState(selectedAssignee);

@@ -10,13 +10,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CRMTask, TaskPriority } from '../types';
 import { useMembers } from '../hooks/useMembers';
 import { useContacts } from '../hooks/useContacts';
 import { DatePickerField } from '../../../components/DatePickerModal';
+import { useTheme, getColors } from '@/theme';
 
 interface CreateTaskModalProps {
   visible: boolean;
@@ -42,8 +42,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   defaultDealId,
   isLoading,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
