@@ -11,7 +11,6 @@ import {
   ScrollView,
   TouchableWithoutFeedback,
   Keyboard,
-  useColorScheme,
 } from 'react-native';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
@@ -19,14 +18,15 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../src/lib/supabase';
 import { isValidEmail } from '../../src/lib/validators';
+import { useTheme, getColors } from '@/theme';
 
 const brandLogo = require('../../assets/images/logo.jpg');
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);

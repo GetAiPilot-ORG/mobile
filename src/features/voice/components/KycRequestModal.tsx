@@ -7,11 +7,11 @@ import {
   Pressable,
   TextInput,
   ScrollView,
-  useColorScheme,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTheme, getColors } from '@/theme';
 
 interface KycRequestModalProps {
   visible: boolean;
@@ -38,8 +38,8 @@ export const KycRequestModal: React.FC<KycRequestModalProps> = ({
   onSubmit,
   isLoading,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [businessName, setBusinessName] = useState('');
   const [documentType, setDocumentType] = useState(DOC_TYPES[0]);

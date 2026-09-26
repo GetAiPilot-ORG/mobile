@@ -9,10 +9,10 @@ import {
   StyleSheet,
   Text,
   View,
-  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { InstapilotConversation } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 interface InstapilotConversationModalProps {
   visible: boolean;
@@ -25,8 +25,8 @@ export const InstapilotConversationModal: React.FC<InstapilotConversationModalPr
   conversation,
   onClose,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   if (!conversation) return null;
 

@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -7,7 +7,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { useTheme } from "../../src/contexts/ThemeContext";
+import { useTheme, getColors } from "../../src/theme";
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
 import { SearchInput } from "../../src/components/SearchInput";
@@ -152,6 +152,8 @@ const CATEGORIES = ["All", "Templates", "Messaging", "Utilities", "AI Audio"];
 export default function FreeToolsScreen() {
   const router = useRouter();
   const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [openingToolId, setOpeningToolId] = useState<string | null>(null);
@@ -269,69 +271,73 @@ export default function FreeToolsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 140,
-  },
-  heroCard: {
-    backgroundColor: "#0A84FF",
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 16,
-  },
-  heroCardDark: {
-    backgroundColor: "#1C1C1E",
-    borderWidth: 1,
-    borderColor: "#2C2C2E",
-  },
-  heroTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: "#FFFFFF",
-  },
-  heroSub: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.85)",
-    marginTop: 4,
-    lineHeight: 18,
-  },
-  heroSubDark: {
-    color: "#8E8E93",
-  },
-  categoryScroll: {
-    flexDirection: "row",
-    marginBottom: 16,
-  },
-  categoryChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  categoryChipDark: {
-    backgroundColor: "#1C1C1E",
-    borderColor: "#2C2C2E",
-  },
-  categoryChipActive: {
-    backgroundColor: "#0A84FF",
-    borderColor: "#0A84FF",
-  },
-  categoryText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#6B7280",
-  },
-  categoryTextDark: {
-    color: "#8E8E93",
-  },
-  categoryTextActive: {
-    color: "#FFFFFF",
-  },
-  toolsList: {
-    marginTop: 4,
-  },
-});
+function createStyles(colors: ReturnType<typeof getColors>, isDark: boolean) {
+  return StyleSheet.create({
+    scrollContent: {
+      padding: 16,
+      paddingBottom: 140,
+    },
+    heroCard: {
+      backgroundColor: colors.card,
+      borderRadius: 18,
+      padding: 18,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    heroCardDark: {
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    heroTitle: {
+      fontSize: 18,
+      fontWeight: "900",
+      color: colors.foreground,
+    },
+    heroSub: {
+      fontSize: 13,
+      color: colors.mutedForeground,
+      marginTop: 4,
+      lineHeight: 18,
+    },
+    heroSubDark: {
+      color: colors.mutedForeground,
+    },
+    categoryScroll: {
+      flexDirection: "row",
+      marginBottom: 16,
+    },
+    categoryChip: {
+      paddingHorizontal: 14,
+      paddingVertical: 7,
+      borderRadius: 20,
+      backgroundColor: colors.card,
+      marginRight: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    categoryChipDark: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+    },
+    categoryChipActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    categoryText: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: colors.mutedForeground,
+    },
+    categoryTextDark: {
+      color: colors.mutedForeground,
+    },
+    categoryTextActive: {
+      color: colors.primaryForeground,
+    },
+    toolsList: {
+      marginTop: 4,
+    },
+  });
+}

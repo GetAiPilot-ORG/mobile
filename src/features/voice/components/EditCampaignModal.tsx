@@ -7,12 +7,12 @@ import {
   Pressable,
   TextInput,
   ScrollView,
-  useColorScheme,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { VoiceCampaign } from '../api/voiceApi';
+import { useTheme, getColors } from '@/theme';
 
 interface EditCampaignModalProps {
   visible: boolean;
@@ -33,8 +33,8 @@ export const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
   onSubmit,
   isLoading,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Outreach');

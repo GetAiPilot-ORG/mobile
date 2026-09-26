@@ -1,6 +1,8 @@
-import { Ionicons } from "@expo/vector-icons";
+import {
+  Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import React, { useState } from "react";
+import React,
+  { useState } from "react";
 import {
   Dimensions,
   Pressable,
@@ -8,7 +10,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -24,6 +25,7 @@ import { useCreateDeal } from "../hooks/useDeals";
 import { useCreateLead } from "../hooks/useLeads";
 import { useCreateTask, useToggleTask } from "../hooks/useTasks";
 import { CRMTask } from "../types";
+import { useTheme, getColors } from '@/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -48,8 +50,8 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
   onSelectDeal,
   onBack,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const {
     data: dashboard,

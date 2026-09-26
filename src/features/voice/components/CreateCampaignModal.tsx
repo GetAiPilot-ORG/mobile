@@ -6,12 +6,12 @@ import {
   StyleSheet,
   Pressable,
   TextInput,
-  useColorScheme,
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTheme, getColors } from '@/theme';
 
 interface CreateCampaignModalProps {
   visible: boolean;
@@ -35,8 +35,8 @@ export const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
   onSubmit,
   isLoading,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [campaignName, setCampaignName] = useState('');
   const [selectedAssistantId, setSelectedAssistantId] = useState<string>(assistants[0]?.id || '');

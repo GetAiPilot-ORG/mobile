@@ -9,7 +9,6 @@ import {
   TextInput,
   ActivityIndicator,
   Linking,
-  useColorScheme,
   Alert,
   Image,
   Share,
@@ -23,6 +22,7 @@ import { supabase } from '../../../lib/supabase';
 import { telegramSupabase } from '../api/telegramSupabase';
 import { telegramApi } from '../api/telegramApi';
 import { ReportBotBrandProfile, TelegramToolKey } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 interface Props { summary?: any; onOpenModal: (key: TelegramToolKey) => void; }
 
@@ -56,8 +56,8 @@ const LOGO_PRESETS = [
 ];
 
 export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<ReportBotTab>('profile');

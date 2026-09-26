@@ -1,7 +1,8 @@
 import React from 'react';
-import { StyleSheet, Text, View, Modal, Pressable, useColorScheme } from 'react-native';
+import { StyleSheet, Text, View, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { DealStage } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 interface StageSelectorSheetProps {
   visible: boolean;
@@ -25,8 +26,8 @@ export const StageSelectorSheet: React.FC<StageSelectorSheetProps> = ({
   onSelectStage,
   onClose,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>

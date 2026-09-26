@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, useColorScheme, Linking, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, Pressable, StyleSheet, Linking, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { crmApi } from '../api/crm.api';
 import { CRMInvoice, InvoiceStatus } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 const WEB_APP_URL = 'https://getaipilot.in';
 
@@ -17,8 +18,8 @@ const STATUS_COLOR: Record<InvoiceStatus, { bg: string; text: string }> = {
 };
 
 export function InvoicesScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const router = useRouter();
   const [filter, setFilter] = useState<string | undefined>(undefined);
 

@@ -7,12 +7,12 @@ import {
   Pressable,
   TextInput,
   ScrollView,
-  useColorScheme,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { VoiceContact } from '../api/voiceApi';
+import { useTheme, getColors } from '@/theme';
 
 interface EditContactModalProps {
   visible: boolean;
@@ -29,8 +29,8 @@ export const EditContactModal: React.FC<EditContactModalProps> = ({
   onSubmit,
   isLoading,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');

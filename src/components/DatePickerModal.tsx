@@ -6,11 +6,11 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  useColorScheme,
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTheme, getColors } from '@/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -76,8 +76,8 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
   title = 'Select Date',
   minDate,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   // Parse current selection or default to today
   const initialDate = useMemo(() => {
@@ -408,8 +408,8 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
   error,
   disabled,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const [modalVisible, setModalVisible] = useState(false);
 
   const displayString = value ? formatDateDisplay(value) : '';

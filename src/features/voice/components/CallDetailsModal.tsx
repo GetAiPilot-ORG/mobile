@@ -7,11 +7,11 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
-  useColorScheme,
   Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTheme, getColors } from '@/theme';
 
 interface CallDetailsModalProps {
   visible: boolean;
@@ -20,8 +20,8 @@ interface CallDetailsModalProps {
 }
 
 export const CallDetailsModal: React.FC<CallDetailsModalProps> = ({ visible, call, onClose }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   if (!call) return null;
 

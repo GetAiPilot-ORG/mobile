@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,13 +12,17 @@ import {
 } from 'react-native';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
-import { colors } from '../../src/theme/colors';
+import { useTheme, getColors, AppColors } from '@/theme';
 import { supabase } from '../../src/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 import { SalesLeadsSkeleton } from '../../src/components/skeletonScreen';
 
 export default function SalesLeadsScreen() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const { isAdmin } = usePlatformSubscription();
   const [search, setSearch] = useState('');
   const [filterTab, setFilterTab] = useState<'all' | 'new' | 'active'>('all');
@@ -161,7 +165,7 @@ export default function SalesLeadsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingBottom: 40,

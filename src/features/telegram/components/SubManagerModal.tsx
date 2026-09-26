@@ -8,7 +8,6 @@ import {
   TextInput,
   ScrollView,
   ActivityIndicator,
-  useColorScheme,
   Alert,
   Switch,
 } from 'react-native';
@@ -21,6 +20,7 @@ import QRCode from 'react-native-qrcode-svg';
 
 import { telegramApi } from '../api/telegramApi';
 import { TelegramChat } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 interface SubManagerModalProps {
   visible: boolean;
@@ -72,8 +72,8 @@ export const SubManagerModal: React.FC<SubManagerModalProps> = ({
   chats = [],
   initialMode = 'admin',
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   // View state
   const [viewMode, setViewMode] = useState<'admin' | 'create'>(initialMode);

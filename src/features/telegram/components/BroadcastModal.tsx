@@ -8,13 +8,13 @@ import {
   ScrollView,
   ActivityIndicator,
   Linking,
-  useColorScheme,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { telegramApi } from '../api/telegramApi';
+import { useTheme, getColors } from '@/theme';
 
 interface BroadcastModalProps {
   visible: boolean;
@@ -28,8 +28,8 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
   visible,
   onClose,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const { data: status, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['telegram_broadcast_status'],

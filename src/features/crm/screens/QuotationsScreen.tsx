@@ -1,4 +1,5 @@
-import { Ionicons } from '@expo/vector-icons';
+import {
+  Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import {
@@ -9,13 +10,13 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { crmApi } from '../api/crm.api';
 import { CRMQuotation, QuotationStatus } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 const WEB_APP_URL = 'https://getaipilot.in';
 
@@ -68,8 +69,8 @@ const LABELS: string[] = [
 ];
 
 export function QuotationsScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [filter, setFilter] = useState<QuotationStatus | undefined>(
     undefined,

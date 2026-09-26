@@ -1,6 +1,11 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useMemo, useState } from "react";
+import {
+  Ionicons } from "@expo/vector-icons";
+import { useMutation,
+  useQuery,
+  useQueryClient } from "@tanstack/react-query";
+import { useCallback,
+  useMemo,
+  useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -10,13 +15,13 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CampaignSkeleton } from "../../../components/skeletonScreen/CampaiganSkeleton";
 import { supabase } from "../../../lib/supabase";
 import { voiceSupabase } from "../../../lib/voice-supabase";
+import { useTheme, getColors } from '@/theme';
 
 type CampaignStatus =
   | "draft"
@@ -579,8 +584,8 @@ function Metric({
 }
 
 export default function CampaignsScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const queryClient = useQueryClient();
 

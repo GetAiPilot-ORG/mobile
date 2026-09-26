@@ -1,5 +1,8 @@
-import { useRouter } from 'expo-router';
-import React, { useState, useEffect } from 'react';
+import {
+  useRouter } from 'expo-router';
+import React,
+  { useState,
+  useEffect } from 'react';
 import {
   Modal,
   View,
@@ -7,7 +10,6 @@ import {
   StyleSheet,
   Pressable,
   TextInput,
-  useColorScheme,
   ActivityIndicator,
   ScrollView,
   Image,
@@ -18,6 +20,7 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { apiClient } from '../../../core/api/client';
 import { openSocialHandoff } from '../utils/socialHandoff';
+import { useTheme, getColors } from '@/theme';
 
 interface CreatePostModalProps {
   visible: boolean;
@@ -65,8 +68,8 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   entitlementsData,
   queueCount = 0,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const router = useRouter();
 
   const [caption, setCaption] = useState(initialCaption || '');
