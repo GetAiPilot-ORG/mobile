@@ -1,14 +1,32 @@
 import { apiClient } from '../../../core/api/client';
 
+export interface VoiceOverview {
+  totalAssistants: number;
+  activeCampaigns: number;
+  totalCalls: number;
+  creditBalance: number;
+  creditBalanceDisplay: string;
+  isPlanExpired?: boolean;
+  planName?: string;
+  planStatus?: string;
+  currentPeriodEnd?: string | null;
+  activeNumbersCount?: number;
+  expiredNumbersCount?: number;
+  totalNumbersCount?: number;
+}
+
 export interface DedicatedNumber {
   id: string;
   phone_number: string;
-  status: 'active' | 'inactive' | 'pending' | 'available';
+  status: 'active' | 'inactive' | 'pending' | 'available' | 'expired' | 'unassigned';
   provider?: string;
   kyc_status?: 'verified' | 'pending' | 'rejected' | 'not_submitted';
+  assigned_assistant_id?: string | null;
   assistants?: { id: string; name: string };
   monthly_price?: number;
   assigned_at?: string;
+  current_period_end?: string | null;
+  isExpired?: boolean;
 }
 
 export interface KycStatusResponse {
@@ -144,8 +162,8 @@ export interface VoiceAssistant {
 
 export const voiceApi = {
   // Overview & Analytics
-  getOverview: async () => {
-    return apiClient.get<any>('/mobile/v1/voice/overview');
+  getOverview: async (): Promise<VoiceOverview> => {
+    return apiClient.get<VoiceOverview>('/mobile/v1/voice/overview');
   },
 
   getAnalytics: async (): Promise<VoiceAnalytics> => {
@@ -218,6 +236,15 @@ export const voiceApi = {
   getAssistants: async (): Promise<VoiceAssistant[]> => {
     const res = await apiClient.get<any>('/mobile/v1/voice/agents');
     return Array.isArray(res) ? res : res.assistants || res.data || [];
+  },
+
+  createAssistant: async (payload: {
+    name: string;
+    prompt: string;
+    language?: string;
+    first_message?: string;
+  }) => {
+    return apiClient.post('/mobile/v1/voice/agents', payload);
   },
 
   // Campaigns

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Modal,
   View,
@@ -6,11 +6,11 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
+  useColorScheme,
   ActivityIndicator,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { useTheme, getColors } from '@/theme';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 
 interface BuyDedicatedNumberModalProps {
   visible: boolean;
@@ -20,18 +20,14 @@ interface BuyDedicatedNumberModalProps {
   isLoading: boolean;
 }
 
-export const BuyDedicatedNumberModal: React.FC<BuyDedicatedNumberModalProps> = ({
-  visible,
-  availableNumbers,
-  onClose,
-  onClaim,
-  isLoading,
-}) => {
-  const { isDark } = useTheme();
-  const colors = getColors(isDark);
+export const BuyDedicatedNumberModal: React.FC<
+  BuyDedicatedNumberModalProps
+> = ({ visible, availableNumbers, onClose, onClaim, isLoading }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
 
   const [selectedNumber, setSelectedNumber] = useState<string>(
-    availableNumbers[0]?.phone_number || '+91 80 4735 9101'
+    availableNumbers[0]?.phone_number || "",
   );
   const [error, setError] = useState<string | null>(null);
 
@@ -39,12 +35,12 @@ export const BuyDedicatedNumberModal: React.FC<BuyDedicatedNumberModalProps> = (
     if (availableNumbers.length > 0 && !selectedNumber) {
       setSelectedNumber(availableNumbers[0].phone_number);
     }
-  }, [availableNumbers]);
+  }, [availableNumbers, selectedNumber]);
 
   const handleClaim = async () => {
     setError(null);
     if (!selectedNumber) {
-      setError('Please select a dedicated virtual number.');
+      setError("Please select a dedicated virtual number.");
       return;
     }
 
@@ -53,25 +49,58 @@ export const BuyDedicatedNumberModal: React.FC<BuyDedicatedNumberModalProps> = (
       await onClaim(selectedNumber);
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to claim dedicated number.');
+      setError(err.message || "Failed to claim dedicated number.");
     }
   };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View style={[styles.container, isDark ? styles.containerDark : styles.containerLight]}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <View
+        style={[
+          styles.container,
+          isDark ? styles.containerDark : styles.containerLight,
+        ]}
+      >
         {/* Header */}
-        <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
+        <View
+          style={[
+            styles.header,
+            isDark ? styles.headerDark : styles.headerLight,
+          ]}
+        >
           <View>
-            <Text style={[styles.headerTitle, isDark && styles.textDark]}>Get Dedicated Number</Text>
-            <Text style={styles.headerSubtitle}>Enterprise Voice Caller ID • ₹1,499/month</Text>
+            <Text style={[styles.headerTitle, isDark && styles.textDark]}>
+              Get Dedicated Number
+            </Text>
+            <Text style={styles.headerSubtitle}>
+              Enterprise Voice Caller ID • ₹1,499/month
+            </Text>
           </View>
-          <Pressable style={[styles.closeBtn, isDark ? styles.closeBtnDark : styles.closeBtnLight]} onPress={onClose}>
-            <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#000000'} />
+          <Pressable
+            style={[
+              styles.closeBtn,
+              isDark ? styles.closeBtnDark : styles.closeBtnLight,
+            ]}
+            onPress={onClose}
+          >
+            <Ionicons
+              name="close"
+              size={20}
+              color={isDark ? "#FFFFFF" : "#000000"}
+            />
           </Pressable>
         </View>
 
-        <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+        >
           {error && (
             <View style={styles.errorBanner}>
               <Ionicons name="alert-circle" size={16} color="#EF4444" />
@@ -80,35 +109,54 @@ export const BuyDedicatedNumberModal: React.FC<BuyDedicatedNumberModalProps> = (
           )}
 
           {/* Value Banner */}
-          <View style={[styles.pricingCard, isDark ? styles.pricingCardDark : styles.pricingCardLight]}>
+          <View
+            style={[
+              styles.pricingCard,
+              isDark ? styles.pricingCardDark : styles.pricingCardLight,
+            ]}
+          >
             <View style={styles.badgeRow}>
               <View style={styles.proPill}>
-                <Ionicons name="sparkles" size={12} color="#8B5CF6" />
+                <Ionicons name="sparkles" size={12} color="#6D3CF5" />
                 <Text style={styles.proPillText}>EXCLUSIVE CALLER ID</Text>
               </View>
-              <Text style={styles.priceTag}>₹1,499<Text style={styles.periodText}>/mo</Text></Text>
+              <Text style={styles.priceTag}>
+                ₹1,499<Text style={styles.periodText}>/mo</Text>
+              </Text>
             </View>
-            <Text style={[styles.pricingTitle, isDark && styles.textDark]}>Dedicated Business Phone Number</Text>
+            <Text style={[styles.pricingTitle, isDark && styles.textDark]}>
+              Dedicated Business Phone Number
+            </Text>
             <Text style={styles.pricingDesc}>
-              Assign a dedicated virtual line to your AI voice agents. Boost answer rates, build brand trust, and receive inbound callbacks directly.
+              Assign a dedicated virtual line to your AI voice agents. Boost
+              answer rates, build brand trust, and receive inbound callbacks
+              directly.
             </Text>
 
             <View style={styles.featuresList}>
               <View style={styles.featureItem}>
                 <Ionicons name="checkmark-circle" size={16} color="#30D158" />
-                <Text style={[styles.featureText, isDark && styles.textDark]}>Consistent Outbound Caller ID</Text>
+                <Text style={[styles.featureText, isDark && styles.textDark]}>
+                  Consistent Outbound Caller ID
+                </Text>
               </View>
               <View style={styles.featureItem}>
                 <Ionicons name="checkmark-circle" size={16} color="#30D158" />
-                <Text style={[styles.featureText, isDark && styles.textDark]}>Direct Inbound Call Forwarding</Text>
+                <Text style={[styles.featureText, isDark && styles.textDark]}>
+                  Direct Inbound Call Forwarding
+                </Text>
               </View>
               <View style={styles.featureItem}>
                 <Ionicons name="checkmark-circle" size={16} color="#30D158" />
-                <Text style={[styles.featureText, isDark && styles.textDark]}>TRAI & DND Compliant Routing</Text>
+                <Text style={[styles.featureText, isDark && styles.textDark]}>
+                  TRAI & DND Compliant Routing
+                </Text>
               </View>
               <View style={styles.featureItem}>
                 <Ionicons name="checkmark-circle" size={16} color="#30D158" />
-                <Text style={[styles.featureText, isDark && styles.textDark]}>Instant KYC Verification Linkage</Text>
+                <Text style={[styles.featureText, isDark && styles.textDark]}>
+                  Instant KYC Verification Linkage
+                </Text>
               </View>
             </View>
           </View>
@@ -119,42 +167,72 @@ export const BuyDedicatedNumberModal: React.FC<BuyDedicatedNumberModalProps> = (
           </View>
 
           <View style={styles.numbersGrid}>
-            {(availableNumbers.length > 0 ? availableNumbers : [
-              { id: '1', phone_number: '+91 80 4735 9101' },
-              { id: '2', phone_number: '+91 80 4735 9102' },
-              { id: '3', phone_number: '+91 80 4735 9103' },
-              { id: '4', phone_number: '+91 80 4735 9104' },
-            ]).map((num) => {
-              const isSelected = selectedNumber === num.phone_number;
-              return (
-                <Pressable
-                  key={num.id || num.phone_number}
+            {availableNumbers.length > 0 ? (
+              availableNumbers.map((num) => {
+                const isSelected = selectedNumber === num.phone_number;
+                return (
+                  <Pressable
+                    key={num.id || num.phone_number}
+                    style={[
+                      styles.numberOption,
+                      isDark
+                        ? styles.numberOptionDark
+                        : styles.numberOptionLight,
+                      isSelected && styles.numberOptionSelected,
+                    ]}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setSelectedNumber(num.phone_number);
+                    }}
+                  >
+                    <View style={styles.optionLeft}>
+                      <Ionicons
+                        name={
+                          isSelected ? "radio-button-on" : "radio-button-off"
+                        }
+                        size={18}
+                        color={isSelected ? "#6D3CF5" : "#8E8E93"}
+                      />
+                      <Text
+                        style={[
+                          styles.numberText,
+                          isDark && styles.textDark,
+                          isSelected && styles.numberTextSelected,
+                        ]}
+                      >
+                        {num.phone_number}
+                      </Text>
+                    </View>
+                    <View style={styles.statusPill}>
+                      <Text style={styles.statusPillText}>Available</Text>
+                    </View>
+                  </Pressable>
+                );
+              })
+            ) : (
+              <View
+                style={[
+                  styles.pricingCard,
+                  isDark ? styles.pricingCardDark : styles.pricingCardLight,
+                  { alignItems: "center", paddingVertical: 20 },
+                ]}
+              >
+                <Ionicons name="call-outline" size={28} color="#8E8E93" />
+                <Text
                   style={[
-                    styles.numberOption,
-                    isDark ? styles.numberOptionDark : styles.numberOptionLight,
-                    isSelected && styles.numberOptionSelected,
+                    {
+                      fontSize: 13,
+                      color: "#8E8E93",
+                      marginTop: 8,
+                      textAlign: "center",
+                    },
                   ]}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setSelectedNumber(num.phone_number);
-                  }}
                 >
-                  <View style={styles.optionLeft}>
-                    <Ionicons
-                      name={isSelected ? 'radio-button-on' : 'radio-button-off'}
-                      size={18}
-                      color={isSelected ? '#8B5CF6' : '#8E8E93'}
-                    />
-                    <Text style={[styles.numberText, isDark && styles.textDark, isSelected && styles.numberTextSelected]}>
-                      {num.phone_number}
-                    </Text>
-                  </View>
-                  <View style={styles.statusPill}>
-                    <Text style={styles.statusPillText}>Available</Text>
-                  </View>
-                </Pressable>
-              );
-            })}
+                  No numbers currently available for instant claim. Please
+                  submit a KYC request to provision custom lines.
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Action Button */}
@@ -168,7 +246,9 @@ export const BuyDedicatedNumberModal: React.FC<BuyDedicatedNumberModalProps> = (
             ) : (
               <>
                 <Ionicons name="card" size={18} color="#FFFFFF" />
-                <Text style={styles.claimBtnText}>Claim Number (₹1,499/mo)</Text>
+                <Text style={styles.claimBtnText}>
+                  Claim Number (₹1,499/mo)
+                </Text>
               </>
             )}
           </Pressable>
@@ -180,101 +260,124 @@ export const BuyDedicatedNumberModal: React.FC<BuyDedicatedNumberModalProps> = (
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  containerLight: { backgroundColor: '#F2F2F7' },
-  containerDark: { backgroundColor: '#020617' },
+  containerLight: { backgroundColor: "#F7F7F8" },
+  containerDark: { backgroundColor: "#000000" },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerLight: { backgroundColor: '#FFFFFF', borderBottomColor: '#E2E8F0' },
-  headerDark: { backgroundColor: '#0F172A', borderBottomColor: '#1E293B' },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#000000' },
-  headerSubtitle: { fontSize: 12, color: '#64748B', marginTop: 2 },
-  textDark: { color: '#F8FAFC' },
+  headerLight: { backgroundColor: "#FFFFFF", borderBottomColor: "#E5E5EA" },
+  headerDark: { backgroundColor: "#1C1C1E", borderBottomColor: "#2C2C2E" },
+  headerTitle: { fontSize: 18, fontWeight: "700", color: "#000000" },
+  headerSubtitle: { fontSize: 12, color: "#65656B", marginTop: 2 },
+  textDark: { color: "#F7F7F8" },
   closeBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
-  closeBtnLight: { backgroundColor: '#E2E8F0' },
-  closeBtnDark: { backgroundColor: '#1E293B' },
+  closeBtnLight: { backgroundColor: "#E5E5EA" },
+  closeBtnDark: { backgroundColor: "#2C2C2E" },
   content: { flex: 1 },
   contentContainer: { padding: 16, gap: 14, paddingBottom: 40 },
   errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
     padding: 12,
     borderRadius: 12,
   },
-  errorText: { color: '#EF4444', fontSize: 12.5, fontWeight: '600', flex: 1 },
+  errorText: { color: "#EF4444", fontSize: 12.5, fontWeight: "600", flex: 1 },
   pricingCard: {
     borderRadius: 18,
     padding: 18,
     borderWidth: 1,
   },
-  pricingCardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  pricingCardDark: { backgroundColor: '#0F172A', borderColor: '#1E293B' },
-  badgeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  pricingCardLight: { backgroundColor: "#FFFFFF", borderColor: "#E5E5EA" },
+  pricingCardDark: { backgroundColor: "#1C1C1E", borderColor: "#2C2C2E" },
+  badgeRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
   proPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
-    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    backgroundColor: "rgba(109, 60, 245, 0.15)",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
   },
-  proPillText: { fontSize: 10, fontWeight: '800', color: '#8B5CF6', letterSpacing: 0.5 },
-  priceTag: { fontSize: 20, fontWeight: '800', color: '#8B5CF6' },
-  periodText: { fontSize: 12, color: '#64748B', fontWeight: '500' },
-  pricingTitle: { fontSize: 16, fontWeight: '700', marginBottom: 6 },
-  pricingDesc: { fontSize: 12.5, color: '#64748B', lineHeight: 18, marginBottom: 16 },
+  proPillText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#6D3CF5",
+    letterSpacing: 0.5,
+  },
+  priceTag: { fontSize: 20, fontWeight: "800", color: "#6D3CF5" },
+  periodText: { fontSize: 12, color: "#65656B", fontWeight: "500" },
+  pricingTitle: { fontSize: 16, fontWeight: "700", marginBottom: 6 },
+  pricingDesc: {
+    fontSize: 12.5,
+    color: "#65656B",
+    lineHeight: 18,
+    marginBottom: 16,
+  },
   featuresList: { gap: 8 },
-  featureItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  featureText: { fontSize: 12.5, fontWeight: '500' },
+  featureItem: { flexDirection: "row", alignItems: "center", gap: 8 },
+  featureText: { fontSize: 12.5, fontWeight: "500" },
   sectionHeader: { marginTop: 6 },
-  sectionTitle: { fontSize: 11.5, fontWeight: '700', color: '#64748B', letterSpacing: 0.5 },
+  sectionTitle: {
+    fontSize: 11.5,
+    fontWeight: "700",
+    color: "#65656B",
+    letterSpacing: 0.5,
+  },
   numbersGrid: { gap: 8 },
   numberOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: 14,
     borderRadius: 14,
     borderWidth: 1.5,
   },
-  numberOptionLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  numberOptionDark: { backgroundColor: '#0F172A', borderColor: '#1E293B' },
-  numberOptionSelected: { borderColor: '#8B5CF6', backgroundColor: 'rgba(139, 92, 246, 0.08)' },
-  optionLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  numberText: { fontSize: 14, fontWeight: '600' },
-  numberTextSelected: { color: '#8B5CF6', fontWeight: '700' },
+  numberOptionLight: { backgroundColor: "#FFFFFF", borderColor: "#E5E5EA" },
+  numberOptionDark: { backgroundColor: "#1C1C1E", borderColor: "#2C2C2E" },
+  numberOptionSelected: {
+    borderColor: "#6D3CF5",
+    backgroundColor: "rgba(109, 60, 245, 0.08)",
+  },
+  optionLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
+  numberText: { fontSize: 14, fontWeight: "600" },
+  numberTextSelected: { color: "#6D3CF5", fontWeight: "700" },
   statusPill: {
-    backgroundColor: 'rgba(48, 209, 88, 0.12)',
+    backgroundColor: "rgba(48, 209, 88, 0.12)",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
   },
-  statusPillText: { fontSize: 11, color: '#30D158', fontWeight: '700' },
+  statusPillText: { fontSize: 11, color: "#30D158", fontWeight: "700" },
   claimButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: "#6D3CF5",
     paddingVertical: 14,
     borderRadius: 14,
     marginTop: 8,
   },
-  claimBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+  claimBtnText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
   btnDisabled: { opacity: 0.6 },
 });

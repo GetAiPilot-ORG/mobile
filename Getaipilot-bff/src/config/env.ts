@@ -33,6 +33,8 @@ const envSchema = z.object({
   WEBVIEW_AUTH_CODE_TTL_SECONDS: z.coerce.number().int().min(30).max(600).default(300),
   RAZORPAY_KEY_ID: z.string().default(''),
   RAZORPAY_KEY_SECRET: z.string().default(''),
+  VOMYRA_API_KEY: z.string().default('0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx'),
+  VOMYRA_BASE_URL: z.string().url().default('https://api.vomyra.com'),
   REDIS_URL: z.string().default('redis://127.0.0.1:6379'),
 });
 
