@@ -1,5 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import {
+  Ionicons } from '@expo/vector-icons';
+import React,
+  { useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -7,8 +9,7 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  useColorScheme,
-  View
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CrmTaskSkeleton } from '../../../components/skeletonScreen';
@@ -16,6 +17,7 @@ import { CreateTaskModal } from '../components/CreateTaskModal';
 import { TaskItem } from '../components/TaskItem';
 import { useCreateTask, useDeleteTask, useTasks, useToggleTask } from '../hooks/useTasks';
 import { CRMTask } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 const TIMEFRAME_TABS: Array<{ key: 'all' | 'today' | 'upcoming' | 'overdue' | 'completed'; label: string }> = [
   { key: 'all', label: 'All Tasks' },
@@ -30,8 +32,8 @@ interface TasksScreenProps {
 }
 
 export const TasksScreen: React.FC<TasksScreenProps> = ({ onBack }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [selectedTimeframe, setSelectedTimeframe] = useState<'all' | 'today' | 'upcoming' | 'overdue' | 'completed'>('today');
   const [showAddTask, setShowAddTask] = useState(false);

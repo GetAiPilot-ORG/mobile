@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NormalizedConversation } from '../types';
 import { ChannelBadge } from './ChannelBadge';
+import { useTheme, getColors } from '@/theme';
 
 const CUSTOMER_SERVICE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
@@ -39,8 +40,9 @@ const formatMessageTime = (dateStr?: string) => {
 };
 
 export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation, onPress }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   const time = formatMessageTime(conversation.last_message.created_at);
 
@@ -80,7 +82,6 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation
     <Pressable
       style={({ pressed }) => [
         styles.container,
-        isDark ? styles.containerDark : styles.containerLight,
         pressed && styles.pressed,
       ]}
       onPress={onPress}
@@ -90,7 +91,7 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation
           {conversation.contact.name ? conversation.contact.name.charAt(0).toUpperCase() : 'W'}
         </Text>
         {isBotActive && (
-          <View style={[styles.botDot, { backgroundColor: isDark ? '#111b21' : '#ffffff' }]}>
+          <View style={styles.botDot}>
             <Text style={{ fontSize: 8 }}>🤖</Text>
           </View>
         )}
@@ -98,14 +99,14 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation
 
       <View style={styles.content}>
         <View style={styles.topRow}>
-          <Text style={[styles.name, { color: isDark ? '#e9edef' : '#0f172a' }]} numberOfLines={1}>
+          <Text style={styles.name} numberOfLines={1}>
             {conversation.contact.name}
           </Text>
-          <Text style={[styles.time, { color: isDark ? '#8696a0' : '#64748b' }]}>{time}</Text>
+          <Text style={styles.time}>{time}</Text>
         </View>
 
         <View style={styles.metaRow}>
-          <Text style={[styles.handle, { color: isDark ? '#8696a0' : '#64748b' }]} numberOfLines={1}>
+          <Text style={styles.handle} numberOfLines={1}>
             +{conversation.contact.handle_or_phone}
           </Text>
 
@@ -137,16 +138,16 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation
         </View>
 
         <View style={styles.bottomRow}>
-          <Text style={[styles.lastMessage, { color: isDark ? '#8696a0' : '#475569' }]} numberOfLines={1}>
+          <Text style={styles.lastMessage} numberOfLines={1}>
             {conversation.last_message.direction === 'outbound' ? 'You: ' : ''}
             {conversation.last_message.content || 'Media message'}
           </Text>
 
           <View style={styles.bottomBadges}>
             {assignedName ? (
-              <View style={[styles.agentTag, { backgroundColor: isDark ? '#1f2c34' : '#f1f5f9' }]}>
-                <Ionicons name="person" size={10} color={isDark ? '#8696a0' : '#64748b'} />
-                <Text style={[styles.agentTagText, { color: isDark ? '#8696a0' : '#64748b' }]} numberOfLines={1}>
+              <View style={styles.agentTag}>
+                <Ionicons name="person" size={10} color={colors.textSecondary} />
+                <Text style={styles.agentTagText} numberOfLines={1}>
                   {assignedName}
                 </Text>
               </View>
@@ -164,143 +165,148 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 14,
-    marginBottom: 8,
-    borderWidth: 1,
-  },
-  containerDark: {
-    backgroundColor: '#111b21',
-    borderColor: '#202c33',
-  },
-  containerLight: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  pressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.995 }],
-  },
-  avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: '#00a884',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    position: 'relative',
-  },
-  avatarLetter: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  botDot: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    borderRadius: 10,
-    padding: 1,
-    borderWidth: 1,
-    borderColor: '#00a884',
-  },
-  content: {
-    flex: 1,
-  },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  name: {
-    fontSize: 15,
-    fontWeight: '700',
-    flex: 1,
-  },
-  time: {
-    fontSize: 11,
-    marginLeft: 8,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-    gap: 6,
-  },
-  handle: {
-    fontSize: 11.5,
-    flex: 1,
-  },
-  windowPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  windowOpenPill: {
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
-    borderColor: 'rgba(16, 185, 129, 0.3)',
-  },
-  windowClosedPill: {
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
-    borderColor: 'rgba(239, 68, 68, 0.3)',
-  },
-  windowPillText: {
-    fontSize: 9.5,
-    fontWeight: '800',
-  },
-  bottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 8,
-  },
-  lastMessage: {
-    fontSize: 12.5,
-    flex: 1,
-  },
-  bottomBadges: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  agentTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    maxWidth: 90,
-  },
-  agentTagText: {
-    fontSize: 9.5,
-    fontWeight: '600',
-  },
-  unreadBadge: {
-    backgroundColor: '#00a884',
-    borderRadius: 10,
-    paddingHorizontal: 7,
-    paddingVertical: 1.5,
-  },
-  unreadText: {
-    color: '#ffffff',
-    fontSize: 10,
-    fontWeight: '800',
-  },
-});
+function createStyles(colors: ReturnType<typeof getColors>, isDark: boolean) {
+  return StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 13,
+      borderRadius: 16,
+      marginBottom: 10,
+      borderWidth: 1,
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.25 : 0.04,
+      shadowRadius: 5,
+      elevation: 2,
+    },
+    pressed: {
+      opacity: 0.88,
+      transform: [{ scale: 0.995 }],
+    },
+    avatar: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      backgroundColor: colors.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+      position: 'relative',
+    },
+    avatarLetter: {
+      color: '#ffffff',
+      fontSize: 18,
+      fontWeight: '700',
+    },
+    botDot: {
+      position: 'absolute',
+      bottom: -2,
+      right: -2,
+      borderRadius: 10,
+      padding: 1,
+      borderWidth: 1,
+      backgroundColor: colors.card,
+      borderColor: colors.primary,
+    },
+    content: {
+      flex: 1,
+    },
+    topRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 3,
+    },
+    name: {
+      fontSize: 15,
+      fontWeight: '700',
+      flex: 1,
+      color: colors.textPrimary,
+    },
+    time: {
+      fontSize: 11,
+      marginLeft: 8,
+      color: colors.textSecondary,
+    },
+    metaRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 5,
+      gap: 6,
+    },
+    handle: {
+      fontSize: 11.5,
+      flex: 1,
+      color: colors.textSecondary,
+    },
+    windowPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 3,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 10,
+      borderWidth: 1,
+    },
+    windowOpenPill: {
+      backgroundColor: 'rgba(16, 185, 129, 0.12)',
+      borderColor: 'rgba(16, 185, 129, 0.3)',
+    },
+    windowClosedPill: {
+      backgroundColor: 'rgba(239, 68, 68, 0.12)',
+      borderColor: 'rgba(239, 68, 68, 0.3)',
+    },
+    windowPillText: {
+      fontSize: 9.5,
+      fontWeight: '800',
+    },
+    bottomRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: 8,
+    },
+    lastMessage: {
+      fontSize: 12.5,
+      flex: 1,
+      color: colors.textSecondary,
+    },
+    bottomBadges: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    agentTag: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 3,
+      paddingHorizontal: 7,
+      paddingVertical: 2.5,
+      borderRadius: 8,
+      maxWidth: 90,
+      backgroundColor: isDark ? colors.surfaceDark : colors.background,
+      borderColor: colors.border,
+      borderWidth: 1,
+    },
+    agentTagText: {
+      fontSize: 9.5,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    unreadBadge: {
+      backgroundColor: colors.primary,
+      borderRadius: 10,
+      paddingHorizontal: 7,
+      paddingVertical: 1.5,
+    },
+    unreadText: {
+      color: '#ffffff',
+      fontSize: 10,
+      fontWeight: '800',
+    },
+  });
+}

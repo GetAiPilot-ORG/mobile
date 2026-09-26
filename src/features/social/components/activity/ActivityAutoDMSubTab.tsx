@@ -1,8 +1,13 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  Ionicons } from '@expo/vector-icons';
+import { useMutation,
+  useQuery,
+  useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React,
+  { useMemo,
+  useState } from 'react';
 import {
   Alert,
   Image,
@@ -12,7 +17,6 @@ import {
   StyleSheet,
   Text,
   View,
-  useColorScheme,
 } from 'react-native';
 import { apiClient } from '../../../../core/api/client';
 import {
@@ -29,6 +33,7 @@ import { AutoDMContactsView } from './autodm/AutoDMContactsView';
 import { AutoDMMediaPreviewModal } from './autodm/AutoDMMediaPreviewModal';
 import { AutoDMProfileView } from './autodm/AutoDMProfileView';
 import { openSocialHandoff } from '../../utils/socialHandoff';
+import { useTheme, getColors } from '@/theme';
 
 export interface ActivityAutoDMSubTabProps {
   connectedAccounts?: any[];
@@ -39,8 +44,8 @@ export const ActivityAutoDMSubTab: React.FC<ActivityAutoDMSubTabProps> = ({
   connectedAccounts = [],
   entitlementsData,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const router = useRouter();
   const queryClient = useQueryClient();
 

@@ -6,13 +6,13 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
-  useColorScheme,
   ActivityIndicator,
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { VoiceCampaign } from '../api/voiceApi';
+import { useTheme, getColors } from '@/theme';
 
 interface CampaignDetailsModalProps {
   visible: boolean;
@@ -35,8 +35,8 @@ export const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({
   onInspectCall,
   isActionLoading,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   if (!campaign) return null;
 

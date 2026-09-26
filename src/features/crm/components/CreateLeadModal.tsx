@@ -10,11 +10,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CRMContact, ContactStatus } from '../types';
 import { useMembers } from '../hooks/useMembers';
+import { useTheme, getColors } from '@/theme';
 
 interface CreateLeadModalProps {
   visible: boolean;
@@ -35,8 +35,8 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
   onSubmit,
   isLoading,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');

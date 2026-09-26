@@ -6,12 +6,12 @@ import {
   StyleSheet,
   Pressable,
   TextInput,
-  useColorScheme,
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTheme, getColors } from '@/theme';
 
 interface TriggerCallModalProps {
   visible: boolean;
@@ -36,8 +36,8 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
   onSubmit,
   isLoading,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [phone, setPhone] = useState(initialPhone);
   const [name, setName] = useState(initialName);

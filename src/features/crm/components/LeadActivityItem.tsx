@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '@/features/theme';
 import { CRMActivity } from '../types';
 
 interface LeadActivityItemProps {
@@ -20,6 +21,7 @@ const TYPE_ICONS: Record<string, { icon: string; color: string }> = {
 };
 
 export const LeadActivityItem: React.FC<LeadActivityItemProps> = ({ activity }) => {
+  const { isDark, colors } = useTheme();
   const meta = TYPE_ICONS[activity.type] || { icon: '📌', color: '#6366f1' };
   const time = new Date(activity.created_at).toLocaleString([], {
     month: 'short',
@@ -29,17 +31,21 @@ export const LeadActivityItem: React.FC<LeadActivityItemProps> = ({ activity }) 
   });
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.iconBox, { backgroundColor: `${meta.color}20` }]}>
+    <View style={[styles.container, { borderBottomColor: colors.border }]}>
+      <View style={[styles.iconBox, { backgroundColor: isDark ? `${meta.color}25` : `${meta.color}15` }]}>
         <Text style={styles.iconText}>{meta.icon}</Text>
       </View>
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>{activity.subject || activity.title || 'Activity'}</Text>
-          <Text style={styles.time}>{time}</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>
+            {activity.subject || activity.title || 'Activity'}
+          </Text>
+          <Text style={[styles.time, { color: colors.textMuted }]}>{time}</Text>
         </View>
         {activity.description ? (
-          <Text style={styles.description}>{activity.description}</Text>
+          <Text style={[styles.description, { color: colors.textSecondary }]}>
+            {activity.description}
+          </Text>
         ) : null}
       </View>
     </View>
@@ -52,7 +58,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   iconBox: {
     width: 32,
@@ -76,16 +81,13 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   title: {
-    color: '#ffffff',
     fontSize: 14,
     fontWeight: '600',
   },
   time: {
-    color: '#6b7280',
     fontSize: 11,
   },
   description: {
-    color: '#9ca3af',
     fontSize: 13,
     lineHeight: 18,
   },

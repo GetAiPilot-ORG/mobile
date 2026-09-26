@@ -1,9 +1,11 @@
 import React from "react";
-import { ScrollView, StyleSheet, View, useColorScheme } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { Skeleton, SkeletonCard, SkeletonCircle, SkeletonRow, SkeletonText } from "../Skeleton";
+import { useTheme, getColors } from '@/theme';
 
 export function InboxSkeleton() {
-  const isDark = useColorScheme() === "dark";
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   return (
     <View style={[styles.container, { backgroundColor: isDark ? "#0B141A" : "#FFFFFF" }]}>
@@ -36,7 +38,8 @@ export function InboxSkeleton() {
 }
 
 export function InboxListSkeleton() {
-  const isDark = useColorScheme() === "dark";
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
@@ -71,7 +74,8 @@ export function InboxListSkeleton() {
 }
 
 export function ConversationSkeleton() {
-  const isDark = useColorScheme() === "dark";
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   return (
     <View style={[styles.container, { backgroundColor: isDark ? "#0B141A" : "#ECE5DD" }]}>

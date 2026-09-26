@@ -1,7 +1,8 @@
 import React from 'react';
-import { StyleSheet, Text, View, Pressable, useColorScheme } from 'react-native';
+import { StyleSheet, Text, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CRMTask, TaskPriority } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 interface TaskItemProps {
   task: CRMTask;
@@ -18,8 +19,8 @@ const PRIORITY_CONFIG: Record<TaskPriority, { label: string; color: string; bg: 
 };
 
 export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onDelete }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const isDone = task.status === 'done';
   const priorityCfg = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.medium;

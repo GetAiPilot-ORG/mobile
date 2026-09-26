@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { useTheme, getColors } from '@/theme';
 
 interface UsageMeterCardProps {
   label: string;
@@ -16,8 +17,8 @@ export const UsageMeterCard: React.FC<UsageMeterCardProps> = ({
   unit = '',
   color = '#6366f1',
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const percentage = Math.min(Math.round((current / (max || 1)) * 100), 100);
 
   return (

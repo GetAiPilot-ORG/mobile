@@ -1,7 +1,11 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  Ionicons } from '@expo/vector-icons';
+import { useQuery,
+  useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
-import React, { useMemo, useState } from 'react';
+import React,
+  { useMemo,
+  useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -11,7 +15,6 @@ import {
   StyleSheet,
   Text,
   View,
-  useColorScheme,
 } from 'react-native';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
@@ -23,6 +26,7 @@ import {
   PricingService,
 } from '../../src/core/pricing/pricingService';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
+import { useTheme, getColors } from '@/theme';
 
 const CATEGORIES: { key: PlanCategory; label: string; icon: string }[] = [
   { key: 'all', label: 'All Plans', icon: 'apps' },
@@ -34,8 +38,8 @@ const CATEGORIES: { key: PlanCategory; label: string; icon: string }[] = [
 ];
 
 export default function OverallPricingScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const queryClient = useQueryClient();
   const { openRazorpayCheckout } = useRazorpay();
 

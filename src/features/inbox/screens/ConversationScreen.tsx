@@ -9,7 +9,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  useColorScheme,
   View,
   ScrollView,
   Alert,
@@ -28,6 +27,7 @@ import { MessageBubble } from '../components';
 import { useInboxWebSocket } from '../hooks/useInboxWebSocket';
 import { NormalizedConversation, NormalizedMessage, TeamMember } from '../types';
 import { ConversationSkeleton } from '../../../components/skeletonScreen';
+import { useTheme, getColors } from '@/theme';
 
 const CUSTOMER_SERVICE_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 Hours Meta Window
 
@@ -44,8 +44,8 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
 }) => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const handleBack = () => {
     if (Platform.OS !== 'web') {

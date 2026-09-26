@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet, useColorScheme } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../src/lib/supabase';
 import { useAuthStore } from '../../src/core/store/authStore';
+import { useTheme, getColors } from '@/theme';
 
 export default function AuthCallbackScreen() {
   const router = useRouter();
@@ -13,8 +14,8 @@ export default function AuthCallbackScreen() {
     code?: string;
     error_description?: string;
   }>();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const syncSession = useAuthStore((s) => s.syncSession);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 

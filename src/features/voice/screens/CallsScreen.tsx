@@ -8,17 +8,17 @@ import {
   Pressable,
   TextInput,
   ActivityIndicator,
-  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { voiceApi, DedicatedNumber, KycStatusResponse, VoiceCall, VoiceAssistant } from '../api/voiceApi';
 import { CallDetailsModal, KycRequestModal, TriggerCallModal } from '../components';
+import { useTheme, getColors } from '@/theme';
 
 export const CallsScreen: React.FC = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const queryClient = useQueryClient();
 
   const [selectedCall, setSelectedCall] = useState<VoiceCall | null>(null);

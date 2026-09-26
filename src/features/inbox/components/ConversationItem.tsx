@@ -1,7 +1,8 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { NormalizedConversation } from '../types';
 import { ChannelBadge } from './ChannelBadge';
+import { useTheme, getColors } from '@/theme';
 
 interface ConversationItemProps {
   conversation: NormalizedConversation;
@@ -36,8 +37,8 @@ const formatMessageTime = (dateStr?: string) => {
 };
 
 export const ConversationItem: React.FC<ConversationItemProps> = ({ conversation, onPress }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const time = formatMessageTime(conversation.last_message.created_at);
 

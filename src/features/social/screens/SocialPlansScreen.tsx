@@ -1,7 +1,11 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  Ionicons } from '@expo/vector-icons';
+import { useQuery,
+  useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
-import React, { useMemo, useState } from 'react';
+import React,
+  { useMemo,
+  useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -10,13 +14,13 @@ import {
   StyleSheet,
   Text,
   View,
-  useColorScheme,
 } from 'react-native';
 import { AppScreen } from '../../../components/AppScreen';
 import { AppTopBar } from '../../../components/AppTopBar';
 import { apiClient } from '../../../core/api/client';
 import { useRazorpay } from '../../../contexts/RazorpayContext';
 import { BillingInterval, SocialPlan } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 const BILLING_INTERVALS: { key: BillingInterval; label: string; discountBadge?: string }[] = [
   { key: 'month', label: 'Monthly' },
@@ -115,8 +119,8 @@ const DEFAULT_PLANS: SocialPlan[] = [
 ];
 
 export const SocialPlansScreen: React.FC = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const queryClient = useQueryClient();
   const { openRazorpayCheckout } = useRazorpay();
 

@@ -8,11 +8,11 @@ import {
   Pressable,
   Alert,
   Linking,
-  useColorScheme,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
+import { useTheme, getColors } from '@/theme';
 
 interface FaqItem {
   category: 'general' | 'whatsapp' | 'telegram' | 'voice' | 'security';
@@ -57,8 +57,8 @@ const CATEGORIES = [
 ];
 
 export default function HelpCenterScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);

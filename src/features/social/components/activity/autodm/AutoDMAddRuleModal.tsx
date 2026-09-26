@@ -1,4 +1,5 @@
-import { Ionicons } from '@expo/vector-icons';
+import {
+  Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
   KeyboardAvoidingView,
@@ -10,8 +11,8 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
+import { useTheme, getColors } from '@/theme';
 
 export interface AutoDMAddRuleModalProps {
   visible: boolean;
@@ -40,8 +41,8 @@ export const AutoDMAddRuleModal: React.FC<AutoDMAddRuleModalProps> = ({
   setRuleChannel,
   onSubmit,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   return (
     <Modal

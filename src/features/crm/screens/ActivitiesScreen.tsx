@@ -7,7 +7,6 @@ import {
   Pressable,
   RefreshControl,
   ActivityIndicator,
-  useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +15,7 @@ import { ActivityTimelineItem } from '../components/ActivityTimelineItem';
 import { LogActivityModal } from '../components/LogActivityModal';
 import { ActivityType } from '../types';
 import { CrmActivitySkeleton } from '../../../components/skeletonScreen';
+import { useTheme, getColors } from '@/theme';
 
 const ACTIVITY_FILTER_TABS: Array<{ key: string; label: string }> = [
   { key: 'all', label: 'All Events' },
@@ -30,8 +30,8 @@ interface ActivitiesScreenProps {
 }
 
 export const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ onBack }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [selectedType, setSelectedType] = useState<string>('all');
   const [showLogModal, setShowLogModal] = useState(false);
