@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
-import React, { useMemo, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -23,6 +24,7 @@ import {
   PricingService,
 } from '../../src/core/pricing/pricingService';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
+import { openVoiceWebBilling } from '../../src/features/voice/utils/voiceBilling';
 
 const CATEGORIES: { key: PlanCategory; label: string; icon: string }[] = [
   { key: 'all', label: 'All Plans', icon: 'apps' },
@@ -38,6 +40,7 @@ export default function OverallPricingScreen() {
   const isDark = colorScheme === 'dark';
   const queryClient = useQueryClient();
   const { openRazorpayCheckout } = useRazorpay();
+  const params = useLocalSearchParams<{ category?: string }>();
 
   const {
     planLabel,
@@ -46,8 +49,16 @@ export default function OverallPricingScreen() {
     refresh: refreshSub,
   } = usePlatformSubscription();
 
-  const [selectedCategory, setSelectedCategory] = useState<PlanCategory>('all');
+  const [selectedCategory, setSelectedCategory] = useState<PlanCategory>(
+    (params.category as PlanCategory) || 'all'
+  );
   const [selectedDuration, setSelectedDuration] = useState<'all' | 'monthly' | 'yearly'>('all');
+
+  useEffect(() => {
+    if (params.category && params.category !== selectedCategory) {
+      setSelectedCategory(params.category as PlanCategory);
+    }
+  }, [params.category]);
 
   // Query active plans from public.pricing_plans
   const {
@@ -79,13 +90,21 @@ export default function OverallPricingScreen() {
 
   const handleSelectPlan = (plan: PricingPlan) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const isAddon = plan.id === 'calling_number' || Boolean(plan.is_addon) || plan.id.includes('number');
+    const isVoicePlan = plan.category === 'calling' || plan.category === 'voice' || plan.id.startsWith('calling') || plan.id.startsWith('call_') || isAddon;
+
+    if (isVoicePlan) {
+      openVoiceWebBilling(queryClient, isDark);
+      return;
+    }
+
     const amountInRupees = Math.round(plan.amount / 100);
     const planDisplayName = plan.plan_label || plan.plan_name;
 
     openRazorpayCheckout({
       amount: amountInRupees,
       currency: plan.currency || 'INR',
-      product: plan.category || 'ecosystem',
+      product: isVoicePlan ? 'calling' : (plan.category || 'ecosystem'),
       planId: plan.id,
       planName: `GetAiPilot - ${planDisplayName}`,
       billingInterval: plan.duration?.toLowerCase().includes('year') ? 'year' : 'month',
@@ -102,6 +121,9 @@ export default function OverallPricingScreen() {
           queryClient.invalidateQueries({ queryKey: ['ecosystem-pricing-plans'] }),
           queryClient.invalidateQueries({ queryKey: ['social', 'entitlements'] }),
           queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+          queryClient.invalidateQueries({ queryKey: ['voice'] }),
+          queryClient.invalidateQueries({ queryKey: ['voice', 'overview'] }),
+          queryClient.invalidateQueries({ queryKey: ['voice', 'numbers'] }),
         ]);
       },
     });
@@ -328,41 +350,63 @@ export default function OverallPricingScreen() {
               const formattedPrice = PricingService.formatPrice(plan.amount, plan.currency);
               const formattedDuration = PricingService.formatDuration(plan.duration || 'monthly');
               const isPopular = Boolean(plan.is_popular);
+              const isAddon = plan.id === 'calling_number' || Boolean(plan.is_addon) || plan.id.includes('number');
 
               return (
                 <View
                   key={plan.id}
                   style={[
                     styles.planCard,
+                    isAddon && styles.addonCard,
                     {
-                      backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                      borderColor: isPopular
+                      backgroundColor: isDark
+                        ? (isAddon ? '#111026' : '#0f172a')
+                        : (isAddon ? '#FAFAFF' : '#ffffff'),
+                      borderColor: isAddon
+                        ? (isDark ? '#6366F1' : '#4F46E5')
+                        : isPopular
                         ? meta.color
                         : isDark
                         ? '#1e293b'
                         : '#e2e8f0',
-                      borderWidth: isPopular ? 2 : 1,
+                      borderWidth: isAddon ? 1.5 : (isPopular ? 2 : 1),
                     },
                   ]}
                 >
-                  {/* Popular Ribbon / Badge */}
+                  {/* Top Badges */}
                   <View style={styles.cardTopRow}>
-                    <View
-                      style={[
-                        styles.categoryBadge,
-                        { backgroundColor: `${meta.color}20` },
-                      ]}
-                    >
-                      <Ionicons name={meta.icon as any} size={11} color={meta.color} />
-                      <Text style={[styles.categoryBadgeText, { color: meta.color }]}>
-                        {meta.label.toUpperCase()}
-                      </Text>
-                    </View>
+                    {isAddon ? (
+                      <View style={[styles.addonBadge, { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.2)' : '#EEF2FF', borderColor: isDark ? '#6366F1' : '#C7D2FE' }]}>
+                        <Ionicons name="cube" size={11} color="#6366F1" />
+                        <Text style={[styles.addonBadgeText, { color: '#6366F1' }]}>
+                          WORKSPACE ADD-ON
+                        </Text>
+                      </View>
+                    ) : (
+                      <View
+                        style={[
+                          styles.categoryBadge,
+                          { backgroundColor: `${meta.color}20` },
+                        ]}
+                      >
+                        <Ionicons name={meta.icon as any} size={11} color={meta.color} />
+                        <Text style={[styles.categoryBadgeText, { color: meta.color }]}>
+                          {meta.label.toUpperCase()}
+                        </Text>
+                      </View>
+                    )}
 
                     {isPopular && (
                       <View style={[styles.popularBadge, { backgroundColor: meta.color }]}>
                         <Ionicons name="sparkles" size={10} color="#ffffff" />
                         <Text style={styles.popularBadgeText}>MOST POPULAR</Text>
+                      </View>
+                    )}
+
+                    {isAddon && (
+                      <View style={[styles.addonValidityBadge, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#DCFCE7' }]}>
+                        <Ionicons name="time" size={10} color="#10B981" />
+                        <Text style={styles.addonValidityBadgeText}>30-DAY VALIDITY</Text>
                       </View>
                     )}
                   </View>
@@ -380,17 +424,27 @@ export default function OverallPricingScreen() {
                   </View>
 
                   {/* Pricing Box */}
-                  <View style={[styles.priceBox, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
+                  <View
+                    style={[
+                      styles.priceBox,
+                      isAddon && styles.addonPriceBox,
+                      {
+                        backgroundColor: isDark
+                          ? (isAddon ? 'rgba(99, 102, 241, 0.1)' : '#1e293b')
+                          : (isAddon ? '#EEF2FF' : '#f8fafc'),
+                      },
+                    ]}
+                  >
                     <View style={styles.priceRow}>
                       <Text style={[styles.priceAmount, { color: isDark ? '#ffffff' : '#0f172a' }]}>
                         {formattedPrice}
                       </Text>
                       <Text style={[styles.priceDuration, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-                        {formattedDuration}
+                        {isAddon ? '/ 30-day line validity' : formattedDuration}
                       </Text>
                     </View>
                     {plan.billing_note ? (
-                      <Text style={[styles.billingNote, { color: meta.color }]}>
+                      <Text style={[styles.billingNote, { color: isAddon ? '#6366F1' : meta.color }]}>
                         {plan.billing_note}
                       </Text>
                     ) : null}
@@ -418,14 +472,28 @@ export default function OverallPricingScreen() {
                         </View>
                       )}
                       {Boolean(plan.included_numbers) && (
-                        <View style={[styles.quotaTag, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
-                          <Ionicons name="call" size={12} color="#25d366" />
-                          <Text style={[styles.quotaTagText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
-                            {plan.included_numbers} Number
+                        <View
+                          style={[
+                            styles.quotaTag,
+                            {
+                              backgroundColor: isAddon
+                                ? (isDark ? 'rgba(99, 102, 241, 0.15)' : '#EEF2FF')
+                                : (isDark ? '#1e293b' : '#f1f5f9'),
+                            },
+                          ]}
+                        >
+                          <Ionicons name="call" size={12} color={isAddon ? "#6366F1" : "#25d366"} />
+                          <Text
+                            style={[
+                              styles.quotaTagText,
+                              { color: isAddon ? (isDark ? '#A5B4FC' : '#4F46E5') : (isDark ? '#cbd5e1' : '#475569') },
+                            ]}
+                          >
+                            {isAddon ? "+1 Dedicated Virtual Line" : `${plan.included_numbers} Number`}
                           </Text>
                         </View>
                       )}
-                      {Boolean(plan.included_channels) && (
+                      {Boolean(plan.included_channels) && !isAddon && (
                         <View style={[styles.quotaTag, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
                           <Ionicons name="share-social" size={12} color="#ec4899" />
                           <Text style={[styles.quotaTagText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
@@ -441,7 +509,11 @@ export default function OverallPricingScreen() {
                     <View style={styles.featuresList}>
                       {plan.features.map((feat, idx) => (
                         <View key={idx} style={styles.featureItem}>
-                          <Ionicons name="checkmark-circle" size={15} color="#10B981" />
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={15}
+                            color={isAddon ? "#6366F1" : "#10B981"}
+                          />
                           <Text
                             style={[
                               styles.featureText,
@@ -460,15 +532,16 @@ export default function OverallPricingScreen() {
                     onPress={() => handleSelectPlan(plan)}
                     style={[
                       styles.subscribeBtn,
+                      isAddon && styles.addonBtn,
                       {
-                        backgroundColor: meta.color,
-                        shadowColor: meta.color,
+                        backgroundColor: isAddon ? '#4F46E5' : meta.color,
+                        shadowColor: isAddon ? '#4F46E5' : meta.color,
                       },
                     ]}
                   >
-                    <Ionicons name="shield-checkmark" size={16} color="#ffffff" />
+                    <Ionicons name={isAddon ? "call" : "shield-checkmark"} size={16} color="#ffffff" />
                     <Text style={styles.subscribeBtnText}>
-                      Subscribe · {formattedPrice}
+                      {isAddon ? `Add Dedicated Line · ${formattedPrice}` : `Subscribe · ${formattedPrice}`}
                     </Text>
                     <Ionicons name="arrow-forward" size={15} color="#ffffff" />
                   </Pressable>
@@ -791,6 +864,45 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '800',
+  },
+  addonBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 4.5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  addonBadgeText: {
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.6,
+  },
+  addonValidityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  addonValidityBadgeText: {
+    color: '#10B981',
+    fontSize: 9.5,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  addonCard: {
+    shadowOpacity: 0.08,
+  },
+  addonPriceBox: {
+    borderLeftWidth: 3,
+    borderLeftColor: '#6366F1',
+  },
+  addonBtn: {
+    backgroundColor: '#4F46E5',
+    shadowColor: '#4F46E5',
   },
   trustCard: {
     padding: 16,

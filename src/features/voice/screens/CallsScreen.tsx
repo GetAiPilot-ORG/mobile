@@ -1,35 +1,38 @@
-import React, { useState } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as Haptics from "expo-haptics";
+import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  RefreshControl,
-  Pressable,
-  TextInput,
   ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
   useColorScheme,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { voiceApi, DedicatedNumber, KycStatusResponse, VoiceCall, VoiceAssistant } from '../api/voiceApi';
-import { CallDetailsModal, KycRequestModal, TriggerCallModal } from '../components';
+  View,
+} from "react-native";
+import { useRouter } from "expo-router";
+import {
+  DedicatedNumber,
+  VoiceAssistant,
+  VoiceCall,
+  voiceApi,
+} from "../api/voiceApi";
+import {
+  CallDetailsModal,
+  TriggerCallModal,
+} from "../components";
+import { openVoiceWebBilling } from "../utils/voiceBilling";
 
 export const CallsScreen: React.FC = () => {
+  const router = useRouter();
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
   const queryClient = useQueryClient();
 
   const [selectedCall, setSelectedCall] = useState<VoiceCall | null>(null);
-  const [isKycModalOpen, setIsKycModalOpen] = useState(false);
   const [isTriggerModalOpen, setIsTriggerModalOpen] = useState(false);
-
-  // Quick Test Call Local State
-  const [testPhone, setTestPhone] = useState('');
-  const [selectedAssistantId, setSelectedAssistantId] = useState<string>('');
-  const [callStatusNotice, setCallStatusNotice] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
 
   // Queries
   const {
@@ -37,24 +40,12 @@ export const CallsScreen: React.FC = () => {
     isLoading: isNumbersLoading,
     refetch: refetchNumbers,
   } = useQuery({
-    queryKey: ['voice', 'numbers'],
+    queryKey: ["voice", "numbers"],
     queryFn: () => voiceApi.getNumbers(),
   });
 
-  const {
-    data: kycData,
-    isLoading: isKycLoading,
-    refetch: refetchKyc,
-  } = useQuery({
-    queryKey: ['voice', 'kyc'],
-    queryFn: () => voiceApi.getKycStatus(),
-  });
-
-  const {
-    data: assistantsData,
-    isLoading: isAssistantsLoading,
-  } = useQuery({
-    queryKey: ['voice', 'assistants'],
+  const { data: assistantsData } = useQuery({
+    queryKey: ["voice", "assistants"],
     queryFn: () => voiceApi.getAssistants(),
   });
 
@@ -64,313 +55,428 @@ export const CallsScreen: React.FC = () => {
     refetch: refetchCalls,
     isRefetching: isCallsRefetching,
   } = useQuery({
-    queryKey: ['voice', 'calls'],
+    queryKey: ["voice", "calls"],
     queryFn: () => voiceApi.getCalls(),
   });
 
-  // Sync default assistant
-  React.useEffect(() => {
-    if (!selectedAssistantId && assistantsData && assistantsData.length > 0) {
-      setSelectedAssistantId(assistantsData[0].id);
-    }
-  }, [assistantsData, selectedAssistantId]);
+  const { data: overviewData, refetch: refetchOverview } = useQuery({
+    queryKey: ["voice", "overview"],
+    queryFn: () => voiceApi.getOverview(),
+  });
 
   // Mutations
   const triggerTestCallMutation = useMutation({
     mutationFn: (payload: any) => voiceApi.triggerOutboundCall(payload),
-    onSuccess: (data: any) => {
-      setCallStatusNotice('Call successfully queued! Connecting AI voice agent to recipient...');
-      queryClient.invalidateQueries({ queryKey: ['voice', 'calls'] });
-      queryClient.invalidateQueries({ queryKey: ['voice', 'analytics'] });
-      setTimeout(() => setCallStatusNotice(null), 6000);
-    },
-    onError: (err: any) => {
-      setCallStatusNotice(`Call error: ${err?.message || 'Could not reach server'}`);
-    },
-  });
-
-  const kycMutation = useMutation({
-    mutationFn: (payload: any) => voiceApi.submitKycRequest(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['voice', 'kyc'] });
+      queryClient.invalidateQueries({ queryKey: ["voice", "calls"] });
+      queryClient.invalidateQueries({ queryKey: ["voice", "overview"] });
+      queryClient.invalidateQueries({ queryKey: ["voice", "analytics"] });
+      setIsTriggerModalOpen(false);
     },
   });
 
-  const handleTestCall = async () => {
-    if (!testPhone.trim()) {
-      setCallStatusNotice('Please enter a phone number to test call.');
-      return;
-    }
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const assignedNum = numbersData?.[0]?.phone_number || '+918047359000';
-    await triggerTestCallMutation.mutateAsync({
-      customerNumber: testPhone.trim(),
-      customerName: 'Test Recipient',
-      assistantId: selectedAssistantId,
-      assignedNumber: assignedNum,
-    });
-  };
-
-  const isRefreshing = isNumbersLoading || isKycLoading || isCallsRefetching;
+  const isRefreshing = isNumbersLoading || isCallsRefetching;
 
   const handleRefresh = () => {
     refetchNumbers();
-    refetchKyc();
     refetchCalls();
+    refetchOverview();
   };
 
-  const dedicatedNumber: DedicatedNumber | undefined = numbersData?.[0];
-  const kyc: KycStatusResponse = kycData || { status: 'verified', businessName: 'Enterprise' };
   const calls: VoiceCall[] = callsData || [];
   const assistants: VoiceAssistant[] = assistantsData || [];
+  const isPlanExpired = Boolean(overviewData?.isPlanExpired);
 
-  const filteredCalls = calls.filter((c) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      c.customerNumber.toLowerCase().includes(q) ||
-      (c.assistant && c.assistant.toLowerCase().includes(q)) ||
-      (c.campaign && c.campaign.toLowerCase().includes(q))
-    );
-  });
+  const totalDispatched = calls.length;
+  const completedCalls = calls.filter((c) => c.status === "completed").length;
+  const failedOrBusy = calls.filter(
+    (c) => c.status === "failed" || c.status === "cancelled",
+  ).length;
+
+  const colors = {
+    background: isDark ? "#000000" : "#F7F8FA",
+    surface: isDark ? "#161618" : "#FFFFFF",
+    surfaceAlt: isDark ? "#1F1F24" : "#F1F3F9",
+    border: isDark ? "#2A2A2E" : "#F0F1F5",
+    text: isDark ? "#FFFFFF" : "#0F172A",
+    textSecondary: isDark ? "#94A3B8" : "#64748B",
+    primary: "#5B3AF5",
+    primaryLight: isDark ? "rgba(91, 58, 245, 0.2)" : "#EDE9FE",
+    green: "#16A34A",
+    greenLight: isDark ? "rgba(22, 163, 74, 0.2)" : "#DCFCE7",
+    red: "#EF4444",
+    redLight: isDark ? "rgba(239, 68, 68, 0.2)" : "#FEE2E2",
+    amber: "#F59E0B",
+  };
 
   return (
     <ScrollView
-      style={[styles.container, isDark ? styles.containerDark : styles.containerLight]}
-      contentContainerStyle={styles.contentContainer}
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.content}
       refreshControl={
-        <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={isDark ? '#FFFFFF' : '#8B5CF6'} />
+        <RefreshControl
+          refreshing={isRefreshing}
+          onRefresh={handleRefresh}
+          tintColor={isDark ? "#FFFFFF" : colors.primary}
+        />
       }
       showsVerticalScrollIndicator={false}
     >
-      {/* 1. DEDICATED NUMBER & KYC CARD */}
-      <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>DEDICATED CALLER & KYC STATUS</Text>
-          <Pressable
-            style={styles.kycActionBtn}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setIsKycModalOpen(true);
-            }}
-          >
-            <Ionicons name="document-text-outline" size={14} color="#8B5CF6" />
-            <Text style={styles.kycActionBtnText}>
-              {kyc.status === 'verified' ? 'KYC Details' : 'Submit KYC'}
-            </Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.numberRow}>
-          <View style={[styles.numIconBox, { backgroundColor: 'rgba(139, 92, 246, 0.12)' }]}>
-            <Ionicons name="call" size={20} color="#8B5CF6" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.numVal, isDark && styles.textDark]}>
-              {dedicatedNumber?.phone_number || '+91 80 4735 9000'}
-            </Text>
-            <Text style={styles.numSub}>
-              Assigned: {dedicatedNumber?.assistants?.name || 'Sales Representative Bot'}
-            </Text>
-          </View>
-          <View style={[styles.badge, kyc.status === 'verified' ? styles.badgeSuccess : styles.badgeWarning]}>
-            <Text style={[styles.badgeText, kyc.status === 'verified' ? styles.textSuccess : styles.textWarning]}>
-              {kyc.status === 'verified' ? 'KYC Verified' : 'KYC Pending'}
-            </Text>
-          </View>
-        </View>
+      {/* 1. TITLE & EYEBROW */}
+      <View style={styles.headingSection}>
+        <Text style={[styles.eyebrowText, { color: colors.textSecondary }]}>
+          // TELEPHONY LOGS & CALL RECORDS
+        </Text>
+        <Text style={[styles.mainHeading, { color: colors.text }]}>
+          Call Records
+        </Text>
+        <Text style={[styles.subHeading, { color: colors.textSecondary }]}>
+          Inspect real-time conversation transcripts, audio playback, and call outcomes.
+        </Text>
       </View>
 
-      {/* 2. QUICK TEST CALL WIDGET */}
-      <View style={[styles.card, styles.testCallCard, isDark ? styles.cardDark : styles.cardLight]}>
-        <View style={styles.sectionHeaderRow}>
-          <View style={styles.titleWithIcon}>
-            <Ionicons name="flash" size={15} color="#8B5CF6" />
-            <Text style={styles.sectionTitle}>QUICK TEST CALL</Text>
-          </View>
-          <Text style={styles.badgeHint}>Direct Dispatch</Text>
-        </View>
-
-        {/* Assistant Selector */}
-        <View style={styles.testFieldGroup}>
-          <Text style={styles.fieldLabel}>SELECT VOICE ASSISTANT</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.assistantsChips}>
-            {(assistants.length > 0 ? assistants : [
-              { id: 'ast_1', name: 'Sales Representative Bot' },
-              { id: 'ast_2', name: 'Support Receptionist' },
-            ]).map((ast) => {
-              const isSelected = (selectedAssistantId || assistants[0]?.id) === ast.id;
-              return (
-                <Pressable
-                  key={ast.id}
-                  style={[
-                    styles.chip,
-                    isDark ? styles.chipDark : styles.chipLight,
-                    isSelected && styles.chipSelected,
-                  ]}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setSelectedAssistantId(ast.id);
-                  }}
-                >
-                  <Ionicons name="mic" size={13} color={isSelected ? '#8B5CF6' : '#8E8E93'} />
-                  <Text style={[styles.chipText, isDark && styles.textDark, isSelected && styles.chipTextSelected]}>
-                    {ast.name}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
-
-        {/* Test Phone Input & Action Button */}
-        <View style={styles.testFieldGroup}>
-          <Text style={styles.fieldLabel}>TEST PHONE NUMBER</Text>
-          <View style={styles.inputAndActionRow}>
-            <TextInput
-              style={[styles.testInput, isDark ? styles.inputDark : styles.inputLight]}
-              placeholder="e.g. +91 98765 43210"
-              placeholderTextColor="#8E8E93"
-              keyboardType="phone-pad"
-              value={testPhone}
-              onChangeText={setTestPhone}
-            />
-            <Pressable
-              style={[styles.testBtn, triggerTestCallMutation.isPending && styles.btnDisabled]}
-              onPress={handleTestCall}
-              disabled={triggerTestCallMutation.isPending}
+      {/* EXPIRED PLAN BANNER */}
+      {isPlanExpired && (
+        <View
+          style={[
+            styles.expiredBanner,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <View style={styles.expiredBannerHeader}>
+            <View
+              style={[
+                styles.expiredIconWrap,
+                {
+                  backgroundColor: isDark
+                    ? "rgba(245, 158, 11, 0.15)"
+                    : "#FEF3C7",
+                },
+              ]}
             >
-              {triggerTestCallMutation.isPending ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <>
-                  <Ionicons name="call" size={15} color="#FFFFFF" />
-                  <Text style={styles.testBtnText}>Test Call</Text>
-                </>
-              )}
+              <Ionicons
+                name="information-circle-outline"
+                size={22}
+                color="#D97706"
+              />
+            </View>
+            <View style={styles.expiredTextWrap}>
+              <View style={styles.expiredTitleRow}>
+                <Text style={[styles.expiredTitle, { color: colors.text }]}>
+                  {overviewData?.planName || "Voice Plan"}
+                </Text>
+                <View style={styles.planStatusPill}>
+                  <Text style={styles.planStatusPillText}>Plan Expired</Text>
+                </View>
+              </View>
+              <Text
+                style={[
+                  styles.expiredDesc,
+                  { color: colors.textSecondary },
+                ]}
+              >
+                Calling lines are paused. Renew your 30-day plan to reactivate calling.
+              </Text>
+            </View>
+          </View>
+          <View
+            style={[
+              styles.expiredTagsRow,
+              { borderTopColor: isDark ? "rgba(245, 158, 11, 0.2)" : "#FDE68A" },
+            ]}
+          >
+            <View
+              style={[
+                styles.expiredTag,
+                {
+                  backgroundColor: isDark
+                    ? "rgba(245, 158, 11, 0.12)"
+                    : "#FEF3C7",
+                },
+              ]}
+            >
+              <Ionicons name="time-outline" size={12} color="#D97706" />
+              <Text style={[styles.expiredTagText, { color: "#D97706" }]}>
+                {overviewData?.currentPeriodEnd
+                  ? `Expired on ${new Date(overviewData.currentPeriodEnd).toLocaleDateString()}`
+                  : "Renewal Required"}
+              </Text>
+            </View>
+
+            <Pressable
+              style={[
+                styles.renewActionBtn,
+                { backgroundColor: colors.primary },
+              ]}
+              onPress={() => openVoiceWebBilling(queryClient, isDark)}
+            >
+              <Ionicons name="sparkles" size={12} color="#FFFFFF" />
+              <Text style={styles.renewActionText}>Renew Plan</Text>
+              <Ionicons name="arrow-forward" size={12} color="#FFFFFF" />
             </Pressable>
           </View>
         </View>
+      )}
 
-        {callStatusNotice && (
-          <View style={styles.noticeBanner}>
-            <Ionicons name="information-circle" size={16} color="#8B5CF6" />
-            <Text style={styles.noticeBannerText}>{callStatusNotice}</Text>
-          </View>
-        )}
-      </View>
-
-      {/* 3. CALL HISTORY LIST */}
-      <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionTitle}>CALL HISTORY ({filteredCalls.length})</Text>
-        <Pressable
-          style={styles.headerBtn}
-          onPress={() => setIsTriggerModalOpen(true)}
-        >
-          <Ionicons name="add" size={16} color="#8B5CF6" />
-          <Text style={styles.headerBtnText}>Outbound Call</Text>
-        </Pressable>
-      </View>
-
-      {/* Search Filter */}
-      <View style={[styles.searchBar, isDark ? styles.searchBarDark : styles.searchBarLight]}>
-        <Ionicons name="search" size={16} color="#8E8E93" />
-        <TextInput
-          style={[styles.searchInput, isDark && styles.textDark]}
-          placeholder="Search by customer phone, assistant, or campaign..."
-          placeholderTextColor="#8E8E93"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
+      {/* 2. QUICK TEST CALL ACTION BUTTON */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Quick Test Call"
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          setIsTriggerModalOpen(true);
+        }}
+        style={({ pressed }) => [
+          styles.quickTestCallBtn,
+          { backgroundColor: colors.primary },
+          pressed && styles.pressed,
+        ]}
+      >
+        <Ionicons name="call" size={17} color="#FFFFFF" />
+        <Text style={styles.quickTestCallBtnText}>Quick Test Call</Text>
+        <Ionicons
+          name="chevron-forward"
+          size={18}
+          color="#FFFFFF"
+          style={styles.btnChevron}
         />
-        {searchQuery.length > 0 && (
-          <Pressable onPress={() => setSearchQuery('')}>
-            <Ionicons name="close-circle" size={16} color="#8E8E93" />
-          </Pressable>
-        )}
+      </Pressable>
+
+      {/* 3. 3-METRIC STATS ROW (Total Dispatched | Completed Calls | No Answer / Busy) */}
+      <View style={styles.statsRow}>
+        {/* Stat 1: Total Dispatched */}
+        <View
+          style={[
+            styles.statCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <View style={styles.statHeader}>
+            <Ionicons name="call-outline" size={14} color={colors.primary} />
+            <Text
+              style={[styles.statLabel, { color: colors.textSecondary }]}
+              numberOfLines={2}
+            >
+              Total{"\n"}Dispatched
+            </Text>
+          </View>
+          <Text style={[styles.statValue, { color: colors.text }]}>
+            {totalDispatched}
+          </Text>
+        </View>
+
+        {/* Stat 2: Completed Calls */}
+        <View
+          style={[
+            styles.statCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <View style={styles.statHeader}>
+            <Ionicons name="checkmark-circle" size={14} color={colors.green} />
+            <Text
+              style={[styles.statLabel, { color: colors.textSecondary }]}
+              numberOfLines={2}
+            >
+              Completed{"\n"}Calls
+            </Text>
+          </View>
+          <Text style={[styles.statValue, { color: colors.text }]}>
+            {completedCalls}
+          </Text>
+        </View>
+
+        {/* Stat 3: No Answer / Busy */}
+        <View
+          style={[
+            styles.statCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <View style={styles.statHeader}>
+            <Ionicons name="close-circle" size={14} color={colors.red} />
+            <Text
+              style={[styles.statLabel, { color: colors.textSecondary }]}
+              numberOfLines={2}
+            >
+              No Answer /{"\n"}Busy
+            </Text>
+          </View>
+          <Text style={[styles.statValue, { color: colors.text }]}>
+            {failedOrBusy}
+          </Text>
+        </View>
       </View>
 
-      {/* Calls Stream */}
-      {isCallsLoading ? (
-        <ActivityIndicator size="large" color="#8B5CF6" style={{ marginTop: 24 }} />
-      ) : (
-        <View style={[styles.card, styles.listCard, isDark ? styles.cardDark : styles.cardLight]}>
-          {filteredCalls.map((call, idx, arr) => (
-            <View key={call.id || idx}>
-              <Pressable
-                style={styles.callRow}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSelectedCall(call);
-                }}
-              >
-                <View
-                  style={[
-                    styles.callIconBox,
-                    {
-                      backgroundColor:
-                        call.status === 'completed'
-                          ? 'rgba(48, 209, 88, 0.12)'
-                          : call.status === 'failed'
-                          ? 'rgba(239, 68, 68, 0.12)'
-                          : 'rgba(245, 158, 11, 0.12)',
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name={call.recordingUrl ? 'mic' : 'call'}
-                    size={18}
-                    color={
-                      call.status === 'completed'
-                        ? '#30D158'
-                        : call.status === 'failed'
-                        ? '#EF4444'
-                        : '#F59E0B'
-                    }
-                  />
-                </View>
+      {/* 4. LIVE TELEPHONY ACTIVITY SECTION */}
+      <View style={styles.sectionHeaderRow}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Live Telephony Activity
+        </Text>
+      </View>
 
-                <View style={styles.callInfo}>
-                  <View style={styles.callRowHeader}>
-                    <Text style={[styles.callPhone, isDark && styles.textDark]}>
-                      {call.customerNumber}
-                    </Text>
-                    <Text style={styles.callDuration}>{call.duration || '10s'}</Text>
+      {/* 5. CALL LOGS CONTENT AREA */}
+      {isCallsLoading ? (
+        <ActivityIndicator
+          size="large"
+          color={colors.primary}
+          style={{ marginTop: 40 }}
+        />
+      ) : calls.length === 0 ? (
+        /* Empty State */
+        <View
+          style={[
+            styles.emptyCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <View
+            style={[
+              styles.emptyIconCircle,
+              { backgroundColor: colors.primaryLight },
+            ]}
+          >
+            <Ionicons name="call" size={36} color={colors.primary} />
+          </View>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>
+            No call records yet
+          </Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+            Your AI calls will appear here in real-time as they are made.
+          </Text>
+        </View>
+      ) : (
+        /* Calls List */
+        <View
+          style={[
+            styles.callListCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          {calls.map((call, idx, arr) => {
+            const isCompleted = call.status === "completed";
+            const isFailed = call.status === "failed";
+            const statusColor = isCompleted
+              ? colors.green
+              : isFailed
+                ? colors.red
+                : colors.amber;
+            const statusBg = isCompleted
+              ? colors.greenLight
+              : isFailed
+                ? colors.redLight
+                : colors.primaryLight;
+
+            return (
+              <View key={call.id || idx}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.callRow,
+                    pressed && styles.callRowPressed,
+                  ]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setSelectedCall(call);
+                  }}
+                >
+                  <View
+                    style={[
+                      styles.callStatusIconBox,
+                      { backgroundColor: statusBg },
+                    ]}
+                  >
+                    <Ionicons
+                      name={
+                        isCompleted
+                          ? "checkmark-circle"
+                          : isFailed
+                            ? "close-circle"
+                            : "call"
+                      }
+                      size={20}
+                      color={statusColor}
+                    />
                   </View>
 
-                  <Text style={styles.callSub}>
-                    {call.assistant || 'Voice Assistant'} • {call.time || 'Recent'}
-                  </Text>
-
-                  {call.campaign ? (
-                    <View style={styles.campaignPill}>
-                      <Ionicons name="rocket-outline" size={10} color="#0A84FF" />
-                      <Text style={styles.campaignPillText}>{call.campaign}</Text>
+                  <View style={styles.callMainInfo}>
+                    <View style={styles.callTopLine}>
+                      <Text
+                        style={[styles.callNumberText, { color: colors.text }]}
+                        numberOfLines={1}
+                      >
+                        {call.callerName || call.customerNumber}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.callDurationText,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        {call.duration || "10s"}
+                      </Text>
                     </View>
-                  ) : null}
 
-                  {call.summary ? (
-                    <Text style={styles.callSummary} numberOfLines={1}>
-                      "{call.summary}"
+                    <Text
+                      style={[styles.callSubText, { color: colors.textSecondary }]}
+                    >
+                      {call.assistant || "AI Assistant"} • {call.time || "Recent"}
                     </Text>
-                  ) : null}
-                </View>
 
-                <Ionicons name="chevron-forward" size={14} color="#8E8E93" />
-              </Pressable>
-              {idx < arr.length - 1 && <View style={[styles.divider, isDark ? styles.dividerDark : styles.dividerLight]} />}
-            </View>
-          ))}
+                    {call.campaign ? (
+                      <View
+                        style={[
+                          styles.campaignTag,
+                          { backgroundColor: colors.primaryLight },
+                        ]}
+                      >
+                        <Ionicons
+                          name="megaphone"
+                          size={11}
+                          color={colors.primary}
+                        />
+                        <Text
+                          style={[
+                            styles.campaignTagText,
+                            { color: colors.primary },
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {call.campaign}
+                        </Text>
+                      </View>
+                    ) : null}
 
-          {filteredCalls.length === 0 && (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="call-outline" size={36} color="#8E8E93" />
-              <Text style={styles.emptyTitle}>No Calls Found</Text>
-              <Text style={styles.emptySub}>
-                {searchQuery ? 'Try changing your search keywords.' : 'Dispatch a test call or launch a campaign to populate call logs.'}
-              </Text>
-            </View>
-          )}
+                    {call.summary ? (
+                      <Text
+                        style={[
+                          styles.callSummaryText,
+                          { color: colors.textSecondary },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {call.summary}
+                      </Text>
+                    ) : null}
+                  </View>
+
+                  <Ionicons
+                    name="chevron-forward"
+                    size={16}
+                    color={colors.textSecondary}
+                  />
+                </Pressable>
+
+                {idx < arr.length - 1 && (
+                  <View
+                    style={[styles.callDivider, { backgroundColor: colors.border }]}
+                  />
+                )}
+              </View>
+            );
+          })}
         </View>
       )}
 
@@ -379,15 +485,6 @@ export const CallsScreen: React.FC = () => {
         visible={Boolean(selectedCall)}
         call={selectedCall}
         onClose={() => setSelectedCall(null)}
-      />
-
-      <KycRequestModal
-        visible={isKycModalOpen}
-        onClose={() => setIsKycModalOpen(false)}
-        onSubmit={async (payload) => {
-          await kycMutation.mutateAsync(payload);
-        }}
-        isLoading={kycMutation.isPending}
       />
 
       <TriggerCallModal
@@ -404,70 +501,296 @@ export const CallsScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  containerLight: { backgroundColor: '#F2F2F7' },
-  containerDark: { backgroundColor: '#020617' },
-  contentContainer: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 130, gap: 14 },
-  card: { borderRadius: 16, padding: 16, borderWidth: 1 },
-  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  cardDark: { backgroundColor: '#0F172A', borderColor: '#1E293B' },
-  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  titleWithIcon: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  sectionTitle: { fontSize: 11.5, fontWeight: '700', color: '#64748B', letterSpacing: 0.5 },
-  kycActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  kycActionBtnText: { fontSize: 12, fontWeight: '700', color: '#8B5CF6' },
-  numberRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12 },
-  numIconBox: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  numVal: { fontSize: 16, fontWeight: '700' },
-  numSub: { fontSize: 11.5, color: '#64748B', marginTop: 2 },
-  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  badgeSuccess: { backgroundColor: 'rgba(48, 209, 88, 0.15)' },
-  badgeWarning: { backgroundColor: 'rgba(245, 158, 11, 0.15)' },
-  badgeText: { fontSize: 10.5, fontWeight: '800' },
-  textSuccess: { color: '#30D158' },
-  textWarning: { color: '#F59E0B' },
-  textDark: { color: '#F8FAFC' },
-  testCallCard: { borderLeftWidth: 4, borderLeftColor: '#8B5CF6' },
-  badgeHint: { fontSize: 10, fontWeight: '700', color: '#8B5CF6', backgroundColor: 'rgba(139, 92, 246, 0.12)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  testFieldGroup: { marginTop: 12, gap: 6 },
-  fieldLabel: { fontSize: 10.5, fontWeight: '700', color: '#64748B', letterSpacing: 0.5 },
-  assistantsChips: { gap: 8, paddingVertical: 2 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1 },
-  chipLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
-  chipDark: { backgroundColor: '#1E293B', borderColor: '#334155' },
-  chipSelected: { borderColor: '#8B5CF6', backgroundColor: 'rgba(139, 92, 246, 0.1)' },
-  chipText: { fontSize: 12, fontWeight: '600', color: '#64748B' },
-  chipTextSelected: { color: '#8B5CF6', fontWeight: '700' },
-  inputAndActionRow: { flexDirection: 'row', gap: 8 },
-  testInput: { flex: 1, height: 44, borderRadius: 10, paddingHorizontal: 12, fontSize: 13.5, borderWidth: 1 },
-  inputLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0', color: '#000000' },
-  inputDark: { backgroundColor: '#1E293B', borderColor: '#334155', color: '#F8FAFC' },
-  testBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#8B5CF6', paddingHorizontal: 16, height: 44, borderRadius: 10, justifyContent: 'center' },
-  testBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
-  btnDisabled: { opacity: 0.6 },
-  noticeBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(139, 92, 246, 0.1)', padding: 10, borderRadius: 10, marginTop: 10 },
-  noticeBannerText: { fontSize: 12, color: '#8B5CF6', fontWeight: '600', flex: 1 },
-  headerBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  headerBtnText: { color: '#8B5CF6', fontSize: 12.5, fontWeight: '700' },
-  searchBar: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 42, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1 },
-  searchBarLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  searchBarDark: { backgroundColor: '#0F172A', borderColor: '#1E293B' },
-  searchInput: { flex: 1, fontSize: 13 },
-  listCard: { padding: 0, overflow: 'hidden' },
-  callRow: { flexDirection: 'row', alignItems: 'center', padding: 14 },
-  callIconBox: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  callInfo: { flex: 1, marginRight: 8 },
-  callRowHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
-  callPhone: { fontSize: 14, fontWeight: '700' },
-  callDuration: { fontSize: 11, color: '#64748B', fontWeight: '600' },
-  callSub: { fontSize: 11.5, color: '#64748B' },
-  campaignPill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(10, 132, 255, 0.1)', alignSelf: 'flex-start', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginTop: 4 },
-  campaignPillText: { fontSize: 10, color: '#0A84FF', fontWeight: '600' },
-  callSummary: { fontSize: 11, color: '#94A3B8', fontStyle: 'italic', marginTop: 3 },
-  divider: { height: 1, marginLeft: 62 },
-  dividerLight: { backgroundColor: '#E2E8F0' },
-  dividerDark: { backgroundColor: '#1E293B' },
-  emptyContainer: { alignItems: 'center', paddingVertical: 32, gap: 6 },
-  emptyTitle: { fontSize: 15, fontWeight: '700', color: '#64748B' },
-  emptySub: { fontSize: 12, color: '#94A3B8', textAlign: 'center', paddingHorizontal: 20 },
+  container: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 110,
+    gap: 14,
+  },
+  headingSection: {
+    paddingTop: 2,
+    gap: 3,
+  },
+  eyebrowText: {
+    fontSize: 10.5,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+  },
+  mainHeading: {
+    fontSize: 27,
+    lineHeight: 33,
+    fontWeight: "800",
+    letterSpacing: -0.6,
+  },
+  subHeading: {
+    fontSize: 13.5,
+    lineHeight: 18,
+    fontWeight: "500",
+  },
+  quickTestCallBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    height: 52,
+    borderRadius: 18,
+    gap: 8,
+    paddingHorizontal: 18,
+    shadowColor: "#5B3AF5",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    elevation: 4,
+    position: "relative",
+  },
+  quickTestCallBtnText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: -0.2,
+  },
+  btnChevron: {
+    position: "absolute",
+    right: 18,
+  },
+  statsRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  statCard: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    minHeight: 88,
+    justifyContent: "space-between",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  statHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+  },
+  statLabel: {
+    fontSize: 10.5,
+    fontWeight: "600",
+    lineHeight: 14,
+    flex: 1,
+  },
+  statValue: {
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.4,
+    marginTop: 4,
+  },
+  sectionHeaderRow: {
+    marginTop: 4,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    letterSpacing: -0.3,
+  },
+  emptyCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    paddingVertical: 48,
+    paddingHorizontal: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.02,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  emptyIconCircle: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    letterSpacing: -0.3,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    fontWeight: "500",
+    textAlign: "center",
+    maxWidth: 240,
+    lineHeight: 18,
+  },
+  callListCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    overflow: "hidden",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  callRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    gap: 12,
+  },
+  callRowPressed: {
+    opacity: 0.75,
+  },
+  callStatusIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  callMainInfo: {
+    flex: 1,
+    gap: 3,
+  },
+  callTopLine: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  callNumberText: {
+    fontSize: 15,
+    fontWeight: "700",
+    letterSpacing: -0.2,
+  },
+  callDurationText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  callSubText: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  campaignTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+    borderRadius: 8,
+    marginTop: 2,
+  },
+  campaignTagText: {
+    fontSize: 10.5,
+    fontWeight: "700",
+  },
+  callSummaryText: {
+    fontSize: 11.5,
+    fontWeight: "500",
+    marginTop: 1,
+  },
+  callDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: 64,
+  },
+  pressed: {
+    opacity: 0.8,
+  },
+  expiredBanner: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 14,
+    gap: 10,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 5,
+    elevation: 1,
+  },
+  expiredBannerHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  expiredIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  expiredTextWrap: {
+    flex: 1,
+    gap: 3,
+  },
+  expiredTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  expiredTitle: {
+    fontSize: 14.5,
+    fontWeight: "700",
+    letterSpacing: -0.2,
+  },
+  planStatusPill: {
+    backgroundColor: "rgba(245, 158, 11, 0.12)",
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 5,
+  },
+  planStatusPillText: {
+    color: "#D97706",
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  expiredDesc: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "500",
+  },
+  expiredTagsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  expiredTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 7,
+  },
+  expiredTagText: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  renewActionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5.5,
+    borderRadius: 8,
+  },
+  renewActionText: {
+    fontSize: 11.5,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
 });
