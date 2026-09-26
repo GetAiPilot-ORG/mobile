@@ -8,6 +8,7 @@ import {
   Animated,
   DimensionValue,
   LayoutChangeEvent,
+  Platform,
   StyleProp,
   StyleSheet,
   View,
@@ -41,7 +42,7 @@ export default function Skeleton({
       Animated.timing(shimmer, {
         toValue: 1,
         duration: 1400,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== "web",
       }),
     );
 

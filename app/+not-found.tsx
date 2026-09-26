@@ -32,13 +32,13 @@ export default function NotFoundScreen() {
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 450,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.spring(scaleAnim, {
         toValue: 1,
         tension: 65,
         friction: 8,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
     ]).start();
 
@@ -48,12 +48,12 @@ export default function NotFoundScreen() {
         Animated.timing(floatAnim, {
           toValue: -8,
           duration: 2000,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
         Animated.timing(floatAnim, {
           toValue: 8,
           duration: 2000,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
       ]),
     );
@@ -64,12 +64,12 @@ export default function NotFoundScreen() {
         Animated.timing(pulseAnim, {
           toValue: 1.08,
           duration: 1600,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
         Animated.timing(pulseAnim, {
           toValue: 1,
           duration: 1600,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
       ]),
     );
@@ -114,7 +114,6 @@ export default function NotFoundScreen() {
     >
       {/* Ambient background glow */}
       <Animated.View
-        pointerEvents="none"
         style={[
           styles.glowCircle,
           {

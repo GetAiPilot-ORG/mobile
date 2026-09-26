@@ -130,7 +130,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   );
 
   return (
-    <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
+    <View style={[styles.floatingWrapper, { bottom: bottomOffset }]}>
       <View
         style={[
           styles.tabBarContainer,
@@ -240,6 +240,7 @@ const styles = StyleSheet.create({
     right: 16,
     alignItems: 'center',
     zIndex: 9999,
+    pointerEvents: 'box-none' as any,
   },
   tabBarContainer: {
     flexDirection: 'row',

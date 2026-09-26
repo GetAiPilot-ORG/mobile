@@ -157,7 +157,6 @@ export function LayoutSkeletonScreen() {
           styles.floatingTabBarWrapper,
           { bottom: bottomOffset },
         ]}
-        pointerEvents="none"
       >
         <View
           style={[
@@ -248,6 +247,7 @@ const styles = StyleSheet.create({
     right: 24,
     alignItems: 'center',
     zIndex: 99,
+    pointerEvents: 'none' as any,
   },
   tabBarContainer: {
     flexDirection: 'row',

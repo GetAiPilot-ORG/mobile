@@ -4,7 +4,7 @@ import { BackHandler, StyleSheet, View } from 'react-native';
 import {
   ProductFloatingBottomBar,
   ProductTabItem,
-} from "../../../src/components/ProductFloatingBottomBar";
+} from '../../../src/components/ProductFloatingBottomBar';
 import { CRMDashboardScreen } from "../../../src/features/crm/screens/CRMDashboardScreen";
 import { GoogleCalendarScreen } from "../../../src/features/crm/screens/GoogleCalendarScreen";
 import { CommunicationScreen } from "../../../src/features/team/screens/CommunicationScreen";

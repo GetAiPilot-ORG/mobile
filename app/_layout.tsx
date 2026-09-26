@@ -1,21 +1,43 @@
-import { getColors } from "@/theme";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack, useRouter, useSegments } from "expo-router";
-import { useEffect } from "react";
-import { StyleSheet, View } from "react-native";
-import "react-native-gesture-handler";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { GlobalErrorBoundary } from "../src/components/GlobalErrorBoundary";
-import { OfflineNotice } from "../src/components/OfflineNotice";
-import { LayoutSkeletonScreen } from "../src/components/skeletonScreen";
-import { AuthProvider } from "../src/contexts/AuthContext";
-import { NetworkProvider, useNetwork } from "../src/contexts/NetworkContext";
-import { RazorpayProvider } from "../src/contexts/RazorpayContext";
-import { ThemeProvider, useTheme } from "../src/contexts/ThemeContext";
-import { useAuthStore } from "../src/core/store/authStore";
-import { StatusBar } from "expo-status-bar";
-import "../src/global.css";
+import '../src/global.css';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Stack, useRouter, useSegments } from 'expo-router';
+import { useEffect } from 'react';
+import { LogBox, Platform, StatusBar, StyleSheet, View } from 'react-native';
+import 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
+// Suppress known deprecation noise in development & Web runtimes
+LogBox.ignoreLogs([
+  '"shadow*" style props are deprecated. Use "boxShadow".',
+  'props.pointerEvents is deprecated. Use style.pointerEvents',
+  'Animated: `useNativeDriver` is not supported',
+  '[Layout children]: Too many screens defined',
+]);
+
+if (Platform.OS === 'web' && typeof window !== 'undefined') {
+  const originalWarn = console.warn;
+  console.warn = (...args: any[]) => {
+    const firstArg = typeof args[0] === 'string' ? args[0] : '';
+    if (
+      firstArg.includes('"shadow*" style props are deprecated') ||
+      firstArg.includes('props.pointerEvents is deprecated') ||
+      firstArg.includes('Animated: `useNativeDriver` is not supported') ||
+      firstArg.includes('Too many screens defined')
+    ) {
+      return;
+    }
+    originalWarn(...args);
+  };
+}
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GlobalErrorBoundary } from '../src/components/GlobalErrorBoundary';
+import { OfflineNotice } from '../src/components/OfflineNotice';
+import { LayoutSkeletonScreen } from '../src/components/skeletonScreen';
+import { AuthProvider } from '../src/contexts/AuthContext';
+import { NetworkProvider, useNetwork } from '../src/contexts/NetworkContext';
+import { RazorpayProvider } from '../src/contexts/RazorpayContext';
+import { ThemeProvider, useTheme } from '../src/contexts/ThemeContext';
+import { useAuthStore } from '../src/core/store/authStore';
 
 export const queryClient = new QueryClient({
   defaultOptions: {

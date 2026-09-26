@@ -5,6 +5,7 @@ import { useEffect,
 import {
   ActivityIndicator,
   Animated,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -31,13 +32,13 @@ export function NetworkStatusScreen({ onRetry, isChecking = false }: NetworkStat
         toValue: 1,
         damping: 12,
         stiffness: 120,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== "web",
       }),
 
       Animated.timing(opacity, {
         toValue: 1,
         duration: 500,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== "web",
       }),
     ]).start();
 
@@ -46,12 +47,12 @@ export function NetworkStatusScreen({ onRetry, isChecking = false }: NetworkStat
         Animated.timing(pulse, {
           toValue: 1.08,
           duration: 1000,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== "web",
         }),
         Animated.timing(pulse, {
           toValue: 1,
           duration: 1000,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== "web",
         }),
       ]),
     );

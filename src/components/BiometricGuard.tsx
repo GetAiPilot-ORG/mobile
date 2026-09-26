@@ -46,12 +46,12 @@ export function BiometricGuard({ children }: BiometricGuardProps) {
           Animated.timing(pulseAnim, {
             toValue: 1.08,
             duration: 1400,
-            useNativeDriver: true,
+            useNativeDriver: Platform.OS !== 'web',
           }),
           Animated.timing(pulseAnim, {
             toValue: 1,
             duration: 1400,
-            useNativeDriver: true,
+            useNativeDriver: Platform.OS !== 'web',
           }),
         ])
       );
@@ -96,7 +96,7 @@ export function BiometricGuard({ children }: BiometricGuardProps) {
         Animated.timing(fadeAnim, {
           toValue: 0,
           duration: 220,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }).start(() => {
           setIsLocked(false);
           fadeAnim.setValue(1);

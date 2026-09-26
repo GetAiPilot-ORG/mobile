@@ -1034,7 +1034,7 @@ export function TeamScreen() {
             </Text>
           </View>
         ) : (
-          <FlatList
+          <FlatList<any>
             key={activeTab}
             data={listData}
             keyExtractor={(item: any, index) =>
