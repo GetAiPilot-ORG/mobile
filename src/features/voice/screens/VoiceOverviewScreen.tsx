@@ -353,8 +353,7 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
         </Pressable>
 
         {/* Card 4: Wallet Status */}
-        <Pressable
-          onPress={() => openVoiceWebBilling(queryClient, isDark)}
+        <View
           style={[
             styles.metricCard,
             { backgroundColor: colors.surface, borderColor: colors.border },
@@ -388,7 +387,7 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
           >
             {rawMinutes.toLocaleString()} Mins
           </Text>
-        </Pressable>
+        </View>
       </View>
 
 
