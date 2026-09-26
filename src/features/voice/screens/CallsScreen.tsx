@@ -500,16 +500,19 @@ export const CallsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: "100%",
   },
   content: {
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 110,
     gap: 14,
+    width: "100%",
   },
   headingSection: {
     paddingTop: 2,
     gap: 3,
+    width: "100%",
   },
   eyebrowText: {
     fontSize: 10.5,
@@ -535,6 +538,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     gap: 8,
     paddingHorizontal: 18,
+    width: "100%",
     shadowColor: "#5B3AF5",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.28,
@@ -555,6 +559,7 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: "row",
     gap: 10,
+    width: "100%",
   },
   statCard: {
     flex: 1,
@@ -588,6 +593,7 @@ const styles = StyleSheet.create({
   },
   sectionHeaderRow: {
     marginTop: 4,
+    width: "100%",
   },
   sectionTitle: {
     fontSize: 18,
@@ -602,6 +608,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
+    width: "100%",
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.02,
@@ -632,6 +639,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     overflow: "hidden",
+    width: "100%",
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.03,

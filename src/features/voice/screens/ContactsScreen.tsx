@@ -1456,16 +1456,19 @@ export const ContactsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: "100%",
   },
   content: {
     paddingHorizontal: 16,
     paddingTop: 6,
     paddingBottom: 100,
     gap: 12,
+    width: "100%",
   },
   headingSection: {
     paddingTop: 2,
     gap: 2,
+    width: "100%",
   },
   eyebrowText: {
     fontSize: 10.5,
@@ -1486,6 +1489,7 @@ const styles = StyleSheet.create({
   topActionsRow: {
     flexDirection: "row",
     gap: 8,
+    width: "100%",
   },
   importCsvBtn: {
     flex: 1,
@@ -1518,6 +1522,7 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: "row",
     gap: 8,
+    width: "100%",
   },
   statCard: {
     flex: 1,

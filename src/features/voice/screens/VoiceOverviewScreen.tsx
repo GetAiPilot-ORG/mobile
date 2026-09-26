@@ -507,16 +507,19 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: "100%",
   },
   content: {
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 110,
     gap: 16,
+    width: "100%",
   },
   headingSection: {
     paddingTop: 2,
     gap: 4,
+    width: "100%",
   },
   mainHeading: {
     fontSize: 27,
@@ -532,6 +535,7 @@ const styles = StyleSheet.create({
   heroGradientCard: {
     flexDirection: "row",
     alignItems: "center",
+    width: "100%",
     borderRadius: 20,
     paddingVertical: 18,
     paddingHorizontal: 16,
@@ -585,6 +589,7 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
+    width: "100%",
     gap: 12,
   },
   metricCard: {
@@ -629,6 +634,7 @@ const styles = StyleSheet.create({
   quickActionsSection: {
     gap: 12,
     marginTop: 4,
+    width: "100%",
   },
   sectionTitle: {
     fontSize: 18.5,
@@ -637,10 +643,12 @@ const styles = StyleSheet.create({
   },
   actionsList: {
     gap: 10,
+    width: "100%",
   },
   actionCard: {
     flexDirection: "row",
     alignItems: "center",
+    width: "100%",
     paddingVertical: 13,
     paddingHorizontal: 15,
     borderRadius: 16,
@@ -658,6 +666,7 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
   },
   actionTitle: {
     flex: 1,
@@ -671,6 +680,7 @@ const styles = StyleSheet.create({
   expiredBanner: {
     borderRadius: 16,
     borderWidth: 1,
+    width: "100%",
     padding: 14,
     gap: 10,
     shadowColor: "#000000",
