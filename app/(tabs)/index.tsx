@@ -696,9 +696,9 @@ export default function HomeScreen() {
               style={[
                 styles.segmentedTabText,
                 selectedFilter === "all" &&
-                  (isDark
-                    ? styles.segmentedTabTextActiveDark
-                    : styles.segmentedTabTextActive),
+                (isDark
+                  ? styles.segmentedTabTextActiveDark
+                  : styles.segmentedTabTextActive),
               ]}
             >
               All Engines
@@ -719,9 +719,9 @@ export default function HomeScreen() {
               style={[
                 styles.segmentedTabText,
                 selectedFilter === "bots" &&
-                  (isDark
-                    ? styles.segmentedTabTextActiveDark
-                    : styles.segmentedTabTextActive),
+                (isDark
+                  ? styles.segmentedTabTextActiveDark
+                  : styles.segmentedTabTextActive),
               ]}
             >
               Automation Hub
@@ -742,9 +742,9 @@ export default function HomeScreen() {
               style={[
                 styles.segmentedTabText,
                 selectedFilter === "tools" &&
-                  (isDark
-                    ? styles.segmentedTabTextActiveDark
-                    : styles.segmentedTabTextActive),
+                (isDark
+                  ? styles.segmentedTabTextActiveDark
+                  : styles.segmentedTabTextActive),
               ]}
             >
               Studio Tools
@@ -889,6 +889,12 @@ export default function HomeScreen() {
             </View>
           </View>
         )}
+        <Pressable onPress={() => router.push('/Referral' as any)}>
+          <Image
+            source={require('../../assets/images/network.png')}
+            style={{ width: 100, height: 100, borderRadius: 10, alignSelf: 'center', justifyContent: 'center' }}
+          />
+        </Pressable>
       </ScrollView>
     </AppScreen>
   );

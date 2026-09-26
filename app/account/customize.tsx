@@ -13,9 +13,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { AppScreen } from '../../src/components/AppScreen';
-import { useTheme, ThemeMode } from '../../src/contexts/ThemeContext';
-import { spacing } from '../../src/theme/spacing';
-import { radius } from '../../src/theme/radius';
+import { useTheme, ThemeMode, ThemeSelector, spacing, radius } from '@/features/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface ShortcutConfig {
@@ -47,12 +45,6 @@ const DEFAULT_SHORTCUTS: ShortcutConfig[] = [
 ];
 
 const PREF_STORAGE_KEY = '@gap_app_customize_shortcuts';
-
-const THEME_OPTIONS: { id: ThemeMode; label: string; icon: string; desc: string }[] = [
-  { id: 'light', label: 'Light', icon: 'sunny', desc: 'Crisp white canvas' },
-  { id: 'dark', label: 'Dark', icon: 'moon', desc: 'OLED pitch black' },
-  { id: 'system', label: 'System', icon: 'phone-portrait', desc: 'Follows OS appearance' },
-];
 
 export default function CustomizeAppScreen() {
   const router = useRouter();
@@ -145,76 +137,7 @@ export default function CustomizeAppScreen() {
 
         {/* 1. Theme & Appearance Mode Switcher */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
-            Appearance & Theme
-          </Text>
-          <Text style={[styles.sectionSubtitle, { color: isDark ? '#8E8E93' : '#64748B' }]}>
-            Choose your preferred color theme across all workspaces, dialogs, and tools.
-          </Text>
-
-          <View style={styles.themeCardsRow}>
-            {THEME_OPTIONS.map((opt) => {
-              const isSelected = themeMode === opt.id;
-              return (
-                <Pressable
-                  key={opt.id}
-                  style={[
-                    styles.themeCard,
-                    isDark ? styles.themeCardDark : styles.themeCardLight,
-                    isSelected && styles.themeCardSelected,
-                    isSelected && { borderColor: colors.primary },
-                  ]}
-                  onPress={async () => {
-                    if (Platform.OS !== 'web') {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }
-                    await setThemeMode(opt.id);
-                  }}
-                >
-                  <View
-                    style={[
-                      styles.themeIconBox,
-                      {
-                        backgroundColor: isSelected
-                          ? colors.primaryMuted
-                          : isDark
-                          ? '#2C2C2E'
-                          : '#F2F4F7',
-                      },
-                    ]}
-                  >
-                    <Ionicons
-                      name={opt.icon as any}
-                      size={20}
-                      color={isSelected ? colors.primary : isDark ? '#FFFFFF' : '#475569'}
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      styles.themeCardTitle,
-                      { color: isSelected ? colors.primary : isDark ? '#FFFFFF' : '#0F172A' },
-                    ]}
-                  >
-                    {opt.label}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.themeCardDesc,
-                      { color: isDark ? '#8E8E93' : '#64748B' },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {opt.desc}
-                  </Text>
-                  {isSelected && (
-                    <View style={[styles.themeCheckmark, { backgroundColor: colors.primary }]}>
-                      <Ionicons name="checkmark" size={11} color="#FFFFFF" />
-                    </View>
-                  )}
-                </Pressable>
-              );
-            })}
-          </View>
+          <ThemeSelector showTitle={true} />
         </View>
 
         {/* Display Settings Card */}

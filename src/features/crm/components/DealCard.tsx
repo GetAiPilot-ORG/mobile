@@ -1,8 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useCrmTheme } from '../hooks/useCrmTheme';
 import { CRMDeal, DealStage } from '../types';
-import { useTheme, getColors } from '@/theme';
 
 interface DealCardProps {
   deal: CRMDeal;
@@ -20,8 +20,7 @@ const STAGE_CONFIG: Record<DealStage, { label: string; color: string; bg: string
 };
 
 export const DealCard: React.FC<DealCardProps> = ({ deal, onPress, onStageChange }) => {
-  const { isDark } = useTheme();
-  const colors = getColors(isDark);
+  const { isDark, colors, accentColor } = useCrmTheme();
 
   const stageCfg = STAGE_CONFIG[deal.stage] || STAGE_CONFIG.lead;
   const currencySymbol = deal.currency === 'INR' ? '₹' : '$';
@@ -30,19 +29,22 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, onPress, onStageChange
     <Pressable
       style={({ pressed }) => [
         styles.card,
-        isDark ? styles.cardDark : styles.cardLight,
-        pressed && (isDark ? styles.cardPressedDark : styles.cardPressedLight),
+        {
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+        },
+        pressed && styles.pressed,
       ]}
       onPress={onPress}
     >
       <View style={styles.topRow}>
         <View style={styles.titleBlock}>
-          <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]} numberOfLines={1}>
+          <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={1}>
             {deal.title}
           </Text>
           {deal.contact ? (
-            <Text style={[styles.contactName, { color: isDark ? '#9CA3AF' : '#64748B' }]} numberOfLines={1}>
-              <Ionicons name="person-outline" size={11} color={isDark ? '#9CA3AF' : '#64748B'} />{' '}
+            <Text style={[styles.contactName, { color: colors.textSecondary }]} numberOfLines={1}>
+              <Ionicons name="person-outline" size={11} color={colors.textSecondary} />{' '}
               {`${deal.contact.first_name || ''} ${deal.contact.last_name || ''}`.trim()}
               {deal.contact.company ? ` • ${deal.contact.company}` : ''}
             </Text>
@@ -60,29 +62,29 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, onPress, onStageChange
       </View>
 
       <View style={styles.middleRow}>
-        <Text style={styles.value}>
+        <Text style={[styles.value, { color: accentColor }]}>
           {currencySymbol}
           {Number(deal.value || 0).toLocaleString()}
         </Text>
         {deal.probability !== undefined && deal.probability !== null ? (
-          <View style={[styles.probBadge, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)' }]}>
-            <Text style={[styles.probText, { color: isDark ? '#D1D5DB' : '#475569' }]}>{deal.probability}% Win Prob</Text>
+          <View style={[styles.probBadge, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' }]}>
+            <Text style={[styles.probText, { color: colors.textSecondary }]}>{deal.probability}% Win Prob</Text>
           </View>
         ) : null}
       </View>
 
-      <View style={[styles.footer, { borderTopColor: isDark ? '#222630' : '#F1F5F9' }]}>
+      <View style={[styles.footer, { borderTopColor: colors.border }]}>
         <View style={styles.footerItem}>
-          <Ionicons name="calendar-outline" size={12} color={isDark ? '#9CA3AF' : '#64748B'} />
-          <Text style={[styles.footerText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+          <Ionicons name="calendar-outline" size={12} color={colors.textMuted} />
+          <Text style={[styles.footerText, { color: colors.textMuted }]}>
             {deal.expected_close_date ? `Close: ${deal.expected_close_date}` : 'No date'}
           </Text>
         </View>
 
         {deal.assignee ? (
           <View style={styles.footerItem}>
-            <Ionicons name="person-circle-outline" size={13} color={isDark ? '#9CA3AF' : '#64748B'} />
-            <Text style={[styles.footerText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>{deal.assignee.name}</Text>
+            <Ionicons name="person-circle-outline" size={13} color={colors.textMuted} />
+            <Text style={[styles.footerText, { color: colors.textMuted }]}>{deal.assignee.name}</Text>
           </View>
         ) : null}
       </View>
@@ -96,32 +98,15 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-  },
-  cardDark: {
-    backgroundColor: '#181A20',
-    borderColor: '#262A34',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  cardLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
   },
-  cardPressedDark: {
-    backgroundColor: '#20232B',
-    borderColor: '#3B82F6',
-  },
-  cardPressedLight: {
-    backgroundColor: '#F8FAFC',
-    borderColor: '#3B82F6',
+  pressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.99 }],
   },
   topRow: {
     flexDirection: 'row',
@@ -163,7 +148,6 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#10B981',
     letterSpacing: -0.5,
   },
   probBadge: {
