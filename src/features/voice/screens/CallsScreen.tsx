@@ -122,11 +122,8 @@ export const CallsScreen: React.FC = () => {
       }
       showsVerticalScrollIndicator={false}
     >
-      {/* 1. TITLE & EYEBROW */}
+      {/* 1. TITLE SECTION */}
       <View style={styles.headingSection}>
-        <Text style={[styles.eyebrowText, { color: colors.textSecondary }]}>
-          // TELEPHONY LOGS & CALL RECORDS
-        </Text>
         <Text style={[styles.mainHeading, { color: colors.text }]}>
           Call Records
         </Text>

@@ -265,15 +265,8 @@ export const ContactsScreen: React.FC = () => {
       }
       showsVerticalScrollIndicator={false}
     >
-      {/* 1. TITLE & EYEBROW */}
+      {/* 1. TITLE SECTION */}
       <View style={styles.headingSection}>
-        <Text style={[styles.eyebrowText, { color: colors.textSecondary }]}>
-          {activeSubTab === "contacts"
-            ? "// AUDIENCE & CRM DATABASE"
-            : activeSubTab === "numbers"
-            ? "// DEDICATED TELEPHONY LINES"
-            : "// VOICE PILOT ENGINE"}
-        </Text>
         <Text style={[styles.mainHeading, { color: colors.text }]}>
           {activeSubTab === "contacts"
             ? "Contacts & Leads"

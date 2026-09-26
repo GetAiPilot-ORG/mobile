@@ -163,11 +163,8 @@ export const CampaignsScreen: React.FC = () => {
       }
       showsVerticalScrollIndicator={false}
     >
-      {/* 1. TITLE & EYEBROW */}
+      {/* 1. TITLE SECTION */}
       <View style={styles.headingSection}>
-        <Text style={[styles.eyebrowText, { color: colors.textSecondary }]}>
-          // OUTBOUND CALL DISPATCHER
-        </Text>
         <Text style={[styles.mainHeading, { color: colors.text }]}>
           Campaigns
         </Text>
