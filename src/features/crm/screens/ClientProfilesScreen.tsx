@@ -1,11 +1,10 @@
-import React from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, Linking, RefreshControl, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { getColors, useTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
+import { ActivityIndicator, FlatList, Linking, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { crmApi } from '../api/crm.api';
 import { CRMBillingProfile } from '../types';
-import { useTheme, getColors } from '@/theme';
 
 const WEB_APP_URL = 'https://getaipilot.in';
 
@@ -19,14 +18,14 @@ export function ClientProfilesScreen() {
   });
 
   const profiles = data?.profiles || [];
-  const bg = isDark ? '#0F1015' : '#F8FAFC';
-  const card = isDark ? '#1A1D26' : '#FFFFFF';
-  const text = isDark ? '#FFFFFF' : '#0F172A';
-  const sub = isDark ? '#9CA3AF' : '#64748B';
-  const border = isDark ? '#262A34' : '#E2E8F0';
+  const bg = colors.background
+  const card = colors.surface
+  const text = colors.text
+  const sub = colors.text
+  const border = colors.border
 
   const open = (p: CRMBillingProfile) => {
-    Linking.openURL(`${WEB_APP_URL}/dashboard/crm/billing-profiles/${p.id}`).catch(() => {});
+    Linking.openURL(`${WEB_APP_URL}/dashboard/crm/billing-profiles/${p.id}`).catch(() => { });
   };
 
   return (
@@ -36,7 +35,7 @@ export function ClientProfilesScreen() {
           <Text style={[s.title, { color: text }]}>Client Profiles</Text>
           <Text style={[s.subtitle, { color: sub }]}>{data?.total_count ?? 0} billing profiles</Text>
         </View>
-        <Pressable style={s.createBtn} onPress={() => Linking.openURL(`${WEB_APP_URL}/dashboard/crm/billing-profiles/create`).catch(() => {})}>
+        <Pressable style={s.createBtn} onPress={() => Linking.openURL(`${WEB_APP_URL}/dashboard/crm/billing-profiles/create`).catch(() => { })}>
           <Ionicons name="add" size={18} color="#FFF" />
           <Text style={s.createBtnText}>Create</Text>
         </Pressable>

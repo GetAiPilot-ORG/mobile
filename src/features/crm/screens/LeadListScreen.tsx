@@ -1,23 +1,21 @@
+import { getColors, useTheme } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-  StyleSheet,
-  Text,
-  View,
   FlatList,
-  TextInput,
   Pressable,
   RefreshControl,
-  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useLeads, useCreateLead } from '../hooks/useLeads';
-import { LeadCard } from '../components/LeadCard';
+import { CrmListSkeleton } from '../../../components/skeletonScreen';
 import { CreateLeadModal } from '../components/CreateLeadModal';
 import { CrmFilterSheet } from '../components/CrmFilterSheet';
-import { ContactStatus } from '../types';
-import { CrmListSkeleton } from '../../../components/skeletonScreen';
-import { useTheme, getColors } from '@/theme';
+import { LeadCard } from '../components/LeadCard';
+import { useCreateLead, useLeads } from '../hooks/useLeads';
 
 interface LeadListScreenProps {
   onSelectLead: (leadId: string) => void;
@@ -53,27 +51,27 @@ export const LeadListScreen: React.FC<LeadListScreenProps> = ({ onSelectLead, on
   const totalCount = data?.total_count || leads.length;
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           {onBack ? (
             <Pressable
-              style={[styles.backBtn, { backgroundColor: isDark ? '#1E2028' : '#F1F5F9' }]}
+              style={[styles.backBtn, { backgroundColor: colors.buttonPrimary }]}
               onPress={onBack}
               hitSlop={8}
             >
-              <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+              <Ionicons name="arrow-back" size={20} color={colors.primary} />
             </Pressable>
           ) : null}
           <View>
             <View style={styles.titleRow}>
-              <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Leads & Contacts</Text>
-              <View style={[styles.countBadge, { backgroundColor: isDark ? '#262A34' : '#E2E8F0' }]}>
+              <Text style={[styles.title, { color: colors.text }]}>Leads & Contacts</Text>
+              <View style={[styles.countBadge, { backgroundColor: colors.surface }]}>
                 <Text style={styles.countText}>{totalCount}</Text>
               </View>
             </View>
-            <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>
               Prospects & customer directory
             </Text>
           </View>
@@ -91,19 +89,19 @@ export const LeadListScreen: React.FC<LeadListScreenProps> = ({ onSelectLead, on
 
       {/* Search Bar & Filter Button */}
       <View style={styles.searchRow}>
-        <View style={[styles.searchBar, { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' }]}>
-          <Ionicons name="search" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
+        <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="search" size={16} color={colors.textMuted} />
           <TextInput
-            style={[styles.searchInput, { color: isDark ? '#FFFFFF' : '#0F172A' }]}
+            style={[styles.searchInput, { color: colors.text }]}
             placeholder="Search by name, company, email..."
-            placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+            placeholderTextColor={colors.textMuted}
             value={search}
             onChangeText={setSearch}
             clearButtonMode="while-editing"
           />
           {search ? (
             <Pressable onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
+              <Ionicons name="close-circle" size={16} color={colors.textMuted} />
             </Pressable>
           ) : null}
         </View>
@@ -111,7 +109,7 @@ export const LeadListScreen: React.FC<LeadListScreenProps> = ({ onSelectLead, on
         <Pressable
           style={[
             styles.filterBtn,
-            { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+            { backgroundColor: colors.surface, borderColor: colors.border },
             (statusFilter !== 'all' || assigneeFilter !== 'all') && styles.filterBtnActive,
           ]}
           onPress={() => setShowFilterSheet(true)}
@@ -119,7 +117,7 @@ export const LeadListScreen: React.FC<LeadListScreenProps> = ({ onSelectLead, on
           <Ionicons
             name="options-outline"
             size={18}
-            color={statusFilter !== 'all' || assigneeFilter !== 'all' ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B'}
+            color={statusFilter !== 'all' || assigneeFilter !== 'all' ? '#3B82F6' : colors.textMuted}
           />
         </Pressable>
       </View>
@@ -133,7 +131,7 @@ export const LeadListScreen: React.FC<LeadListScreenProps> = ({ onSelectLead, on
               key={tab.key}
               style={[
                 styles.tabChip,
-                { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+                { backgroundColor: colors.surface, borderColor: colors.border },
                 isSelected && (isDark ? styles.tabChipSelectedDark : styles.tabChipSelectedLight),
               ]}
               onPress={() => setStatusFilter(tab.key)}
@@ -141,7 +139,7 @@ export const LeadListScreen: React.FC<LeadListScreenProps> = ({ onSelectLead, on
               <Text
                 style={[
                   styles.tabText,
-                  { color: isDark ? '#9CA3AF' : '#64748B' },
+                  { color: colors.textMuted },
                   isSelected && styles.tabTextSelected,
                 ]}
               >
@@ -157,9 +155,9 @@ export const LeadListScreen: React.FC<LeadListScreenProps> = ({ onSelectLead, on
         <CrmListSkeleton />
       ) : leads.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="people-outline" size={48} color={isDark ? '#4B5563' : '#CBD5E1'} />
-          <Text style={[styles.emptyTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>No matching records</Text>
-          <Text style={[styles.emptySubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+          <Ionicons name="people-outline" size={48} color={colors.text} />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>No matching records</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
             {search
               ? `No contacts found matching "${search}"`
               : 'Add your first lead to start building your sales pipeline.'}

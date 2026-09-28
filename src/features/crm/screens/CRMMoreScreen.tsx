@@ -1,10 +1,10 @@
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { getColors, useTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { useMembers } from '../hooks/useMembers';
+import React from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCrmDashboard } from '../hooks/useCrmDashboard';
-import { useTheme, getColors } from '@/theme';
+import { useMembers } from '../hooks/useMembers';
 
 interface CRMMoreScreenProps {
   onSelectSection: (section: 'contacts' | 'activities') => void;
@@ -19,23 +19,23 @@ export const CRMMoreScreen: React.FC<CRMMoreScreenProps> = ({ onSelectSection, o
   const { data: dashboard } = useCrmDashboard();
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.contentContainer}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             {onBack ? (
               <Pressable
-                style={[styles.backBtn, { backgroundColor: isDark ? '#1E2028' : '#F1F5F9' }]}
+                style={[styles.backBtn, { backgroundColor: colors.surface }]}
                 onPress={onBack}
                 hitSlop={8}
               >
-                <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+                <Ionicons name="arrow-back" size={20} color={colors.text} />
               </Pressable>
             ) : null}
             <View>
-              <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>More CRM Modules</Text>
-              <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Team directory, contacts & touchpoint analytics</Text>
+              <Text style={[styles.title, { color: colors.text }]}>More CRM Modules</Text>
+              <Text style={[styles.subtitle, { color: colors.textMuted }]}>Team directory, contacts & touchpoint analytics</Text>
             </View>
           </View>
         </View>
@@ -50,10 +50,10 @@ export const CRMMoreScreen: React.FC<CRMMoreScreenProps> = ({ onSelectSection, o
               <Ionicons name="people" size={22} color="#3B82F6" />
             </View>
             <View style={styles.menuInfo}>
-              <Text style={[styles.menuTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Contacts Directory</Text>
-              <Text style={[styles.menuDesc, { color: isDark ? '#9CA3AF' : '#64748B' }]}>All leads, customers, and partners in one place</Text>
+              <Text style={[styles.menuTitle, { color: colors.text }]}>Contacts Directory</Text>
+              <Text style={[styles.menuDesc, { color: colors.textMuted }]}>All leads, customers, and partners in one place</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={isDark ? '#6B7280' : '#94A3B8'} />
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </Pressable>
 
           <Pressable
@@ -64,31 +64,31 @@ export const CRMMoreScreen: React.FC<CRMMoreScreenProps> = ({ onSelectSection, o
               <Ionicons name="time" size={22} color="#F59E0B" />
             </View>
             <View style={styles.menuInfo}>
-              <Text style={[styles.menuTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Activity Stream</Text>
-              <Text style={[styles.menuDesc, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Unified log of calls, meetings, notes & follow-ups</Text>
+              <Text style={[styles.menuTitle, { color: colors.text }]}>Activity Stream</Text>
+              <Text style={[styles.menuDesc, { color: colors.textMuted }]}>Unified log of calls, meetings, notes & follow-ups</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={isDark ? '#6B7280' : '#94A3B8'} />
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </Pressable>
         </View>
 
         {/* Team Members Section */}
         <View style={styles.sectionBlock}>
-          <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>CRM Team ({members.length})</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>CRM Team ({members.length})</Text>
 
           <View style={styles.membersList}>
             {members.map((m) => (
               <View key={m.id} style={[styles.memberCard, isDark ? styles.cardDark : styles.cardLight]}>
-                <View style={[styles.memberAvatar, { backgroundColor: isDark ? '#262A34' : '#E2E8F0' }]}>
+                <View style={[styles.memberAvatar, { backgroundColor: colors.surface }]}>
                   <Text style={styles.memberAvatarText}>
                     {(m.name?.[0] || 'U').toUpperCase()}
                   </Text>
                 </View>
                 <View style={styles.memberInfo}>
-                  <Text style={[styles.memberName, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>{m.name}</Text>
-                  <Text style={[styles.memberEmail, { color: isDark ? '#9CA3AF' : '#64748B' }]}>{m.email}</Text>
+                  <Text style={[styles.memberName, { color: colors.text }]}>{m.name}</Text>
+                  <Text style={[styles.memberEmail, { color: colors.textMuted }]}>{m.email}</Text>
                 </View>
-                <View style={[styles.roleBadge, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}>
-                  <Text style={[styles.roleText, { color: isDark ? '#D1D5DB' : '#475569' }]}>{m.role || 'Sales Rep'}</Text>
+                <View style={[styles.roleBadge, { backgroundColor: colors.surface }]}>
+                  <Text style={[styles.roleText, { color: colors.text }]}>{m.role || 'Sales Rep'}</Text>
                 </View>
               </View>
             ))}
@@ -98,19 +98,19 @@ export const CRMMoreScreen: React.FC<CRMMoreScreenProps> = ({ onSelectSection, o
         {/* Performance Highlights */}
         {dashboard?.stats ? (
           <View style={styles.sectionBlock}>
-            <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Performance Snapshot</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Performance Snapshot</Text>
             <View style={styles.snapshotGrid}>
               <View style={[styles.snapshotCard, isDark ? styles.cardDark : styles.cardLight]}>
-                <Text style={[styles.snapshotLabel, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Total Contacts</Text>
-                <Text style={[styles.snapshotVal, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>{dashboard.stats.totalContacts}</Text>
+                <Text style={[styles.snapshotLabel, { color: colors.textMuted }]}>Total Contacts</Text>
+                <Text style={[styles.snapshotVal, { color: colors.text }]}>{dashboard.stats.totalContacts}</Text>
               </View>
               <View style={[styles.snapshotCard, isDark ? styles.cardDark : styles.cardLight]}>
-                <Text style={[styles.snapshotLabel, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Active Deals</Text>
-                <Text style={[styles.snapshotVal, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>{dashboard.stats.openDeals}</Text>
+                <Text style={[styles.snapshotLabel, { color: colors.textMuted }]}>Active Deals</Text>
+                <Text style={[styles.snapshotVal, { color: colors.text }]}>{dashboard.stats.openDeals}</Text>
               </View>
               <View style={[styles.snapshotCard, isDark ? styles.cardDark : styles.cardLight]}>
-                <Text style={[styles.snapshotLabel, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Won Value</Text>
-                <Text style={[styles.snapshotVal, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>₹{dashboard.stats.wonDealValueThisMonth.toLocaleString()}</Text>
+                <Text style={[styles.snapshotLabel, { color: colors.textMuted }]}>Won Value</Text>
+                <Text style={[styles.snapshotVal, { color: colors.text }]}>₹{dashboard.stats.wonDealValueThisMonth.toLocaleString()}</Text>
               </View>
             </View>
           </View>
