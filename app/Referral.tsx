@@ -55,7 +55,7 @@ interface ReferralScreenProps {
 
 const APP_REFERRAL_URL =
     Platform.OS === 'web'
-        ? 'https://getaipilot.in/register'
+        ? 'http://localhost:8080/register'
         : 'https://getaipilot.in/register';
 
 export default function ReferralScreen() {

@@ -1,7 +1,8 @@
+import { getColors, useTheme } from '@/theme';
 import {
-  Ionicons } from '@expo/vector-icons';
-import React,
-  { useState } from 'react';
+  Ionicons
+} from '@expo/vector-icons';
+import React, { useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -17,7 +18,6 @@ import { CreateTaskModal } from '../components/CreateTaskModal';
 import { TaskItem } from '../components/TaskItem';
 import { useCreateTask, useDeleteTask, useTasks, useToggleTask } from '../hooks/useTasks';
 import { CRMTask } from '../types';
-import { useTheme, getColors } from '@/theme';
 
 const TIMEFRAME_TABS: Array<{ key: 'all' | 'today' | 'upcoming' | 'overdue' | 'completed'; label: string }> = [
   { key: 'all', label: 'All Tasks' },
@@ -58,22 +58,22 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({ onBack }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           {onBack ? (
             <Pressable
-              style={[styles.backBtn, { backgroundColor: isDark ? '#1E2028' : '#F1F5F9' }]}
+              style={[styles.backBtn, { backgroundColor: colors.surface }]}
               onPress={onBack}
               hitSlop={8}
             >
-              <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+              <Ionicons name="arrow-back" size={20} color={colors.text} />
             </Pressable>
           ) : null}
           <View>
-            <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Tasks & Follow-ups</Text>
-            <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Daily schedule, reminders & client action items</Text>
+            <Text style={[styles.title, { color: colors.text }]}>Tasks & Follow-ups</Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>Daily schedule, reminders & client action items</Text>
           </View>
         </View>
 
@@ -96,7 +96,7 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({ onBack }) => {
               key={tab.key}
               style={[
                 styles.tabChip,
-                { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+                { backgroundColor: colors.surface, borderColor: colors.border },
                 isSelected && (isDark ? styles.tabChipSelectedDark : styles.tabChipSelectedLight),
               ]}
               onPress={() => setSelectedTimeframe(tab.key)}
@@ -104,7 +104,7 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({ onBack }) => {
               <Text
                 style={[
                   styles.tabText,
-                  { color: isDark ? '#9CA3AF' : '#64748B' },
+                  { color: colors.textMuted },
                   isSelected && styles.tabTextSelected,
                 ]}
               >
@@ -120,9 +120,9 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({ onBack }) => {
         <CrmTaskSkeleton />
       ) : tasks.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="checkbox-outline" size={48} color={isDark ? '#4B5563' : '#CBD5E1'} />
-          <Text style={[styles.emptyTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>No {selectedTimeframe} tasks</Text>
-          <Text style={[styles.emptySubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+          <Ionicons name="checkbox-outline" size={48} color={colors.textMuted} />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>No {selectedTimeframe} tasks</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
             {selectedTimeframe === 'completed'
               ? 'No completed tasks recorded yet.'
               : 'You have no open tasks in this view. Great job keeping up!'}

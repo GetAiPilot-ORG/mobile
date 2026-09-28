@@ -1,25 +1,25 @@
-import React, { useState, useMemo } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  FlatList,
-  Pressable,
-  ScrollView,
-  RefreshControl,
-  TextInput,
-  Dimensions,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { getColors, useTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useDeals, useCreateDeal, useUpdateDealStage } from '../hooks/useDeals';
-import { DealCard } from '../components/DealCard';
-import { CreateDealModal } from '../components/CreateDealModal';
-import { StageSelectorSheet } from '../components/StageSelectorSheet';
-import { CRMDeal, DealStage } from '../types';
+import React, { useMemo, useState } from 'react';
+import {
+  Dimensions,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { CrmPipelineSkeleton } from '../../../components/skeletonScreen';
-import { useTheme, getColors } from '@/theme';
+import { CreateDealModal } from '../components/CreateDealModal';
+import { DealCard } from '../components/DealCard';
+import { StageSelectorSheet } from '../components/StageSelectorSheet';
+import { useCreateDeal, useDeals, useUpdateDealStage } from '../hooks/useDeals';
+import { CRMDeal, DealStage } from '../types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COLUMN_WIDTH = Math.min(SCREEN_WIDTH * 0.82, 320);
@@ -133,7 +133,7 @@ export const PipelineScreen: React.FC<PipelineScreenProps> = ({ onBack, onSelect
   const handleAdvanceStage = (deal: CRMDeal) => {
     const nextStage = NEXT_STAGE_MAP[deal.stage];
     if (nextStage) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
       updateDealStage.mutate({ id: deal.id, stage: nextStage });
     } else {
       setSelectedDealForStage(deal);
@@ -141,28 +141,28 @@ export const PipelineScreen: React.FC<PipelineScreenProps> = ({ onBack, onSelect
   };
 
   const handleOpenAddDeal = (stage: DealStage = 'lead') => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     setDefaultStageForAdd(stage);
     setShowAddDeal(true);
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           {onBack ? (
             <Pressable
-              style={[styles.backBtn, { backgroundColor: isDark ? '#1E2028' : '#F1F5F9' }]}
+              style={[styles.backBtn, { backgroundColor: colors.surface }]}
               onPress={onBack}
               hitSlop={8}
             >
-              <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+              <Ionicons name="arrow-back" size={20} color={colors.text} />
             </Pressable>
           ) : null}
           <View>
-            <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Sales Pipeline</Text>
-            <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+            <Text style={[styles.title, { color: colors.text }]}>Sales Pipeline</Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>
               {allDeals.length} active deals • {formatCurrency(totalPipelineValue)}
             </Text>
           </View>
@@ -170,31 +170,31 @@ export const PipelineScreen: React.FC<PipelineScreenProps> = ({ onBack, onSelect
 
         <View style={styles.headerRight}>
           {/* Board / List Toggle */}
-          <View style={[styles.toggleContainer, { backgroundColor: isDark ? '#1E2028' : '#F1F5F9' }]}>
+          <View style={[styles.toggleContainer, { backgroundColor: colors.surface }]}>
             <Pressable
               style={[styles.toggleBtn, viewMode === 'board' && styles.toggleBtnActive]}
               onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
                 setViewMode('board');
               }}
             >
               <Ionicons
                 name="grid-outline"
                 size={16}
-                color={viewMode === 'board' ? '#FFFFFF' : isDark ? '#9CA3AF' : '#64748B'}
+                color={viewMode === 'board' ? colors.text : colors.textMuted}
               />
             </Pressable>
             <Pressable
               style={[styles.toggleBtn, viewMode === 'list' && styles.toggleBtnActive]}
               onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
                 setViewMode('list');
               }}
             >
               <Ionicons
                 name="list-outline"
                 size={16}
-                color={viewMode === 'list' ? '#FFFFFF' : isDark ? '#9CA3AF' : '#64748B'}
+                color={viewMode === 'list' ? colors.text : colors.textMuted}
               />
             </Pressable>
           </View>
@@ -215,25 +215,25 @@ export const PipelineScreen: React.FC<PipelineScreenProps> = ({ onBack, onSelect
       <View
         style={[
           styles.kpiBanner,
-          { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+          { backgroundColor: colors.surface, borderColor: colors.border },
         ]}
       >
         <View style={styles.kpiCol}>
-          <Text style={[styles.kpiLabel, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Total Pipeline</Text>
-          <Text style={[styles.kpiValue, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+          <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>Total Pipeline</Text>
+          <Text style={[styles.kpiValue, { color: colors.text }]}>
             {formatCurrency(totalPipelineValue)}
           </Text>
         </View>
-        <View style={[styles.kpiDivider, { backgroundColor: isDark ? '#262A34' : '#E2E8F0' }]} />
+        <View style={[styles.kpiDivider, { backgroundColor: colors.border }]} />
         <View style={styles.kpiCol}>
-          <Text style={[styles.kpiLabel, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Deals Won</Text>
+          <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>Deals Won</Text>
           <Text style={[styles.kpiValue, { color: '#10B981' }]}>
             {formatCurrency(wonValue)}
           </Text>
         </View>
-        <View style={[styles.kpiDivider, { backgroundColor: isDark ? '#262A34' : '#E2E8F0' }]} />
+        <View style={[styles.kpiDivider, { backgroundColor: colors.border }]} />
         <View style={styles.kpiCol}>
-          <Text style={[styles.kpiLabel, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Win Ratio</Text>
+          <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>Win Ratio</Text>
           <Text style={[styles.kpiValue, { color: '#3B82F6' }]}>
             {allDeals.length > 0 ? `${Math.round((wonCount / allDeals.length) * 100)}%` : '0%'}
           </Text>
@@ -244,20 +244,20 @@ export const PipelineScreen: React.FC<PipelineScreenProps> = ({ onBack, onSelect
       <View
         style={[
           styles.searchBar,
-          { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+          { backgroundColor: colors.surface, borderColor: colors.border },
         ]}
       >
-        <Ionicons name="search" size={16} color={isDark ? '#6B7280' : '#94A3B8'} />
+        <Ionicons name="search" size={16} color={colors.textMuted} />
         <TextInput
-          style={[styles.searchInput, { color: isDark ? '#FFFFFF' : '#0F172A' }]}
+          style={[styles.searchInput, { color: colors.text }]}
           placeholder="Filter deals by title or client..."
-          placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+          placeholderTextColor={colors.textMuted}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
         {searchQuery ? (
           <Pressable onPress={() => setSearchQuery('')} hitSlop={6}>
-            <Ionicons name="close-circle" size={16} color={isDark ? '#6B7280' : '#94A3B8'} />
+            <Ionicons name="close-circle" size={16} color={colors.textMuted} />
           </Pressable>
         ) : null}
       </View>
@@ -291,14 +291,14 @@ export const PipelineScreen: React.FC<PipelineScreenProps> = ({ onBack, onSelect
                 key={stageCfg.key}
                 style={[
                   styles.kanbanColumn,
-                  { backgroundColor: isDark ? '#14161C' : '#F1F5F9', borderColor: isDark ? '#222630' : '#E2E8F0' },
+                  { backgroundColor: colors.background, borderColor: colors.border },
                 ]}
               >
                 {/* Column Header */}
-                <View style={[styles.columnHeader, { borderBottomColor: isDark ? '#222630' : '#E2E8F0' }]}>
+                <View style={[styles.columnHeader, { borderBottomColor: colors.border }]}>
                   <View style={styles.columnHeaderLeft}>
                     <View style={[styles.stageDot, { backgroundColor: stageCfg.color }]} />
-                    <Text style={[styles.columnTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                    <Text style={[styles.columnTitle, { color: colors.text }]}>
                       {stageCfg.label}
                     </Text>
                     <View style={[styles.countBadge, { backgroundColor: stageCfg.bg }]}>
@@ -309,11 +309,11 @@ export const PipelineScreen: React.FC<PipelineScreenProps> = ({ onBack, onSelect
                   </View>
 
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={[styles.columnTotalText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+                    <Text style={[styles.columnTotalText, { color: colors.textMuted }]}>
                       {formatCurrency(stageTotal)}
                     </Text>
                     <Pressable
-                      style={[styles.addDealInStageBtn, { backgroundColor: isDark ? '#262A34' : '#FFFFFF' }]}
+                      style={[styles.addDealInStageBtn, { backgroundColor: colors.surface }]}
                       onPress={() => handleOpenAddDeal(stageCfg.key)}
                       hitSlop={6}
                     >
@@ -330,8 +330,8 @@ export const PipelineScreen: React.FC<PipelineScreenProps> = ({ onBack, onSelect
                 >
                   {stageDeals.length === 0 ? (
                     <View style={styles.emptyColumn}>
-                      <Ionicons name="folder-open-outline" size={28} color={isDark ? '#4B5563' : '#CBD5E1'} />
-                      <Text style={[styles.emptyColumnText, { color: isDark ? '#6B7280' : '#94A3B8' }]}>
+                      <Ionicons name="folder-open-outline" size={28} color={colors.textMuted} />
+                      <Text style={[styles.emptyColumnText, { color: colors.textMuted }]}>
                         No deals in {stageCfg.label.toLowerCase()}
                       </Text>
                     </View>
@@ -352,8 +352,8 @@ export const PipelineScreen: React.FC<PipelineScreenProps> = ({ onBack, onSelect
                               style={[
                                 styles.advanceStageBtn,
                                 {
-                                  backgroundColor: isDark ? '#1E222B' : '#EFF6FF',
-                                  borderColor: isDark ? '#2D323F' : '#DBEAFE',
+                                  backgroundColor: colors.surface,
+                                  borderColor: colors.border,
                                 },
                               ]}
                               onPress={() => handleAdvanceStage(deal)}
@@ -388,11 +388,11 @@ export const PipelineScreen: React.FC<PipelineScreenProps> = ({ onBack, onSelect
                   key={s.key}
                   style={[
                     styles.stageChip,
-                    { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+                    { backgroundColor: colors.surface, borderColor: colors.border },
                     isSelected && (isDark ? styles.stageChipSelectedDark : styles.stageChipSelectedLight),
                   ]}
                   onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
                     setSelectedStageFilter(s.key);
                   }}
                 >
@@ -400,7 +400,7 @@ export const PipelineScreen: React.FC<PipelineScreenProps> = ({ onBack, onSelect
                   <Text
                     style={[
                       styles.stageText,
-                      { color: isDark ? '#9CA3AF' : '#64748B' },
+                      { color: colors.textMuted },
                       isSelected && { color: s.color, fontWeight: '700' },
                     ]}
                   >

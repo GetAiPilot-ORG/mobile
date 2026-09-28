@@ -1,8 +1,9 @@
+import { getColors, useTheme } from '@/theme';
 import {
-  Ionicons } from "@expo/vector-icons";
+  Ionicons
+} from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import React,
-  { useState } from "react";
+import React, { useState } from "react";
 import {
   Dimensions,
   Pressable,
@@ -25,7 +26,6 @@ import { useCreateDeal } from "../hooks/useDeals";
 import { useCreateLead } from "../hooks/useLeads";
 import { useCreateTask, useToggleTask } from "../hooks/useTasks";
 import { CRMTask } from "../types";
-import { useTheme, getColors } from '@/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -91,7 +91,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
     <SafeAreaView
       style={[
         styles.safeArea,
-        { backgroundColor: isDark ? "#0F1015" : "#F8FAFC" },
+        { backgroundColor: colors.background },
       ]}
       edges={["top"]}
     >
@@ -122,7 +122,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
               <Pressable
                 style={[
                   styles.backBtn,
-                  { backgroundColor: isDark ? "#1E2028" : "#F1F5F9" },
+                  { backgroundColor: colors.surface },
                 ]}
                 onPress={onBack}
                 hitSlop={8}
@@ -132,7 +132,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                 <Ionicons
                   name="arrow-back"
                   size={20}
-                  color={isDark ? "#FFFFFF" : "#0F172A"}
+                  color={colors.text}
                 />
               </Pressable>
             ) : null}
@@ -143,7 +143,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                 <Text
                   style={[
                     styles.headerTitle,
-                    { color: isDark ? "#FFFFFF" : "#0F172A" },
+                    { color: colors.text },
                   ]}
                 >
                   CRM Workspace
@@ -155,7 +155,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
               <Text
                 style={[
                   styles.headerSubtitle,
-                  { color: isDark ? "#9CA3AF" : "#64748B" },
+                  { color: colors.text },
                 ]}
                 numberOfLines={1}
               >
@@ -197,12 +197,12 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
               <Ionicons
                 name="checkbox-outline"
                 size={14}
-                color={isDark ? "#D1D5DB" : "#334155"}
+                color={colors.text}
               />
               <Text
                 style={[
                   styles.secondaryActionText,
-                  { color: isDark ? "#D1D5DB" : "#334155" },
+                  { color: colors.text },
                 ]}
               >
                 Task
@@ -224,7 +224,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                   sub={`${stats?.openDeals ?? 0} active deals`}
                   icon="wallet-outline"
                   gradientColors={
-                    isDark ? ["#1E293B", "#0F172A"] : ["#2563EB", "#1D4ED8"]
+                    isDark ? [colors.background, colors.surface] : [colors.primary, colors.background]
                   }
                   trend="+14% mo"
                   onPress={() => onNavigateTab?.("pipeline")}
@@ -285,7 +285,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                   <Text
                     style={[
                       styles.sectionTitle,
-                      { color: isDark ? "#FFFFFF" : "#0F172A" },
+                      { color: colors.text },
                     ]}
                   >
                     Pipeline Distribution
@@ -307,7 +307,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
               <View
                 style={[
                   styles.pipelineBar,
-                  { backgroundColor: isDark ? "#262A34" : "#E2E8F0" },
+                  { backgroundColor: colors.surface },
                 ]}
               >
                 {pipelineSummary.map((p) => {
@@ -360,7 +360,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                     <Text
                       style={[
                         styles.stageName,
-                        { color: isDark ? "#9CA3AF" : "#64748B" },
+                        { color: colors.text },
                       ]}
                     >
                       {p.label}
@@ -378,7 +378,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                       <Text
                         style={[
                           styles.stageCount,
-                          { color: isDark ? "#FFFFFF" : "#0F172A" },
+                          { color: colors.text },
                         ]}
                       >
                         {p.count}
@@ -397,7 +397,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                   <Text
                     style={[
                       styles.sectionTitle,
-                      { color: isDark ? "#FFFFFF" : "#0F172A" },
+                      { color: colors.text },
                     ]}
                   >
                     Today's Priority Follow-ups
@@ -428,7 +428,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                   <Text
                     style={[
                       styles.emptyTitle,
-                      { color: isDark ? "#FFFFFF" : "#0F172A" },
+                      { color: colors.text },
                     ]}
                   >
                     All caught up for today!
@@ -436,7 +436,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                   <Text
                     style={[
                       styles.emptySubtitle,
-                      { color: isDark ? "#9CA3AF" : "#64748B" },
+                      { color: colors.textMuted },
                     ]}
                   >
                     No overdue tasks or urgent customer follow-ups pending.
@@ -514,9 +514,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                               color={
                                 isDone
                                   ? "#10B981"
-                                  : isDark
-                                    ? "#6B7280"
-                                    : "#94A3B8"
+                                  : colors.textMuted
                               }
                             />
                           </Pressable>
@@ -525,7 +523,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                         <Text
                           style={[
                             styles.followupTitle,
-                            { color: isDark ? "#FFFFFF" : "#0F172A" },
+                            { color: colors.text },
                             isDone && styles.taskTitleCompleted,
                           ]}
                           numberOfLines={2}
@@ -538,12 +536,12 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                             <Ionicons
                               name="person-circle-outline"
                               size={14}
-                              color={isDark ? "#9CA3AF" : "#64748B"}
+                              color={colors.textMuted}
                             />
                             <Text
                               style={[
                                 styles.followupContactName,
-                                { color: isDark ? "#9CA3AF" : "#64748B" },
+                                { color: colors.textMuted },
                               ]}
                               numberOfLines={1}
                             >
@@ -559,9 +557,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                               task.priority === "urgent"
                                 ? { backgroundColor: "rgba(239, 68, 68, 0.15)" }
                                 : {
-                                  backgroundColor: isDark
-                                    ? "#262A34"
-                                    : "#F1F5F9",
+                                  backgroundColor: colors.surface,
                                 },
                             ]}
                           >
@@ -572,9 +568,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                                   color:
                                     task.priority === "urgent"
                                       ? "#EF4444"
-                                      : isDark
-                                        ? "#9CA3AF"
-                                        : "#64748B",
+                                      : colors.textMuted,
                                 },
                               ]}
                             >
@@ -606,7 +600,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                   <Text
                     style={[
                       styles.sectionTitle,
-                      { color: isDark ? "#FFFFFF" : "#0F172A" },
+                      { color: colors.text },
                     ]}
                   >
                     Recent Active Leads
@@ -630,7 +624,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                   <Text
                     style={[
                       styles.emptyTitle,
-                      { color: isDark ? "#FFFFFF" : "#0F172A" },
+                      { color: colors.text },
                     ]}
                   >
                     No leads yet
@@ -638,7 +632,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                   <Text
                     style={[
                       styles.emptySubtitle,
-                      { color: isDark ? "#9CA3AF" : "#64748B" },
+                      { color: colors.textMuted },
                     ]}
                   >
                     Add your first prospect or link WhatsApp contacts to build
@@ -675,7 +669,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                   <Text
                     style={[
                       styles.sectionTitle,
-                      { color: isDark ? "#FFFFFF" : "#0F172A" },
+                      { color: colors.text },
                     ]}
                   >
                     Live Touchpoints & History
@@ -697,7 +691,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                   <Text
                     style={[
                       styles.emptyTitle,
-                      { color: isDark ? "#FFFFFF" : "#0F172A" },
+                      { color: colors.text },
                     ]}
                   >
                     No touchpoints logged
@@ -705,7 +699,7 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                   <Text
                     style={[
                       styles.emptySubtitle,
-                      { color: isDark ? "#9CA3AF" : "#64748B" },
+                      { color: colors.textMuted },
                     ]}
                   >
                     Logged calls, meeting notes & messages will stream here.

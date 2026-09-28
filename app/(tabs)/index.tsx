@@ -7,6 +7,7 @@ import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Dimensions,
   Image,
   Platform,
   Pressable,
@@ -25,6 +26,8 @@ import { useTheme } from "../../src/contexts/ThemeContext";
 import { apiClient } from "../../src/core/api/client";
 import { usePlatformSubscription } from "../../src/hooks/usePlatformSubscription";
 import { supabase } from "../../src/lib/supabase";
+
+const { width, height } = Dimensions.get('window')
 
 interface LoginDevice {
   sessionId: string;
@@ -889,10 +892,16 @@ export default function HomeScreen() {
             </View>
           </View>
         )}
-        <Pressable onPress={() => router.push('/Referral' as any)}>
+        <Pressable
+          onPress={() => router.push('/Referral' as any)}
+          style={styles.referralCard}
+          accessibilityRole="button"
+          accessibilityLabel="Refer AI Automation Services"
+        >
           <Image
-            source={require('../../assets/images/network.png')}
-            style={{ width: 100, height: 100, borderRadius: 10, alignSelf: 'center', justifyContent: 'center' }}
+            source={require('../../assets/images/referral.png')}
+            style={[styles.referralImage, { width: width }]}
+            resizeMode="cover"
           />
         </Pressable>
       </ScrollView>
@@ -906,6 +915,17 @@ function createStyles(color: ReturnType<typeof getColors>, isDark: boolean) {
       flex: 1,
       width: "100%",
       backgroundColor: color.background,
+    },
+    referralCard: {
+      marginHorizontal: 10,
+      marginVertical: 8,
+      borderRadius: 16,
+      overflow: 'hidden',
+    },
+
+    referralImage: {
+      height: height * 0.5,
+      borderRadius: 16
     },
     scrollContent: {
       paddingHorizontal: 16,
