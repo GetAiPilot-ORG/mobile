@@ -163,11 +163,8 @@ export const CampaignsScreen: React.FC = () => {
       }
       showsVerticalScrollIndicator={false}
     >
-      {/* 1. TITLE & EYEBROW */}
+      {/* 1. TITLE SECTION */}
       <View style={styles.headingSection}>
-        <Text style={[styles.eyebrowText, { color: colors.textSecondary }]}>
-          // OUTBOUND CALL DISPATCHER
-        </Text>
         <Text style={[styles.mainHeading, { color: colors.text }]}>
           Campaigns
         </Text>
@@ -488,16 +485,19 @@ export const CampaignsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: "100%",
   },
   content: {
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 110,
     gap: 14,
+    width: "100%",
   },
   headingSection: {
     paddingTop: 2,
     gap: 3,
+    width: "100%",
   },
   eyebrowText: {
     fontSize: 10.5,
@@ -519,6 +519,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    width: "100%",
   },
   refreshBtn: {
     width: 44,
@@ -564,6 +565,7 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: "row",
     gap: 8,
+    width: "100%",
   },
   statCard: {
     flex: 1,
@@ -589,6 +591,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    width: "100%",
   },
   sectionTitle: {
     fontSize: 16,
@@ -610,6 +613,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     overflow: "hidden",
+    width: "100%",
   },
   jobRow: {
     flexDirection: "row",
