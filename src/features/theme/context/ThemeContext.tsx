@@ -133,11 +133,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     try {
       if (Appearance && typeof (Appearance as any).setColorScheme === 'function') {
-        if (themeMode === 'system') {
-          (Appearance as any).setColorScheme(null);
-        } else {
-          (Appearance as any).setColorScheme(activeTheme);
-        }
+        // Android AppearanceModule.setColorScheme expects a non-null string ('light' | 'dark')
+        (Appearance as any).setColorScheme(activeTheme);
       }
     } catch (e) {
       // safe fallback
