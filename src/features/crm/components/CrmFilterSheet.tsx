@@ -59,31 +59,31 @@ export const CrmFilterSheet: React.FC<CrmFilterSheetProps> = ({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={[styles.backdrop, { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0.5)' }]}>
+      <View style={[styles.backdrop, { backgroundColor: colors.overlay }]}>
         <View
           style={[
             styles.sheetContent,
             {
-              backgroundColor: isDark ? '#181A20' : '#FFFFFF',
-              borderColor: isDark ? '#262A34' : '#E2E8F0',
+              backgroundColor: colors.modalBackground,
+              borderColor: colors.modalBorder,
             },
           ]}
         >
-          <View style={[styles.dragHandle, { backgroundColor: isDark ? '#374151' : '#CBD5E1' }]} />
+          <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
           <View style={styles.header}>
-            <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Filter Records</Text>
+            <Text style={[styles.title, { color: colors.modalTitle }]}>Filter Records</Text>
             <Pressable
-              style={[styles.closeBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              style={[styles.closeBtn, { backgroundColor: colors.surfaceSecondary }]}
               onPress={onClose}
               hitSlop={8}
             >
-              <Ionicons name="close" size={20} color={isDark ? '#9CA3AF' : '#64748B'} />
+              <Ionicons name="close" size={20} color={colors.iconMuted} />
             </Pressable>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
             {/* Status Section */}
-            <Text style={[styles.sectionTitle, { color: isDark ? '#D1D5DB' : '#475569' }]}>Status</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Status</Text>
             <View style={styles.chipGrid}>
               {STATUS_FILTERS.map((s) => {
                 const isSelected = tempStatus === s.key;
@@ -93,10 +93,8 @@ export const CrmFilterSheet: React.FC<CrmFilterSheetProps> = ({
                     style={[
                       styles.chip,
                       {
-                        backgroundColor: isSelected
-                          ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
-                          : isDark ? '#222630' : '#F1F5F9',
-                        borderColor: isSelected ? '#3B82F6' : 'transparent',
+                        backgroundColor: isSelected ? colors.accentSoft : colors.surfaceSecondary,
+                        borderColor: isSelected ? colors.primary : 'transparent',
                       },
                     ]}
                     onPress={() => setTempStatus(s.key)}
@@ -105,7 +103,7 @@ export const CrmFilterSheet: React.FC<CrmFilterSheetProps> = ({
                       style={[
                         styles.chipText,
                         {
-                          color: isSelected ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B',
+                          color: isSelected ? colors.primary : colors.mutedText,
                           fontWeight: isSelected ? '600' : '500',
                         },
                       ]}
@@ -120,16 +118,14 @@ export const CrmFilterSheet: React.FC<CrmFilterSheetProps> = ({
             {/* Assignee Section */}
             {members && members.length > 0 ? (
               <>
-                <Text style={[styles.sectionTitle, { color: isDark ? '#D1D5DB' : '#475569' }]}>Assignee</Text>
+                <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Assignee</Text>
                 <View style={styles.chipGrid}>
                   <Pressable
                     style={[
                       styles.chip,
                       {
-                        backgroundColor: tempAssignee === 'all'
-                          ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
-                          : isDark ? '#222630' : '#F1F5F9',
-                        borderColor: tempAssignee === 'all' ? '#3B82F6' : 'transparent',
+                        backgroundColor: tempAssignee === 'all' ? colors.accentSoft : colors.surfaceSecondary,
+                        borderColor: tempAssignee === 'all' ? colors.primary : 'transparent',
                       },
                     ]}
                     onPress={() => setTempAssignee('all')}
@@ -138,7 +134,7 @@ export const CrmFilterSheet: React.FC<CrmFilterSheetProps> = ({
                       style={[
                         styles.chipText,
                         {
-                          color: tempAssignee === 'all' ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B',
+                          color: tempAssignee === 'all' ? colors.primary : colors.mutedText,
                           fontWeight: tempAssignee === 'all' ? '600' : '500',
                         },
                       ]}
@@ -154,10 +150,8 @@ export const CrmFilterSheet: React.FC<CrmFilterSheetProps> = ({
                         style={[
                           styles.chip,
                           {
-                            backgroundColor: isSelected
-                              ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
-                              : isDark ? '#222630' : '#F1F5F9',
-                            borderColor: isSelected ? '#3B82F6' : 'transparent',
+                            backgroundColor: isSelected ? colors.accentSoft : colors.surfaceSecondary,
+                            borderColor: isSelected ? colors.primary : 'transparent',
                           },
                         ]}
                         onPress={() => setTempAssignee(m.id)}
@@ -166,7 +160,7 @@ export const CrmFilterSheet: React.FC<CrmFilterSheetProps> = ({
                           style={[
                             styles.chipText,
                             {
-                              color: isSelected ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B',
+                              color: isSelected ? colors.primary : colors.mutedText,
                               fontWeight: isSelected ? '600' : '500',
                             },
                           ]}
@@ -184,13 +178,13 @@ export const CrmFilterSheet: React.FC<CrmFilterSheetProps> = ({
           {/* Footer Actions */}
           <View style={styles.footer}>
             <Pressable
-              style={[styles.resetBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              style={[styles.resetBtn, { backgroundColor: colors.buttonSecondary }]}
               onPress={handleReset}
             >
-              <Text style={[styles.resetBtnText, { color: isDark ? '#D1D5DB' : '#475569' }]}>Reset</Text>
+              <Text style={[styles.resetBtnText, { color: colors.buttonSecondaryForeground }]}>Reset</Text>
             </Pressable>
-            <Pressable style={styles.applyBtn} onPress={handleApply}>
-              <Text style={styles.applyBtnText}>Apply Filters</Text>
+            <Pressable style={[styles.applyBtn, { backgroundColor: colors.primary }]} onPress={handleApply}>
+              <Text style={[styles.applyBtnText, { color: colors.buttonPrimaryForeground }]}>Apply Filters</Text>
             </Pressable>
           </View>
         </View>
@@ -202,11 +196,9 @@ export const CrmFilterSheet: React.FC<CrmFilterSheetProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'flex-end',
   },
   sheetContent: {
-    backgroundColor: '#181A20',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
@@ -214,12 +206,15 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     maxHeight: '80%',
     borderWidth: 1,
-    borderColor: '#262A34',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 8,
   },
   dragHandle: {
     width: 36,
     height: 4,
-    backgroundColor: '#374151',
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 12,
@@ -231,20 +226,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
   },
   closeBtn: {
     padding: 6,
     borderRadius: 8,
-    backgroundColor: '#262A34',
   },
   scroll: {
     marginBottom: 16,
   },
   sectionTitle: {
-    color: '#D1D5DB',
     fontSize: 13,
     fontWeight: '600',
     letterSpacing: -0.1,
@@ -260,22 +252,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#222630',
     borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  chipSelected: {
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-    borderColor: '#3B82F6',
   },
   chipText: {
-    color: '#9CA3AF',
     fontSize: 13,
     fontWeight: '500',
-  },
-  chipTextSelected: {
-    color: '#60A5FA',
-    fontWeight: '600',
   },
   footer: {
     flexDirection: 'row',
@@ -285,12 +266,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#262A34',
     alignItems: 'center',
     justifyContent: 'center',
   },
   resetBtnText: {
-    color: '#D1D5DB',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -298,12 +277,10 @@ const styles = StyleSheet.create({
     flex: 2,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#3B82F6',
     alignItems: 'center',
     justifyContent: 'center',
   },
   applyBtnText: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
   },

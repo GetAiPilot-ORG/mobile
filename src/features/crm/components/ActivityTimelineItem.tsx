@@ -1,8 +1,8 @@
+import { getColors, useTheme } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { ActivityType, CRMActivity } from '../types';
-import { useTheme, getColors } from '@/theme';
 
 interface ActivityTimelineItemProps {
   activity: CRMActivity;
@@ -52,20 +52,20 @@ export const ActivityTimelineItem: React.FC<ActivityTimelineItemProps> = ({ acti
         <View style={[styles.iconCircle, { backgroundColor: typeCfg.bg }]}>
           <Ionicons name={typeCfg.icon} size={15} color={typeCfg.color} />
         </View>
-        {!isLast ? <View style={[styles.verticalLine, { backgroundColor: isDark ? '#262A34' : '#E2E8F0' }]} /> : null}
+        {!isLast ? <View style={[styles.verticalLine, { backgroundColor: colors.background }]} /> : null}
       </View>
 
       {/* Content card */}
-      <View style={[styles.content, isDark ? styles.contentDark : styles.contentLight]}>
+      <View style={[styles.content, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
         <View style={styles.header}>
-          <Text style={[styles.subject, { color: isDark ? '#FFFFFF' : '#0F172A' }]} numberOfLines={1}>
+          <Text style={[styles.subject, { color: colors.text }]} numberOfLines={1}>
             {activity.subject || activity.title || 'Activity Event'}
           </Text>
-          <Text style={[styles.timestamp, { color: isDark ? '#6B7280' : '#94A3B8' }]}>{formatDate(activity.created_at)}</Text>
+          <Text style={[styles.timestamp, { color: colors.mutedText }]}>{formatDate(activity.created_at)}</Text>
         </View>
 
         {activity.description ? (
-          <Text style={[styles.description, { color: isDark ? '#9CA3AF' : '#64748B' }]} numberOfLines={3}>
+          <Text style={[styles.description, { color: colors.mutedText }]} numberOfLines={3}>
             {activity.description}
           </Text>
         ) : null}
@@ -74,17 +74,17 @@ export const ActivityTimelineItem: React.FC<ActivityTimelineItemProps> = ({ acti
         {activity.contact || activity.deal ? (
           <View style={styles.tagRow}>
             {activity.contact ? (
-              <View style={[styles.tag, { backgroundColor: isDark ? '#222630' : '#F1F5F9' }]}>
-                <Ionicons name="person-outline" size={10} color={isDark ? '#9CA3AF' : '#64748B'} />
-                <Text style={[styles.tagText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+              <View style={[styles.tag, { backgroundColor: colors.surfaceSecondary }]}>
+                <Ionicons name="person-outline" size={10} color={colors.iconMuted} />
+                <Text style={[styles.tagText, { color: colors.textSecondary }]}>
                   {`${activity.contact.first_name || ''} ${activity.contact.last_name || ''}`.trim()}
                 </Text>
               </View>
             ) : null}
             {activity.deal ? (
-              <View style={[styles.tag, { backgroundColor: isDark ? '#222630' : '#F1F5F9' }]}>
-                <Ionicons name="briefcase-outline" size={10} color={isDark ? '#9CA3AF' : '#64748B'} />
-                <Text style={[styles.tagText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>{activity.deal.title}</Text>
+              <View style={[styles.tag, { backgroundColor: colors.surfaceSecondary }]}>
+                <Ionicons name="briefcase-outline" size={10} color={colors.iconMuted} />
+                <Text style={[styles.tagText, { color: colors.textSecondary }]}>{activity.deal.title}</Text>
               </View>
             ) : null}
           </View>
@@ -125,12 +125,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   contentDark: {
-    backgroundColor: '#181A20',
-    borderColor: '#262A34',
+    backgroundColor: '#52575D',
+    borderColor: '#686D72',
   },
   contentLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    backgroundColor: '#F8F5EF',
+    borderColor: '#D2CABA',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,

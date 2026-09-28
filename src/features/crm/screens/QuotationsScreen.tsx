@@ -1,5 +1,6 @@
 import {
-  Ionicons } from '@expo/vector-icons';
+  Ionicons
+} from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import {
@@ -14,9 +15,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { getColors, useTheme } from '@/theme';
 import { crmApi } from '../api/crm.api';
 import { CRMQuotation, QuotationStatus } from '../types';
-import { useTheme, getColors } from '@/theme';
 
 const WEB_APP_URL = 'https://getaipilot.in';
 
@@ -95,11 +96,11 @@ export function QuotationsScreen() {
   // Theme
   // ---------------------------------------------
 
-  const bg = isDark ? '#0B0D12' : '#F8FAFC';
-  const card = isDark ? '#151820' : '#FFFFFF';
-  const text = isDark ? '#F8FAFC' : '#0F172A';
-  const sub = isDark ? '#9CA3AF' : '#64748B';
-  const border = isDark ? '#252936' : '#E2E8F0';
+  const bg = colors.surface;
+  const card = colors.surface;
+  const text = colors.text;
+  const sub = colors.textMuted;
+  const border = colors.border;
 
   // ---------------------------------------------
   // Open quotation
