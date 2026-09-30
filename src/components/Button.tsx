@@ -38,7 +38,7 @@ export const Button: React.FC<ButtonProps> = ({
   const variantStyles: Record<ButtonVariant, string> = {
     primary: 'bg-primary active:opacity-90',
     secondary: isDark
-      ? 'bg-surface dark:bg-[#1C1C1E] border border-border dark:border-[#2C2C2E] active:bg-[#2C2C2E]'
+      ? 'bg-[#101C2A] border border-[#234563] active:bg-[#0D1724]'
       : 'bg-surface border border-border active:bg-gray-100',
     destructive: 'bg-destructive active:opacity-90',
     ghost: 'bg-transparent active:opacity-70',

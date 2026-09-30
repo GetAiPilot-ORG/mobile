@@ -354,8 +354,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   backButtonDark: {
-    backgroundColor: '#52575D',
-    borderColor: '#686D72',
+    backgroundColor: '#0A111B',
+    borderColor: '#1B334A',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   profileBtnDark: {
-    borderColor: '#686D72',
+    borderColor: '#1B334A',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     color: '#41444B',
   },
   titleDark: {
-    color: "#F7F3EA",
+    color: '#F7FAFC',
   },
   subtitle: {
     fontSize: 12,
@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
     color: '#6B7076',
   },
   subtitleDark: {
-    color: "#C6C0B5",
+    color: '#8FA3B8',
   },
   rightSection: {
     flexDirection: "row",
@@ -478,8 +478,8 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   planBadgeDark: {
-    backgroundColor: 'rgba(10, 132, 255, 0.16)',
-    borderColor: 'rgba(10, 132, 255, 0.45)',
+    backgroundColor: 'rgba(47, 140, 255, 0.14)',
+    borderColor: 'rgba(47, 140, 255, 0.42)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,

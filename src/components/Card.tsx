@@ -32,13 +32,13 @@ export const Card: React.FC<CardProps> = ({
 
   const variantStyles: Record<CardVariant, string> = {
     default: isDark
-      ? 'bg-[#1C1C1E] border border-[#2C2C2E]'
+      ? 'bg-[#0B1420] border border-[#234563]'
       : 'bg-white border border-[#E5E7EB]',
     elevated: isDark
-      ? 'bg-[#1C1C1E] border border-[#2C2C2E]'
+      ? 'bg-[#0B1420] border border-[#234563]'
       : 'bg-white border border-[#E5E7EB] shadow-sm',
     outlined: isDark
-      ? 'bg-transparent border border-[#2C2C2E]'
+      ? 'bg-transparent border border-[#1B334A]'
       : 'bg-transparent border border-[#E5E7EB]',
   };
 

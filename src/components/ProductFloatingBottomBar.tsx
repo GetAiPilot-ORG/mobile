@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import {
   View,
@@ -69,368 +70,348 @@ export const ProductFloatingBottomBar: React.FC<
   moreTabInactiveIcon = "apps-outline",
   pinPrimaryTabs = false,
 }) => {
-  const insets = useSafeAreaInsets();
-  const { isDark } = useTheme();
+    const insets = useSafeAreaInsets();
+    const { isDark } = useTheme();
 
-  const [containerWidth, setContainerWidth] = useState(0);
-  const [isMoreModalVisible, setIsMoreModalVisible] = useState(false);
+    const [containerWidth, setContainerWidth] = useState(0);
+    const [isMoreModalVisible, setIsMoreModalVisible] = useState(false);
 
-  // Bottom floating offset based on safe area
-  const bottomOffset = Math.max(insets.bottom, 12);
+    // Bottom floating offset based on safe area
+    const bottomOffset = Math.max(insets.bottom, 12);
 
-  const activeColor = accentColor;
-  const inactiveColor = isDark ? "#8E8E93" : "#64748B";
+    const activeColor = accentColor;
+    const inactiveColor = isDark ? "#8E8E93" : "#64748B";
 
-  const hasOverflow = items.length > 5;
+    const hasOverflow = items.length > 5;
 
-  let visibleItems: (
-    | ProductTabItem
-    | {
+    let visibleItems: (
+      | ProductTabItem
+      | {
         key: string;
         label: string;
         activeIcon: IoniconsName;
         inactiveIcon: IoniconsName;
         description?: string;
       }
-  )[];
-  let overflowItems: ProductTabItem[];
+    )[];
+    let overflowItems: ProductTabItem[];
 
-  const moreTabItem = {
-    key: "__more__",
-    label: moreTabLabel,
-    activeIcon: moreTabActiveIcon as IoniconsName,
-    inactiveIcon: moreTabInactiveIcon as IoniconsName,
-    description: "All additional tools and services",
-  };
+    const moreTabItem = {
+      key: "__more__",
+      label: moreTabLabel,
+      activeIcon: moreTabActiveIcon as IoniconsName,
+      inactiveIcon: moreTabInactiveIcon as IoniconsName,
+      description: "All additional tools and services",
+    };
 
-  if (hasOverflow) {
-    const defaultPrimary = items.slice(0, 4);
-    const activeItem = items.find((i) => i.key === activeKey);
-    const isPrimaryActive = defaultPrimary.some((i) => i.key === activeKey);
+    if (hasOverflow) {
+      const defaultPrimary = items.slice(0, 4);
+      const activeItem = items.find((i) => i.key === activeKey);
+      const isPrimaryActive = defaultPrimary.some((i) => i.key === activeKey);
 
-    if (!pinPrimaryTabs && !isPrimaryActive && activeItem) {
-      visibleItems = [...items.slice(0, 3), activeItem, moreTabItem];
-      overflowItems = items.filter(
-        (item) => !visibleItems.some((v) => v.key === item.key),
-      );
+      if (!pinPrimaryTabs && !isPrimaryActive && activeItem) {
+        visibleItems = [...items.slice(0, 3), activeItem, moreTabItem];
+        overflowItems = items.filter(
+          (item) => !visibleItems.some((v) => v.key === item.key),
+        );
+      } else {
+        visibleItems = [...defaultPrimary, moreTabItem];
+        overflowItems = items.slice(4);
+      }
     } else {
-      visibleItems = [...defaultPrimary, moreTabItem];
-      overflowItems = items.slice(4);
+      visibleItems = items;
+      overflowItems = [];
     }
-  } else {
-    visibleItems = items;
-    overflowItems = [];
-  }
 
-  const isOverflowActive = overflowItems.some((item) => item.key === activeKey);
-  const activeIndex = visibleItems.findIndex((item) =>
-    item.key === "__more__" ? isOverflowActive : item.key === activeKey,
-  );
-  const safeActiveIndex = activeIndex >= 0 ? activeIndex : 0;
+    const isOverflowActive = overflowItems.some((item) => item.key === activeKey);
+    const activeIndex = visibleItems.findIndex((item) =>
+      item.key === "__more__" ? isOverflowActive : item.key === activeKey,
+    );
+    const safeActiveIndex = activeIndex >= 0 ? activeIndex : 0;
 
-  const paddingHorizontal = 6;
-  const numTabs = visibleItems.length || 4;
-  const availableWidth = Math.max(0, containerWidth - paddingHorizontal * 2);
-  const tabWidth = numTabs > 0 ? availableWidth / numTabs : 0;
-  const pillInset = 4;
+    const paddingHorizontal = 6;
+    const numTabs = visibleItems.length || 4;
+    const availableWidth = Math.max(0, containerWidth - paddingHorizontal * 2);
+    const tabWidth = numTabs > 0 ? availableWidth / numTabs : 0;
+    const pillInset = 4;
 
-  const slideAnim = useRef(new Animated.Value(0)).current;
+    const slideAnim = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    if (tabWidth > 0) {
-      Animated.spring(slideAnim, {
-        toValue: safeActiveIndex * tabWidth,
-        tension: 80,
-        friction: 10,
-        useNativeDriver: Platform.OS !== "web",
-      }).start();
-    }
-  }, [safeActiveIndex, tabWidth]);
+    useEffect(() => {
+      if (tabWidth > 0) {
+        Animated.spring(slideAnim, {
+          toValue: safeActiveIndex * tabWidth,
+          tension: 80,
+          friction: 10,
+          useNativeDriver: Platform.OS !== "web",
+        }).start();
+      }
+    }, [safeActiveIndex, tabWidth]);
 
-  const onContainerLayout = (event: LayoutChangeEvent) => {
-    const { width } = event.nativeEvent.layout;
-    if (width > 0 && width !== containerWidth) {
-      setContainerWidth(width);
-    }
-  };
+    const onContainerLayout = (event: LayoutChangeEvent) => {
+      const { width } = event.nativeEvent.layout;
+      if (width > 0 && width !== containerWidth) {
+        setContainerWidth(width);
+      }
+    };
 
-  const handleTabPress = (
-    item:
-      | ProductTabItem
-      | {
+    const handleTabPress = (
+      item:
+        | ProductTabItem
+        | {
           key: string;
           label: string;
           activeIcon: IoniconsName;
           inactiveIcon: IoniconsName;
         },
-  ) => {
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    ) => {
+      if (Platform.OS !== "web") {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
 
-    if (item.key === "__more__") {
-      setIsMoreModalVisible(true);
-    } else {
+      if (item.key === "__more__") {
+        setIsMoreModalVisible(true);
+      } else {
+        LayoutAnimation.configureNext(tabSpringAnimation);
+        onChangeTab(item.key);
+      }
+    };
+
+    const handleSelectOverflowItem = (key: string) => {
+      if (Platform.OS !== "web") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      setIsMoreModalVisible(false);
       LayoutAnimation.configureNext(tabSpringAnimation);
-      onChangeTab(item.key);
-    }
-  };
+      onChangeTab(key);
+    };
 
-  const handleSelectOverflowItem = (key: string) => {
-    if (Platform.OS !== "web") {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
-    setIsMoreModalVisible(false);
-    LayoutAnimation.configureNext(tabSpringAnimation);
-    onChangeTab(key);
-  };
-
-  return (
-    <>
-      <View style={[styles.floatingWrapper, { bottom: bottomOffset }]}>
-        <View
-          onLayout={onContainerLayout}
-          style={[
-            styles.tabBarContainer,
-            isDark ? styles.tabBarContainerDark : styles.tabBarContainerLight,
-          ]}
-        >
-          {/* Soft Gliding Active Pill */}
-          {tabWidth > 0 && (
-            <Animated.View
-              style={[
-                styles.slidingIndicator,
-                {
-                  width: tabWidth - pillInset * 2,
-                  left: paddingHorizontal + pillInset,
-                  transform: [{ translateX: slideAnim }],
-                },
-              ]}
-            >
-              <View
+    return (
+      <>
+        <View style={[styles.floatingWrapper, { bottom: bottomOffset }]}>
+          <View
+            onLayout={onContainerLayout}
+            style={[
+              styles.tabBarContainer,
+              isDark ? styles.tabBarContainerDark : styles.tabBarContainerLight,
+            ]}
+          >
+            {/* Soft Gliding Active Pill */}
+            {tabWidth > 0 && (
+              <Animated.View
                 style={[
-                  isDark ? styles.indicatorPillDark : styles.indicatorPillLight,
+                  styles.slidingIndicator,
                   {
-                    backgroundColor: isDark
-                      ? "rgba(255, 255, 255, 0.08)"
-                      : `${accentColor}14`,
+                    width: tabWidth - pillInset * 2,
+                    left: paddingHorizontal + pillInset,
+                    transform: [{ translateX: slideAnim }],
                   },
                 ]}
-              />
-            </Animated.View>
-          )}
-
-          {/* Tab Items */}
-          {visibleItems.map((item, index) => {
-            const isMoreTab = item.key === "__more__";
-            const isFocused = safeActiveIndex === index;
-            const iconName = isFocused ? item.activeIcon : item.inactiveIcon;
-
-            return (
-              <Pressable
-                key={item.key}
-                accessibilityRole="button"
-                accessibilityState={isFocused ? { selected: true } : {}}
-                onPress={() => handleTabPress(item)}
-                style={styles.tabItem}
               >
-                <View style={styles.tabContentAll}>
-                  <View style={styles.iconWrapper}>
-                    <Ionicons
-                      name={iconName}
-                      size={isFocused ? 21 : 20}
-                      color={isFocused ? activeColor : inactiveColor}
-                    />
-                    {"badge" in item && item.badge ? (
-                      <View
-                        style={[
-                          styles.badgeDot,
-                          { backgroundColor: activeColor },
-                        ]}
-                      >
-                        <Text style={styles.badgeText}>{item.badge}</Text>
-                      </View>
-                    ) : isMoreTab && isOverflowActive ? (
-                      <View
-                        style={[
-                          styles.activeMiniDot,
-                          { backgroundColor: activeColor },
-                        ]}
-                      />
-                    ) : null}
-                  </View>
-                  <Text
-                    style={[
-                      styles.tabLabel,
-                      isFocused
-                        ? [styles.tabLabelActive, { color: activeColor }]
-                        : [styles.tabLabelInactive, { color: inactiveColor }],
-                      { maxWidth: tabWidth > 0 ? tabWidth - 10 : 55 },
-                    ]}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {item.label}
-                  </Text>
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
-
-      {/* Pop-up Menu Modal for Overflow items (> 5 items) */}
-      {hasOverflow && (
-        <Modal
-          visible={isMoreModalVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setIsMoreModalVisible(false)}
-        >
-          <TouchableWithoutFeedback
-            onPress={() => setIsMoreModalVisible(false)}
-          >
-            <View style={styles.modalBackdrop}>
-              <TouchableWithoutFeedback>
                 <View
                   style={[
-                    styles.popupCard,
-                    isDark ? styles.popupCardDark : styles.popupCardLight,
-                    { bottom: bottomOffset + 68 },
+                    isDark ? styles.indicatorPillDark : styles.indicatorPillLight,
+                    {
+                      backgroundColor: isDark
+                        ? "rgba(255, 255, 255, 0.08)"
+                        : `${accentColor}14`,
+                    },
                   ]}
-                >
-                  <View style={styles.popupHeader}>
-                    <View style={styles.popupHeaderLeft}>
-                      <View
-                        style={[
-                          styles.popupIconCircle,
-                          { backgroundColor: `${accentColor}18` },
-                        ]}
-                      >
-                        <Ionicons name="grid" size={16} color={accentColor} />
-                      </View>
-                      <Text
-                        style={[
-                          styles.popupTitle,
-                          isDark ? styles.textDark : styles.textLight,
-                        ]}
-                      >
-                        {moreMenuTitle}
-                      </Text>
-                    </View>
-                    <Pressable
-                      onPress={() => setIsMoreModalVisible(false)}
-                      style={styles.closeBtn}
-                      hitSlop={8}
-                    >
-                      <Ionicons
-                        name="close"
-                        size={18}
-                        color={isDark ? "#94A3B8" : "#64748B"}
-                      />
-                    </Pressable>
-                  </View>
+                />
+              </Animated.View>
+            )}
 
-                  <ScrollView
-                    style={styles.popupScroll}
-                    showsVerticalScrollIndicator={false}
-                  >
-                    {overflowItems.map((item, idx) => {
-                      const isItemActive = activeKey === item.key;
-                      return (
-                        <Pressable
-                          key={item.key}
+            {/* Tab Items */}
+            {visibleItems.map((item, index) => {
+              const isMoreTab = item.key === "__more__";
+              const isFocused = safeActiveIndex === index;
+              const iconName = isFocused ? item.activeIcon : item.inactiveIcon;
+
+              return (
+                <Pressable
+                  key={item.key}
+                  accessibilityRole="button"
+                  accessibilityState={isFocused ? { selected: true } : {}}
+                  onPress={() => handleTabPress(item)}
+                  style={styles.tabItem}
+                >
+                  <View style={styles.tabContentAll}>
+                    <View style={styles.iconWrapper}>
+                      <Ionicons
+                        name={iconName}
+                        size={isFocused ? 21 : 20}
+                        color={isFocused ? activeColor : inactiveColor}
+                      />
+                      {"badge" in item && item.badge ? (
+                        <View
                           style={[
-                            styles.popupItem,
-                            isItemActive &&
+                            styles.badgeDot,
+                            { backgroundColor: activeColor },
+                          ]}
+                        >
+                          <Text style={styles.badgeText}>{item.badge}</Text>
+                        </View>
+                      ) : isMoreTab && isOverflowActive ? (
+                        <View
+                          style={[
+                            styles.activeMiniDot,
+                            { backgroundColor: activeColor },
+                          ]}
+                        />
+                      ) : null}
+                    </View>
+                    <Text
+                      style={[
+                        styles.tabLabel,
+                        isFocused
+                          ? [styles.tabLabelActive, { color: activeColor }]
+                          : [styles.tabLabelInactive, { color: inactiveColor }],
+                        { maxWidth: tabWidth > 0 ? tabWidth - 10 : 55 },
+                      ]}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
+                      {item.label}
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Pop-up Menu Modal for Overflow items (> 5 items) */}
+        {hasOverflow && (
+          <Modal
+            visible={isMoreModalVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setIsMoreModalVisible(false)}
+          >
+            <TouchableWithoutFeedback
+              onPress={() => setIsMoreModalVisible(false)}
+            >
+              <View style={styles.modalBackdrop}>
+                <TouchableWithoutFeedback>
+                  <View
+                    style={[
+                      styles.popupCard,
+                      isDark ? styles.popupCardDark : styles.popupCardLight,
+                      { bottom: bottomOffset + 68 },
+                    ]}
+                  >
+                    <View style={styles.popupHeader}>
+                      <View style={styles.popupHeaderLeft}>
+                        <View
+                          style={[
+                            styles.popupIconCircle,
+                            { backgroundColor: `${accentColor}18` },
+                          ]}
+                        >
+                          <Ionicons name="grid" size={16} color={accentColor} />
+                        </View>
+                        <Text
+                          style={[
+                            styles.popupTitle,
+                            isDark ? styles.textDark : styles.textLight,
+                          ]}
+                        >
+                          {moreMenuTitle}
+                        </Text>
+                      </View>
+                      <Pressable
+                        onPress={() => setIsMoreModalVisible(false)}
+                        style={styles.closeBtn}
+                        hitSlop={8}
+                      >
+                        <Ionicons name="close" size={18} color={isDark ? '#8FA3B8' : '#64748B'} />
+                      </Pressable>
+                    </View>
+
+                    <ScrollView
+                      style={styles.popupScroll}
+                      showsVerticalScrollIndicator={false}
+                    >
+                      {overflowItems.map((item, idx) => {
+                        const isItemActive = activeKey === item.key;
+                        return (
+                          <Pressable
+                            key={item.key}
+                            style={[
+                              styles.popupItem,
+                              isItemActive &&
                               (isDark
                                 ? styles.popupItemActiveDark
                                 : styles.popupItemActiveLight),
-                            idx < overflowItems.length - 1 &&
+                              idx < overflowItems.length - 1 &&
                               styles.popupItemBorder,
-                            idx < overflowItems.length - 1 &&
+                              idx < overflowItems.length - 1 &&
                               (isDark ? styles.borderDark : styles.borderLight),
-                          ]}
-                          onPress={() => handleSelectOverflowItem(item.key)}
-                        >
-                          <View
-                            style={[
-                              styles.popupItemIconBox,
-                              {
-                                backgroundColor: isItemActive
-                                  ? `${accentColor}20`
-                                  : isDark
-                                    ? "#1E293B"
-                                    : "#F1F5F9",
-                              },
                             ]}
+                            onPress={() => handleSelectOverflowItem(item.key)}
                           >
-                            <Ionicons
-                              name={
-                                isItemActive
-                                  ? item.activeIcon
-                                  : item.inactiveIcon
-                              }
-                              size={18}
-                              color={
-                                isItemActive
-                                  ? accentColor
-                                  : isDark
-                                    ? "#94A3B8"
-                                    : "#64748B"
-                              }
-                            />
-                          </View>
-
-                          <View style={styles.popupItemContent}>
-                            <Text
+                            <View
                               style={[
-                                styles.popupItemLabel,
-                                isDark ? styles.textDark : styles.textLight,
-                                isItemActive && {
-                                  color: accentColor,
-                                  fontWeight: "700",
-                                },
+                                styles.popupItemIconBox,
+                                { backgroundColor: isItemActive ? `${accentColor}20` : isDark ? '#101C2A' : '#F1F5F9' },
                               ]}
                             >
-                              {item.label}
-                            </Text>
-                            {item.description ? (
-                              <Text
-                                style={styles.popupItemDesc}
-                                numberOfLines={1}
-                              >
-                                {item.description}
-                              </Text>
-                            ) : null}
-                          </View>
+                              <Ionicons
+                                name={
+                                  isItemActive
+                                    ? item.activeIcon
+                                    : item.inactiveIcon
+                                }
+                                size={18}
+                                color={isItemActive ? accentColor : isDark ? '#8FA3B8' : '#64748B'}
+                              />
+                            </View>
 
-                          {isItemActive ? (
-                            <Ionicons
-                              name="checkmark-circle"
-                              size={18}
-                              color={accentColor}
-                            />
-                          ) : (
-                            <Ionicons
-                              name="chevron-forward"
-                              size={14}
-                              color={isDark ? "#475569" : "#CBD5E1"}
-                            />
-                          )}
-                        </Pressable>
-                      );
-                    })}
-                  </ScrollView>
-                </View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
-      )}
-    </>
-  );
-};
+                            <View style={styles.popupItemContent}>
+                              <Text
+                                style={[
+                                  styles.popupItemLabel,
+                                  isDark ? styles.textDark : styles.textLight,
+                                  isItemActive && {
+                                    color: accentColor,
+                                    fontWeight: "700",
+                                  },
+                                ]}
+                              >
+                                {item.label}
+                              </Text>
+                              {item.description ? (
+                                <Text
+                                  style={styles.popupItemDesc}
+                                  numberOfLines={1}
+                                >
+                                  {item.description}
+                                </Text>
+                              ) : null}
+                            </View>
+
+                            {isItemActive ? (
+                              <Ionicons
+                                name="checkmark-circle"
+                                size={18}
+                                color={accentColor}
+                              />
+                            ) : (
+                              <Ionicons name="chevron-forward" size={14} color={isDark ? '#234563' : '#CBD5E1'} />
+                            )}
+                          </Pressable>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
+                </TouchableWithoutFeedback>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
+        )}
+      </>
+    );
+  };
 
 const styles = StyleSheet.create({
   floatingWrapper: {
@@ -463,9 +444,9 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   tabBarContainerDark: {
-    backgroundColor: "#171719",
-    borderColor: "#2A2A2E",
-    shadowColor: "#000000",
+    backgroundColor: '#0A111B',
+    borderColor: '#234563',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.45,
     shadowRadius: 20,
@@ -570,8 +551,8 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0, 0, 0, 0.1)",
   },
   popupCardDark: {
-    backgroundColor: "#1C1C1E",
-    borderColor: "#2C2C2E",
+    backgroundColor: '#0D1724',
+    borderColor: '#234563',
   },
   popupHeader: {
     flexDirection: "row",
@@ -619,13 +600,13 @@ const styles = StyleSheet.create({
     borderBottomColor: "#F1F5F9",
   },
   borderDark: {
-    borderBottomColor: "#2C2C2E",
+    borderBottomColor: '#162B3F',
   },
   popupItemActiveLight: {
     backgroundColor: "rgba(0, 122, 255, 0.06)",
   },
   popupItemActiveDark: {
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    backgroundColor: 'rgba(47, 140, 255, 0.10)',
   },
   popupItemIconBox: {
     width: 34,

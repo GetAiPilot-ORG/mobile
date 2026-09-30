@@ -1,9 +1,12 @@
 import {
-  LinearGradient } from "expo-linear-gradient";
+  LinearGradient
+} from "expo-linear-gradient";
 import React,
-  { useEffect,
+{
+  useEffect,
   useRef,
-  useState } from "react";
+  useState
+} from "react";
 import {
   Animated,
   DimensionValue,
@@ -14,7 +17,7 @@ import {
   View,
   ViewStyle,
 } from "react-native";
-import { useTheme, getColors } from '@/theme';
+import { useTheme } from "../contexts/ThemeContext";
 
 export interface SkeletonProps {
   width?: DimensionValue;
@@ -32,7 +35,6 @@ export default function Skeleton({
   style,
 }: SkeletonProps) {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
   const [componentWidth, setComponentWidth] = useState<number>(300);
 
   const shimmer = useRef(new Animated.Value(-1)).current;
@@ -71,6 +73,10 @@ export default function Skeleton({
       : 9999
     : borderRadius;
 
+  // Dark: deep navy surface (#0B1420), Light: standard light gray (#E5E7EB)
+  const skeletonBg = isDark ? "#0B1420" : "#E5E7EB";
+  const shimmerColor = isDark ? "rgba(75, 163, 255, 0.07)" : "rgba(255,255,255,0.65)";
+
   return (
     <Animated.View
       onLayout={handleLayout}
@@ -80,7 +86,7 @@ export default function Skeleton({
           width,
           height,
           borderRadius: finalBorderRadius,
-          backgroundColor: isDark ? "#1C1C1E" : "#E5E7EB",
+          backgroundColor: skeletonBg,
         },
         style,
       ]}
@@ -97,7 +103,7 @@ export default function Skeleton({
         <LinearGradient
           colors={[
             "transparent",
-            isDark ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.65)",
+            shimmerColor,
             "transparent",
           ]}
           start={{ x: 0, y: 0.5 }}
@@ -152,14 +158,15 @@ export function SkeletonCard({
   style?: StyleProp<ViewStyle>;
 }) {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
   return (
     <View
       style={[
         styles.card,
         {
-          backgroundColor: isDark ? "#161B22" : "#FFFFFF",
-          borderColor: isDark ? "#262C36" : "#E5E7EB",
+          // Dark: premium navy card (#0B1420), border (#234563)
+          // Light: white card, gray border
+          backgroundColor: isDark ? "#0B1420" : "#FFFFFF",
+          borderColor: isDark ? "#234563" : "#E5E7EB",
         },
         style,
       ]}

@@ -18,11 +18,11 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 
+import { useTheme } from '../../../contexts/ThemeContext';
 import { supabase } from '../../../lib/supabase';
 import { telegramSupabase } from '../api/telegramSupabase';
 import { telegramApi } from '../api/telegramApi';
 import { ReportBotBrandProfile, TelegramToolKey } from '../types';
-import { useTheme, getColors } from '@/theme';
 
 interface Props { summary?: any; onOpenModal: (key: TelegramToolKey) => void; }
 
@@ -57,7 +57,6 @@ const LOGO_PRESETS = [
 
 export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<ReportBotTab>('profile');
@@ -1049,10 +1048,10 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { width: '100%', marginBottom: 20 },
+  container: { width: '100%', marginBottom: 12 },
   topCard: { borderRadius: 16, borderWidth: 1, overflow: 'hidden', marginBottom: 14 },
   cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  cardDark: { backgroundColor: '#121212', borderColor: '#27272A' },
+  cardDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1062,10 +1061,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   borderLight: { borderBottomColor: '#E2E8F0' },
-  borderDark: { borderBottomColor: '#1E2430' },
+  borderDark: { borderBottomColor: '#162B3F' },
   title: { fontSize: 18, fontWeight: '800' },
   textLight: { color: '#0F172A' },
-  textDark: { color: '#F8FAFC' },
+  textDark: { color: '#F7FAFC' },
   subtitle: { color: '#64748B', fontSize: 11.5, marginTop: 3, lineHeight: 16 },
   closeBtn: {
     width: 32,
@@ -1075,7 +1074,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   closeBtnLight: { backgroundColor: '#F1F5F9' },
-  closeBtnDark: { backgroundColor: '#1E2430' },
+  closeBtnDark: { backgroundColor: '#101C2A' },
 
   // Action Header Row
   actionHeaderRow: {
@@ -1106,7 +1105,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   btnLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  btnDark: { backgroundColor: '#161C28', borderColor: '#27272A' },
+  btnDark: { backgroundColor: '#101C2A', borderColor: '#234563' },
   refreshBtnText: { fontSize: 12, fontWeight: '600' },
 
   // Tabs Section & Status Bar
@@ -1163,9 +1162,9 @@ const styles = StyleSheet.create({
   },
 
   body: { flex: 1 },
-  bodyContent: { padding: 16, paddingBottom: 40 },
+  bodyContent: { paddingTop: 0, paddingBottom: 0 },
   loadingBox: {
-    paddingVertical: 60,
+    paddingVertical: 40,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 12,
@@ -1177,7 +1176,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   formHeaderRow: {
     flexDirection: 'row',
@@ -1216,7 +1215,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   inputLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0', color: '#0F172A' },
-  inputDark: { backgroundColor: '#161C28', borderColor: '#27272A', color: '#F8FAFC' },
+  inputDark: { backgroundColor: '#0A1420', borderColor: '#1B334A', color: '#F7FAFC' },
 
   // Logo Upload Box (Pressable)
   logoUploadBox: {
@@ -1230,7 +1229,7 @@ const styles = StyleSheet.create({
     padding: 6,
   },
   logoUploadBoxLight: { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1' },
-  logoUploadBoxDark: { backgroundColor: '#161C28', borderColor: '#334155' },
+  logoUploadBoxDark: { backgroundColor: '#0A1420', borderColor: '#1B334A' },
   logoUploadBoxActive: { borderStyle: 'solid', borderColor: '#0284C7' },
   logoUploadLabel: { fontSize: 10, fontWeight: '700', color: '#64748B', marginTop: 4 },
   uploadBtnMini: {
@@ -1290,9 +1289,9 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   nativeUploadBtnDark: {
-    backgroundColor: '#1E2430',
+    backgroundColor: '#101C2A',
     borderWidth: 1,
-    borderColor: '#27272A',
+    borderColor: '#234563',
   },
   nativeUploadBtnTitle: {
     color: '#FFFFFF',
@@ -1310,7 +1309,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   previewCardLight: {
     backgroundColor: '#FFFFFF',
@@ -1321,7 +1320,7 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 3,
   },
-  previewCardDark: { backgroundColor: '#121722', borderColor: '#1E2430' },
+  previewCardDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
   previewHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1351,7 +1350,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   pdfPaperLight: { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1' },
-  pdfPaperDark: { backgroundColor: '#161C28', borderColor: '#334155' },
+  pdfPaperDark: { backgroundColor: '#0A1420', borderColor: '#1B334A' },
   pdfHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1401,7 +1400,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   metricBoxLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  metricBoxDark: { backgroundColor: '#121722', borderColor: '#27272A' },
+  metricBoxDark: { backgroundColor: '#0A1420', borderColor: '#1B334A' },
   metricKey: { fontSize: 9, fontWeight: '800', color: '#64748B' },
   metricVal: { fontSize: 13, fontWeight: '800', marginTop: 2 },
   pdfDisclaimerSnippet: {
@@ -1462,7 +1461,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   itemLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
-  itemDark: { backgroundColor: '#161C28', borderColor: '#27272A' },
+  itemDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
   channelIcon: {
     width: 32,
     height: 32,
@@ -1508,7 +1507,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   dialogCardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  dialogCardDark: { backgroundColor: '#121722', borderColor: '#1E2430' },
+  dialogCardDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
   dialogHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1556,7 +1555,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   presetItemLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
-  presetItemDark: { backgroundColor: '#161C28', borderColor: '#27272A' },
+  presetItemDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
   presetItemActive: { borderColor: '#0284C7', backgroundColor: 'rgba(2, 132, 199, 0.12)' },
   presetImage: {
     width: 32,
@@ -1630,7 +1629,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   fullPdfPageLight: { backgroundColor: '#FFFFFF', borderColor: '#CBD5E1' },
-  fullPdfPageDark: { backgroundColor: '#131824', borderColor: '#2E384D' },
+  fullPdfPageDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
   pageNumberBadge: {
     position: 'absolute',
     top: 14,

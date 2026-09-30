@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useTheme, getColors } from '@/theme';
+import { useTheme } from '../contexts/ThemeContext';
 
 export type StatusVariant =
   | 'operational'
@@ -25,8 +25,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   label,
   size = 'md',
 }) => {
-  const { isDark } = useTheme();
-  const colors = getColors(isDark);
+  const { colors } = useTheme();
   const norm = (variant || status || 'active').toLowerCase();
 
   let bg = colors.accentSoft;
@@ -38,8 +37,8 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
     textColor = colors.destructive;
     displayLabel = label || 'Maintenance';
   } else if (norm.includes('oper') || norm === 'active' || norm === 'verified') {
-    bg = colors.accentSoft;
-    textColor = '#16B882';
+    bg = colors.successSoft;
+    textColor = colors.success;
     displayLabel = label || 'Operational';
   } else if (norm.includes('degrad') || norm === 'warning' || norm === 'trial') {
     bg = colors.warningSoft;

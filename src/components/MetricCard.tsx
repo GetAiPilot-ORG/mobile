@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useTheme, getColors } from '@/theme';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface MetricCardProps {
   label: string;
@@ -19,11 +19,18 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   badgeColor = '#16B882',
   icon,
 }) => {
-  const { isDark } = useTheme();
-  const colors = getColors(isDark);
+  const { colors } = useTheme();
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors.card,
+          borderColor: colors.cardBorder,
+        },
+      ]}
+    >
       <View style={styles.topRow}>
         <Text style={[styles.label, { color: colors.mutedForeground }]} numberOfLines={1}>
           {label}
@@ -31,18 +38,20 @@ export const MetricCard: React.FC<MetricCardProps> = ({
         {icon ? <Text style={styles.icon}>{icon}</Text> : null}
       </View>
       <View style={styles.valueRow}>
-        <Text style={[styles.value, { color: colors.foreground }]}>{value}</Text>
+        <Text style={[styles.value, { color: colors.cardForeground }]}>{value}</Text>
         {badge ? (
           <View style={[styles.badge, { backgroundColor: badgeColor + '20' }]}>
             <Text style={[styles.badgeText, { color: badgeColor }]}>{badge}</Text>
           </View>
         ) : null}
       </View>
+
       {subtext ? <Text style={[styles.subtext, { color: colors.mutedForeground }]}>{subtext}</Text> : null}
+
+
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   card: {
     flex: 1,
