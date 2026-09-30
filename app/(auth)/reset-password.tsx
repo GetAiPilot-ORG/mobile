@@ -11,7 +11,6 @@ import {
   ScrollView,
   TouchableWithoutFeedback,
   Keyboard,
-  useColorScheme,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,12 +18,13 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { supabase } from '../../src/lib/supabase';
 import { useAuthStore } from '../../src/core/store/authStore';
+import { useTheme, getColors } from '@/theme';
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const syncSession = useAuthStore((s) => s.syncSession);
 
   const [password, setPassword] = useState('');

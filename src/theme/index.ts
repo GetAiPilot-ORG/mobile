@@ -1,6 +1,1 @@
-export * from './colors';
-export * from './typography';
-export * from './spacing';
-export * from './radius';
-export * from './shadows';
-export * from './productThemes';
+export * from '../features/theme';

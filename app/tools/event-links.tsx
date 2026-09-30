@@ -9,13 +9,12 @@ import {
   Alert,
   Share,
   Linking,
-  useColorScheme,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
-import { colors } from '../../src/theme/colors';
+import { useTheme, getColors } from '@/theme';
 
 interface EventTemplate {
   title: string;
@@ -60,8 +59,8 @@ const EVENT_TEMPLATES: EventTemplate[] = [
 const PLATFORMS = ['Google Meet', 'Zoom', 'YouTube Live', 'In-Person'] as const;
 
 export default function EventLinksScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [eventName, setEventName] = useState('AI Automation Masterclass 2026');
   const [eventDate, setEventDate] = useState('Sept 15, 2026');
@@ -74,14 +73,14 @@ export default function EventLinksScreen() {
 
   // Dynamic Theme Mapping
   const theme = {
-    bg: isDark ? colors.backgroundDark : colors.background,
-    card: isDark ? colors.surfaceDark : colors.card,
-    cardBorder: isDark ? colors.borderDark : colors.border,
-    text: isDark ? colors.foregroundDark : colors.foreground,
+    bg: colors.background,
+    card: colors.card,
+    cardBorder: colors.border,
+    text: colors.foreground,
     mutedText: colors.mutedForeground,
     inputBg: isDark ? '#141416' : '#FFFFFF',
-    inputBorder: isDark ? '#2C2C2E' : colors.border,
-    primary: colors.primary, // GetAiPilot Electric Blue
+    inputBorder: colors.border,
+    primary: colors.primary,
     primarySoft: colors.accentSoft,
   };
 

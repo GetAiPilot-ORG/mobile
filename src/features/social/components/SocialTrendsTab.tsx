@@ -9,13 +9,13 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { apiClient } from '../../../core/api/client';
 import { SocialTrendsSkeleton } from '../../../components/skeletonScreen';
 import { TrendItem, TrendFeedResponse } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 interface SocialTrendsTabProps {
   trendsLoading: boolean;
@@ -55,8 +55,8 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
   onUseTrendInPost,
   onRefreshTrends,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   // Filters State
   const [selectedCategory, setSelectedCategory] = useState<TrendCategory>(CATEGORIES[0]);

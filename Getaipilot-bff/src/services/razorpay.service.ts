@@ -2,6 +2,7 @@ import axios from 'axios';
 import crypto from 'crypto';
 import { env } from '../config/env.js';
 import { HubAdapter } from '../adapters/hub.adapter.js';
+import { VoiceAdapter } from '../adapters/voice.adapter.js';
 
 export interface CreateOrderInput {
   userId: string;
@@ -233,6 +234,9 @@ export class RazorpayService {
     } catch (dbErr: any) {
       console.warn('[RazorpayService] Database persistence warning (proceeding with verified payment):', dbErr?.message);
     }
+
+    // 3b. Sync to Voice Supabase if Voice plan or Dedicated Number
+    await this.syncVoiceSubscription(userId, planId, planName, amount, startedAt, expiresAt, input.product);
 
     return {
       success: true,
@@ -475,6 +479,9 @@ export class RazorpayService {
       console.warn('[RazorpayService] Database persistence warning:', dbErr?.message);
     }
 
+    // 5b. Sync to Voice Supabase if Voice plan or Dedicated Number
+    await this.syncVoiceSubscription(userId, planId, planName, amount, startedAt, expiresAt, input.product);
+
     return {
       success: true,
       orderId: input.orderId || qrId,
@@ -489,5 +496,202 @@ export class RazorpayService {
       expiresAt,
       verifiedNumber: number,
     };
+  }
+
+  /**
+   * Synchronizes active plan subscription & minutes to Voice Supabase
+   */
+  private static async syncVoiceSubscription(
+    userId: string,
+    planId: string,
+    planName: string,
+    amount: number,
+    startedAt: string,
+    expiresAt: string,
+    product?: string
+  ) {
+    const isVoice =
+      product === 'calling' ||
+      product === 'voice' ||
+      planId.startsWith('calling') ||
+      planId.startsWith('voice') ||
+      planId === 'start' ||
+      planId === 'growth' ||
+      planId === 'scale';
+
+    if (!isVoice) return;
+
+    try {
+      const voiceClient = (VoiceAdapter as any).voiceSupabase;
+      if (!voiceClient) return;
+
+      // 1. Resolve workspace for userId
+      let voiceWorkspaceId: string | null = null;
+      const { data: member } = await voiceClient
+        .from('workspace_members')
+        .select('workspace_id')
+        .eq('user_id', userId)
+        .limit(1)
+        .maybeSingle();
+
+      if (member?.workspace_id) {
+        voiceWorkspaceId = member.workspace_id;
+      } else {
+        const { data: ws } = await voiceClient
+          .from('workspaces')
+          .select('id')
+          .eq('owner_id', userId)
+          .limit(1)
+          .maybeSingle();
+        if (ws?.id) voiceWorkspaceId = ws.id;
+      }
+
+      if (!voiceWorkspaceId) {
+        const { data: anyWs } = await voiceClient
+          .from('workspaces')
+          .select('id')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (anyWs?.id) voiceWorkspaceId = anyWs.id;
+      }
+
+      if (voiceWorkspaceId) {
+        const isNumberOnly = planId.includes('number') || product === 'number_purchase';
+        const isTopUp = planId.includes('topup') || product === 'top_up';
+
+        if (isTopUp) {
+          const minutesGranted = Math.floor(amount / 5);
+          // Add minutes to credit_ledger
+          await voiceClient.from('credit_ledger').insert({
+            workspace_id: voiceWorkspaceId,
+            amount: minutesGranted,
+            type: 'top_up',
+            description: `Razorpay Wallet Top-up (₹${amount} = ${minutesGranted} Mins)`,
+            created_at: startedAt,
+          });
+
+          // Record payment intent in Voice DB
+          await voiceClient.from('payment_intents').insert({
+            workspace_id: voiceWorkspaceId,
+            purchase_type: 'top_up',
+            amount: Math.round(amount * 100),
+            currency: 'INR',
+            status: 'succeeded',
+            title: `AI Calling Minutes Top-up (₹${amount})`,
+            created_at: startedAt,
+          });
+        } else if (isNumberOnly) {
+          // Increment dedicated_number_entitlements in workspace
+          const { data: currentWs } = await voiceClient
+            .from('workspaces')
+            .select('dedicated_number_entitlements')
+            .eq('id', voiceWorkspaceId)
+            .single();
+
+          const entitlements = (currentWs?.dedicated_number_entitlements || 0) + 1;
+          await voiceClient
+            .from('workspaces')
+            .update({ dedicated_number_entitlements: entitlements })
+            .eq('id', voiceWorkspaceId);
+
+          // Reactivate expired phone numbers
+          await voiceClient
+            .from('phone_numbers')
+            .update({
+              current_period_end: expiresAt,
+              status: 'unassigned',
+            })
+            .eq('workspace_id', voiceWorkspaceId);
+
+          // Record payment intent in Voice DB
+          await voiceClient.from('payment_intents').insert({
+            workspace_id: voiceWorkspaceId,
+            purchase_type: 'number_purchase',
+            amount: Math.round(amount * 100),
+            currency: 'INR',
+            status: 'succeeded',
+            title: 'Dedicated Phone Number (30 Days)',
+            created_at: startedAt,
+          });
+        } else {
+          // Map to standard plan ID matching GAP_VoicePilot DB schema (call_lite, call_pro, call_elite)
+          let dbPlanId = 'call_lite';
+          let minutesGranted = 250;
+          if (planId.includes('pro') || planId.includes('growth') || planId.includes('build')) {
+            dbPlanId = 'call_pro';
+            minutesGranted = 1000;
+          } else if (planId.includes('scale') || planId.includes('elite')) {
+            dbPlanId = 'call_elite';
+            minutesGranted = 3500;
+          }
+
+          // Check if plan exists in Voice Supabase plans table
+          const { data: dbPlan } = await voiceClient
+            .from('plans')
+            .select('id, included_credits')
+            .or(`id.eq.${dbPlanId},id.eq.${planId}`)
+            .limit(1)
+            .maybeSingle();
+
+          if (dbPlan?.id) {
+            dbPlanId = dbPlan.id;
+            if (dbPlan.included_credits) {
+              minutesGranted = Number(dbPlan.included_credits);
+            }
+          }
+
+          // 2. Upsert workspace_subscriptions
+          await voiceClient.from('workspace_subscriptions').upsert(
+            {
+              workspace_id: voiceWorkspaceId,
+              plan_id: dbPlanId,
+              status: 'active',
+              current_period_start: startedAt,
+              current_period_end: expiresAt,
+              updated_at: startedAt,
+            },
+            { onConflict: 'workspace_id' }
+          );
+
+          // 3. Add minutes to credit_ledger
+          await voiceClient.from('credit_ledger').insert({
+            workspace_id: voiceWorkspaceId,
+            amount: minutesGranted,
+            type: 'top_up',
+            description: `Plan Subscription: ${planName} (+${minutesGranted} AI Mins)`,
+            created_at: startedAt,
+          });
+
+          // 4. Grant dedicated number entitlement
+          await voiceClient
+            .from('workspaces')
+            .update({ dedicated_number_entitlements: 1 })
+            .eq('id', voiceWorkspaceId);
+
+          // 5. Extend validity on all workspace phone numbers
+          await voiceClient
+            .from('phone_numbers')
+            .update({
+              current_period_end: expiresAt,
+            })
+            .eq('workspace_id', voiceWorkspaceId);
+
+          // 6. Record payment intent in Voice DB
+          await voiceClient.from('payment_intents').insert({
+            workspace_id: voiceWorkspaceId,
+            plan_id: dbPlanId,
+            purchase_type: 'plan_purchase',
+            amount: Math.round(amount * 100),
+            currency: 'INR',
+            status: 'succeeded',
+            title: `Plan Purchase: ${planName}`,
+            created_at: startedAt,
+          });
+        }
+      }
+    } catch (err: any) {
+      console.warn('[RazorpayService] Voice DB sync error:', err?.message);
+    }
   }
 }

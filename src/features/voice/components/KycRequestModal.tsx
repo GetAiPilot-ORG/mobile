@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Modal,
   View,
@@ -9,9 +9,9 @@ import {
   ScrollView,
   useColorScheme,
   ActivityIndicator,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 
 interface KycRequestModalProps {
   visible: boolean;
@@ -26,10 +26,10 @@ interface KycRequestModalProps {
 }
 
 const DOC_TYPES = [
-  'GST Certificate',
-  'Company Incorporation Certificate',
-  'Aadhaar / Passport of Director',
-  'PAN Card of Enterprise',
+  "GST Certificate",
+  "Company Incorporation Certificate",
+  "Aadhaar / Passport of Director",
+  "PAN Card of Enterprise",
 ];
 
 export const KycRequestModal: React.FC<KycRequestModalProps> = ({
@@ -39,22 +39,24 @@ export const KycRequestModal: React.FC<KycRequestModalProps> = ({
   isLoading,
 }) => {
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
 
-  const [businessName, setBusinessName] = useState('');
+  const [businessName, setBusinessName] = useState("");
   const [documentType, setDocumentType] = useState(DOC_TYPES[0]);
-  const [idNumber, setIdNumber] = useState('');
-  const [comments, setComments] = useState('');
+  const [idNumber, setIdNumber] = useState("");
+  const [comments, setComments] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
     setError(null);
     if (!businessName.trim()) {
-      setError('Please enter your registered Business / Organization name.');
+      setError("Please enter your registered Business / Organization name.");
       return;
     }
     if (!idNumber.trim()) {
-      setError('Please provide the identification number / GSTIN for verification.');
+      setError(
+        "Please provide the identification number / GSTIN for verification.",
+      );
       return;
     }
 
@@ -68,25 +70,58 @@ export const KycRequestModal: React.FC<KycRequestModalProps> = ({
       });
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to submit KYC verification request.');
+      setError(err.message || "Failed to submit KYC verification request.");
     }
   };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View style={[styles.container, isDark ? styles.containerDark : styles.containerLight]}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <View
+        style={[
+          styles.container,
+          isDark ? styles.containerDark : styles.containerLight,
+        ]}
+      >
         {/* Header */}
-        <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
+        <View
+          style={[
+            styles.header,
+            isDark ? styles.headerDark : styles.headerLight,
+          ]}
+        >
           <View>
-            <Text style={[styles.headerTitle, isDark && styles.textDark]}>Business KYC Verification</Text>
-            <Text style={styles.headerSubtitle}>Mandatory for Dedicated Indian Virtual Numbers</Text>
+            <Text style={[styles.headerTitle, isDark && styles.textDark]}>
+              Business KYC Verification
+            </Text>
+            <Text style={styles.headerSubtitle}>
+              Mandatory for Dedicated Indian Virtual Numbers
+            </Text>
           </View>
-          <Pressable style={[styles.closeBtn, isDark ? styles.closeBtnDark : styles.closeBtnLight]} onPress={onClose}>
-            <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#000000'} />
+          <Pressable
+            style={[
+              styles.closeBtn,
+              isDark ? styles.closeBtnDark : styles.closeBtnLight,
+            ]}
+            onPress={onClose}
+          >
+            <Ionicons
+              name="close"
+              size={20}
+              color={isDark ? "#FFFFFF" : "#000000"}
+            />
           </Pressable>
         </View>
 
-        <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+        >
           {error && (
             <View style={styles.errorBanner}>
               <Ionicons name="alert-circle" size={16} color="#EF4444" />
@@ -95,10 +130,17 @@ export const KycRequestModal: React.FC<KycRequestModalProps> = ({
           )}
 
           {/* Compliance Notice Card */}
-          <View style={[styles.noticeCard, isDark ? styles.noticeCardDark : styles.noticeCardLight]}>
+          <View
+            style={[
+              styles.noticeCard,
+              isDark ? styles.noticeCardDark : styles.noticeCardLight,
+            ]}
+          >
             <Ionicons name="shield-checkmark" size={20} color="#0A84FF" />
             <Text style={[styles.noticeText, isDark && styles.textDark]}>
-              As per DoT & TRAI regulations, all dedicated telecalling lines require enterprise identity verification before active outbound calling is unlocked.
+              As per DoT & TRAI regulations, all dedicated telecalling lines
+              require enterprise identity verification before active outbound
+              calling is unlocked.
             </Text>
           </View>
 
@@ -106,7 +148,10 @@ export const KycRequestModal: React.FC<KycRequestModalProps> = ({
           <View style={styles.fieldGroup}>
             <Text style={styles.fieldLabel}>LEGAL BUSINESS NAME</Text>
             <TextInput
-              style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+              style={[
+                styles.input,
+                isDark ? styles.inputDark : styles.inputLight,
+              ]}
               placeholder="e.g. Acme Technologies Private Limited"
               placeholderTextColor="#8E8E93"
               value={businessName}
@@ -134,9 +179,9 @@ export const KycRequestModal: React.FC<KycRequestModalProps> = ({
                     }}
                   >
                     <Ionicons
-                      name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
+                      name={isSelected ? "checkmark-circle" : "ellipse-outline"}
                       size={14}
-                      color={isSelected ? '#8B5CF6' : '#8E8E93'}
+                      color={isSelected ? "#6D3CF5" : "#8E8E93"}
                     />
                     <Text
                       style={[
@@ -157,7 +202,10 @@ export const KycRequestModal: React.FC<KycRequestModalProps> = ({
           <View style={styles.fieldGroup}>
             <Text style={styles.fieldLabel}>DOCUMENT / GSTIN NUMBER</Text>
             <TextInput
-              style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+              style={[
+                styles.input,
+                isDark ? styles.inputDark : styles.inputLight,
+              ]}
               placeholder="e.g. 29ABCDE1234F1Z5"
               placeholderTextColor="#8E8E93"
               autoCapitalize="characters"
@@ -170,7 +218,11 @@ export const KycRequestModal: React.FC<KycRequestModalProps> = ({
           <View style={styles.fieldGroup}>
             <Text style={styles.fieldLabel}>ADDITIONAL REMARKS (OPTIONAL)</Text>
             <TextInput
-              style={[styles.input, styles.textArea, isDark ? styles.inputDark : styles.inputLight]}
+              style={[
+                styles.input,
+                styles.textArea,
+                isDark ? styles.inputDark : styles.inputLight,
+              ]}
               placeholder="Authorized signatory details or notes..."
               placeholderTextColor="#8E8E93"
               multiline
@@ -190,7 +242,11 @@ export const KycRequestModal: React.FC<KycRequestModalProps> = ({
               <ActivityIndicator color="#FFFFFF" />
             ) : (
               <>
-                <Ionicons name="checkmark-done-circle" size={18} color="#FFFFFF" />
+                <Ionicons
+                  name="checkmark-done-circle"
+                  size={18}
+                  color="#FFFFFF"
+                />
                 <Text style={styles.submitBtnText}>Submit KYC Application</Text>
               </>
             )}
@@ -203,54 +259,62 @@ export const KycRequestModal: React.FC<KycRequestModalProps> = ({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  containerLight: { backgroundColor: '#F2F2F7' },
-  containerDark: { backgroundColor: '#020617' },
+  containerLight: { backgroundColor: "#F7F7F8" },
+  containerDark: { backgroundColor: "#000000" },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerLight: { backgroundColor: '#FFFFFF', borderBottomColor: '#E2E8F0' },
-  headerDark: { backgroundColor: '#0F172A', borderBottomColor: '#1E293B' },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#000000' },
-  headerSubtitle: { fontSize: 12, color: '#64748B', marginTop: 2 },
-  textDark: { color: '#F8FAFC' },
+  headerLight: { backgroundColor: "#FFFFFF", borderBottomColor: "#E5E5EA" },
+  headerDark: { backgroundColor: "#1C1C1E", borderBottomColor: "#2C2C2E" },
+  headerTitle: { fontSize: 18, fontWeight: "700", color: "#000000" },
+  headerSubtitle: { fontSize: 12, color: "#65656B", marginTop: 2 },
+  textDark: { color: "#F7F7F8" },
   closeBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
-  closeBtnLight: { backgroundColor: '#E2E8F0' },
-  closeBtnDark: { backgroundColor: '#1E293B' },
+  closeBtnLight: { backgroundColor: "#E5E5EA" },
+  closeBtnDark: { backgroundColor: "#2C2C2E" },
   content: { flex: 1 },
   contentContainer: { padding: 16, gap: 16, paddingBottom: 40 },
   errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
     padding: 12,
     borderRadius: 12,
   },
-  errorText: { color: '#EF4444', fontSize: 12.5, fontWeight: '600', flex: 1 },
+  errorText: { color: "#EF4444", fontSize: 12.5, fontWeight: "600", flex: 1 },
   noticeCard: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
     padding: 14,
     borderRadius: 14,
     borderWidth: 1,
   },
-  noticeCardLight: { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' },
-  noticeCardDark: { backgroundColor: 'rgba(10, 132, 255, 0.1)', borderColor: 'rgba(10, 132, 255, 0.2)' },
-  noticeText: { fontSize: 12, color: '#1E40AF', lineHeight: 17, flex: 1 },
+  noticeCardLight: { backgroundColor: "#EFF6FF", borderColor: "#BFDBFE" },
+  noticeCardDark: {
+    backgroundColor: "rgba(10, 132, 255, 0.1)",
+    borderColor: "rgba(10, 132, 255, 0.2)",
+  },
+  noticeText: { fontSize: 12, color: "#1E40AF", lineHeight: 17, flex: 1 },
   fieldGroup: { gap: 6 },
-  fieldLabel: { fontSize: 11, fontWeight: '700', color: '#64748B', letterSpacing: 0.5 },
+  fieldLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#65656B",
+    letterSpacing: 0.5,
+  },
   input: {
     height: 48,
     borderRadius: 12,
@@ -258,33 +322,44 @@ const styles = StyleSheet.create({
     fontSize: 14,
     borderWidth: 1,
   },
-  inputLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0', color: '#000000' },
-  inputDark: { backgroundColor: '#0F172A', borderColor: '#1E293B', color: '#F8FAFC' },
-  textArea: { height: 80, paddingTop: 12, textAlignVertical: 'top' },
+  inputLight: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E5E5EA",
+    color: "#000000",
+  },
+  inputDark: {
+    backgroundColor: "#1C1C1E",
+    borderColor: "#2C2C2E",
+    color: "#F7F7F8",
+  },
+  textArea: { height: 80, paddingTop: 12, textAlignVertical: "top" },
   docOptionsGrid: { gap: 8 },
   docChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     padding: 12,
     borderRadius: 12,
     borderWidth: 1.5,
   },
-  docChipLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  docChipDark: { backgroundColor: '#0F172A', borderColor: '#1E293B' },
-  docChipSelected: { borderColor: '#8B5CF6', backgroundColor: 'rgba(139, 92, 246, 0.08)' },
-  docChipText: { fontSize: 13, fontWeight: '500' },
-  docChipTextSelected: { color: '#8B5CF6', fontWeight: '700' },
+  docChipLight: { backgroundColor: "#FFFFFF", borderColor: "#E5E5EA" },
+  docChipDark: { backgroundColor: "#1C1C1E", borderColor: "#2C2C2E" },
+  docChipSelected: {
+    borderColor: "#6D3CF5",
+    backgroundColor: "rgba(109, 60, 245, 0.08)",
+  },
+  docChipText: { fontSize: 13, fontWeight: "500" },
+  docChipTextSelected: { color: "#6D3CF5", fontWeight: "700" },
   submitButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: "#6D3CF5",
     paddingVertical: 14,
     borderRadius: 14,
     marginTop: 8,
   },
-  submitBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+  submitBtnText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
   btnDisabled: { opacity: 0.6 },
 });

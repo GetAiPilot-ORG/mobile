@@ -105,7 +105,7 @@ const TABS: { id: AccountTab; label: string }[] = [
 export default function AccountScreen() {
   const router = useRouter();
   const { tab } = useLocalSearchParams<{ tab?: string }>();
-  const { isDark } = useTheme();
+  const { isDark, themeMode, setThemeMode, colors } = useTheme();
   const { user, signOut } = useAuth();
   const { isAdmin, planLabel, isActive, plan } = usePlatformSubscription();
   const queryClient = useQueryClient();
@@ -1521,6 +1521,58 @@ export default function AccountScreen() {
         {activeTab === 'preferences' && (
           <View style={styles.tabContent}>
             <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
+              APPEARANCE & THEME
+            </Text>
+            <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+              <View style={styles.themeSelectorRow}>
+                {[
+                  { id: 'light', label: 'Light', icon: 'sunny-outline' },
+                  { id: 'dark', label: 'Dark', icon: 'moon-outline' },
+                  { id: 'system', label: 'System', icon: 'phone-portrait-outline' },
+                ].map((item) => {
+                  const isSelected = themeMode === item.id;
+                  return (
+                    <Pressable
+                      key={item.id}
+                      style={[
+                        styles.themeOptionPill,
+                        isDark ? styles.themeOptionPillDark : styles.themeOptionPillLight,
+                        isSelected && (isDark ? styles.themeOptionPillSelectedDark : styles.themeOptionPillSelectedLight),
+                      ]}
+                      onPress={async () => {
+                        if (Platform.OS !== 'web') {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }
+                        await setThemeMode(item.id as any);
+                      }}
+                    >
+                      <Ionicons
+                        name={item.icon as any}
+                        size={16}
+                        color={
+                          isSelected
+                            ? colors.primaryForeground
+                            : isDark
+                            ? '#8E8E93'
+                            : '#64748B'
+                        }
+                      />
+                      <Text
+                        style={[
+                          styles.themeOptionText,
+                          isDark ? styles.themeOptionTextDark : styles.themeOptionTextLight,
+                          isSelected && styles.themeOptionTextSelected,
+                        ]}
+                      >
+                        {item.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+
+            <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
               APPLICATION PREFERENCES
             </Text>
             <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
@@ -2471,5 +2523,52 @@ const styles = StyleSheet.create({
   timeoutPillTextActive: {
     color: '#10B981',
     fontWeight: '800',
+  },
+  // Theme Selector
+  themeSelectorRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 4,
+  },
+  themeOptionPill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  themeOptionPillLight: {
+    backgroundColor: '#F2F4F7',
+    borderColor: '#E5E7EB',
+  },
+  themeOptionPillDark: {
+    backgroundColor: '#2C2C2E',
+    borderColor: '#3A3A3C',
+  },
+  themeOptionPillSelectedLight: {
+    backgroundColor: '#CABFAB',
+    borderColor: '#CABFAB',
+  },
+  themeOptionPillSelectedDark: {
+    backgroundColor: '#CABFAB',
+    borderColor: '#CABFAB',
+  },
+  themeOptionText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  themeOptionTextLight: {
+    color: '#4B5563',
+  },
+  themeOptionTextDark: {
+    color: '#D1D5DB',
+  },
+  themeOptionTextSelected: {
+    color: '#41444B',
+    fontWeight: '700',
   },
 });

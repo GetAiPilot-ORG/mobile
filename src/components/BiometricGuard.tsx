@@ -8,13 +8,13 @@ import {
   AppStateStatus,
   Animated,
   StatusBar,
-  useColorScheme,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { BiometricService, BiometricAuthType } from '../lib/biometrics';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme, getColors } from '@/theme';
 
 interface BiometricGuardProps {
   children: React.ReactNode;
@@ -22,7 +22,8 @@ interface BiometricGuardProps {
 
 export function BiometricGuard({ children }: BiometricGuardProps) {
   const { session } = useAuth();
-  const colorScheme = useColorScheme();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const [isLocked, setIsLocked] = useState(false);
   const [biometricType, setBiometricType] = useState<BiometricAuthType>('NONE');
   const [biometricLabel, setBiometricLabel] = useState<string>('Face ID');

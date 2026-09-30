@@ -10,13 +10,13 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { telegramApi } from '../api/telegramApi';
 import { ChatBotConfig, ChatBotSession, ChatBotMessage } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 interface ChatBotModalProps {
   visible: boolean;
@@ -24,8 +24,8 @@ interface ChatBotModalProps {
 }
 
 export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const queryClient = useQueryClient();
 
   // Modals state

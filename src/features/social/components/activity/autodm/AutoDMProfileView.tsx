@@ -1,6 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
+import {
+  Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import React, { useMemo, useState } from 'react';
+import React,
+  { useMemo,
+  useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -10,9 +13,9 @@ import {
   StyleSheet,
   Text,
   View,
-  useColorScheme,
 } from 'react-native';
 import { AutoDMAccount, AutoDMInstagramMediaItem } from '../../../types';
+import { useTheme, getColors } from '@/theme';
 
 export interface AutoDMProfileViewProps {
   profileAccount?: AutoDMAccount;
@@ -39,8 +42,8 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
   onSelectMediaPost,
   onTriggerAutoDM,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [mediaFilter, setMediaFilter] = useState<'all' | 'video' | 'image'>('all');
 

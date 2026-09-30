@@ -1,4 +1,7 @@
-import { Ionicons } from "@expo/vector-icons";
+import { getColors, useTheme } from '@/theme';
+import {
+  Ionicons
+} from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useCallback } from "react";
@@ -9,7 +12,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -23,8 +25,8 @@ const ENTITY_TILES = [
     key: "contacts",
     label: "Contacts",
     icon: "people",
-    color: "#3B82F6",
-    bg: "#EFF6FF",
+    color: "#647D8C",
+    bg: "#E8F0F3",
     route: "/crm/contacts",
   },
   {
@@ -32,47 +34,47 @@ const ENTITY_TILES = [
     label: "Deals",
     icon: "briefcase",
     color: "#8B5CF6",
-    bg: "#F5F3FF",
+    bg: "#EDE9FE",
     route: "/crm/deals",
   },
   {
     key: "tasks",
     label: "Tasks",
     icon: "checkmark-circle",
-    color: "#10B981",
-    bg: "#ECFDF5",
+    color: "#4F8A68",
+    bg: "#E6F2EC",
     route: "/crm/tasks",
   },
   {
     key: "invoices",
     label: "Invoices",
     icon: "receipt",
-    color: "#F59E0B",
-    bg: "#FFFBEB",
+    color: "#B8863B",
+    bg: "#F5EEDD",
     route: "/crm/invoices",
   },
   {
     key: "quotations",
     label: "Quotations",
     icon: "document-text",
-    color: "#EF4444",
-    bg: "#FEF2F2",
+    color: "#B85C5C",
+    bg: "#F5E8E8",
     route: "/crm/quotations",
   },
   {
     key: "billing-profiles",
     label: "Client Profiles",
     icon: "card",
-    color: "#06B6D4",
-    bg: "#ECFEFF",
+    color: "#CABFAB",
+    bg: "#F0ECE3",
     route: "/crm/billing-profiles",
   },
   {
     key: "payments",
     label: "Payments",
     icon: "cash",
-    color: "#EC4899",
-    bg: "#FDF2F8",
+    color: "#9B8F70",
+    bg: "#EAE4D8",
     route: "/crm/payments",
   },
 ];
@@ -82,8 +84,8 @@ interface CRMDashboardScreenProps {
 }
 
 export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProps = {}) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const router = useRouter();
 
   const {
@@ -117,11 +119,11 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
     await Promise.all([refetchOrg(), refetchDash(), refetchTeam()]);
   }, [refetchOrg, refetchDash, refetchTeam]);
 
-  const bg = isDark ? "#0F1015" : "#F8FAFC";
-  const card = isDark ? "#1A1D26" : "#FFFFFF";
-  const text = isDark ? "#FFFFFF" : "#0F172A";
-  const sub = isDark ? "#9CA3AF" : "#64748B";
-  const border = isDark ? "#262A34" : "#E2E8F0";
+  const bg = colors.background
+  const card = colors.surface
+  const text = colors.text
+  const sub = colors.text
+  const border = colors.border
 
   const planTier = org?.subscription_tier || "free";
   const isPro = planTier !== "free";
@@ -139,7 +141,7 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
   };
 
   const openBilling = () => {
-    Linking.openURL(`${WEB_APP_URL}/pricing`).catch(() => {});
+    Linking.openURL(`${WEB_APP_URL}/pricing`).catch(() => { });
   };
 
   return (
@@ -151,7 +153,7 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
           <RefreshControl
             refreshing={isRefetching}
             onRefresh={onRefresh}
-            tintColor="#3B82F6"
+            tintColor={colors.primary}
           />
         }
       >
@@ -166,7 +168,7 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
           <View
             style={[
               s.tierBadge,
-              { backgroundColor: isPro ? "#8B5CF6" : "#64748B" },
+              { backgroundColor: isPro ? colors.products.crm : colors.mutedForeground },
             ]}
           >
             <Ionicons
@@ -181,8 +183,8 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
         {/* Subscription & Plans Card */}
         <View style={[s.card, { backgroundColor: card, borderColor: border }]}>
           <View style={s.cardRow}>
-            <View style={[s.iconCircle, { backgroundColor: "#EDE9FE" }]}>
-              <Ionicons name="diamond" size={20} color="#8B5CF6" />
+            <View style={[s.iconCircle, { backgroundColor: colors.accentSoft }]}>
+              <Ionicons name="diamond" size={20} color={colors.primary} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[s.cardTitle, { color: text }]}>
@@ -236,18 +238,18 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
           <Pressable
             style={[
               s.upgradeBtn,
-              { backgroundColor: isPro ? "#10B981" : "#8B5CF6" },
+              { backgroundColor: isPro ? colors.success : colors.primary },
             ]}
             onPress={() =>
-              Linking.openURL(`${WEB_APP_URL}/dashboard/plans`).catch(() => {})
+              Linking.openURL(`${WEB_APP_URL}/dashboard/plans`).catch(() => { })
             }
           >
             <Ionicons
               name={isPro ? "checkmark-circle" : "arrow-up-circle"}
               size={16}
-              color="#FFF"
+              color={colors.buttonPrimaryForeground}
             />
-            <Text style={s.upgradeBtnText}>
+            <Text style={[s.upgradeBtnText, { color: colors.buttonPrimaryForeground }]}>
               {isPro ? "Plan Active" : "Upgrade Plan"}
             </Text>
           </Pressable>
@@ -259,25 +261,25 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
             s.card,
             s.billingCard,
             {
-              backgroundColor: isDark ? "#1A1D26" : "#F0F9FF",
-              borderColor: "#3B82F6",
+              backgroundColor: colors.surface,
+              borderColor: colors.primary,
             },
           ]}
           onPress={openBilling}
         >
           <View style={s.cardRow}>
-            <View style={[s.iconCircle, { backgroundColor: "#DBEAFE" }]}>
-              <Ionicons name="settings" size={20} color="#3B82F6" />
+            <View style={[s.iconCircle, { backgroundColor: colors.primaryMuted }]}>
+              <Ionicons name="settings" size={20} color={colors.primary} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[s.cardTitle, { color: text }]}>
                 Billing Settings
               </Text>
-              <Text style={[s.cardSub, { color: "#3B82F6" }]}>
+              <Text style={[s.cardSub, { color: colors.primary }]}>
                 Manage invoices, payment methods & tax info
               </Text>
             </View>
-            <Ionicons name="open-outline" size={18} color="#3B82F6" />
+            <Ionicons name="open-outline" size={18} color={colors.primary} />
           </View>
         </Pressable>
 
@@ -295,8 +297,8 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
             ]}
           >
             <View style={s.statHeader}>
-              <View style={[s.statIcon, { backgroundColor: "#ECFDF5" }]}>
-                <Ionicons name="receipt" size={16} color="#10B981" />
+              <View style={[s.statIcon, { backgroundColor: colors.successSoft }]}>
+                <Ionicons name="receipt" size={16} color={colors.success} />
               </View>
               {!isPro && (
                 <View style={s.lockedBadge}>
@@ -313,11 +315,11 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
                 style={s.viewFeatureBtn}
                 onPress={() => navigateTo("/crm/invoices")}
               >
-                <Text style={s.viewFeatureText}>View →</Text>
+                <Text style={[s.viewFeatureText, { color: colors.success }]}>View →</Text>
               </Pressable>
             )}
             {!isPro && (
-              <Text style={[s.lockedText, { color: "#F59E0B" }]}>
+              <Text style={[s.lockedText, { color: colors.warning }]}>
                 Pro feature
               </Text>
             )}
@@ -328,8 +330,8 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
             style={[s.statCard, { backgroundColor: card, borderColor: border }]}
           >
             <View style={s.statHeader}>
-              <View style={[s.statIcon, { backgroundColor: "#EFF6FF" }]}>
-                <Ionicons name="people" size={16} color="#3B82F6" />
+              <View style={[s.statIcon, { backgroundColor: colors.accentSoft }]}>
+                <Ionicons name="people" size={16} color={colors.primary} />
               </View>
             </View>
             <Text style={[s.statValue, { color: text }]}>
@@ -338,8 +340,8 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
             <Text style={[s.statLabel, { color: sub }]}>Team Active</Text>
             <Text style={[s.statExtra, { color: sub }]}>
               {teamActivity
-                ? `${teamActivity.wfhToday} WFH · of ${teamActivity.totalMembers} total`
-                : `${stats?.teamCount ?? 0} total`}
+                ? `${(teamActivity as any)?.wfhToday ?? 0} WFH`
+                : `of ${stats?.teamCount ?? 0} total`}
             </Text>
           </View>
         </View>
@@ -404,7 +406,7 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
               style={[
                 s.tile,
                 {
-                  backgroundColor: isDark ? "#1A1D26" : tile.bg,
+                  backgroundColor: colors.surface,
                   borderColor: border,
                 },
               ]}
@@ -477,7 +479,7 @@ const s = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 12,
   },
-  upgradeBtnText: { color: "#FFF", fontWeight: "700", fontSize: 14 },
+  upgradeBtnText: { fontWeight: "700", fontSize: 14 },
   statsRow: { flexDirection: "row", gap: 12, marginBottom: 4 },
   statCard: {
     flex: 1,
@@ -510,7 +512,7 @@ const s = StyleSheet.create({
   statLabel: { fontSize: 12, marginTop: 2 },
   statExtra: { fontSize: 11, marginTop: 2 },
   viewFeatureBtn: { marginTop: 8 },
-  viewFeatureText: { color: "#10B981", fontSize: 12, fontWeight: "600" },
+  viewFeatureText: { fontSize: 12, fontWeight: "600" },
   lockedText: { fontSize: 11, marginTop: 6, fontWeight: "500" },
   sectionHeader: { marginTop: 8, marginBottom: 10 },
   sectionTitle: { fontSize: 17, fontWeight: "700", letterSpacing: -0.2 },

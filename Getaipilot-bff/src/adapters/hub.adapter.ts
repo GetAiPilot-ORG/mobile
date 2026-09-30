@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { env } from '../config/env.js';
 import { UserRole } from '../types/index.js';
+import { VoiceAdapter } from './voice.adapter.js';
 
 export interface AuthenticatedUserResult {
   id: string;
@@ -608,25 +609,108 @@ export class HubAdapter {
   }
 
   /**
-   * Fetches active ecosystem pricing plans from public.pricing_plans
+   * Fetches active ecosystem pricing plans from public.pricing_plans and VoicePilot DB
    */
   public static async getPricingPlans(category?: string) {
     const client = this.adminClient;
-    let query = client
-      .from('pricing_plans')
-      .select('*')
-      .eq('is_active', true)
-      .order('amount', { ascending: true });
+    let hubPlans: any[] = [];
 
-    if (category && category !== 'all') {
-      query = query.eq('category', category);
+    try {
+      let query = client
+        .from('pricing_plans')
+        .select('*')
+        .eq('is_active', true)
+        .order('amount', { ascending: true });
+
+      if (category && category !== 'all') {
+        query = query.eq('category', category);
+      }
+
+      const { data, error } = await query;
+      if (!error && data) {
+        hubPlans = data;
+      }
+    } catch (err: any) {
+      console.warn('[HubAdapter] getPricingPlans error:', err?.message);
     }
 
-    const { data, error } = await query;
-    if (error) {
-      console.warn('[HubAdapter] getPricingPlans error:', error.message);
-      return [];
+    // If querying calling/voice or all plans, ensure VoicePilot live plans are merged
+    if (!category || category === 'all' || category === 'calling' || category === 'voice') {
+      try {
+        const voiceClient = (VoiceAdapter as any).voiceSupabase;
+        if (voiceClient) {
+          const { data: vPlans, error: vErr } = await voiceClient
+            .from('plans')
+            .select('*')
+            .eq('is_active', true)
+            .order('price_monthly', { ascending: true });
+
+          if (!vErr && vPlans && vPlans.length > 0) {
+            const mappedVoicePlans = vPlans
+              .filter((vp: any) => vp.id !== 'sidebar_permissions' && vp.id !== 'enterprise')
+              .map((vp: any) => {
+                const feats = vp.features || {};
+                return {
+                  id: vp.id,
+                  plan_name: `calling_${vp.id}`,
+                  plan_label: vp.name || 'Voice Plan',
+                  currency: 'INR',
+                  amount: Math.round((Number(vp.price_monthly) || 0) * 100),
+                  duration: 'monthly',
+                  is_active: true,
+                  category: 'calling',
+                  description: feats.description || `${vp.included_credits} AI calling minutes included.`,
+                  features: feats.feature_list || [
+                    `${vp.included_credits} AI Calling Minutes`,
+                    `₹${feats.extra_min_rate || 5}.00 / min per-minute rate`,
+                    `1 Dedicated Virtual Phone Line Included`,
+                    `Hindi, English & Hinglish Support`,
+                    `Custom AI System Prompts`,
+                  ],
+                  is_popular: Boolean(feats.is_popular || vp.id === 'call_pro'),
+                  included_call_minutes: Number(vp.included_credits) || 0,
+                  extra_call_rate_paise: Math.round((Number(feats.extra_min_rate) || 5) * 100),
+                  included_numbers: vp.id === 'call_elite' ? 2 : 1,
+                  included_channels: 1,
+                  billing_note: feats.feeNote || `Includes ${vp.included_credits} AI calling minutes.`,
+                };
+              });
+
+            const numberAddon = {
+              id: 'calling_number',
+              plan_name: 'calling_dedicated_number',
+              plan_label: 'Dedicated Phone Number',
+              currency: 'INR',
+              amount: 149900,
+              duration: 'monthly',
+              is_active: true,
+              category: 'calling',
+              description: 'Add an extra dedicated virtual phone line to your workspace.',
+              features: [
+                '1 Dedicated Virtual Phone Number (30 Days)',
+                'Inbound & Outbound Calling Enabled',
+                'Bind to Any AI Voice Assistant Bot',
+                'Instant KYC Verification Linkage',
+                'TRAI & DND Compliant Routing',
+              ],
+              is_popular: false,
+              included_call_minutes: 0,
+              extra_call_rate_paise: 0,
+              included_numbers: 1,
+              included_channels: 1,
+              billing_note: 'Dedicated virtual phone line valid for 30 days.',
+              is_addon: true,
+            };
+
+            const otherPlans = hubPlans.filter((p: any) => p.category !== 'calling' && p.category !== 'voice');
+            return [...otherPlans, ...mappedVoicePlans, numberAddon];
+          }
+        }
+      } catch (voiceErr: any) {
+        console.warn('[HubAdapter] Voice plans sync error:', voiceErr?.message);
+      }
     }
-    return data || [];
+
+    return hubPlans;
   }
 }

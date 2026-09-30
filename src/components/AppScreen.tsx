@@ -36,12 +36,11 @@ export function AppScreen({
     paddingBottom = insets.bottom;
   }
 
-  const bgClass = isDark ? 'bg-[#000000]' : 'bg-[#F8F9FA]';
   const paddingClass = padding ? 'p-lg' : '';
 
   return (
     <View
-      className={`flex-1 flex-col w-full ${bgClass} ${paddingClass} ${className}`}
+      className={`flex-1 flex-col w-full ${paddingClass} ${className}`}
       style={[
         {
           flex: 1,

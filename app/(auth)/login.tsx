@@ -1,10 +1,12 @@
-import { AppScreen } from "@/components/AppScreen";
+import {
+  AppScreen } from "@/components/AppScreen";
 import { NetworkStatusScreen } from "@/components/StatusScreen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect,
+  useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
@@ -15,8 +17,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  useColorScheme,
-  View
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AuthSkeleton } from "../../src/components/skeletonScreen/AuthSkeletonScreen";
@@ -24,6 +25,7 @@ import { useNetwork } from "../../src/contexts/NetworkContext";
 import { useAuthStore } from "../../src/core/store/authStore";
 import { supabase } from "../../src/lib/supabase";
 import { isValidEmail } from "../../src/lib/validators";
+import { useTheme, getColors } from '@/theme';
 
 const REMEMBER_ME_KEY = "@gap_remember_me";
 const SAVE_LOGIN_KEY = "@gap_saved_identifier";
@@ -32,8 +34,8 @@ const brandLogo = require("../../assets/images/logo.png");
 export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const login = useAuthStore((s) => s.login);
   const [authMode, setAuthMode] = useState<"password" | "otp">("password");
 

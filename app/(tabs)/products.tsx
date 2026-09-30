@@ -1,11 +1,10 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTheme } from '../../src/contexts/ThemeContext';
+import { useTheme, getColors } from '@/theme';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
 import { ProductCard } from '../../src/components/ProductCard';
-import { colors } from '../../src/theme/colors';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../src/lib/supabase';
@@ -14,6 +13,7 @@ import { ProductsSkeleton } from '../../src/components/skeletonScreen';
 export default function ProductsScreen() {
   const router = useRouter();
   const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const { hasWhatsApp, hasTelegram, hasVoice, hasSocial, hasCRM, refresh } =
     usePlatformSubscription();
   const [isRefreshing, setIsRefreshing] = React.useState(false);

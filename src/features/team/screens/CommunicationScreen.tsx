@@ -1,4 +1,5 @@
-import { Ionicons } from '@expo/vector-icons';
+import {
+  Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import {
@@ -8,12 +9,12 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
-  View
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LeaveRequest } from '../../crm/types';
 import { teamApi } from '../api/team.api';
+import { useTheme, getColors } from '@/theme';
 
 type TabType = 'email' | 'wfh';
 
@@ -25,8 +26,8 @@ const WFH_STATUS_COLOR: Record<string, { bg: string; text: string }> = {
 };
 
 export function CommunicationScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const [activeTab, setActiveTab] = useState<TabType>('wfh');
 
   const bg = isDark ? '#0F1015' : '#F8FAFC';

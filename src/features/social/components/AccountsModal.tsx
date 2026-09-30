@@ -1,4 +1,5 @@
-import { Ionicons } from '@expo/vector-icons';
+import {
+  Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React from 'react';
 import {
@@ -9,9 +10,9 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from 'react-native';
+import { useTheme, getColors } from '@/theme';
 
 interface AccountsModalProps {
   visible: boolean;
@@ -27,8 +28,8 @@ export const AccountsModal: React.FC<AccountsModalProps> = ({
   onClose,
   onDisconnect,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   if (!visible) return null;
 

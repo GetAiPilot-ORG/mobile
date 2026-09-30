@@ -8,13 +8,12 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
-  useColorScheme,
   Share,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
-import { colors } from '../../src/theme/colors';
+import { useTheme, getColors } from '@/theme';
 
 interface MetricCheck {
   title: string;
@@ -49,8 +48,8 @@ const QUICK_TEST_DOMAINS = [
 ];
 
 export default function WebsiteAuditScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [domainUrl, setDomainUrl] = useState('https://getaipilot.in');
   const [isAuditing, setIsAuditing] = useState(false);
@@ -59,14 +58,14 @@ export default function WebsiteAuditScreen() {
 
   // Dynamic Theme Mapping
   const theme = {
-    bg: isDark ? colors.backgroundDark : colors.background,
-    card: isDark ? colors.surfaceDark : colors.card,
-    cardBorder: isDark ? colors.borderDark : colors.border,
-    text: isDark ? colors.foregroundDark : colors.foreground,
+    bg: colors.background,
+    card: colors.card,
+    cardBorder: colors.border,
+    text: colors.foreground,
     mutedText: colors.mutedForeground,
     inputBg: isDark ? '#141416' : '#FFFFFF',
-    inputBorder: isDark ? '#2C2C2E' : colors.border,
-    primary: colors.primary, // GetAiPilot Electric Blue
+    inputBorder: colors.border,
+    primary: colors.primary,
   };
 
   const calculateDynamicAudit = (targetUrl: string): AuditResult => {

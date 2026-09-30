@@ -11,7 +11,6 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,6 +34,7 @@ interface ChatMessage {
 import { useQuery } from '@tanstack/react-query';
 import { telegramSupabase } from '../api/telegramSupabase';
 import { useAuthStore } from '../../../core/store/authStore';
+import { useTheme, getColors } from '@/theme';
 
 interface ChatUser {
   id: string;
@@ -44,8 +44,8 @@ interface ChatUser {
 }
 
 export const ChatBotScreen: React.FC<Props> = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const card = isDark ? styles.cardDark : styles.cardLight;
   const txt = isDark ? styles.textDark : styles.textLight;

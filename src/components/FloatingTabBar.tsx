@@ -91,7 +91,7 @@ const tabSpringAnimation = {
 
 export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
   const insets = useSafeAreaInsets();
-  const { isDark } = useTheme();
+  const { isDark, colors } = useTheme();
   const { user, profile } = useAuth();
   const { isAdmin: isPlatformAdmin } = usePlatformSubscription();
 
@@ -134,7 +134,10 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
       <View
         style={[
           styles.tabBarContainer,
-          isDark ? styles.tabBarContainerDark : styles.tabBarContainerLight,
+          {
+            backgroundColor: colors.card,
+            borderColor: colors.border,
+          },
         ]}
       >
         {visibleRoutes.map((route: { key: string; name: string }, index: number) => {
@@ -182,18 +185,18 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
                 onLongPress={onLongPress}
                 style={[
                   styles.activePill,
-                  isDark ? styles.activePillDark : styles.activePillLight,
+                  { backgroundColor: colors.primary },
                 ]}
               >
                 <Ionicons
                   name={iconName}
                   size={19}
-                  color={isDark ? '#000000' : '#FFFFFF'}
+                  color={colors.primaryForeground}
                 />
                 <Text
                   style={[
                     styles.activeLabel,
-                    isDark ? styles.activeLabelDark : styles.activeLabelLight,
+                    { color: colors.primaryForeground },
                   ]}
                   numberOfLines={1}
                 >
@@ -220,7 +223,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
               <Ionicons
                 name={iconName}
                 size={20}
-                color={isDark ? '#9CA3AF' : '#64748B'}
+                color={colors.tabInactive || colors.mutedForeground}
               />
             </Pressable>
           );
@@ -261,8 +264,8 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   tabBarContainerDark: {
-    backgroundColor: '#121214',
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.5,

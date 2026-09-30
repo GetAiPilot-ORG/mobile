@@ -1,5 +1,9 @@
-import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useRef, useState } from "react";
+import {
+  LinearGradient } from "expo-linear-gradient";
+import React,
+  { useEffect,
+  useRef,
+  useState } from "react";
 import {
   Animated,
   DimensionValue,
@@ -9,8 +13,8 @@ import {
   StyleSheet,
   View,
   ViewStyle,
-  useColorScheme,
 } from "react-native";
+import { useTheme, getColors } from '@/theme';
 
 export interface SkeletonProps {
   width?: DimensionValue;
@@ -27,7 +31,8 @@ export default function Skeleton({
   circle = false,
   style,
 }: SkeletonProps) {
-  const isDark = useColorScheme() === "dark";
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const [componentWidth, setComponentWidth] = useState<number>(300);
 
   const shimmer = useRef(new Animated.Value(-1)).current;
@@ -146,7 +151,8 @@ export function SkeletonCard({
   children?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
-  const isDark = useColorScheme() === "dark";
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   return (
     <View
       style={[

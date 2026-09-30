@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, useColorScheme, Linking, RefreshControl, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { getColors, useTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { ActivityIndicator, FlatList, Linking, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { crmApi } from '../api/crm.api';
 import { CRMInvoice, InvoiceStatus } from '../types';
 
@@ -17,8 +18,8 @@ const STATUS_COLOR: Record<InvoiceStatus, { bg: string; text: string }> = {
 };
 
 export function InvoicesScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const router = useRouter();
   const [filter, setFilter] = useState<string | undefined>(undefined);
 
@@ -28,14 +29,14 @@ export function InvoicesScreen() {
   });
 
   const invoices = data?.invoices || [];
-  const bg = isDark ? '#0F1015' : '#F8FAFC';
-  const card = isDark ? '#1A1D26' : '#FFFFFF';
-  const text = isDark ? '#FFFFFF' : '#0F172A';
-  const sub = isDark ? '#9CA3AF' : '#64748B';
-  const border = isDark ? '#262A34' : '#E2E8F0';
+  const bg = isDark ? colors.background : colors.background;
+  const card = isDark ? colors.surface : colors.surface;
+  const text = isDark ? colors.text : colors.text;
+  const sub = isDark ? colors.textMuted : colors.textMuted;
+  const border = isDark ? colors.border : colors.border;
 
   const openInvoice = (invoice: CRMInvoice) => {
-    Linking.openURL(`${WEB_APP_URL}/dashboard/crm/invoices/${invoice.id}`).catch(() => {});
+    Linking.openURL(`${WEB_APP_URL}/dashboard/crm/invoices/${invoice.id}`).catch(() => { });
   };
 
   const renderInvoice = ({ item }: { item: CRMInvoice }) => {
@@ -72,7 +73,7 @@ export function InvoicesScreen() {
         </View>
         <Pressable
           style={s.createBtn}
-          onPress={() => Linking.openURL(`${WEB_APP_URL}/dashboard/crm/invoices/create`).catch(() => {})}
+          onPress={() => Linking.openURL(`${WEB_APP_URL}/dashboard/crm/invoices/create`).catch(() => { })}
         >
           <Ionicons name="add" size={18} color="#FFF" />
           <Text style={s.createBtnText}>Create</Text>

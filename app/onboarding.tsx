@@ -11,7 +11,6 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
-  useColorScheme,
   Switch,
 } from 'react-native';
 import { Image } from 'expo-image';
@@ -23,6 +22,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../src/lib/supabase';
 import { useAuth } from '../src/contexts/AuthContext';
 import { BiometricService, BiometricSettings } from '../src/lib/biometrics';
+import { useTheme, getColors } from '@/theme';
 
 const brandLogo = require('../assets/images/logo.jpg');
 
@@ -42,8 +42,8 @@ const TEAM_SIZES = ['1-5', '6-15', '16-50', '50+'];
 export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const { user, refreshProfile } = useAuth();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);

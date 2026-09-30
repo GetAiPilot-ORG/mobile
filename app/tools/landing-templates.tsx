@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -16,7 +16,7 @@ import {
   openAuthenticatedDashboard,
   openAuthenticatedTemplate,
 } from "../../src/lib/template-deep-link";
-import { colors } from "../../src/theme/colors";
+import { useTheme, getColors, AppColors } from "@/theme";
 
 interface LandingTemplate {
   id: string;
@@ -102,6 +102,10 @@ const LANDING_TEMPLATES_CATALOG: LandingTemplate[] = [
 ];
 
 export default function LandingTemplatesScreen() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [search, setSearch] = useState("");
   const [openingTemplateId, setOpeningTemplateId] = useState<string | null>(
@@ -278,7 +282,7 @@ export default function LandingTemplatesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingBottom: 40,

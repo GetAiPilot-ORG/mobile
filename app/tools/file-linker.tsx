@@ -8,7 +8,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  useColorScheme,
   View,
 } from "react-native";
 
@@ -34,7 +33,7 @@ import {
 
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
-import { getColors } from "../../src/theme/colors";
+import { useTheme, getColors } from "@/theme";
 
 type SelectedFile = {
   name: string;
@@ -49,8 +48,7 @@ export default function FileLinkerScreen() {
    * SYSTEM THEME
    * =========================================================
    */
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
   const colors = getColors(isDark);
 
   /*

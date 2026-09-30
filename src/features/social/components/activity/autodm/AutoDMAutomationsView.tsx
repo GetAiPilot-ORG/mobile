@@ -1,6 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
+import {
+  Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import React, { useState } from 'react';
+import React,
+  { useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -9,10 +11,10 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
 import { AutoDMAccount, AutoDMAutomationItem } from '../../../types';
 import { openSocialHandoff } from '../../../utils/socialHandoff';
+import { useTheme, getColors } from '@/theme';
 
 export interface AutoDMAutomationsViewProps {
   dynamicAutomations: AutoDMAutomationItem[];
@@ -27,8 +29,8 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
   activeAutoDMAccount,
   onToggleRule,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [autodmSearch, setAutodmSearch] = useState('');
   const [autodmStatusFilter, setAutodmStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');

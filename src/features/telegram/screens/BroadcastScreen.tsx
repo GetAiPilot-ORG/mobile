@@ -6,12 +6,12 @@ import {
   StyleSheet,
   Text,
   View,
-  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useAuthStore } from '../../../core/store/authStore';
 import { TelegramToolKey } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 interface Props {
   chats?: any[];
@@ -20,8 +20,8 @@ interface Props {
 }
 
 export const BroadcastScreen: React.FC<Props> = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const user = useAuthStore((s) => s.user);
 
   const telegramUserId =

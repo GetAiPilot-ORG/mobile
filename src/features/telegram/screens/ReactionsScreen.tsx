@@ -12,7 +12,6 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +20,7 @@ import * as Haptics from 'expo-haptics';
 import { telegramApi } from '../api/telegramApi';
 import { telegramSupabase } from '../api/telegramSupabase';
 import { ReactionAutopilotRule, ReactionOrder, TelegramToolKey } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 interface Props {
   chats?: any[];
@@ -46,8 +46,8 @@ const CAMPAIGN_TYPES = [
 ];
 
 export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const queryClient = useQueryClient();
 
   // Active Sub-Tab

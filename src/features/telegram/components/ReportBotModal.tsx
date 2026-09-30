@@ -9,7 +9,6 @@ import {
   TextInput,
   ActivityIndicator,
   Linking,
-  useColorScheme,
   Alert,
   Image,
   Share,
@@ -21,6 +20,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { telegramApi } from '../api/telegramApi';
 import { ReportBotBrandProfile } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 interface ReportBotModalProps {
   visible: boolean;
@@ -57,8 +57,8 @@ const LOGO_PRESETS = [
 ];
 
 export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<ReportBotTab>('profile');

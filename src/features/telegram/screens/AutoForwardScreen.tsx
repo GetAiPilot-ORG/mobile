@@ -1,6 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
+import {
+  Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import React, { useState } from 'react';
+import React,
+  { useState } from 'react';
 import {
   Linking,
   Platform,
@@ -8,10 +10,10 @@ import {
   StyleSheet,
   Text,
   View,
-  useColorScheme
 } from 'react-native';
 import { StatCard } from '../components/ui/StatCard';
 import { TelegramToolKey } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 type AfSection = 'mappings' | 'filters' | 'blocked' | 'delays' | 'headers';
 
@@ -22,8 +24,8 @@ interface AutoForwardScreenProps {
 }
 
 export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRules, summary, onOpenModal }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const [afSection, setAfSection] = useState<AfSection>('mappings');
   const [selectedDelay, setSelectedDelay] = useState(0);
 

@@ -1,6 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
+import {
+  Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import React, { useEffect, useState } from 'react';
+import React,
+  { useEffect,
+  useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -12,7 +15,6 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
 import { BFF_BASE_URL } from '../../core/api/client';
 import { RazorpayApiService } from '../../core/payments/razorpayService';
@@ -35,6 +37,7 @@ import {
   validateUpiId,
 } from '../../core/payments/validation';
 import { useAuthStore } from '../../core/store/authStore';
+import { useTheme, getColors } from '@/theme';
 
 export interface RazorpayCheckoutModalProps {
   visible: boolean;
@@ -64,8 +67,8 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
   options,
   onClose,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const currentUser = useAuthStore((s) => s.user);
 
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>('qr');

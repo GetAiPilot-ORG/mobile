@@ -1,31 +1,31 @@
-import React, { useState, useMemo } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  Pressable,
-  Linking,
-  TextInput,
-  Alert,
-  useColorScheme,
-  Dimensions,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { getColors, useTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useLead, useUpdateLead, useDeleteLead } from '../hooks/useLeads';
-import { useDeals, useCreateDeal, useUpdateDealStage } from '../hooks/useDeals';
-import { useTasks, useCreateTask, useToggleTask } from '../hooks/useTasks';
-import { useActivities, useCreateActivity, useAddLeadNote } from '../hooks/useActivities';
-import { ContactStatus, DealStage } from '../types';
-import { DealCard } from '../components/DealCard';
-import { TaskItem } from '../components/TaskItem';
+import React, { useMemo, useState } from 'react';
+import {
+  Alert,
+  Dimensions,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LeadDetailSkeleton } from '../../../components/skeletonScreen';
 import { ActivityTimelineItem } from '../components/ActivityTimelineItem';
 import { CreateDealModal } from '../components/CreateDealModal';
 import { CreateTaskModal } from '../components/CreateTaskModal';
+import { DealCard } from '../components/DealCard';
 import { LogActivityModal } from '../components/LogActivityModal';
-import { LeadDetailSkeleton } from '../../../components/skeletonScreen';
+import { TaskItem } from '../components/TaskItem';
+import { useActivities, useAddLeadNote, useCreateActivity } from '../hooks/useActivities';
+import { useCreateDeal, useDeals, useUpdateDealStage } from '../hooks/useDeals';
+import { useDeleteLead, useLead, useUpdateLead } from '../hooks/useLeads';
+import { useCreateTask, useTasks, useToggleTask } from '../hooks/useTasks';
+import { ContactStatus, DealStage } from '../types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -58,8 +58,8 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
   onBack,
   onSelectDeal,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const { data: lead, isLoading, refetch } = useLead(leadId);
   const updateLead = useUpdateLead();
@@ -104,13 +104,13 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
 
   const handleCall = () => {
     if (!lead?.phone) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     Linking.openURL(`tel:${lead.phone}`);
   };
 
   const handleWhatsApp = () => {
     if (!lead?.phone) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     const cleanPhone = lead.phone.replace(/[^0-9]/g, '');
     const leadName = lead.name || `${lead.first_name || ''} ${lead.last_name || ''}`.trim();
     const msg = encodeURIComponent(`Hi ${leadName || 'there'}, following up regarding our discussion.`);
@@ -132,12 +132,12 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
 
   const handleEmail = () => {
     if (!lead?.email) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     Linking.openURL(`mailto:${lead.email}`);
   };
 
   const handleStepPress = (stepKey: DealStage, index: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
     if (primaryDeal) {
       updateDealStage.mutate({ id: primaryDeal.id, stage: stepKey });
     } else {
@@ -157,7 +157,7 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
   };
 
   const handleStatusChange = (newStatus: ContactStatus) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     if (lead) {
       updateLead.mutate({ id: lead.id, patch: { status: newStatus } });
     }
@@ -185,35 +185,35 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
 
   const handleSendQuickNote = async () => {
     if (!quickNote.trim() || !lead) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     await addLeadNote.mutateAsync({ leadId: lead.id, note: quickNote.trim() });
     setQuickNote('');
   };
 
   if (isLoading || !lead) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <LeadDetailSkeleton />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
       {/* Top Header */}
-      <View style={[styles.header, { borderBottomColor: isDark ? '#1E2028' : '#E2E8F0' }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <Pressable
-          style={[styles.iconBtn, { backgroundColor: isDark ? '#181A20' : '#F1F5F9' }]}
+          style={[styles.iconBtn, { backgroundColor: colors.background }]}
           onPress={onBack}
           hitSlop={8}
         >
-          <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+          <Ionicons name="arrow-back" size={20} color={colors.text} />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]} numberOfLines={1}>
+        <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
           {lead.name || `${lead.first_name} ${lead.last_name}`}
         </Text>
         <Pressable
-          style={[styles.iconBtn, { backgroundColor: isDark ? '#181A20' : '#F1F5F9' }]}
+          style={[styles.iconBtn, { backgroundColor: colors.background }]}
           onPress={handleDelete}
           hitSlop={8}
         >
@@ -225,7 +225,7 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
         {/* Profile Card */}
         <View style={[styles.profileCard, isDark ? styles.cardDark : styles.cardLight]}>
           <View style={styles.profileRow}>
-            <View style={[styles.avatar, { backgroundColor: isDark ? '#262A34' : '#E2E8F0' }]}>
+            <View style={[styles.avatar, { backgroundColor: colors.background }]}>
               <Text style={styles.avatarText}>
                 {(lead.first_name?.[0] || 'L').toUpperCase()}
                 {(lead.last_name?.[0] || '').toUpperCase()}
@@ -234,11 +234,11 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
 
             <View style={styles.profileInfo}>
               <View style={styles.nameValueRow}>
-                <Text style={[styles.profileName, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                <Text style={[styles.profileName, { color: colors.text }]}>
                   {lead.name || `${lead.first_name} ${lead.last_name}`}
                 </Text>
                 {totalContactDealValue > 0 && (
-                  <View style={[styles.dealValBadge, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7' }]}>
+                  <View style={[styles.dealValBadge, { backgroundColor: colors.background }]}>
                     <Text style={styles.dealValBadgeText}>
                       ₹{(totalContactDealValue / 100000).toFixed(1)}L
                     </Text>
@@ -247,7 +247,7 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
               </View>
 
               {lead.company || lead.job_title ? (
-                <Text style={[styles.profileCompany, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+                <Text style={[styles.profileCompany, { color: colors.textMuted }]}>
                   {[lead.job_title, lead.company].filter(Boolean).join(' • ')}
                 </Text>
               ) : null}
@@ -267,7 +267,7 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
                       key={s}
                       style={[
                         styles.statusTab,
-                        { backgroundColor: isDark ? '#121316' : '#F8FAFC', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+                        { backgroundColor: isDark ? colors.background : colors.background, borderColor: isDark ? colors.border : colors.border },
                         isCurrent && { backgroundColor: cfg.bg, borderColor: cfg.dot },
                       ]}
                       onPress={() => handleStatusChange(s)}
@@ -275,7 +275,7 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
                       <Text
                         style={[
                           styles.statusTabText,
-                          isCurrent ? { color: cfg.text, fontWeight: '700' } : { color: isDark ? '#6B7280' : '#94A3B8' },
+                          isCurrent ? { color: cfg.text, fontWeight: '700' } : { color: colors.textMuted },
                         ]}
                       >
                         {cfg.label}
@@ -303,8 +303,8 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
             <View style={[styles.touchpointIconCircle, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
               <Ionicons name="call" size={20} color="#10B981" />
             </View>
-            <Text style={[styles.touchpointLabel, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Call</Text>
-            <Text style={[styles.touchpointSub, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+            <Text style={[styles.touchpointLabel, { color: colors.text }]}>Call</Text>
+            <Text style={[styles.touchpointSub, { color: colors.textMuted }]}>
               {lead.phone ? 'Direct dial' : 'No phone'}
             </Text>
           </Pressable>
@@ -322,8 +322,8 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
             <View style={[styles.touchpointIconCircle, { backgroundColor: 'rgba(37, 211, 102, 0.15)' }]}>
               <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
             </View>
-            <Text style={[styles.touchpointLabel, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>WhatsApp</Text>
-            <Text style={[styles.touchpointSub, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+            <Text style={[styles.touchpointLabel, { color: colors.text }]}>WhatsApp</Text>
+            <Text style={[styles.touchpointSub, { color: colors.textMuted }]}>
               {lead.phone ? 'Chat now' : 'No phone'}
             </Text>
           </Pressable>
@@ -341,8 +341,8 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
             <View style={[styles.touchpointIconCircle, { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}>
               <Ionicons name="mail" size={20} color="#3B82F6" />
             </View>
-            <Text style={[styles.touchpointLabel, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Email</Text>
-            <Text style={[styles.touchpointSub, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+            <Text style={[styles.touchpointLabel, { color: colors.text }]}>Email</Text>
+            <Text style={[styles.touchpointSub, { color: colors.textMuted }]}>
               {lead.email ? 'Compose' : 'No email'}
             </Text>
           </Pressable>
@@ -351,22 +351,22 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
           <Pressable
             style={[styles.touchpointLargeBtn, isDark ? styles.cardDark : styles.cardLight]}
             onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
               setShowAddTask(true);
             }}
           >
             <View style={[styles.touchpointIconCircle, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
               <Ionicons name="calendar" size={20} color="#F59E0B" />
             </View>
-            <Text style={[styles.touchpointLabel, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Schedule</Text>
-            <Text style={[styles.touchpointSub, { color: isDark ? '#9CA3AF' : '#64748B' }]}>+ Follow-up</Text>
+            <Text style={[styles.touchpointLabel, { color: colors.text }]}>Schedule</Text>
+            <Text style={[styles.touchpointSub, { color: colors.textMuted }]}>+ Follow-up</Text>
           </Pressable>
         </View>
 
         {/* Interactive Deal Stage Stepper */}
         <View style={[styles.stepperCard, isDark ? styles.cardDark : styles.cardLight]}>
           <View style={styles.stepperHeader}>
-            <Text style={[styles.stepperTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+            <Text style={[styles.stepperTitle, { color: colors.text }]}>
               Pipeline Progress
             </Text>
             <Text style={styles.stepperStageCurrent}>
@@ -400,8 +400,8 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
                         <Text
                           style={[
                             styles.stepNumber,
-                            isCurrent && { color: '#FFFFFF', fontWeight: '700' },
-                            !isPast && !isCurrent && { color: isDark ? '#6B7280' : '#94A3B8' },
+                            isCurrent && { color: colors.text, fontWeight: '700' },
+                            !isPast && !isCurrent && { color: colors.textMuted },
                           ]}
                         >
                           {idx + 1}
@@ -412,8 +412,8 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
                       style={[
                         styles.stepLabel,
                         isCurrent && { color: '#3B82F6', fontWeight: '700' },
-                        isPast && { color: isDark ? '#D1D5DB' : '#334155' },
-                        !isPast && !isCurrent && { color: isDark ? '#6B7280' : '#94A3B8' },
+                        isPast && { color: colors.text },
+                        !isPast && !isCurrent && { color: colors.textMuted },
                       ]}
                     >
                       {step.label}
@@ -439,10 +439,10 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
         <View style={[styles.scoreCard, isDark ? styles.cardDark : styles.cardLight]}>
           <View style={styles.scoreTopRow}>
             <View>
-              <Text style={[styles.scoreTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+              <Text style={[styles.scoreTitle, { color: colors.text }]}>
                 Customer Engagement Score
               </Text>
-              <Text style={[styles.scoreSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+              <Text style={[styles.scoreSubtitle, { color: colors.textMuted }]}>
                 AI Intent & Responsiveness Rating
               </Text>
             </View>
@@ -454,7 +454,7 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
           </View>
 
           {/* Score Meter Bar */}
-          <View style={[styles.scoreMeterTrack, { backgroundColor: isDark ? '#262A34' : '#E2E8F0' }]}>
+          <View style={[styles.scoreMeterTrack, { backgroundColor: isDark ? colors.border : colors.border }]}>
             <View style={[styles.scoreMeterFill, { width: `${engagementScore}%` }]} />
           </View>
 
@@ -462,13 +462,13 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
           <View style={styles.scoreHighlights}>
             <View style={styles.scoreChip}>
               <Ionicons name="checkmark-circle" size={13} color="#10B981" />
-              <Text style={[styles.scoreChipText, { color: isDark ? '#D1D5DB' : '#334155' }]}>
+              <Text style={[styles.scoreChipText, { color: colors.text }]}>
                 {activities.length > 0 ? `${activities.length} interactions` : 'Newly assigned'}
               </Text>
             </View>
             <View style={styles.scoreChip}>
               <Ionicons name="flame" size={13} color="#F59E0B" />
-              <Text style={[styles.scoreChipText, { color: isDark ? '#D1D5DB' : '#334155' }]}>
+              <Text style={[styles.scoreChipText, { color: colors.text }]}>
                 High Intent Prospect
               </Text>
             </View>
@@ -476,7 +476,7 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
         </View>
 
         {/* Navigation Tabs */}
-        <View style={[styles.tabNav, { borderBottomColor: isDark ? '#1E2028' : '#E2E8F0' }]}>
+        <View style={[styles.tabNav, { borderBottomColor: isDark ? colors.border : colors.border }]}>
           {[
             { key: 'overview', label: 'Overview', count: null },
             { key: 'deals', label: 'Deals', count: deals.length },
@@ -489,14 +489,14 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
                 key={tab.key}
                 style={[styles.navTabItem, isSelected && styles.navTabItemSelected]}
                 onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
                   setActiveTab(tab.key as any);
                 }}
               >
                 <Text
                   style={[
                     styles.navTabText,
-                    { color: isDark ? '#9CA3AF' : '#64748B' },
+                    { color: colors.text },
                     isSelected && (isDark ? styles.navTabTextSelectedDark : styles.navTabTextSelectedLight),
                   ]}
                 >
@@ -513,47 +513,47 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
             <View style={styles.overviewContainer}>
               {/* Contact Details Card */}
               <View style={[styles.infoCard, isDark ? styles.cardDark : styles.cardLight]}>
-                <Text style={[styles.infoCardTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                <Text style={[styles.infoCardTitle, { color: colors.text }]}>
                   Contact Information
                 </Text>
 
                 <View style={styles.infoRow}>
-                  <Ionicons name="call-outline" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
+                  <Ionicons name="call-outline" size={16} color={colors.text} />
                   <View style={styles.infoCol}>
-                    <Text style={[styles.infoLabel, { color: isDark ? '#6B7280' : '#94A3B8' }]}>Phone</Text>
-                    <Text style={[styles.infoValue, { color: isDark ? '#E5E7EB' : '#1E293B' }]}>
+                    <Text style={[styles.infoLabel, { color: colors.text }]}>Phone</Text>
+                    <Text style={[styles.infoValue, { color: colors.textMuted }]}>
                       {lead.phone || 'Not provided'}
                     </Text>
                   </View>
                 </View>
 
                 <View style={styles.infoRow}>
-                  <Ionicons name="mail-outline" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
+                  <Ionicons name="mail-outline" size={16} color={colors.text} />
                   <View style={styles.infoCol}>
-                    <Text style={[styles.infoLabel, { color: isDark ? '#6B7280' : '#94A3B8' }]}>Email</Text>
-                    <Text style={[styles.infoValue, { color: isDark ? '#E5E7EB' : '#1E293B' }]}>
+                    <Text style={[styles.infoLabel, { color: colors.text }]}>Email</Text>
+                    <Text style={[styles.infoValue, { color: colors.textMuted }]}>
                       {lead.email || 'Not provided'}
                     </Text>
                   </View>
                 </View>
 
                 <View style={styles.infoRow}>
-                  <Ionicons name="business-outline" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
+                  <Ionicons name="business-outline" size={16} color={colors.text} />
                   <View style={styles.infoCol}>
-                    <Text style={[styles.infoLabel, { color: isDark ? '#6B7280' : '#94A3B8' }]}>Company</Text>
-                    <Text style={[styles.infoValue, { color: isDark ? '#E5E7EB' : '#1E293B' }]}>
+                    <Text style={[styles.infoLabel, { color: colors.text }]}>Company</Text>
+                    <Text style={[styles.infoValue, { color: colors.textMuted }]}>
                       {lead.company || 'Not provided'}
                     </Text>
                   </View>
                 </View>
 
                 <View style={styles.infoRow}>
-                  <Ionicons name="person-circle-outline" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
+                  <Ionicons name="person-circle-outline" size={16} color={colors.text} />
                   <View style={styles.infoCol}>
-                    <Text style={[styles.infoLabel, { color: isDark ? '#6B7280' : '#94A3B8' }]}>
+                    <Text style={[styles.infoLabel, { color: colors.text }]}>
                       Assigned Sales Rep
                     </Text>
-                    <Text style={[styles.infoValue, { color: isDark ? '#E5E7EB' : '#1E293B' }]}>
+                    <Text style={[styles.infoValue, { color: colors.textMuted }]}>
                       {lead.assignee?.name || 'Unassigned'}
                     </Text>
                   </View>
@@ -562,8 +562,8 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
 
               {/* Notes Card */}
               <View style={[styles.infoCard, isDark ? styles.cardDark : styles.cardLight]}>
-                <Text style={[styles.infoCardTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Notes & Context</Text>
-                <Text style={[styles.notesText, { color: isDark ? '#D1D5DB' : '#334155' }]}>
+                <Text style={[styles.infoCardTitle, { color: colors.text }]}>Notes & Context</Text>
+                <Text style={[styles.notesText, { color: colors.textMuted }]}>
                   {lead.notes || 'No general notes logged for this contact.'}
                 </Text>
               </View>
@@ -573,9 +573,9 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
           {activeTab === 'deals' && (
             <View>
               <View style={styles.subHeader}>
-                <Text style={[styles.subHeaderTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Linked Deals</Text>
+                <Text style={[styles.subHeaderTitle, { color: colors.text }]}>Linked Deals</Text>
                 <Pressable
-                  style={[styles.subHeaderBtn, { backgroundColor: isDark ? '#262A34' : '#EFF6FF' }]}
+                  style={[styles.subHeaderBtn, { backgroundColor: colors.primary }]}
                   onPress={() => setShowAddDeal(true)}
                 >
                   <Text style={styles.subHeaderBtnText}>+ New Deal</Text>
@@ -584,8 +584,8 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
 
               {deals.length === 0 ? (
                 <View style={[styles.emptyTabCard, isDark ? styles.cardDark : styles.cardLight]}>
-                  <Ionicons name="briefcase-outline" size={32} color={isDark ? '#6B7280' : '#94A3B8'} />
-                  <Text style={[styles.emptyTabText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+                  <Ionicons name="briefcase-outline" size={32} color={colors.text} />
+                  <Text style={[styles.emptyTabText, { color: colors.textMuted }]}>
                     No deals associated with this contact yet.
                   </Text>
                 </View>
@@ -604,11 +604,11 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
           {activeTab === 'tasks' && (
             <View>
               <View style={styles.subHeader}>
-                <Text style={[styles.subHeaderTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                <Text style={[styles.subHeaderTitle, { color: colors.text }]}>
                   Follow-ups & Tasks
                 </Text>
                 <Pressable
-                  style={[styles.subHeaderBtn, { backgroundColor: isDark ? '#262A34' : '#EFF6FF' }]}
+                  style={[styles.subHeaderBtn, { backgroundColor: colors.primary }]}
                   onPress={() => setShowAddTask(true)}
                 >
                   <Text style={styles.subHeaderBtnText}>+ New Task</Text>
@@ -617,8 +617,8 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
 
               {tasks.length === 0 ? (
                 <View style={[styles.emptyTabCard, isDark ? styles.cardDark : styles.cardLight]}>
-                  <Ionicons name="checkbox-outline" size={32} color={isDark ? '#6B7280' : '#94A3B8'} />
-                  <Text style={[styles.emptyTabText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+                  <Ionicons name="checkbox-outline" size={32} color={colors.text} />
+                  <Text style={[styles.emptyTabText, { color: colors.textMuted }]}>
                     No open tasks for this contact.
                   </Text>
                 </View>
@@ -640,13 +640,13 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
               <View
                 style={[
                   styles.quickNoteBar,
-                  { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+                  { backgroundColor: colors.card, borderColor: colors.border },
                 ]}
               >
                 <TextInput
-                  style={[styles.quickNoteInput, { color: isDark ? '#FFFFFF' : '#0F172A' }]}
+                  style={[styles.quickNoteInput, { color: colors.text }]}
                   placeholder="Add a quick note or update..."
-                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+                  placeholderTextColor={colors.textMuted}
                   value={quickNote}
                   onChangeText={setQuickNote}
                 />
@@ -661,8 +661,8 @@ export const LeadDetailScreen: React.FC<LeadDetailScreenProps> = ({
 
               {activities.length === 0 ? (
                 <View style={[styles.emptyTabCard, isDark ? styles.cardDark : styles.cardLight]}>
-                  <Ionicons name="time-outline" size={32} color={isDark ? '#6B7280' : '#94A3B8'} />
-                  <Text style={[styles.emptyTabText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+                  <Ionicons name="time-outline" size={32} color={colors.text} />
+                  <Text style={[styles.emptyTabText, { color: colors.text }]}>
                     No activity history logged yet.
                   </Text>
                 </View>

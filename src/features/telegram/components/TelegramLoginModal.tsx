@@ -8,10 +8,10 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTheme, getColors } from '@/theme';
 
 interface TelegramLoginModalProps {
   visible: boolean;
@@ -32,8 +32,8 @@ export const TelegramLoginModal: React.FC<TelegramLoginModalProps> = ({
   onVerifyOtp,
   onSubmitPassword,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [step, setStep] = useState<LoginStep>('phone');
   const [phone, setPhone] = useState('+91');

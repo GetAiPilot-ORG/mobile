@@ -3,7 +3,6 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  useColorScheme,
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,11 +13,12 @@ import {
   SkeletonRow,
   SkeletonText,
 } from '../Skeleton';
+import { useTheme, getColors } from '@/theme';
 
 export function LayoutSkeletonScreen() {
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const topPadding = Math.max(insets.top, 12);
   const bottomOffset = Math.max(insets.bottom + 6, 20);

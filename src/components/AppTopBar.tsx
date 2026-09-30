@@ -99,7 +99,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
-  const { isDark } = useTheme();
+  const { isDark, colors } = useTheme();
   const user = useAuthStore((s) => s.user);
 
   // Auto-detect: Show back button on all sub-pages with title unless explicitly disabled
@@ -165,8 +165,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
     <View
       style={[
         styles.container,
-        { paddingTop: topPadding },
-        isDark ? styles.containerDark : styles.containerLight,
+        { paddingTop: topPadding, backgroundColor: colors.background },
       ]}
     >
       <View style={styles.leftSection}>
@@ -186,7 +185,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
               <Ionicons
                 name="chevron-back"
                 size={20}
-                color={isDark ? '#FFFFFF' : '#000000'}
+                color={colors.foreground}
               />
             </View>
           </Pressable>
@@ -322,11 +321,11 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   containerLight: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: 'transparent',
     borderBottomWidth: 0,
   },
   containerDark: {
-    backgroundColor: '#000000',
+    backgroundColor: 'transparent',
     borderBottomWidth: 0,
   },
   leftSection: {
@@ -346,8 +345,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   backButtonLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E5E7EB',
+    backgroundColor: '#F8F5EF',
+    borderColor: '#D2CABA',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -355,8 +354,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   backButtonDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
+    backgroundColor: '#52575D',
+    borderColor: '#686D72',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
@@ -382,7 +381,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   profileBtnLight: {
-    borderColor: '#E5E7EB',
+    borderColor: '#D2CABA',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
@@ -390,7 +389,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   profileBtnDark: {
-    borderColor: '#2C2C2E',
+    borderColor: '#686D72',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -410,13 +409,13 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#0A84FF',
+    backgroundColor: '#CABFAB',
     justifyContent: 'center',
     alignItems: 'center',
     flexShrink: 0,
   },
   profileAvatarText: {
-    color: '#FFFFFF',
+    color: '#41444B',
     fontSize: 18,
     fontWeight: '700',
   },
@@ -431,10 +430,10 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   titleLight: {
-    color: '#000000',
+    color: '#41444B',
   },
   titleDark: {
-    color: "#FFFFFF",
+    color: "#F7F3EA",
   },
   subtitle: {
     fontSize: 12,
@@ -443,10 +442,10 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   subtitleLight: {
-    color: '#64748B',
+    color: '#6B7076',
   },
   subtitleDark: {
-    color: "#8E8E93",
+    color: "#C6C0B5",
   },
   rightSection: {
     flexDirection: "row",

@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, useColorScheme, Linking, RefreshControl, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { getColors, useTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
+import { ActivityIndicator, FlatList, Linking, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { crmApi } from '../api/crm.api';
 import { CRMPayment } from '../types';
 
@@ -17,8 +17,8 @@ const METHOD_ICON: Record<string, string> = {
 };
 
 export function PaymentsScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const { data, isLoading, isRefetching, refetch } = useQuery({
     queryKey: ['crm-payments'],
@@ -26,15 +26,15 @@ export function PaymentsScreen() {
   });
 
   const payments = data?.payments || [];
-  const bg = isDark ? '#0F1015' : '#F8FAFC';
-  const card = isDark ? '#1A1D26' : '#FFFFFF';
-  const text = isDark ? '#FFFFFF' : '#0F172A';
-  const sub = isDark ? '#9CA3AF' : '#64748B';
-  const border = isDark ? '#262A34' : '#E2E8F0';
+  const bg = colors.background;
+  const card = colors.surface;
+  const text = colors.text;
+  const sub = colors.textMuted;
+  const border = colors.border;
 
   const open = (p: CRMPayment) => {
     if (p.invoice_id) {
-      Linking.openURL(`${WEB_APP_URL}/dashboard/crm/invoices/${p.invoice_id}`).catch(() => {});
+      Linking.openURL(`${WEB_APP_URL}/dashboard/crm/invoices/${p.invoice_id}`).catch(() => { });
     }
   };
 
@@ -47,7 +47,7 @@ export function PaymentsScreen() {
           <Text style={[s.title, { color: text }]}>Payments</Text>
           <Text style={[s.subtitle, { color: sub }]}>₹{totalCollected.toLocaleString('en-IN')} collected</Text>
         </View>
-        <Pressable style={s.createBtn} onPress={() => Linking.openURL(`${WEB_APP_URL}/dashboard/crm/payments/record`).catch(() => {})}>
+        <Pressable style={s.createBtn} onPress={() => Linking.openURL(`${WEB_APP_URL}/dashboard/crm/payments/record`).catch(() => { })}>
           <Ionicons name="add" size={18} color="#FFF" />
           <Text style={s.createBtnText}>Record</Text>
         </Pressable>

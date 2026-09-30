@@ -1,7 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '../theme/colors';
+import { getColors } from '@/theme';
+
+const colors = getColors();
 
 interface Props {
   children: React.ReactNode;

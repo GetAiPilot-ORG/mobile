@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
+import { useTheme, getColors } from '@/theme';
 
 interface MetricCardProps {
   label: string;
@@ -19,23 +19,26 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   badgeColor = '#16B882',
   icon,
 }) => {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.topRow}>
-        <Text style={styles.label} numberOfLines={1}>
+        <Text style={[styles.label, { color: colors.mutedForeground }]} numberOfLines={1}>
           {label}
         </Text>
         {icon ? <Text style={styles.icon}>{icon}</Text> : null}
       </View>
       <View style={styles.valueRow}>
-        <Text style={styles.value}>{value}</Text>
+        <Text style={[styles.value, { color: colors.foreground }]}>{value}</Text>
         {badge ? (
           <View style={[styles.badge, { backgroundColor: badgeColor + '20' }]}>
             <Text style={[styles.badgeText, { color: badgeColor }]}>{badge}</Text>
           </View>
         ) : null}
       </View>
-      {subtext ? <Text style={styles.subtext}>{subtext}</Text> : null}
+      {subtext ? <Text style={[styles.subtext, { color: colors.mutedForeground }]}>{subtext}</Text> : null}
     </View>
   );
 };
@@ -43,11 +46,9 @@ export const MetricCard: React.FC<MetricCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: colors.card,
     borderRadius: 14,
     padding: 14,
     borderWidth: 1,
-    borderColor: colors.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
@@ -63,7 +64,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 12.5,
     fontWeight: '500',
-    color: colors.mutedForeground,
     letterSpacing: -0.1,
   },
   icon: {
@@ -77,7 +77,6 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 22,
     fontWeight: '700',
-    color: colors.foreground,
     letterSpacing: -0.5,
   },
   badge: {
@@ -91,7 +90,6 @@ const styles = StyleSheet.create({
   },
   subtext: {
     fontSize: 11,
-    color: colors.mutedForeground,
     marginTop: 4,
   },
 });

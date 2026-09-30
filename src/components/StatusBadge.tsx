@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
+import { useTheme, getColors } from '@/theme';
 
 export type StatusVariant =
   | 'operational'
@@ -25,6 +25,8 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   label,
   size = 'md',
 }) => {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const norm = (variant || status || 'active').toLowerCase();
 
   let bg = colors.accentSoft;

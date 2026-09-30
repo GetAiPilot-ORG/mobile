@@ -1,6 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
+import {
+  Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import React, { useMemo, useState } from 'react';
+import React,
+  { useMemo,
+  useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -10,9 +13,9 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
 import { AutoDMContactItem } from '../../../types';
+import { useTheme, getColors } from '@/theme';
 
 export interface AutoDMContactsViewProps {
   dynamicContacts: AutoDMContactItem[];
@@ -27,8 +30,8 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
   onExportContacts,
   onRefreshContacts,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [contactSearch, setContactSearch] = useState('');
   const [contactFilter, setContactFilter] = useState<'all' | 'synced' | 'with_dms'>('all');

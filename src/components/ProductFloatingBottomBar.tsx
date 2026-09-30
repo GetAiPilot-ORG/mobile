@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -11,13 +11,13 @@ import {
   ScrollView,
   Animated,
   LayoutChangeEvent,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
-import { useTheme } from '../contexts/ThemeContext';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as Haptics from "expo-haptics";
+import { useTheme } from "../contexts/ThemeContext";
 
-export type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
+export type IoniconsName = React.ComponentProps<typeof Ionicons>["name"];
 
 export interface ProductTabItem {
   key: string;
@@ -56,15 +56,17 @@ const tabSpringAnimation = {
   },
 };
 
-export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> = ({
+export const ProductFloatingBottomBar: React.FC<
+  ProductFloatingBottomBarProps
+> = ({
   items,
   activeKey,
   onChangeTab,
-  accentColor = '#0A84FF',
-  moreMenuTitle = 'More Options',
-  moreTabLabel = 'More',
-  moreTabActiveIcon = 'apps',
-  moreTabInactiveIcon = 'apps-outline',
+  accentColor = "#0A84FF",
+  moreMenuTitle = "More Options",
+  moreTabLabel = "More",
+  moreTabActiveIcon = "apps",
+  moreTabInactiveIcon = "apps-outline",
   pinPrimaryTabs = false,
 }) => {
   const insets = useSafeAreaInsets();
@@ -77,19 +79,28 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
   const bottomOffset = Math.max(insets.bottom, 12);
 
   const activeColor = accentColor;
-  const inactiveColor = isDark ? '#8E8E93' : '#64748B';
+  const inactiveColor = isDark ? "#8E8E93" : "#64748B";
 
   const hasOverflow = items.length > 5;
 
-  let visibleItems: (ProductTabItem | { key: string; label: string; activeIcon: IoniconsName; inactiveIcon: IoniconsName; description?: string })[];
+  let visibleItems: (
+    | ProductTabItem
+    | {
+        key: string;
+        label: string;
+        activeIcon: IoniconsName;
+        inactiveIcon: IoniconsName;
+        description?: string;
+      }
+  )[];
   let overflowItems: ProductTabItem[];
 
   const moreTabItem = {
-    key: '__more__',
+    key: "__more__",
     label: moreTabLabel,
     activeIcon: moreTabActiveIcon as IoniconsName,
     inactiveIcon: moreTabInactiveIcon as IoniconsName,
-    description: 'All additional tools and services',
+    description: "All additional tools and services",
   };
 
   if (hasOverflow) {
@@ -99,7 +110,9 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
 
     if (!pinPrimaryTabs && !isPrimaryActive && activeItem) {
       visibleItems = [...items.slice(0, 3), activeItem, moreTabItem];
-      overflowItems = items.filter((item) => !visibleItems.some((v) => v.key === item.key));
+      overflowItems = items.filter(
+        (item) => !visibleItems.some((v) => v.key === item.key),
+      );
     } else {
       visibleItems = [...defaultPrimary, moreTabItem];
       overflowItems = items.slice(4);
@@ -111,7 +124,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
 
   const isOverflowActive = overflowItems.some((item) => item.key === activeKey);
   const activeIndex = visibleItems.findIndex((item) =>
-    item.key === '__more__' ? isOverflowActive : item.key === activeKey
+    item.key === "__more__" ? isOverflowActive : item.key === activeKey,
   );
   const safeActiveIndex = activeIndex >= 0 ? activeIndex : 0;
 
@@ -129,7 +142,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
         toValue: safeActiveIndex * tabWidth,
         tension: 80,
         friction: 10,
-        useNativeDriver: Platform.OS !== 'web',
+        useNativeDriver: Platform.OS !== "web",
       }).start();
     }
   }, [safeActiveIndex, tabWidth]);
@@ -141,12 +154,21 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
     }
   };
 
-  const handleTabPress = (item: ProductTabItem | { key: string; label: string; activeIcon: IoniconsName; inactiveIcon: IoniconsName }) => {
-    if (Platform.OS !== 'web') {
+  const handleTabPress = (
+    item:
+      | ProductTabItem
+      | {
+          key: string;
+          label: string;
+          activeIcon: IoniconsName;
+          inactiveIcon: IoniconsName;
+        },
+  ) => {
+    if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
-    if (item.key === '__more__') {
+    if (item.key === "__more__") {
       setIsMoreModalVisible(true);
     } else {
       LayoutAnimation.configureNext(tabSpringAnimation);
@@ -155,7 +177,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
   };
 
   const handleSelectOverflowItem = (key: string) => {
-    if (Platform.OS !== 'web') {
+    if (Platform.OS !== "web") {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
     setIsMoreModalVisible(false);
@@ -188,7 +210,11 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
               <View
                 style={[
                   isDark ? styles.indicatorPillDark : styles.indicatorPillLight,
-                  { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : `${accentColor}14` },
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(255, 255, 255, 0.08)"
+                      : `${accentColor}14`,
+                  },
                 ]}
               />
             </Animated.View>
@@ -196,7 +222,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
 
           {/* Tab Items */}
           {visibleItems.map((item, index) => {
-            const isMoreTab = item.key === '__more__';
+            const isMoreTab = item.key === "__more__";
             const isFocused = safeActiveIndex === index;
             const iconName = isFocused ? item.activeIcon : item.inactiveIcon;
 
@@ -215,12 +241,22 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
                       size={isFocused ? 21 : 20}
                       color={isFocused ? activeColor : inactiveColor}
                     />
-                    {'badge' in item && item.badge ? (
-                      <View style={[styles.badgeDot, { backgroundColor: activeColor }]}>
+                    {"badge" in item && item.badge ? (
+                      <View
+                        style={[
+                          styles.badgeDot,
+                          { backgroundColor: activeColor },
+                        ]}
+                      >
                         <Text style={styles.badgeText}>{item.badge}</Text>
                       </View>
                     ) : isMoreTab && isOverflowActive ? (
-                      <View style={[styles.activeMiniDot, { backgroundColor: activeColor }]} />
+                      <View
+                        style={[
+                          styles.activeMiniDot,
+                          { backgroundColor: activeColor },
+                        ]}
+                      />
                     ) : null}
                   </View>
                   <Text
@@ -251,7 +287,9 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
           animationType="fade"
           onRequestClose={() => setIsMoreModalVisible(false)}
         >
-          <TouchableWithoutFeedback onPress={() => setIsMoreModalVisible(false)}>
+          <TouchableWithoutFeedback
+            onPress={() => setIsMoreModalVisible(false)}
+          >
             <View style={styles.modalBackdrop}>
               <TouchableWithoutFeedback>
                 <View
@@ -263,10 +301,20 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
                 >
                   <View style={styles.popupHeader}>
                     <View style={styles.popupHeaderLeft}>
-                      <View style={[styles.popupIconCircle, { backgroundColor: `${accentColor}18` }]}>
+                      <View
+                        style={[
+                          styles.popupIconCircle,
+                          { backgroundColor: `${accentColor}18` },
+                        ]}
+                      >
                         <Ionicons name="grid" size={16} color={accentColor} />
                       </View>
-                      <Text style={[styles.popupTitle, isDark ? styles.textDark : styles.textLight]}>
+                      <Text
+                        style={[
+                          styles.popupTitle,
+                          isDark ? styles.textDark : styles.textLight,
+                        ]}
+                      >
                         {moreMenuTitle}
                       </Text>
                     </View>
@@ -275,11 +323,18 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
                       style={styles.closeBtn}
                       hitSlop={8}
                     >
-                      <Ionicons name="close" size={18} color={isDark ? '#94A3B8' : '#64748B'} />
+                      <Ionicons
+                        name="close"
+                        size={18}
+                        color={isDark ? "#94A3B8" : "#64748B"}
+                      />
                     </Pressable>
                   </View>
 
-                  <ScrollView style={styles.popupScroll} showsVerticalScrollIndicator={false}>
+                  <ScrollView
+                    style={styles.popupScroll}
+                    showsVerticalScrollIndicator={false}
+                  >
                     {overflowItems.map((item, idx) => {
                       const isItemActive = activeKey === item.key;
                       return (
@@ -287,22 +342,43 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
                           key={item.key}
                           style={[
                             styles.popupItem,
-                            isItemActive && (isDark ? styles.popupItemActiveDark : styles.popupItemActiveLight),
-                            idx < overflowItems.length - 1 && styles.popupItemBorder,
-                            idx < overflowItems.length - 1 && (isDark ? styles.borderDark : styles.borderLight),
+                            isItemActive &&
+                              (isDark
+                                ? styles.popupItemActiveDark
+                                : styles.popupItemActiveLight),
+                            idx < overflowItems.length - 1 &&
+                              styles.popupItemBorder,
+                            idx < overflowItems.length - 1 &&
+                              (isDark ? styles.borderDark : styles.borderLight),
                           ]}
                           onPress={() => handleSelectOverflowItem(item.key)}
                         >
                           <View
                             style={[
                               styles.popupItemIconBox,
-                              { backgroundColor: isItemActive ? `${accentColor}20` : isDark ? '#1E293B' : '#F1F5F9' },
+                              {
+                                backgroundColor: isItemActive
+                                  ? `${accentColor}20`
+                                  : isDark
+                                    ? "#1E293B"
+                                    : "#F1F5F9",
+                              },
                             ]}
                           >
                             <Ionicons
-                              name={isItemActive ? item.activeIcon : item.inactiveIcon}
+                              name={
+                                isItemActive
+                                  ? item.activeIcon
+                                  : item.inactiveIcon
+                              }
                               size={18}
-                              color={isItemActive ? accentColor : isDark ? '#94A3B8' : '#64748B'}
+                              color={
+                                isItemActive
+                                  ? accentColor
+                                  : isDark
+                                    ? "#94A3B8"
+                                    : "#64748B"
+                              }
                             />
                           </View>
 
@@ -311,22 +387,36 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
                               style={[
                                 styles.popupItemLabel,
                                 isDark ? styles.textDark : styles.textLight,
-                                isItemActive && { color: accentColor, fontWeight: '700' },
+                                isItemActive && {
+                                  color: accentColor,
+                                  fontWeight: "700",
+                                },
                               ]}
                             >
                               {item.label}
                             </Text>
                             {item.description ? (
-                              <Text style={styles.popupItemDesc} numberOfLines={1}>
+                              <Text
+                                style={styles.popupItemDesc}
+                                numberOfLines={1}
+                              >
                                 {item.description}
                               </Text>
                             ) : null}
                           </View>
 
                           {isItemActive ? (
-                            <Ionicons name="checkmark-circle" size={18} color={accentColor} />
+                            <Ionicons
+                              name="checkmark-circle"
+                              size={18}
+                              color={accentColor}
+                            />
                           ) : (
-                            <Ionicons name="chevron-forward" size={14} color={isDark ? '#475569' : '#CBD5E1'} />
+                            <Ionicons
+                              name="chevron-forward"
+                              size={14}
+                              color={isDark ? "#475569" : "#CBD5E1"}
+                            />
                           )}
                         </Pressable>
                       );
@@ -344,99 +434,99 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
 
 const styles = StyleSheet.create({
   floatingWrapper: {
-    position: 'absolute',
-    left: 10,
-    right: 10,
-    alignItems: 'center',
+    position: "absolute",
+    left: 0,
+    right: 0,
+    alignItems: "center",
     zIndex: 9999,
-    pointerEvents: 'box-none' as any,
+    pointerEvents: "box-none" as any,
   },
   tabBarContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: 400,
-    height: 58,
-    borderRadius: 29,
-    paddingHorizontal: 6,
-    borderWidth: 1,
-    position: 'relative',
-    overflow: 'hidden',
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+    maxWidth: 440,
+    height: 64,
+    borderRadius: 0,
+    paddingHorizontal: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    position: "relative",
+    overflow: "hidden",
   },
   tabBarContainerLight: {
-    backgroundColor: 'rgba(255, 255, 255, 0.96)',
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 8,
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E7E7EB",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 6,
   },
   tabBarContainerDark: {
-    backgroundColor: 'rgba(28, 28, 30, 0.95)',
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    shadowColor: '#000000',
+    backgroundColor: "#171719",
+    borderColor: "#2A2A2E",
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.45,
     shadowRadius: 20,
     elevation: 10,
   },
   slidingIndicator: {
-    position: 'absolute',
-    top: 6,
-    bottom: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: "absolute",
+    top: 5,
+    bottom: 5,
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 0,
-    pointerEvents: 'none' as any,
+    pointerEvents: "none" as any,
   },
   indicatorPillDark: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 24,
+    width: "100%",
+    height: "100%",
+    borderRadius: 14,
   },
   indicatorPillLight: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 24,
+    width: "100%",
+    height: "100%",
+    borderRadius: 14,
   },
   tabItem: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
+    alignItems: "center",
+    justifyContent: "center",
+    height: "100%",
     zIndex: 1,
   },
   tabContentAll: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: 2,
     flexShrink: 1,
-    width: '100%',
+    width: "100%",
   },
   iconWrapper: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "center",
   },
   badgeDot: {
-    position: 'absolute',
+    position: "absolute",
     top: -4,
     right: -8,
     borderRadius: 8,
     minWidth: 14,
     height: 14,
     paddingHorizontal: 3,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   badgeText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 8.5,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   activeMiniDot: {
-    position: 'absolute',
+    position: "absolute",
     top: -2,
     right: -4,
     width: 6,
@@ -446,22 +536,22 @@ const styles = StyleSheet.create({
   tabLabel: {
     fontSize: 10.5,
     letterSpacing: -0.2,
-    textAlign: 'center',
+    textAlign: "center",
   },
   tabLabelInactive: {
-    fontWeight: '500',
+    fontWeight: "500",
   },
   tabLabelActive: {
-    fontWeight: '700',
+    fontWeight: "700",
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.55)",
+    justifyContent: "flex-end",
+    alignItems: "center",
   },
   popupCard: {
-    position: 'absolute',
+    position: "absolute",
     left: 20,
     right: 20,
     maxWidth: 380,
@@ -469,44 +559,44 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 16,
     maxHeight: 340,
-    shadowColor: '#000000',
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35,
     shadowRadius: 24,
     elevation: 16,
   },
   popupCardLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: 'rgba(0, 0, 0, 0.1)',
+    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(0, 0, 0, 0.1)",
   },
   popupCardDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
+    backgroundColor: "#1C1C1E",
+    borderColor: "#2C2C2E",
   },
   popupHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
     paddingBottom: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(148, 163, 184, 0.2)',
+    borderBottomColor: "rgba(148, 163, 184, 0.2)",
   },
   popupHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   popupIconCircle: {
     width: 28,
     height: 28,
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   popupTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   closeBtn: {
     padding: 4,
@@ -515,8 +605,8 @@ const styles = StyleSheet.create({
     flexGrow: 0,
   },
   popupItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 10,
     paddingHorizontal: 8,
     borderRadius: 12,
@@ -526,40 +616,40 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   borderLight: {
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: "#F1F5F9",
   },
   borderDark: {
-    borderBottomColor: '#2C2C2E',
+    borderBottomColor: "#2C2C2E",
   },
   popupItemActiveLight: {
-    backgroundColor: 'rgba(0, 122, 255, 0.06)',
+    backgroundColor: "rgba(0, 122, 255, 0.06)",
   },
   popupItemActiveDark: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
   },
   popupItemIconBox: {
     width: 34,
     height: 34,
     borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   popupItemContent: {
     flex: 1,
   },
   popupItemLabel: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   popupItemDesc: {
     fontSize: 11,
-    color: '#8E8E93',
+    color: "#8E8E93",
     marginTop: 1,
   },
   textLight: {
-    color: '#0F172A',
+    color: "#0F172A",
   },
   textDark: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
 });

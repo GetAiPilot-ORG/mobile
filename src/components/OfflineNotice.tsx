@@ -6,18 +6,18 @@ import {
   Pressable,
   Animated,
   ActivityIndicator,
-  useColorScheme,
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
+import { useTheme, getColors } from '@/theme';
 
 export function OfflineNotice() {
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const { isOffline, isReconnected, isChecking, refresh } = useNetworkStatus();
 

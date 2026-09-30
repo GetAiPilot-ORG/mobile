@@ -7,14 +7,13 @@ import {
   Pressable,
   Switch,
   Alert,
-  useColorScheme,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { AppScreen } from '../../src/components/AppScreen';
-import { AppTopBar } from '../../src/components/AppTopBar';
-import { colors } from '../../src/theme/colors';
-import { spacing } from '../../src/theme/spacing';
-import { radius } from '../../src/theme/radius';
+import { useTheme, ThemeMode, ThemeSelector, spacing, radius } from '@/features/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface ShortcutConfig {
@@ -49,8 +48,7 @@ const PREF_STORAGE_KEY = '@gap_app_customize_shortcuts';
 
 export default function CustomizeAppScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { themeMode, setThemeMode, isDark, colors } = useTheme();
 
   const [shortcuts, setShortcuts] = useState<ShortcutConfig[]>(DEFAULT_SHORTCUTS);
   const [compactView, setCompactView] = useState(false);
@@ -107,7 +105,7 @@ export default function CustomizeAppScreen() {
   const toolItems = shortcuts.filter((s) => s.category === 'tools');
 
   return (
-    <AppScreen safeArea={false} backgroundColor={isDark ? '#000000' : '#F8FAFC'}>
+    <AppScreen safeArea={false} backgroundColor={colors.background}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
@@ -130,11 +128,16 @@ export default function CustomizeAppScreen() {
               <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
                 Customize App
               </Text>
-              <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
-                Personalize dashboard shortcuts, active modules, and layout preferences.
+              <Text style={[styles.subtitle, { color: isDark ? '#8E8E93' : '#64748B' }]}>
+                Personalize theme appearance, dashboard shortcuts, and layout preferences.
               </Text>
             </View>
           </View>
+        </View>
+
+        {/* 1. Theme & Appearance Mode Switcher */}
+        <View style={styles.section}>
+          <ThemeSelector showTitle={true} />
         </View>
 
         {/* Display Settings Card */}
@@ -375,8 +378,64 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   resetButtonText: {
-    color: colors.destructive,
+    color: '#DC2626',
     fontWeight: 'bold',
     fontSize: 14,
+  },
+  // Theme Switcher Cards
+  themeCardsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  themeCard: {
+    flex: 1,
+    borderRadius: radius.xl,
+    padding: 14,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    position: 'relative',
+    minHeight: 120,
+    justifyContent: 'center',
+  },
+  themeCardLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+  },
+  themeCardDark: {
+    backgroundColor: '#1C1C1E',
+    borderColor: '#2C2C2E',
+  },
+  themeCardSelected: {
+    borderWidth: 2,
+  },
+  themeIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  themeCardTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 3,
+  },
+  themeCardDesc: {
+    fontSize: 10,
+    textAlign: 'center',
+    lineHeight: 13,
+  },
+  themeCheckmark: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

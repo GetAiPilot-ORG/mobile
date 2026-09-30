@@ -1,21 +1,20 @@
+import { getColors, useTheme } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-  StyleSheet,
-  Text,
-  View,
   FlatList,
-  TextInput,
   Pressable,
   RefreshControl,
-  ActivityIndicator,
-  useColorScheme,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useContacts, useCreateContact } from '../hooks/useContacts';
-import { LeadCard } from '../components/LeadCard';
-import { CreateLeadModal } from '../components/CreateLeadModal';
 import { CrmListSkeleton } from '../../../components/skeletonScreen';
+import { CreateLeadModal } from '../components/CreateLeadModal';
+import { LeadCard } from '../components/LeadCard';
+import { useContacts, useCreateContact } from '../hooks/useContacts';
 
 interface ContactsScreenProps {
   onSelectContact: (contactId: string) => void;
@@ -23,8 +22,8 @@ interface ContactsScreenProps {
 }
 
 export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onSelectContact, onBack }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [search, setSearch] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -37,22 +36,22 @@ export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onSelectContact,
   const contacts = data?.contacts || [];
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.surface }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           {onBack ? (
             <Pressable
-              style={[styles.backBtn, { backgroundColor: isDark ? '#1E2028' : '#F1F5F9' }]}
+              style={[styles.backBtn, { backgroundColor: colors.surface }]}
               onPress={onBack}
               hitSlop={8}
             >
-              <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+              <Ionicons name="arrow-back" size={20} color={colors.text} />
             </Pressable>
           ) : null}
           <View>
-            <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>All Contacts</Text>
-            <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Complete customer and partner phonebook</Text>
+            <Text style={[styles.title, { color: colors.text }]}>All Contacts</Text>
+            <Text style={[styles.subtitle, { color: colors.text }]}>Complete customer and partner phonebook</Text>
           </View>
         </View>
 
@@ -63,18 +62,18 @@ export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onSelectContact,
       </View>
 
       {/* Search */}
-      <View style={[styles.searchBar, { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' }]}>
-        <Ionicons name="search" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
+      <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.text }]}>
+        <Ionicons name="search" size={16} color={colors.text} />
         <TextInput
-          style={[styles.searchInput, { color: isDark ? '#FFFFFF' : '#0F172A' }]}
+          style={[styles.searchInput, { color: colors.text }]}
           placeholder="Search all contacts & companies..."
-          placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+          placeholderTextColor={colors.text}
           value={search}
           onChangeText={setSearch}
         />
         {search ? (
           <Pressable onPress={() => setSearch('')}>
-            <Ionicons name="close-circle" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
+            <Ionicons name="close-circle" size={16} color={colors.text} />
           </Pressable>
         ) : null}
       </View>
@@ -84,9 +83,9 @@ export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onSelectContact,
         <CrmListSkeleton />
       ) : contacts.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="people-outline" size={48} color={isDark ? '#4B5563' : '#CBD5E1'} />
-          <Text style={[styles.emptyTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>No contacts found</Text>
-          <Text style={[styles.emptySubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+          <Ionicons name="people-outline" size={48} color={colors.text} />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>No contacts found</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.text }]}>
             {search ? `No records matching "${search}"` : 'Your contact book is currently empty.'}
           </Text>
         </View>

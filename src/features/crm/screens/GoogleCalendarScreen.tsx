@@ -1,5 +1,8 @@
 
-import { Ionicons } from '@expo/vector-icons';
+import { getColors, useTheme } from '@/theme';
+import {
+  Ionicons
+} from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import React, { useMemo } from 'react';
 import {
@@ -10,7 +13,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,8 +21,8 @@ import { crmApi } from '../api/crm.api';
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
 export function GoogleCalendarScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   /*
    * --------------------------------------------------------------------------
@@ -30,20 +32,20 @@ export function GoogleCalendarScreen() {
 
   const theme = useMemo(
     () => ({
-      background: isDark ? '#0F1117' : '#F6F8FB',
-      surface: isDark ? '#181B23' : '#FFFFFF',
-      surfaceSecondary: isDark ? '#20242E' : '#F8FAFC',
+      background: colors.background,
+      surface: colors.background,
+      surfaceSecondary: colors.background,
 
-      text: isDark ? '#FFFFFF' : '#0F172A',
-      secondaryText: isDark ? '#A1A1AA' : '#64748B',
-      mutedText: isDark ? '#71717A' : '#94A3B8',
+      text: colors.text,
+      secondaryText: colors.textMuted,
+      mutedText: colors.textMuted,
 
-      border: isDark ? '#2A2F3A' : '#E2E8F0',
+      border: colors.border,
 
-      primary: '#3B82F6',
-      primarySoft: isDark ? '#172A46' : '#EFF6FF',
+      primary: colors.primary,
+      primarySoft: colors.background,
 
-      success: '#10B981',
+      success: colors.success,
       successSoft: isDark ? '#102C25' : '#ECFDF5',
 
       purple: '#8B5CF6',

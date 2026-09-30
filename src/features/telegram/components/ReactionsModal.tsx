@@ -11,13 +11,13 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { telegramApi } from '../api/telegramApi';
 import { ReactionAutopilotRule, ReactionOrder } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 interface ReactionsModalProps {
   visible: boolean;
@@ -47,8 +47,8 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
   visible,
   onClose,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const queryClient = useQueryClient();
 
   // Active Sub-Tab
