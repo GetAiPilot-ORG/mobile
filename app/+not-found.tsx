@@ -106,7 +106,7 @@ export default function NotFoundScreen() {
       style={[
         styles.container,
         {
-          backgroundColor: color.background,
+          backgroundColor: colors.background,
           paddingTop: Math.max(insets.top + 20, 44),
           paddingBottom: Math.max(insets.bottom + 24, 32),
         },

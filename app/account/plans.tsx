@@ -24,6 +24,8 @@ import {
   PricingService,
 } from '../../src/core/pricing/pricingService';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { getActiveReferralDiscount, checkAndCompleteReferralReward, ReferralDiscountInfo } from '../../src/services/referralService';
 import { openVoiceWebBilling } from '../../src/features/voice/utils/voiceBilling';
 
 const CATEGORIES: { key: PlanCategory; label: string; icon: string }[] = [
@@ -48,6 +50,17 @@ export default function OverallPricingScreen() {
     expiresAt,
     refresh: refreshSub,
   } = usePlatformSubscription();
+
+  const { user } = useAuth();
+
+  const { data: referralDiscount, refetch: refetchDiscount } = useQuery<ReferralDiscountInfo>({
+    queryKey: ['active-referral-discount', user?.id],
+    queryFn: () => getActiveReferralDiscount(user?.id),
+    staleTime: 60 * 1000,
+  });
+
+  const hasReferralDiscount = Boolean(referralDiscount?.hasDiscount && (referralDiscount.discountPercent || 0) > 0);
+  const discountPercent = referralDiscount?.discountPercent || 0;
 
   const [selectedCategory, setSelectedCategory] = useState<PlanCategory>(
     (params.category as PlanCategory) || 'all'
@@ -74,7 +87,7 @@ export default function OverallPricingScreen() {
 
   const onRefresh = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    await Promise.all([refetch(), refreshSub()]);
+    await Promise.all([refetch(), refreshSub(), refetchDiscount()]);
   };
 
   // Filter by duration if user selects specific duration tab
@@ -98,7 +111,10 @@ export default function OverallPricingScreen() {
       return;
     }
 
-    const amountInRupees = Math.round(plan.amount / 100);
+    const baseAmountInRupees = Math.round(plan.amount / 100);
+    const amountInRupees = (!isAddon && hasReferralDiscount)
+      ? Math.max(1, Math.round(baseAmountInRupees * (1 - discountPercent / 100)))
+      : baseAmountInRupees;
     const planDisplayName = plan.plan_label || plan.plan_name;
 
     openRazorpayCheckout({
@@ -111,6 +127,16 @@ export default function OverallPricingScreen() {
       description: plan.description || `${planDisplayName} Subscription`,
       onSuccess: async () => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+        // Complete referral reward & link if buyer was referred
+        if (user?.id) {
+          try {
+            await checkAndCompleteReferralReward(user.id, plan.id, amountInRupees);
+          } catch (refErr) {
+            console.warn('[Pricing] Referral reward completion notice:', refErr);
+          }
+        }
+
         Alert.alert(
           'Subscription Activated! 🎉',
           `Your subscription to ${planDisplayName} has been confirmed. Quotas are active in your workspace.`,
@@ -119,6 +145,7 @@ export default function OverallPricingScreen() {
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ['platform-subscription'] }),
           queryClient.invalidateQueries({ queryKey: ['ecosystem-pricing-plans'] }),
+          queryClient.invalidateQueries({ queryKey: ['active-referral-discount'] }),
           queryClient.invalidateQueries({ queryKey: ['social', 'entitlements'] }),
           queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
           queryClient.invalidateQueries({ queryKey: ['voice'] }),
@@ -351,6 +378,12 @@ export default function OverallPricingScreen() {
               const formattedDuration = PricingService.formatDuration(plan.duration || 'monthly');
               const isPopular = Boolean(plan.is_popular);
               const isAddon = plan.id === 'calling_number' || Boolean(plan.is_addon) || plan.id.includes('number');
+              const baseAmountInRupees = Math.round(plan.amount / 100);
+              const isEligibleForDiscount = hasReferralDiscount && !isAddon;
+              const discountedPriceRupees = isEligibleForDiscount
+                ? Math.max(1, Math.round(baseAmountInRupees * (1 - discountPercent / 100)))
+                : baseAmountInRupees;
+              const formattedDiscountedPrice = PricingService.formatPrice(discountedPriceRupees * 100, plan.currency);
 
               return (
                 <View
@@ -436,12 +469,28 @@ export default function OverallPricingScreen() {
                     ]}
                   >
                     <View style={styles.priceRow}>
-                      <Text style={[styles.priceAmount, { color: isDark ? '#ffffff' : '#0f172a' }]}>
-                        {formattedPrice}
-                      </Text>
+                      {isEligibleForDiscount ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+                          <Text style={[styles.priceAmount, { color: '#10B981' }]}>
+                            {formattedDiscountedPrice}
+                          </Text>
+                          <Text style={[styles.originalPrice, { color: isDark ? '#64748B' : '#94A3B8' }]}>
+                            {formattedPrice}
+                          </Text>
+                        </View>
+                      ) : (
+                        <Text style={[styles.priceAmount, { color: isDark ? '#ffffff' : '#0f172a' }]}>
+                          {formattedPrice}
+                        </Text>
+                      )}
                       <Text style={[styles.priceDuration, { color: isDark ? '#94a3b8' : '#64748b' }]}>
                         {isAddon ? '/ 30-day line validity' : formattedDuration}
                       </Text>
+                      {isEligibleForDiscount && (
+                        <View style={styles.discountPill}>
+                          <Text style={styles.discountPillText}>-{discountPercent}%</Text>
+                        </View>
+                      )}
                     </View>
                     {plan.billing_note ? (
                       <Text style={[styles.billingNote, { color: isAddon ? '#6366F1' : meta.color }]}>
@@ -922,5 +971,59 @@ const styles = StyleSheet.create({
   trustDesc: {
     fontSize: 11,
     marginTop: 1,
+  },
+  referralBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 12,
+    marginBottom: 6,
+  },
+  referralBannerIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  referralBannerTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  referralBadge: {
+    backgroundColor: '#10B981',
+    paddingHorizontal: 7,
+    paddingVertical: 2.5,
+    borderRadius: 6,
+  },
+  referralBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  referralBannerSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  originalPrice: {
+    fontSize: 16,
+    textDecorationLine: 'line-through',
+    fontWeight: '600',
+  },
+  discountPill: {
+    backgroundColor: '#10B981',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginLeft: 6,
+  },
+  discountPillText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '800',
   },
 });

@@ -861,6 +861,22 @@ export default function AccountScreen() {
               </Pressable>
 
               <Pressable
+                style={[styles.navRow, isDark ? styles.navRowDark : styles.navRowLight]}
+                onPress={() => router.push('/Referral' as any)}
+              >
+                <View style={[styles.navIconBox, { backgroundColor: '#10B981' }]}>
+                  <Ionicons name="gift" size={16} color="#FFFFFF" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.navRowTitle, isDark && styles.navRowTitleDark]}>Refer & Earn</Text>
+                  <Text style={[styles.navRowSubtitle, isDark && styles.navRowSubtitleDark]}>
+                    Invite friends, unlock rewards & plan discounts
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+              </Pressable>
+
+              <Pressable
                 style={[styles.navRow, { borderBottomWidth: 0 }]}
                 onPress={() => router.push('/account/customize' as any)}
               >
@@ -1321,6 +1337,20 @@ export default function AccountScreen() {
                 onPress={() => router.push('/account/plans' as any)}
               >
                 <Text style={styles.primaryButtonText}>Upgrade / Change Plan →</Text>
+              </Pressable>
+
+              <Pressable
+                style={[
+                  styles.secondaryButton,
+                  isDark && styles.secondaryButtonDark,
+                  { marginTop: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+                ]}
+                onPress={() => router.push('/Referral' as any)}
+              >
+                <Ionicons name="gift-outline" size={15} color={isDark ? '#ffffff' : '#000000'} style={{ marginRight: 6 }} />
+                <Text style={[styles.secondaryButtonText, isDark && styles.secondaryButtonTextDark]}>
+                  Refer Friends for Discounts 🎁
+                </Text>
               </Pressable>
             </View>
 

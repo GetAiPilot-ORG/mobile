@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../src/contexts/AuthContext';
 import { BiometricService, BiometricSettings } from '../src/lib/biometrics';
 import { supabase } from '../src/lib/supabase';
+import { getPendingReferralCode, handlePendingReferral } from '../src/services/referralService';
 
 const brandLogo = require('../assets/images/logo.jpg');
 
@@ -53,6 +54,7 @@ export default function OnboardingScreen() {
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [teamSize, setTeamSize] = useState(TEAM_SIZES[0]);
   const [phone, setPhone] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,6 +78,14 @@ export default function OnboardingScreen() {
       setBiometricSettings(settings);
     }
     loadBiometrics();
+
+    async function loadPendingReferral() {
+      const pending = await getPendingReferralCode();
+      if (pending) {
+        setReferralCode(pending);
+      }
+    }
+    loadPendingReferral();
   }, []);
 
   const triggerHaptic = (style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Light) => {
@@ -160,6 +170,23 @@ export default function OnboardingScreen() {
         .eq('id', user.id);
 
       if (updateError) throw updateError;
+
+      // Link referral code if provided
+      const cleanRef = referralCode.trim();
+      if (cleanRef) {
+        try {
+          await handlePendingReferral(cleanRef);
+        } catch (refErr) {
+          console.warn("[Onboarding] Referral linking error:", refErr);
+        }
+      }
+
+      // Activate Free Trial via Supabase RPC
+      try {
+        await supabase.rpc("activate_free_trial");
+      } catch (trialErr) {
+        console.warn("[Onboarding] Free trial activation error:", trialErr);
+      }
 
       triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
       await refreshProfile();
@@ -338,6 +365,37 @@ export default function OnboardingScreen() {
                     keyboardType="phone-pad"
                     returnKeyType="done"
                   />
+                </View>
+
+                <View style={[styles.inputRow, styles.inputRowBorder, { flexDirection: "row", alignItems: "center" }]}>
+                  <TextInput
+                    style={[
+                      styles.nativeInput,
+                      { color: colors.textSecondary, flex: 1, letterSpacing: referralCode ? 1.2 : 0 },
+                    ]}
+                    placeholder="Referral Code (Optional) - 5% Off"
+                    placeholderTextColor={colors.textSecondary}
+                    value={referralCode}
+                    onChangeText={(txt) => setReferralCode(txt.toUpperCase().trim())}
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    returnKeyType="done"
+                  />
+                  {referralCode.trim().length >= 3 && (
+                    <View
+                      style={{
+                        backgroundColor: isDark ? "rgba(16, 185, 129, 0.2)" : "#DCFCE7",
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
+                        borderRadius: 6,
+                        marginRight: 16,
+                      }}
+                    >
+                      <Text style={{ color: "#10B981", fontSize: 11, fontWeight: "700" }}>
+                        5% OFF
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </View>
 
