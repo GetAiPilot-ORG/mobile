@@ -373,7 +373,7 @@ export default function OnboardingScreen() {
                       styles.nativeInput,
                       { color: colors.textSecondary, flex: 1, letterSpacing: referralCode ? 1.2 : 0 },
                     ]}
-                    placeholder="Referral Code (Optional) - 5% Off"
+                    placeholder="Referral Code (Optional) - 5% Off GAP Pro"
                     placeholderTextColor={colors.textSecondary}
                     value={referralCode}
                     onChangeText={(txt) => setReferralCode(txt.toUpperCase().trim())}

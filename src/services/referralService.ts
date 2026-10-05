@@ -10,7 +10,6 @@ export interface ReferralMilestone {
   discountPercent: number;
   bonusPerk: string;
   description: string;
-  perkType: "voice_minutes" | "telegram_suite" | "social_pilot" | "vip_pro";
   badgeColor: string;
 }
 
@@ -21,8 +20,7 @@ export const REFERRAL_MILESTONES: ReferralMilestone[] = [
     requiredReferrals: 1,
     discountPercent: 10,
     bonusPerk: "100 AI Voice Minutes",
-    description: "10% OFF next purchase + 100 Free AI Voice Calling Minutes",
-    perkType: "voice_minutes",
+    description: "10% OFF next purchase",
     badgeColor: "#D97706",
   },
   {
@@ -31,8 +29,7 @@ export const REFERRAL_MILESTONES: ReferralMilestone[] = [
     requiredReferrals: 3,
     discountPercent: 25,
     bonusPerk: "Telegram Bot Suite (1 Mo)",
-    description: "25% OFF next purchase + Free 1-month Telegram Automation suite",
-    perkType: "telegram_suite",
+    description: "25% OFF next purchase",
     badgeColor: "#94A3B8",
   },
   {
@@ -41,8 +38,7 @@ export const REFERRAL_MILESTONES: ReferralMilestone[] = [
     requiredReferrals: 5,
     discountPercent: 50,
     bonusPerk: "Social Pilot Pro (1 Mo)",
-    description: "50% OFF next purchase + Free 1-month Social Auto-Publisher",
-    perkType: "social_pilot",
+    description: "50% OFF next purchase",
     badgeColor: "#EAB308",
   },
   {
@@ -51,8 +47,7 @@ export const REFERRAL_MILESTONES: ReferralMilestone[] = [
     requiredReferrals: 10,
     discountPercent: 75,
     bonusPerk: "75% Free Pro Plan Month",
-    description: "75% Free Pro Plan month + Permanent VIP Ambassador Status",
-    perkType: "vip_pro",
+    description: "75% Free Pro Plan month",
     badgeColor: "#06B6D4",
   },
 ];
@@ -275,10 +270,10 @@ export const checkUserCanRefer = async (userId: string): Promise<UserReferralEli
 
     const hasPaymentRecord = Boolean(
       sub.last_payment_id ||
-        sub.razorpay_payment_id ||
-        sub.razorpay_subscription_id ||
-        (sub.plan_price_paise && Number(sub.plan_price_paise) > 0) ||
-        (sub.raw && typeof sub.raw === "object" && (sub.raw as any).razorpay_payment_id)
+      sub.razorpay_payment_id ||
+      sub.razorpay_subscription_id ||
+      (sub.plan_price_paise && Number(sub.plan_price_paise) > 0) ||
+      (sub.raw && typeof sub.raw === "object" && (sub.raw as any).razorpay_payment_id)
     );
 
     const hasPurchased = hasPaymentRecord || (!isTrial && (isActive || sub.started_at !== null));
@@ -552,7 +547,7 @@ export const checkAndCompleteReferralReward = async (
   buyerUserId: string,
   planName?: string,
   amountPaid?: number
-): Promise<{ success: boolean; message?: string; [key: string]: any }> => {
+): Promise<{ success: boolean; message?: string;[key: string]: any }> => {
   if (!buyerUserId) return { success: false, message: "Missing buyer user ID" };
 
   const cleanPlan = (planName || "").toLowerCase().trim();
@@ -700,12 +695,12 @@ export const getReferralEarnings = async (
     const nextReq = nextMilestone ? nextMilestone.requiredReferrals : currentMilestone.requiredReferrals;
     const progressPercent = nextMilestone
       ? Math.min(
-          100,
-          Math.max(
-            0,
-            Math.round(((completedReferrals - prevReq) / (nextReq - prevReq)) * 100)
-          )
+        100,
+        Math.max(
+          0,
+          Math.round(((completedReferrals - prevReq) / (nextReq - prevReq)) * 100)
         )
+      )
       : 100;
 
     return {
@@ -746,4 +741,44 @@ export const redeemReferralReward = async (
     console.error("[Referral] Error redeeming reward:", e);
     return false;
   }
+};
+
+export const isGapProPlan = (plan: { id?: string | null; plan_name?: string | null; plan_label?: string | null; category?: string | null; is_addon?: boolean | null }): boolean => {
+  const cat = (plan.category || "").toLowerCase().trim();
+  const name = (plan.plan_name || "").toLowerCase().trim();
+  const label = (plan.plan_label || "").toLowerCase().trim();
+  const id = (plan.id || "").toLowerCase().trim();
+
+  // Exclude addons and standalone phone lines or extra seats
+  if (
+    name.includes("number") ||
+    id.includes("number") ||
+    name.includes("extra_user") ||
+    id.includes("extra_user") ||
+    Boolean(plan.is_addon)
+  ) {
+    return false;
+  }
+
+  // Must match all-in-one / bundle category
+  if (cat === "all-in-one" || cat === "all_in_one" || cat === "bundle" || cat === "ecosystem") {
+    return true;
+  }
+
+  // Plan name or label matching GAP Pro / All-In-One / GAP Max / GAP Enterprise
+  if (
+    name.includes("all_in_one") ||
+    name.includes("bundle") ||
+    name.includes("gap_pro") ||
+    name.includes("gap_scale") ||
+    name.includes("gap_max") ||
+    label.includes("gap pro") ||
+    label.includes("gap core") ||
+    label.includes("gap max") ||
+    label.includes("gap enterprise")
+  ) {
+    return true;
+  }
+
+  return false;
 };

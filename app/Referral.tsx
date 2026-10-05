@@ -298,7 +298,7 @@ export default function ReferralScreen() {
               </View>
 
               <Text style={[styles.codeDescription, { color: colors.textSecondary }]}>
-                Share your code with colleagues or friends. When they register with your referral, they receive an instant 5% discount on their first plan, and you earn milestone perks!
+                Share your code with colleagues or friends. When they register with your referral, they receive an instant 5% discount on their GAP Pro plan purchase, and you earn milestone perks!
               </Text>
 
               <View style={styles.actionButtonsRow}>
