@@ -18,7 +18,7 @@ export default function NotFoundScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
-  const color = getColors(isDark);
+  const colors = getColors(isDark);
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -106,7 +106,7 @@ export default function NotFoundScreen() {
       style={[
         styles.container,
         {
-          backgroundColor: color.background,
+          backgroundColor: colors.background,
           paddingTop: Math.max(insets.top + 20, 44),
           paddingBottom: Math.max(insets.bottom + 24, 32),
         },
@@ -207,7 +207,7 @@ export default function NotFoundScreen() {
         <Text
           style={[
             styles.description,
-            { color: isDark ? "#94A3B8" : "#64748B" },
+            { color: colors.backgroundLight },
           ]}
         >
           The screen or resource you're looking for doesn't exist, was moved, or
@@ -257,13 +257,13 @@ export default function NotFoundScreen() {
             <Ionicons
               name="arrow-back"
               size={18}
-              color={isDark ? "#E2E8F0" : "#334155"}
+              color={colors.text}
               style={{ marginRight: 6 }}
             />
             <Text
               style={[
                 styles.secondaryBtnText,
-                { color: isDark ? "#E2E8F0" : "#334155" },
+                { color: colors.text },
               ]}
             >
               Go Back
@@ -273,7 +273,7 @@ export default function NotFoundScreen() {
 
         {/* Sub-footer Note */}
         <Text
-          style={[styles.footerNote, { color: isDark ? "#475569" : "#94A3B8" }]}
+          style={[styles.footerNote, { color: colors.backgroundLight }]}
         >
           GetAiPilot Workspace Navigation
         </Text>

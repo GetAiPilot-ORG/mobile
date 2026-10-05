@@ -1,3 +1,7 @@
+import { getColors, useTheme } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import {
   Platform,
@@ -8,12 +12,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import * as Clipboard from 'expo-clipboard';
-import { TelegramToolKey } from '../types';
 import { StatCard } from '../components/ui/StatCard';
-import { useTheme, getColors } from '@/theme';
+import { TelegramToolKey } from '../types';
 
 type TrackerSection = 'joins' | 'connect' | 'links';
 
@@ -32,9 +32,9 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
   const [userFilter, setUserFilter] = useState<'All' | 'Active' | 'Bot Start' | 'Leave' | 'Pending'>('All');
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
 
-  const card = isDark ? styles.cardDark : styles.cardLight;
-  const txt = isDark ? styles.textDark : styles.textLight;
-  const border = isDark ? styles.borderDark : styles.borderLight;
+  const card = { backgroundColor: colors.background, borderColor: colors.border };
+  const txt = { color: colors.text };
+  const border = { borderColor: colors.border };
 
   const filteredUsers = (trackerDash?.newUsers || []).filter((u: any) => {
     const nameStr = (u.name || u.first_name || '').toLowerCase();
@@ -91,13 +91,13 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
         ] as { key: TrackerSection; icon: string; label: string; badge: number | null }[]).map((tab) => (
           <Pressable
             key={tab.key}
-            style={[styles.segTab, trackerSection === tab.key && (isDark ? styles.segTabActiveDark : styles.segTabActiveLight)]}
+            style={[styles.segTab, trackerSection === tab.key && { backgroundColor: colors.background }]}
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setTrackerSection(tab.key);
             }}
           >
-            <Ionicons name={tab.icon as any} size={14} color={trackerSection === tab.key ? '#0284C7' : isDark ? '#94A3B8' : '#64748B'} />
+            <Ionicons name={tab.icon as any} size={14} color={trackerSection === tab.key ? '#0284C7' : colors.text} />
             <Text style={[styles.segTabText, trackerSection === tab.key && styles.segTabTextActive, txt]}>{tab.label}</Text>
             {tab.badge !== null && (
               <View style={[styles.segBadge, trackerSection === tab.key && styles.segBadgeActive]}>
@@ -147,7 +147,7 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
               </View>
             </View>
             {(trackerDash?.channels || []).map((chan: any) => (
-              <View key={chan.channel_id} style={[styles.chanCard, isDark ? styles.chanCardDark : styles.chanCardLight]}>
+              <View key={chan.channel_id} style={[styles.chanCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={styles.chanCardHeader}>
                   <Text style={[styles.chanName, txt]}>{chan.channel_name}</Text>
                   <View style={styles.periodPill}>
@@ -206,7 +206,7 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
                 {(['All', 'Active', 'Bot Start', 'Leave', 'Pending'] as const).map((st) => (
                   <Pressable
                     key={st}
-                    style={[styles.filterPill, userFilter === st && styles.filterPillActive, isDark ? styles.filterPillDark : styles.filterPillLight]}
+                    style={[styles.filterPill, userFilter === st && styles.filterPillActive, { backgroundColor: colors.background, borderColor: colors.border }]}
                     onPress={() => {
                       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       setUserFilter(st);
@@ -221,7 +221,7 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
               const sc = statusColor(user.status);
               const userNameStr = user.name || user.first_name || 'User';
               return (
-                <View key={user.id || String(Math.random())} style={[styles.userRow, isDark ? styles.userRowDark : styles.userRowLight]}>
+                <View key={user.id || String(Math.random())} style={[styles.userRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
                     <View style={styles.userAvatar}>
                       <Text style={styles.userAvatarText}>{userNameStr.charAt(0).toUpperCase()}</Text>

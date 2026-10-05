@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useTheme } from '../../../contexts/ThemeContext';
+import { LinearGradient } from 'expo-linear-gradient';
+import React from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { getColors, useTheme } from '../../../contexts/ThemeContext';
 import { TelegramHubTool } from '../types';
 
 interface ToolCardProps {
@@ -58,6 +58,7 @@ const DEFAULT_VISUAL: ToolVisualConfig = {
 
 export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
   const { isDark } = useTheme();
+  const colors = getColors(isDark)
 
   const visual = TOOL_VISUAL_MAP[tool.key] || DEFAULT_VISUAL;
 
@@ -70,7 +71,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
     <Pressable
       style={({ pressed }) => [
         styles.card,
-        isDark ? styles.cardDark : styles.cardLight,
+        { backgroundColor: colors.card, borderColor: colors.border },
         pressed && styles.cardPressed,
       ]}
       onPress={handlePress}
@@ -88,12 +89,12 @@ export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
       {/* Middle: Title & Description */}
       <View style={styles.infoCol}>
         <Text
-          style={[styles.title, isDark ? styles.textDark : styles.textLight]}
+          style={[styles.title, { color: colors.text }]}
           numberOfLines={1}
         >
           {tool.title}
         </Text>
-        <Text style={styles.description} numberOfLines={2}>
+        <Text style={[styles.description, { color: colors.textSecondary }]} numberOfLines={2}>
           {tool.description}
         </Text>
       </View>
@@ -102,7 +103,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
       <Ionicons
         name="chevron-forward"
         size={18}
-        color={isDark ? '#475569' : '#94A3B8'}
+        color={colors.textSecondary}
       />
     </Pressable>
   );

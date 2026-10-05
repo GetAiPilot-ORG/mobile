@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { getColors, useTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { teamApi } from '../api/team.api';
+import { useState } from 'react';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { BirthdayEntry, CompanyHoliday } from '../../crm/types';
-import { useTheme, getColors } from '@/theme';
+import { teamApi } from '../api/team.api';
 
 type TabType = 'birthdays' | 'holidays';
 
@@ -16,11 +16,11 @@ export function PlannerScreen() {
   const colors = getColors(isDark);
   const [activeTab, setActiveTab] = useState<TabType>('birthdays');
 
-  const bg = isDark ? '#0F1015' : '#F8FAFC';
-  const card = isDark ? '#1A1D26' : '#FFFFFF';
-  const text = isDark ? '#FFFFFF' : '#0F172A';
-  const sub = isDark ? '#9CA3AF' : '#64748B';
-  const border = isDark ? '#262A34' : '#E2E8F0';
+  const bg = colors.background;
+  const card = colors.card;
+  const text = colors.text;
+  const sub = colors.textSecondary;
+  const border = colors.border;
 
   const { data: bdayData, isLoading: bdayLoading, refetch: refetchBday, isRefetching: bdayRefetching } = useQuery({
     queryKey: ['team-birthdays'],
@@ -44,7 +44,7 @@ export function PlannerScreen() {
     const isSoon = item.days_until <= 7;
     return (
       <View style={[s.card, { backgroundColor: card, borderColor: isToday ? '#EC4899' : border }]}>
-        <View style={[s.dateBox, { backgroundColor: isToday ? '#FDF2F8' : isSoon ? '#FFF7F0' : (isDark ? '#262A34' : '#F8FAFC') }]}>
+        <View style={[s.dateBox, { backgroundColor: isToday ? '#FDF2F8' : isSoon ? '#FFF7F0' : colors.surface }]}>
           <Text style={[s.dateDay, { color: isToday ? '#EC4899' : isSoon ? '#F59E0B' : sub }]}>{bday.getDate()}</Text>
           <Text style={[s.dateMonth, { color: sub }]}>{MONTH_NAMES[bday.getMonth()]}</Text>
         </View>
@@ -59,7 +59,7 @@ export function PlannerScreen() {
               <Text style={{ color: '#EC4899', fontSize: 11, fontWeight: '700' }}>🎂 Today!</Text>
             </View>
           ) : (
-            <View style={[s.badge, { backgroundColor: isSoon ? '#FFF7F0' : (isDark ? '#262A34' : '#F8FAFC') }]}>
+            <View style={[s.badge, { backgroundColor: isSoon ? '#FFF7F0' : colors.surface }]}>
               <Text style={{ color: isSoon ? '#F59E0B' : sub, fontSize: 11, fontWeight: '600' }}>
                 in {item.days_until}d
               </Text>
@@ -76,7 +76,7 @@ export function PlannerScreen() {
     const isUpcoming = daysUntil <= 7;
     return (
       <View style={[s.card, { backgroundColor: card, borderColor: isUpcoming ? '#F59E0B' : border }]}>
-        <View style={[s.dateBox, { backgroundColor: isUpcoming ? '#FFFBEB' : (isDark ? '#262A34' : '#F8FAFC') }]}>
+        <View style={[s.dateBox, { backgroundColor: isUpcoming ? '#FFFBEB' : colors.surface }]}>
           <Text style={[s.dateDay, { color: isUpcoming ? '#F59E0B' : sub }]}>{hdate.getDate()}</Text>
           <Text style={[s.dateMonth, { color: sub }]}>{MONTH_NAMES[hdate.getMonth()]}</Text>
         </View>
@@ -84,13 +84,13 @@ export function PlannerScreen() {
           <Text style={[s.name, { color: text }]}>{item.title}</Text>
           {item.description && <Text style={[s.roleText, { color: sub }]} numberOfLines={2}>{item.description}</Text>}
           {item.category && (
-            <View style={[s.badge, { backgroundColor: isDark ? '#262A34' : '#F1F5F9', alignSelf: 'flex-start', marginTop: 4 }]}>
+            <View style={[s.badge, { backgroundColor: colors.surface, alignSelf: 'flex-start', marginTop: 4 }]}>
               <Text style={{ color: sub, fontSize: 10 }}>{item.category}</Text>
             </View>
           )}
         </View>
         {daysUntil >= 0 && (
-          <View style={[s.badge, { backgroundColor: isUpcoming ? '#FFFBEB' : (isDark ? '#262A34' : '#F8FAFC') }]}>
+          <View style={[s.badge, { backgroundColor: isUpcoming ? '#FFFBEB' : colors.surface }]}>
             <Text style={{ color: isUpcoming ? '#F59E0B' : sub, fontSize: 11, fontWeight: '600' }}>
               {daysUntil === 0 ? 'Today' : `in ${daysUntil}d`}
             </Text>

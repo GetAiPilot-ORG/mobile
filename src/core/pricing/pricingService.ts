@@ -27,7 +27,7 @@ export interface PricingPlan {
   is_addon?: boolean | null;
 }
 
-export type PlanCategory = 'all' | 'calling' | 'social' | 'whatsapp' | 'telegram' | 'crm';
+export type PlanCategory = 'all' | 'all-in-one' | 'calling' | 'social' | 'whatsapp' | 'telegram' | 'crm';
 
 export const CATEGORY_META: Record<
   string,
@@ -39,6 +39,13 @@ export const CATEGORY_META: Record<
     color: '#0A84FF',
     badge: 'ALL ENGINES',
     desc: 'Complete GetAiPilot Ecosystem Quotas',
+  },
+  'all-in-one': {
+    label: 'GAP Pro',
+    icon: 'diamond',
+    color: '#8B5CF6',
+    badge: 'ALL-IN-ONE PRO',
+    desc: 'Complete All-in-One AI Suite (WhatsApp, Telegram, Voice, CRM, Social)',
   },
   calling: {
     label: 'Voice AI',
