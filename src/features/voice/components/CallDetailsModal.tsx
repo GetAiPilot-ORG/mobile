@@ -10,9 +10,9 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from "react-native";
+import { useTheme, getColors } from "@/theme";
 import { VoiceCall } from "../api/voiceApi";
 
 interface CallDetailsModalProps {
@@ -26,8 +26,8 @@ export const CallDetailsModal: React.FC<CallDetailsModalProps> = ({
   call,
   onClose,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const themeColors = getColors(isDark);
 
   if (!call) return null;
 
@@ -49,21 +49,22 @@ export const CallDetailsModal: React.FC<CallDetailsModalProps> = ({
     call.status === "cancelled";
 
   const colors = {
-    background: isDark ? "#0A0A0E" : "#FFFFFF",
-    surface: isDark ? "#141418" : "#F8FAFC",
-    surfaceAlt: isDark ? "#1C1C22" : "#F1F5F9",
-    border: isDark ? "#282832" : "#E2E8F0",
-    text: isDark ? "#FFFFFF" : "#0F172A",
-    textSecondary: isDark ? "#94A3B8" : "#64748B",
-    primary: "#5844E3",
-    primaryLight: isDark ? "rgba(88, 68, 227, 0.15)" : "#EEF2FF",
+    ...themeColors,
+    background: themeColors.background,
+    surface: themeColors.surface,
+    surfaceAlt: themeColors.surfaceSecondary,
+    border: themeColors.border,
+    text: themeColors.text,
+    textSecondary: themeColors.textMuted,
+    primary: themeColors.products.voice || "#5844E3",
+    primaryLight: themeColors.products.voiceSoft || (isDark ? "rgba(88, 68, 227, 0.15)" : "#EEF2FF"),
     summaryBg: isDark ? "#1A1813" : "#FEFCE8",
     summaryBorder: isDark ? "rgba(245, 158, 11, 0.25)" : "#FEF08A",
     summaryText: isDark ? "#FDE68A" : "#713F12",
-    emerald: "#059669",
-    emeraldLight: isDark ? "rgba(5, 150, 105, 0.15)" : "#ECFDF5",
-    emeraldBubble: "#059669",
-    assistantBubble: isDark ? "#1E1E26" : "#FFFFFF",
+    emerald: themeColors.success,
+    emeraldLight: themeColors.successSoft,
+    emeraldBubble: themeColors.success,
+    assistantBubble: themeColors.card,
   };
 
   const handleOpenRecording = async () => {

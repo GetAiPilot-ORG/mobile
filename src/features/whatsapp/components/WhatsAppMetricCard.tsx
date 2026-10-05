@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../../contexts/ThemeContext';
+import { useTheme, getColors } from '@/theme';
 
 export type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -25,12 +25,13 @@ export const WhatsAppMetricCard: React.FC<WhatsAppMetricCardProps> = ({
   trend,
 }) => {
   const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   return (
-    <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
       {/* Top row with Label & Icon badge */}
       <View style={styles.topRow}>
-        <Text style={[styles.label, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]} numberOfLines={1}>
+        <Text style={[styles.label, { color: colors.textMuted }]} numberOfLines={1}>
           {label}
         </Text>
         <View style={[styles.iconCircle, { backgroundColor: `${iconColor}15` }]}>
@@ -43,13 +44,13 @@ export const WhatsAppMetricCard: React.FC<WhatsAppMetricCardProps> = ({
       </View>
 
       {/* Value */}
-      <Text style={[styles.value, isDark ? styles.textLight : styles.textDark]} numberOfLines={1}>
+      <Text style={[styles.value, { color: colors.text }]} numberOfLines={1}>
         {value}
       </Text>
 
       {/* Subtext */}
       {subtext ? (
-        <Text style={[styles.subtext, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]} numberOfLines={1}>
+        <Text style={[styles.subtext, { color: colors.textMuted }]} numberOfLines={1}>
           {subtext}
         </Text>
       ) : null}

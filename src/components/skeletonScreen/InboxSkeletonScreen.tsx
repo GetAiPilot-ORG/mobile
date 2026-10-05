@@ -8,7 +8,7 @@ export function InboxSkeleton() {
   const colors = getColors(isDark);
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? "#0B141A" : "#FFFFFF" }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <Skeleton width="100%" height={40} borderRadius={10} />
@@ -50,7 +50,7 @@ export function InboxListSkeleton() {
           key={item}
           style={[
             styles.convRow,
-            { borderBottomColor: isDark ? "rgba(255,255,255,0.06)" : "#F1F5F9" },
+            { borderBottomColor: colors.border },
           ]}
         >
           {/* Avatar */}
@@ -78,12 +78,12 @@ export function ConversationSkeleton() {
   const colors = getColors(isDark);
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? "#0B141A" : "#ECE5DD" }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Chat Top Header */}
       <View
         style={[
           styles.chatHeader,
-          { backgroundColor: isDark ? "#1F2C34" : "#F0F2F5" },
+          { backgroundColor: colors.surface },
         ]}
       >
         <Skeleton width={24} height={24} borderRadius={12} style={{ marginRight: 12 }} />
@@ -111,7 +111,7 @@ export function ConversationSkeleton() {
             style={[
               styles.bubble,
               {
-                backgroundColor: isDark ? "#1F2C34" : "#FFFFFF",
+                backgroundColor: colors.card,
                 alignSelf: "flex-start",
                 width: "72%",
               },
@@ -129,7 +129,7 @@ export function ConversationSkeleton() {
             style={[
               styles.bubble,
               {
-                backgroundColor: isDark ? "#005C4B" : "#D9FDD3",
+                backgroundColor: `${colors.primary}25`,
                 alignSelf: "flex-end",
                 width: "65%",
               },
@@ -147,7 +147,7 @@ export function ConversationSkeleton() {
             style={[
               styles.bubble,
               {
-                backgroundColor: isDark ? "#1F2C34" : "#FFFFFF",
+                backgroundColor: colors.card,
                 alignSelf: "flex-start",
                 width: "55%",
               },
@@ -164,7 +164,7 @@ export function ConversationSkeleton() {
             style={[
               styles.bubble,
               {
-                backgroundColor: isDark ? "#005C4B" : "#D9FDD3",
+                backgroundColor: `${colors.primary}25`,
                 alignSelf: "flex-end",
                 width: "78%",
               },
@@ -182,7 +182,7 @@ export function ConversationSkeleton() {
       <View
         style={[
           styles.inputBar,
-          { backgroundColor: isDark ? "#1F2C34" : "#F0F2F5" },
+          { backgroundColor: colors.surface },
         ]}
       >
         <SkeletonCircle size={36} style={{ marginRight: 8 }} />

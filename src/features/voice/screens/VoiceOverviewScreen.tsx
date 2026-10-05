@@ -11,9 +11,9 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from "react-native";
+import { useTheme, getColors } from "@/theme";
 import { VoiceOverview, voiceApi } from "../api/voiceApi";
 import { openVoiceWebBilling } from "../utils/voiceBilling";
 
@@ -42,7 +42,8 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
 }) => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const isDark = useColorScheme() === "dark";
+  const { isDark } = useTheme();
+  const themeColors = getColors(isDark);
   const {
     data = EMPTY,
     isLoading,
@@ -64,17 +65,18 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
   });
 
   const colors = {
-    background: isDark ? "#000000" : "#F7F8FA",
-    surface: isDark ? "#161618" : "#FFFFFF",
-    surfaceAlt: isDark ? "#1F1F24" : "#F1F3F9",
-    border: isDark ? "#2A2A2E" : "#F0F1F5",
-    text: isDark ? "#FFFFFF" : "#0F172A",
-    textSecondary: isDark ? "#94A3B8" : "#64748B",
-    primary: "#5B3AF5",
-    primaryLight: isDark ? "rgba(91, 58, 245, 0.2)" : "#EDE9FE",
-    green: "#16A34A",
-    greenLight: isDark ? "rgba(22, 163, 74, 0.15)" : "#DCFCE7",
-    chevron: isDark ? "#64748B" : "#94A3B8",
+    ...themeColors,
+    background: themeColors.background,
+    surface: themeColors.surface,
+    surfaceAlt: themeColors.surfaceSecondary,
+    border: themeColors.border,
+    text: themeColors.text,
+    textSecondary: themeColors.textMuted,
+    primary: themeColors.products.voice || "#5B3AF5",
+    primaryLight: themeColors.products.voiceSoft || (isDark ? "rgba(91, 58, 245, 0.2)" : "#EDE9FE"),
+    green: themeColors.success,
+    greenLight: themeColors.successSoft,
+    chevron: themeColors.iconMuted,
   };
 
   const navigate = (tab: "overview" | "calls" | "campaigns" | "contacts") => {

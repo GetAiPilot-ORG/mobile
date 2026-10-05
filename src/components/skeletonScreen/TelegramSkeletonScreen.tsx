@@ -1,10 +1,17 @@
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { Skeleton, SkeletonCard, SkeletonCircle, SkeletonRow, SkeletonText } from "../Skeleton";
+import { useTheme, getColors } from '@/theme';
 
 export function TelegramSkeleton() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
+    <ScrollView
+      contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+      style={{ backgroundColor: colors.background }}
+    >
       {/* Bot Connection Card */}
       <SkeletonCard style={{ marginBottom: 16 }}>
         <SkeletonRow style={{ justifyContent: "space-between", marginBottom: 12 }}>

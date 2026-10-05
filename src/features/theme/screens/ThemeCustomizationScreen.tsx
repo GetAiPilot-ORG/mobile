@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme, getColors } from '@/theme';
 import { ThemeSelector } from '../components/ThemeSelector';
 import { ProductThemeBadge } from '../components/ProductThemeBadge';
 import { getProductThemes } from '../constants/productThemes';
@@ -11,7 +11,8 @@ interface ThemeCustomizationScreenProps {
 }
 
 export const ThemeCustomizationScreen: React.FC<ThemeCustomizationScreenProps> = ({ onBack }) => {
-  const { isDark, themeMode, colors } = useTheme();
+  const { isDark, themeMode } = useTheme();
+  const colors = getColors(isDark);
   const productThemes = getProductThemes(isDark);
 
   return (
@@ -28,14 +29,14 @@ export const ThemeCustomizationScreen: React.FC<ThemeCustomizationScreenProps> =
           style={[
             styles.backButton,
             {
-              backgroundColor: isDark ? '#1C1C1E' : '#F2F4F7',
-              borderColor: isDark ? '#2C2C2E' : '#E5E7EB',
+              backgroundColor: colors.surfaceSecondary,
+              borderColor: colors.border,
             },
           ]}
           onPress={onBack}
         >
-          <Ionicons name="arrow-back" size={16} color={isDark ? '#FFFFFF' : '#000000'} />
-          <Text style={[styles.backText, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+          <Ionicons name="arrow-back" size={16} color={colors.text} />
+          <Text style={[styles.backText, { color: colors.text }]}>
             Back
           </Text>
         </Pressable>
@@ -43,10 +44,10 @@ export const ThemeCustomizationScreen: React.FC<ThemeCustomizationScreenProps> =
 
       {/* Screen Header */}
       <View style={styles.header}>
-        <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+        <Text style={[styles.title, { color: colors.text }]}>
           Theme & UI Appearance
         </Text>
-        <Text style={[styles.subtitle, { color: isDark ? '#8E8E93' : '#64748B' }]}>
+        <Text style={[styles.subtitle, { color: colors.textMuted }]}>
           GetAiPilot HIG Design Tokens — OLED Pitch Black, Crisp Light & Product Accents
         </Text>
       </View>
@@ -59,17 +60,17 @@ export const ThemeCustomizationScreen: React.FC<ThemeCustomizationScreenProps> =
         style={[
           styles.summaryCard,
           {
-            backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-            borderColor: isDark ? '#2C2C2E' : '#E5E7EB',
+            backgroundColor: colors.card,
+            borderColor: colors.cardBorder,
           },
         ]}
       >
         <View style={styles.summaryRow}>
           <View style={styles.summaryTextContainer}>
-            <Text style={[styles.summaryTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+            <Text style={[styles.summaryTitle, { color: colors.text }]}>
               Active Mode: {themeMode.toUpperCase()}
             </Text>
-            <Text style={[styles.summaryDesc, { color: isDark ? '#8E8E93' : '#64748B' }]}>
+            <Text style={[styles.summaryDesc, { color: colors.textMuted }]}>
               Canvas Color: {colors.background} • Surface: {colors.surface}
             </Text>
           </View>
@@ -84,10 +85,10 @@ export const ThemeCustomizationScreen: React.FC<ThemeCustomizationScreenProps> =
 
       {/* Product Suite Accent Palette Showcase */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
           Product Accent Palette
         </Text>
-        <Text style={[styles.sectionSubtitle, { color: isDark ? '#8E8E93' : '#64748B' }]}>
+        <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
           Dedicated theme accents automatically tuned for each AI product module.
         </Text>
 

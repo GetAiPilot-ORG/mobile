@@ -13,9 +13,9 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  useColorScheme,
   View,
 } from "react-native";
+import { useTheme, getColors } from "@/theme";
 import { DedicatedNumber, VoiceContact, voiceApi } from "../api/voiceApi";
 import {
   AssignNumberModal,
@@ -35,8 +35,8 @@ function getInitials(name: string): string {
 }
 
 export const ContactsScreen: React.FC = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const themeColors = getColors(isDark);
   const queryClient = useQueryClient();
 
   const [activeSubTab, setActiveSubTab] = useState<
@@ -217,20 +217,21 @@ export const ContactsScreen: React.FC = () => {
   ).length;
 
   const colors = {
-    background: isDark ? "#000000" : "#F8F9FA",
-    surface: isDark ? "#141418" : "#FFFFFF",
-    surfaceAlt: isDark ? "#1C1C22" : "#F1F3F9",
-    border: isDark ? "#282832" : "#E2E8F0",
-    text: isDark ? "#FFFFFF" : "#0F172A",
-    textSecondary: isDark ? "#94A3B8" : "#64748B",
-    primary: "#5844E3",
-    primaryLight: isDark ? "rgba(88, 68, 227, 0.15)" : "#EEF2FF",
-    green: "#16A34A",
-    greenLight: isDark ? "rgba(22, 163, 74, 0.15)" : "#DCFCE7",
-    amber: "#D97706",
-    amberLight: isDark ? "rgba(245, 158, 11, 0.15)" : "#FEF3C7",
-    red: "#EF4444",
-    redLight: isDark ? "rgba(239, 68, 68, 0.12)" : "#FEE2E2",
+    ...themeColors,
+    background: themeColors.background,
+    surface: themeColors.surface,
+    surfaceAlt: themeColors.surfaceSecondary,
+    border: themeColors.border,
+    text: themeColors.text,
+    textSecondary: themeColors.textMuted,
+    primary: themeColors.products.voice || "#5844E3",
+    primaryLight: themeColors.products.voiceSoft || (isDark ? "rgba(88, 68, 227, 0.15)" : "#EEF2FF"),
+    green: themeColors.success,
+    greenLight: themeColors.successSoft,
+    amber: themeColors.warning,
+    amberLight: themeColors.warningSoft,
+    red: themeColors.destructive,
+    redLight: themeColors.destructiveSoft,
   };
 
   const filteredContacts = contacts.filter((cnt) => {

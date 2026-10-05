@@ -12,7 +12,6 @@ import {
   StyleSheet,
   Text,
   View,
-  useColorScheme,
   useWindowDimensions,
 } from "react-native";
 import { AppScreen } from "../../src/components/AppScreen";
@@ -33,6 +32,7 @@ import {
   getActiveReferralDiscount,
   isGapProPlan,
 } from "../../src/services/referralService";
+import { getColors, useTheme } from "../../src/theme";
 
 const CATEGORIES: { key: PlanCategory; label: string; icon: string }[] = [
   // { key: "all", label: "All Plans", icon: "apps" },
@@ -45,8 +45,8 @@ const CATEGORIES: { key: PlanCategory; label: string; icon: string }[] = [
 ];
 
 export default function OverallPricingScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const { width: windowWidth } = useWindowDimensions();
   const queryClient = useQueryClient();
   const { openRazorpayCheckout } = useRazorpay();
@@ -335,7 +335,7 @@ export default function OverallPricingScreen() {
 
         {/* Plan Name & Tagline */}
         <View style={styles.planHeader}>
-          <Text style={[styles.planTitle, { color: isDark ? "#f8fafc" : "#0f172a" }]}>
+          <Text style={[styles.planTitle, { color: colors.text }]}>
             {plan.plan_label || plan.plan_name}
           </Text>
           {isProCard ? (
@@ -352,7 +352,7 @@ export default function OverallPricingScreen() {
             </View>
           ) : plan.description ? (
             <Text
-              style={[styles.planDescription, { color: isDark ? "#94a3b8" : "#64748b" }]}
+              style={[styles.planDescription, { color: colors.textMuted }]}
               numberOfLines={2}
             >
               {plan.description}
@@ -389,19 +389,19 @@ export default function OverallPricingScreen() {
                 <Text
                   style={[
                     styles.originalPrice,
-                    { color: isDark ? "#64748B" : "#94A3B8" },
+                    { color: colors.textMuted },
                   ]}
                 >
                   {formattedPrice}
                 </Text>
               </View>
             ) : (
-              <Text style={[styles.priceAmount, { color: isDark ? "#ffffff" : "#0f172a" }]}>
+              <Text style={[styles.priceAmount, { color: colors.text }]}>
                 {formattedPrice}
               </Text>
             )}
             <Text
-              style={[styles.priceDuration, { color: isDark ? "#94a3b8" : "#64748b" }]}
+              style={[styles.priceDuration, { color: colors.textMuted }]}
             >
               {isAddon ? "/ 30-day" : formattedDuration}
             </Text>
@@ -433,14 +433,14 @@ export default function OverallPricingScreen() {
                 <View
                   style={[
                     styles.quotaTag,
-                    { backgroundColor: isDark ? "#1e293b" : "#f1f5f9" },
+                    { backgroundColor: colors.surfaceSecondary },
                   ]}
                 >
                   <Ionicons name="mic" size={11} color="#8b5cf6" />
                   <Text
                     style={[
                       styles.quotaTagText,
-                      { color: isDark ? "#cbd5e1" : "#475569" },
+                      { color: colors.textSecondary },
                     ]}
                   >
                     {plan.included_call_minutes} AI Mins
@@ -451,14 +451,14 @@ export default function OverallPricingScreen() {
                 <View
                   style={[
                     styles.quotaTag,
-                    { backgroundColor: isDark ? "#1e293b" : "#f1f5f9" },
+                    { backgroundColor: colors.surfaceSecondary },
                   ]}
                 >
                   <Ionicons name="pricetag" size={11} color="#8b5cf6" />
                   <Text
                     style={[
                       styles.quotaTagText,
-                      { color: isDark ? "#cbd5e1" : "#475569" },
+                      { color: colors.textSecondary },
                     ]}
                   >
                     ₹{plan.extra_call_rate_paise! / 100}/min
@@ -507,14 +507,14 @@ export default function OverallPricingScreen() {
                 <View
                   style={[
                     styles.quotaTag,
-                    { backgroundColor: isDark ? "#1e293b" : "#f1f5f9" },
+                    { backgroundColor: colors.surfaceSecondary },
                   ]}
                 >
                   <Ionicons name="share-social" size={11} color="#ec4899" />
                   <Text
                     style={[
                       styles.quotaTagText,
-                      { color: isDark ? "#cbd5e1" : "#475569" },
+                      { color: colors.textSecondary },
                     ]}
                   >
                     {plan.included_channels} Channels
@@ -537,7 +537,7 @@ export default function OverallPricingScreen() {
                 <Text
                   style={[
                     styles.featureText,
-                    { color: isDark ? "#e2e8f0" : "#334155" },
+                    { color: colors.text },
                   ]}
                   numberOfLines={2}
                 >
@@ -579,7 +579,7 @@ export default function OverallPricingScreen() {
   };
 
   return (
-    <AppScreen safeArea={false} backgroundColor={isDark ? "#000000" : "#F8FAFC"}>
+    <AppScreen safeArea={false} backgroundColor={colors.background}>
       <AppTopBar
         title="Overall Pricing & Plans"
         subtitle="GetAiPilot Ecosystem Subscriptions"
@@ -619,7 +619,7 @@ export default function OverallPricingScreen() {
                 {subscriptionStatus ? subscriptionStatus.toUpperCase() : "ACTIVE WORKSPACE"}
               </Text>
             </View>
-            <Text style={[styles.planStatusDate, { color: isDark ? "#94a3b8" : "#64748b" }]}>
+            <Text style={[styles.planStatusDate, { color: colors.textMuted }]}>
               {expiresAt
                 ? `Renews ${new Date(expiresAt).toLocaleDateString(undefined, {
                   month: "short",
@@ -630,10 +630,10 @@ export default function OverallPricingScreen() {
             </Text>
           </View>
 
-          <Text style={[styles.statusPlanName, { color: isDark ? "#FFFFFF" : "#0f172a" }]}>
+          <Text style={[styles.statusPlanName, { color: colors.text }]}>
             {planLabel || "GAP Pro Max"}
           </Text>
-          <Text style={[styles.statusPlanDesc, { color: isDark ? "#cbd5e1" : "#475569" }]}>
+          <Text style={[styles.statusPlanDesc, { color: colors.textSecondary }]}>
             Full multi-engine access enabled: Voice AI, Social Pilot, WhatsApp, Telegram & Smart CRM.
           </Text>
         </View>
@@ -689,84 +689,11 @@ export default function OverallPricingScreen() {
           </View>
         )}
 
-        {/* 2. Duration Selector (Monthly vs Yearly) */}
-        <View
-          style={[
-            styles.durationBar,
-            {
-              backgroundColor: isDark ? "#0f172a" : "#f1f5f9",
-              borderColor: isDark ? "#1e293b" : "#e2e8f0",
-            },
-          ]}
-        >
-          <Pressable
-            style={[
-              styles.durationTab,
-              selectedDuration === "all" &&
-              (isDark ? styles.durationTabActiveDark : styles.durationTabActive),
-            ]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setSelectedDuration("all");
-            }}
-          >
-            <Text
-              style={[
-                styles.durationTabText,
-                { color: selectedDuration === "all" ? (isDark ? "#fff" : "#0f172a") : "#64748b" },
-              ]}
-            >
-              All Durations
-            </Text>
-          </Pressable>
-
-          <Pressable
-            style={[
-              styles.durationTab,
-              selectedDuration === "monthly" &&
-              (isDark ? styles.durationTabActiveDark : styles.durationTabActive),
-            ]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setSelectedDuration("monthly");
-            }}
-          >
-            <Text
-              style={[
-                styles.durationTabText,
-                { color: selectedDuration === "monthly" ? (isDark ? "#fff" : "#0f172a") : "#64748b" },
-              ]}
-            >
-              Monthly
-            </Text>
-          </Pressable>
-
-          <Pressable
-            style={[
-              styles.durationTab,
-              selectedDuration === "yearly" &&
-              (isDark ? styles.durationTabActiveDark : styles.durationTabActive),
-            ]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setSelectedDuration("yearly");
-            }}
-          >
-            <Text
-              style={[
-                styles.durationTabText,
-                { color: selectedDuration === "yearly" ? (isDark ? "#fff" : "#0f172a") : "#64748b" },
-              ]}
-            >
-              Annual (Save 20%+)
-            </Text>
-          </Pressable>
-        </View>
 
         {isLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#0A84FF" />
-            <Text style={[styles.loadingText, { color: isDark ? "#94a3b8" : "#64748b" }]}>
+            <Text style={[styles.loadingText, { color: colors.textMuted }]}>
               Loading verified pricing plans...
             </Text>
           </View>
@@ -797,7 +724,7 @@ export default function OverallPricingScreen() {
                     <Ionicons name="diamond" size={17} color="#8B5CF6" />
                   </View>
                   <View>
-                    <Text style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : "#0f172a" }]}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
                       GAP Pro All-in-One Plans
                     </Text>
                     <Text
@@ -831,7 +758,7 @@ export default function OverallPricingScreen() {
                   <Text
                     style={[
                       styles.innerEmptyTitle,
-                      { color: isDark ? "#f8fafc" : "#0f172a" },
+                      { color: colors.text },
                     ]}
                   >
                     No GAP Pro plans matching this duration filter
@@ -839,7 +766,7 @@ export default function OverallPricingScreen() {
                   <Text
                     style={[
                       styles.innerEmptyDesc,
-                      { color: isDark ? "#94a3b8" : "#64748b" },
+                      { color: colors.textMuted },
                     ]}
                   >
                     Switch duration filter to "All Durations" to view monthly & annual bundles.
@@ -865,7 +792,7 @@ export default function OverallPricingScreen() {
 
             {/* 3. Category Selector Pills (Scrollable) */}
             <View style={styles.categorySection}>
-              <Text style={[styles.sectionLabel, { color: isDark ? "#94a3b8" : "#64748b" }]}>
+              <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
                 FILTER BY PRODUCT CATEGORY
               </Text>
               <ScrollView
@@ -888,14 +815,10 @@ export default function OverallPricingScreen() {
                         {
                           backgroundColor: isSelected
                             ? meta.color
-                            : isDark
-                              ? "#0f172a"
-                              : "#ffffff",
+                            : colors.surface,
                           borderColor: isSelected
                             ? meta.color
-                            : isDark
-                              ? "#1e293b"
-                              : "#e2e8f0",
+                            : colors.border,
                         },
                       ]}
                     >
@@ -908,7 +831,7 @@ export default function OverallPricingScreen() {
                         style={[
                           styles.categoryPillText,
                           {
-                            color: isSelected ? "#ffffff" : isDark ? "#f1f5f9" : "#1e293b",
+                            color: isSelected ? "#ffffff" : colors.text,
                             fontWeight: isSelected ? "800" : "600",
                           },
                         ]}
@@ -924,8 +847,8 @@ export default function OverallPricingScreen() {
               style={[
                 styles.sectionContainer,
                 {
-                  backgroundColor: isDark ? "#0b1120" : "#ffffff",
-                  borderColor: isDark ? "#1e293b" : "#e2e8f0",
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
                 },
               ]}
             >
@@ -935,19 +858,19 @@ export default function OverallPricingScreen() {
                   <View
                     style={[
                       styles.sectionIconBadge,
-                      { backgroundColor: isDark ? "#1e293b" : "#f1f5f9" },
+                      { backgroundColor: colors.surfaceSecondary },
                     ]}
                   >
                     <Ionicons name="cube-outline" size={17} color="#0A84FF" />
                   </View>
                   <View>
-                    <Text style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : "#0f172a" }]}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
                       Individual Engine Plans & Add-ons
                     </Text>
                     <Text
                       style={[
                         styles.sectionSubtitle,
-                        { color: isDark ? "#94a3b8" : "#64748b" },
+                        { color: colors.textMuted },
                       ]}
                     >
                       Modular single-channel tools & dedicated phone lines
@@ -958,7 +881,7 @@ export default function OverallPricingScreen() {
                 <View
                   style={[
                     styles.scrollHintBadge,
-                    { backgroundColor: isDark ? "#1e293b" : "#f1f5f9" },
+                    { backgroundColor: colors.surfaceSecondary },
                   ]}
                 >
                   <Ionicons name="swap-horizontal" size={13} color="#0A84FF" />
@@ -973,14 +896,14 @@ export default function OverallPricingScreen() {
                 <View
                   style={[
                     styles.emptyHorizontalBox,
-                    { backgroundColor: isDark ? "#080c17" : "#F8FAFC" },
+                    { backgroundColor: colors.backgroundSecondary },
                   ]}
                 >
                   <Ionicons name="pricetags-outline" size={28} color="#0A84FF" />
                   <Text
                     style={[
                       styles.innerEmptyTitle,
-                      { color: isDark ? "#f8fafc" : "#0f172a" },
+                      { color: colors.text },
                     ]}
                   >
                     {selectedCategory === "all-in-one"
@@ -990,7 +913,7 @@ export default function OverallPricingScreen() {
                   <Text
                     style={[
                       styles.innerEmptyDesc,
-                      { color: isDark ? "#94a3b8" : "#64748b" },
+                      { color: colors.textMuted },
                     ]}
                   >
                     {selectedCategory === "all-in-one"

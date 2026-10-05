@@ -1,5 +1,5 @@
 import { Appearance } from 'react-native';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '@/theme';
 
 export function useColorScheme(): 'light' | 'dark' {
   try {

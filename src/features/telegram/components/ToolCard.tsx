@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { getColors, useTheme } from '../../../contexts/ThemeContext';
+import { useTheme, getColors } from '@/theme';
 import { TelegramHubTool } from '../types';
 
 interface ToolCardProps {

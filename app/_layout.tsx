@@ -14,7 +14,7 @@ import { LayoutSkeletonScreen } from "../src/components/skeletonScreen";
 import { AuthProvider } from "../src/contexts/AuthContext";
 import { NetworkProvider, useNetwork } from "../src/contexts/NetworkContext";
 import { RazorpayProvider } from "../src/contexts/RazorpayContext";
-import { ThemeProvider, useTheme } from "../src/contexts/ThemeContext";
+import { ThemeProvider, useTheme, getColors } from "@/theme";
 import { useAuthStore } from "../src/core/store/authStore";
 import { captureReferralParam, handlePendingReferral } from "../src/services/referralService";
 
@@ -163,7 +163,8 @@ function SplashOverlay() {
 }
 
 function RootThemedContainer({ children }: { children: React.ReactNode }) {
-  const { isDark, colors } = useTheme();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   return (
     <View style={[styles.rootContainer, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? "light" : "dark"} />
@@ -173,7 +174,8 @@ function RootThemedContainer({ children }: { children: React.ReactNode }) {
 }
 
 function ThemedNavigationStack() {
-  const { colors } = useTheme();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   return (
     <Stack
       screenOptions={{

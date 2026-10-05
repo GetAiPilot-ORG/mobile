@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop, Text as SvgText } from 'react-native-svg';
-import { getColors, useTheme } from '../../../contexts/ThemeContext';
+import { useTheme, getColors } from '@/theme';
 
 interface DashboardAnalyticsChartsProps {
   joinsCount?: number;

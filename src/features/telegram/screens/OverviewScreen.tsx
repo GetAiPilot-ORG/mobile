@@ -9,7 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { getColors, useTheme } from '../../../contexts/ThemeContext';
+import { useTheme, getColors } from '@/theme';
 
 import { DashboardAnalyticsCharts, HubProgressCard, ToolCard } from '../components';
 import { StatCard } from '../components/ui/StatCard';

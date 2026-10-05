@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { ThemeMode } from '../types';
 import { useTheme } from '../context/ThemeContext';
+import { getColors } from '../constants/colors';
 
 interface ThemeModeCardProps {
   mode: ThemeMode;
@@ -22,7 +23,8 @@ export const ThemeModeCard: React.FC<ThemeModeCardProps> = ({
   selected,
   onSelect,
 }) => {
-  const { isDark, colors } = useTheme();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const handlePress = async () => {
     if (Platform.OS !== 'web') {
@@ -40,9 +42,11 @@ export const ThemeModeCard: React.FC<ThemeModeCardProps> = ({
       onPress={handlePress}
       style={({ pressed }) => [
         styles.card,
-        isDark ? styles.cardDark : styles.cardLight,
+        {
+          backgroundColor: colors.card,
+          borderColor: selected ? colors.primary : colors.cardBorder,
+        },
         selected && styles.cardSelected,
-        selected && { borderColor: colors.primary },
         pressed && styles.pressed,
       ]}
     >
@@ -53,16 +57,14 @@ export const ThemeModeCard: React.FC<ThemeModeCardProps> = ({
             {
               backgroundColor: selected
                 ? colors.primaryMuted
-                : isDark
-                ? '#2C2C2E'
-                : '#F2F4F7',
+                : colors.surfaceSecondary,
             },
           ]}
         >
           <Ionicons
             name={iconName}
             size={22}
-            color={selected ? colors.primary : isDark ? '#FFFFFF' : '#475569'}
+            color={selected ? colors.primary : colors.text}
           />
         </View>
 
@@ -76,7 +78,7 @@ export const ThemeModeCard: React.FC<ThemeModeCardProps> = ({
       <Text
         style={[
           styles.title,
-          { color: selected ? colors.primary : isDark ? '#FFFFFF' : '#0F172A' },
+          { color: selected ? colors.primary : colors.text },
         ]}
       >
         {title}
@@ -85,7 +87,7 @@ export const ThemeModeCard: React.FC<ThemeModeCardProps> = ({
       <Text
         style={[
           styles.description,
-          { color: isDark ? '#8E8E93' : '#64748B' },
+          { color: colors.textMuted },
         ]}
         numberOfLines={2}
       >

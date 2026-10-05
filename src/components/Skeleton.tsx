@@ -80,7 +80,7 @@ export default function Skeleton({
           width,
           height,
           borderRadius: finalBorderRadius,
-          backgroundColor: isDark ? "#1C1C1E" : "#E5E7EB",
+          backgroundColor: colors.surfaceSecondary,
         },
         style,
       ]}
@@ -158,8 +158,8 @@ export function SkeletonCard({
       style={[
         styles.card,
         {
-          backgroundColor: isDark ? "#161B22" : "#FFFFFF",
-          borderColor: isDark ? "#262C36" : "#E5E7EB",
+          backgroundColor: colors.card,
+          borderColor: colors.cardBorder,
         },
         style,
       ]}

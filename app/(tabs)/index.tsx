@@ -1,6 +1,6 @@
 import { HomeSkeleton } from "@/components/skeletonScreen/HomeSkeletonScreen";
 import { NetworkStatusScreen } from "@/components/StatusScreen";
-import { getColors } from "@/theme";
+import { getColors, useTheme } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
@@ -22,7 +22,6 @@ import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
 import { useAuth } from "../../src/contexts/AuthContext";
 import { useNetwork } from "../../src/contexts/NetworkContext";
-import { useTheme } from "../../src/contexts/ThemeContext";
 import { apiClient } from "../../src/core/api/client";
 import { usePlatformSubscription } from "../../src/hooks/usePlatformSubscription";
 import { supabase } from "../../src/lib/supabase";

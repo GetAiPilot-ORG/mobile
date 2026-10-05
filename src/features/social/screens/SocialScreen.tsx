@@ -15,6 +15,7 @@ import {
   ProductFloatingBottomBar,
   ProductTabItem,
 } from '../../../components/ProductFloatingBottomBar';
+import { useTheme, getColors } from '@/theme';
 import { apiClient } from '../../../core/api/client';
 import {
   AccountsModal,
@@ -69,6 +70,8 @@ const SOCIAL_TABS: ProductTabItem[] = [
 export const SocialScreen: React.FC = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [activeTab, setActiveTab] = useState<SocialTabType>('overview');
   const [selectedPost, setSelectedPost] = useState<any | null>(null);
@@ -434,18 +437,18 @@ export const SocialScreen: React.FC = () => {
         : '0%';
 
   return (
-    <AppScreen>
+    <AppScreen backgroundColor={colors.background}>
       <AppTopBar title="SocialPilot" subtitle="Cross-Platform Social Publishing" />
 
       {/* Main Content Area */}
       <ScrollView
-        style={styles.container}
+        style={[styles.container, { backgroundColor: colors.background }]}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl
             refreshing={isOverviewRefetching || isPostsRefetching}
             onRefresh={handleRefresh}
-            tintColor="#ec4899"
+            tintColor={colors.products.social}
           />
         }
       >

@@ -15,9 +15,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useTheme } from "../../../contexts/ThemeContext";
-
-import { getColors } from "@/theme";
+import { useTheme, getColors } from "@/theme";
 import { CrmListSkeleton } from "../../../components/skeletonScreen";
 import { useAuthStore } from "../../../core/store/authStore";
 import { inboxApi } from "../../inbox/api/inboxApi";

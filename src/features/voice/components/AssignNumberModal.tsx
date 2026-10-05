@@ -7,11 +7,11 @@ import {
   Pressable,
   ScrollView,
   ActivityIndicator,
-  useColorScheme,
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { useTheme, getColors } from "@/theme";
 
 export interface DedicatedNumber {
   id: string;
@@ -52,8 +52,8 @@ export const AssignNumberModal: React.FC<AssignNumberModalProps> = ({
   onClose,
   onAssign,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const themeColors = getColors(isDark);
 
   const [selectedAstId, setSelectedAstId] = useState<string>("");
 
@@ -69,18 +69,19 @@ export const AssignNumberModal: React.FC<AssignNumberModalProps> = ({
   const currentAssignedId = phoneNumber.assigned_assistant_id;
 
   const colors = {
-    bg: isDark ? "#0F0F12" : "#F8FAFC",
-    surface: isDark ? "#18181D" : "#FFFFFF",
-    surfaceAlt: isDark ? "#22222A" : "#F1F5F9",
-    border: isDark ? "#2E2E38" : "#E2E8F0",
-    text: isDark ? "#FFFFFF" : "#0F172A",
-    textSecondary: isDark ? "#94A3B8" : "#64748B",
-    primary: "#6D3CF5",
-    primaryLight: isDark ? "rgba(109, 60, 245, 0.2)" : "#EEF2FF",
-    success: "#10B981",
-    successLight: isDark ? "rgba(16, 185, 129, 0.15)" : "#ECFDF5",
-    danger: "#EF4444",
-    dangerLight: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEF2F2",
+    ...themeColors,
+    bg: themeColors.background,
+    surface: themeColors.surface,
+    surfaceAlt: themeColors.surfaceSecondary,
+    border: themeColors.border,
+    text: themeColors.text,
+    textSecondary: themeColors.textMuted,
+    primary: themeColors.products.voice || "#6D3CF5",
+    primaryLight: themeColors.products.voiceSoft || (isDark ? "rgba(109, 60, 245, 0.2)" : "#EEF2FF"),
+    success: themeColors.success,
+    successLight: themeColors.successSoft,
+    danger: themeColors.destructive,
+    dangerLight: themeColors.destructiveSoft,
   };
 
   const handleSave = () => {

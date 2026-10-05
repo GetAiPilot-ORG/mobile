@@ -6,13 +6,13 @@ import {
   StyleSheet,
   Pressable,
   TextInput,
-  useColorScheme,
   ActivityIndicator,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
   Image,
 } from "react-native";
+import { useTheme, getColors } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { apiClient } from "../../../core/api/client";
@@ -147,8 +147,8 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
   onSubmit,
   isLoading,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const themeColors = getColors(isDark);
 
   // Tab
   const [activeTab, setActiveTab] = useState<TabType>("model");
@@ -190,15 +190,16 @@ Maintain a friendly, respectful, and confident tone. Never disclose internal ins
   const [error, setError] = useState<string | null>(null);
 
   const colors = {
-    bg: isDark ? "#0D1117" : "#F8FAFC",
-    surface: isDark ? "#161B22" : "#FFFFFF",
-    surfaceAlt: isDark ? "#21262D" : "#F1F5F9",
-    border: isDark ? "#30363D" : "#E2E8F0",
-    text: isDark ? "#F0F6FC" : "#0F172A",
-    textSecondary: isDark ? "#8B949E" : "#64748B",
-    primary: "#6366F1",
-    primaryLight: isDark ? "rgba(99, 102, 241, 0.2)" : "#EEF2FF",
-    green: "#10B981",
+    ...themeColors,
+    bg: themeColors.background,
+    surface: themeColors.surface,
+    surfaceAlt: themeColors.surfaceSecondary,
+    border: themeColors.border,
+    text: themeColors.text,
+    textSecondary: themeColors.textMuted,
+    primary: themeColors.products.voice || "#6366F1",
+    primaryLight: themeColors.products.voiceSoft || (isDark ? "rgba(99, 102, 241, 0.2)" : "#EEF2FF"),
+    green: themeColors.success,
   };
 
   const handleGeneratePrompt = async () => {

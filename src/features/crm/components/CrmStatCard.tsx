@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCrmTheme } from '../hooks/useCrmTheme';
+import { useTheme, getColors } from '@/theme';
 
 interface CrmStatCardProps {
   label: string;
@@ -25,6 +26,8 @@ export const CrmStatCard: React.FC<CrmStatCardProps> = ({
   progress,
   onPress,
 }) => {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const { gradient } = useCrmTheme();
   const activeGradient = gradientColors || gradient;
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useTheme } from '../../../contexts/ThemeContext';
+import { useTheme, getColors } from '@/theme';
 import { WhatsAppBroadcast } from '../types';
 
 interface BroadcastCardProps {
@@ -10,6 +10,7 @@ interface BroadcastCardProps {
 
 export const BroadcastCard: React.FC<BroadcastCardProps> = ({ broadcast, onPress }) => {
   const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const isCompleted = broadcast.status === 'completed';
   const isQueued = broadcast.status === 'queued' || broadcast.status === 'preparing';
