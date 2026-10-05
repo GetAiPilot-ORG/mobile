@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { useCrmTheme } from '../hooks/useCrmTheme';
+import { getColors } from '@/theme';
 
 interface LeadFiltersProps {
   selectedStatus: string;
@@ -11,7 +12,8 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
   selectedStatus,
   onSelectStatus,
 }) => {
-  const { colors, accentColor, accentSoft, accentBorder } = useCrmTheme();
+  const { isDark, accentColor, accentSoft, accentBorder } = useCrmTheme();
+  const colors = getColors(isDark);
 
   const statuses = [
     { id: 'all', label: 'All Deals' },

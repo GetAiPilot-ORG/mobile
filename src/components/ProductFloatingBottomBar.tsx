@@ -15,7 +15,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import { useTheme } from "../contexts/ThemeContext";
+import { useTheme, getColors } from "@/theme";
 
 export type IoniconsName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -71,6 +71,7 @@ export const ProductFloatingBottomBar: React.FC<
 }) => {
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [containerWidth, setContainerWidth] = useState(0);
   const [isMoreModalVisible, setIsMoreModalVisible] = useState(false);
@@ -79,7 +80,7 @@ export const ProductFloatingBottomBar: React.FC<
   const bottomOffset = Math.max(insets.bottom, 12);
 
   const activeColor = accentColor;
-  const inactiveColor = isDark ? "#8E8E93" : "#64748B";
+  const inactiveColor = colors.textMuted;
 
   const hasOverflow = items.length > 5;
 
@@ -192,7 +193,10 @@ export const ProductFloatingBottomBar: React.FC<
           onLayout={onContainerLayout}
           style={[
             styles.tabBarContainer,
-            isDark ? styles.tabBarContainerDark : styles.tabBarContainerLight,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+            },
           ]}
         >
           {/* Soft Gliding Active Pill */}
@@ -295,11 +299,14 @@ export const ProductFloatingBottomBar: React.FC<
                 <View
                   style={[
                     styles.popupCard,
-                    isDark ? styles.popupCardDark : styles.popupCardLight,
-                    { bottom: bottomOffset + 68 },
+                    {
+                      backgroundColor: colors.card,
+                      borderColor: colors.border,
+                      bottom: bottomOffset + 68,
+                    },
                   ]}
                 >
-                  <View style={styles.popupHeader}>
+                  <View style={[styles.popupHeader, { borderBottomColor: colors.border }]}>
                     <View style={styles.popupHeaderLeft}>
                       <View
                         style={[
@@ -312,7 +319,7 @@ export const ProductFloatingBottomBar: React.FC<
                       <Text
                         style={[
                           styles.popupTitle,
-                          isDark ? styles.textDark : styles.textLight,
+                          { color: colors.text },
                         ]}
                       >
                         {moreMenuTitle}
@@ -326,7 +333,7 @@ export const ProductFloatingBottomBar: React.FC<
                       <Ionicons
                         name="close"
                         size={18}
-                        color={isDark ? "#94A3B8" : "#64748B"}
+                        color={colors.textMuted}
                       />
                     </Pressable>
                   </View>
@@ -348,8 +355,9 @@ export const ProductFloatingBottomBar: React.FC<
                                 : styles.popupItemActiveLight),
                             idx < overflowItems.length - 1 &&
                               styles.popupItemBorder,
-                            idx < overflowItems.length - 1 &&
-                              (isDark ? styles.borderDark : styles.borderLight),
+                            idx < overflowItems.length - 1 && {
+                              borderBottomColor: colors.border,
+                            },
                           ]}
                           onPress={() => handleSelectOverflowItem(item.key)}
                         >
@@ -359,9 +367,7 @@ export const ProductFloatingBottomBar: React.FC<
                               {
                                 backgroundColor: isItemActive
                                   ? `${accentColor}20`
-                                  : isDark
-                                    ? "#1E293B"
-                                    : "#F1F5F9",
+                                  : colors.surfaceSecondary,
                               },
                             ]}
                           >
@@ -375,9 +381,7 @@ export const ProductFloatingBottomBar: React.FC<
                               color={
                                 isItemActive
                                   ? accentColor
-                                  : isDark
-                                    ? "#94A3B8"
-                                    : "#64748B"
+                                  : colors.textMuted
                               }
                             />
                           </View>
@@ -386,9 +390,8 @@ export const ProductFloatingBottomBar: React.FC<
                             <Text
                               style={[
                                 styles.popupItemLabel,
-                                isDark ? styles.textDark : styles.textLight,
+                                { color: isItemActive ? accentColor : colors.text },
                                 isItemActive && {
-                                  color: accentColor,
                                   fontWeight: "700",
                                 },
                               ]}
@@ -397,7 +400,7 @@ export const ProductFloatingBottomBar: React.FC<
                             </Text>
                             {item.description ? (
                               <Text
-                                style={styles.popupItemDesc}
+                                style={[styles.popupItemDesc, { color: colors.textMuted }]}
                                 numberOfLines={1}
                               >
                                 {item.description}

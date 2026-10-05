@@ -1,10 +1,11 @@
 import { Tabs } from "expo-router";
 import { FloatingTabBar } from "../../src/components/FloatingTabBar";
 import { useAuth } from "../../src/contexts/AuthContext";
-import { useTheme } from "../../src/contexts/ThemeContext";
+import { useTheme, getColors } from "@/theme";
 
 export default function TabLayout() {
-  const { colors } = useTheme();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const { user, profile } = useAuth();
   const userRole = (user?.role || profile?.role || "").toLowerCase();
   const isAdmin = Boolean(

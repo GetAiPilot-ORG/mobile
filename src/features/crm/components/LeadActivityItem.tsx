@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { useTheme } from '@/features/theme';
+import { useTheme, getColors } from '@/features/theme';
 import { CRMActivity } from '../types';
 
 interface LeadActivityItemProps {
@@ -21,7 +21,8 @@ const TYPE_ICONS: Record<string, { icon: string; color: string }> = {
 };
 
 export const LeadActivityItem: React.FC<LeadActivityItemProps> = ({ activity }) => {
-  const { isDark, colors } = useTheme();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const meta = TYPE_ICONS[activity.type] || { icon: '📌', color: '#6366f1' };
   const time = new Date(activity.created_at).toLocaleString([], {
     month: 'short',

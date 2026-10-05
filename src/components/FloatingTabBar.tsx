@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, getColors } from '@/theme';
 import { usePlatformSubscription } from '../hooks/usePlatformSubscription';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -91,7 +91,8 @@ const tabSpringAnimation = {
 
 export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
   const insets = useSafeAreaInsets();
-  const { isDark, colors } = useTheme();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const { user, profile } = useAuth();
   const { isAdmin: isPlatformAdmin } = usePlatformSubscription();
 
@@ -217,13 +218,17 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
               onLongPress={onLongPress}
               style={[
                 styles.inactiveButton,
-                isDark ? styles.inactiveButtonDark : styles.inactiveButtonLight,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(255, 255, 255, 0.07)'
+                    : 'rgba(0, 0, 0, 0.04)',
+                },
               ]}
             >
               <Ionicons
                 name={iconName}
                 size={20}
-                color={colors.tabInactive || colors.mutedForeground}
+                color={colors.textMuted}
               />
             </Pressable>
           );

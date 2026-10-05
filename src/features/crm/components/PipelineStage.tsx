@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useCrmTheme } from '../hooks/useCrmTheme';
+import { getColors } from '@/theme';
 import { PipelineStage as StageType } from '../types';
 
 interface PipelineStageProps {
@@ -14,7 +15,8 @@ export const PipelineStage: React.FC<PipelineStageProps> = ({
   isSelected,
   onPress,
 }) => {
-  const { colors, accentColor, accentSoft, isDark } = useCrmTheme();
+  const { accentColor, accentSoft, isDark } = useCrmTheme();
+  const colors = getColors(isDark);
   const name = stage.label || stage.name || stage.stage || 'Stage';
   const count = stage.count ?? stage.lead_count ?? 0;
   const val = Number(stage.totalValue ?? stage.total_value ?? 0);

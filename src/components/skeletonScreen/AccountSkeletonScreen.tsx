@@ -1,8 +1,12 @@
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { Skeleton, SkeletonCard, SkeletonCircle, SkeletonRow, SkeletonText } from "../Skeleton";
+import { useTheme, getColors } from '@/theme';
 
 export function DeviceSessionsSkeleton() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+
   return (
     <View style={{ paddingVertical: 8 }}>
       {[1, 2].map((i) => (
@@ -12,7 +16,7 @@ export function DeviceSessionsSkeleton() {
             paddingVertical: 12,
             paddingHorizontal: 4,
             borderBottomWidth: i === 1 ? StyleSheet.hairlineWidth : 0,
-            borderBottomColor: "rgba(150, 150, 150, 0.2)",
+            borderBottomColor: colors.border,
             justifyContent: "space-between",
           }}
         >
@@ -31,8 +35,14 @@ export function DeviceSessionsSkeleton() {
 }
 
 export function AccountSkeleton() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 50, paddingBottom: 100 }}>
+    <ScrollView
+      contentContainerStyle={{ padding: 16, paddingTop: 50, paddingBottom: 100 }}
+      style={{ backgroundColor: colors.background }}
+    >
       {/* Profile Banner */}
       <SkeletonCard style={{ alignItems: "center", paddingVertical: 20, marginBottom: 16 }}>
         <SkeletonCircle size={70} style={styles.mb12} />
@@ -67,7 +77,7 @@ export function AccountSkeleton() {
               justifyContent: "space-between",
               paddingVertical: 12,
               borderBottomWidth: i < 3 ? StyleSheet.hairlineWidth : 0,
-              borderBottomColor: "rgba(150, 150, 150, 0.2)",
+              borderBottomColor: colors.border,
             }}
           >
             <SkeletonRow>

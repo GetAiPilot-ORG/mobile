@@ -1,3 +1,4 @@
+import { useTheme } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
@@ -12,7 +13,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useTheme } from "../../../contexts/ThemeContext";
 
 import { getColors } from "@/theme";
 import { useWhatsAppBroadcasts } from "../hooks/useWhatsAppBroadcasts";
@@ -191,16 +191,16 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
     },
     ...(broadcast.failed_count > 0
       ? [
-          {
-            label: "Failed / Undelivered",
-            value: broadcast.failed_count.toLocaleString(),
-            icon: "alert-circle-outline" as const,
-            iconColor: isDark ? "#FF453A" : "#DC2626",
-            bgColor: isDark
-              ? "rgba(255, 69, 58, 0.12)"
-              : "rgba(220, 38, 38, 0.08)",
-          },
-        ]
+        {
+          label: "Failed / Undelivered",
+          value: broadcast.failed_count.toLocaleString(),
+          icon: "alert-circle-outline" as const,
+          iconColor: isDark ? "#FF453A" : "#DC2626",
+          bgColor: isDark
+            ? "rgba(255, 69, 58, 0.12)"
+            : "rgba(220, 38, 38, 0.08)",
+        },
+      ]
       : []),
   ];
 
@@ -405,7 +405,7 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
             >
               {broadcast.audience_type
                 ? broadcast.audience_type.charAt(0).toUpperCase() +
-                  broadcast.audience_type.slice(1).toLowerCase()
+                broadcast.audience_type.slice(1).toLowerCase()
                 : "Custom"}
             </Text>
           </View>

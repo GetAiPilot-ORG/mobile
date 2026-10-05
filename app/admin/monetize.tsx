@@ -1,5 +1,4 @@
-import { useTheme } from "@/contexts/ThemeContext";
-import { getColors } from "@/theme";
+import { useTheme, getColors } from "@/theme";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {

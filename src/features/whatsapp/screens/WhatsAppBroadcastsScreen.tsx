@@ -12,7 +12,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useTheme } from "../../../contexts/ThemeContext";
+import { useTheme } from "@/theme";
 
 import { getColors } from "@/theme";
 import { WhatsAppBroadcastsSkeleton } from "../../../components/skeletonScreen";

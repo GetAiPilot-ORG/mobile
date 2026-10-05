@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleProp, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, getColors } from '@/theme';
 
 export interface AppScreenProps {
   children: React.ReactNode;
@@ -21,7 +21,8 @@ export function AppScreen({
   className = '',
 }: AppScreenProps) {
   const insets = useSafeAreaInsets();
-  const { isDark, colors } = useTheme();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const defaultBg = backgroundColor || colors.background;
 

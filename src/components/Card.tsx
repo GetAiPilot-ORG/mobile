@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { View, ViewProps } from 'react-native';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, getColors } from '@/theme';
 
 export type CardVariant = 'default' | 'elevated' | 'outlined';
 
@@ -20,6 +20,7 @@ export const Card: React.FC<CardProps> = ({
   ...props
 }) => {
   const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const paddingMap = {
     none: 'p-0',
@@ -30,30 +31,25 @@ export const Card: React.FC<CardProps> = ({
     xl: 'p-xl',
   };
 
-  const variantStyles: Record<CardVariant, string> = {
-    default: isDark
-      ? 'bg-[#1C1C1E] border border-[#2C2C2E]'
-      : 'bg-white border border-[#E5E7EB]',
-    elevated: isDark
-      ? 'bg-[#1C1C1E] border border-[#2C2C2E]'
-      : 'bg-white border border-[#E5E7EB] shadow-sm',
-    outlined: isDark
-      ? 'bg-transparent border border-[#2C2C2E]'
-      : 'bg-transparent border border-[#E5E7EB]',
+  const dynamicCardStyle = {
+    backgroundColor: variant === 'outlined' ? 'transparent' : colors.card,
+    borderColor: colors.cardBorder,
+    borderWidth: 1,
   };
 
   return (
     <View
       className={`
         rounded-lg
-        ${variantStyles[variant]}
+        ${variant === 'elevated' && !isDark ? 'shadow-sm' : ''}
         ${paddingMap[padding]}
         ${className}
       `}
-      style={style}
+      style={[dynamicCardStyle, style]}
       {...props}
     >
       {children}
     </View>
   );
 };
+

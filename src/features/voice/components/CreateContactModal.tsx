@@ -7,9 +7,9 @@ import {
   Pressable,
   TextInput,
   ScrollView,
-  useColorScheme,
   ActivityIndicator,
 } from "react-native";
+import { useTheme, getColors } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
@@ -32,8 +32,8 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
   onSubmit,
   isLoading,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");

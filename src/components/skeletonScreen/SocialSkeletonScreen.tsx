@@ -1,10 +1,17 @@
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { Skeleton, SkeletonCard, SkeletonCircle, SkeletonRow, SkeletonText } from "../Skeleton";
+import { useTheme, getColors } from '@/theme';
 
 export function SocialScreenSkeleton() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
+    <ScrollView
+      contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+      style={{ backgroundColor: colors.background }}
+    >
       {/* 2x2 Performance Grid */}
       <View style={styles.grid}>
         <View style={styles.halfCard}>
@@ -79,6 +86,9 @@ export function SocialScreenSkeleton() {
 }
 
 export function SocialPostsSkeleton() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+
   return (
     <View style={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 100 }}>
       {[1, 2, 3].map((i) => (
@@ -115,6 +125,9 @@ export function SocialPostsSkeleton() {
 }
 
 export function SocialTrendsSkeleton() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+
   return (
     <View style={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 100 }}>
       {[1, 2, 3, 4, 5].map((i) => (

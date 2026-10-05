@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useTheme, getColors } from '@/theme';
 
 interface LeadValueBadgeProps {
   value?: number | null;
@@ -10,6 +11,8 @@ export const LeadValueBadge: React.FC<LeadValueBadgeProps> = ({
   value = 0,
   currency = 'INR',
 }) => {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const num = value || 0;
   let formatted = `₹${num.toLocaleString()}`;
   if (num >= 100000) {
@@ -17,8 +20,8 @@ export const LeadValueBadge: React.FC<LeadValueBadgeProps> = ({
   }
 
   return (
-    <View style={styles.badge}>
-      <Text style={styles.text}>{formatted}</Text>
+    <View style={[styles.badge, { backgroundColor: colors.successSoft, borderColor: colors.success }]}>
+      <Text style={[styles.text, { color: colors.success }]}>{formatted}</Text>
     </View>
   );
 };

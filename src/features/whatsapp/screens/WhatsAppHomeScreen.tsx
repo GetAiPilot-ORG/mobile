@@ -1,3 +1,4 @@
+import { getColors, useTheme } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
@@ -14,9 +15,6 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTheme } from "../../../contexts/ThemeContext";
-
-import { getColors } from "@/theme";
 import {
   ProductFloatingBottomBar,
   ProductTabItem,
@@ -139,13 +137,13 @@ export const WhatsAppHomeScreen: React.FC = () => {
   // Effective connection state based on selected connected account or global status
   const currentConnection = activeAccount
     ? {
-        connected: true,
-        status: "connected",
-        phone_number: activeAccount.display_phone_number,
-        display_name: activeAccount.name,
-        quality_rating: activeAccount.quality_rating,
-        messaging_limit: activeAccount.messaging_limit,
-      }
+      connected: true,
+      status: "connected",
+      phone_number: activeAccount.display_phone_number,
+      display_name: activeAccount.name,
+      quality_rating: activeAccount.quality_rating,
+      messaging_limit: activeAccount.messaging_limit,
+    }
     : status?.connected
       ? status
       : undefined;
@@ -487,9 +485,9 @@ export const WhatsAppHomeScreen: React.FC = () => {
                       styles.accountRow,
                       isDark ? styles.accountRowDark : styles.accountRowLight,
                       isSelected &&
-                        (isDark
-                          ? styles.accountRowSelectedDark
-                          : styles.accountRowSelectedLight),
+                      (isDark
+                        ? styles.accountRowSelectedDark
+                        : styles.accountRowSelectedLight),
                       pressed && { opacity: 0.75 },
                     ]}
                     onPress={() => {

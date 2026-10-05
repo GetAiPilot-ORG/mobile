@@ -13,7 +13,7 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
-import { getColors, useTheme } from "../../../contexts/ThemeContext";
+import { useTheme, getColors } from "@/theme";
 
 import { AppScreen } from "../../../components/AppScreen";
 import { AppTopBar } from "../../../components/AppTopBar";

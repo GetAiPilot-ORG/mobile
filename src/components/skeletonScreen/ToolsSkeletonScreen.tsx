@@ -1,8 +1,12 @@
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { Skeleton, SkeletonCard, SkeletonCircle, SkeletonRow, SkeletonText } from "../Skeleton";
+import { useTheme, getColors } from '@/theme';
 
 export function TemplatesListSkeleton() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+
   return (
     <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 100 }}>
       {/* Header Info Card */}
@@ -41,6 +45,9 @@ export function TemplatesListSkeleton() {
 }
 
 export function QuickFormsSkeleton() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+
   return (
     <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 100 }}>
       {/* Search Input */}
@@ -71,6 +78,9 @@ export function QuickFormsSkeleton() {
 }
 
 export function ProductsSkeleton() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+
   return (
     <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}>
       {[1, 2, 3, 4, 5].map((i) => (

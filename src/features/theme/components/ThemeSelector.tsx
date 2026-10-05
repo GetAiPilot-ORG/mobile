@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Text } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme, getColors } from '@/theme';
 import { ThemeModeCard } from './ThemeModeCard';
 import { ThemeMode } from '../types';
 
@@ -10,15 +10,16 @@ interface ThemeSelectorProps {
 
 export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ showTitle = true }) => {
   const { themeMode, setThemeMode, isDark } = useTheme();
+  const colors = getColors(isDark);
 
   return (
     <View style={styles.container}>
       {showTitle && (
         <View style={styles.header}>
-          <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+          <Text style={[styles.title, { color: colors.text }]}>
             Theme & Appearance
           </Text>
-          <Text style={[styles.subtitle, { color: isDark ? '#8E8E93' : '#64748B' }]}>
+          <Text style={[styles.subtitle, { color: colors.textMuted }]}>
             Select your preferred color theme across all tools, screens, and modals.
           </Text>
         </View>
