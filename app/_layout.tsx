@@ -13,6 +13,7 @@ LogBox.ignoreLogs([
   'props.pointerEvents is deprecated. Use style.pointerEvents',
   'Animated: `useNativeDriver` is not supported',
   '[Layout children]: Too many screens defined',
+  "Can't perform a React state update on a component that hasn't mounted yet",
 ]);
 
 if (Platform.OS === 'web' && typeof window !== 'undefined') {
