@@ -1,8 +1,9 @@
+import { getColors, useTheme } from '@/theme';
 import {
-  Ionicons } from '@expo/vector-icons';
+  Ionicons
+} from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import React,
-  { useState } from 'react';
+import React, { useState } from 'react';
 import {
   Linking,
   Platform,
@@ -13,7 +14,6 @@ import {
 } from 'react-native';
 import { StatCard } from '../components/ui/StatCard';
 import { TelegramToolKey } from '../types';
-import { useTheme, getColors } from '@/theme';
 
 type AfSection = 'mappings' | 'filters' | 'blocked' | 'delays' | 'headers';
 
@@ -29,9 +29,9 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
   const [afSection, setAfSection] = useState<AfSection>('mappings');
   const [selectedDelay, setSelectedDelay] = useState(0);
 
-  const card = isDark ? styles.cardDark : styles.cardLight;
-  const txt = isDark ? styles.textDark : styles.textLight;
-  const border = isDark ? styles.borderDark : styles.borderLight;
+  const card = { backgroundColor: colors.card };
+  const txt = { color: colors.text };
+  const border = { color: colors.border };
 
   const dbFilters = summary?.loadedFilters || [];
   const dbBlacklist = summary?.loadedBlacklist || [];
@@ -39,9 +39,9 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
 
   const filtersList = dbFilters.length > 0
     ? dbFilters.map((f: any) => ({
-        from: f.from_name || f.keyword || f.find_text || f.word || '',
-        to: f.to_name || f.replacement || f.replace_text || f.replace_with || '',
-      }))
+      from: f.from_name || f.keyword || f.find_text || f.word || '',
+      to: f.to_name || f.replacement || f.replace_text || f.replace_with || '',
+    }))
     : forwardRules.flatMap(r => r.keywords_filter || []).map((f: string) => {
       const parts = f.split('->');
       return { from: parts[0] || f, to: parts[1] || '' };
@@ -148,7 +148,7 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
                 const sourceLabel = rule.source_chat_title || rule.sender_name || (rule.sender_id ? `id:${rule.sender_id}` : 'Source Channel');
                 const targetLabel = rule.target_chat_title || (Array.isArray(rule.receivers_names) && rule.receivers_names.length > 0 ? rule.receivers_names.join(', ') : (Array.isArray(rule.receivers) && rule.receivers.length > 0 ? rule.receivers.map((r: any) => `id:${r}`).join(', ') : 'Target Channel'));
                 return (
-                  <View key={`rule_${rule.id || idx}`} style={[styles.mappingRow, isDark ? styles.mappingRowDark : styles.mappingRowLight]}>
+                  <View key={`rule_${rule.id || idx}`} style={[styles.mappingRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
                     <View style={styles.mappingLeft}>
                       <View style={styles.mappingArrow}>
                         <Ionicons name="arrow-redo" size={12} color="#0284C7" />
@@ -156,7 +156,7 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
                       <Text style={[styles.mappingSource, txt]} numberOfLines={1}>{sourceLabel}</Text>
                     </View>
                     <Ionicons name="arrow-forward" size={14} color="#94A3B8" style={{ marginHorizontal: 8 }} />
-                    <View style={[styles.targetBadge, isDark ? styles.targetBadgeDark : styles.targetBadgeLight]}>
+                    <View style={[styles.targetBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
                       <Text style={[styles.targetBadgeText, txt]} numberOfLines={1}>{targetLabel}</Text>
                     </View>
                   </View>
@@ -184,7 +184,7 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
               <Text style={{ fontSize: 12, color: '#64748B', padding: 10 }}>No filters configured.</Text>
             ) : (
               filtersList.map((item: any, idx: number) => (
-                <View key={idx} style={[styles.filterItem, border]}>
+                <View key={idx} style={[styles.filterItem]}>
                   <Text style={styles.filterFrom}>{item.from}</Text>
                   {item.to ? <Ionicons name="arrow-forward" size={14} color="#94A3B8" /> : null}
                   {item.to ? <Text style={styles.filterTo}>{item.to}</Text> : null}
@@ -242,7 +242,7 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
               <Text style={styles.sectionSub}>Prevent Telegram rate-limiting & simulate natural typing</Text>
             </View>
           </View>
-          <View style={[styles.delayBigBox, isDark ? styles.delayBoxDark : styles.delayBoxLight]}>
+          <View style={[styles.delayBigBox, { backgroundColor: colors.card }]}>
             <Text style={[styles.delayBigNumber, txt]}>{delaySec}</Text>
             <Text style={styles.delayBigLabel}>seconds delay active</Text>
           </View>
@@ -250,7 +250,7 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
             {[0, 5, 15, 30, 60].map((sec) => (
               <Pressable
                 key={sec}
-                style={[styles.delayPresetBtn, border, selectedDelay === sec && styles.delayPresetBtnActive]}
+                style={[styles.delayPresetBtn, selectedDelay === sec && styles.delayPresetBtnActive]}
                 onPress={() => setSelectedDelay(sec)}
               >
                 <Text style={[styles.delayPresetText, txt, selectedDelay === sec && { color: '#FFFFFF' }]}>

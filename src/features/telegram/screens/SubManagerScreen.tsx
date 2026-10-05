@@ -1,3 +1,7 @@
+import { getColors, useTheme } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import {
   Alert,
@@ -9,12 +13,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import * as Clipboard from 'expo-clipboard';
-import { TelegramToolKey } from '../types';
 import { StatCard } from '../components/ui/StatCard';
-import { useTheme, getColors } from '@/theme';
+import { TelegramToolKey } from '../types';
 
 type SubSection = 'pages' | 'revenue' | 'channels';
 
@@ -54,9 +54,9 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
   const [pageActiveMap, setPageActiveMap] = useState<Record<string, boolean>>({});
   const [launchExpanded, setLaunchExpanded] = useState(false);
 
-  const card = isDark ? styles.cardDark : styles.cardLight;
-  const txt = isDark ? styles.textDark : styles.textLight;
-  const border = isDark ? styles.borderDark : styles.borderLight;
+  const card = { backgroundColor: colors.card, borderColor: colors.border };
+  const txt = { color: colors.text };
+  const border = { borderColor: colors.border };
 
   const filteredTxns = (stats.transactions || []).filter((tx: any) => {
     const q = txnSearch.toLowerCase();
@@ -97,7 +97,7 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
               <Text style={styles.activeBadgeText}>Bot Active</Text>
             </View>
           </View>
-          <Text style={[styles.headerSub, isDark ? { color: '#94A3B8' } : { color: '#64748B' }]} numberOfLines={1}>VIP Community & Subscription Hub</Text>
+          <Text style={[styles.headerSub, { color: colors.textSecondary }]} numberOfLines={1}>VIP Community & Subscription Hub</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Pressable style={styles.newBtn} onPress={() => onOpenModal('sub_manager')}>
@@ -132,7 +132,7 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
       </View>
 
       {/* Launch Readiness Accordion */}
-      <Pressable style={[styles.launchBanner, isDark ? styles.launchBannerDark : styles.launchBannerLight]} onPress={() => setLaunchExpanded(!launchExpanded)}>
+      <Pressable style={[styles.launchBanner, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => setLaunchExpanded(!launchExpanded)}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Ionicons name="rocket-outline" size={16} color="#10B981" />
           <Text style={[styles.launchTitle, txt]}>Launch Readiness</Text>
@@ -290,7 +290,7 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 {(['All', 'Success', 'On Hold'] as const).map((f) => (
-                  <Pressable key={f} style={[styles.filterPill, txnFilter === f && styles.filterPillActive, isDark ? styles.filterPillDark : styles.filterPillLight]} onPress={() => setTxnFilter(f)}>
+                  <Pressable key={f} style={[styles.filterPill, txnFilter === f && styles.filterPillActive, { backgroundColor: colors.background, borderColor: colors.border }]} onPress={() => setTxnFilter(f)}>
                     <Text style={[styles.filterPillText, txnFilter === f && styles.filterPillTextActive, txt]}>{f}</Text>
                   </Pressable>
                 ))}
@@ -309,7 +309,7 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
                 const statusVal = (tx.status || 'SUCCESS').toUpperCase();
 
                 return (
-                  <View key={tx.id || paymentId} style={[styles.txnRow, isDark ? styles.txnRowDark : styles.txnRowLight]}>
+                  <View key={tx.id || paymentId} style={[styles.txnRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
                     <View style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
                       <Text style={[styles.txnId, txt]} numberOfLines={1}>{paymentId}</Text>
                       <Text style={styles.txnDate} numberOfLines={1}>{formattedDate}</Text>

@@ -479,7 +479,7 @@ export const TelegramScreen: React.FC = () => {
           onStartLogin={async () => ({ success: true, message: "" })}
           onVerifyOtp={async () => ({ success: true, message: "" })}
           onSubmitPassword={async () => ({ success: true, message: "" })}
-          onSuccess={() => {}}
+          onSuccess={() => { }}
         />
       )}
     </AppScreen>
