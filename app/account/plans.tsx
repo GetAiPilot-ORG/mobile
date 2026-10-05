@@ -19,7 +19,11 @@ import { AppTopBar } from "../../src/components/AppTopBar";
 import { useAuth } from "../../src/contexts/AuthContext";
 import { useRazorpay } from "../../src/contexts/RazorpayContext";
 import {
+  calculateGapProPricing,
   CATEGORY_META,
+  GAP_PRO_INTERVALS,
+  GapProInterval,
+  isAddonPlan,
   PlanCategory,
   PricingPlan,
   PricingService,
@@ -35,8 +39,7 @@ import {
 import { getColors, useTheme } from "../../src/theme";
 
 const CATEGORIES: { key: PlanCategory; label: string; icon: string }[] = [
-  // { key: "all", label: "All Plans", icon: "apps" },
-  // { key: "all-in-one", label: "GAP Pro", icon: "diamond" },
+  { key: "all", label: "All Plans", icon: "apps" },
   { key: "calling", label: "Voice AI", icon: "call" },
   { key: "social", label: "Social Pilot", icon: "share-social" },
   { key: "whatsapp", label: "WhatsApp", icon: "logo-whatsapp" },
@@ -79,7 +82,7 @@ export default function OverallPricingScreen() {
   const [selectedCategory, setSelectedCategory] = useState<PlanCategory>(
     (params.category as PlanCategory) || "all"
   );
-  const [selectedDuration, setSelectedDuration] = useState<"all" | "monthly" | "yearly">("all");
+  const [gapProInterval, setGapProInterval] = useState<GapProInterval>("month");
 
   useEffect(() => {
     if (params.category && params.category !== selectedCategory) {
@@ -104,39 +107,29 @@ export default function OverallPricingScreen() {
     await Promise.all([refetch(), refreshSub(), refetchDiscount()]);
   };
 
-  // Duration filter helper
-  const matchesDuration = (p: PricingPlan) => {
-    if (selectedDuration === "all") return true;
-    const d = (p.duration || "monthly").toLowerCase();
-    if (selectedDuration === "monthly") return d.includes("month");
-    if (selectedDuration === "yearly") return d.includes("year") || d.includes("annual");
-    return true;
-  };
-
   // Section 1: GAP Pro plans at the top (All-In-One ecosystem tiers)
   const gapProPlans = useMemo(() => {
     return allPlans
-      .filter((p) => isGapProPlan(p) && matchesDuration(p))
+      .filter((p) => isGapProPlan(p))
       .sort((a, b) => a.amount - b.amount);
-  }, [allPlans, selectedDuration]);
+  }, [allPlans]);
 
   // Section 2: Other Plans & Add-ons below it (Modular individual tools)
   const otherPlans = useMemo(() => {
     return allPlans
       .filter((p) => {
         if (isGapProPlan(p)) return false;
-        if (!matchesDuration(p)) return false;
         if (selectedCategory === "all") return true;
         if (selectedCategory === "all-in-one") return false;
         const cat = (p.category || "").toLowerCase();
         return cat === selectedCategory;
       })
       .sort((a, b) => a.amount - b.amount);
-  }, [allPlans, selectedCategory, selectedDuration]);
+  }, [allPlans, selectedCategory]);
 
   const handleSelectPlan = (plan: PricingPlan) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const isAddon = plan.id === "calling_number" || Boolean(plan.is_addon) || plan.id.includes("number");
+    const isAddon = isAddonPlan(plan);
     const isVoicePlan =
       plan.category === "calling" ||
       plan.category === "voice" ||
@@ -150,12 +143,60 @@ export default function OverallPricingScreen() {
     }
 
     const isPro = isGapProPlan(plan);
+
+    // GAP Pro interval calculation with duration discounts
+    if (isPro) {
+      const proPricing = calculateGapProPricing(
+        plan.amount,
+        gapProInterval,
+        hasReferralDiscount ? discountPercent : 0
+      );
+      const amountInRupees = proPricing.totalChargedRupees;
+      const planDisplayName = `${plan.plan_label || plan.plan_name} (${proPricing.option.label})`;
+
+      openRazorpayCheckout({
+        amount: amountInRupees,
+        currency: plan.currency || "INR",
+        product: "ecosystem",
+        planId: plan.id,
+        planName: `GetAiPilot - ${planDisplayName}`,
+        billingInterval: gapProInterval,
+        description: `${planDisplayName} Subscription · ${proPricing.option.days} Days Quotas`,
+        onSuccess: async () => {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+          // Complete referral reward & link if buyer was referred and purchased GAP Pro
+          if (user?.id) {
+            try {
+              await checkAndCompleteReferralReward(user.id, plan.id, amountInRupees);
+            } catch (refErr) {
+              console.warn("[Pricing] Referral reward completion notice:", refErr);
+            }
+          }
+
+          Alert.alert(
+            "Subscription Activated! 🎉",
+            `Your ${proPricing.option.label} subscription to ${planDisplayName} has been confirmed. Quotas are active in your workspace for ${proPricing.option.days} days.`,
+            [{ text: "Great!" }]
+          );
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ["platform-subscription"] }),
+            queryClient.invalidateQueries({ queryKey: ["ecosystem-pricing-plans-all"] }),
+            queryClient.invalidateQueries({ queryKey: ["active-referral-discount"] }),
+            queryClient.invalidateQueries({ queryKey: ["social", "entitlements"] }),
+            queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+            queryClient.invalidateQueries({ queryKey: ["voice"] }),
+            queryClient.invalidateQueries({ queryKey: ["voice", "overview"] }),
+            queryClient.invalidateQueries({ queryKey: ["voice", "numbers"] }),
+          ]);
+        },
+      });
+      return;
+    }
+
+    // Standard modular plan checkout
     const baseAmountInRupees = Math.round(plan.amount / 100);
-    // Referral discount strictly applies ONLY to GAP Pro plans (same as bot-dashboard)
-    const amountInRupees =
-      isPro && hasReferralDiscount
-        ? Math.max(1, Math.round(baseAmountInRupees * (1 - discountPercent / 100)))
-        : baseAmountInRupees;
+    const amountInRupees = baseAmountInRupees;
     const planDisplayName = plan.plan_label || plan.plan_name;
 
     const dur = (plan.duration || '').toLowerCase();
@@ -174,15 +215,6 @@ export default function OverallPricingScreen() {
       description: plan.description || `${planDisplayName} Subscription`,
       onSuccess: async () => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-        // Complete referral reward & link if buyer was referred and purchased GAP Pro
-        if (user?.id && isPro) {
-          try {
-            await checkAndCompleteReferralReward(user.id, plan.id, amountInRupees);
-          } catch (refErr) {
-            console.warn("[Pricing] Referral reward completion notice:", refErr);
-          }
-        }
 
         Alert.alert(
           "Subscription Activated! 🎉",
@@ -209,22 +241,36 @@ export default function OverallPricingScreen() {
   const renderPlanCard = (plan: PricingPlan, isProCard: boolean) => {
     const catKey = (plan.category || "all").toLowerCase();
     const meta = CATEGORY_META[catKey] || CATEGORY_META.all;
-    const formattedPrice = PricingService.formatPrice(plan.amount, plan.currency);
-    const formattedDuration = PricingService.formatDuration(plan.duration || "monthly");
     const isPopular = Boolean(plan.is_popular);
-    const isAddon = plan.id === "calling_number" || Boolean(plan.is_addon) || plan.id.includes("number");
+    const isAddon = isAddonPlan(plan);
     const isPro = isGapProPlan(plan);
-    const baseAmountInRupees = Math.round(plan.amount / 100);
 
-    // Referral discount strictly applies ONLY to GAP Pro plans
+    // GAP Pro interval pricing calculation with dynamic discounts
+    const proPricing = isProCard
+      ? calculateGapProPricing(
+          plan.amount,
+          gapProInterval,
+          hasReferralDiscount ? discountPercent : 0
+        )
+      : null;
+
+    const baseAmountInRupees = Math.round(plan.amount / 100);
     const isEligibleForDiscount = hasReferralDiscount && isPro;
     const discountedPriceRupees = isEligibleForDiscount
       ? Math.max(1, Math.round(baseAmountInRupees * (1 - discountPercent / 100)))
       : baseAmountInRupees;
-    const formattedDiscountedPrice = PricingService.formatPrice(
-      discountedPriceRupees * 100,
-      plan.currency
-    );
+
+    const formattedPrice = isProCard && proPricing
+      ? PricingService.formatPrice(proPricing.baseMonthlyRupees * 100, plan.currency)
+      : PricingService.formatPrice(plan.amount, plan.currency);
+
+    const formattedDiscountedPrice = isProCard && proPricing
+      ? PricingService.formatPrice(proPricing.finalMonthlyRupees * 100, plan.currency)
+      : PricingService.formatPrice(discountedPriceRupees * 100, plan.currency);
+
+    const formattedDuration = isProCard
+      ? "/month"
+      : PricingService.formatDuration(plan.duration || "monthly");
 
     return (
       <View
@@ -308,6 +354,23 @@ export default function OverallPricingScreen() {
             </View>
           )}
 
+          {isProCard && proPricing && proPricing.option.discountPercent > 0 && (
+            <View
+              style={[
+                styles.durationSavingsBadge,
+                {
+                  backgroundColor: isDark ? "rgba(139, 92, 246, 0.25)" : "#EDE9FE",
+                  borderColor: isDark ? "#8B5CF6" : "#C4B5FD",
+                },
+              ]}
+            >
+              <Ionicons name="flash" size={10} color="#8B5CF6" />
+              <Text style={[styles.durationSavingsBadgeText, { color: isDark ? "#DDD6FE" : "#6D28D9" }]}>
+                {proPricing.option.badge}
+              </Text>
+            </View>
+          )}
+
           {isEligibleForDiscount && (
             <View
               style={[
@@ -381,7 +444,7 @@ export default function OverallPricingScreen() {
           ]}
         >
           <View style={styles.priceRow}>
-            {isEligibleForDiscount ? (
+            {(isProCard ? proPricing?.hasDiscount : isEligibleForDiscount) ? (
               <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
                 <Text style={[styles.priceAmount, { color: "#10B981" }]}>
                   {formattedDiscountedPrice}
@@ -405,13 +468,26 @@ export default function OverallPricingScreen() {
             >
               {isAddon ? "/ 30-day" : formattedDuration}
             </Text>
-            {isEligibleForDiscount && (
+            {(isProCard ? proPricing?.hasDiscount : isEligibleForDiscount) && (
               <View style={styles.discountPill}>
-                <Text style={styles.discountPillText}>-{discountPercent}%</Text>
+                <Text style={styles.discountPillText}>
+                  -{isProCard && proPricing
+                    ? proPricing.intervalDiscountPercent + (hasReferralDiscount ? discountPercent : 0)
+                    : discountPercent}%
+                </Text>
               </View>
             )}
           </View>
-          {plan.billing_note ? (
+          {isProCard && proPricing ? (
+            <Text
+              style={[styles.billingNote, { color: "#8B5CF6" }]}
+              numberOfLines={1}
+            >
+              {gapProInterval === "month"
+                ? "Billed monthly · 30-day renewal cycle"
+                : `Billed ₹${proPricing.totalChargedRupees.toLocaleString('en-IN')} for ${proPricing.option.months} mos · Save ₹${proPricing.totalSavedRupees.toLocaleString('en-IN')}`}
+            </Text>
+          ) : plan.billing_note ? (
             <Text
               style={[
                 styles.billingNote,
@@ -566,11 +642,13 @@ export default function OverallPricingScreen() {
             color="#ffffff"
           />
           <Text style={styles.subscribeBtnText}>
-            {isProCard
-              ? `Get GAP Pro · ${isEligibleForDiscount ? formattedDiscountedPrice : formattedPrice}`
-              : isAddon
-                ? `Add Line · ${formattedPrice}`
-                : `Subscribe · ${formattedPrice}`}
+            {isProCard && proPricing
+              ? `Get ${plan.plan_label || "GAP Pro"} · ₹${proPricing.totalChargedRupees.toLocaleString("en-IN")}`
+              : isProCard
+                ? `Get GAP Pro · ${isEligibleForDiscount ? formattedDiscountedPrice : formattedPrice}`
+                : isAddon
+                  ? `Add Line · ${formattedPrice}`
+                  : `Subscribe · ${formattedPrice}`}
           </Text>
           <Ionicons name="arrow-forward" size={14} color="#ffffff" />
         </Pressable>
@@ -746,6 +824,95 @@ export default function OverallPricingScreen() {
                 </View>
               </View>
 
+              {/* Duration Filter: Monthly, Quarterly, Half-Yearly, Yearly */}
+              <View style={styles.proIntervalWrapper}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.proIntervalScroll}
+                >
+                  {GAP_PRO_INTERVALS.map((inv) => {
+                    const isSelected = gapProInterval === inv.key;
+                    return (
+                      <Pressable
+                        key={inv.key}
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          setGapProInterval(inv.key);
+                        }}
+                        style={[
+                          styles.proIntervalChip,
+                          {
+                            backgroundColor: isSelected
+                              ? "#8B5CF6"
+                              : isDark
+                                ? "#161331"
+                                : "#EDE9FE",
+                            borderColor: isSelected
+                              ? "#7C3AED"
+                              : isDark
+                                ? "rgba(139, 92, 246, 0.4)"
+                                : "#DDD6FE",
+                          },
+                        ]}
+                      >
+                        <Ionicons
+                          name={
+                            inv.key === "year"
+                              ? "trophy"
+                              : inv.key === "six_months"
+                                ? "shield-checkmark"
+                                : inv.key === "quarterly"
+                                  ? "flash"
+                                  : "calendar"
+                          }
+                          size={13}
+                          color={isSelected ? "#ffffff" : isDark ? "#C4B5FD" : "#7C3AED"}
+                        />
+                        <Text
+                          style={[
+                            styles.proIntervalChipText,
+                            {
+                              color: isSelected
+                                ? "#ffffff"
+                                : isDark
+                                  ? "#DDD6FE"
+                                  : "#6D28D9",
+                              fontWeight: isSelected ? "800" : "600",
+                            },
+                          ]}
+                        >
+                          {inv.label}
+                        </Text>
+                        {Boolean(inv.badge) && (
+                          <View
+                            style={[
+                              styles.proIntervalChipBadge,
+                              {
+                                backgroundColor: isSelected
+                                  ? "rgba(255, 255, 255, 0.25)"
+                                  : isDark
+                                    ? "rgba(16, 185, 129, 0.2)"
+                                    : "#DCFCE7",
+                              },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.proIntervalChipBadgeText,
+                                { color: isSelected ? "#ffffff" : "#059669" },
+                              ]}
+                            >
+                              {inv.badge}
+                            </Text>
+                          </View>
+                        )}
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+
               {/* Horizontal Scroll Area for GAP Pro */}
               {gapProPlans.length === 0 ? (
                 <View
@@ -761,7 +928,7 @@ export default function OverallPricingScreen() {
                       { color: colors.text },
                     ]}
                   >
-                    No GAP Pro plans matching this duration filter
+                    No GAP Pro plans available
                   </Text>
                   <Text
                     style={[
@@ -769,7 +936,7 @@ export default function OverallPricingScreen() {
                       { color: colors.textMuted },
                     ]}
                   >
-                    Switch duration filter to "All Durations" to view monthly & annual bundles.
+                    Please verify your network connection or pull to refresh.
                   </Text>
                 </View>
               ) : (
@@ -1071,6 +1238,50 @@ const styles = StyleSheet.create({
     shadowColor: "#8B5CF6",
     shadowOpacity: 0.18,
     shadowRadius: 12,
+  },
+  proIntervalWrapper: {
+    marginTop: 2,
+    marginBottom: 4,
+  },
+  proIntervalScroll: {
+    gap: 8,
+    paddingVertical: 2,
+    paddingRight: 8,
+  },
+  proIntervalChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+  },
+  proIntervalChipText: {
+    fontSize: 12.5,
+  },
+  proIntervalChipBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  proIntervalChipBadgeText: {
+    fontSize: 9.5,
+    fontWeight: "800",
+    letterSpacing: 0.3,
+  },
+  durationSavingsBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  durationSavingsBadgeText: {
+    fontSize: 10,
+    fontWeight: "800",
   },
   sectionHeaderRow: {
     flexDirection: "row",
