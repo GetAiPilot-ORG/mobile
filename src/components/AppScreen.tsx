@@ -37,6 +37,7 @@ export function AppScreen({
     paddingBottom = insets.bottom;
   }
 
+  const bgClass = isDark ? 'bg-[#05080D]' : 'bg-[#F8F9FA]';
   const paddingClass = padding ? 'p-lg' : '';
 
   return (
