@@ -11,9 +11,9 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  useColorScheme,
   View,
 } from "react-native";
+import { useTheme, getColors } from "@/theme";
 import { voiceApi } from "../api/voiceApi";
 
 interface TriggerCallModalProps {
@@ -42,8 +42,8 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
   onSubmit,
   isLoading,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const themeColors = getColors(isDark);
 
   const [phone, setPhone] = useState(initialPhone);
   const [name, setName] = useState(initialName);
@@ -95,20 +95,21 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
   }, [assistants, selectedAssistantId, initialAssistantId]);
 
   const colors = {
-    background: isDark ? "#0D0D10" : "#FFFFFF",
-    surface: isDark ? "#16161B" : "#F8FAFC",
-    surfaceAlt: isDark ? "#1F1F26" : "#F1F5F9",
-    border: isDark ? "#282832" : "#E2E8F0",
-    text: isDark ? "#FFFFFF" : "#0F172A",
-    textSecondary: isDark ? "#94A3B8" : "#64748B",
-    primary: "#5844E3",
-    primaryLight: isDark ? "rgba(88, 68, 227, 0.15)" : "#EEF2FF",
-    green: "#16A34A",
-    greenLight: isDark ? "rgba(22, 163, 74, 0.12)" : "#DCFCE7",
-    amber: "#D97706",
-    amberLight: isDark ? "rgba(245, 158, 11, 0.12)" : "#FEF3C7",
-    danger: "#EF4444",
-    dangerLight: isDark ? "rgba(239, 68, 68, 0.12)" : "#FEE2E2",
+    ...themeColors,
+    background: themeColors.background,
+    surface: themeColors.surface,
+    surfaceAlt: themeColors.surfaceSecondary,
+    border: themeColors.border,
+    text: themeColors.text,
+    textSecondary: themeColors.textMuted,
+    primary: themeColors.products.voice || "#5844E3",
+    primaryLight: themeColors.products.voiceSoft || (isDark ? "rgba(88, 68, 227, 0.15)" : "#EEF2FF"),
+    green: themeColors.success,
+    greenLight: themeColors.successSoft,
+    amber: themeColors.warning,
+    amberLight: themeColors.warningSoft,
+    danger: themeColors.destructive,
+    dangerLight: themeColors.destructiveSoft,
   };
 
   const handleTrigger = async () => {

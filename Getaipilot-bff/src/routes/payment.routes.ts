@@ -488,7 +488,7 @@ export async function paymentRoutes(fastify: FastifyInstance) {
     <h2 style="margin:0 0 8px;">Payment Verified!</h2>
     <p style="color:#94a3b8; font-size:13px; margin:0 0 16px;">Your workspace upgrade is now active.</p>
     <div style="font-size:11px; color:#64748b; word-break:break-all;">Payment ID: ${paymentId}<br>Order ID: ${orderId}</div>
-    <p style="margin-top:24px; font-size:12px; color:#ec4899; font-weight:bold;">Return to the GetAiPilot App</p>
+    <a href="getaipilot://" style="display:inline-block; margin-top:24px; font-size:14px; color:#ffffff; background:#ec4899; padding:12px 24px; border-radius:12px; text-decoration:none; font-weight:800; box-shadow:0 4px 14px rgba(236,72,153,0.4);">Return to GetAiPilot App</a>
   </div>
 </body>
 </html>`;

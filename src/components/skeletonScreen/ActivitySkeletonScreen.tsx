@@ -1,10 +1,17 @@
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { Skeleton, SkeletonCard, SkeletonCircle, SkeletonRow, SkeletonText } from "../Skeleton";
+import { useTheme, getColors } from '@/theme';
 
 export function ActivityScreenSkeleton() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 130 }}>
+    <ScrollView
+      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 130 }}
+      style={{ backgroundColor: colors.background }}
+    >
       {/* Segmented Control Track */}
       <Skeleton width="100%" height={38} borderRadius={10} style={{ marginBottom: 16 }} />
 
@@ -28,7 +35,7 @@ export function ActivityScreenSkeleton() {
             paddingVertical: 14,
             borderTopWidth: StyleSheet.hairlineWidth,
             borderBottomWidth: StyleSheet.hairlineWidth,
-            borderColor: "rgba(150, 150, 150, 0.2)",
+            borderColor: colors.border,
             marginBottom: 14,
           }}
         >
@@ -62,7 +69,7 @@ export function ActivityScreenSkeleton() {
               justifyContent: "space-between",
               paddingVertical: 12,
               borderBottomWidth: i < 4 ? StyleSheet.hairlineWidth : 0,
-              borderBottomColor: "rgba(150, 150, 150, 0.2)",
+              borderBottomColor: colors.border,
             }}
           >
             <SkeletonRow style={{ flex: 1, marginRight: 10 }}>

@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useTheme } from '../../../contexts/ThemeContext';
+import React from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTheme, getColors } from '@/theme';
 
 interface HubProgressCardProps {
   total: number;
@@ -18,6 +18,7 @@ export const HubProgressCard: React.FC<HubProgressCardProps> = ({
   isRefreshing,
 }) => {
   const { isDark } = useTheme();
+  const colors = getColors(isDark)
   const percentage = Math.round((completed / (total || 1)) * 100);
 
   const handleRefresh = () => {
@@ -26,14 +27,14 @@ export const HubProgressCard: React.FC<HubProgressCardProps> = ({
   };
 
   return (
-    <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+    <View style={[styles.card, { backgroundColor: colors.card }]}>
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <View style={styles.iconBox}>
             <Ionicons name="apps" size={18} color="#0284C7" />
           </View>
           <View style={styles.titleTextWrap}>
-            <Text style={[styles.title, isDark ? styles.textDark : styles.textLight]} numberOfLines={1}>
+            <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
               Connected Platforms Hub
             </Text>
             <Text style={styles.subtitle} numberOfLines={1}>
@@ -52,14 +53,14 @@ export const HubProgressCard: React.FC<HubProgressCardProps> = ({
         </Pressable>
       </View>
 
-      <View style={styles.progressContainer}>
+      <View style={{ ...styles.progressContainer, backgroundColor: colors.backgroundSecondary }}>
         <View style={styles.progressHeader}>
           <Text style={styles.progressLabel}>SETUP PROGRESS</Text>
           <Text style={[styles.progressVal, percentage === 100 && { color: '#10B981' }]}>
             {completed}/{total} Completed ({percentage}%)
           </Text>
         </View>
-        <View style={[styles.progressBarBg, isDark ? styles.progressBarBgDark : styles.progressBarBgLight]}>
+        <View style={[styles.progressBarBg, { backgroundColor: colors.card }]}>
           <View
             style={[
               styles.progressBarFill,

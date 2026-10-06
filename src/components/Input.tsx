@@ -1,6 +1,6 @@
 import React from 'react';
 import { TextInput, TextInputProps, View, Text } from 'react-native';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, getColors } from '@/theme';
 
 export type InputVariant = 'default' | 'filled';
 
@@ -25,6 +25,7 @@ export const Input: React.FC<InputProps> = ({
   ...props
 }) => {
   const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const variantStyles: Record<InputVariant, string> = {
     default: isDark
@@ -45,18 +46,13 @@ export const Input: React.FC<InputProps> = ({
         </Text>
       )}
       <TextInput
-        className={`
-          rounded-md px-lg py-md font-body-md
-          ${variantStyles[variant]}
-          ${error ? 'border-destructive' : ''}
-          ${className}
-        `}
-        placeholderTextColor={placeholderTextColor || placeholderColor}
-        style={style}
+        className={`rounded-md px-lg py-md font-body-md ${className}`}
+        placeholderTextColor={placeholderTextColor || colors.textMuted}
+        style={[inputDynamicStyle, style]}
         {...props}
       />
       {error ? (
-        <Text className="text-label-sm text-destructive mt-xs font-medium">
+        <Text style={{ color: colors.error }} className="text-label-sm mt-xs font-medium">
           {error}
         </Text>
       ) : helperText ? (

@@ -5,7 +5,7 @@ import {
   TouchableOpacityProps,
   ActivityIndicator,
 } from 'react-native';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, getColors } from '@/theme';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'destructive' | 'ghost';
 export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
@@ -34,14 +34,23 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
-  const variantStyles: Record<ButtonVariant, string> = {
-    primary: 'bg-primary active:opacity-90',
-    secondary: isDark
-      ? 'bg-[#101C2A] border border-[#234563] active:bg-[#0D1724]'
-      : 'bg-surface border border-border active:bg-gray-100',
-    destructive: 'bg-destructive active:opacity-90',
-    ghost: 'bg-transparent active:opacity-70',
+  const getVariantStyle = () => {
+    switch (variant) {
+      case 'primary':
+        return { backgroundColor: colors.primary };
+      case 'secondary':
+        return {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          borderWidth: 1,
+        };
+      case 'destructive':
+        return { backgroundColor: colors.error };
+      case 'ghost':
+        return { backgroundColor: 'transparent' };
+    }
   };
 
   const sizeStyles: Record<ButtonSize, { container: string; text: string }> = {
@@ -64,16 +73,15 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const getTextColor = () => {
-    if (variant === 'primary' || variant === 'destructive') return 'text-white';
-    if (variant === 'ghost') return 'text-primary';
-    return isDark ? 'text-white' : 'text-foreground';
+    if (variant === 'primary' || variant === 'destructive') return '#FFFFFF';
+    if (variant === 'ghost') return colors.primary;
+    return colors.text;
   };
 
   return (
     <TouchableOpacity
       className={`
         flex-row items-center justify-center gap-sm
-        ${variantStyles[variant]}
         ${sizeStyles[size].container}
         ${fullWidth ? 'w-full' : ''}
         ${disabled ? 'opacity-50' : ''}
@@ -81,18 +89,21 @@ export const Button: React.FC<ButtonProps> = ({
         ${className}
       `}
       disabled={disabled || isLoading}
-      style={style}
+      style={[getVariantStyle(), style]}
       {...props}
     >
       {isLoading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'primary' || variant === 'destructive' ? '#FFFFFF' : '#0084FF'}
+          color={variant === 'primary' || variant === 'destructive' ? '#FFFFFF' : colors.primary}
         />
       ) : (
         <>
           {icon}
-          <Text className={`font-semibold ${sizeStyles[size].text} ${getTextColor()}`}>
+          <Text
+            className={`font-semibold ${sizeStyles[size].text}`}
+            style={{ color: getTextColor() }}
+          >
             {label}
           </Text>
         </>

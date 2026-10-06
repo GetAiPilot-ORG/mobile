@@ -1,14 +1,19 @@
 import { Dimensions, View } from "react-native";
+import { useTheme, getColors } from '@/theme';
 
 const width = Dimensions.get("window").width;
-export function CampaignSkeleton({ isDark }: { isDark: boolean }) {
+export function CampaignSkeleton({ isDark: propIsDark }: { isDark?: boolean }) {
+  const { isDark: themeIsDark } = useTheme();
+  const isDark = propIsDark !== undefined ? propIsDark : themeIsDark;
+  const colors = getColors(isDark);
+
   return (
     <View
       style={[
         styles.skeletonCard,
         {
-          backgroundColor: isDark ? "#17181C" : "#FFFFFF",
-          borderColor: isDark ? "#292B32" : "#E5E7EB",
+          backgroundColor: colors.card,
+          borderColor: colors.border,
         },
       ]}
     >
@@ -16,7 +21,7 @@ export function CampaignSkeleton({ isDark }: { isDark: boolean }) {
         style={[
           styles.skeletonLarge,
           {
-            backgroundColor: isDark ? "#292B32" : "#E5E7EB",
+            backgroundColor: colors.surfaceSecondary,
           },
         ]}
       />
@@ -25,7 +30,7 @@ export function CampaignSkeleton({ isDark }: { isDark: boolean }) {
         style={[
           styles.skeletonMedium,
           {
-            backgroundColor: isDark ? "#292B32" : "#E5E7EB",
+            backgroundColor: colors.surfaceSecondary,
           },
         ]}
       />
@@ -34,7 +39,7 @@ export function CampaignSkeleton({ isDark }: { isDark: boolean }) {
         style={[
           styles.skeletonLine,
           {
-            backgroundColor: isDark ? "#292B32" : "#E5E7EB",
+            backgroundColor: colors.surfaceSecondary,
           },
         ]}
       />
@@ -43,7 +48,7 @@ export function CampaignSkeleton({ isDark }: { isDark: boolean }) {
         style={[
           styles.skeletonLine,
           {
-            backgroundColor: isDark ? "#292B32" : "#E5E7EB",
+            backgroundColor: colors.surfaceSecondary,
           },
         ]}
       />

@@ -13,7 +13,7 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
-import { getColors, useTheme } from "../../../contexts/ThemeContext";
+import { useTheme, getColors } from "@/theme";
 
 import { AppScreen } from "../../../components/AppScreen";
 import { AppTopBar } from "../../../components/AppTopBar";
@@ -484,7 +484,7 @@ export const TelegramScreen: React.FC = () => {
           onStartLogin={async () => ({ success: true, message: "" })}
           onVerifyOtp={async () => ({ success: true, message: "" })}
           onSubmitPassword={async () => ({ success: true, message: "" })}
-          onSuccess={() => {}}
+          onSuccess={() => { }}
         />
       )}
     </AppScreen>

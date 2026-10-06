@@ -14,9 +14,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useTheme } from "../../../contexts/ThemeContext";
+import { getColors, useTheme } from "@/theme";
 
-import { getColors } from "@/theme";
 import { WhatsAppTemplatesSkeleton } from "../../../components/skeletonScreen";
 import { TemplateCard } from "../components";
 import { useWhatsAppTemplates } from "../hooks/useWhatsAppTemplates";

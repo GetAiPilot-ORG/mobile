@@ -1,19 +1,19 @@
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import {
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { Platform } from 'react-native';
-import { useTheme } from '../../../contexts/ThemeContext';
+import { useTheme, getColors } from '@/theme';
 
-import { HubProgressCard, ToolCard, DashboardAnalyticsCharts } from '../components';
+import { DashboardAnalyticsCharts, HubProgressCard, ToolCard } from '../components';
 import { StatCard } from '../components/ui/StatCard';
-import { TelegramToolKey, TelegramHubTool } from '../types';
+import { TelegramHubTool, TelegramToolKey } from '../types';
 
 type TelegramCategory = 'all' | 'automation' | 'monetization' | 'growth';
 
@@ -129,6 +129,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
   onOpenModal,
 }) => {
   const { isDark } = useTheme();
+  const colors = getColors(isDark)
   const [selectedCategory, setSelectedCategory] = useState<TelegramCategory>('all');
 
   const hub = summary?.hub || { totalModules: 8, completedModules: 8, tools: [] };
@@ -153,8 +154,8 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
     return true;
   });
 
-  const card = isDark ? styles.cardDark : styles.cardLight;
-  const txt = isDark ? styles.textDark : styles.textLight;
+  const card = { backgroundColor: colors.card };
+  const txt = { color: colors.text };
 
   return (
     <>
@@ -270,7 +271,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
       />
 
       {/* Category Filter */}
-      <View style={styles.categorySection}>
+      <View style={[styles.categorySection, { backgroundColor: colors.backgroundSecondary }]}>
         <Text style={[styles.sectionTitle, txt]}>
           Platform Integration Tools ({filteredTools.length}/8)
         </Text>

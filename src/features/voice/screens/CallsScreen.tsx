@@ -9,9 +9,9 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from "react-native";
+import { useTheme, getColors } from "@/theme";
 import { useRouter } from "expo-router";
 import {
   DedicatedNumber,
@@ -27,8 +27,8 @@ import { openVoiceWebBilling } from "../utils/voiceBilling";
 
 export const CallsScreen: React.FC = () => {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const themeColors = getColors(isDark);
   const queryClient = useQueryClient();
 
   const [selectedCall, setSelectedCall] = useState<VoiceCall | null>(null);
@@ -94,19 +94,20 @@ export const CallsScreen: React.FC = () => {
   ).length;
 
   const colors = {
-    background: isDark ? "#000000" : "#F7F8FA",
-    surface: isDark ? "#161618" : "#FFFFFF",
-    surfaceAlt: isDark ? "#1F1F24" : "#F1F3F9",
-    border: isDark ? "#2A2A2E" : "#F0F1F5",
-    text: isDark ? "#FFFFFF" : "#0F172A",
-    textSecondary: isDark ? "#94A3B8" : "#64748B",
-    primary: "#5B3AF5",
-    primaryLight: isDark ? "rgba(91, 58, 245, 0.2)" : "#EDE9FE",
-    green: "#16A34A",
-    greenLight: isDark ? "rgba(22, 163, 74, 0.2)" : "#DCFCE7",
-    red: "#EF4444",
-    redLight: isDark ? "rgba(239, 68, 68, 0.2)" : "#FEE2E2",
-    amber: "#F59E0B",
+    ...themeColors,
+    background: themeColors.background,
+    surface: themeColors.surface,
+    surfaceAlt: themeColors.surfaceSecondary,
+    border: themeColors.border,
+    text: themeColors.text,
+    textSecondary: themeColors.textMuted,
+    primary: themeColors.products.voice || "#5B3AF5",
+    primaryLight: themeColors.products.voiceSoft || (isDark ? "rgba(91, 58, 245, 0.2)" : "#EDE9FE"),
+    green: themeColors.success,
+    greenLight: themeColors.successSoft,
+    red: themeColors.destructive,
+    redLight: themeColors.destructiveSoft,
+    amber: themeColors.warning,
   };
 
   return (

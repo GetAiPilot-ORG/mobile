@@ -1,8 +1,12 @@
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { Skeleton, SkeletonCard, SkeletonCircle, SkeletonRow, SkeletonText } from "../Skeleton";
+import { useTheme, getColors } from '@/theme';
 
 export function VoiceCallsSkeleton() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+
   return (
     <View style={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 60 }}>
       {/* Telecalling Campaign Card */}

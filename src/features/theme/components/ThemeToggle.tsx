@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme, getColors } from '@/theme';
 
 interface ThemeToggleProps {
   showLabel?: boolean;
@@ -11,6 +11,7 @@ interface ThemeToggleProps {
 
 export const ThemeToggle: React.FC<ThemeToggleProps> = ({ showLabel = false, size = 'md' }) => {
   const { isDark, toggleTheme, themeMode } = useTheme();
+  const colors = getColors(isDark);
 
   const handlePress = async () => {
     if (Platform.OS !== 'web') {
@@ -30,7 +31,10 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ showLabel = false, siz
       onPress={handlePress}
       style={({ pressed }) => [
         styles.button,
-        isDark ? styles.buttonDark : styles.buttonLight,
+        {
+          backgroundColor: colors.surfaceSecondary,
+          borderColor: colors.border,
+        },
         pressed && styles.pressed,
       ]}
       accessibilityRole="button"
@@ -42,7 +46,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ showLabel = false, siz
         color={isDark ? '#F59E0B' : '#EAB308'}
       />
       {showLabel && (
-        <Text style={[styles.label, { color: isDark ? '#F7F3EA' : '#41444B' }]}>
+        <Text style={[styles.label, { color: colors.text }]}>
           {isDark ? 'Dark Mode' : 'Light Mode'}
         </Text>
       )}

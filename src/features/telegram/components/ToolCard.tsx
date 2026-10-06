@@ -2,7 +2,10 @@ import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useTheme } from '../../../contexts/ThemeContext';
+import { LinearGradient } from 'expo-linear-gradient';
+import React from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTheme, getColors } from '@/theme';
 import { TelegramHubTool } from '../types';
 
 interface ToolCardProps {
@@ -87,6 +90,7 @@ const DEFAULT_VISUAL: ToolVisualConfig = {
 
 export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
   const { isDark } = useTheme();
+  const colors = getColors(isDark)
 
   const visual = TOOL_VISUAL_MAP[tool.key] || DEFAULT_VISUAL;
   const badgeText = tool.badge || visual.badge;
@@ -102,7 +106,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
     <Pressable
       style={({ pressed }) => [
         styles.card,
-        isDark ? styles.cardDark : styles.cardLight,
+        { backgroundColor: colors.card, borderColor: colors.border },
         pressed && styles.cardPressed,
       ]}
       onPress={handlePress}

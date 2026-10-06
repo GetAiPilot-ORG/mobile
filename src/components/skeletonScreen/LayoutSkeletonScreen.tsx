@@ -27,7 +27,7 @@ export function LayoutSkeletonScreen() {
     <View
       style={[
         styles.container,
-        { backgroundColor: isDark ? '#000000' : '#F2F2F7' },
+        { backgroundColor: colors.background },
       ]}
     >
       {/* 1. Header / Top Navigation Bar Skeleton */}
@@ -36,12 +36,8 @@ export function LayoutSkeletonScreen() {
           styles.topBar,
           {
             paddingTop: topPadding + 6,
-            backgroundColor: isDark
-              ? 'rgba(18, 18, 20, 0.95)'
-              : 'rgba(255, 255, 255, 0.95)',
-            borderBottomColor: isDark
-              ? 'rgba(255, 255, 255, 0.08)'
-              : 'rgba(0, 0, 0, 0.08)',
+            backgroundColor: colors.surface,
+            borderBottomColor: colors.border,
           },
         ]}
       >
@@ -161,7 +157,10 @@ export function LayoutSkeletonScreen() {
         <View
           style={[
             styles.tabBarContainer,
-            isDark ? styles.tabBarContainerDark : styles.tabBarContainerLight,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+            },
           ]}
         >
           {[1, 2, 3, 4].map((tab) => (

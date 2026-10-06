@@ -1,27 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Modal,
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  ScrollView,
-  TextInput,
-  ActivityIndicator,
-  Linking,
-  Alert,
-  Image,
-  Share,
-} from 'react-native';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Linking,
+  Modal,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 import { useTheme } from '../../../contexts/ThemeContext';
 import { supabase } from '../../../lib/supabase';
 import { telegramSupabase } from '../api/telegramSupabase';
-import { telegramApi } from '../api/telegramApi';
 import { ReportBotBrandProfile, TelegramToolKey } from '../types';
 
 interface Props { summary?: any; onOpenModal: (key: TelegramToolKey) => void; }
@@ -140,7 +139,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
     mutationFn: async (profile: Partial<ReportBotBrandProfile>) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-      
+
       const payload = {
         user_id: user.id,
         brand_name: profile.advisoryFirm || '',
@@ -157,7 +156,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
         is_active: true,
         updated_at: new Date().toISOString(),
       };
-      
+
       const { error } = await supabase.from('tg_brand_settings').upsert(payload, { onConflict: 'user_id' });
       if (error) throw error;
       return true;
@@ -297,11 +296,11 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
   return (
     <View style={styles.container}>
       {/* Top Header Card */}
-      <View style={[styles.topCard, isDark ? styles.cardDark : styles.cardLight]}>
+      <View style={[styles.topCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         {/* Top Header */}
-        <View style={[styles.header, isDark ? styles.borderDark : styles.borderLight]}>
+        <View style={[styles.header, { borderColor: colors.border }]}>
           <View style={{ flex: 1, paddingRight: 8 }}>
-            <Text style={[styles.title, isDark ? styles.textDark : styles.textLight]}>GAP Report Bot</Text>
+            <Text style={[styles.title, { color: colors.text }]}>GAP Report Bot</Text>
             <Text style={styles.subtitle} numberOfLines={2}>
               Convert Telegram trading calls into branded SEBI research PDFs.
             </Text>
@@ -309,7 +308,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
         </View>
 
         {/* Action Header Buttons: Start Bot & Refresh Status */}
-        <View style={[styles.actionHeaderRow, isDark ? styles.borderDark : styles.borderLight]}>
+        <View style={[styles.actionHeaderRow, { borderColor: colors.border }]}>
           <Pressable style={styles.startBotBtn} onPress={handleStartBot}>
             <Ionicons name="paper-plane-outline" size={14} color="#FFFFFF" />
             <Text style={styles.startBotBtnText}>Start Bot</Text>
@@ -317,15 +316,15 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
           </Pressable>
 
           <Pressable
-            style={[styles.refreshBtn, isDark ? styles.btnDark : styles.btnLight]}
+            style={[styles.refreshBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               refetch();
             }}
             disabled={isRefetching}
           >
-            <Ionicons name="refresh-outline" size={14} color={isDark ? '#CBD5E1' : '#475569'} />
-            <Text style={[styles.refreshBtnText, isDark ? styles.textDark : styles.textLight]}>
+            <Ionicons name="refresh-outline" size={14} color={colors.text} />
+            <Text style={[styles.refreshBtnText, { color: colors.text }]}>
               {isRefetching ? 'Refreshing...' : 'Refresh Status'}
             </Text>
           </Pressable>
@@ -393,7 +392,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
         {isLoading && !activeData ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator size="large" color="#0284C7" />
-            <Text style={[styles.loadingText, isDark ? styles.textDark : styles.textLight]}>
+            <Text style={[styles.loadingText, { color: colors.text }]}>
               Loading SEBI Report Bot Suite...
             </Text>
           </View>
@@ -403,10 +402,10 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
             {activeTab === 'profile' && (
               <>
                 {/* SEBI Brand Profile Card Header */}
-                <View style={[styles.formCard, isDark ? styles.cardDark : styles.cardLight]}>
+                <View style={[styles.formCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
                   <View style={styles.formHeaderRow}>
                     <View style={{ flex: 1, paddingRight: 6 }}>
-                      <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight]}>
+                      <Text style={[styles.sectionTitle, { color: colors.text }]}>
                         SEBI Brand Profile
                       </Text>
                       <Text style={styles.sectionSubtitle}>These details appear on every generated research PDF.</Text>
@@ -424,626 +423,626 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                   </View>
 
                   {/* SECTION 1: IDENTITY (REQUIRED) */}
-                    <Text style={styles.groupHeading}>Identity</Text>
-                    <Text style={styles.groupDesc}>Required information for the report header and Hub completion</Text>
+                  <Text style={styles.groupHeading}>Identity</Text>
+                  <Text style={styles.groupDesc}>Required information for the report header and Hub completion</Text>
 
-                    <View style={styles.row}>
-                      <View style={[styles.field, { flex: 1, marginRight: 6 }]}>
-                        <Text style={styles.label}>ADVISORY FIRM *</Text>
-                        <TextInput
-                          style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
-                          value={advisoryFirm}
-                          onChangeText={setAdvisoryFirm}
-                          placeholder="No Brand"
-                          placeholderTextColor="#94A3B8"
-                        />
-                      </View>
-                      <View style={[styles.field, { flex: 1, marginLeft: 6 }]}>
-                        <Text style={styles.label}>RESEARCH ANALYST *</Text>
-                        <TextInput
-                          style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
-                          value={researchAnalyst}
-                          onChangeText={setResearchAnalyst}
-                          placeholder="SEBI"
-                          placeholderTextColor="#94A3B8"
-                        />
-                      </View>
-                    </View>
-
-                    <View style={styles.row}>
-                      <View style={[styles.field, { flex: 1, marginRight: 6 }]}>
-                        <Text style={styles.label}>SEBI REGISTRATION *</Text>
-                        <TextInput
-                          style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
-                          value={sebiRegistration}
-                          onChangeText={setSebiRegistration}
-                          placeholder="INH010600090"
-                          placeholderTextColor="#94A3B8"
-                        />
-                      </View>
-                      <View style={[styles.field, { flex: 1, marginLeft: 6 }]}>
-                        <Text style={styles.label}>WEBSITE</Text>
-                        <TextInput
-                          style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
-                          value={website}
-                          onChangeText={setWebsite}
-                          placeholder="getaipilot.com"
-                          placeholderTextColor="#94A3B8"
-                        />
-                      </View>
-                    </View>
-
-                    {/* SECTION 2: CONTACT (OPTIONAL) */}
-                    <Text style={[styles.groupHeading, { marginTop: 14 }]}>Contact</Text>
-                    <Text style={styles.groupDesc}>Optional details that can appear in footer and compliance pages.</Text>
-
-                    <View style={styles.field}>
-                      <Text style={styles.label}>EMAIL</Text>
+                  <View style={styles.row}>
+                    <View style={[styles.field, { flex: 1, marginRight: 6 }]}>
+                      <Text style={styles.label}>ADVISORY FIRM *</Text>
                       <TextInput
-                        style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
-                        value={email}
-                        onChangeText={setEmail}
-                        placeholder="research@example.com"
-                        placeholderTextColor="#94A3B8"
-                        keyboardType="email-address"
-                      />
-                    </View>
-
-                    <View style={styles.field}>
-                      <Text style={styles.label}>LOCATION / OFFICE ADDRESS (OPTIONAL)</Text>
-                      <TextInput
-                        style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
-                        value={officeAddress}
-                        onChangeText={setOfficeAddress}
-                        placeholder="e.g. Kallam, Latur, Maharashtra"
+                        style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                        value={advisoryFirm}
+                        onChangeText={setAdvisoryFirm}
+                        placeholder="No Brand"
                         placeholderTextColor="#94A3B8"
                       />
                     </View>
-
-                    {/* SECTION 3: REPORT ASSETS & CLICKABLE LOGO UPLOAD */}
-                    <Text style={[styles.groupHeading, { marginTop: 14 }]}>Report Assets</Text>
-                    <Text style={styles.groupDesc}>Logo and first-page risk language are used in every generated PDF.</Text>
-
-                    <View style={styles.row}>
-                      {/* Interactive Pressable Logo Box */}
-                      <Pressable
-                        style={({ pressed }) => [
-                          styles.logoUploadBox,
-                          isDark ? styles.logoUploadBoxDark : styles.logoUploadBoxLight,
-                          logoUrl ? styles.logoUploadBoxActive : null,
-                          pressed && { opacity: 0.8 },
-                        ]}
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          setIsLogoModalOpen(true);
-                        }}
-                      >
-                        {logoUrl ? (
-                          <View style={styles.logoPreviewWrapper}>
-                            <Image source={{ uri: logoUrl }} style={styles.logoImagePreview} resizeMode="contain" />
-                            <View style={styles.changeBadge}>
-                              <Ionicons name="create-outline" size={10} color="#FFFFFF" />
-                              <Text style={styles.changeBadgeText}>Change</Text>
-                            </View>
-                          </View>
-                        ) : (
-                          <>
-                            <Ionicons name="image-outline" size={26} color="#0284C7" />
-                            <Text style={styles.logoUploadLabel}>Brand Logo</Text>
-                            <View style={styles.uploadBtnMini}>
-                              <Ionicons name="cloud-upload-outline" size={12} color="#0284C7" />
-                              <Text style={styles.uploadBtnMiniText}>Upload Logo</Text>
-                            </View>
-                          </>
-                        )}
-                      </Pressable>
-
-                      <View style={{ flex: 1, marginLeft: 10 }}>
-                        <Text style={styles.label}>PAGE 1 RISK DISCLAIMER</Text>
-                        <TextInput
-                          style={[styles.input, isDark ? styles.inputDark : styles.inputLight, { height: 95, textAlignVertical: 'top' }]}
-                          multiline
-                          value={page1Disclaimer}
-                          onChangeText={setPage1Disclaimer}
-                          placeholder="Add short SEBI/risk disclaimer for the first page..."
-                          placeholderTextColor="#94A3B8"
-                        />
-                      </View>
-                    </View>
-
-                    {/* SECTION 4: OPTIONAL PAGES */}
-                    <Text style={[styles.groupHeading, { marginTop: 14 }]}>Optional Pages</Text>
-                    <Text style={styles.groupDesc}>Add only the disclosure pages you want appended after the recommendation page.</Text>
-
-                    <View style={styles.field}>
-                      <Text style={styles.label}>PAGE 2 DISCLOSURE</Text>
+                    <View style={[styles.field, { flex: 1, marginLeft: 6 }]}>
+                      <Text style={styles.label}>RESEARCH ANALYST *</Text>
                       <TextInput
-                        style={[styles.input, isDark ? styles.inputDark : styles.inputLight, { height: 60, textAlignVertical: 'top' }]}
-                        multiline
-                        value={page2Disclosure}
-                        onChangeText={setPage2Disclosure}
-                        placeholder="Optional disclosure content."
-                        placeholderTextColor="#94A3B8"
-                      />
-                    </View>
-
-                    <View style={styles.field}>
-                      <Text style={styles.label}>PAGE 3 CONFLICTS</Text>
-                      <TextInput
-                        style={[styles.input, isDark ? styles.inputDark : styles.inputLight, { height: 60, textAlignVertical: 'top' }]}
-                        multiline
-                        value={page3Conflicts}
-                        onChangeText={setPage3Conflicts}
-                        placeholder="Optional conflict of interest content."
-                        placeholderTextColor="#94A3B8"
-                      />
-                    </View>
-
-                    <View style={styles.field}>
-                      <Text style={styles.label}>PAGE 4 POLICY</Text>
-                      <TextInput
-                        style={[styles.input, isDark ? styles.inputDark : styles.inputLight, { height: 60, textAlignVertical: 'top' }]}
-                        multiline
-                        value={page4Policy}
-                        onChangeText={setPage4Policy}
-                        placeholder="Optional risk and policy content."
+                        style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                        value={researchAnalyst}
+                        onChangeText={setResearchAnalyst}
+                        placeholder="SEBI"
                         placeholderTextColor="#94A3B8"
                       />
                     </View>
                   </View>
 
-                  {/* 🌟 PDF PREVIEW CARD */}
-                  <View style={[styles.previewCard, isDark ? styles.previewCardDark : styles.previewCardLight]}>
-                    <View style={styles.previewHeaderRow}>
-                      <View style={{ flex: 1, paddingRight: 6 }}>
-                        <Text style={[styles.previewTitle, isDark ? styles.textDark : styles.textLight]}>
-                          PDF Preview
-                        </Text>
-                        <Text style={styles.previewSubtitle}>Live snapshot rendered from your SEBI brand settings.</Text>
-                      </View>
-                      <View style={styles.completedBadge}>
-                        <View style={styles.dotGreen} />
-                        <Text style={styles.completedBadgeText}>Live Synced</Text>
-                      </View>
+                  <View style={styles.row}>
+                    <View style={[styles.field, { flex: 1, marginRight: 6 }]}>
+                      <Text style={styles.label}>SEBI REGISTRATION *</Text>
+                      <TextInput
+                        style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                        value={sebiRegistration}
+                        onChangeText={setSebiRegistration}
+                        placeholder="INH010600090"
+                        placeholderTextColor="#94A3B8"
+                      />
                     </View>
-
-                    {/* Rendered Sample PDF Sheet View */}
-                    <View style={[styles.pdfPaper, isDark ? styles.pdfPaperDark : styles.pdfPaperLight]}>
-                      {/* PDF Header with Avatar / Logo & SEBI Registration */}
-                      <View style={styles.pdfHeader}>
-                        {logoUrl ? (
-                          <Image source={{ uri: logoUrl }} style={styles.pdfHeaderLogo} resizeMode="contain" />
-                        ) : (
-                          <View style={styles.pdfAvatarBox}>
-                            <Text style={styles.pdfAvatarText}>{advisoryFirm ? advisoryFirm.charAt(0).toUpperCase() : 'N'}</Text>
-                          </View>
-                        )}
-                        <View style={{ flex: 1 }}>
-                          <Text style={[styles.pdfFirmName, isDark ? styles.textDark : styles.textLight]} numberOfLines={1}>
-                            {advisoryFirm || 'No Brand'}
-                          </Text>
-                          <Text style={styles.pdfAnalystMeta}>
-                            {researchAnalyst || 'SEBI'} • Reg: {sebiRegistration || 'INH010600090'}
-                          </Text>
-                        </View>
-                      </View>
-
-                      {/* Trade Recommendation Badge Banner */}
-                      <View style={styles.tradeRecommendationBanner}>
-                        <Ionicons name="trending-up" size={16} color="#FFFFFF" />
-                        <Text style={styles.tradeRecommendationText}>
-                          BUY RECOMMENDATION : NIFTY 24000 CE
-                        </Text>
-                      </View>
-
-                      {/* 3 Call Metrics: Entry, Target, Stop Loss */}
-                      <View style={styles.tradeMetricsRow}>
-                        <View style={[styles.metricBox, isDark ? styles.metricBoxDark : styles.metricBoxLight]}>
-                          <Text style={styles.metricKey}>ENTRY</Text>
-                          <Text style={[styles.metricVal, isDark ? styles.textDark : styles.textLight]}>Rs 150</Text>
-                        </View>
-                        <View style={[styles.metricBox, isDark ? styles.metricBoxDark : styles.metricBoxLight]}>
-                          <Text style={styles.metricKey}>TARGET</Text>
-                          <Text style={[styles.metricVal, { color: '#10B981' }]}>Rs 200</Text>
-                        </View>
-                        <View style={[styles.metricBox, isDark ? styles.metricBoxDark : styles.metricBoxLight]}>
-                          <Text style={styles.metricKey}>STOP LOSS</Text>
-                          <Text style={[styles.metricVal, { color: '#EF4444' }]}>Rs 120</Text>
-                        </View>
-                      </View>
-
-                      {/* Disclaimer Snippet */}
-                      <Text style={styles.pdfDisclaimerSnippet} numberOfLines={2}>
-                        {page1Disclaimer || 'Your disclaimer appears here. Add compact risk language so generated reports stay ready for review.'}
-                      </Text>
-
-                      <View style={styles.pdfFooterRow}>
-                        <Text style={styles.pdfPagesCount}>
-                          {[true, !!page2Disclosure, !!page3Conflicts, !!page4Policy].filter(Boolean).length} pages configured
-                        </Text>
-                        <Text style={styles.pdfPoweredBy}>Powered by GAP SEBI Engine</Text>
-                      </View>
+                    <View style={[styles.field, { flex: 1, marginLeft: 6 }]}>
+                      <Text style={styles.label}>WEBSITE</Text>
+                      <TextInput
+                        style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                        value={website}
+                        onChangeText={setWebsite}
+                        placeholder="getaipilot.com"
+                        placeholderTextColor="#94A3B8"
+                      />
                     </View>
+                  </View>
 
-                    {/* Preview CTA Button - Opens Full Interactive PDF Previewer */}
+                  {/* SECTION 2: CONTACT (OPTIONAL) */}
+                  <Text style={[styles.groupHeading, { marginTop: 14 }]}>Contact</Text>
+                  <Text style={styles.groupDesc}>Optional details that can appear in footer and compliance pages.</Text>
+
+                  <View style={styles.field}>
+                    <Text style={styles.label}>EMAIL</Text>
+                    <TextInput
+                      style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                      value={email}
+                      onChangeText={setEmail}
+                      placeholder="research@example.com"
+                      placeholderTextColor="#94A3B8"
+                      keyboardType="email-address"
+                    />
+                  </View>
+
+                  <View style={styles.field}>
+                    <Text style={styles.label}>LOCATION / OFFICE ADDRESS (OPTIONAL)</Text>
+                    <TextInput
+                      style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                      value={officeAddress}
+                      onChangeText={setOfficeAddress}
+                      placeholder="e.g. Kallam, Latur, Maharashtra"
+                      placeholderTextColor="#94A3B8"
+                    />
+                  </View>
+
+                  {/* SECTION 3: REPORT ASSETS & CLICKABLE LOGO UPLOAD */}
+                  <Text style={[styles.groupHeading, { marginTop: 14 }]}>Report Assets</Text>
+                  <Text style={styles.groupDesc}>Logo and first-page risk language are used in every generated PDF.</Text>
+
+                  <View style={styles.row}>
+                    {/* Interactive Pressable Logo Box */}
                     <Pressable
-                      style={styles.previewBtn}
+                      style={({ pressed }) => [
+                        styles.logoUploadBox,
+                        { borderColor: colors.border, backgroundColor: colors.card },
+                        logoUrl ? styles.logoUploadBoxActive : null,
+                        pressed && { opacity: 0.8 },
+                      ]}
                       onPress={() => {
-                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                        setIsPdfPreviewOpen(true);
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setIsLogoModalOpen(true);
                       }}
                     >
-                      <Ionicons name="eye" size={16} color="#FFFFFF" />
-                      <Text style={styles.previewBtnText}>Preview My PDF</Text>
+                      {logoUrl ? (
+                        <View style={styles.logoPreviewWrapper}>
+                          <Image source={{ uri: logoUrl }} style={styles.logoImagePreview} resizeMode="contain" />
+                          <View style={styles.changeBadge}>
+                            <Ionicons name="create-outline" size={10} color="#FFFFFF" />
+                            <Text style={styles.changeBadgeText}>Change</Text>
+                          </View>
+                        </View>
+                      ) : (
+                        <>
+                          <Ionicons name="image-outline" size={26} color="#0284C7" />
+                          <Text style={styles.logoUploadLabel}>Brand Logo</Text>
+                          <View style={styles.uploadBtnMini}>
+                            <Ionicons name="cloud-upload-outline" size={12} color="#0284C7" />
+                            <Text style={styles.uploadBtnMiniText}>Upload Logo</Text>
+                          </View>
+                        </>
+                      )}
+                    </Pressable>
+
+                    <View style={{ flex: 1, marginLeft: 10 }}>
+                      <Text style={styles.label}>PAGE 1 RISK DISCLAIMER</Text>
+                      <TextInput
+                        style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, height: 95, textAlignVertical: 'top' }]}
+                        multiline
+                        value={page1Disclaimer}
+                        onChangeText={setPage1Disclaimer}
+                        placeholder="Add short SEBI/risk disclaimer for the first page..."
+                        placeholderTextColor="#94A3B8"
+                      />
+                    </View>
+                  </View>
+
+                  {/* SECTION 4: OPTIONAL PAGES */}
+                  <Text style={[styles.groupHeading, { marginTop: 14 }]}>Optional Pages</Text>
+                  <Text style={styles.groupDesc}>Add only the disclosure pages you want appended after the recommendation page.</Text>
+
+                  <View style={styles.field}>
+                    <Text style={styles.label}>PAGE 2 DISCLOSURE</Text>
+                    <TextInput
+                      style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, height: 60, textAlignVertical: 'top' }]}
+                      multiline
+                      value={page2Disclosure}
+                      onChangeText={setPage2Disclosure}
+                      placeholder="Optional disclosure content."
+                      placeholderTextColor="#94A3B8"
+                    />
+                  </View>
+
+                  <View style={styles.field}>
+                    <Text style={styles.label}>PAGE 3 CONFLICTS</Text>
+                    <TextInput
+                      style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, height: 60, textAlignVertical: 'top' }]}
+                      multiline
+                      value={page3Conflicts}
+                      onChangeText={setPage3Conflicts}
+                      placeholder="Optional conflict of interest content."
+                      placeholderTextColor="#94A3B8"
+                    />
+                  </View>
+
+                  <View style={styles.field}>
+                    <Text style={styles.label}>PAGE 4 POLICY</Text>
+                    <TextInput
+                      style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, height: 60, textAlignVertical: 'top' }]}
+                      multiline
+                      value={page4Policy}
+                      onChangeText={setPage4Policy}
+                      placeholder="Optional risk and policy content."
+                      placeholderTextColor="#94A3B8"
+                    />
+                  </View>
+                </View>
+
+                {/* 🌟 PDF PREVIEW CARD */}
+                <View style={[styles.previewCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                  <View style={styles.previewHeaderRow}>
+                    <View style={{ flex: 1, paddingRight: 6 }}>
+                      <Text style={[styles.previewTitle, { color: colors.text }]}>
+                        PDF Preview
+                      </Text>
+                      <Text style={styles.previewSubtitle}>Live snapshot rendered from your SEBI brand settings.</Text>
+                    </View>
+                    <View style={styles.completedBadge}>
+                      <View style={styles.dotGreen} />
+                      <Text style={styles.completedBadgeText}>Live Synced</Text>
+                    </View>
+                  </View>
+
+                  {/* Rendered Sample PDF Sheet View */}
+                  <View style={[styles.pdfPaper, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                    {/* PDF Header with Avatar / Logo & SEBI Registration */}
+                    <View style={styles.pdfHeader}>
+                      {logoUrl ? (
+                        <Image source={{ uri: logoUrl }} style={styles.pdfHeaderLogo} resizeMode="contain" />
+                      ) : (
+                        <View style={styles.pdfAvatarBox}>
+                          <Text style={styles.pdfAvatarText}>{advisoryFirm ? advisoryFirm.charAt(0).toUpperCase() : 'N'}</Text>
+                        </View>
+                      )}
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.pdfFirmName, { color: colors.text }]} numberOfLines={1}>
+                          {advisoryFirm || 'No Brand'}
+                        </Text>
+                        <Text style={styles.pdfAnalystMeta}>
+                          {researchAnalyst || 'SEBI'} • Reg: {sebiRegistration || 'INH010600090'}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Trade Recommendation Badge Banner */}
+                    <View style={styles.tradeRecommendationBanner}>
+                      <Ionicons name="trending-up" size={16} color="#FFFFFF" />
+                      <Text style={styles.tradeRecommendationText}>
+                        BUY RECOMMENDATION : NIFTY 24000 CE
+                      </Text>
+                    </View>
+
+                    {/* 3 Call Metrics: Entry, Target, Stop Loss */}
+                    <View style={styles.tradeMetricsRow}>
+                      <View style={[styles.metricBox, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                        <Text style={styles.metricKey}>ENTRY</Text>
+                        <Text style={[styles.metricVal, { color: colors.text }]}>Rs 150</Text>
+                      </View>
+                      <View style={[styles.metricBox, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                        <Text style={styles.metricKey}>TARGET</Text>
+                        <Text style={[styles.metricVal, { color: '#10B981' }]}>Rs 200</Text>
+                      </View>
+                      <View style={[styles.metricBox, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                        <Text style={styles.metricKey}>STOP LOSS</Text>
+                        <Text style={[styles.metricVal, { color: '#EF4444' }]}>Rs 120</Text>
+                      </View>
+                    </View>
+
+                    {/* Disclaimer Snippet */}
+                    <Text style={styles.pdfDisclaimerSnippet} numberOfLines={2}>
+                      {page1Disclaimer || 'Your disclaimer appears here. Add compact risk language so generated reports stay ready for review.'}
+                    </Text>
+
+                    <View style={styles.pdfFooterRow}>
+                      <Text style={styles.pdfPagesCount}>
+                        {[true, !!page2Disclosure, !!page3Conflicts, !!page4Policy].filter(Boolean).length} pages configured
+                      </Text>
+                      <Text style={styles.pdfPoweredBy}>Powered by GAP SEBI Engine</Text>
+                    </View>
+                  </View>
+
+                  {/* Preview CTA Button - Opens Full Interactive PDF Previewer */}
+                  <Pressable
+                    style={styles.previewBtn}
+                    onPress={() => {
+                      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                      setIsPdfPreviewOpen(true);
+                    }}
+                  >
+                    <Ionicons name="eye" size={16} color="#FFFFFF" />
+                    <Text style={styles.previewBtnText}>Preview My PDF</Text>
+                  </Pressable>
+                </View>
+              </>
+            )}
+
+            {/* TAB 2: CHANNELS */}
+            {activeTab === 'channels' && (
+              <View style={[styles.formCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                <View style={styles.formHeaderRow}>
+                  <View style={{ flex: 1, paddingRight: 6 }}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                      Mapped Trading Channels
+                    </Text>
+                    <Text style={styles.sectionSubtitle}>
+                      Channels where @ResearchReport233_bot generates automated SEBI PDFs.
+                    </Text>
+                  </View>
+                </View>
+
+                {(dashboard?.channels || []).length === 0 ? (
+                  <View style={styles.emptyBox}>
+                    <Ionicons name="radio-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
+                    <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                      No Channels Connected Yet
+                    </Text>
+                    <Text style={styles.emptyDesc}>
+                      Add @ResearchReport233_bot as an Admin to your Telegram trading channel to begin auto-converting calls.
+                    </Text>
+                    <Pressable style={[styles.startBotBtn, { marginTop: 12 }]} onPress={handleStartBot}>
+                      <Ionicons name="add" size={16} color="#FFFFFF" />
+                      <Text style={styles.startBotBtnText}>Connect Channel</Text>
                     </Pressable>
                   </View>
-                </>
-              )}
-
-              {/* TAB 2: CHANNELS */}
-              {activeTab === 'channels' && (
-                <View style={[styles.formCard, isDark ? styles.cardDark : styles.cardLight]}>
-                  <View style={styles.formHeaderRow}>
-                    <View style={{ flex: 1, paddingRight: 6 }}>
-                      <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight]}>
-                        Mapped Trading Channels
-                      </Text>
-                      <Text style={styles.sectionSubtitle}>
-                        Channels where @ResearchReport233_bot generates automated SEBI PDFs.
-                      </Text>
+                ) : (
+                  (dashboard?.channels || []).map((ch: any, idx: number) => (
+                    <View key={`ch_${ch.id || idx}`} style={[styles.channelItem, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                      <View style={styles.channelIcon}>
+                        <Ionicons name="megaphone" size={16} color="#0284C7" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.channelName, { color: colors.text }]}>
+                          {ch.channel_name || ch.name || 'Telegram Channel'}
+                        </Text>
+                        <Text style={styles.channelStatus}>{ch.channel_id ? `ID: ${ch.channel_id}` : ''} ● {ch.status || 'Active'}</Text>
+                      </View>
+                      <Ionicons name="checkmark-circle" size={18} color="#10B981" />
                     </View>
-                  </View>
+                  ))
+                )}
+              </View>
+            )}
 
-                  {(dashboard?.channels || []).length === 0 ? (
-                    <View style={styles.emptyBox}>
-                      <Ionicons name="radio-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
-                      <Text style={[styles.emptyTitle, isDark ? styles.textDark : styles.textLight]}>
-                        No Channels Connected Yet
-                      </Text>
-                      <Text style={styles.emptyDesc}>
-                        Add @ResearchReport233_bot as an Admin to your Telegram trading channel to begin auto-converting calls.
-                      </Text>
-                      <Pressable style={[styles.startBotBtn, { marginTop: 12 }]} onPress={handleStartBot}>
-                        <Ionicons name="add" size={16} color="#FFFFFF" />
-                        <Text style={styles.startBotBtnText}>Connect Channel</Text>
+            {/* TAB 3: REPORTS ARCHIVE */}
+            {activeTab === 'archive' && (
+              <View style={[styles.formCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                <View style={styles.formHeaderRow}>
+                  <View>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                      Generated Reports Archive
+                    </Text>
+                    <Text style={styles.sectionSubtitle}>
+                      Complete compliance history of all generated research PDFs.
+                    </Text>
+                  </View>
+                </View>
+
+                {(dashboard?.reports || []).length === 0 ? (
+                  <View style={styles.emptyBox}>
+                    <Ionicons name="document-text-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
+                    <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                      No Reports Generated Yet
+                    </Text>
+                    <Text style={styles.emptyDesc}>
+                      When you post trading calls in your connected channels, formatted SEBI compliance PDFs will appear here.
+                    </Text>
+                  </View>
+                ) : (
+                  (dashboard?.reports || []).map((rep: any) => (
+                    <View key={rep.id} style={[styles.reportItem, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                      <View style={styles.reportIconCircle}>
+                        <Ionicons name="document-text" size={18} color="#EF4444" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.reportItemTitle, { color: colors.text }]}>
+                          {rep.title}
+                        </Text>
+                        <Text style={styles.reportItemMeta}>
+                          Call: {rep.callType || 'BUY'} • Entry: {rep.entry || '-'} • Target: {rep.target || '-'} • SL: {rep.stopLoss || '-'}
+                        </Text>
+                      </View>
+                      <Pressable
+                        style={styles.downloadBtn}
+                        onPress={() => {
+                          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                          if (rep.pdfUrl) {
+                            Linking.openURL(rep.pdfUrl);
+                          } else {
+                            setIsPdfPreviewOpen(true);
+                          }
+                        }}
+                      >
+                        <Ionicons name={rep.pdfUrl ? "download-outline" : "eye-outline"} size={16} color="#0284C7" />
                       </Pressable>
                     </View>
-                  ) : (
-                    (dashboard?.channels || []).map((ch: any, idx: number) => (
-                      <View key={`ch_${ch.id || idx}`} style={[styles.channelItem, isDark ? styles.itemDark : styles.itemLight]}>
-                        <View style={styles.channelIcon}>
-                          <Ionicons name="megaphone" size={16} color="#0284C7" />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={[styles.channelName, isDark ? styles.textDark : styles.textLight]}>
-                            {ch.channel_name || ch.name || 'Telegram Channel'}
-                          </Text>
-                          <Text style={styles.channelStatus}>{ch.channel_id ? `ID: ${ch.channel_id}` : ''} ● {ch.status || 'Active'}</Text>
-                        </View>
-                        <Ionicons name="checkmark-circle" size={18} color="#10B981" />
-                      </View>
-                    ))
-                  )}
-                </View>
-              )}
-
-              {/* TAB 3: REPORTS ARCHIVE */}
-              {activeTab === 'archive' && (
-                <View style={[styles.formCard, isDark ? styles.cardDark : styles.cardLight]}>
-                  <View style={styles.formHeaderRow}>
-                    <View>
-                      <Text style={[styles.sectionTitle, isDark ? styles.textDark : styles.textLight]}>
-                        Generated Reports Archive
-                      </Text>
-                      <Text style={styles.sectionSubtitle}>
-                        Complete compliance history of all generated research PDFs.
-                      </Text>
-                    </View>
-                  </View>
-
-                  {(dashboard?.reports || []).length === 0 ? (
-                    <View style={styles.emptyBox}>
-                      <Ionicons name="document-text-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
-                      <Text style={[styles.emptyTitle, isDark ? styles.textDark : styles.textLight]}>
-                        No Reports Generated Yet
-                      </Text>
-                      <Text style={styles.emptyDesc}>
-                        When you post trading calls in your connected channels, formatted SEBI compliance PDFs will appear here.
-                      </Text>
-                    </View>
-                  ) : (
-                    (dashboard?.reports || []).map((rep: any) => (
-                      <View key={rep.id} style={[styles.reportItem, isDark ? styles.itemDark : styles.itemLight]}>
-                        <View style={styles.reportIconCircle}>
-                          <Ionicons name="document-text" size={18} color="#EF4444" />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={[styles.reportItemTitle, isDark ? styles.textDark : styles.textLight]}>
-                            {rep.title}
-                          </Text>
-                          <Text style={styles.reportItemMeta}>
-                            Call: {rep.callType || 'BUY'} • Entry: {rep.entry || '-'} • Target: {rep.target || '-'} • SL: {rep.stopLoss || '-'}
-                          </Text>
-                        </View>
-                        <Pressable
-                          style={styles.downloadBtn}
-                          onPress={() => {
-                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                            if (rep.pdfUrl) {
-                              Linking.openURL(rep.pdfUrl);
-                            } else {
-                              setIsPdfPreviewOpen(true);
-                            }
-                          }}
-                        >
-                          <Ionicons name={rep.pdfUrl ? "download-outline" : "eye-outline"} size={16} color="#0284C7" />
-                        </Pressable>
-                      </View>
-                    ))
-                  )}
-                </View>
-              )}
-            </>
-          )}
-        </View>
-
-        {/* 🖼️ BRAND LOGO UPLOADER / SELECTOR MODAL WITH GALLERY & CAMERA */}
-        <Modal visible={isLogoModalOpen} transparent animationType="fade" onRequestClose={() => setIsLogoModalOpen(false)}>
-          <View style={styles.dialogOverlay}>
-            <View style={[styles.dialogCard, isDark ? styles.dialogCardDark : styles.dialogCardLight]}>
-              <View style={styles.dialogHeader}>
-                <View>
-                  <Text style={[styles.dialogTitle, isDark ? styles.textDark : styles.textLight]}>Upload Brand Logo</Text>
-                  <Text style={styles.dialogSub}>Choose from gallery, snap a photo, or paste a URL.</Text>
-                </View>
-                <Pressable onPress={() => setIsLogoModalOpen(false)} style={styles.dialogCloseBtn}>
-                  <Ionicons name="close" size={18} color={isDark ? '#FFFFFF' : '#0F172A'} />
-                </Pressable>
+                  ))
+                )}
               </View>
-
-              {/* 📸 PRIMARY NATIVE ACTIONS: GALLERY & CAMERA */}
-              <View style={styles.nativeUploadRow}>
-                <Pressable
-                  style={[styles.nativeUploadBtn, styles.nativeUploadBtnPrimary]}
-                  onPress={handlePickFromGallery}
-                  disabled={isPickingImage}
-                >
-                  {isPickingImage ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <>
-                      <Ionicons name="images" size={20} color="#FFFFFF" />
-                      <View>
-                        <Text style={styles.nativeUploadBtnTitle}>Choose from Gallery</Text>
-                        <Text style={styles.nativeUploadBtnSub}>Pick logo from photo library</Text>
-                      </View>
-                    </>
-                  )}
-                </Pressable>
-
-                <Pressable
-                  style={[styles.nativeUploadBtn, isDark ? styles.nativeUploadBtnDark : styles.nativeUploadBtnLight]}
-                  onPress={handleTakeCameraPhoto}
-                  disabled={isPickingImage}
-                >
-                  <Ionicons name="camera" size={20} color="#0284C7" />
-                  <View>
-                    <Text style={[styles.nativeUploadBtnTitle, isDark ? styles.textDark : styles.textLight]}>Take Photo</Text>
-                    <Text style={styles.nativeUploadBtnSub}>Snap logo with camera</Text>
-                  </View>
-                </Pressable>
-              </View>
-
-              {/* Custom Image URL Input */}
-              <View style={{ marginBottom: 14 }}>
-                <Text style={styles.label}>OR PASTE IMAGE URL</Text>
-                <View style={styles.urlInputRow}>
-                  <TextInput
-                    style={[styles.input, isDark ? styles.inputDark : styles.inputLight, { flex: 1 }]}
-                    placeholder="https://example.com/logo.png"
-                    placeholderTextColor="#94A3B8"
-                    value={customLogoInput}
-                    onChangeText={setCustomLogoInput}
-                    autoCapitalize="none"
-                  />
-                  <Pressable
-                    style={[styles.applyUrlBtn, !customLogoInput.trim() && { opacity: 0.5 }]}
-                    onPress={() => {
-                      if (customLogoInput.trim()) {
-                        handleApplyLogoUrl(customLogoInput.trim());
-                      }
-                    }}
-                    disabled={!customLogoInput.trim()}
-                  >
-                    <Text style={styles.applyUrlBtnText}>Apply</Text>
-                  </Pressable>
-                </View>
-              </View>
-
-              {/* Curated Presets Grid */}
-              <Text style={styles.label}>OR CHOOSE A BRAND PRESET</Text>
-              <View style={styles.presetGrid}>
-                {LOGO_PRESETS.map((preset) => (
-                  <Pressable
-                    key={preset.name}
-                    style={[
-                      styles.presetItem,
-                      isDark ? styles.presetItemDark : styles.presetItemLight,
-                      logoUrl === preset.url && styles.presetItemActive,
-                    ]}
-                    onPress={() => handleApplyLogoUrl(preset.url)}
-                  >
-                    <Image source={{ uri: preset.url }} style={styles.presetImage} resizeMode="cover" />
-                    <Text style={[styles.presetName, isDark ? styles.textDark : styles.textLight]} numberOfLines={1}>
-                      {preset.name}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              {/* Footer with Remove button */}
-              {logoUrl && (
-                <Pressable style={styles.removeLogoBtn} onPress={handleRemoveLogo}>
-                  <Ionicons name="trash-outline" size={14} color="#EF4444" />
-                  <Text style={styles.removeLogoBtnText}>Remove Current Logo</Text>
-                </Pressable>
-              )}
-            </View>
-          </View>
-        </Modal>
-
-        {/* 📑 FULL INTERACTIVE SEBI PDF REPORT VIEWER MODAL */}
-        <Modal visible={isPdfPreviewOpen} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setIsPdfPreviewOpen(false)}>
-          <View style={[styles.pdfViewerContainer, isDark ? styles.cardDark : styles.cardLight]}>
-            {/* Viewer Top Bar */}
-            <View style={[styles.pdfViewerHeader, isDark ? styles.borderDark : styles.borderLight]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Pressable style={styles.viewerCloseBtn} onPress={() => setIsPdfPreviewOpen(false)}>
-                  <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
-                </Pressable>
-                <View>
-                  <Text style={[styles.viewerTitle, isDark ? styles.textDark : styles.textLight]}>
-                    SEBI Research Report PDF
-                  </Text>
-                  <Text style={styles.viewerSub}>{advisoryFirm} • Verified Sample</Text>
-                </View>
-              </View>
-
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Pressable style={styles.viewerActionBtn} onPress={handleShareReport}>
-                  <Ionicons name="share-outline" size={18} color="#0284C7" />
-                </Pressable>
-                <Pressable
-                  style={styles.viewerActionBtnPrimary}
-                  onPress={() => {
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    Alert.alert('PDF Ready', 'Report PDF is generated with high-res vector graphics and ready to broadcast.');
-                  }}
-                >
-                  <Ionicons name="download-outline" size={16} color="#FFFFFF" />
-                  <Text style={styles.viewerActionBtnPrimaryText}>Save</Text>
-                </Pressable>
-              </View>
-            </View>
-
-            {/* Scrollable Multi-Page Document View */}
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.pdfViewerBody} showsVerticalScrollIndicator={false}>
-              {/* PAGE 1: TRADE RECOMMENDATION */}
-              <View style={[styles.fullPdfPage, isDark ? styles.fullPdfPageDark : styles.fullPdfPageLight]}>
-                <View style={styles.pageNumberBadge}>
-                  <Text style={styles.pageNumberText}>Page 1 of {[true, !!page2Disclosure, !!page3Conflicts, !!page4Policy].filter(Boolean).length}</Text>
-                </View>
-
-                {/* Branded Header */}
-                <View style={styles.fullPdfHeader}>
-                  {logoUrl ? (
-                    <Image source={{ uri: logoUrl }} style={styles.fullPdfLogo} resizeMode="contain" />
-                  ) : (
-                    <View style={styles.fullPdfAvatarBox}>
-                      <Text style={styles.fullPdfAvatarText}>{advisoryFirm ? advisoryFirm.charAt(0).toUpperCase() : 'N'}</Text>
-                    </View>
-                  )}
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.fullPdfFirmTitle}>{advisoryFirm || 'No Brand'}</Text>
-                    <Text style={styles.fullPdfMetaText}>
-                      Research Analyst: {researchAnalyst} • SEBI Reg: {sebiRegistration}
-                    </Text>
-                    <Text style={styles.fullPdfMetaText}>
-                      Web: {website} • Email: {email}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.pdfDivider} />
-
-                {/* Call Banner */}
-                <View style={styles.fullPdfCallBanner}>
-                  <Text style={styles.fullPdfCallBadge}>INTRADAY OPTION CALL</Text>
-                  <Text style={styles.fullPdfCallTitle}>BUY NIFTY 24000 CE</Text>
-                  <Text style={styles.fullPdfCallTime}>Generated on {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
-                </View>
-
-                {/* Trade Matrix Table */}
-                <View style={styles.fullPdfMatrix}>
-                  <View style={styles.matrixCol}>
-                    <Text style={styles.matrixLabel}>ENTRY RANGE</Text>
-                    <Text style={styles.matrixValue}>Rs 150.00</Text>
-                  </View>
-                  <View style={[styles.matrixCol, styles.matrixBorder]}>
-                    <Text style={styles.matrixLabel}>TARGET</Text>
-                    <Text style={[styles.matrixValue, { color: '#059669' }]}>Rs 200.00</Text>
-                  </View>
-                  <View style={styles.matrixCol}>
-                    <Text style={styles.matrixLabel}>STOP LOSS</Text>
-                    <Text style={[styles.matrixValue, { color: '#DC2626' }]}>Rs 120.00</Text>
-                  </View>
-                </View>
-
-                {/* Rationale & Setup Section */}
-                <View style={styles.pdfSectionBlock}>
-                  <Text style={styles.pdfSectionHeading}>Technical Setup & Rationale</Text>
-                  <Text style={styles.pdfSectionBody}>
-                    Nifty 24000 CE is exhibiting strong momentum above resistance with heavy open interest buildup. F&O PCR trend remains bullish with 1:1.67 risk-reward ratio.
-                  </Text>
-                </View>
-
-                {/* Page 1 Mandatory SEBI Disclaimer */}
-                <View style={styles.pdfDisclaimerBox}>
-                  <Text style={styles.pdfDisclaimerTitle}>SEBI COMPLIANCE & RISK DISCLAIMER</Text>
-                  <Text style={styles.pdfDisclaimerText}>
-                    {page1Disclaimer || 'Investment in securities market are subject to market risks. Read all the related documents carefully before investing. Registration granted by SEBI and certification from NISM in no way guarantee performance.'}
-                  </Text>
-                </View>
-
-                {/* Footer Stamp */}
-                <View style={styles.fullPdfFooter}>
-                  <Text style={styles.footerAddressText}>{officeAddress}</Text>
-                  <Text style={styles.footerEngineText}>GAP SEBI Report Bot Suite</Text>
-                </View>
-              </View>
-
-              {/* PAGE 2: DISCLOSURES (IF CONFIGURED) */}
-              {page2Disclosure ? (
-                <View style={[styles.fullPdfPage, isDark ? styles.fullPdfPageDark : styles.fullPdfPageLight]}>
-                  <View style={styles.pageNumberBadge}>
-                    <Text style={styles.pageNumberText}>Page 2</Text>
-                  </View>
-                  <Text style={styles.fullPdfFirmTitle}>{advisoryFirm}</Text>
-                  <Text style={styles.pdfSectionHeading}>Regulatory Disclosures</Text>
-                  <View style={styles.pdfDivider} />
-                  <Text style={styles.pdfSectionBody}>{page2Disclosure}</Text>
-                </View>
-              ) : null}
-
-              {/* PAGE 3: CONFLICTS (IF CONFIGURED) */}
-              {page3Conflicts ? (
-                <View style={[styles.fullPdfPage, isDark ? styles.fullPdfPageDark : styles.fullPdfPageLight]}>
-                  <View style={styles.pageNumberBadge}>
-                    <Text style={styles.pageNumberText}>Page 3</Text>
-                  </View>
-                  <Text style={styles.fullPdfFirmTitle}>{advisoryFirm}</Text>
-                  <Text style={styles.pdfSectionHeading}>Conflict of Interest Statement</Text>
-                  <View style={styles.pdfDivider} />
-                  <Text style={styles.pdfSectionBody}>{page3Conflicts}</Text>
-                </View>
-              ) : null}
-
-              {/* PAGE 4: POLICY (IF CONFIGURED) */}
-              {page4Policy ? (
-                <View style={[styles.fullPdfPage, isDark ? styles.fullPdfPageDark : styles.fullPdfPageLight]}>
-                  <View style={styles.pageNumberBadge}>
-                    <Text style={styles.pageNumberText}>Page 4</Text>
-                  </View>
-                  <Text style={styles.fullPdfFirmTitle}>{advisoryFirm}</Text>
-                  <Text style={styles.pdfSectionHeading}>Risk & Execution Policy</Text>
-                  <View style={styles.pdfDivider} />
-                  <Text style={styles.pdfSectionBody}>{page4Policy}</Text>
-                </View>
-              ) : null}
-            </ScrollView>
-          </View>
-        </Modal>
+            )}
+          </>
+        )}
       </View>
+
+      {/* 🖼️ BRAND LOGO UPLOADER / SELECTOR MODAL WITH GALLERY & CAMERA */}
+      <Modal visible={isLogoModalOpen} transparent animationType="fade" onRequestClose={() => setIsLogoModalOpen(false)}>
+        <View style={styles.dialogOverlay}>
+          <View style={[styles.dialogCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
+            <View style={styles.dialogHeader}>
+              <View>
+                <Text style={[styles.dialogTitle, { color: colors.text }]}>Upload Brand Logo</Text>
+                <Text style={styles.dialogSub}>Choose from gallery, snap a photo, or paste a URL.</Text>
+              </View>
+              <Pressable onPress={() => setIsLogoModalOpen(false)} style={styles.dialogCloseBtn}>
+                <Ionicons name="close" size={18} color={colors.text} />
+              </Pressable>
+            </View>
+
+            {/* 📸 PRIMARY NATIVE ACTIONS: GALLERY & CAMERA */}
+            <View style={styles.nativeUploadRow}>
+              <Pressable
+                style={[styles.nativeUploadBtn, styles.nativeUploadBtnPrimary]}
+                onPress={handlePickFromGallery}
+                disabled={isPickingImage}
+              >
+                {isPickingImage ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Ionicons name="images" size={20} color="#FFFFFF" />
+                    <View>
+                      <Text style={styles.nativeUploadBtnTitle}>Choose from Gallery</Text>
+                      <Text style={styles.nativeUploadBtnSub}>Pick logo from photo library</Text>
+                    </View>
+                  </>
+                )}
+              </Pressable>
+
+              <Pressable
+                style={[styles.nativeUploadBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+                onPress={handleTakeCameraPhoto}
+                disabled={isPickingImage}
+              >
+                <Ionicons name="camera" size={20} color="#0284C7" />
+                <View>
+                  <Text style={[styles.nativeUploadBtnTitle, { color: colors.text }]}>Take Photo</Text>
+                  <Text style={styles.nativeUploadBtnSub}>Snap logo with camera</Text>
+                </View>
+              </Pressable>
+            </View>
+
+            {/* Custom Image URL Input */}
+            <View style={{ marginBottom: 14 }}>
+              <Text style={styles.label}>OR PASTE IMAGE URL</Text>
+              <View style={styles.urlInputRow}>
+                <TextInput
+                  style={[styles.input, { borderColor: colors.border, backgroundColor: colors.card }, { flex: 1 }]}
+                  placeholder="https://example.com/logo.png"
+                  placeholderTextColor="#94A3B8"
+                  value={customLogoInput}
+                  onChangeText={setCustomLogoInput}
+                  autoCapitalize="none"
+                />
+                <Pressable
+                  style={[styles.applyUrlBtn, !customLogoInput.trim() && { opacity: 0.5 }]}
+                  onPress={() => {
+                    if (customLogoInput.trim()) {
+                      handleApplyLogoUrl(customLogoInput.trim());
+                    }
+                  }}
+                  disabled={!customLogoInput.trim()}
+                >
+                  <Text style={styles.applyUrlBtnText}>Apply</Text>
+                </Pressable>
+              </View>
+            </View>
+
+            {/* Curated Presets Grid */}
+            <Text style={styles.label}>OR CHOOSE A BRAND PRESET</Text>
+            <View style={styles.presetGrid}>
+              {LOGO_PRESETS.map((preset) => (
+                <Pressable
+                  key={preset.name}
+                  style={[
+                    styles.presetItem,
+                    { borderColor: colors.border, backgroundColor: colors.card },
+                    logoUrl === preset.url && styles.presetItemActive,
+                  ]}
+                  onPress={() => handleApplyLogoUrl(preset.url)}
+                >
+                  <Image source={{ uri: preset.url }} style={styles.presetImage} resizeMode="cover" />
+                  <Text style={[styles.presetName, { color: colors.text }]} numberOfLines={1}>
+                    {preset.name}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            {/* Footer with Remove button */}
+            {logoUrl && (
+              <Pressable style={styles.removeLogoBtn} onPress={handleRemoveLogo}>
+                <Ionicons name="trash-outline" size={14} color="#EF4444" />
+                <Text style={styles.removeLogoBtnText}>Remove Current Logo</Text>
+              </Pressable>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* 📑 FULL INTERACTIVE SEBI PDF REPORT VIEWER MODAL */}
+      <Modal visible={isPdfPreviewOpen} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setIsPdfPreviewOpen(false)}>
+        <View style={[styles.pdfViewerContainer, { borderColor: colors.border, backgroundColor: colors.card }]}>
+          {/* Viewer Top Bar */}
+          <View style={[styles.pdfViewerHeader, { borderColor: colors.border }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Pressable style={styles.viewerCloseBtn} onPress={() => setIsPdfPreviewOpen(false)}>
+                <Ionicons name="arrow-back" size={20} color={colors.text} />
+              </Pressable>
+              <View>
+                <Text style={[styles.viewerTitle, { color: colors.text }]}>
+                  SEBI Research Report PDF
+                </Text>
+                <Text style={styles.viewerSub}>{advisoryFirm} • Verified Sample</Text>
+              </View>
+            </View>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Pressable style={styles.viewerActionBtn} onPress={handleShareReport}>
+                <Ionicons name="share-outline" size={18} color="#0284C7" />
+              </Pressable>
+              <Pressable
+                style={styles.viewerActionBtnPrimary}
+                onPress={() => {
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  Alert.alert('PDF Ready', 'Report PDF is generated with high-res vector graphics and ready to broadcast.');
+                }}
+              >
+                <Ionicons name="download-outline" size={16} color="#FFFFFF" />
+                <Text style={styles.viewerActionBtnPrimaryText}>Save</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Scrollable Multi-Page Document View */}
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.pdfViewerBody} showsVerticalScrollIndicator={false}>
+            {/* PAGE 1: TRADE RECOMMENDATION */}
+            <View style={[styles.fullPdfPage, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.pageNumberBadge}>
+                <Text style={styles.pageNumberText}>Page 1 of {[true, !!page2Disclosure, !!page3Conflicts, !!page4Policy].filter(Boolean).length}</Text>
+              </View>
+
+              {/* Branded Header */}
+              <View style={styles.fullPdfHeader}>
+                {logoUrl ? (
+                  <Image source={{ uri: logoUrl }} style={styles.fullPdfLogo} resizeMode="contain" />
+                ) : (
+                  <View style={styles.fullPdfAvatarBox}>
+                    <Text style={styles.fullPdfAvatarText}>{advisoryFirm ? advisoryFirm.charAt(0).toUpperCase() : 'N'}</Text>
+                  </View>
+                )}
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.fullPdfFirmTitle}>{advisoryFirm || 'No Brand'}</Text>
+                  <Text style={styles.fullPdfMetaText}>
+                    Research Analyst: {researchAnalyst} • SEBI Reg: {sebiRegistration}
+                  </Text>
+                  <Text style={styles.fullPdfMetaText}>
+                    Web: {website} • Email: {email}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.pdfDivider} />
+
+              {/* Call Banner */}
+              <View style={styles.fullPdfCallBanner}>
+                <Text style={styles.fullPdfCallBadge}>INTRADAY OPTION CALL</Text>
+                <Text style={styles.fullPdfCallTitle}>BUY NIFTY 24000 CE</Text>
+                <Text style={styles.fullPdfCallTime}>Generated on {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
+              </View>
+
+              {/* Trade Matrix Table */}
+              <View style={styles.fullPdfMatrix}>
+                <View style={styles.matrixCol}>
+                  <Text style={styles.matrixLabel}>ENTRY RANGE</Text>
+                  <Text style={styles.matrixValue}>Rs 150.00</Text>
+                </View>
+                <View style={[styles.matrixCol, styles.matrixBorder]}>
+                  <Text style={styles.matrixLabel}>TARGET</Text>
+                  <Text style={[styles.matrixValue, { color: '#059669' }]}>Rs 200.00</Text>
+                </View>
+                <View style={styles.matrixCol}>
+                  <Text style={styles.matrixLabel}>STOP LOSS</Text>
+                  <Text style={[styles.matrixValue, { color: '#DC2626' }]}>Rs 120.00</Text>
+                </View>
+              </View>
+
+              {/* Rationale & Setup Section */}
+              <View style={styles.pdfSectionBlock}>
+                <Text style={styles.pdfSectionHeading}>Technical Setup & Rationale</Text>
+                <Text style={styles.pdfSectionBody}>
+                  Nifty 24000 CE is exhibiting strong momentum above resistance with heavy open interest buildup. F&O PCR trend remains bullish with 1:1.67 risk-reward ratio.
+                </Text>
+              </View>
+
+              {/* Page 1 Mandatory SEBI Disclaimer */}
+              <View style={styles.pdfDisclaimerBox}>
+                <Text style={styles.pdfDisclaimerTitle}>SEBI COMPLIANCE & RISK DISCLAIMER</Text>
+                <Text style={styles.pdfDisclaimerText}>
+                  {page1Disclaimer || 'Investment in securities market are subject to market risks. Read all the related documents carefully before investing. Registration granted by SEBI and certification from NISM in no way guarantee performance.'}
+                </Text>
+              </View>
+
+              {/* Footer Stamp */}
+              <View style={styles.fullPdfFooter}>
+                <Text style={styles.footerAddressText}>{officeAddress}</Text>
+                <Text style={styles.footerEngineText}>GAP SEBI Report Bot Suite</Text>
+              </View>
+            </View>
+
+            {/* PAGE 2: DISCLOSURES (IF CONFIGURED) */}
+            {page2Disclosure ? (
+              <View style={[styles.fullPdfPage, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={styles.pageNumberBadge}>
+                  <Text style={styles.pageNumberText}>Page 2</Text>
+                </View>
+                <Text style={styles.fullPdfFirmTitle}>{advisoryFirm}</Text>
+                <Text style={styles.pdfSectionHeading}>Regulatory Disclosures</Text>
+                <View style={styles.pdfDivider} />
+                <Text style={styles.pdfSectionBody}>{page2Disclosure}</Text>
+              </View>
+            ) : null}
+
+            {/* PAGE 3: CONFLICTS (IF CONFIGURED) */}
+            {page3Conflicts ? (
+              <View style={[styles.fullPdfPage, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={styles.pageNumberBadge}>
+                  <Text style={styles.pageNumberText}>Page 3</Text>
+                </View>
+                <Text style={styles.fullPdfFirmTitle}>{advisoryFirm}</Text>
+                <Text style={styles.pdfSectionHeading}>Conflict of Interest Statement</Text>
+                <View style={styles.pdfDivider} />
+                <Text style={styles.pdfSectionBody}>{page3Conflicts}</Text>
+              </View>
+            ) : null}
+
+            {/* PAGE 4: POLICY (IF CONFIGURED) */}
+            {page4Policy ? (
+              <View style={[styles.fullPdfPage, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={styles.pageNumberBadge}>
+                  <Text style={styles.pageNumberText}>Page 4</Text>
+                </View>
+                <Text style={styles.fullPdfFirmTitle}>{advisoryFirm}</Text>
+                <Text style={styles.pdfSectionHeading}>Risk & Execution Policy</Text>
+                <View style={styles.pdfDivider} />
+                <Text style={styles.pdfSectionBody}>{page4Policy}</Text>
+              </View>
+            ) : null}
+          </ScrollView>
+        </View>
+      </Modal>
+    </View>
   );
 };
 
