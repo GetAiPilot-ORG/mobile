@@ -1,24 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Modal,
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  ScrollView,
-  TextInput,
-  ActivityIndicator,
-  Linking,
-  Alert,
-  Image,
-  Share,
-} from 'react-native';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Linking,
+  Modal,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
-import { useTheme } from '../../../contexts/ThemeContext';
+import { getColors, useTheme } from '@/theme';
 import { telegramApi } from '../api/telegramApi';
 import { ReportBotBrandProfile } from '../types';
 
@@ -783,7 +783,7 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
                 <View style={styles.urlInputRow}>
                   <TextInput
                     style={[styles.input, isDark ? styles.inputDark : styles.inputLight, { flex: 1 }]}
-                    placeholder="https://example.com/logo.png"
+                    placeholder="https://example.com/logobag.png"
                     placeholderTextColor="#94A3B8"
                     value={customLogoInput}
                     onChangeText={setCustomLogoInput}
