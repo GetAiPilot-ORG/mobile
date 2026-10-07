@@ -61,9 +61,7 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   label: {
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
+    fontSize: 11,
+    fontWeight: '600',
   },
 });

@@ -1,35 +1,63 @@
-import React, { useState } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
+  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useTheme } from "@/theme";
 
-import { BroadcastCard } from '../components';
-import { useWhatsAppBroadcasts } from '../hooks/useWhatsAppBroadcasts';
-import { WhatsAppBroadcast } from '../types';
-import { WhatsAppBroadcastDetailScreen } from './WhatsAppBroadcastDetailScreen';
+import { getColors } from "@/theme";
+import { WhatsAppBroadcastsSkeleton } from "../../../components/skeletonScreen";
+import { BroadcastCard } from "../components";
+import { useWhatsAppBroadcasts } from "../hooks/useWhatsAppBroadcasts";
+import { WhatsAppBroadcast } from "../types";
+import { WhatsAppBroadcastDetailScreen } from "./WhatsAppBroadcastDetailScreen";
 
 interface WhatsAppBroadcastsScreenProps {
   onBack?: () => void;
 }
 
-export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> = ({ onBack }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [selectedBroadcast, setSelectedBroadcast] = useState<WhatsAppBroadcast | null>(null);
+export const WhatsAppBroadcastsScreen: React.FC<
+  WhatsAppBroadcastsScreenProps
+> = ({ onBack }) => {
+  const router = useRouter();
+  const { isDark } = useTheme();
+  const color = getColors(isDark);
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [selectedBroadcast, setSelectedBroadcast] =
+    useState<WhatsAppBroadcast | null>(null);
 
   const { data, isLoading, refetch, isRefetching } = useWhatsAppBroadcasts({
-    status: selectedStatus !== 'all' ? selectedStatus : undefined,
+    status: selectedStatus !== "all" ? selectedStatus : undefined,
   });
+
+  const handleBack = () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    if (onBack) {
+      onBack();
+    } else if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/products/whatsapp");
+    }
+  };
+
+  const handleStatusSelect = (tab: string) => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setSelectedStatus(tab);
+  };
 
   if (selectedBroadcast) {
     return (
@@ -41,85 +69,124 @@ export const WhatsAppBroadcastsScreen: React.FC<WhatsAppBroadcastsScreenProps> =
   }
 
   const broadcasts = data?.broadcasts || [];
-  const statusTabs = ['all', 'completed', 'queued', 'scheduled'];
+  const statusTabs = ["all", "completed", "queued", "scheduled"];
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
+    <SafeAreaView
+      edges={["top", "left", "right"]}
+      style={[
+        styles.safeArea,
+        { backgroundColor: isDark ? "#000000" : "#F8F9FA" },
+      ]}
+    >
       <View style={styles.container}>
-        {/* Header */}
-        <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
-          {onBack ? (
-            <Pressable
-              style={[styles.backButton, isDark ? styles.backButtonDark : styles.backButtonLight]}
-              onPress={onBack}
-            >
-              <Text style={[styles.backText, { color: isDark ? '#818cf8' : '#4f46e5' }]}>← Back</Text>
-            </Pressable>
-          ) : null}
-          <View style={styles.titleContainer}>
-            <Text style={[styles.title, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Broadcast Campaigns</Text>
-            <Text style={[styles.subtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-              WhatsApp Outreach Directory
-            </Text>
-          </View>
+        {/* Header matching Overview Tab */}
+        <View
+          style={[
+            styles.header,
+            isDark ? styles.headerDark : styles.headerLight,
+          ]}
+        >
+          <Pressable
+            style={({ pressed }) => [
+              styles.backButton,
+              isDark ? styles.backButtonDark : styles.backButtonLight,
+              pressed && styles.backButtonPressed,
+            ]}
+            onPress={handleBack}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
+            <Ionicons
+              name="chevron-back"
+              size={20}
+              color={isDark ? "#F8FAFC" : "#0F172A"}
+            />
+          </Pressable>
+          <Text
+            style={[
+              styles.title,
+              isDark ? styles.titleDark : styles.titleLight,
+            ]}
+          >
+            Broadcast Campaigns
+          </Text>
         </View>
-
-        {/* Filter Pills */}
-        <View style={styles.filterRow}>
-          {statusTabs.map((tab) => {
-            const isSelected = selectedStatus === tab;
-            return (
-              <Pressable
-                key={tab}
-                style={[
-                  styles.filterChip,
-                  isDark ? styles.filterChipDark : styles.filterChipLight,
-                  isSelected && styles.filterChipActive,
-                ]}
-                onPress={() => setSelectedStatus(tab)}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    { color: isSelected ? '#020617' : isDark ? '#94a3b8' : '#64748b' },
-                    isSelected && styles.filterChipTextActive,
-                  ]}
-                >
-                  {tab.toUpperCase()}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {/* Broadcasts List */}
-        {isLoading && !data ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#25d366" />
-            <Text style={[styles.loadingText, { color: isDark ? '#64748b' : '#94a3b8' }]}>Loading broadcasts...</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={broadcasts}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <BroadcastCard
-                broadcast={item}
-                onPress={(b) => setSelectedBroadcast(b)}
-              />
-            )}
-            contentContainerStyle={styles.listContent}
-            refreshControl={
-              <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#25d366" />
-            }
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text style={[styles.emptyText, { color: isDark ? '#64748b' : '#94a3b8' }]}>No broadcast campaigns found</Text>
-              </View>
-            }
-          />
-        )}
       </View>
+
+      {/* Filter Pills */}
+      <View style={styles.filterRow}>
+        {statusTabs.map((tab) => {
+          const isSelected = selectedStatus === tab;
+          return (
+            <Pressable
+              key={tab}
+              style={({ pressed }) => [
+                styles.filterChip,
+                isDark ? styles.filterChipDark : styles.filterChipLight,
+                isSelected &&
+                  (isDark
+                    ? styles.filterChipActiveDark
+                    : styles.filterChipActiveLight),
+                pressed && styles.filterChipPressed,
+              ]}
+              onPress={() => handleStatusSelect(tab)}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  isDark
+                    ? styles.filterChipTextDark
+                    : styles.filterChipTextLight,
+                  isSelected &&
+                    (isDark
+                      ? styles.filterChipTextActiveDark
+                      : styles.filterChipTextActiveLight),
+                ]}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {/* Broadcasts List */}
+      {isLoading && !data ? (
+        <WhatsAppBroadcastsSkeleton />
+      ) : (
+        <FlatList
+          data={broadcasts}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <BroadcastCard
+              broadcast={item}
+              onPress={(b) => setSelectedBroadcast(b)}
+            />
+          )}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={refetch}
+              tintColor={isDark ? "#FFFFFF" : "#0A84FF"}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text
+                style={[
+                  styles.emptyText,
+                  { color: isDark ? "#94A3B8" : "#64748B" },
+                ]}
+              >
+                No broadcast campaigns found
+              </Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -132,87 +199,116 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerDark: {
-    backgroundColor: '#0b1329',
-    borderBottomColor: '#1e293b',
+    backgroundColor: "#000000",
+    borderBottomColor: "rgba(255, 255, 255, 0.08)",
   },
   headerLight: {
-    backgroundColor: '#ffffff',
-    borderBottomColor: '#e2e8f0',
+    backgroundColor: "#FFFFFF",
+    borderBottomColor: "rgba(0, 0, 0, 0.06)",
   },
-  backButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    marginRight: 12,
-  },
-  backButtonDark: {
-    backgroundColor: '#1e293b',
-  },
-  backButtonLight: {
-    backgroundColor: '#f1f5f9',
-  },
-  backText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  titleContainer: {
+  headerLeftRow: {
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+    borderWidth: 1,
+  },
+  backButtonLight: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E5E7EB",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  backButtonDark: {
+    backgroundColor: "#1C1C1E",
+    borderColor: "#2C2C2E",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  backButtonPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.94 }],
+  },
   title: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 20,
+    fontWeight: "700",
+    letterSpacing: -0.4,
   },
-  subtitle: {
-    fontSize: 11,
+  titleLight: {
+    color: "#0F172A",
   },
-  newButton: {
-    backgroundColor: '#25d366',
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 8,
-  },
-  newButtonText: {
-    color: '#020617',
-    fontSize: 13,
-    fontWeight: '800',
+  titleDark: {
+    color: "#F8FAFC",
   },
   filterRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 8,
   },
   filterChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 100,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   filterChipDark: {
-    backgroundColor: '#0f172a',
-    borderColor: '#1e293b',
+    backgroundColor: "#1C1C1E",
+    borderColor: "#2C2C2E",
   },
   filterChipLight: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
+    backgroundColor: "#F2F2F7",
+    borderColor: "#E5E7EB",
   },
-  filterChipActive: {
-    backgroundColor: '#25d366',
-    borderColor: '#25d366',
+  filterChipActiveDark: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#FFFFFF",
+  },
+  filterChipActiveLight: {
+    backgroundColor: "#000000",
+    borderColor: "#000000",
+  },
+  filterChipPressed: {
+    opacity: 0.8,
   },
   filterChipText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: "600",
+    letterSpacing: -0.1,
   },
-  filterChipTextActive: {
-    fontWeight: '800',
+  filterChipTextDark: {
+    color: "#8E8E93",
+  },
+  filterChipTextLight: {
+    color: "#6B7280",
+  },
+  filterChipTextActiveDark: {
+    color: "#000000",
+    fontWeight: "700",
+  },
+  filterChipTextActiveLight: {
+    color: "#FFFFFF",
+    fontWeight: "700",
   },
   listContent: {
     padding: 16,
@@ -220,8 +316,8 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingText: {
     fontSize: 13,
@@ -229,7 +325,7 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     padding: 40,
-    alignItems: 'center',
+    alignItems: "center",
   },
   emptyText: {
     fontSize: 14,

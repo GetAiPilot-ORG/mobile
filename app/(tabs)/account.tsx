@@ -1,32 +1,33 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-  TextInput,
-  Switch,
-  Alert,
   ActivityIndicator,
-  Modal,
-  useColorScheme,
+  Alert,
   Animated,
   LayoutChangeEvent,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { useTheme, getColors } from '@/theme';
 import { AppScreen } from '../../src/components/AppScreen';
-import { colors } from '../../src/theme/colors';
+import { DeviceSessionsSkeleton } from '../../src/components/skeletonScreen';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { supabase } from '../../src/lib/supabase';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Profile } from '../../src/types/database';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { apiClient } from '../../src/core/api/client';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 import { BiometricService, BiometricSettings } from '../../src/lib/biometrics';
-import { apiClient } from '../../src/core/api/client';
+import { supabase } from '../../src/lib/supabase';
+import { Profile } from '../../src/types/database';
 
 type AccountTab = 'overview' | 'edit' | 'security' | 'billing' | 'preferences';
 
@@ -48,6 +49,51 @@ interface DeviceSessionsResponse {
   devices: DeviceSession[];
 }
 
+/**
+ * A stable ID for this app installation.
+ *
+ * Do not use the Supabase access token or user password as the device ID.
+ * The same ID is reused after app restarts, so the backend can upsert one
+ * device instead of creating a new device on every request.
+ */
+const DEVICE_ID_STORAGE_KEY = '@get_ai_pilot_device_id';
+
+const getOrCreateDeviceId = async (): Promise<string> => {
+  const existing = await AsyncStorage.getItem(DEVICE_ID_STORAGE_KEY);
+
+  if (existing) {
+    return existing;
+  }
+
+  const randomPart = Math.random().toString(36).slice(2);
+  const deviceId = `mobile-${Date.now()}-${randomPart}`;
+
+  await AsyncStorage.setItem(DEVICE_ID_STORAGE_KEY, deviceId);
+
+  return deviceId;
+};
+
+const getDeviceRegistrationPayload = async () => {
+  const deviceId = await getOrCreateDeviceId();
+
+  return {
+    deviceId,
+    deviceName:
+      Platform.OS === 'ios'
+        ? 'iPhone / iPad'
+        : Platform.OS === 'android'
+          ? 'Android Device'
+          : 'Web',
+    platform:
+      Platform.OS === 'ios'
+        ? 'ios'
+        : Platform.OS === 'android'
+          ? 'android'
+          : 'web',
+    appVersion: 'mobile',
+  };
+};
+
 const TABS: { id: AccountTab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'edit', label: 'Edit Profile' },
@@ -59,8 +105,8 @@ const TABS: { id: AccountTab; label: string }[] = [
 export default function AccountScreen() {
   const router = useRouter();
   const { tab } = useLocalSearchParams<{ tab?: string }>();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark, themeMode, setThemeMode } = useTheme();
+  const colors = getColors(isDark);
   const { user, signOut } = useAuth();
   const { isAdmin, planLabel, isActive, plan } = usePlatformSubscription();
   const queryClient = useQueryClient();
@@ -84,7 +130,7 @@ export default function AccountScreen() {
         toValue: activeTabIndex * tabPillWidth,
         tension: 68,
         friction: 9,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }).start();
     }
   }, [activeTabIndex, tabPillWidth]);
@@ -199,7 +245,7 @@ export default function AccountScreen() {
       try {
         const invs = await apiClient.get<any[]>('/mobile/v1/user/invoices');
         if (Array.isArray(invs)) return invs;
-      } catch (e) {}
+      } catch (e) { }
       const { data } = await supabase
         .from('app_subscription_payments')
         .select('*')
@@ -219,7 +265,7 @@ export default function AccountScreen() {
       try {
         const bp = await apiClient.get<any>('/mobile/v1/user/billing-profile');
         if (bp) return bp;
-      } catch (e) {}
+      } catch (e) { }
       const { data } = await supabase
         .from('app_billing_profiles')
         .select('*')
@@ -230,20 +276,114 @@ export default function AccountScreen() {
     enabled: !!user?.id,
   });
 
-  // Device sessions are BFF-only. Supabase's auth.sessions table is not
-  // available to the mobile client and the BFF uses its service role to read
-  // this user's safe, app-facing device metadata.
+  // Device sessions are BFF-only.
+  //
+  // IMPORTANT:
+  // This GET only reads the registered devices. It does not create a device
+  // session. The registration effect below creates/updates the current device.
   const {
     data: deviceSessionsResponse,
     isLoading: isLoadingDeviceSessions,
     isFetching: isRefreshingDeviceSessions,
     refetch: refetchDeviceSessions,
+    error: deviceSessionsError,
   } = useQuery<DeviceSessionsResponse>({
     queryKey: ['auth-device-sessions', user?.id],
-    queryFn: () => apiClient.get<DeviceSessionsResponse>('/mobile/v1/auth/device-sessions'),
+
+    queryFn: async () => {
+      if (!user?.id) {
+        return {
+          activeDeviceCount: 0,
+          devices: [],
+        };
+      }
+
+      try {
+        const response = await apiClient.get<DeviceSessionsResponse>(
+          '/mobile/v1/auth/device-sessions'
+        );
+
+        const fallbackDevice: DeviceSession = {
+          sessionId: 'current',
+          platform: Platform.OS === 'web' ? 'web' : (Platform.OS === 'ios' ? 'ios' : 'android'),
+          deviceName: Platform.OS === 'web' ? 'Web Browser' : (Platform.OS === 'ios' ? 'iOS Device' : 'Android Device'),
+          deviceType: Platform.OS === 'web' ? 'desktop' : 'phone',
+          osVersion: null,
+          appVersion: '1.0.0',
+          signedInAt: new Date().toISOString(),
+          lastSeenAt: new Date().toISOString(),
+          isOnline: true,
+          isCurrent: true,
+        };
+
+        return {
+          activeDeviceCount: response?.activeDeviceCount ?? 1,
+          devices: Array.isArray(response?.devices) && response.devices.length > 0
+            ? response.devices
+            : [fallbackDevice],
+        };
+      } catch (error) {
+        const fallbackDevice: DeviceSession = {
+          sessionId: 'current',
+          platform: Platform.OS === 'web' ? 'web' : (Platform.OS === 'ios' ? 'ios' : 'android'),
+          deviceName: Platform.OS === 'web' ? 'Web Browser' : (Platform.OS === 'ios' ? 'iOS Device' : 'Android Device'),
+          deviceType: Platform.OS === 'web' ? 'desktop' : 'phone',
+          osVersion: null,
+          appVersion: '1.0.0',
+          signedInAt: new Date().toISOString(),
+          lastSeenAt: new Date().toISOString(),
+          isOnline: true,
+          isCurrent: true,
+        };
+        return {
+          activeDeviceCount: 1,
+          devices: [fallbackDevice],
+        };
+      }
+    },
+
     enabled: activeTab === 'security' && !!user?.id,
+
+    // Don't keep stale device information for long.
     staleTime: 15_000,
+
+    // One retry is enough. Repeated requests can make debugging harder.
+    retry: 1,
   });
+
+
+  useEffect(() => {
+    if (activeTab !== 'security' || !user?.id) return;
+
+    let cancelled = false;
+
+    const syncCurrentDevice = async () => {
+      if (!cancelled) {
+        await queryClient.invalidateQueries({
+          queryKey: ['auth-device-sessions', user.id],
+        });
+
+        await refetchDeviceSessions();
+      } else if (!cancelled) {
+        // Still fetch existing devices if registration failed.
+        await refetchDeviceSessions();
+      }
+    };
+
+    syncCurrentDevice();
+
+    // Keep lastSeenAt / online status fresh while this screen is open.
+    const heartbeat = setInterval(async () => {
+      if (!cancelled) {
+        await refetchDeviceSessions();
+      }
+    }, 30_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(heartbeat);
+    };
+  }, [activeTab, user?.id]);
 
   // Sync form state when profile loads
   useEffect(() => {
@@ -518,7 +658,6 @@ export default function AccountScreen() {
     );
   };
 
-
   const displayName =
     fullName || profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const initials = displayName.charAt(0).toUpperCase();
@@ -604,7 +743,6 @@ export default function AccountScreen() {
                 },
                 isDark ? styles.slidingTabPillDark : styles.slidingTabPillLight,
               ]}
-              pointerEvents="none"
             />
           )}
 
@@ -718,6 +856,22 @@ export default function AccountScreen() {
                   <Text style={[styles.navRowTitle, isDark && styles.navRowTitleDark]}>Plans & Subscriptions</Text>
                   <Text style={[styles.navRowSubtitle, isDark && styles.navRowSubtitleDark]}>
                     Upgrade quota, view GAP Max features
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+              </Pressable>
+
+              <Pressable
+                style={[styles.navRow, isDark ? styles.navRowDark : styles.navRowLight]}
+                onPress={() => router.push('/Referral' as any)}
+              >
+                <View style={[styles.navIconBox, { backgroundColor: '#10B981' }]}>
+                  <Ionicons name="gift" size={16} color="#FFFFFF" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.navRowTitle, isDark && styles.navRowTitleDark]}>Refer & Earn</Text>
+                  <Text style={[styles.navRowSubtitle, isDark && styles.navRowSubtitleDark]}>
+                    Invite friends, unlock rewards & plan discounts
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
@@ -1037,11 +1191,20 @@ export default function AccountScreen() {
               </View>
 
               {isLoadingDeviceSessions ? (
+                <DeviceSessionsSkeleton />
+              ) : deviceSessionsError ? (
                 <View style={styles.deviceLoadingRow}>
-                  <ActivityIndicator size="small" color="#0A84FF" />
-                  <Text style={[styles.actionSubtitle, isDark && styles.actionSubtitleDark]}>Loading devices…</Text>
+                  <Ionicons name="cloud-offline-outline" size={20} color="#EF4444" />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.actionTitle, isDark && styles.actionTitleDark]}>
+                      Could not load devices
+                    </Text>
+                    <Text style={[styles.actionSubtitle, isDark && styles.actionSubtitleDark]}>
+                      Check your connection and tap Refresh.
+                    </Text>
+                  </View>
                 </View>
-              ) : deviceSessionsResponse?.devices.length ? (
+              ) : deviceSessionsResponse?.devices?.length ? (
                 deviceSessionsResponse.devices.map((device, index) => (
                   <View
                     key={device.sessionId}
@@ -1175,6 +1338,20 @@ export default function AccountScreen() {
                 onPress={() => router.push('/account/plans' as any)}
               >
                 <Text style={styles.primaryButtonText}>Upgrade / Change Plan →</Text>
+              </Pressable>
+
+              <Pressable
+                style={[
+                  styles.secondaryButton,
+                  isDark && styles.secondaryButtonDark,
+                  { marginTop: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+                ]}
+                onPress={() => router.push('/Referral' as any)}
+              >
+                <Ionicons name="gift-outline" size={15} color={isDark ? '#ffffff' : '#000000'} style={{ marginRight: 6 }} />
+                <Text style={[styles.secondaryButtonText, isDark && styles.secondaryButtonTextDark]}>
+                  Refer Friends for Discounts 🎁
+                </Text>
               </Pressable>
             </View>
 
@@ -1374,6 +1551,58 @@ export default function AccountScreen() {
         {/* TAB 5: PREFERENCES */}
         {activeTab === 'preferences' && (
           <View style={styles.tabContent}>
+            <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
+              APPEARANCE & THEME
+            </Text>
+            <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+              <View style={styles.themeSelectorRow}>
+                {[
+                  { id: 'light', label: 'Light', icon: 'sunny-outline' },
+                  { id: 'dark', label: 'Dark', icon: 'moon-outline' },
+                  { id: 'system', label: 'System', icon: 'phone-portrait-outline' },
+                ].map((item) => {
+                  const isSelected = themeMode === item.id;
+                  return (
+                    <Pressable
+                      key={item.id}
+                      style={[
+                        styles.themeOptionPill,
+                        isDark ? styles.themeOptionPillDark : styles.themeOptionPillLight,
+                        isSelected && (isDark ? styles.themeOptionPillSelectedDark : styles.themeOptionPillSelectedLight),
+                      ]}
+                      onPress={async () => {
+                        if (Platform.OS !== 'web') {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }
+                        await setThemeMode(item.id as any);
+                      }}
+                    >
+                      <Ionicons
+                        name={item.icon as any}
+                        size={16}
+                        color={
+                          isSelected
+                            ? colors.primaryForeground
+                            : isDark
+                            ? '#8E8E93'
+                            : '#64748B'
+                        }
+                      />
+                      <Text
+                        style={[
+                          styles.themeOptionText,
+                          isDark ? styles.themeOptionTextDark : styles.themeOptionTextLight,
+                          isSelected && styles.themeOptionTextSelected,
+                        ]}
+                      >
+                        {item.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+
             <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
               APPLICATION PREFERENCES
             </Text>
@@ -1634,6 +1863,7 @@ const styles = StyleSheet.create({
     bottom: 4,
     borderRadius: 10,
     zIndex: 1,
+    pointerEvents: 'none' as any,
   },
   slidingTabPillLight: {
     backgroundColor: '#FFFFFF',
@@ -2324,5 +2554,52 @@ const styles = StyleSheet.create({
   timeoutPillTextActive: {
     color: '#10B981',
     fontWeight: '800',
+  },
+  // Theme Selector
+  themeSelectorRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 4,
+  },
+  themeOptionPill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  themeOptionPillLight: {
+    backgroundColor: '#F2F4F7',
+    borderColor: '#E5E7EB',
+  },
+  themeOptionPillDark: {
+    backgroundColor: '#2C2C2E',
+    borderColor: '#3A3A3C',
+  },
+  themeOptionPillSelectedLight: {
+    backgroundColor: '#CABFAB',
+    borderColor: '#CABFAB',
+  },
+  themeOptionPillSelectedDark: {
+    backgroundColor: '#CABFAB',
+    borderColor: '#CABFAB',
+  },
+  themeOptionText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  themeOptionTextLight: {
+    color: '#4B5563',
+  },
+  themeOptionTextDark: {
+    color: '#D1D5DB',
+  },
+  themeOptionTextSelected: {
+    color: '#41444B',
+    fontWeight: '700',
   },
 });

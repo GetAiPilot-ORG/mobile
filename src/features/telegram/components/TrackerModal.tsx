@@ -7,7 +7,6 @@ import {
   Pressable,
   TextInput,
   ScrollView,
-  useColorScheme,
   ActivityIndicator,
   Alert,
   Image,
@@ -23,6 +22,7 @@ import {
   TelegramTrackerDashboardData,
   TelegramTrackerNewUser,
 } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 interface TrackerModalProps {
   visible: boolean;
@@ -32,8 +32,8 @@ interface TrackerModalProps {
 type TrackerTab = 'connect' | 'links' | 'joins';
 
 export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [activeTab, setActiveTab] = useState<TrackerTab>('joins');
   const [loading, setLoading] = useState(false);
@@ -235,11 +235,14 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
     }
   };
 
-  const filteredUsers = (dashboard?.newUsers || []).filter((u) => {
+  const filteredUsers = (dashboard?.newUsers || []).filter((u: any) => {
+    const nameStr = (u.name || u.first_name || '').toLowerCase();
+    const chanStr = (u.channel_name || '').toLowerCase();
+    const q = userSearch.toLowerCase();
     const matchesSearch =
-      u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
-      u.channel_name.toLowerCase().includes(userSearch.toLowerCase()) ||
-      String(u.telegram_user_id).includes(userSearch);
+      nameStr.includes(q) ||
+      chanStr.includes(q) ||
+      String(u.telegram_user_id || '').includes(q);
     const matchesFilter = userStatusFilter === 'All' || u.status === userStatusFilter;
     return matchesSearch && matchesFilter;
   });
@@ -1419,19 +1422,15 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   matrixHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 8,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 6,
     marginBottom: 14,
   },
   matrixHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    flex: 1,
-    minWidth: 150,
   },
   matrixTitle: {
     fontSize: 14,
@@ -1515,19 +1514,28 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   chanLinksWrap: {
-    gap: 4,
+    gap: 6,
+    marginTop: 4,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(148,163,184,0.2)',
   },
   linkJoinPill: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 4,
-    paddingHorizontal: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(2,132,199,0.07)',
+    borderWidth: 1,
+    borderColor: 'rgba(2,132,199,0.15)',
   },
   linkJoinPillTitle: {
     fontSize: 11,
     flex: 1,
     marginLeft: 6,
+    marginRight: 6,
   },
   linkJoinPillBadge: {
     backgroundColor: '#E0F2FE',

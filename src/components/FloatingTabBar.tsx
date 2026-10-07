@@ -1,17 +1,18 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import React from 'react';
 import {
-  View,
-  Text,
+  LayoutAnimation,
+  Platform,
   Pressable,
   StyleSheet,
-  Platform,
-  useColorScheme,
-  Animated,
-  LayoutChangeEvent,
+  Text,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
+import { useTheme, getColors } from '@/theme';
+import { usePlatformSubscription } from '../hooks/usePlatformSubscription';
+import { useAuth } from '../contexts/AuthContext';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -32,6 +33,17 @@ const TAB_CONFIG: Record<string, TabItemConfig> = {
     activeIcon: 'chatbubbles',
     inactiveIcon: 'chatbubbles-outline',
   },
+
+  team: {
+    label: 'Team',
+    activeIcon: 'people',
+    inactiveIcon: 'people-outline',
+  },
+  planner: {
+    label: 'Planner',
+    activeIcon: 'calendar',
+    inactiveIcon: 'calendar-outline',
+  },
   tools: {
     label: 'Tools',
     activeIcon: 'telescope',
@@ -42,6 +54,16 @@ const TAB_CONFIG: Record<string, TabItemConfig> = {
     activeIcon: 'pulse',
     inactiveIcon: 'pulse-outline',
   },
+  admin: {
+    label: 'Admin',
+    activeIcon: 'shield-checkmark',
+    inactiveIcon: 'shield-checkmark-outline'
+  },
+  communication: {
+    label: 'Connect',
+    activeIcon: 'mail',
+    inactiveIcon: 'mail-outline',
+  },
 };
 
 export interface FloatingTabBarProps {
@@ -51,19 +73,55 @@ export interface FloatingTabBarProps {
   insets?: any;
 }
 
+const tabSpringAnimation = {
+  duration: 260,
+  create: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+    property: LayoutAnimation.Properties.opacity,
+  },
+  update: {
+    type: LayoutAnimation.Types.spring,
+    springDamping: 0.75,
+  },
+  delete: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+    property: LayoutAnimation.Properties.opacity,
+  },
+};
+
 export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const { user, profile } = useAuth();
+  const { isAdmin: isPlatformAdmin } = usePlatformSubscription();
+
+  const userRole = (user?.role || profile?.role || '').toLowerCase();
+  const isAdmin = Boolean(
+    userRole === 'admin' ||
+    (user as any)?.is_admin === true ||
+    profile?.is_admin === true
+  );
 
   // Bottom floating offset based on safe area
-  const bottomOffset = Math.max(insets.bottom + 6, 20);
+  const bottomOffset = Math.max(insets.bottom, 12);
 
-  // Filter visible routes: strictly the 4 main tabs (Home, Inbox, Tools, Activity)
+  // Filter visible routes: Home, Inbox, Tools, Activity, and Admin ONLY for admin users
   const visibleRoutes = state.routes.filter((route: any) => {
     const descriptor = descriptors[route.key];
     const options = descriptor ? descriptor.options : {};
-    return options.href !== null && !!TAB_CONFIG[route.name] && route.name !== 'products';
+
+    // Explicitly hide products, account, fleet from bottom bar
+    if (route.name === 'products' || route.name === 'account' || route.name === 'fleet') {
+      return false;
+    }
+
+    // Admin tab (shield-checkmark) should ONLY show when the user is admin
+    if (route.name === 'admin') {
+      return Boolean(isAdmin);
+    }
+
+    return options.href !== null && !!TAB_CONFIG[route.name];
   });
 
   const currentRouteName = state.routes[state.index]?.name;
@@ -72,61 +130,17 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
     visibleRoutes.findIndex((r: any) => r.name === currentRouteName)
   );
 
-  // Layout measurement for mathematical symmetry
-  const [containerWidth, setContainerWidth] = useState(0);
-  const paddingHorizontal = 6;
-  const numTabs = visibleRoutes.length || 4;
-  const availableWidth = Math.max(0, containerWidth - paddingHorizontal * 2);
-  const tabWidth = numTabs > 0 ? availableWidth / numTabs : 0;
-
-  // Spring animation for the smooth gliding active pill
-  const slideAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (tabWidth > 0) {
-      Animated.spring(slideAnim, {
-        toValue: activeVisibleIndex * tabWidth,
-        tension: 80,
-        friction: 10,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [activeVisibleIndex, tabWidth]);
-
-  const onContainerLayout = (event: LayoutChangeEvent) => {
-    const { width } = event.nativeEvent.layout;
-    if (width > 0 && width !== containerWidth) {
-      setContainerWidth(width);
-    }
-  };
-
   return (
-    <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
+    <View style={[styles.floatingWrapper, { bottom: bottomOffset }]}>
       <View
-        onLayout={onContainerLayout}
         style={[
           styles.tabBarContainer,
-          isDark ? styles.tabBarContainerDark : styles.tabBarContainerLight,
+          {
+            backgroundColor: colors.card,
+            borderColor: colors.border,
+          },
         ]}
       >
-        {/* Soft Gliding Active Pill */}
-        {tabWidth > 0 && (
-          <Animated.View
-            style={[
-              styles.slidingIndicator,
-              {
-                width: tabWidth - 4,
-                left: paddingHorizontal + 2,
-                transform: [{ translateX: slideAnim }],
-              },
-            ]}
-            pointerEvents="none"
-          >
-            <View style={isDark ? styles.indicatorPillDark : styles.indicatorPillLight} />
-          </Animated.View>
-        )}
-
-        {/* Symmetric Tab Items */}
         {visibleRoutes.map((route: { key: string; name: string }, index: number) => {
           const descriptor = descriptors[route.key];
           const options = descriptor ? descriptor.options : ({} as any);
@@ -137,6 +151,8 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
             if (Platform.OS !== 'web') {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
+
+            LayoutAnimation.configureNext(tabSpringAnimation);
 
             const event = navigation.emit({
               type: 'tabPress',
@@ -157,38 +173,63 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
           };
 
           const iconName = isFocused ? config.activeIcon : config.inactiveIcon;
-          const activeColor = isDark ? '#0A84FF' : '#007AFF';
-          const inactiveColor = isDark ? '#8E8E93' : '#6B7280';
 
-          return (
-            <Pressable
-              key={route.key}
-              accessibilityRole="button"
-              accessibilityState={isFocused ? { selected: true } : {}}
-              accessibilityLabel={options.tabBarAccessibilityLabel}
-              testID={options.tabBarButtonTestID}
-              onPress={onPress}
-              onLongPress={onLongPress}
-              style={styles.tabItem}
-            >
-              <View style={styles.tabContent}>
+          if (isFocused) {
+            return (
+              <Pressable
+                key={route.key}
+                accessibilityRole="button"
+                accessibilityState={{ selected: true }}
+                accessibilityLabel={options.tabBarAccessibilityLabel}
+                testID={options.tabBarButtonTestID}
+                onPress={onPress}
+                onLongPress={onLongPress}
+                style={[
+                  styles.activePill,
+                  { backgroundColor: colors.primary },
+                ]}
+              >
                 <Ionicons
                   name={iconName}
-                  size={isFocused ? 21 : 20}
-                  color={isFocused ? activeColor : inactiveColor}
+                  size={19}
+                  color={isDark ? '#FFFFFF' : '#FFFFFF'}
                 />
                 <Text
                   style={[
-                    styles.tabLabel,
-                    isFocused
-                      ? [styles.tabLabelActive, { color: activeColor }]
-                      : [styles.tabLabelInactive, { color: inactiveColor }],
+                    styles.activeLabel,
+                    { color: colors.primaryForeground },
                   ]}
                   numberOfLines={1}
                 >
                   {config.label}
                 </Text>
-              </View>
+              </Pressable>
+            );
+          }
+
+          return (
+            <Pressable
+              key={route.key}
+              accessibilityRole="button"
+              accessibilityState={{ selected: false }}
+              accessibilityLabel={options.tabBarAccessibilityLabel}
+              testID={options.tabBarButtonTestID}
+              onPress={onPress}
+              onLongPress={onLongPress}
+              style={[
+                styles.inactiveButton,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(255, 255, 255, 0.07)'
+                    : 'rgba(0, 0, 0, 0.04)',
+                },
+              ]}
+            >
+              <Ionicons
+                name={iconName}
+                size={20}
+                color={colors.textMuted}
+              />
             </Pressable>
           );
         })}
@@ -200,80 +241,86 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
 const styles = StyleSheet.create({
   floatingWrapper: {
     position: 'absolute',
-    left: 24,
-    right: 24,
+    left: 16,
+    right: 16,
     alignItems: 'center',
     zIndex: 9999,
+    pointerEvents: 'box-none' as any,
   },
   tabBarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
-    maxWidth: 380,
-    height: 58,
-    borderRadius: 29,
-    paddingHorizontal: 6,
-    borderWidth: StyleSheet.hairlineWidth,
-    position: 'relative',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    height: 52,
+    borderRadius: 26,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+    borderWidth: 1,
+    gap: 6,
   },
   tabBarContainerLight: {
-    backgroundColor: 'rgba(255, 255, 255, 0.94)',
+    backgroundColor: '#FFFFFF',
     borderColor: 'rgba(0, 0, 0, 0.08)',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 18,
+    elevation: 12,
   },
   tabBarContainerDark: {
-    backgroundColor: 'rgba(28, 28, 30, 0.94)',
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: '#0A111B',
+    borderColor: '#234563',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.45,
+    shadowRadius: 24,
+    elevation: 14,
   },
-  slidingIndicator: {
-    position: 'absolute',
-    top: 5,
-    bottom: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1,
-  },
-  indicatorPillDark: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  indicatorPillLight: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 24,
-    backgroundColor: 'rgba(0, 122, 255, 0.08)',
-  },
-  tabItem: {
-    flex: 1,
+  activePill: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: '100%',
-    zIndex: 2,
+    height: 44,
+    paddingHorizontal: 15,
+    borderRadius: 22,
+    gap: 6,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    elevation: 5,
   },
-  tabContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
+  activePillDark: {
+    backgroundColor: 'rgba(47, 140, 255, 0.16)',
+    borderWidth: 1,
+    borderColor: '#3E9BFF',
   },
-  tabLabel: {
-    fontSize: 10.5,
+  activePillLight: {
+    backgroundColor: '#0F172A',
+  },
+  activeLabel: {
+    fontSize: 13,
+    fontWeight: '700',
     letterSpacing: -0.2,
   },
-  tabLabelInactive: {
-    fontWeight: '500',
+  activeLabelDark: {
+    color: '#FFFFFF',
   },
-  tabLabelActive: {
-    fontWeight: '600',
+  activeLabelLight: {
+    color: '#FFFFFF',
+  },
+  inactiveButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+    width: 44,
+    borderRadius: 22,
+  },
+  inactiveButtonDark: {
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  inactiveButtonLight: {
+    backgroundColor: 'rgba(0, 0, 0, 0.04)',
   },
 });

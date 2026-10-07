@@ -1,52 +1,74 @@
-import React, { useMemo, useState } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
+import React, { useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  useColorScheme,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { getColors, useTheme } from "@/theme";
 
-import { TemplateCard } from '../components';
-import { useWhatsAppTemplates } from '../hooks/useWhatsAppTemplates';
+import { WhatsAppTemplatesSkeleton } from "../../../components/skeletonScreen";
+import { TemplateCard } from "../components";
+import { useWhatsAppTemplates } from "../hooks/useWhatsAppTemplates";
 
 interface WhatsAppTemplatesScreenProps {
   onBack?: () => void;
 }
 
-export const WhatsAppTemplatesScreen: React.FC<WhatsAppTemplatesScreenProps> = ({ onBack }) => {
+export const WhatsAppTemplatesScreen: React.FC<
+  WhatsAppTemplatesScreenProps
+> = ({ onBack }) => {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  const handleBack = onBack || (() => router.back());
+  const { isDark } = useTheme();
+  const color = getColors(isDark);
+  const handleBack = () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    if (onBack) {
+      onBack();
+    } else if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/products/whatsapp");
+    }
+  };
 
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [activeCategory, setActiveCategory] = useState<string>('ALL');
-  const [activeStatus, setActiveStatus] = useState<string>('ALL');
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [activeCategory, setActiveCategory] = useState<string>("ALL");
+  const [activeStatus, setActiveStatus] = useState<string>("ALL");
 
-  const { data: templates, isLoading, refetch, isRefetching } = useWhatsAppTemplates();
+  const {
+    data: templates,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useWhatsAppTemplates();
 
   const categoryOptions = [
-    { val: 'ALL', label: 'All Templates' },
-    { val: 'UTILITY', label: 'Utility' },
-    { val: 'MARKETING', label: 'Marketing' },
-    { val: 'AUTHENTICATION', label: 'Authentication' },
+    { val: "ALL", label: "All Templates" },
+    { val: "UTILITY", label: "Utility" },
+    { val: "MARKETING", label: "Marketing" },
+    { val: "AUTHENTICATION", label: "Authentication" },
   ];
 
   // Calculate Status Counts
   const stats = useMemo(() => {
     const list = templates || [];
-    const approved = list.filter((t) => t.status === 'APPROVED').length;
-    const pending = list.filter((t) => t.status === 'PENDING').length;
-    const rejected = list.filter((t) => t.status === 'REJECTED' || t.status === 'PAUSED').length;
+    const approved = list.filter((t) => t.status === "APPROVED").length;
+    const pending = list.filter((t) => t.status === "PENDING").length;
+    const rejected = list.filter(
+      (t) => t.status === "REJECTED" || t.status === "PAUSED",
+    ).length;
     return { approved, pending, rejected, total: list.length };
   }, [templates]);
 
@@ -54,20 +76,26 @@ export const WhatsAppTemplatesScreen: React.FC<WhatsAppTemplatesScreenProps> = (
   const filteredTemplates = useMemo(() => {
     let list = templates || [];
 
-    if (activeCategory !== 'ALL') {
-      list = list.filter((t) => (t.category || '').toUpperCase() === activeCategory);
+    if (activeCategory !== "ALL") {
+      list = list.filter(
+        (t) => (t.category || "").toUpperCase() === activeCategory,
+      );
     }
 
-    if (activeStatus !== 'ALL') {
-      list = list.filter((t) => (t.status || '').toUpperCase() === activeStatus);
+    if (activeStatus !== "ALL") {
+      list = list.filter(
+        (t) => (t.status || "").toUpperCase() === activeStatus,
+      );
     }
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       list = list.filter((t) => {
         const nameMatch = t.name.toLowerCase().includes(q);
-        const bodyComp = t.components?.find((c: any) => c.type === 'BODY');
-        const bodyMatch = bodyComp?.text ? bodyComp.text.toLowerCase().includes(q) : false;
+        const bodyComp = t.components?.find((c: any) => c.type === "BODY");
+        const bodyMatch = bodyComp?.text
+          ? bodyComp.text.toLowerCase().includes(q)
+          : false;
         return nameMatch || bodyMatch;
       });
     }
@@ -77,46 +105,85 @@ export const WhatsAppTemplatesScreen: React.FC<WhatsAppTemplatesScreenProps> = (
 
   return (
     <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}
-      edges={['top', 'left', 'right']}
+      style={[styles.safeArea, { backgroundColor: color.background }]}
+      edges={["top", "left", "right"]}
     >
-      <View style={[styles.container, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
-        {/* 1. Top Header */}
-        <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
-          <View style={styles.headerTitleRow}>
+      <View style={[styles.container, { backgroundColor: color.background }]}>
+        {/* Top Header matching Overview Tab */}
+        <View
+          style={[
+            styles.header,
+            isDark ? styles.headerDark : styles.headerLight,
+          ]}
+        >
+          <View style={styles.headerLeftRow}>
             <Pressable
-              style={[styles.backButton, isDark ? styles.backButtonDark : styles.backButtonLight]}
+              style={({ pressed }) => [
+                styles.backButton,
+                isDark ? styles.backButtonDark : styles.backButtonLight,
+                pressed && styles.backButtonPressed,
+              ]}
               onPress={handleBack}
-              hitSlop={10}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
             >
-              <Ionicons name="arrow-back" size={20} color={isDark ? '#f8fafc' : '#0f172a'} />
+              <Ionicons
+                name="chevron-back"
+                size={20}
+                color={isDark ? "#F8FAFC" : "#0F172A"}
+              />
             </Pressable>
 
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.title, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Message Templates</Text>
-              <Text style={[styles.subtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-                Browse approved WhatsApp message templates
-              </Text>
-            </View>
+            <Text
+              style={[
+                styles.title,
+                isDark ? styles.titleDark : styles.titleLight,
+              ]}
+            >
+              Message Templates
+            </Text>
           </View>
         </View>
 
-        {/* 2. Filter & Search Controls Card */}
-        <View style={[styles.filterCard, isDark ? styles.filterCardDark : styles.filterCardLight]}>
+        {/* Filter & Search Controls Card */}
+        <View
+          style={[
+            styles.filterCard,
+            isDark ? styles.filterCardDark : styles.filterCardLight,
+          ]}
+        >
           {/* Search Bar */}
-          <View style={[styles.searchBar, isDark ? styles.searchBarDark : styles.searchBarLight]}>
-            <Ionicons name="search-outline" size={16} color={isDark ? '#64748b' : '#94a3b8'} style={styles.searchIcon} />
+          <View
+            style={[
+              styles.searchBar,
+              isDark ? styles.searchBarDark : styles.searchBarLight,
+            ]}
+          >
+            <Ionicons
+              name="search-outline"
+              size={18}
+              color={isDark ? "#64748B" : "#94A3B8"}
+              style={styles.searchIcon}
+            />
             <TextInput
-              style={[styles.searchInput, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+              style={[
+                styles.searchInput,
+                { color: isDark ? "#F8FAFC" : "#0F172A" },
+              ]}
               placeholder="Search template name or message..."
-              placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
+              placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
               value={searchQuery}
               onChangeText={setSearchQuery}
               clearButtonMode="while-editing"
             />
             {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery('')} hitSlop={10}>
-                <Ionicons name="close-circle" size={16} color={isDark ? '#64748b' : '#94a3b8'} />
+              <Pressable onPress={() => setSearchQuery("")} hitSlop={8}>
+                <Ionicons
+                  name="close-circle"
+                  size={16}
+                  color={isDark ? "#64748B" : "#94A3B8"}
+                />
               </Pressable>
             )}
           </View>
@@ -137,12 +204,23 @@ export const WhatsAppTemplatesScreen: React.FC<WhatsAppTemplatesScreenProps> = (
                     isDark ? styles.categoryTabDark : styles.categoryTabLight,
                     isSelected && styles.categoryTabActive,
                   ]}
-                  onPress={() => setActiveCategory(cat.val)}
+                  onPress={() => {
+                    if (Platform.OS !== "web") {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }
+                    setActiveCategory(cat.val);
+                  }}
                 >
                   <Text
                     style={[
                       styles.categoryTabText,
-                      { color: isDark ? '#94a3b8' : '#64748b' },
+                      {
+                        color: isSelected
+                          ? "#000000"
+                          : isDark
+                            ? "#94A3B8"
+                            : "#64748B",
+                      },
                       isSelected && styles.categoryTabTextActive,
                     ]}
                   >
@@ -154,19 +232,45 @@ export const WhatsAppTemplatesScreen: React.FC<WhatsAppTemplatesScreenProps> = (
           </ScrollView>
 
           {/* Status Stats Row with Clickable Badges */}
-          <View style={[styles.statsRow, isDark ? styles.borderDark : styles.borderLight]}>
+          <View
+            style={[
+              styles.statsRow,
+              isDark ? styles.borderDark : styles.borderLight,
+            ]}
+          >
             <View style={styles.badgesGroup}>
               {/* All Badge */}
               <Pressable
                 style={[
                   styles.countBadge,
                   isDark ? styles.countBadgeDark : styles.countBadgeLight,
-                  activeStatus === 'ALL' && (isDark ? styles.countBadgeActiveDark : styles.countBadgeActiveLight),
+                  activeStatus === "ALL" &&
+                    (isDark
+                      ? styles.countBadgeActiveDark
+                      : styles.countBadgeActiveLight),
                 ]}
-                onPress={() => setActiveStatus('ALL')}
+                onPress={() => {
+                  if (Platform.OS !== "web") {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  setActiveStatus("ALL");
+                }}
               >
-                <Text style={[styles.countBadgeText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-                  All: <Text style={{ fontWeight: '800', color: isDark ? '#f8fafc' : '#0f172a' }}>{stats.total}</Text>
+                <Text
+                  style={[
+                    styles.countBadgeText,
+                    { color: isDark ? "#94A3B8" : "#64748B" },
+                  ]}
+                >
+                  All:{" "}
+                  <Text
+                    style={{
+                      fontWeight: "700",
+                      color: isDark ? "#F8FAFC" : "#0F172A",
+                    }}
+                  >
+                    {stats.total}
+                  </Text>
                 </Text>
               </Pressable>
 
@@ -175,12 +279,24 @@ export const WhatsAppTemplatesScreen: React.FC<WhatsAppTemplatesScreenProps> = (
                 style={[
                   styles.countBadge,
                   isDark ? styles.countBadgeDark : styles.countBadgeLight,
-                  activeStatus === 'APPROVED' && (isDark ? styles.countBadgeActiveDark : styles.countBadgeActiveLight),
+                  activeStatus === "APPROVED" &&
+                    (isDark
+                      ? styles.countBadgeActiveDark
+                      : styles.countBadgeActiveLight),
                 ]}
-                onPress={() => setActiveStatus(activeStatus === 'APPROVED' ? 'ALL' : 'APPROVED')}
+                onPress={() => {
+                  if (Platform.OS !== "web") {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  setActiveStatus(
+                    activeStatus === "APPROVED" ? "ALL" : "APPROVED",
+                  );
+                }}
               >
-                <Ionicons name="checkmark-circle" size={12} color="#25d366" />
-                <Text style={[styles.countBadgeText, { color: '#25d366' }]}>{stats.approved}</Text>
+                <Ionicons name="checkmark-circle" size={12} color="#25D366" />
+                <Text style={[styles.countBadgeText, { color: "#25D366" }]}>
+                  {stats.approved}
+                </Text>
               </Pressable>
 
               {/* Pending Badge */}
@@ -188,12 +304,24 @@ export const WhatsAppTemplatesScreen: React.FC<WhatsAppTemplatesScreenProps> = (
                 style={[
                   styles.countBadge,
                   isDark ? styles.countBadgeDark : styles.countBadgeLight,
-                  activeStatus === 'PENDING' && (isDark ? styles.countBadgeActiveDark : styles.countBadgeActiveLight),
+                  activeStatus === "PENDING" &&
+                    (isDark
+                      ? styles.countBadgeActiveDark
+                      : styles.countBadgeActiveLight),
                 ]}
-                onPress={() => setActiveStatus(activeStatus === 'PENDING' ? 'ALL' : 'PENDING')}
+                onPress={() => {
+                  if (Platform.OS !== "web") {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  setActiveStatus(
+                    activeStatus === "PENDING" ? "ALL" : "PENDING",
+                  );
+                }}
               >
-                <Ionicons name="time-outline" size={12} color="#fbbf24" />
-                <Text style={[styles.countBadgeText, { color: '#fbbf24' }]}>{stats.pending}</Text>
+                <Ionicons name="time-outline" size={12} color="#FBBF24" />
+                <Text style={[styles.countBadgeText, { color: "#FBBF24" }]}>
+                  {stats.pending}
+                </Text>
               </Pressable>
 
               {/* Rejected Badge */}
@@ -201,40 +329,54 @@ export const WhatsAppTemplatesScreen: React.FC<WhatsAppTemplatesScreenProps> = (
                 style={[
                   styles.countBadge,
                   isDark ? styles.countBadgeDark : styles.countBadgeLight,
-                  activeStatus === 'REJECTED' && (isDark ? styles.countBadgeActiveDark : styles.countBadgeActiveLight),
+                  activeStatus === "REJECTED" &&
+                    (isDark
+                      ? styles.countBadgeActiveDark
+                      : styles.countBadgeActiveLight),
                 ]}
-                onPress={() => setActiveStatus(activeStatus === 'REJECTED' ? 'ALL' : 'REJECTED')}
+                onPress={() => {
+                  if (Platform.OS !== "web") {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  setActiveStatus(
+                    activeStatus === "REJECTED" ? "ALL" : "REJECTED",
+                  );
+                }}
               >
-                <Ionicons name="close-circle" size={12} color="#f87171" />
-                <Text style={[styles.countBadgeText, { color: '#f87171' }]}>{stats.rejected}</Text>
+                <Ionicons name="close-circle" size={12} color="#F87171" />
+                <Text style={[styles.countBadgeText, { color: "#F87171" }]}>
+                  {stats.rejected}
+                </Text>
               </Pressable>
             </View>
 
             {/* Sync Meta Templates Button */}
             <Pressable
               style={styles.syncBtn}
-              onPress={() => refetch()}
+              onPress={() => {
+                if (Platform.OS !== "web") {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                refetch();
+              }}
               disabled={isRefetching}
             >
               <Ionicons
                 name="refresh-outline"
                 size={13}
-                color="#25d366"
-                style={isRefetching ? { transform: [{ rotate: '45deg' }] } : {}}
+                color="#25D366"
+                style={isRefetching ? { transform: [{ rotate: "45deg" }] } : {}}
               />
-              <Text style={styles.syncBtnText}>{isRefetching ? 'Syncing...' : 'Sync'}</Text>
+              <Text style={styles.syncBtnText}>
+                {isRefetching ? "Syncing..." : "Sync"}
+              </Text>
             </Pressable>
           </View>
         </View>
 
-        {/* 3. Templates FlatList / Grid */}
+        {/* Templates FlatList / Grid */}
         {isLoading && !templates ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#25d366" />
-            <Text style={[styles.loadingText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-              Syncing Meta WhatsApp templates...
-            </Text>
-          </View>
+          <WhatsAppTemplatesSkeleton />
         ) : (
           <FlatList
             data={filteredTemplates}
@@ -245,29 +387,56 @@ export const WhatsAppTemplatesScreen: React.FC<WhatsAppTemplatesScreenProps> = (
               <RefreshControl
                 refreshing={isRefetching}
                 onRefresh={refetch}
-                tintColor="#25d366"
+                tintColor="#25D366"
               />
             }
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Ionicons name="document-text-outline" size={48} color={isDark ? '#334155' : '#cbd5e1'} />
-                <Text style={[styles.emptyTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                <Ionicons
+                  name="document-text-outline"
+                  size={48}
+                  color={isDark ? "#334155" : "#CBD5E1"}
+                />
+                <Text
+                  style={[
+                    styles.emptyTitle,
+                    { color: isDark ? "#F8FAFC" : "#0F172A" },
+                  ]}
+                >
                   No WhatsApp Templates Found
                 </Text>
-                <Text style={[styles.emptyText, { color: isDark ? '#64748b' : '#94a3b8' }]}>
-                  {searchQuery || activeCategory !== 'ALL' || activeStatus !== 'ALL'
-                    ? 'No templates match your active filters. Try clearing filters or search query.'
-                    : 'No WhatsApp message templates available for this account.'}
+                <Text
+                  style={[
+                    styles.emptyText,
+                    { color: isDark ? "#64748B" : "#94A3B8" },
+                  ]}
+                >
+                  {searchQuery ||
+                  activeCategory !== "ALL" ||
+                  activeStatus !== "ALL"
+                    ? "No templates match your active filters. Try clearing filters or search query."
+                    : "No WhatsApp message templates available for this account."}
                 </Text>
               </View>
             }
           />
         )}
 
-        {/* 4. Meta Status Bar Footer */}
-        <View style={[styles.metaLiveFooter, isDark ? styles.footerDark : styles.footerLight]}>
-          <Text style={[styles.footerCountText, { color: isDark ? '#64748b' : '#94a3b8' }]}>
-            Showing {filteredTemplates.length} of {templates?.length || 0} templates
+        {/* Meta Status Bar Footer */}
+        <View
+          style={[
+            styles.metaLiveFooter,
+            isDark ? styles.footerDark : styles.footerLight,
+          ]}
+        >
+          <Text
+            style={[
+              styles.footerCountText,
+              { color: isDark ? "#64748B" : "#94A3B8" },
+            ]}
+          >
+            Showing {filteredTemplates.length} of {templates?.length || 0}{" "}
+            templates
           </Text>
 
           <View style={styles.metaLiveBadge}>
@@ -288,165 +457,169 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerDark: {
-    backgroundColor: '#020617',
-    borderBottomColor: '#1e293b',
+    backgroundColor: "#000000",
+    borderBottomColor: "rgba(255, 255, 255, 0.08)",
   },
   headerLight: {
-    backgroundColor: '#ffffff',
-    borderBottomColor: '#e2e8f0',
+    backgroundColor: "#FFFFFF",
+    borderBottomColor: "rgba(0, 0, 0, 0.06)",
   },
-  headerTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  headerLeftRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
   },
   backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  backButtonDark: {
-    backgroundColor: '#1e293b',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+    borderWidth: 1,
   },
   backButtonLight: {
-    backgroundColor: '#f1f5f9',
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E5E7EB",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  backButtonDark: {
+    backgroundColor: "#1C1C1E",
+    borderColor: "#2C2C2E",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  backButtonPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.94 }],
   },
   title: {
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: -0.3,
+    fontSize: 20,
+    fontWeight: "700",
+    letterSpacing: -0.4,
   },
-  subtitle: {
-    fontSize: 12,
-    marginTop: 1,
+  titleLight: {
+    color: "#0F172A",
   },
-  newTemplateBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#25d366',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8,
-    shadowColor: '#25d366',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  newTemplateBtnText: {
-    color: '#020617',
-    fontSize: 12.5,
-    fontWeight: '700',
+  titleDark: {
+    color: "#F8FAFC",
   },
   filterCard: {
-    marginHorizontal: 14,
-    marginTop: 12,
+    marginHorizontal: 16,
+    marginTop: 10,
     marginBottom: 6,
-    borderRadius: 12,
-    padding: 10,
+    borderRadius: 14,
+    padding: 12,
     borderWidth: 1,
   },
   filterCardDark: {
-    backgroundColor: '#0f172a',
-    borderColor: '#1e293b',
+    backgroundColor: "#1C1C1E",
+    borderColor: "#2C2C2E",
   },
   filterCardLight: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
-    shadowColor: '#000',
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E5E7EB",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
     elevation: 1,
   },
   searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 10,
     paddingHorizontal: 10,
-    height: 38,
+    height: 40,
     marginBottom: 10,
+    borderWidth: 1,
   },
   searchBarDark: {
-    backgroundColor: '#020617',
-    borderColor: '#1e293b',
+    backgroundColor: "#121214",
+    borderColor: "#2C2C2E",
   },
   searchBarLight: {
-    backgroundColor: '#f8fafc',
-    borderColor: '#e2e8f0',
+    backgroundColor: "#F8F9FA",
+    borderColor: "#E5E7EB",
   },
   searchIcon: {
     marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    fontSize: 12.5,
+    fontSize: 13,
+    fontWeight: "500",
     paddingVertical: 0,
   },
   categoryScroll: {
     gap: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingBottom: 10,
   },
   categoryTab: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 7,
+    borderRadius: 8,
     borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   categoryTabDark: {
-    backgroundColor: '#020617',
-    borderColor: '#1e293b',
+    backgroundColor: "#121214",
+    borderColor: "#2C2C2E",
   },
   categoryTabLight: {
-    backgroundColor: '#f8fafc',
-    borderColor: '#e2e8f0',
+    backgroundColor: "#F8F9FA",
+    borderColor: "#E5E7EB",
   },
   categoryTabActive: {
-    backgroundColor: '#25d366',
-    borderColor: '#25d366',
+    backgroundColor: "#25D366",
+    borderColor: "#25D366",
   },
   categoryTabText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   categoryTabTextActive: {
-    color: '#020617',
-    fontWeight: '800',
+    color: "#000000",
+    fontWeight: "700",
   },
   statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderTopWidth: 1,
-    paddingTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 10,
   },
   borderDark: {
-    borderTopColor: '#1e293b',
+    borderTopColor: "#2C2C2E",
   },
   borderLight: {
-    borderTopColor: '#e2e8f0',
+    borderTopColor: "#E5E7EB",
   },
   badgesGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   countBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -454,40 +627,40 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   countBadgeDark: {
-    backgroundColor: '#020617',
-    borderColor: '#1e293b',
+    backgroundColor: "#121214",
+    borderColor: "#2C2C2E",
   },
   countBadgeLight: {
-    backgroundColor: '#f8fafc',
-    borderColor: '#e2e8f0',
+    backgroundColor: "#F8F9FA",
+    borderColor: "#E5E7EB",
   },
   countBadgeActiveDark: {
-    backgroundColor: '#1e293b',
-    borderColor: '#475569',
+    backgroundColor: "#2C2C2E",
+    borderColor: "#3A3A3C",
   },
   countBadgeActiveLight: {
-    backgroundColor: '#e2e8f0',
-    borderColor: '#cbd5e1',
+    backgroundColor: "#E5E7EB",
+    borderColor: "#D1D5DB",
   },
   countBadgeText: {
     fontSize: 11.5,
-    fontWeight: '800',
+    fontWeight: "600",
   },
   syncBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: 'rgba(37, 211, 102, 0.12)',
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: "rgba(37, 211, 102, 0.12)",
     borderWidth: 1,
-    borderColor: 'rgba(37, 211, 102, 0.25)',
+    borderColor: "rgba(37, 211, 102, 0.25)",
     gap: 4,
   },
   syncBtnText: {
     fontSize: 11.5,
-    fontWeight: '700',
-    color: '#25d366',
+    fontWeight: "700",
+    color: "#25D366",
   },
   listContent: {
     padding: 14,
@@ -495,64 +668,64 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingText: {
     fontSize: 13,
     marginTop: 10,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   emptyContainer: {
     paddingVertical: 60,
     paddingHorizontal: 24,
-    alignItems: 'center',
+    alignItems: "center",
   },
   emptyTitle: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: "700",
     marginTop: 12,
   },
   emptyText: {
     fontSize: 12.5,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 6,
     lineHeight: 18,
   },
   metaLiveFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   footerDark: {
-    backgroundColor: '#020617',
-    borderTopColor: '#1e293b',
+    backgroundColor: "#000000",
+    borderTopColor: "rgba(255, 255, 255, 0.08)",
   },
   footerLight: {
-    backgroundColor: '#ffffff',
-    borderTopColor: '#e2e8f0',
+    backgroundColor: "#FFFFFF",
+    borderTopColor: "rgba(0, 0, 0, 0.06)",
   },
   footerCountText: {
     fontSize: 11.5,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   metaLiveBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   metaGreenDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#25d366',
+    backgroundColor: "#25D366",
     marginRight: 5,
   },
   metaLiveText: {
     fontSize: 11,
-    fontWeight: '600',
-    color: '#25d366',
+    fontWeight: "600",
+    color: "#25D366",
   },
 });

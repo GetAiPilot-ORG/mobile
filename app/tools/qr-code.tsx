@@ -9,14 +9,13 @@ import {
   Alert,
   Share,
   Linking,
-  useColorScheme,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
-import { colors } from '../../src/theme/colors';
+import { useTheme, getColors } from '@/theme';
 
 type QRType = 'url' | 'whatsapp' | 'upi' | 'wifi' | 'contact' | 'text';
 
@@ -44,8 +43,8 @@ const CATEGORIES: { id: QRType; title: string; icon: string }[] = [
 ];
 
 export default function QRCodeGeneratorScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [qrType, setQrType] = useState<QRType>('url');
   const [selectedColor, setSelectedColor] = useState<QRColorOption>(QR_COLORS[0]);
@@ -76,14 +75,14 @@ export default function QRCodeGeneratorScreen() {
 
   // Dynamic Theme Mapping
   const theme = {
-    bg: isDark ? colors.backgroundDark : colors.background,
-    card: isDark ? colors.surfaceDark : colors.card,
-    cardBorder: isDark ? colors.borderDark : colors.border,
-    text: isDark ? colors.foregroundDark : colors.foreground,
+    bg: colors.background,
+    card: colors.card,
+    cardBorder: colors.border,
+    text: colors.foreground,
     mutedText: colors.mutedForeground,
     inputBg: isDark ? '#141416' : '#FFFFFF',
-    inputBorder: isDark ? '#2C2C2E' : colors.border,
-    primary: colors.primary, // GetAiPilot Electric Blue
+    inputBorder: colors.border,
+    primary: colors.primary,
   };
 
   // Compute final QR payload

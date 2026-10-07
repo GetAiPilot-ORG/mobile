@@ -1,33 +1,39 @@
+import { getColors, useTheme } from '@/theme';
+import {
+  Ionicons
+} from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-  StyleSheet,
-  Text,
-  View,
+  Alert,
   FlatList,
   Pressable,
   RefreshControl,
-  ActivityIndicator,
-  Alert,
-  useColorScheme,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useTasks, useCreateTask, useToggleTask, useDeleteTask } from '../hooks/useTasks';
-import { TaskItem } from '../components/TaskItem';
+import { CrmTaskSkeleton } from '../../../components/skeletonScreen';
 import { CreateTaskModal } from '../components/CreateTaskModal';
+import { TaskItem } from '../components/TaskItem';
+import { useCreateTask, useDeleteTask, useTasks, useToggleTask } from '../hooks/useTasks';
 import { CRMTask } from '../types';
 
 const TIMEFRAME_TABS: Array<{ key: 'all' | 'today' | 'upcoming' | 'overdue' | 'completed'; label: string }> = [
+  { key: 'all', label: 'All Tasks' },
   { key: 'today', label: 'Today' },
   { key: 'upcoming', label: 'Upcoming' },
   { key: 'overdue', label: 'Overdue' },
-  { key: 'completed', label: 'Completed' },
-  { key: 'all', label: 'All Tasks' },
+  { key: 'completed', label: 'Completed' }
 ];
 
-export const TasksScreen: React.FC = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+interface TasksScreenProps {
+  onBack?: () => void;
+}
+
+export const TasksScreen: React.FC<TasksScreenProps> = ({ onBack }) => {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [selectedTimeframe, setSelectedTimeframe] = useState<'all' | 'today' | 'upcoming' | 'overdue' | 'completed'>('today');
   const [showAddTask, setShowAddTask] = useState(false);
@@ -52,12 +58,23 @@ export const TasksScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Tasks & Follow-ups</Text>
-          <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Daily schedule, reminders & client action items</Text>
+        <View style={styles.headerLeft}>
+          {onBack ? (
+            <Pressable
+              style={[styles.backBtn, { backgroundColor: colors.surface }]}
+              onPress={onBack}
+              hitSlop={8}
+            >
+              <Ionicons name="arrow-back" size={20} color={colors.text} />
+            </Pressable>
+          ) : null}
+          <View>
+            <Text style={[styles.title, { color: colors.text }]}>Tasks & Follow-ups</Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>Daily schedule, reminders & client action items</Text>
+          </View>
         </View>
 
         <Pressable
@@ -79,7 +96,7 @@ export const TasksScreen: React.FC = () => {
               key={tab.key}
               style={[
                 styles.tabChip,
-                { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+                { backgroundColor: colors.surface, borderColor: colors.border },
                 isSelected && (isDark ? styles.tabChipSelectedDark : styles.tabChipSelectedLight),
               ]}
               onPress={() => setSelectedTimeframe(tab.key)}
@@ -87,7 +104,7 @@ export const TasksScreen: React.FC = () => {
               <Text
                 style={[
                   styles.tabText,
-                  { color: isDark ? '#9CA3AF' : '#64748B' },
+                  { color: colors.textMuted },
                   isSelected && styles.tabTextSelected,
                 ]}
               >
@@ -100,15 +117,12 @@ export const TasksScreen: React.FC = () => {
 
       {/* Tasks List */}
       {isLoading && !tasks ? (
-        <View style={styles.loaderBox}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={[styles.loaderText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Loading tasks...</Text>
-        </View>
+        <CrmTaskSkeleton />
       ) : tasks.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="checkbox-outline" size={48} color={isDark ? '#4B5563' : '#CBD5E1'} />
-          <Text style={[styles.emptyTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>No {selectedTimeframe} tasks</Text>
-          <Text style={[styles.emptySubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+          <Ionicons name="checkbox-outline" size={48} color={colors.textMuted} />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>No {selectedTimeframe} tasks</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
             {selectedTimeframe === 'completed'
               ? 'No completed tasks recorded yet.'
               : 'You have no open tasks in this view. Great job keeping up!'}
@@ -164,6 +178,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  backBtn: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: '#1E2028',
   },
   title: {
     fontSize: 20,

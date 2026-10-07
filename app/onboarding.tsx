@@ -1,28 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import { getColors, useTheme } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
   ActivityIndicator,
-  ScrollView,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
-  useColorScheme,
+  Pressable,
+  ScrollView,
+  StyleSheet,
   Switch,
+  Text,
+  TextInput,
+  TouchableWithoutFeedback,
+  View,
 } from 'react-native';
-import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from '../src/lib/supabase';
 import { useAuth } from '../src/contexts/AuthContext';
 import { BiometricService, BiometricSettings } from '../src/lib/biometrics';
+import { supabase } from '../src/lib/supabase';
+import { getPendingReferralCode, handlePendingReferral } from '../src/services/referralService';
 
 const brandLogo = require('../assets/images/logo.jpg');
 
@@ -42,8 +43,8 @@ const TEAM_SIZES = ['1-5', '6-15', '16-50', '50+'];
 export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const { user, refreshProfile } = useAuth();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -53,6 +54,7 @@ export default function OnboardingScreen() {
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [teamSize, setTeamSize] = useState(TEAM_SIZES[0]);
   const [phone, setPhone] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,6 +78,14 @@ export default function OnboardingScreen() {
       setBiometricSettings(settings);
     }
     loadBiometrics();
+
+    async function loadPendingReferral() {
+      const pending = await getPendingReferralCode();
+      if (pending) {
+        setReferralCode(pending);
+      }
+    }
+    loadPendingReferral();
   }, []);
 
   const triggerHaptic = (style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Light) => {
@@ -161,6 +171,23 @@ export default function OnboardingScreen() {
 
       if (updateError) throw updateError;
 
+      // Link referral code if provided
+      const cleanRef = referralCode.trim();
+      if (cleanRef) {
+        try {
+          await handlePendingReferral(cleanRef);
+        } catch (refErr) {
+          console.warn("[Onboarding] Referral linking error:", refErr);
+        }
+      }
+
+      // Activate Free Trial via Supabase RPC
+      try {
+        await supabase.rpc("activate_free_trial");
+      } catch (trialErr) {
+        console.warn("[Onboarding] Free trial activation error:", trialErr);
+      }
+
       triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
       await refreshProfile();
       router.replace('/(tabs)' as any);
@@ -215,8 +242,8 @@ export default function OnboardingScreen() {
             {step === 1
               ? 'Tailor your AI workspace engines according to your needs'
               : step === 2
-              ? 'Set up your default workspace profile and automation channels'
-              : 'Authorize security and real-time alerts for an optimal iOS experience'}
+                ? 'Set up your default workspace profile and automation channels'
+                : 'Authorize security and real-time alerts for an optimal iOS experience'}
           </Text>
 
           {/* Inline Error Banner */}
@@ -285,8 +312,7 @@ export default function OnboardingScreen() {
                 <View
                   style={[
                     styles.radioCircle,
-                    accountType === 'personal' && styles.radioCircleActive,
-                    isDark && styles.radioCircleDark,
+                    accountType === 'personal' && styles.radioCircleActive,{borderColor:colors.border}
                   ]}
                 >
                   {accountType === 'personal' && <Text style={styles.radioCheckmark}>✓</Text>}
@@ -302,12 +328,12 @@ export default function OnboardingScreen() {
             /* STEP 2: Workspace Details */
             <View style={styles.stepTwoContent}>
               {/* Grouped Profile Inputs Card */}
-              <View style={[styles.inputGroup, isDark && styles.inputGroupDark]}>
+              <View style={[styles.inputGroup, { borderColor: colors.border }]}>
                 <View style={styles.inputRow}>
                   <TextInput
-                    style={[styles.nativeInput, isDark && styles.nativeInputDark]}
+                    style={[styles.nativeInput, { color: colors.textSecondary }]}
                     placeholder="Your Full Name"
-                    placeholderTextColor={isDark ? '#636366' : '#8E8E93'}
+                    placeholderTextColor={colors.textSecondary}
                     value={fullName}
                     onChangeText={setFullName}
                     autoCapitalize="words"
@@ -316,11 +342,11 @@ export default function OnboardingScreen() {
                 </View>
 
                 {accountType === 'business' && (
-                  <View style={[styles.inputRow, styles.inputRowBorder, isDark && styles.inputRowBorderDark]}>
+                  <View style={[styles.inputRow, styles.inputRowBorder]}>
                     <TextInput
-                      style={[styles.nativeInput, isDark && styles.nativeInputDark]}
+                      style={[styles.nativeInput, { color: colors.textSecondary }]}
                       placeholder="Business / Agency Name *"
-                      placeholderTextColor={isDark ? '#636366' : '#8E8E93'}
+                      placeholderTextColor={colors.textSecondary}
                       value={businessName}
                       onChangeText={setBusinessName}
                       autoCapitalize="words"
@@ -329,16 +355,47 @@ export default function OnboardingScreen() {
                   </View>
                 )}
 
-                <View style={[styles.inputRow, styles.inputRowBorder, isDark && styles.inputRowBorderDark]}>
+                <View style={[styles.inputRow, styles.inputRowBorder]}>
                   <TextInput
-                    style={[styles.nativeInput, isDark && styles.nativeInputDark]}
+                    style={[styles.nativeInput, { color: colors.textSecondary }]}
                     placeholder="Mobile / WhatsApp Number"
-                    placeholderTextColor={isDark ? '#636366' : '#8E8E93'}
+                    placeholderTextColor={colors.textSecondary}
                     value={phone}
                     onChangeText={setPhone}
                     keyboardType="phone-pad"
                     returnKeyType="done"
                   />
+                </View>
+
+                <View style={[styles.inputRow, styles.inputRowBorder, { flexDirection: "row", alignItems: "center" }]}>
+                  <TextInput
+                    style={[
+                      styles.nativeInput,
+                      { color: colors.textSecondary, flex: 1, letterSpacing: referralCode ? 1.2 : 0 },
+                    ]}
+                    placeholder="Referral Code (Optional) - 5% Off GAP Pro"
+                    placeholderTextColor={colors.textSecondary}
+                    value={referralCode}
+                    onChangeText={(txt) => setReferralCode(txt.toUpperCase().trim())}
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    returnKeyType="done"
+                  />
+                  {referralCode.trim().length >= 3 && (
+                    <View
+                      style={{
+                        backgroundColor: isDark ? "rgba(16, 185, 129, 0.2)" : "#DCFCE7",
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
+                        borderRadius: 6,
+                        marginRight: 16,
+                      }}
+                    >
+                      <Text style={{ color: "#10B981", fontSize: 11, fontWeight: "700" }}>
+                        5% OFF
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </View>
 
@@ -448,8 +505,8 @@ export default function OnboardingScreen() {
                         biometricSettings.biometricType === 'FACE_ID'
                           ? 'scan-outline'
                           : biometricSettings.biometricType === 'TOUCH_ID' || biometricSettings.biometricType === 'FINGERPRINT'
-                          ? 'finger-print-outline'
-                          : 'shield-checkmark-outline'
+                            ? 'finger-print-outline'
+                            : 'shield-checkmark-outline'
                       }
                       size={22}
                       color="#10B981"
@@ -491,7 +548,7 @@ export default function OnboardingScreen() {
                       triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
                       setNotificationsEnabled(val);
                     }}
-                    trackColor={{ false: isDark ? '#3A3A3C' : '#E5E7EB', true: '#0A84FF' }}
+                    trackColor={{ false: colors.text, true: '#0A84FF' }}
                     thumbColor="#FFFFFF"
                   />
                 </View>
@@ -502,10 +559,10 @@ export default function OnboardingScreen() {
                     <Ionicons name="phone-portrait-outline" size={22} color="#8B5CF6" />
                   </View>
                   <View style={styles.permissionTextBox}>
-                    <Text style={[styles.permissionTitle, isDark && styles.permissionTitleDark]}>
+                    <Text style={[styles.permissionTitle, { color: colors.textPrimary }]}>
                       Tactile Haptic Feedback
                     </Text>
-                    <Text style={[styles.permissionDesc, isDark && styles.permissionDescDark]}>
+                    <Text style={[styles.permissionDesc, { color: colors.textSecondary }]}>
                       Smooth iOS tactile vibrations on actions & buttons
                     </Text>
                   </View>
@@ -515,7 +572,7 @@ export default function OnboardingScreen() {
                       triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
                       setHapticsEnabled(val);
                     }}
-                    trackColor={{ false: isDark ? '#3A3A3C' : '#E5E7EB', true: '#8B5CF6' }}
+                    trackColor={{ false: colors.text, true: '#8B5CF6' }}
                     thumbColor="#FFFFFF"
                   />
                 </View>
@@ -528,7 +585,7 @@ export default function OnboardingScreen() {
                 disabled={loading}
               >
                 {loading ? (
-                  <ActivityIndicator color="#FFFFFF" />
+                  <ActivityIndicator color={colors.text} />
                 ) : (
                   <Text style={styles.primaryButtonText}>Complete Setup & Enter Hub 🚀</Text>
                 )}
@@ -536,13 +593,13 @@ export default function OnboardingScreen() {
 
               {/* Back to Step 2 */}
               <Pressable
-                style={[styles.secondaryButton, isDark && styles.secondaryButtonDark]}
+                style={[styles.secondaryButton, { backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.border }]}
                 onPress={() => {
                   triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
                   setStep(2);
                 }}
               >
-                <Text style={[styles.secondaryButtonText, isDark && styles.secondaryButtonTextDark]}>
+                <Text style={[styles.secondaryButtonText, { color: colors.text }]}>
                   ← Back to Step 2
                 </Text>
               </Pressable>

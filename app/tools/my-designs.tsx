@@ -20,7 +20,8 @@ import {
   openAuthenticatedDashboard,
   openAuthenticatedTemplate,
 } from "../../src/lib/template-deep-link";
-import { colors } from "../../src/theme/colors";
+import { useTheme, getColors, AppColors } from "@/theme";
+import { TemplatesListSkeleton } from "../../src/components/skeletonScreen";
 
 export interface SavedBioPage {
   id: string;
@@ -68,6 +69,10 @@ export type UnifiedDesignItem =
   | (SavedLandingPage & { type: "landing"; sortDate: string });
 
 export default function MyDesignScreen() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const authUser = useAuthStore((s) => s.user);
   const [activeTab, setActiveTab] = useState<"all" | "bio" | "landing">("all");
   const [bioPages, setBioPages] = useState<SavedBioPage[]>([]);
@@ -427,10 +432,7 @@ export default function MyDesignScreen() {
       />
 
       {loading ? (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading all your designs...</Text>
-        </View>
+        <TemplatesListSkeleton />
       ) : (
         <FlatList
           data={unifiedList}
@@ -591,7 +593,7 @@ export default function MyDesignScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   listContent: {
     padding: 16,
     paddingBottom: 48,

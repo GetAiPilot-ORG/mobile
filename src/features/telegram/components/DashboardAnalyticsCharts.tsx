@@ -1,11 +1,20 @@
-import React from 'react';
-import { StyleSheet, Text, View, useColorScheme } from 'react-native';
-import Svg, { Defs, LinearGradient, Path, Stop, Line, Text as SvgText, Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop, Text as SvgText } from 'react-native-svg';
+import { useTheme, getColors } from '@/theme';
 
-export const DashboardAnalyticsCharts: React.FC = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+interface DashboardAnalyticsChartsProps {
+  joinsCount?: number;
+  revenue?: number;
+}
+
+export const DashboardAnalyticsCharts: React.FC<DashboardAnalyticsChartsProps> = ({
+  joinsCount = 0,
+  revenue = 0,
+}) => {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark)
 
   const chartWidth = 320;
   const chartHeight = 90;
@@ -13,19 +22,19 @@ export const DashboardAnalyticsCharts: React.FC = () => {
   return (
     <View style={styles.container}>
       {/* 1. Channel Join Tracking Card */}
-      <View style={[styles.chartCard, isDark ? styles.cardDark : styles.cardLight]}>
+      <View style={[styles.chartCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
         <View style={styles.chartHeaderRow}>
           <View style={styles.chartTitleGroup}>
             <Ionicons name="trending-up-outline" size={16} color="#10B981" />
-            <Text style={[styles.chartTitle, isDark ? styles.textDark : styles.textLight]}>
+            <Text style={[styles.chartTitle, { color: colors.text }]}>
               Channel Join Tracking
             </Text>
           </View>
           <View style={styles.badgeGreen}>
-            <Text style={styles.badgeGreenText}>20 recent joins</Text>
+            <Text style={styles.badgeGreenText}>{joinsCount} total joins</Text>
           </View>
         </View>
-        <Text style={styles.chartSubtitle}>Tracked member joins across your deep invite links.</Text>
+        <Text style={[styles.chartSubtitle, { color: colors.text }]}>Tracked member joins across your deep invite links.</Text>
 
         <View style={styles.svgContainer}>
           <Svg width="100%" height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`}>
@@ -37,12 +46,12 @@ export const DashboardAnalyticsCharts: React.FC = () => {
             </Defs>
 
             {/* Grid lines */}
-            <Line x1="25" y1="15" x2="310" y2="15" stroke={isDark ? '#262C36' : '#F1F5F9'} strokeWidth="1" strokeDasharray="3 3" />
-            <Line x1="25" y1="40" x2="310" y2="40" stroke={isDark ? '#262C36' : '#F1F5F9'} strokeWidth="1" strokeDasharray="3 3" />
-            <Line x1="25" y1="65" x2="310" y2="65" stroke={isDark ? '#262C36' : '#F1F5F9'} strokeWidth="1" />
+            <Line x1="25" y1="15" x2="310" y2="15" stroke={colors.border} strokeWidth="1" strokeDasharray="3 3" />
+            <Line x1="25" y1="40" x2="310" y2="40" stroke={colors.border} strokeWidth="1" strokeDasharray="3 3" />
+            <Line x1="25" y1="65" x2="310" y2="65" stroke={colors.border} strokeWidth="1" />
 
             {/* Y Axis Labels */}
-            <SvgText x="8" y="18" fill="#94A3B8" fontSize="9" fontWeight="600">4</SvgText>
+            <SvgText x="8" y="18" fill={colors.text} fontSize="9" fontWeight="600">4</SvgText>
             <SvgText x="8" y="43" fill="#94A3B8" fontSize="9" fontWeight="600">2</SvgText>
             <SvgText x="8" y="68" fill="#94A3B8" fontSize="9" fontWeight="600">0</SvgText>
 
@@ -79,16 +88,16 @@ export const DashboardAnalyticsCharts: React.FC = () => {
       </View>
 
       {/* 2. TeleSub Revenue Analytics Card */}
-      <View style={[styles.chartCard, isDark ? styles.cardDark : styles.cardLight]}>
+      <View style={[styles.chartCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
         <View style={styles.chartHeaderRow}>
           <View style={styles.chartTitleGroup}>
             <Ionicons name="card-outline" size={16} color="#0284C7" />
-            <Text style={[styles.chartTitle, isDark ? styles.textDark : styles.textLight]}>
+            <Text style={[styles.chartTitle, { color: colors.text }]}>
               TeleSub Revenue Analytics
             </Text>
           </View>
           <View style={styles.badgeBlue}>
-            <Text style={styles.badgeBlueText}>₹0</Text>
+            <Text style={styles.badgeBlueText}>₹{Number(revenue).toLocaleString()}</Text>
           </View>
         </View>
         <Text style={styles.chartSubtitle}>Real payment earnings from your subscription pages.</Text>
@@ -103,12 +112,12 @@ export const DashboardAnalyticsCharts: React.FC = () => {
             </Defs>
 
             {/* Grid lines */}
-            <Line x1="25" y1="15" x2="310" y2="15" stroke={isDark ? '#262C36' : '#F1F5F9'} strokeWidth="1" strokeDasharray="3 3" />
-            <Line x1="25" y1="40" x2="310" y2="40" stroke={isDark ? '#262C36' : '#F1F5F9'} strokeWidth="1" strokeDasharray="3 3" />
-            <Line x1="25" y1="65" x2="310" y2="65" stroke={isDark ? '#262C36' : '#F1F5F9'} strokeWidth="1" />
+            <Line x1="25" y1="15" x2="310" y2="15" stroke={colors.border} strokeWidth="1" strokeDasharray="3 3" />
+            <Line x1="25" y1="40" x2="310" y2="40" stroke={colors.border} strokeWidth="1" strokeDasharray="3 3" />
+            <Line x1="25" y1="65" x2="310" y2="65" stroke={colors.border} strokeWidth="1" />
 
             {/* Y Axis Labels */}
-            <SvgText x="8" y="18" fill="#94A3B8" fontSize="9" fontWeight="600">₹4</SvgText>
+            <SvgText x="8" y="18" fill={colors.text} fontSize="9" fontWeight="600">₹4</SvgText>
             <SvgText x="8" y="43" fill="#94A3B8" fontSize="9" fontWeight="600">₹2</SvgText>
             <SvgText x="8" y="68" fill="#94A3B8" fontSize="9" fontWeight="600">₹0</SvgText>
 
@@ -156,8 +165,8 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   cardDark: {
-    backgroundColor: '#161B26',
-    borderColor: '#262C36',
+    backgroundColor: '#121212',
+    borderColor: '#27272A',
   },
   chartHeaderRow: {
     flexDirection: 'row',

@@ -45,7 +45,7 @@ export function usePlatformSubscription() {
 
       return {
         sub: subRes.data,
-        isAdmin: profileRes.data?.is_admin || profileRes.data?.role === 'owner' || profileRes.data?.role === 'admin' || false
+        isAdmin: Boolean(profileRes.data?.is_admin === true || profileRes.data?.role?.toLowerCase() === 'admin'),
       };
     },
   });

@@ -1,19 +1,19 @@
+import { getColors, useTheme } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-  StyleSheet,
-  Text,
-  View,
   FlatList,
   Pressable,
   RefreshControl,
-  ActivityIndicator,
-  useColorScheme,
+  StyleSheet,
+  Text,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useActivities, useCreateActivity } from '../hooks/useActivities';
+import { CrmActivitySkeleton } from '../../../components/skeletonScreen';
 import { ActivityTimelineItem } from '../components/ActivityTimelineItem';
 import { LogActivityModal } from '../components/LogActivityModal';
+import { useActivities, useCreateActivity } from '../hooks/useActivities';
 import { ActivityType } from '../types';
 
 const ACTIVITY_FILTER_TABS: Array<{ key: string; label: string }> = [
@@ -24,9 +24,13 @@ const ACTIVITY_FILTER_TABS: Array<{ key: string; label: string }> = [
   { key: 'email', label: 'Emails' },
 ];
 
-export const ActivitiesScreen: React.FC = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+interface ActivitiesScreenProps {
+  onBack?: () => void;
+}
+
+export const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ onBack }) => {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [selectedType, setSelectedType] = useState<string>('all');
   const [showLogModal, setShowLogModal] = useState(false);
@@ -38,12 +42,23 @@ export const ActivitiesScreen: React.FC = () => {
   const createActivity = useCreateActivity();
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]} edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.surface }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Activity Stream</Text>
-          <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Full chronological history of client touchpoints</Text>
+        <View style={styles.headerLeft}>
+          {onBack ? (
+            <Pressable
+              style={[styles.backBtn, { backgroundColor: colors.surface }]}
+              onPress={onBack}
+              hitSlop={8}
+            >
+              <Ionicons name="arrow-back" size={20} color={colors.text} />
+            </Pressable>
+          ) : null}
+          <View>
+            <Text style={[styles.title, { color: colors.text }]}>Activity Stream</Text>
+            <Text style={[styles.subtitle, { color: colors.text }]}>Full chronological history of client touchpoints</Text>
+          </View>
         </View>
 
         <Pressable
@@ -65,7 +80,7 @@ export const ActivitiesScreen: React.FC = () => {
               key={tab.key}
               style={[
                 styles.tabChip,
-                { backgroundColor: isDark ? '#181A20' : '#FFFFFF', borderColor: isDark ? '#262A34' : '#E2E8F0' },
+                { backgroundColor: colors.surface, borderColor: colors.border },
                 isSelected && (isDark ? styles.tabChipSelectedDark : styles.tabChipSelectedLight),
               ]}
               onPress={() => setSelectedType(tab.key)}
@@ -73,7 +88,7 @@ export const ActivitiesScreen: React.FC = () => {
               <Text
                 style={[
                   styles.tabText,
-                  { color: isDark ? '#9CA3AF' : '#64748B' },
+                  { color: colors.text },
                   isSelected && styles.tabTextSelected,
                 ]}
               >
@@ -86,15 +101,12 @@ export const ActivitiesScreen: React.FC = () => {
 
       {/* Activity List */}
       {isLoading && !activities ? (
-        <View style={styles.loaderBox}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={[styles.loaderText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>Loading activity history...</Text>
-        </View>
+        <CrmActivitySkeleton />
       ) : activities.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="time-outline" size={48} color={isDark ? '#4B5563' : '#CBD5E1'} />
-          <Text style={[styles.emptyTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>No events recorded</Text>
-          <Text style={[styles.emptySubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+          <Ionicons name="time-outline" size={48} color={colors.text} />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>No events recorded</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.text }]}>
             {selectedType !== 'all'
               ? `No ${selectedType} activities logged yet.`
               : 'Log calls, meetings, notes, and emails to build a unified timeline.'}
@@ -149,6 +161,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  backBtn: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: '#1E2028',
   },
   title: {
     fontSize: 20,

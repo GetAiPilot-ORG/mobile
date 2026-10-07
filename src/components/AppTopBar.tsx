@@ -1,24 +1,14 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable, Platform, useColorScheme } from 'react-native';
-import { Image } from 'expo-image';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
-import { colors } from '../theme/colors';
-import * as Haptics from "expo-haptics";
-import { Image } from "expo-image";
-import { useRouter } from "expo-router";
-import React from "react";
-import {
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Image } from 'expo-image';
+import { useRouter, usePathname } from 'expo-router';
+import { useAuthStore } from '../core/store/authStore';
+import { useTheme, getColors } from '@/theme';
+import React, { useEffect } from 'react';
+import { BackHandler, Platform, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { usePlatformSubscription } from '../hooks/usePlatformSubscription';
 
 const brandLogo = require("../../assets/images/logo.jpg");
 
@@ -27,34 +17,104 @@ export interface AppTopBarProps {
   subtitle?: string;
   showBack?: boolean;
   rightElement?: React.ReactNode;
+  leftElement?: React.ReactNode;
   onBackPress?: () => void;
+  parentRoute?: string;
+  showPlanBadge?: boolean;
 }
+
+/**
+ * Intelligent parent route resolver so sub-screens never fall back blindly to Home screen
+ */
+export const getParentRoute = (pathname: string): string => {
+  if (!pathname) return '/(tabs)';
+
+  // 1. Tool sub-screens -> go to Tools tab
+  if (pathname.startsWith('/tools/')) {
+    return '/(tabs)/tools';
+  }
+
+  // 2. CRM sub-screens -> go to CRM overview or Products tab
+  if (pathname.startsWith('/products/crm/leads/')) {
+    return '/products/crm';
+  }
+  if (pathname.startsWith('/products/crm')) {
+    return '/(tabs)/products';
+  }
+
+  // 3. WhatsApp sub-screens -> go to WhatsApp overview or Products tab
+  if (pathname.startsWith('/products/whatsapp/broadcasts/')) {
+    return '/products/whatsapp';
+  }
+  if (pathname.startsWith('/products/whatsapp/')) {
+    return '/products/whatsapp';
+  }
+  if (pathname.startsWith('/products/whatsapp')) {
+    return '/(tabs)/products';
+  }
+
+  // 3.5 Social sub-screens -> go to Social overview
+  if (pathname.startsWith('/products/social/plans')) {
+    return '/products/social';
+  }
+
+  // 4. Other products -> go to Products tab
+  if (
+    pathname.startsWith('/products/voice') ||
+    pathname.startsWith('/products/social') ||
+    pathname.startsWith('/products/telegram') ||
+    pathname.startsWith('/products/')
+  ) {
+    return '/(tabs)/products';
+  }
+
+  // 5. Account sub-screens -> go to Account tab
+  if (pathname.startsWith('/account/')) {
+    return '/(tabs)/account';
+  }
+
+  // 6. Admin sub-screens -> go to Admin tab
+  if (pathname.startsWith('/admin/')) {
+    return '/(tabs)/admin';
+  }
+
+  // 7. Inbox sub-screens -> go to Inbox tab
+  if (pathname.startsWith('/inbox/')) {
+    return '/(tabs)/inbox';
+  }
+
+  return '/(tabs)';
+};
 
 export const AppTopBar: React.FC<AppTopBarProps> = ({
   title,
   subtitle,
   showBack,
   rightElement,
+  leftElement,
   onBackPress,
+  parentRoute,
+  showPlanBadge,
 }) => {
   const router = useRouter();
+  const pathname = usePathname();
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-
-  // const handleBack = () => {
-  //   if (Platform.OS !== 'web') {
-  //     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  //   }
-  //   if (onBackPress) {
-  //     onBackPress();
-  //   } else if (router.canGoBack()) {
-  //     router.back();
-  //   }
-  // };
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const user = useAuthStore((s) => s.user);
 
   // Auto-detect: Show back button on all sub-pages with title unless explicitly disabled
   const shouldShowBack = showBack !== undefined ? showBack : !!title;
+
+  const { planLabel, isActive } = usePlatformSubscription();
+  const displayPlanBadge = showPlanBadge !== undefined ? showPlanBadge : (!title && !shouldShowBack);
+
+  const handlePlanBadgePress = () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    router.push('/account/plans' as any);
+  };
 
   const handleBack = () => {
     if (Platform.OS !== "web") {
@@ -63,74 +123,189 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
 
     if (onBackPress) {
       onBackPress();
-      console.log("Custom back handler executed");
       return;
     }
 
+    const fallbackParent = parentRoute || getParentRoute(pathname);
+
     if (router.canGoBack()) {
-      console.log("Going back");
       router.back();
     } else {
-      router.replace('/(tabs)');
+      router.replace(fallbackParent as any);
     }
   };
 
-  const topPadding = Math.max(insets.top, 10);
+  // Android hardware back button handler
+  useEffect(() => {
+    if (!shouldShowBack) return;
+
+    const onHardwareBack = () => {
+      handleBack();
+      return true;
+    };
+
+    const sub = BackHandler.addEventListener('hardwareBackPress', onHardwareBack);
+    return () => sub.remove();
+  }, [shouldShowBack, onBackPress, parentRoute, pathname]);
+
+  const handleProfilePress = () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    router.push('/(tabs)/account' as any);
+  };
+
+  const displayName = user?.name || user?.user_metadata?.full_name || user?.email || 'User';
+  const avatarInitial = displayName.charAt(0).toUpperCase() || 'G';
+  const avatarUrl = user?.user_metadata?.avatar_url;
+
+  const statusBarHeight = Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0;
+  const topPadding = Math.max(insets.top, statusBarHeight) + (Platform.OS === 'android' ? 14 : 8);
 
   return (
     <View
       style={[
         styles.container,
-        { paddingTop: topPadding, minHeight: 52 + topPadding },
-        isDark ? styles.containerDark : styles.containerLight,
+        { paddingTop: topPadding, backgroundColor: colors.background },
       ]}
     >
       <View style={styles.leftSection}>
-        {shouldShowBack && (
+        {shouldShowBack ? (
           <Pressable
-            style={({ pressed }) => [
-              styles.backButton,
-              isDark ? styles.backButtonDark : styles.backButtonLight,
-              pressed && styles.backButtonPressed,
-            ]}
             onPress={handleBack}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Back"
           >
-            <Ionicons
-              name="chevron-back"
-              size={22}
-              color={isDark ? '#FFFFFF' : '#007AFF'}
-            />
+            <View
+              style={[
+                styles.backButton,
+                isDark ? styles.backButtonDark : styles.backButtonLight,
+              ]}
+            >
+              <Ionicons
+                name="chevron-back"
+                size={20}
+                color={colors.foreground}
+              />
+            </View>
           </Pressable>
-        )}
+        ) : leftElement ? (
+          leftElement
+        ) : !title ? (
+          /* Profile Avatar Button on the Left for Home */
+          <Pressable
+            onPress={handleProfilePress}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Profile Account"
+          >
+            <View
+              style={[
+                styles.profileBtn,
+                isDark ? styles.profileBtnDark : styles.profileBtnLight,
+              ]}
+            >
+              {avatarUrl ? (
+                <Image source={{ uri: avatarUrl }} style={styles.profileAvatarImg} contentFit="cover" />
+              ) : (
+                <View style={styles.profileAvatarCircle}>
+                  <Text style={styles.profileAvatarText}>{avatarInitial}</Text>
+                </View>
+              )}
+            </View>
+          </Pressable>
+        ) : null}
+
         <View style={styles.titleWrapper}>
           {title ? (
-            <Text style={[styles.title, isDark ? styles.titleDark : styles.titleLight]} numberOfLines={1}>
+            <Text
+              style={[styles.title, isDark ? styles.titleDark : styles.titleLight]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {title}
             </Text>
           ) : (
-            <View style={styles.brandRow}>
-              <View style={styles.logoWrapper}>
-                <Image
-                  source={brandLogo}
-                  style={styles.logoImage}
-                  contentFit="cover"
-                />
-              </View>
-              <Text style={[styles.brandText, isDark ? styles.brandTextDark : styles.brandTextLight]}>GetAiPilot</Text>
-            </View>
+            <>
+              <Text
+                style={[styles.title, isDark ? styles.titleDark : styles.titleLight]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {displayName}
+              </Text>
+              <Text
+                style={[styles.subtitle, isDark ? styles.subtitleDark : styles.subtitleLight]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {subtitle || "Workspace Hub"}
+              </Text>
+            </>
           )}
-          {subtitle && (
-            <Text style={[styles.subtitle, isDark ? styles.subtitleDark : styles.subtitleLight]} numberOfLines={1}>
+          {title && subtitle ? (
+            <Text
+              style={[styles.subtitle, isDark ? styles.subtitleDark : styles.subtitleLight]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {subtitle}
             </Text>
-          )}
+          ) : null}
         </View>
       </View>
 
-      {rightElement && <View style={styles.rightSection}>{rightElement}</View>}
+      {rightElement ? (
+        <View style={styles.rightSection}>{rightElement}</View>
+      ) : displayPlanBadge ? (
+        <View style={styles.rightSection}>
+          <Pressable
+            onPress={handlePlanBadgePress}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={`Current workspace plan: ${planLabel || 'Free'}. Tap to view and upgrade plans`}
+          >
+            <View
+              style={[
+                styles.planBadge,
+                isDark ? styles.planBadgeDark : styles.planBadgeLight,
+              ]}
+            >
+              <View
+                style={[
+                  styles.planDot,
+                  { backgroundColor: isActive ? '#30D158' : '#F59E0B' },
+                ]}
+              />
+              <Ionicons
+                name="sparkles"
+                size={13}
+                color={isActive ? '#0A84FF' : '#F59E0B'}
+                style={styles.planSparkles}
+              />
+              <Text
+                style={[
+                  styles.planBadgeText,
+                  isDark ? styles.planBadgeTextDark : styles.planBadgeTextLight,
+                ]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {planLabel || 'Free Plan'}
+              </Text>
+              <Ionicons
+                name="chevron-forward"
+                size={13}
+                color={isDark ? '#60A5FA' : '#0A84FF'}
+                style={styles.planChevron}
+              />
+            </View>
+          </Pressable>
+        </View>
+      ) : (
+        <View style={styles.rightEmpty} />
+      )}
     </View>
   );
 };
@@ -140,97 +315,207 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    width: "100%",
     paddingHorizontal: 16,
-    paddingBottom: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingBottom: 14,
+    borderBottomWidth: 0,
+    flexShrink: 0,
   },
   containerLight: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
+    backgroundColor: 'transparent',
+    borderBottomWidth: 0,
   },
   containerDark: {
-    backgroundColor: 'rgba(18, 18, 20, 0.95)',
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'transparent',
+    borderBottomWidth: 0,
   },
   leftSection: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+    marginRight: 10,
+    minWidth: 0,
   },
   backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: 12,
+    borderWidth: 1,
   },
   backButtonLight: {
-    backgroundColor: 'rgba(0, 122, 255, 0.08)',
+    backgroundColor: '#F8F5EF',
+    borderColor: '#D2CABA',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
   },
   backButtonDark: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: '#0A111B',
+    borderColor: '#1B334A',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
   },
   backButtonPressed: {
-    opacity: 0.6,
-    transform: [{ scale: 0.95 }],
+    opacity: 0.7,
+    transform: [{ scale: 0.94 }],
+  },
+  profileBtn: {
+    width: 42,
+    height: 42,
+    minWidth: 42,
+    minHeight: 42,
+    maxWidth: 42,
+    maxHeight: 42,
+    borderRadius: 21,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 11,
+    borderWidth: 1.5,
+    flexShrink: 0,
+  },
+  profileBtnLight: {
+    borderColor: '#D2CABA',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  profileBtnDark: {
+    borderColor: '#1B334A',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  profileBtnPressed: {
+    opacity: 0.75,
+    transform: [{ scale: 0.94 }],
+  },
+  profileAvatarImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 21,
+  },
+  profileAvatarCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#CABFAB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+  profileAvatarText: {
+    color: '#41444B',
+    fontSize: 18,
+    fontWeight: '700',
   },
   titleWrapper: {
     flex: 1,
     justifyContent: 'center',
+    minWidth: 0,
   },
   title: {
     fontSize: 17,
     fontWeight: '700',
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
   },
   titleLight: {
-    color: '#000000',
+    color: '#41444B',
   },
   titleDark: {
-    color: "#FFFFFF",
+    color: '#F7FAFC',
   },
   subtitle: {
     fontSize: 12,
-    color: "#6B7280",
-    marginTop: 1,
-    letterSpacing: -0.2,
+    marginTop: 2,
+    letterSpacing: -0.1,
+    fontWeight: '400',
   },
   subtitleLight: {
-    color: '#6B7280',
+    color: '#6B7076',
   },
   subtitleDark: {
-    color: "#9CA3AF",
-  },
-  brandRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  logoWrapper: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    overflow: "hidden",
-  },
-  logoImage: {
-    width: "100%",
-    height: "100%",
-  },
-  brandText: {
-    fontSize: 19,
-    fontWeight: "800",
-    color: "#000000",
-    letterSpacing: -0.5,
-  },
-  brandTextLight: {
-    color: '#000000',
-  },
-  brandTextDark: {
-    color: "#FFFFFF",
+    color: '#8FA3B8',
   },
   rightSection: {
     flexDirection: "row",
     alignItems: "center",
+    flexShrink: 0,
+  },
+  rightEmpty: {
+    width: 0,
+    height: 0,
+  },
+  planBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'nowrap',
+    gap: 6,
+    height: 36,
+    paddingHorizontal: 12,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    flexShrink: 0,
+    alignSelf: 'center',
+  },
+  planBadgeLight: {
+    backgroundColor: 'rgba(10, 132, 255, 0.08)',
+    borderColor: 'rgba(10, 132, 255, 0.25)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  planBadgeDark: {
+    backgroundColor: 'rgba(47, 140, 255, 0.14)',
+    borderColor: 'rgba(47, 140, 255, 0.42)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  planBadgePressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.95 }],
+  },
+  planDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    marginRight: 6,
+    flexShrink: 0,
+  },
+  planSparkles: {
+    marginRight: 6,
+    flexShrink: 0,
+  },
+  planChevron: {
+    marginLeft: 4,
+    flexShrink: 0,
+  },
+  planBadgeText: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+    flexShrink: 0,
+  },
+  planBadgeTextLight: {
+    color: '#0A84FF',
+  },
+  planBadgeTextDark: {
+    color: '#38BDF8',
   },
 });

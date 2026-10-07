@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { useTheme, getColors } from '@/theme';
 
 interface MetricGlassCardProps {
   title: string;
@@ -16,8 +17,8 @@ export const MetricGlassCard: React.FC<MetricGlassCardProps> = ({
   icon,
   accentColor = '#6366f1',
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   return (
     <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
@@ -73,10 +74,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   title: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    fontSize: 12.5,
+    fontWeight: '500',
+    letterSpacing: -0.1,
   },
   value: {
     fontSize: 24,

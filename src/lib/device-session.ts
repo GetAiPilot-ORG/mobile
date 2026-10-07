@@ -3,7 +3,7 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { SecureStorage } from '../core/storage/secureStorage';
 
-const INSTALLATION_ID_KEY = '@gap_device_installation_id';
+const INSTALLATION_ID_KEY = 'gap_device_installation_id';
 
 export interface DeviceLoginInfo {
   installationId: string;

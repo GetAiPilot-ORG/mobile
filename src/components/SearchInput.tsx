@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, TextInput, StyleSheet, Pressable, Text, useColorScheme } from 'react-native';
-import { colors } from '../theme/colors';
+import { View, TextInput, StyleSheet, Pressable, Text } from 'react-native';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface SearchInputProps {
   value: string;
@@ -15,8 +15,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   placeholder = 'Search...',
   onClear,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
 
   return (
     <View style={[styles.container, isDark && styles.containerDark]}>
@@ -26,7 +25,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#8E8E93"
+        placeholderTextColor={isDark ? '#72869A' : '#9CA3AF'}
         autoCapitalize="none"
         autoCorrect={false}
       />
@@ -59,8 +58,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   containerDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
+    backgroundColor: '#0A1420',
+    borderColor: '#1B334A',
   },
   searchIcon: {
     fontSize: 14,
@@ -73,7 +72,7 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   inputDark: {
-    color: '#FFFFFF',
+    color: '#F7FAFC',
   },
   clearBtn: {
     width: 20,
@@ -84,7 +83,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   clearBtnDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#101C2A',
   },
   clearText: {
     fontSize: 11,
@@ -92,6 +91,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   clearTextDark: {
-    color: '#8E8E93',
+    color: '#8FA3B8',
   },
 });

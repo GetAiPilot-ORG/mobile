@@ -10,10 +10,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityType, CRMActivity } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 interface LogActivityModalProps {
   visible: boolean;
@@ -25,10 +25,10 @@ interface LogActivityModalProps {
 }
 
 const ACTIVITY_TYPES: Array<{ key: ActivityType; label: string; icon: keyof typeof Ionicons.glyphMap; color: string }> = [
-  { key: 'call', label: 'Call', icon: 'call', color: '#10B981' },
-  { key: 'email', label: 'Email', icon: 'mail', color: '#3B82F6' },
+  { key: 'call', label: 'Call', icon: 'call', color: '#4F8A68' },
+  { key: 'email', label: 'Email', icon: 'mail', color: '#647D8C' },
   { key: 'meeting', label: 'Meeting', icon: 'calendar', color: '#8B5CF6' },
-  { key: 'note', label: 'Note', icon: 'document-text', color: '#F59E0B' },
+  { key: 'note', label: 'Note', icon: 'document-text', color: '#B8863B' },
   { key: 'follow_up', label: 'Follow Up', icon: 'alarm', color: '#EC4899' },
 ];
 
@@ -40,8 +40,8 @@ export const LogActivityModal: React.FC<LogActivityModalProps> = ({
   defaultDealId,
   isLoading,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [type, setType] = useState<ActivityType>('note');
   const [subject, setSubject] = useState('');
@@ -82,45 +82,45 @@ export const LogActivityModal: React.FC<LogActivityModalProps> = ({
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={[styles.modalOverlay, { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0.5)' }]}
+        style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}
       >
         <View
           style={[
             styles.modalContent,
             {
-              backgroundColor: isDark ? '#181A20' : '#FFFFFF',
-              borderColor: isDark ? '#262A34' : '#E2E8F0',
+              backgroundColor: colors.modalBackground,
+              borderColor: colors.modalBorder,
             },
           ]}
         >
           {/* Header */}
           <View style={styles.header}>
             <View>
-              <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Log Activity</Text>
-              <Text style={[styles.headerSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+              <Text style={[styles.headerTitle, { color: colors.modalTitle }]}>Log Activity</Text>
+              <Text style={[styles.headerSubtitle, { color: colors.modalDescription }]}>
                 Record a call, meeting, note or email
               </Text>
             </View>
             <Pressable
-              style={[styles.closeBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              style={[styles.closeBtn, { backgroundColor: colors.surfaceSecondary }]}
               onPress={handleClose}
               hitSlop={8}
             >
-              <Ionicons name="close" size={20} color={isDark ? '#9CA3AF' : '#64748B'} />
+              <Ionicons name="close" size={20} color={colors.iconMuted} />
             </Pressable>
           </View>
 
           {errorMessage ? (
-            <View style={styles.errorBox}>
-              <Ionicons name="alert-circle" size={16} color="#EF4444" />
-              <Text style={styles.errorText}>{errorMessage}</Text>
+            <View style={[styles.errorBox, { backgroundColor: colors.destructiveSoft }]}>
+              <Ionicons name="alert-circle" size={16} color={colors.destructive} />
+              <Text style={[styles.errorText, { color: colors.destructive }]}>{errorMessage}</Text>
             </View>
           ) : null}
 
           <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
             {/* Type selector */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Activity Type</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Activity Type</Text>
               <View style={styles.typeRow}>
                 {ACTIVITY_TYPES.map((t) => {
                   const isSelected = type === t.key;
@@ -130,10 +130,8 @@ export const LogActivityModal: React.FC<LogActivityModalProps> = ({
                       style={[
                         styles.typeOption,
                         {
-                          backgroundColor: isSelected
-                            ? isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(59, 130, 246, 0.12)'
-                            : isDark ? '#222630' : '#F1F5F9',
-                          borderColor: isSelected ? '#3B82F6' : 'transparent',
+                          backgroundColor: isSelected ? colors.accentSoft : colors.surfaceSecondary,
+                          borderColor: isSelected ? colors.primary : 'transparent',
                         },
                       ]}
                       onPress={() => setType(t.key)}
@@ -141,13 +139,13 @@ export const LogActivityModal: React.FC<LogActivityModalProps> = ({
                       <Ionicons
                         name={t.icon}
                         size={18}
-                        color={isSelected ? t.color : isDark ? '#9CA3AF' : '#64748B'}
+                        color={isSelected ? t.color : colors.iconMuted}
                       />
                       <Text
                         style={[
                           styles.typeText,
                           {
-                            color: isSelected ? t.color : isDark ? '#9CA3AF' : '#64748B',
+                            color: isSelected ? t.color : colors.mutedText,
                             fontWeight: isSelected ? '700' : '600',
                           },
                         ]}
@@ -162,18 +160,18 @@ export const LogActivityModal: React.FC<LogActivityModalProps> = ({
 
             {/* Subject */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Subject / Summary *</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Subject / Summary *</Text>
               <TextInput
                 style={[
                   styles.input,
                   {
-                    backgroundColor: isDark ? '#121316' : '#F8FAFC',
-                    borderColor: isDark ? '#262A34' : '#CBD5E1',
-                    color: isDark ? '#FFFFFF' : '#0F172A',
+                    backgroundColor: colors.inputBackground,
+                    borderColor: colors.inputBorder,
+                    color: colors.inputForeground,
                   },
                 ]}
                 placeholder="e.g. Discussed pricing proposal & contract terms"
-                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+                placeholderTextColor={colors.inputPlaceholder}
                 value={subject}
                 onChangeText={setSubject}
               />
@@ -181,19 +179,19 @@ export const LogActivityModal: React.FC<LogActivityModalProps> = ({
 
             {/* Description / Content */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Details & Outcome</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Details & Outcome</Text>
               <TextInput
                 style={[
                   styles.input,
                   styles.textArea,
                   {
-                    backgroundColor: isDark ? '#121316' : '#F8FAFC',
-                    borderColor: isDark ? '#262A34' : '#CBD5E1',
-                    color: isDark ? '#FFFFFF' : '#0F172A',
+                    backgroundColor: colors.inputBackground,
+                    borderColor: colors.inputBorder,
+                    color: colors.inputForeground,
                   },
                 ]}
                 placeholder="Client agreed on annual billing, requested updated quote by Friday..."
-                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+                placeholderTextColor={colors.inputPlaceholder}
                 multiline
                 numberOfLines={4}
                 value={description}
@@ -205,17 +203,17 @@ export const LogActivityModal: React.FC<LogActivityModalProps> = ({
           {/* Footer Actions */}
           <View style={styles.modalFooter}>
             <Pressable
-              style={[styles.cancelBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              style={[styles.cancelBtn, { backgroundColor: colors.buttonSecondary }]}
               onPress={handleClose}
               disabled={isLoading}
             >
-              <Text style={[styles.cancelBtnText, { color: isDark ? '#D1D5DB' : '#475569' }]}>Cancel</Text>
+              <Text style={[styles.cancelBtnText, { color: colors.buttonSecondaryForeground }]}>Cancel</Text>
             </Pressable>
-            <Pressable style={styles.submitBtn} onPress={handleSubmit} disabled={isLoading}>
+            <Pressable style={[styles.submitBtn, { backgroundColor: colors.primary }]} onPress={handleSubmit} disabled={isLoading}>
               {isLoading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <ActivityIndicator size="small" color={colors.buttonPrimaryForeground} />
               ) : (
-                <Text style={styles.submitBtnText}>Log Event</Text>
+                <Text style={[styles.submitBtnText, { color: colors.buttonPrimaryForeground }]}>Log Event</Text>
               )}
             </Pressable>
           </View>
@@ -228,11 +226,9 @@ export const LogActivityModal: React.FC<LogActivityModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#181A20',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
@@ -240,7 +236,11 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 36 : 24,
     maxHeight: '80%',
     borderWidth: 1,
-    borderColor: '#262A34',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 8,
   },
   header: {
     flexDirection: 'row',
@@ -249,31 +249,26 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   headerTitle: {
-    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
   },
   headerSubtitle: {
-    color: '#9CA3AF',
     fontSize: 12,
     marginTop: 2,
   },
   closeBtn: {
     padding: 6,
     borderRadius: 8,
-    backgroundColor: '#262A34',
   },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
     padding: 10,
     borderRadius: 8,
     marginBottom: 12,
   },
   errorText: {
-    color: '#EF4444',
     fontSize: 12,
     flex: 1,
   },
@@ -284,19 +279,15 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   label: {
-    color: '#D1D5DB',
     fontSize: 12,
     fontWeight: '600',
     marginBottom: 6,
   },
   input: {
-    backgroundColor: '#121316',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#262A34',
     paddingHorizontal: 12,
     paddingVertical: 10,
-    color: '#FFFFFF',
     fontSize: 14,
   },
   textArea: {
@@ -315,16 +306,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#222630',
     borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  typeOptionSelected: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderColor: '#3B82F6',
   },
   typeText: {
-    color: '#9CA3AF',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -336,12 +320,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#262A34',
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelBtnText: {
-    color: '#D1D5DB',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -349,12 +331,10 @@ const styles = StyleSheet.create({
     flex: 2,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#3B82F6',
     alignItems: 'center',
     justifyContent: 'center',
   },
   submitBtnText: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
   },

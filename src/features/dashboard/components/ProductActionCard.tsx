@@ -1,6 +1,12 @@
-import { useRouter } from 'expo-router';
+import {
+  useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useTheme, getColors } from '@/theme';
 
 interface ProductActionCardProps {
   title: string;
@@ -20,8 +26,8 @@ export const ProductActionCard: React.FC<ProductActionCardProps> = ({
   accentColor = '#3b82f6',
 }) => {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   return (
     <Pressable
@@ -96,9 +102,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   badgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
+    fontSize: 11,
+    fontWeight: '600',
   },
   title: {
     fontSize: 16,

@@ -10,12 +10,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CRMTask, TaskPriority } from '../types';
 import { useMembers } from '../hooks/useMembers';
 import { useContacts } from '../hooks/useContacts';
+import { DatePickerField } from '../../../components/DatePickerModal';
+import { useTheme, getColors } from '@/theme';
 
 interface CreateTaskModalProps {
   visible: boolean;
@@ -27,10 +28,10 @@ interface CreateTaskModalProps {
 }
 
 const PRIORITIES: Array<{ key: TaskPriority; label: string; color: string }> = [
-  { key: 'low', label: 'Low', color: '#9CA3AF' },
-  { key: 'medium', label: 'Medium', color: '#60A5FA' },
-  { key: 'high', label: 'High', color: '#FBBF24' },
-  { key: 'urgent', label: 'Urgent', color: '#F87171' },
+  { key: 'low', label: 'Low', color: '#8A8D91' },
+  { key: 'medium', label: 'Medium', color: '#647D8C' },
+  { key: 'high', label: 'High', color: '#B8863B' },
+  { key: 'urgent', label: 'Urgent', color: '#B85C5C' },
 ];
 
 export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
@@ -41,8 +42,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   defaultDealId,
   isLoading,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -95,56 +96,56 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={[styles.modalOverlay, { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0.5)' }]}
+        style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}
       >
         <View
           style={[
             styles.modalContent,
             {
-              backgroundColor: isDark ? '#181A20' : '#FFFFFF',
-              borderColor: isDark ? '#262A34' : '#E2E8F0',
+              backgroundColor: colors.modalBackground,
+              borderColor: colors.modalBorder,
             },
           ]}
         >
           {/* Header */}
           <View style={styles.header}>
             <View>
-              <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Create Task</Text>
-              <Text style={[styles.headerSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+              <Text style={[styles.headerTitle, { color: colors.modalTitle }]}>Create Task</Text>
+              <Text style={[styles.headerSubtitle, { color: colors.modalDescription }]}>
                 Set follow-ups and action items
               </Text>
             </View>
             <Pressable
-              style={[styles.closeBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              style={[styles.closeBtn, { backgroundColor: colors.surfaceSecondary }]}
               onPress={handleClose}
               hitSlop={8}
             >
-              <Ionicons name="close" size={20} color={isDark ? '#9CA3AF' : '#64748B'} />
+              <Ionicons name="close" size={20} color={colors.iconMuted} />
             </Pressable>
           </View>
 
           {errorMessage ? (
-            <View style={styles.errorBox}>
-              <Ionicons name="alert-circle" size={16} color="#EF4444" />
-              <Text style={styles.errorText}>{errorMessage}</Text>
+            <View style={[styles.errorBox, { backgroundColor: colors.destructiveSoft }]}>
+              <Ionicons name="alert-circle" size={16} color={colors.destructive} />
+              <Text style={[styles.errorText, { color: colors.destructive }]}>{errorMessage}</Text>
             </View>
           ) : null}
 
           <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
             {/* Title */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Task Title *</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Task Title *</Text>
               <TextInput
                 style={[
                   styles.input,
                   {
-                    backgroundColor: isDark ? '#121316' : '#F8FAFC',
-                    borderColor: isDark ? '#262A34' : '#CBD5E1',
-                    color: isDark ? '#FFFFFF' : '#0F172A',
+                    backgroundColor: colors.inputBackground,
+                    borderColor: colors.inputBorder,
+                    color: colors.inputForeground,
                   },
                 ]}
                 placeholder="e.g. Follow up on demo feedback"
-                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+                placeholderTextColor={colors.inputPlaceholder}
                 value={title}
                 onChangeText={setTitle}
               />
@@ -152,7 +153,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 
             {/* Priority */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Priority</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Priority</Text>
               <View style={styles.priorityRow}>
                 {PRIORITIES.map((p) => {
                   const isSelected = priority === p.key;
@@ -162,10 +163,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                       style={[
                         styles.priorityOption,
                         {
-                          backgroundColor: isSelected
-                            ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
-                            : isDark ? '#222630' : '#F1F5F9',
-                          borderColor: isSelected ? '#3B82F6' : 'transparent',
+                          backgroundColor: isSelected ? colors.accentSoft : colors.surfaceSecondary,
+                          borderColor: isSelected ? colors.primary : 'transparent',
                         },
                       ]}
                       onPress={() => setPriority(p.key)}
@@ -174,7 +173,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                         style={[
                           styles.priorityOptionText,
                           {
-                            color: isSelected ? p.color : isDark ? '#9CA3AF' : '#64748B',
+                            color: isSelected ? p.color : colors.mutedText,
                             fontWeight: isSelected ? '700' : '600',
                           },
                         ]}
@@ -187,38 +186,25 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
               </View>
             </View>
 
-            {/* Due Date */}
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Due Date (YYYY-MM-DD)</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: isDark ? '#121316' : '#F8FAFC',
-                    borderColor: isDark ? '#262A34' : '#CBD5E1',
-                    color: isDark ? '#FFFFFF' : '#0F172A',
-                  },
-                ]}
-                placeholder={new Date().toISOString().split('T')[0]}
-                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
-                value={dueDate}
-                onChangeText={setDueDate}
-              />
-            </View>
+            {/* Due Date Picker */}
+            <DatePickerField
+              label="Due Date"
+              value={dueDate}
+              onChangeDate={setDueDate}
+              placeholder="Pick a due date..."
+            />
 
             {/* Link Contact */}
             {contactsData?.contacts && contactsData.contacts.length > 0 ? (
               <View style={styles.inputGroup}>
-                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Link Contact / Lead</Text>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>Link Contact / Lead</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
                   <Pressable
                     style={[
                       styles.chip,
                       {
-                        backgroundColor: contactId === ''
-                          ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
-                          : isDark ? '#222630' : '#F1F5F9',
-                        borderColor: contactId === '' ? '#3B82F6' : 'transparent',
+                        backgroundColor: contactId === '' ? colors.accentSoft : colors.surfaceSecondary,
+                        borderColor: contactId === '' ? colors.primary : 'transparent',
                       },
                     ]}
                     onPress={() => setContactId('')}
@@ -227,7 +213,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                       style={[
                         styles.chipText,
                         {
-                          color: contactId === '' ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B',
+                          color: contactId === '' ? colors.primary : colors.mutedText,
                           fontWeight: contactId === '' ? '600' : '500',
                         },
                       ]}
@@ -243,10 +229,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                         style={[
                           styles.chip,
                           {
-                            backgroundColor: isSelected
-                              ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
-                              : isDark ? '#222630' : '#F1F5F9',
-                            borderColor: isSelected ? '#3B82F6' : 'transparent',
+                            backgroundColor: isSelected ? colors.accentSoft : colors.surfaceSecondary,
+                            borderColor: isSelected ? colors.primary : 'transparent',
                           },
                         ]}
                         onPress={() => setContactId(c.id)}
@@ -255,7 +239,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                           style={[
                             styles.chipText,
                             {
-                              color: isSelected ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B',
+                              color: isSelected ? colors.primary : colors.mutedText,
                               fontWeight: isSelected ? '600' : '500',
                             },
                           ]}
@@ -272,16 +256,14 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             {/* Assignee */}
             {members && members.length > 0 ? (
               <View style={styles.inputGroup}>
-                <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Assign to</Text>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>Assign to</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
                   <Pressable
                     style={[
                       styles.chip,
                       {
-                        backgroundColor: assignedTo === ''
-                          ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
-                          : isDark ? '#222630' : '#F1F5F9',
-                        borderColor: assignedTo === '' ? '#3B82F6' : 'transparent',
+                        backgroundColor: assignedTo === '' ? colors.accentSoft : colors.surfaceSecondary,
+                        borderColor: assignedTo === '' ? colors.primary : 'transparent',
                       },
                     ]}
                     onPress={() => setAssignedTo('')}
@@ -290,7 +272,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                       style={[
                         styles.chipText,
                         {
-                          color: assignedTo === '' ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B',
+                          color: assignedTo === '' ? colors.primary : colors.mutedText,
                           fontWeight: assignedTo === '' ? '600' : '500',
                         },
                       ]}
@@ -306,10 +288,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                         style={[
                           styles.chip,
                           {
-                            backgroundColor: isSelected
-                              ? isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)'
-                              : isDark ? '#222630' : '#F1F5F9',
-                            borderColor: isSelected ? '#3B82F6' : 'transparent',
+                            backgroundColor: isSelected ? colors.accentSoft : colors.surfaceSecondary,
+                            borderColor: isSelected ? colors.primary : 'transparent',
                           },
                         ]}
                         onPress={() => setAssignedTo(m.id)}
@@ -318,7 +298,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                           style={[
                             styles.chipText,
                             {
-                              color: isSelected ? '#3B82F6' : isDark ? '#9CA3AF' : '#64748B',
+                              color: isSelected ? colors.primary : colors.mutedText,
                               fontWeight: isSelected ? '600' : '500',
                             },
                           ]}
@@ -334,19 +314,19 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 
             {/* Description */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: isDark ? '#D1D5DB' : '#334155' }]}>Description & Notes</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Description & Notes</Text>
               <TextInput
                 style={[
                   styles.input,
                   styles.textArea,
                   {
-                    backgroundColor: isDark ? '#121316' : '#F8FAFC',
-                    borderColor: isDark ? '#262A34' : '#CBD5E1',
-                    color: isDark ? '#FFFFFF' : '#0F172A',
+                    backgroundColor: colors.inputBackground,
+                    borderColor: colors.inputBorder,
+                    color: colors.inputForeground,
                   },
                 ]}
                 placeholder="Details of what needs to be discussed or prepared..."
-                placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+                placeholderTextColor={colors.inputPlaceholder}
                 multiline
                 numberOfLines={3}
                 value={description}
@@ -358,17 +338,17 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           {/* Footer Actions */}
           <View style={styles.modalFooter}>
             <Pressable
-              style={[styles.cancelBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              style={[styles.cancelBtn, { backgroundColor: colors.buttonSecondary }]}
               onPress={handleClose}
               disabled={isLoading}
             >
-              <Text style={[styles.cancelBtnText, { color: isDark ? '#D1D5DB' : '#475569' }]}>Cancel</Text>
+              <Text style={[styles.cancelBtnText, { color: colors.buttonSecondaryForeground }]}>Cancel</Text>
             </Pressable>
-            <Pressable style={styles.submitBtn} onPress={handleSubmit} disabled={isLoading}>
+            <Pressable style={[styles.submitBtn, { backgroundColor: colors.primary }]} onPress={handleSubmit} disabled={isLoading}>
               {isLoading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <ActivityIndicator size="small" color={colors.buttonPrimaryForeground} />
               ) : (
-                <Text style={styles.submitBtnText}>Add Task</Text>
+                <Text style={[styles.submitBtnText, { color: colors.buttonPrimaryForeground }]}>Add Task</Text>
               )}
             </Pressable>
           </View>
@@ -381,11 +361,9 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#181A20',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
@@ -393,7 +371,11 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 36 : 24,
     maxHeight: '88%',
     borderWidth: 1,
-    borderColor: '#262A34',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 8,
   },
   header: {
     flexDirection: 'row',
@@ -402,31 +384,26 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   headerTitle: {
-    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
   },
   headerSubtitle: {
-    color: '#9CA3AF',
     fontSize: 12,
     marginTop: 2,
   },
   closeBtn: {
     padding: 6,
     borderRadius: 8,
-    backgroundColor: '#262A34',
   },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
     padding: 10,
     borderRadius: 8,
     marginBottom: 12,
   },
   errorText: {
-    color: '#EF4444',
     fontSize: 12,
     flex: 1,
   },
@@ -437,19 +414,15 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   label: {
-    color: '#D1D5DB',
     fontSize: 12,
     fontWeight: '600',
     marginBottom: 6,
   },
   input: {
-    backgroundColor: '#121316',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#262A34',
     paddingHorizontal: 12,
     paddingVertical: 10,
-    color: '#FFFFFF',
     fontSize: 14,
   },
   textArea: {
@@ -464,17 +437,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#222630',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  priorityOptionSelected: {
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-    borderColor: '#3B82F6',
   },
   priorityOptionText: {
-    color: '#9CA3AF',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -485,23 +451,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#222630',
     marginRight: 8,
     borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  chipSelected: {
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-    borderColor: '#3B82F6',
   },
   chipText: {
-    color: '#9CA3AF',
     fontSize: 12,
     fontWeight: '500',
-  },
-  chipTextSelected: {
-    color: '#60A5FA',
-    fontWeight: '600',
   },
   modalFooter: {
     flexDirection: 'row',
@@ -511,12 +466,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#262A34',
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelBtnText: {
-    color: '#D1D5DB',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -524,12 +477,10 @@ const styles = StyleSheet.create({
     flex: 2,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#3B82F6',
     alignItems: 'center',
     justifyContent: 'center',
   },
   submitBtnText: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
   },

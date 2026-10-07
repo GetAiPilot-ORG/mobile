@@ -1,11 +1,16 @@
-import { AppScreen } from "@/components/AppScreen";
+import {
+  AppScreen
+} from "@/components/AppScreen";
 import { NetworkStatusScreen } from "@/components/StatusScreen";
+import { getColors, useTheme } from '@/theme';
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import NetInfo from "@react-native-community/netinfo";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState
+} from "react";
 import {
   ActivityIndicator,
   Keyboard,
@@ -16,25 +21,24 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableWithoutFeedback,
-  useColorScheme,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { HomeSkeleton } from "../../src/components/skeletonScreen/HomeSkeletonScreen";
+import { AuthSkeleton } from "../../src/components/skeletonScreen/AuthSkeletonScreen";
+import { useNetwork } from "../../src/contexts/NetworkContext";
 import { useAuthStore } from "../../src/core/store/authStore";
 import { supabase } from "../../src/lib/supabase";
 import { isValidEmail } from "../../src/lib/validators";
 
 const REMEMBER_ME_KEY = "@gap_remember_me";
 const SAVE_LOGIN_KEY = "@gap_saved_identifier";
-const brandLogo = require("../../assets/images/icon.png");
+const brandLogo = require("../../assets/images/logobag.png");
 
 export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const login = useAuthStore((s) => s.login);
   const [authMode, setAuthMode] = useState<"password" | "otp">("password");
 
@@ -47,8 +51,7 @@ export default function LoginScreen() {
     type: "error" | "success";
     message: string;
   } | null>(null);
-  const [isOnline, setIsOnline] = useState(true);
-  const [networkChecked, setNetworkChecked] = useState(false);
+  const { isOnline, networkChecked, refresh, isChecking } = useNetwork();
 
   // Load saved login info on mount
   useEffect(() => {
@@ -64,37 +67,11 @@ export default function LoginScreen() {
             setIdentifier(savedEmail);
           }
         }
-      } catch {}
+      } catch { }
     })();
   }, []);
 
-  useEffect(() => {
-    const checkInitialConnection = async () => {
-      const state = await NetInfo.fetch();
 
-      const online =
-        state.isConnected === true && state.isInternetReachable !== false;
-
-      setIsOnline(online);
-      setNetworkChecked(true);
-    };
-
-    checkInitialConnection();
-
-    let wasOnline = true;
-
-    const unsubscribe = NetInfo.addEventListener((state) => {
-      const online =
-        state.isConnected === true && state.isInternetReachable !== false;
-
-      setIsOnline(online);
-      setNetworkChecked(true);
-
-      wasOnline = online;
-    });
-
-    return () => unsubscribe();
-  }, []);
 
   const triggerHaptic = (
     style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Light,
@@ -108,9 +85,9 @@ export default function LoginScreen() {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
     const nextState = !saveLoginInfo;
     setSaveLoginInfo(nextState);
-    AsyncStorage.setItem(REMEMBER_ME_KEY, String(nextState)).catch(() => {});
+    AsyncStorage.setItem(REMEMBER_ME_KEY, String(nextState)).catch(() => { });
     if (!nextState) {
-      AsyncStorage.removeItem(SAVE_LOGIN_KEY).catch(() => {});
+      AsyncStorage.removeItem(SAVE_LOGIN_KEY).catch(() => { });
     }
   };
 
@@ -197,7 +174,7 @@ export default function LoginScreen() {
   if (!networkChecked) {
     return (
       <AppScreen safeArea={true}>
-        <HomeSkeleton />
+        <AuthSkeleton />
       </AppScreen>
     );
   }
@@ -206,14 +183,8 @@ export default function LoginScreen() {
     return (
       <AppScreen safeArea={false}>
         <NetworkStatusScreen
-          onRetry={async () => {
-            const state = await NetInfo.fetch();
-
-            const online =
-              state.isConnected === true && state.isInternetReachable !== false;
-
-            setIsOnline(online);
-          }}
+          onRetry={refresh}
+          isChecking={isChecking}
         />
       </AppScreen>
     );
@@ -498,9 +469,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
   },
   logoImage: {
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
     borderRadius: 46,
+    resizeMode: "contain",
+    backgroundColor: "transparent",
   },
   heading: {
     fontSize: 24,

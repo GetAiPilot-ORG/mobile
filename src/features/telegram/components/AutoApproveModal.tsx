@@ -8,13 +8,13 @@ import {
   ScrollView,
   ActivityIndicator,
   Linking,
-  useColorScheme,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { telegramApi } from '../api/telegramApi';
+import { useTheme, getColors } from '@/theme';
 
 interface AutoApproveModalProps {
   visible: boolean;
@@ -26,8 +26,8 @@ export const AutoApproveModal: React.FC<AutoApproveModalProps> = ({
   visible,
   onClose,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const { data: status, isLoading } = useQuery({
     queryKey: ['telegram_auto_approve_status'],
@@ -315,9 +315,8 @@ const styles = StyleSheet.create({
   },
   logoSubText: {
     color: '#FFFFFF',
-    fontSize: 8,
-    fontWeight: '700',
-    textTransform: 'uppercase',
+    fontSize: 9,
+    fontWeight: '600',
   },
   eyebrowBadge: {
     flexDirection: 'row',
@@ -375,7 +374,7 @@ const styles = StyleSheet.create({
   },
   idCardDark: {
     backgroundColor: '#161C28',
-    borderColor: '#262C36',
+    borderColor: '#27272A',
   },
   idLabel: {
     fontSize: 12,
@@ -429,9 +428,8 @@ const styles = StyleSheet.create({
   // Features List
   sectionHeading: {
     fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    fontWeight: '700',
+    letterSpacing: -0.1,
     marginBottom: 12,
   },
   featuresList: {

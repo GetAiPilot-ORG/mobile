@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { useTheme, getColors } from '@/theme';
 
 interface ActivityFeedItemProps {
   product: string;
@@ -14,8 +15,8 @@ export const ActivityFeedItem: React.FC<ActivityFeedItemProps> = ({
   description,
   timestamp,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const formattedTime = new Date(timestamp).toLocaleTimeString([], {
     hour: '2-digit',

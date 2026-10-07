@@ -1,29 +1,32 @@
 import { HomeSkeleton } from "@/components/skeletonScreen/HomeSkeletonScreen";
 import { NetworkStatusScreen } from "@/components/StatusScreen";
+import { getColors, useTheme } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
-import NetInfo from "@react-native-community/netinfo";
 import { useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Alert,
+  Dimensions,
   Image,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  useColorScheme,
   View,
 } from "react-native";
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
 import { useAuth } from "../../src/contexts/AuthContext";
+import { useNetwork } from "../../src/contexts/NetworkContext";
 import { apiClient } from "../../src/core/api/client";
 import { usePlatformSubscription } from "../../src/hooks/usePlatformSubscription";
 import { supabase } from "../../src/lib/supabase";
+
+const { width, height } = Dimensions.get('window')
 
 interface LoginDevice {
   sessionId: string;
@@ -42,8 +45,10 @@ interface DeviceSessionsResponse {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const color = getColors(isDark);
+
+  const styles = useMemo(() => createStyles(color, isDark), [color, isDark]);
   const { user } = useAuth();
   const {
     planLabel,
@@ -60,8 +65,7 @@ export default function HomeScreen() {
     "all" | "bots" | "tools"
   >("all");
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isOnline, setIsOnline] = useState(true);
-  const [networkChecked, setNetworkChecked] = useState(false);
+  const { isOnline, networkChecked, refresh, isChecking } = useNetwork();
 
   // Real Workspace Telemetry from Supabase
   const { data: telemetry, refetch: refetchTelemetry } = useQuery({
@@ -112,8 +116,38 @@ export default function HomeScreen() {
     refetch: refetchDeviceSessions,
   } = useQuery<DeviceSessionsResponse>({
     queryKey: ["auth-device-sessions", user?.id],
-    queryFn: () =>
-      apiClient.get<DeviceSessionsResponse>("/mobile/v1/auth/device-sessions"),
+    queryFn: async () => {
+      try {
+        return await apiClient.get<DeviceSessionsResponse>(
+          "/mobile/v1/auth/device-sessions",
+        );
+      } catch {
+        return {
+          activeDeviceCount: 1,
+          devices: [
+            {
+              sessionId: "current",
+              platform:
+                Platform.OS === "web"
+                  ? "web"
+                  : Platform.OS === "ios"
+                    ? "ios"
+                    : "android",
+              deviceName:
+                Platform.OS === "web"
+                  ? "Web Browser"
+                  : Platform.OS === "ios"
+                    ? "iOS Device"
+                    : "Android Device",
+              osVersion: null,
+              lastSeenAt: new Date().toISOString(),
+              isOnline: true,
+              isCurrent: true,
+            },
+          ],
+        };
+      }
+    },
     enabled: !!user?.id,
     staleTime: 15_000,
   });
@@ -125,52 +159,14 @@ export default function HomeScreen() {
     setIsRefreshing(false);
   };
 
+  const prevOnlineRef = useRef(isOnline);
   useEffect(() => {
-    const checkInitialConnection = async () => {
-      const state = await NetInfo.fetch();
-
-      const online =
-        state.isConnected === true && state.isInternetReachable !== false;
-
-      setIsOnline(online);
-      setNetworkChecked(true);
-    };
-
-    checkInitialConnection();
-
-    let wasOnline = true;
-
-    const unsubscribe = NetInfo.addEventListener((state) => {
-      const online =
-        state.isConnected === true && state.isInternetReachable !== false;
-
-      setIsOnline(online);
-      setNetworkChecked(true);
-
-      if (wasOnline && !online) {
-        Alert.alert(
-          "Device Offline",
-          "Your device has lost its internet connection.",
-          [{ text: "OK" }],
-        );
-      }
-
-      if (!wasOnline && online) {
-        Alert.alert(
-          "Back Online",
-          "Your device is connected to the internet again.",
-          [{ text: "OK" }],
-        );
-
-        refetchDeviceSessions();
-        refetchTelemetry();
-      }
-
-      wasOnline = online;
-    });
-
-    return () => unsubscribe();
-  }, [refetchDeviceSessions, refetchTelemetry]);
+    if (!prevOnlineRef.current && isOnline) {
+      refetchDeviceSessions();
+      refetchTelemetry();
+    }
+    prevOnlineRef.current = isOnline;
+  }, [isOnline, refetchDeviceSessions, refetchTelemetry]);
 
   const triggerHaptic = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -186,7 +182,7 @@ export default function HomeScreen() {
       name: "Telegram",
       desc: "Auto-forward feeds, bots & reactions",
       logo: require("../../assets/images/products/telegram.png"),
-      iconBg: "#0088CC",
+      iconBg: color.products.telegram,
       route: "/products/telegram",
       status: hasTelegram ? "Active" : "Pro",
       isLive: hasTelegram,
@@ -196,7 +192,7 @@ export default function HomeScreen() {
       name: "WhatsApp",
       desc: "Broadcasts & 24/7 Meta API triggers",
       logo: require("../../assets/images/products/whatsapp.png"),
-      iconBg: "#25D366",
+      iconBg: color.products.whatsapp,
       route: "/products/whatsapp",
       status: hasWhatsApp ? "Active" : "Pro",
       isLive: hasWhatsApp,
@@ -206,7 +202,7 @@ export default function HomeScreen() {
       name: "Voice AI",
       desc: "AI Voice calling agents & speech streaming",
       logo: require("../../assets/images/products/voice.png"),
-      iconBg: "#8B5CF6",
+      iconBg: color.products.voice,
       route: "/products/voice",
       status: hasVoice ? "Active" : "Pro",
       isLive: hasVoice,
@@ -216,7 +212,7 @@ export default function HomeScreen() {
       name: "Smart CRM",
       desc: "Pipelines, deals & lead contact automation",
       logo: require("../../assets/images/products/crm.png"),
-      iconBg: "#F59E0B",
+      iconBg: color.products.crm,
       route: "/products/crm",
       status: hasCRM ? "Active" : "Pro",
       isLive: hasCRM,
@@ -226,7 +222,7 @@ export default function HomeScreen() {
       name: "Social Pilot",
       desc: "Cross-platform auto-poster & queue",
       logo: require("../../assets/images/products/social.png"),
-      iconBg: "#E1306C",
+      iconBg: color.products.social,
       route: "/products/social",
       status: hasSocial ? "Active" : "Growth",
       isLive: hasSocial,
@@ -306,59 +302,24 @@ export default function HomeScreen() {
   }
 
   if (!isOnline) {
-    return (
-      <AppScreen safeArea={false}>
-        <NetworkStatusScreen
-          onRetry={async () => {
-            const state = await NetInfo.fetch();
-
-            const online =
-              state.isConnected === true && state.isInternetReachable !== false;
-
-            setIsOnline(online);
-
-            if (online) {
-              refetchTelemetry();
-              refetchDeviceSessions();
-            }
-          }}
-        />
-      </AppScreen>
-    );
+    return <NetworkStatusScreen onRetry={refresh} isChecking={isChecking} />;
   }
   return (
     <AppScreen safeArea={false}>
       {/* Top Header */}
-      <AppTopBar
-        rightElement={
-          <Pressable
-            style={styles.avatarBtn}
-            onPress={() => {
-              triggerHaptic();
-              router.push("/(tabs)/account" as any);
-            }}
-          >
-            <Text style={styles.avatarBtnText}>
-              {displayName.charAt(0).toUpperCase()}
-            </Text>
-          </Pressable>
-        }
-      />
+      <AppTopBar showPlanBadge={true} />
 
       <ScrollView
-        style={[
-          styles.scrollView,
-          isDark ? styles.scrollViewDark : styles.scrollViewLight,
-        ]}
+        style={[styles.scrollView, { backgroundColor: color.background }]}
         contentContainerStyle={[
           styles.scrollContent,
-          isDark ? styles.scrollContentDark : styles.scrollContentLight,
+          { backgroundColor: color.background },
         ]}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={onRefresh}
-            tintColor="#0A84FF"
+            tintColor={color.primary}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -373,30 +334,38 @@ export default function HomeScreen() {
           <Ionicons
             name="search"
             size={16}
-            color="#8E8E93"
+            color={color.iconPrimary}
             style={styles.searchIcon}
           />
           <TextInput
-            style={[styles.searchInput, isDark && styles.searchInputDark]}
+            style={[styles.searchInput]}
             placeholder="Search bots, automation & tools..."
-            placeholderTextColor="#8E8E93"
+            placeholderTextColor={color.inputPlaceholder}
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoCapitalize="none"
           />
           {searchQuery.length > 0 ? (
             <Pressable onPress={() => setSearchQuery("")} hitSlop={8}>
-              <Ionicons name="close-circle" size={16} color="#8E8E93" />
+              <Ionicons
+                name="close-circle"
+                size={16}
+                color={color.iconPrimary}
+              />
             </Pressable>
           ) : (
-            <Ionicons name="options-outline" size={16} color="#8E8E93" />
+            <Ionicons
+              name="options-outline"
+              size={16}
+              color={color.iconPrimary}
+            />
           )}
         </View>
 
         {/* Dual Telemetry Widgets (Apple Inset Dual Cards) */}
         <View style={styles.heroRow}>
           <Pressable
-            style={[styles.heroCard, isDark && styles.heroCardDark]}
+            style={[styles.heroCard]}
             onPress={() => {
               triggerHaptic();
               router.push("/account/plans" as any);
@@ -405,10 +374,10 @@ export default function HomeScreen() {
             <View
               style={[
                 styles.heroIconBox,
-                { backgroundColor: "rgba(10, 132, 255, 0.15)" },
+                { backgroundColor: color.accentSoft },
               ]}
             >
-              <Ionicons name="diamond" size={17} color="#0A84FF" />
+              <Ionicons name="diamond" size={17} color={color.primary} />
             </View>
             <View style={styles.heroCardTextCol}>
               <Text
@@ -420,21 +389,19 @@ export default function HomeScreen() {
               >
                 Workspace Plan
               </Text>
-              <Text
-                style={[
-                  styles.heroCardTitle,
-                  isDark && styles.heroCardTitleDark,
-                ]}
-                numberOfLines={1}
-              >
+              <Text style={[styles.heroCardTitle]} numberOfLines={1}>
                 {planLabel || "GAP Pro Max"}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={13} color="#8E8E93" />
+            <Ionicons
+              name="chevron-forward"
+              size={13}
+              color={color.iconPrimary}
+            />
           </Pressable>
 
           <Pressable
-            style={[styles.heroCard, isDark && styles.heroCardDark]}
+            style={[styles.heroCard]}
             onPress={() => {
               triggerHaptic();
               router.push("/(tabs)/activity" as any);
@@ -458,26 +425,21 @@ export default function HomeScreen() {
               >
                 Automation Fleet
               </Text>
-              <Text
-                style={[
-                  styles.heroCardTitle,
-                  isDark && styles.heroCardTitleDark,
-                ]}
-                numberOfLines={1}
-              >
+              <Text style={[styles.heroCardTitle]} numberOfLines={1}>
                 5 Engines
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={13} color="#8E8E93" />
+            <Ionicons
+              name="chevron-forward"
+              size={13}
+              color={color.iconPrimary}
+            />
           </Pressable>
         </View>
 
         {/* Signed-in device summary. Full device management lives in Account > Security. */}
         <Pressable
-          style={[
-            styles.loginSecurityCard,
-            isDark && styles.loginSecurityCardDark,
-          ]}
+          style={[styles.loginSecurityCard]}
           onPress={() => {
             triggerHaptic();
             router.push({
@@ -502,14 +464,7 @@ export default function HomeScreen() {
           </View>
           <View style={styles.loginSecurityContent}>
             <View style={styles.loginSecurityHeader}>
-              <Text
-                style={[
-                  styles.loginSecurityTitle,
-                  isDark && styles.loginSecurityTitleDark,
-                ]}
-              >
-                Login security
-              </Text>
+              <Text style={[styles.loginSecurityTitle]}>Login security</Text>
               <View style={styles.loginSecurityCount}>
                 <Text style={styles.loginSecurityCountText}>
                   {isLoadingDevices
@@ -529,7 +484,7 @@ export default function HomeScreen() {
                           : "phone-portrait-outline"
                       }
                       size={13}
-                      color="#8E8E93"
+                      color={color.iconPrimary}
                     />
                     <Text
                       style={[
@@ -569,20 +524,170 @@ export default function HomeScreen() {
               </Text>
             )}
           </View>
-          <Ionicons name="chevron-forward" size={17} color="#8E8E93" />
+          <Ionicons
+            name="chevron-forward"
+            size={17}
+            color={color.iconPrimary}
+          />
+        </Pressable>
+
+        {/* Overall Ecosystem Pricing & Upgrades Tile */}
+        <Pressable
+          style={[
+            styles.pricingTile,
+            isDark ? styles.pricingTileDark : styles.pricingTileLight,
+          ]}
+          onPress={() => {
+            triggerHaptic();
+            router.push("/account/plans" as any);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Explore overall pricing plans and ecosystem quotas"
+        >
+          <View style={styles.pricingTileHeader}>
+            <View style={styles.pricingTileBadgeRow}>
+              <View
+                style={[
+                  styles.pricingBadge,
+                  {
+                    backgroundColor: color.accentSoft,
+                  },
+                ]}
+              >
+                <Ionicons name="sparkles" size={11} color={color.primary} />
+                <Text style={styles.pricingBadgeText}>ECOSYSTEM PRICING</Text>
+              </View>
+              <View
+                style={[
+                  styles.pricingSaveBadge,
+                  { backgroundColor: color.accentSoft },
+                ]}
+              >
+                <Text style={[styles.pricingSaveBadgeText, { color: color.accent }]}>FROM ₹799/MO</Text>
+              </View>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={color.iconPrimary}
+            />
+          </View>
+
+          <View style={styles.pricingTileBody}>
+            <Text
+              style={[
+                styles.pricingTileTitle,
+                isDark && styles.pricingTileTitleDark,
+              ]}
+            >
+              Scale Your Automation Fleet
+            </Text>
+            <Text
+              style={[
+                styles.pricingTileDesc,
+                isDark && styles.pricingTileDescDark,
+              ]}
+            >
+              Voice AI Calling · Social Pilot · WhatsApp · Telegram · Smart CRM
+            </Text>
+          </View>
+
+          {/* Pricing Quick Snapshot Pills */}
+          <View style={styles.pricingPillRow}>
+            <View
+              style={[
+                styles.pricePill,
+                { backgroundColor: color.tabBackground },
+              ]}
+            >
+              <Ionicons name="call" size={11} color={color.products.voice} />
+              <Text
+                style={[
+                  styles.pricePillText,
+                  { color: color.textPrimary },
+                ]}
+              >
+                Voice AI ₹1,499
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.pricePill,
+                { backgroundColor: color.tabBackground },
+              ]}
+            >
+              <Ionicons name="share-social" size={11} color={color.products.social} />
+              <Text
+                style={[
+                  styles.pricePillText,
+                  { color: color.textPrimary },
+                ]}
+              >
+                Social ₹999
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.pricePill,
+                { backgroundColor: color.tabBackground },
+              ]}
+            >
+              <Ionicons name="logo-whatsapp" size={11} color={color.products.whatsapp} />
+              <Text
+                style={[
+                  styles.pricePillText,
+                  { color: color.textPrimary },
+                ]}
+              >
+                WA ₹999
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.pricePill,
+                { backgroundColor: color.tabBackground },
+              ]}
+            >
+              <Ionicons name="people" size={11} color={color.products.crm} />
+              <Text
+                style={[
+                  styles.pricePillText,
+                  { color: color.textPrimary },
+                ]}
+              >
+                CRM ₹799
+              </Text>
+            </View>
+          </View>
+
+          {/* Bottom Action Strip */}
+          <View
+            style={[
+              styles.pricingActionStrip,
+              { borderTopColor: color.border },
+            ]}
+          >
+            <Text
+              style={[
+                styles.pricingActionStripText,
+                { color: color.textSecondary },
+              ]}
+            >
+              Compare all plans, quotas & features
+            </Text>
+            <View style={styles.pricingActionStripBtn}>
+              <Text style={styles.pricingActionStripBtnText}>View Plans</Text>
+              <Ionicons name="arrow-forward" size={12} color={color.primary} />
+            </View>
+          </View>
         </Pressable>
 
         {/* iOS Native Segmented Filter Bar */}
-        <View
-          style={[styles.segmentedTrack, isDark && styles.segmentedTrackDark]}
-        >
+        <View style={[styles.segmentedTrack]}>
           <Pressable
             style={[
               styles.segmentedTab,
-              selectedFilter === "all" &&
-                (isDark
-                  ? styles.segmentedTabActiveDark
-                  : styles.segmentedTabActive),
+              selectedFilter === "all" && styles.segmentedTabActive,
             ]}
             onPress={() => {
               triggerHaptic();
@@ -593,9 +698,9 @@ export default function HomeScreen() {
               style={[
                 styles.segmentedTabText,
                 selectedFilter === "all" &&
-                  (isDark
-                    ? styles.segmentedTabTextActiveDark
-                    : styles.segmentedTabTextActive),
+                (isDark
+                  ? styles.segmentedTabTextActiveDark
+                  : styles.segmentedTabTextActive),
               ]}
             >
               All Engines
@@ -605,10 +710,7 @@ export default function HomeScreen() {
           <Pressable
             style={[
               styles.segmentedTab,
-              selectedFilter === "bots" &&
-                (isDark
-                  ? styles.segmentedTabActiveDark
-                  : styles.segmentedTabActive),
+              selectedFilter === "bots" && styles.segmentedTabActive,
             ]}
             onPress={() => {
               triggerHaptic();
@@ -619,9 +721,9 @@ export default function HomeScreen() {
               style={[
                 styles.segmentedTabText,
                 selectedFilter === "bots" &&
-                  (isDark
-                    ? styles.segmentedTabTextActiveDark
-                    : styles.segmentedTabTextActive),
+                (isDark
+                  ? styles.segmentedTabTextActiveDark
+                  : styles.segmentedTabTextActive),
               ]}
             >
               Automation Hub
@@ -631,10 +733,7 @@ export default function HomeScreen() {
           <Pressable
             style={[
               styles.segmentedTab,
-              selectedFilter === "tools" &&
-                (isDark
-                  ? styles.segmentedTabActiveDark
-                  : styles.segmentedTabActive),
+              selectedFilter === "tools" && styles.segmentedTabActive,
             ]}
             onPress={() => {
               triggerHaptic();
@@ -645,9 +744,9 @@ export default function HomeScreen() {
               style={[
                 styles.segmentedTabText,
                 selectedFilter === "tools" &&
-                  (isDark
-                    ? styles.segmentedTabTextActiveDark
-                    : styles.segmentedTabTextActive),
+                (isDark
+                  ? styles.segmentedTabTextActiveDark
+                  : styles.segmentedTabTextActive),
               ]}
             >
               Studio Tools
@@ -775,7 +874,7 @@ export default function HomeScreen() {
                       <Ionicons
                         name="chevron-forward"
                         size={17}
-                        color="#8E8E93"
+                        color={color.iconPrimary}
                       />
                     </Pressable>
                     {!isLast && (
@@ -792,353 +891,469 @@ export default function HomeScreen() {
             </View>
           </View>
         )}
+        <Pressable
+          onPress={() => router.push('/Referral' as any)}
+          style={styles.referralCard}
+          accessibilityRole="button"
+          accessibilityLabel="Refer AI Automation Services"
+        >
+          <Image
+            source={require('../../assets/images/referral.png')}
+            style={[styles.referralImage, { width: width }]}
+            resizeMode="cover"
+          />
+        </Pressable>
       </ScrollView>
     </AppScreen>
   );
 }
 
-const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewLight: {
-    backgroundColor: "#F2F2F7",
-  },
-  scrollViewDark: {
-    backgroundColor: "#000000",
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 130,
-  },
-  scrollContentLight: {
-    backgroundColor: "#F2F2F7",
-  },
-  scrollContentDark: {
-    backgroundColor: "#000000",
-  },
-  avatarBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#0A84FF",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarBtnText: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  // ─── iOS Native Search Field ───────────────────────────────────
-  searchBarContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#E3E3E8",
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    height: 38,
-    marginBottom: 16,
-  },
-  searchBarContainerDark: {
-    backgroundColor: "#1C1C1E",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#2C2C2E",
-  },
-  searchIcon: {
-    marginRight: 6,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: "#000000",
-    paddingVertical: 6,
-  },
-  searchInputDark: {
-    color: "#FFFFFF",
-  },
-  // ─── Dual Telemetry Widgets ────────────────────────────────────
-  heroRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 16,
-  },
-  heroCard: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingVertical: 11,
-    paddingHorizontal: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#E5E7EB",
-    gap: 9,
-  },
-  heroCardDark: {
-    backgroundColor: "#161B22",
-    borderColor: "#262C36",
-  },
-  heroIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  heroCardTextCol: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  heroCardEyebrow: {
-    fontSize: 10,
-    fontWeight: "500",
-    color: "#6B7280",
-    marginBottom: 2,
-  },
-  heroCardEyebrowDark: {
-    color: "#8E8E93",
-  },
-  heroCardTitle: {
-    fontSize: 13.5,
-    fontWeight: "700",
-    color: "#000000",
-    letterSpacing: -0.2,
-  },
-  heroCardTitleDark: {
-    color: "#FFFFFF",
-  },
-  loginSecurityCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 13,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#E5E7EB",
-    marginBottom: 16,
-  },
-  loginSecurityCardDark: {
-    backgroundColor: "#161B22",
-    borderColor: "#262C36",
-  },
-  loginSecurityIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 11,
-  },
-  loginSecurityContent: {
-    flex: 1,
-  },
-  loginSecurityHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  loginSecurityTitle: {
-    fontSize: 14.5,
-    fontWeight: "700",
-    color: "#000000",
-  },
-  loginSecurityTitleDark: {
-    color: "#FFFFFF",
-  },
-  loginSecurityCount: {
-    backgroundColor: "rgba(16, 185, 129, 0.16)",
-    borderRadius: 8,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-  },
-  loginSecurityCountText: {
-    color: "#10B981",
-    fontSize: 10.5,
-    fontWeight: "800",
-  },
-  loginSecuritySubtitle: {
-    color: "#6B7280",
-    fontSize: 12,
-    marginTop: 3,
-  },
-  loginSecuritySubtitleDark: {
-    color: "#8E8E93",
-  },
-  loginDeviceList: {
-    marginTop: 5,
-    gap: 3,
-  },
-  loginDeviceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-  },
-  loginDeviceText: {
-    flex: 1,
-    color: "#6B7280",
-    fontSize: 12,
-  },
-  loginDeviceTextDark: {
-    color: "#8E8E93",
-  },
-  loginMoreDevices: {
-    color: "#0A84FF",
-    fontSize: 11.5,
-    fontWeight: "700",
-    marginLeft: 18,
-  },
-  loginMoreDevicesDark: {
-    color: "#64B5FF",
-  },
-  // ─── iOS Native Segmented Track ────────────────────────────────
-  segmentedTrack: {
-    flexDirection: "row",
-    backgroundColor: "#E3E3E8",
-    borderRadius: 10,
-    padding: 3,
-    marginBottom: 20,
-  },
-  segmentedTrackDark: {
-    backgroundColor: "#161B22",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#262C36",
-  },
-  segmentedTab: {
-    flex: 1,
-    paddingVertical: 7,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  segmentedTabActive: {
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  segmentedTabActiveDark: {
-    backgroundColor: "#262C36",
-  },
-  segmentedTabText: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#6B7280",
-  },
-  segmentedTabTextActive: {
-    color: "#000000",
-    fontWeight: "600",
-  },
-  segmentedTabTextActiveDark: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-  },
-  // ─── Section Header (Apple HIG Style) ──────────────────────────
-  sectionBlock: {
-    marginBottom: 24,
-  },
-  sectionHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 4,
-    marginBottom: 8,
-  },
-  sectionHeaderTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#374151",
-    letterSpacing: -0.2,
-  },
-  sectionHeaderTitleDark: {
-    color: "#9CA3AF",
-  },
-  sectionActionText: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "#0A84FF",
-  },
-  // ─── Inset Grouped Grid (5 Engines Row) ────────────────────────
-  gridContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#E5E7EB",
-  },
-  gridContainerDark: {
-    backgroundColor: "#161B22",
-    borderColor: "#262C36",
-  },
-  gridItem: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  gridLogoImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 13,
-  },
-  // ─── Inset Grouped List (Apple HIG Settings Style) ─────────────
-  groupedListContainer: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#E5E7EB",
-    overflow: "hidden",
-  },
-  groupedListContainerDark: {
-    backgroundColor: "#161B22",
-    borderColor: "#262C36",
-  },
-  groupedListItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    gap: 12,
-  },
-  toolIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  toolInfo: {
-    flex: 1,
-  },
-  toolName: {
-    fontSize: 14.5,
-    fontWeight: "700",
-    color: "#000000",
-    letterSpacing: -0.2,
-    marginBottom: 1,
-  },
-  toolNameDark: {
-    color: "#FFFFFF",
-  },
-  toolDesc: {
-    fontSize: 11.5,
-    color: "#6B7280",
-  },
-  toolDescDark: {
-    color: "#8E8E93",
-  },
-  hairlineDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: "#E5E7EB",
-    marginLeft: 58,
-  },
-  hairlineDividerDark: {
-    backgroundColor: "#262C36",
-  },
-});
+function createStyles(color: ReturnType<typeof getColors>, isDark: boolean) {
+  return StyleSheet.create({
+    scrollView: {
+      flex: 1,
+      width: "100%",
+      backgroundColor: color.background,
+    },
+    referralCard: {
+      marginHorizontal: 10,
+      marginVertical: 8,
+      borderRadius: 16,
+      overflow: 'hidden',
+    },
+
+    referralImage: {
+      height: height * 0.5,
+      borderRadius: 16
+    },
+    scrollContent: {
+      paddingHorizontal: 16,
+      paddingTop: 8,
+      paddingBottom: 130,
+      width: "100%",
+    },
+    avatarBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: color.primary,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    avatarBtnText: {
+      fontSize: 13,
+      fontWeight: "800",
+      color: color.primaryForeground,
+    },
+    // ─── iOS Native Search Field ───────────────────────────────────
+    searchBarContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: color.card,
+      borderRadius: 12,
+      paddingHorizontal: 10,
+      height: 38,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: color.border,
+    },
+    searchBarContainerDark: {
+      backgroundColor: color.card,
+      borderWidth: 1,
+      borderColor: color.border,
+    },
+    searchIcon: {
+      marginRight: 6,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 14,
+      color: color.textPrimary,
+      paddingVertical: 6,
+    },
+    // ─── Dual Telemetry Widgets ────────────────────────────────────
+    heroRow: {
+      flexDirection: "row",
+      gap: 12,
+      marginBottom: 16,
+    },
+    heroCard: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: color.card,
+      borderRadius: 16,
+      paddingVertical: 11,
+      paddingHorizontal: 12,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: color.border,
+      gap: 9,
+    },
+    heroIconBox: {
+      width: 32,
+      height: 32,
+      borderRadius: 9,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    heroCardTextCol: {
+      flex: 1,
+      justifyContent: "center",
+    },
+    heroCardEyebrow: {
+      fontSize: 10,
+      fontWeight: "500",
+      color: color.textSecondary,
+      marginBottom: 2,
+    },
+    heroCardEyebrowDark: {
+      color: color.textSecondary,
+    },
+    heroCardTitle: {
+      fontSize: 13.5,
+      fontWeight: "700",
+      color: color.textPrimary,
+      letterSpacing: -0.2,
+    },
+    loginSecurityCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: color.card,
+      borderRadius: 16,
+      padding: 13,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: color.border,
+      marginBottom: 16,
+    },
+    loginSecurityIcon: {
+      width: 38,
+      height: 38,
+      borderRadius: 11,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 11,
+    },
+    loginSecurityContent: {
+      flex: 1,
+    },
+    loginSecurityHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+    },
+    loginSecurityTitle: {
+      fontSize: 14.5,
+      fontWeight: "700",
+      color: color.textPrimary,
+    },
+    loginSecurityCount: {
+      backgroundColor: color.successSoft,
+      borderRadius: 8,
+      paddingHorizontal: 7,
+      paddingVertical: 3,
+    },
+    loginSecurityCountText: {
+      color: color.success,
+      fontSize: 10.5,
+      fontWeight: "800",
+    },
+    loginSecuritySubtitle: {
+      color: color.textSecondary,
+      fontSize: 12,
+      marginTop: 3,
+    },
+    loginSecuritySubtitleDark: {
+      color: color.textSecondary,
+    },
+    loginDeviceList: {
+      marginTop: 5,
+      gap: 3,
+    },
+    loginDeviceRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+    },
+    loginDeviceText: {
+      flex: 1,
+      color: color.textSecondary,
+      fontSize: 12,
+    },
+    loginDeviceTextDark: {
+      color: color.textSecondary,
+    },
+    loginMoreDevices: {
+      color: color.primary,
+      fontSize: 11.5,
+      fontWeight: "700",
+      marginLeft: 18,
+    },
+    loginMoreDevicesDark: {
+      color: color.primary,
+    },
+    // ─── iOS Native Segmented Track ────────────────────────────────
+    segmentedTrack: {
+      flexDirection: "row",
+      backgroundColor: color.tabBackground,
+      borderRadius: 10,
+      padding: 3,
+      marginBottom: 20,
+    },
+    segmentedTab: {
+      flex: 1,
+      paddingVertical: 7,
+      borderRadius: 8,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    segmentedTabActive: {
+      backgroundColor: color.card,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+    segmentedTabText: {
+      fontSize: 12,
+      fontWeight: "500",
+      color: color.textSecondary,
+    },
+    segmentedTabTextActive: {
+      color: color.textPrimary,
+      fontWeight: "600",
+    },
+    segmentedTabTextActiveDark: {
+      color: color.textPrimary,
+      fontWeight: "600",
+    },
+    // ─── Section Header (Apple HIG Style) ──────────────────────────
+    sectionBlock: {
+      marginBottom: 24,
+    },
+    sectionHeaderRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: 4,
+      marginBottom: 8,
+    },
+    sectionHeaderTitle: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: color.textSecondary,
+      letterSpacing: -0.2,
+    },
+    sectionHeaderTitleDark: {
+      color: color.textSecondary,
+    },
+    sectionActionText: {
+      fontSize: 13,
+      fontWeight: "500",
+      color: color.primary,
+    },
+    // ─── Inset Grouped Grid (5 Engines Row) ────────────────────────
+    gridContainer: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      backgroundColor: color.card,
+      borderRadius: 18,
+      paddingVertical: 14,
+      paddingHorizontal: 14,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: color.border,
+    },
+    gridContainerDark: {
+      backgroundColor: color.card,
+      borderColor: color.border,
+    },
+    gridItem: {
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    gridLogoImage: {
+      width: 50,
+      height: 50,
+      borderRadius: 13,
+    },
+    // ─── Inset Grouped List (Apple HIG Settings Style) ─────────────
+    groupedListContainer: {
+      backgroundColor: color.card,
+      borderRadius: 18,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: color.border,
+      overflow: "hidden",
+    },
+    groupedListContainerDark: {
+      backgroundColor: color.card,
+      borderColor: color.border,
+    },
+    groupedListItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      gap: 12,
+    },
+    toolIconBox: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    toolInfo: {
+      flex: 1,
+    },
+    toolName: {
+      fontSize: 14.5,
+      fontWeight: "700",
+      color: color.textPrimary,
+      letterSpacing: -0.2,
+      marginBottom: 1,
+    },
+    toolNameDark: {
+      color: color.textPrimary,
+    },
+    toolDesc: {
+      fontSize: 11.5,
+      color: color.textSecondary,
+    },
+    toolDescDark: {
+      color: color.textSecondary,
+    },
+    hairlineDivider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: color.border,
+      marginLeft: 58,
+    },
+    hairlineDividerDark: {
+      backgroundColor: color.border,
+    },
+    pricingTile: {
+      borderRadius: 16,
+      padding: 14,
+      gap: 10,
+      borderWidth: 1,
+      marginBottom: 12,
+    },
+    pricingTileLight: {
+      backgroundColor: color.card,
+      borderColor: color.border,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    pricingTileDark: {
+      backgroundColor: color.card,
+      borderColor: color.border,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    pricingTileHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    pricingTileBadgeRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    pricingBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingHorizontal: 7,
+      paddingVertical: 3,
+      borderRadius: 6,
+      backgroundColor: color.accentSoft,
+    },
+    pricingBadgeText: {
+      fontSize: 10,
+      fontWeight: "800",
+      color: color.foreground,
+      letterSpacing: 0.5,
+    },
+    pricingSaveBadge: {
+      paddingHorizontal: 7,
+      paddingVertical: 3,
+      borderRadius: 6,
+      backgroundColor: color.accentSoft,
+    },
+    pricingSaveBadgeText: {
+      fontSize: 10,
+      fontWeight: "800",
+      color: color.accent,
+      letterSpacing: 0.5,
+    },
+    pricingTileBody: {
+      gap: 2,
+    },
+    pricingTileTitle: {
+      fontSize: 15,
+      fontWeight: "800",
+      color: color.textPrimary,
+      letterSpacing: -0.2,
+    },
+    pricingTileTitleDark: {
+      color: color.textPrimary,
+    },
+    pricingTileDesc: {
+      fontSize: 11.5,
+      color: color.textSecondary,
+    },
+    pricingTileDescDark: {
+      color: color.textSecondary,
+    },
+    pricingPillRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 6,
+      marginTop: 2,
+    },
+    pricePill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 7,
+    },
+    pricePillText: {
+      fontSize: 10.5,
+      fontWeight: "700",
+    },
+    pricingActionStrip: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingTop: 8,
+      borderTopWidth: 1,
+      borderColor: color.border,
+      marginTop: 2,
+    },
+    pricingActionStripText: {
+      fontSize: 11,
+      fontWeight: "500",
+      color: color.textSecondary,
+    },
+    pricingActionStripBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 3,
+    },
+    pricingActionStripBtnText: {
+      fontSize: 11.5,
+      fontWeight: "700",
+      color: color.primary,
+    },
+  });
+}

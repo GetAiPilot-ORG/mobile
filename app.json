@@ -2,7 +2,7 @@
   "expo": {
     "name": "GetAIPilot",
     "slug": "getaipilot",
-    "owner": "theycallmetanishk",
+    "owner": "poojareactnative",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -12,7 +12,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.unreala9.mobile",
       "infoPlist": {
-        "NSFaceIDUsageDescription": "Allow GetAIPilot to use Face ID for fast and secure authentication."
+        "NSFaceIDUsageDescription": "Allow GetAIPilot to use Face ID for fast and secure authentication.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -26,14 +27,25 @@
       "package": "com.unreala9.mobile",
       "permissions": [
         "USE_BIOMETRIC",
-        "USE_FINGERPRINT"
+        "USE_FINGERPRINT",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
       ]
     },
     "web": {
+      "bundler": "metro",
       "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "enableSceneSupport": true
+          }
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",
@@ -50,7 +62,9 @@
         }
       ],
       "expo-image",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-asset",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -58,8 +72,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "966b2780-641c-401e-a8e7-6a89b3ad7de3"
-      }
+        "projectId": "b20e09aa-b2a4-483d-ba57-6b1b70f6d988"
+      },
+      "router": {}
     }
   }
 }

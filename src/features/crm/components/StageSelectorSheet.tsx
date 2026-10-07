@@ -1,7 +1,8 @@
 import React from 'react';
-import { StyleSheet, Text, View, Modal, Pressable, useColorScheme } from 'react-native';
+import { StyleSheet, Text, View, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { DealStage } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 interface StageSelectorSheetProps {
   visible: boolean;
@@ -11,12 +12,12 @@ interface StageSelectorSheetProps {
 }
 
 const STAGES: Array<{ key: DealStage; label: string; desc: string; color: string }> = [
-  { key: 'lead', label: 'Lead', desc: 'Initial contact, unqualified', color: '#9CA3AF' },
-  { key: 'qualified', label: 'Qualified', desc: 'Needs confirmed, decision maker identified', color: '#60A5FA' },
-  { key: 'proposal', label: 'Proposal', desc: 'Quote or proposal sent to client', color: '#FBBF24' },
-  { key: 'negotiation', label: 'Negotiation', desc: 'Reviewing pricing and contract terms', color: '#A78BFA' },
-  { key: 'closed_won', label: 'Closed Won', desc: 'Contract signed, deal won 🎉', color: '#34D399' },
-  { key: 'closed_lost', label: 'Closed Lost', desc: 'Deal cancelled or lost to competitor', color: '#F87171' },
+  { key: 'lead', label: 'Lead', desc: 'Initial contact, unqualified', color: '#8A8D91' },
+  { key: 'qualified', label: 'Qualified', desc: 'Needs confirmed, decision maker identified', color: '#647D8C' },
+  { key: 'proposal', label: 'Proposal', desc: 'Quote or proposal sent to client', color: '#B8863B' },
+  { key: 'negotiation', label: 'Negotiation', desc: 'Reviewing pricing and contract terms', color: '#8B5CF6' },
+  { key: 'closed_won', label: 'Closed Won', desc: 'Contract signed, deal won 🎉', color: '#4F8A68' },
+  { key: 'closed_lost', label: 'Closed Lost', desc: 'Deal cancelled or lost to competitor', color: '#B85C5C' },
 ];
 
 export const StageSelectorSheet: React.FC<StageSelectorSheetProps> = ({
@@ -25,33 +26,33 @@ export const StageSelectorSheet: React.FC<StageSelectorSheetProps> = ({
   onSelectStage,
   onClose,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <Pressable
-        style={[styles.backdrop, { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0.5)' }]}
+        style={[styles.backdrop, { backgroundColor: colors.overlay }]}
         onPress={onClose}
       >
         <View
           style={[
             styles.sheetContent,
             {
-              backgroundColor: isDark ? '#181A20' : '#FFFFFF',
-              borderColor: isDark ? '#262A34' : '#E2E8F0',
+              backgroundColor: colors.modalBackground,
+              borderColor: colors.modalBorder,
             },
           ]}
         >
-          <View style={[styles.dragHandle, { backgroundColor: isDark ? '#374151' : '#CBD5E1' }]} />
+          <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
           <View style={styles.header}>
-            <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>Update Pipeline Stage</Text>
+            <Text style={[styles.title, { color: colors.modalTitle }]}>Update Pipeline Stage</Text>
             <Pressable
-              style={[styles.closeBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              style={[styles.closeBtn, { backgroundColor: colors.surfaceSecondary }]}
               onPress={onClose}
               hitSlop={8}
             >
-              <Ionicons name="close" size={20} color={isDark ? '#9CA3AF' : '#64748B'} />
+              <Ionicons name="close" size={20} color={colors.iconMuted} />
             </Pressable>
           </View>
 
@@ -64,10 +65,8 @@ export const StageSelectorSheet: React.FC<StageSelectorSheetProps> = ({
                   style={[
                     styles.stageItem,
                     {
-                      backgroundColor: isSelected
-                        ? isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.08)'
-                        : isDark ? '#121316' : '#F8FAFC',
-                      borderColor: isSelected ? '#3B82F6' : isDark ? '#262A34' : '#E2E8F0',
+                      backgroundColor: isSelected ? colors.accentSoft : colors.surfaceSecondary,
+                      borderColor: isSelected ? colors.primary : colors.border,
                     },
                   ]}
                   onPress={() => {
@@ -81,14 +80,14 @@ export const StageSelectorSheet: React.FC<StageSelectorSheetProps> = ({
                       style={[
                         styles.stageLabel,
                         {
-                          color: isSelected ? s.color : isDark ? '#FFFFFF' : '#0F172A',
+                          color: isSelected ? s.color : colors.text,
                           fontWeight: isSelected ? '700' : '600',
                         },
                       ]}
                     >
                       {s.label}
                     </Text>
-                    <Text style={[styles.stageDesc, { color: isDark ? '#9CA3AF' : '#64748B' }]}>{s.desc}</Text>
+                    <Text style={[styles.stageDesc, { color: colors.mutedText }]}>{s.desc}</Text>
                   </View>
                   {isSelected ? <Ionicons name="checkmark-circle" size={20} color={s.color} /> : null}
                 </Pressable>
@@ -104,23 +103,24 @@ export const StageSelectorSheet: React.FC<StageSelectorSheetProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'flex-end',
   },
   sheetContent: {
-    backgroundColor: '#181A20',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 32,
     borderWidth: 1,
-    borderColor: '#262A34',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 8,
   },
   dragHandle: {
     width: 36,
     height: 4,
-    backgroundColor: '#374151',
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 12,
@@ -132,14 +132,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
   },
   closeBtn: {
     padding: 6,
     borderRadius: 8,
-    backgroundColor: '#262A34',
   },
   stageList: {
     gap: 8,
@@ -149,13 +147,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 12,
     borderRadius: 12,
-    backgroundColor: '#121316',
     borderWidth: 1,
-    borderColor: '#262A34',
-  },
-  stageItemSelected: {
-    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-    borderColor: '#3B82F6',
   },
   colorDot: {
     width: 10,
@@ -167,12 +159,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stageLabel: {
-    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '600',
   },
   stageDesc: {
-    color: '#9CA3AF',
     fontSize: 11,
     marginTop: 2,
   },
