@@ -1,12 +1,16 @@
 import {
-  AppScreen } from "@/components/AppScreen";
+  AppScreen
+} from "@/components/AppScreen";
 import { NetworkStatusScreen } from "@/components/StatusScreen";
+import { getColors, useTheme } from '@/theme';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { useEffect,
-  useState } from "react";
+import {
+  useEffect,
+  useState
+} from "react";
 import {
   ActivityIndicator,
   Keyboard,
@@ -25,11 +29,10 @@ import { useNetwork } from "../../src/contexts/NetworkContext";
 import { useAuthStore } from "../../src/core/store/authStore";
 import { supabase } from "../../src/lib/supabase";
 import { isValidEmail } from "../../src/lib/validators";
-import { useTheme, getColors } from '@/theme';
 
 const REMEMBER_ME_KEY = "@gap_remember_me";
 const SAVE_LOGIN_KEY = "@gap_saved_identifier";
-const brandLogo = require("../../assets/images/logo.png");
+const brandLogo = require("../../assets/images/logobag.png");
 
 export default function LoginScreen() {
   const router = useRouter();
