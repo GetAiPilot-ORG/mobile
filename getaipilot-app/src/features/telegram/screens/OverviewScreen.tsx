@@ -24,6 +24,81 @@ const CATEGORIES: { key: TelegramCategory; label: string; icon: string }[] = [
   { key: 'growth', label: 'Growth', icon: 'trending-up-outline' },
 ];
 
+const DEFAULT_TELEGRAM_TOOLS: TelegramHubTool[] = [
+  {
+    key: 'tracker',
+    title: 'GAP Tracker',
+    description: 'Connect Telegram bots, track channel joins, and generate deep tracking invite links.',
+    badge: 'POPULAR',
+    isCompleted: true,
+    statusText: 'Active',
+    icon: 'share-social',
+  },
+  {
+    key: 'sub_manager',
+    title: 'GAP Sub Manager',
+    description: 'Manage gated subscription landing pages and process recurring community payments.',
+    badge: 'MONETIZE',
+    isCompleted: true,
+    statusText: 'Active',
+    icon: 'card',
+  },
+  {
+    key: 'autoforward',
+    title: 'GAP Autoforwarding',
+    description: 'Mirror and auto-forward messages across public and private Telegram channels automatically.',
+    badge: 'AUTOMATION',
+    isCompleted: true,
+    statusText: 'Active',
+    icon: 'git-compare-outline',
+  },
+  {
+    key: 'report_bot',
+    title: 'GAP Report Bot',
+    description: 'Turn Telegram trading calls and chart screenshots into branded SEBI research report PDFs.',
+    badge: 'SEBI',
+    isCompleted: true,
+    statusText: 'Active',
+    icon: 'document-text',
+  },
+  {
+    key: 'reactions',
+    title: 'GAP Reactions',
+    description: 'Boost your post engagement with automated Telegram reaction emoji delivery.',
+    badge: 'ENGAGEMENT',
+    isCompleted: true,
+    statusText: 'Active',
+    icon: 'sparkles',
+  },
+  {
+    key: 'auto_approve',
+    title: 'Auto-Approve Bot',
+    description: 'Instantly and automatically accept new group or channel join requests 24/7.',
+    badge: 'SMART GATE',
+    isCompleted: true,
+    statusText: 'Active',
+    icon: 'checkmark-circle-outline',
+  },
+  {
+    key: 'chatbot',
+    title: 'AI Chat Bot',
+    description: 'Deploy intelligent ChatGPT-powered Telegram bots to handle user support & sales queries.',
+    badge: 'AI DRIVEN',
+    isCompleted: true,
+    statusText: 'Active',
+    icon: 'chatbubbles',
+  },
+  {
+    key: 'broadcast',
+    title: 'Broadcast Msg',
+    description: 'Send high-converting instant announcements and mass broadcasts to all your bot subscribers.',
+    badge: 'BROADCAST',
+    isCompleted: true,
+    statusText: 'Active',
+    icon: 'megaphone',
+  },
+];
+
 interface OverviewScreenProps {
   summary: any;
   realRevenue: number;
@@ -59,7 +134,19 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
 
   const hub = summary?.hub || { totalModules: 8, completedModules: 8, tools: [] };
 
-  const filteredTools = (hub.tools || []).filter((tool: TelegramHubTool) => {
+  const toolsSource: TelegramHubTool[] =
+    hub.tools && hub.tools.length > 0
+      ? hub.tools.map((t: TelegramHubTool) => {
+          const defaultDef = DEFAULT_TELEGRAM_TOOLS.find((d) => d.key === t.key);
+          return {
+            ...t,
+            badge: t.badge || defaultDef?.badge,
+            description: t.description || t.statusText || defaultDef?.description || '',
+          };
+        })
+      : DEFAULT_TELEGRAM_TOOLS;
+
+  const filteredTools = toolsSource.filter((tool: TelegramHubTool) => {
     if (selectedCategory === 'all') return true;
     if (selectedCategory === 'automation') return ['autoforward', 'auto_approve', 'chatbot', 'reactions'].includes(tool.key);
     if (selectedCategory === 'monetization') return ['sub_manager', 'report_bot'].includes(tool.key);
@@ -101,29 +188,71 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
             </Pressable>
           </View> */}
         </View>
+      </View>
 
-        {/* 6 KPI Cards */}
-        <View style={[styles.metricsGrid, isDark ? styles.borderDark : styles.borderLight, { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }]}>
-          {[
-            { label: 'TRACKED BOTS', value: botsList.length, color: '#0284C7', icon: 'hardware-chip-outline', bg: 'rgba(2,132,199,0.12)', tab: 'bots', sub: 'Connected bots' },
-            { label: 'CHANNELS', value: (chats || []).length, color: '#10B981', icon: 'megaphone-outline', bg: 'rgba(16,185,129,0.12)', tab: 'bots', sub: 'Mapped channels' },
-            { label: 'DEEP LINKS', value: deepLinksCount, color: '#06B6D4', icon: 'link-outline', bg: 'rgba(6,182,212,0.12)', tab: 'bots', sub: 'Tracked join links' },
-            { label: 'FORWARDS', value: (forwardRules || []).length, color: '#8B5CF6', icon: 'git-compare-outline', bg: 'rgba(139,92,246,0.12)', tab: 'automations', sub: 'Active rules' },
-            { label: 'SUB PAGES', value: subManagerPages.length || (subPlans || []).length, color: '#EC4899', icon: 'wallet-outline', bg: 'rgba(236,72,153,0.12)', tab: 'sub_manager', sub: 'Monetized pages' },
-            { label: 'REVENUE', value: `₹${(realRevenue ?? 0).toLocaleString()}`, color: '#F59E0B', icon: 'cash-outline', bg: 'rgba(245,158,11,0.12)', tab: 'sub_manager', sub: 'Total collected', isRevenue: true },
-          ].map((m, i) => (
-            <StatCard
-              key={i}
-              label={m.label}
-              value={m.value}
-              icon={m.icon}
-              color={m.color}
-              bg={m.bg}
-              sub={m.sub}
-              onPress={() => onNavigate(m.tab)}
-              isRevenue={m.isRevenue}
-            />
-          ))}
+      {/* 6 Standalone KPI Cards - Identical Layout to Tracker */}
+      <View style={styles.metricsContainer}>
+        <View style={styles.metricsRow}>
+          <StatCard
+            label="TRACKED BOTS"
+            value={botsList.length}
+            icon="hardware-chip"
+            color="#0284C7"
+            bg="rgba(2,132,199,0.15)"
+            sub="Connected bots"
+            onPress={() => onNavigate('bots')}
+          />
+          <StatCard
+            label="CHANNELS"
+            value={(chats || []).length}
+            icon="megaphone"
+            color="#10B981"
+            bg="rgba(16,185,129,0.15)"
+            sub="Mapped channels"
+            onPress={() => onNavigate('bots')}
+          />
+        </View>
+
+        <View style={styles.metricsRow}>
+          <StatCard
+            label="DEEP LINKS"
+            value={deepLinksCount}
+            icon="link"
+            color="#06B6D4"
+            bg="rgba(6,182,212,0.15)"
+            sub="Tracked join links"
+            onPress={() => onNavigate('bots')}
+          />
+          <StatCard
+            label="FORWARDS"
+            value={(forwardRules || []).length}
+            icon="git-compare"
+            color="#8B5CF6"
+            bg="rgba(139,92,246,0.15)"
+            sub="Active rules"
+            onPress={() => onNavigate('automations')}
+          />
+        </View>
+
+        <View style={styles.metricsRow}>
+          <StatCard
+            label="SUB PAGES"
+            value={subManagerPages.length || (subPlans || []).length}
+            icon="wallet"
+            color="#EC4899"
+            bg="rgba(236,72,153,0.15)"
+            sub="Monetized pages"
+            onPress={() => onNavigate('sub_manager')}
+          />
+          <StatCard
+            label="REVENUE"
+            value={`₹${(realRevenue ?? 0).toLocaleString()}`}
+            icon="cash"
+            color="#F59E0B"
+            bg="rgba(245,158,11,0.15)"
+            sub="Total collected"
+            onPress={() => onNavigate('sub_manager')}
+          />
         </View>
       </View>
 
@@ -196,17 +325,19 @@ const styles = StyleSheet.create({
   refreshBtnText: { fontSize: 12, fontWeight: '700' },
   connectBtn: { flex: 1, height: 38, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#0284C7', borderRadius: 10 },
   connectBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
-  metricsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 8, borderTopWidth: 1, paddingTop: 12, marginTop: 4 },
-  metricCard: { width: '48.5%', padding: 10, borderRadius: 12, borderWidth: 1, justifyContent: 'space-between', minHeight: 88 },
-  metricCardLight: { backgroundColor: 'rgba(248,250,252,0.9)', borderColor: '#E2E8F0' },
-  metricCardDark: { backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' },
-  metricCardPressed: { opacity: 0.75 },
-  metricHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  metricLabel: { fontSize: 9, fontWeight: '800', color: '#94A3B8', letterSpacing: 0.4, flex: 1 },
-  metricIconWrap: { width: 22, height: 22, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
-  metricValue: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
-  metricFooterRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
-  metricSub: { fontSize: 10, color: '#64748B', fontWeight: '500', flex: 1 },
+  metricsContainer: {
+    width: '100%',
+    alignSelf: 'stretch',
+    gap: 10,
+    marginBottom: 14,
+  },
+  metricsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+    alignSelf: 'stretch',
+    marginBottom: 10,
+  },
   categorySection: { marginBottom: 14 },
   sectionTitle: { fontSize: 15, fontWeight: '800', marginBottom: 10 },
   categoryScroll: { gap: 8, paddingBottom: 4 },
