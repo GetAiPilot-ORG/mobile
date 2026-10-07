@@ -1,4 +1,4 @@
-import { getColors, useTheme } from "@/theme";
+import { getColors, useTheme } from "../../../theme";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
@@ -657,6 +657,9 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 16,
     paddingTop: 12,
+    width: "100%",
+    maxWidth: 1100,
+    alignSelf: "center",
   },
   sectionHeaderRow: {
     marginTop: 12,

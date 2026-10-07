@@ -3,14 +3,30 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { ActivityIndicator, FlatList, Linking, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { crmApi } from '../api/crm.api';
 import { CRMBillingProfile } from '../types';
 
 const WEB_APP_URL = 'https://getaipilot.in';
 
-export function ClientProfilesScreen() {
+export interface ClientProfilesScreenProps {
+  onBack?: () => void;
+}
+
+export function ClientProfilesScreen({ onBack }: ClientProfilesScreenProps = {}) {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+  const router = useRouter();
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/products/crm');
+    }
+  };
 
   const { data, isLoading, isRefetching, refetch } = useQuery({
     queryKey: ['crm-billing-profiles'],
@@ -18,11 +34,11 @@ export function ClientProfilesScreen() {
   });
 
   const profiles = data?.profiles || [];
-  const bg = colors.background
-  const card = colors.surface
-  const text = colors.text
-  const sub = colors.text
-  const border = colors.border
+  const bg = colors.background;
+  const card = colors.surface;
+  const text = colors.text;
+  const sub = colors.textMuted;
+  const border = colors.border;
 
   const open = (p: CRMBillingProfile) => {
     Linking.openURL(`${WEB_APP_URL}/dashboard/crm/billing-profiles/${p.id}`).catch(() => { });
@@ -31,9 +47,27 @@ export function ClientProfilesScreen() {
   return (
     <SafeAreaView style={[{ flex: 1, backgroundColor: bg }]} edges={['top']}>
       <View style={s.header}>
-        <View>
-          <Text style={[s.title, { color: text }]}>Client Profiles</Text>
-          <Text style={[s.subtitle, { color: sub }]}>{data?.total_count ?? 0} billing profiles</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Pressable
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: card,
+            }}
+            onPress={handleBack}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
+            <Ionicons name="chevron-back" size={20} color={text} />
+          </Pressable>
+          <View>
+            <Text style={[s.title, { color: text }]}>Client Profiles</Text>
+            <Text style={[s.subtitle, { color: sub }]}>{data?.total_count ?? 0} billing profiles</Text>
+          </View>
         </View>
         <Pressable style={s.createBtn} onPress={() => Linking.openURL(`${WEB_APP_URL}/dashboard/crm/billing-profiles/create`).catch(() => { })}>
           <Ionicons name="add" size={18} color="#FFF" />

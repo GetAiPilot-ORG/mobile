@@ -1,4 +1,4 @@
-import { useTheme } from "@/theme";
+
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { getColors } from "@/theme";
+import { getColors, useTheme } from "../../../theme";
 import { useWhatsAppBroadcasts } from "../hooks/useWhatsAppBroadcasts";
 import { WhatsAppBroadcast } from "../types";
 
@@ -37,8 +37,10 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
     }
     if (onBack) {
       onBack();
-    } else {
+    } else if (router.canGoBack()) {
       router.back();
+    } else {
+      router.replace("/products/whatsapp");
     }
   };
 

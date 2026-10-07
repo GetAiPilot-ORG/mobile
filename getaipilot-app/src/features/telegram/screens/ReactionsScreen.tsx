@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
 import {
   ActivityIndicator,
   Alert,
@@ -49,6 +50,7 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   // Active Sub-Tab
   const [activeTab, setActiveTab] = useState<ReactionTab>('autopilot');
@@ -675,11 +677,20 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
               style={styles.modalSubmitBtn}
               onPress={() => {
                 setIsTopUpOpen(false);
-                Linking.openURL('https://getaipilot.in/pricing');
+                router.push('/account/plans?category=telegram');
               }}
             >
               <Ionicons name="card-outline" size={16} color="#FFFFFF" />
-              <Text style={styles.modalSubmitBtnText}>Add Funds (Web Portal)</Text>
+              <Text style={styles.modalSubmitBtnText}>View Telegram Plans & Top Up</Text>
+            </Pressable>
+            <Pressable
+              style={{ marginTop: 10, alignItems: 'center', paddingVertical: 8 }}
+              onPress={() => {
+                setIsTopUpOpen(false);
+                Linking.openURL('https://getaipilot.in/pricing');
+              }}
+            >
+              <Text style={{ fontSize: 13, color: '#0284C7', fontWeight: '600' }}>Or Open Web Billing Portal</Text>
             </Pressable>
           </View>
         </View>

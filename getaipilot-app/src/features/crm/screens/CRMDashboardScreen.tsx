@@ -1,4 +1,4 @@
-import { getColors, useTheme } from '@/theme';
+import { getColors, useTheme } from '../../../theme';
 import {
   Ionicons
 } from "@expo/vector-icons";
@@ -141,7 +141,7 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
   };
 
   const openBilling = () => {
-    Linking.openURL(`${WEB_APP_URL}/pricing`).catch(() => { });
+    router.push('/account/plans?category=crm' as any);
   };
 
   return (
@@ -159,11 +159,27 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
       >
         {/* Header */}
         <View style={s.header}>
-          <View>
-            <Text style={[s.headerTitle, { color: text }]}>CRM Dashboard</Text>
-            <Text style={[s.headerSub, { color: sub }]}>
-              {org?.name || "Your Organization"}
-            </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+            <Pressable
+              onPress={() => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace("/(tabs)/products");
+                }
+              }}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Back to products"
+            >
+              <Ionicons name="chevron-back" size={22} color={text} />
+            </Pressable>
+            <View style={{ flex: 1 }}>
+              <Text style={[s.headerTitle, { color: text }]} numberOfLines={1}>CRM Dashboard</Text>
+              <Text style={[s.headerSub, { color: sub }]} numberOfLines={1}>
+                {org?.name || "Your Organization"}
+              </Text>
+            </View>
           </View>
           <View
             style={[
@@ -240,9 +256,7 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
               s.upgradeBtn,
               { backgroundColor: isPro ? colors.success : colors.primary },
             ]}
-            onPress={() =>
-              Linking.openURL(`${WEB_APP_URL}/dashboard/plans`).catch(() => { })
-            }
+            onPress={() => router.push('/account/plans?category=crm' as any)}
           >
             <Ionicons
               name={isPro ? "checkmark-circle" : "arrow-up-circle"}
@@ -435,7 +449,13 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
 
 const s = StyleSheet.create({
   safe: { flex: 1 },
-  scroll: { paddingHorizontal: 16, paddingTop: 4 },
+  scroll: {
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    width: "100%",
+    maxWidth: 1100,
+    alignSelf: "center",
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",

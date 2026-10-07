@@ -118,7 +118,13 @@ export default function CustomizeAppScreen() {
                 borderColor: isDark ? '#2C2C2E' : '#E5E7EB',
               },
             ]}
-            onPress={() => router.back()}
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)/account');
+              }
+            }}
           >
             <Text style={[styles.backButtonText, { color: isDark ? '#FFFFFF' : '#000000' }]}>
               ← Back

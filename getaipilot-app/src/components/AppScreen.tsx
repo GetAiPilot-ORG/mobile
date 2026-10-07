@@ -10,6 +10,8 @@ export interface AppScreenProps {
   backgroundColor?: string;
   padding?: boolean;
   className?: string;
+  maxWidth?: number;
+  centerContent?: boolean;
 }
 
 export function AppScreen({
@@ -19,6 +21,8 @@ export function AppScreen({
   backgroundColor,
   padding = false,
   className = '',
+  maxWidth,
+  centerContent = false,
 }: AppScreenProps) {
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
@@ -50,11 +54,18 @@ export function AppScreen({
           backgroundColor: defaultBg,
           paddingTop,
           paddingBottom,
+          alignItems: centerContent ? 'center' : 'stretch',
         },
         style,
       ]}
     >
-      {children}
+      {maxWidth ? (
+        <View style={{ width: '100%', maxWidth, alignSelf: 'center', flex: 1 }}>
+          {children}
+        </View>
+      ) : (
+        children
+      )}
     </View>
   );
 }

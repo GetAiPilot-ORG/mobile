@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -40,14 +40,16 @@ import { getColors, useTheme } from "../../src/theme";
 
 const CATEGORIES: { key: PlanCategory; label: string; icon: string }[] = [
   { key: "all", label: "All Plans", icon: "apps" },
+  { key: "all-in-one", label: "GAP Pro", icon: "diamond" },
   { key: "calling", label: "Voice AI", icon: "call" },
-  { key: "social", label: "Social Pilot", icon: "share-social" },
   { key: "whatsapp", label: "WhatsApp", icon: "logo-whatsapp" },
   { key: "telegram", label: "Telegram", icon: "paper-plane" },
   { key: "crm", label: "Smart CRM", icon: "people" },
+  { key: "social", label: "Social Pilot", icon: "share-social" },
 ];
 
 export default function OverallPricingScreen() {
+  const router = useRouter();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const { width: windowWidth } = useWindowDimensions();
@@ -55,9 +57,17 @@ export default function OverallPricingScreen() {
   const { openRazorpayCheckout } = useRazorpay();
   const params = useLocalSearchParams<{ category?: string }>();
 
-  // Card dimensions for horizontal carousel swiping
-  const cardWidth = Math.min(Math.max(Math.round(windowWidth * 0.78), 285), 335);
+  // Responsive card dimensions for horizontal carousel swiping
+  const cardWidth = Math.min(Math.max(Math.round(windowWidth * 0.78), 275), 340);
   const snapInterval = cardWidth + 14;
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(tabs)/products");
+    }
+  };
 
   const {
     planLabel,
@@ -114,18 +124,40 @@ export default function OverallPricingScreen() {
       .sort((a, b) => a.amount - b.amount);
   }, [allPlans]);
 
-  // Section 2: Other Plans & Add-ons below it (Modular individual tools)
-  const otherPlans = useMemo(() => {
+  // Section 2: Voice AI plans
+  const voicePlans = useMemo(() => {
     return allPlans
-      .filter((p) => {
-        if (isGapProPlan(p)) return false;
-        if (selectedCategory === "all") return true;
-        if (selectedCategory === "all-in-one") return false;
-        const cat = (p.category || "").toLowerCase();
-        return cat === selectedCategory;
-      })
+      .filter((p) => !isGapProPlan(p) && (p.category === "calling" || p.category === "voice"))
       .sort((a, b) => a.amount - b.amount);
-  }, [allPlans, selectedCategory]);
+  }, [allPlans]);
+
+  // Section 3: WhatsApp Automation plans
+  const whatsappPlans = useMemo(() => {
+    return allPlans
+      .filter((p) => !isGapProPlan(p) && p.category === "whatsapp")
+      .sort((a, b) => a.amount - b.amount);
+  }, [allPlans]);
+
+  // Section 4: Telegram Ecosystem plans
+  const telegramPlans = useMemo(() => {
+    return allPlans
+      .filter((p) => !isGapProPlan(p) && p.category === "telegram")
+      .sort((a, b) => a.amount - b.amount);
+  }, [allPlans]);
+
+  // Section 5: Smart CRM & Pipeline plans
+  const crmPlans = useMemo(() => {
+    return allPlans
+      .filter((p) => !isGapProPlan(p) && p.category === "crm")
+      .sort((a, b) => a.amount - b.amount);
+  }, [allPlans]);
+
+  // Section 6: Social Pilot plans
+  const socialPlans = useMemo(() => {
+    return allPlans
+      .filter((p) => !isGapProPlan(p) && p.category === "social")
+      .sort((a, b) => a.amount - b.amount);
+  }, [allPlans]);
 
   const handleSelectPlan = (plan: PricingPlan) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -656,12 +688,107 @@ export default function OverallPricingScreen() {
     );
   };
 
+  /**
+   * Render a dedicated product category section with verified plans, header badge & carousel
+   */
+  const renderProductCategorySection = (
+    categoryKey: PlanCategory,
+    plansList: PricingPlan[]
+  ) => {
+    const meta = CATEGORY_META[categoryKey] || CATEGORY_META.all;
+    if (plansList.length === 0) return null;
+
+    return (
+      <View
+        key={categoryKey}
+        style={[
+          styles.sectionContainer,
+          {
+            backgroundColor: colors.surface,
+            borderColor: isDark ? `${meta.color}40` : `${meta.color}30`,
+          },
+        ]}
+      >
+        {/* Section Header */}
+        <View style={styles.sectionHeaderRow}>
+          <View style={styles.sectionHeaderLeft}>
+            <View
+              style={[
+                styles.sectionIconBadge,
+                { backgroundColor: `${meta.color}18` },
+              ]}
+            >
+              <Ionicons name={meta.icon as any} size={17} color={meta.color} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                  {meta.label} Plans
+                </Text>
+                <View
+                  style={{
+                    backgroundColor: `${meta.color}20`,
+                    paddingHorizontal: 7,
+                    paddingVertical: 2,
+                    borderRadius: 6,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: meta.color,
+                      fontSize: 10,
+                      fontWeight: "800",
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    {meta.badge}
+                  </Text>
+                </View>
+              </View>
+              <Text
+                style={[styles.sectionSubtitle, { color: colors.textMuted }]}
+                numberOfLines={1}
+              >
+                {meta.desc}
+              </Text>
+            </View>
+          </View>
+
+          <View
+            style={[
+              styles.scrollHintBadge,
+              { backgroundColor: `${meta.color}15` },
+            ]}
+          >
+            <Ionicons name="swap-horizontal" size={13} color={meta.color} />
+            <Text style={[styles.scrollHintText, { color: meta.color }]}>
+              {plansList.length} Tiers ⇄
+            </Text>
+          </View>
+        </View>
+
+        {/* Horizontal Scroll Area */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          decelerationRate="fast"
+          snapToInterval={snapInterval}
+          snapToAlignment="start"
+          contentContainerStyle={styles.horizontalScrollContent}
+        >
+          {plansList.map((plan) => renderPlanCard(plan, false))}
+        </ScrollView>
+      </View>
+    );
+  };
+
   return (
     <AppScreen safeArea={false} backgroundColor={colors.background}>
       <AppTopBar
         title="Overall Pricing & Plans"
         subtitle="GetAiPilot Ecosystem Subscriptions"
         showBack={true}
+        onBackPress={handleBack}
       />
 
       <ScrollView
@@ -1010,97 +1137,38 @@ export default function OverallPricingScreen() {
                 })}
               </ScrollView>
             </View>
-            <View
-              style={[
-                styles.sectionContainer,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                },
-              ]}
-            >
-              {/* Section Header */}
-              <View style={styles.sectionHeaderRow}>
-                <View style={styles.sectionHeaderLeft}>
-                  <View
-                    style={[
-                      styles.sectionIconBadge,
-                      { backgroundColor: colors.surfaceSecondary },
-                    ]}
-                  >
-                    <Ionicons name="cube-outline" size={17} color="#0A84FF" />
-                  </View>
-                  <View>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                      Individual Engine Plans & Add-ons
-                    </Text>
-                    <Text
-                      style={[
-                        styles.sectionSubtitle,
-                        { color: colors.textMuted },
-                      ]}
-                    >
-                      Modular single-channel tools & dedicated phone lines
-                    </Text>
-                  </View>
-                </View>
+            {/* Product Category Sections */}
+            {(selectedCategory === "all" || selectedCategory === "calling") &&
+              renderProductCategorySection("calling", voicePlans)}
 
-                <View
-                  style={[
-                    styles.scrollHintBadge,
-                    { backgroundColor: colors.surfaceSecondary },
-                  ]}
-                >
-                  <Ionicons name="swap-horizontal" size={13} color="#0A84FF" />
-                  <Text style={[styles.scrollHintText, { color: "#0A84FF" }]}>
-                    {otherPlans.length} Plans ⇄
-                  </Text>
-                </View>
+            {(selectedCategory === "all" || selectedCategory === "whatsapp") &&
+              renderProductCategorySection("whatsapp", whatsappPlans)}
+
+            {(selectedCategory === "all" || selectedCategory === "telegram") &&
+              renderProductCategorySection("telegram", telegramPlans)}
+
+            {(selectedCategory === "all" || selectedCategory === "crm") &&
+              renderProductCategorySection("crm", crmPlans)}
+
+            {(selectedCategory === "all" || selectedCategory === "social") &&
+              renderProductCategorySection("social", socialPlans)}
+
+            {selectedCategory === "all-in-one" && (
+              <View
+                style={[
+                  styles.emptyHorizontalBox,
+                  { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
+                ]}
+              >
+                <Ionicons name="diamond-outline" size={28} color="#8B5CF6" />
+                <Text style={[styles.innerEmptyTitle, { color: colors.text }]}>
+                  GAP Pro All-in-One Featured
+                </Text>
+                <Text style={[styles.innerEmptyDesc, { color: colors.textMuted }]}>
+                  All GAP Pro unified ecosystem tiers are featured in the top carousel. Select "All Plans" or specific engine tabs above to browse modular plans.
+                </Text>
               </View>
-
-              {/* Horizontal Scroll Area for Other Plans */}
-              {otherPlans.length === 0 ? (
-                <View
-                  style={[
-                    styles.emptyHorizontalBox,
-                    { backgroundColor: colors.backgroundSecondary },
-                  ]}
-                >
-                  <Ionicons name="pricetags-outline" size={28} color="#0A84FF" />
-                  <Text
-                    style={[
-                      styles.innerEmptyTitle,
-                      { color: colors.text },
-                    ]}
-                  >
-                    {selectedCategory === "all-in-one"
-                      ? "Viewing GAP Pro Suite"
-                      : "No plans in this category"}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.innerEmptyDesc,
-                      { color: colors.textMuted },
-                    ]}
-                  >
-                    {selectedCategory === "all-in-one"
-                      ? "GAP Pro All-In-One plans are featured in the top carousel. Tap Voice AI, WhatsApp, or Telegram to view modular standalone tools."
-                      : "Try selecting another product category or duration filter above."}
-                  </Text>
-                </View>
-              ) : (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  decelerationRate="fast"
-                  snapToInterval={snapInterval}
-                  snapToAlignment="start"
-                  contentContainerStyle={styles.horizontalScrollContent}
-                >
-                  {otherPlans.map((plan) => renderPlanCard(plan, false))}
-                </ScrollView>
-              )}
-            </View>
+            )}
           </View>
         )}
       </ScrollView>
@@ -1113,6 +1181,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 120,
+    width: "100%",
+    maxWidth: 1100,
+    alignSelf: "center",
     gap: 16,
   },
   statusBanner: {

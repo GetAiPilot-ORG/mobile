@@ -15,7 +15,7 @@ import {
   ProductFloatingBottomBar,
   ProductTabItem,
 } from '../../../components/ProductFloatingBottomBar';
-import { useTheme, getColors } from '@/theme';
+import { useTheme, getColors } from '../../../theme';
 import { apiClient } from '../../../core/api/client';
 import {
   AccountsModal,
@@ -80,32 +80,41 @@ export const SocialScreen: React.FC = () => {
   const [showAccountsModal, setShowAccountsModal] = useState(false);
   const [initialCaptionForCreate, setInitialCaptionForCreate] = useState<string | undefined>(undefined);
 
-  // Hardware Back Handler
-  useEffect(() => {
-    const onHardwareBack = () => {
-      if (selectedInstapilotConv) {
-        setSelectedInstapilotConv(null);
-        return true;
-      }
-      if (selectedPost) {
-        setSelectedPost(null);
-        return true;
-      }
-      if (activeTab !== 'overview') {
-        setActiveTab('overview');
-        return true;
-      }
-      if (router.canGoBack()) {
-        router.back();
-        return true;
-      }
-      router.replace('/(tabs)/products');
+  // Safe Back Handler for Header and Hardware Back
+  const handleBack = useCallback(() => {
+    if (selectedInstapilotConv) {
+      setSelectedInstapilotConv(null);
       return true;
-    };
+    }
+    if (selectedPost) {
+      setSelectedPost(null);
+      return true;
+    }
+    if (showCreateModal) {
+      setShowCreateModal(false);
+      return true;
+    }
+    if (showAccountsModal) {
+      setShowAccountsModal(false);
+      return true;
+    }
+    if (activeTab !== 'overview') {
+      setActiveTab('overview');
+      return true;
+    }
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/products');
+    }
+    return true;
+  }, [selectedInstapilotConv, selectedPost, showCreateModal, showAccountsModal, activeTab, router]);
 
+  useEffect(() => {
+    const onHardwareBack = () => handleBack();
     const sub = BackHandler.addEventListener('hardwareBackPress', onHardwareBack);
     return () => sub.remove();
-  }, [selectedPost, selectedInstapilotConv, activeTab, router]);
+  }, [handleBack]);
 
   const [selectedRange, setSelectedRange] = useState<number>(30);
 
@@ -438,7 +447,11 @@ export const SocialScreen: React.FC = () => {
 
   return (
     <AppScreen backgroundColor={colors.background}>
-      <AppTopBar title="SocialPilot" subtitle="Cross-Platform Social Publishing" />
+      <AppTopBar
+        title="SocialPilot"
+        subtitle="Cross-Platform Social Publishing"
+        onBackPress={handleBack}
+      />
 
       {/* Main Content Area */}
       <ScrollView
@@ -605,5 +618,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 130,
+    width: '100%',
+    maxWidth: 1100,
+    alignSelf: 'center',
   },
 });

@@ -188,7 +188,11 @@ export default function ForgotPasswordScreen() {
             style={[styles.secondaryButton, { backgroundColor: colors.backgroundLight, borderColor: colors.border }]}
             onPress={() => {
               triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-              router.back();
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(auth)/login');
+              }
             }}
           >
             <Text style={[styles.secondaryButtonText, { color: colors.primary }]}>

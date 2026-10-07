@@ -432,7 +432,16 @@ export default function AdminMonetizeScreen() {
             The Monetize and Revenue engine is restricted to authenticated
             system administrators.
           </Text>
-          <Pressable style={styles.backButton} onPress={() => router.back()}>
+          <Pressable
+            style={styles.backButton}
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)/admin');
+              }
+            }}
+          >
             <Text style={styles.backButtonText}>Return to Safety</Text>
           </Pressable>
         </View>
@@ -504,7 +513,16 @@ export default function AdminMonetizeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Pressable style={styles.backButton} onPress={() => router.back()}>
+          <Pressable
+            style={styles.backButton}
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)/admin');
+              }
+            }}
+          >
             <Text style={styles.backButtonText}>← Admin Hub</Text>
           </Pressable>
           <View style={styles.adminBadge}>

@@ -250,7 +250,13 @@ export default function ReferralScreen() {
             {/* Top Navigation Bar */}
             <View style={styles.header}>
               <Pressable
-                onPress={() => router.back()}
+                onPress={() => {
+                  if (router.canGoBack()) {
+                    router.back();
+                  } else {
+                    router.replace('/(tabs)/account' as any);
+                  }
+                }}
                 hitSlop={12}
                 style={[styles.backButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
               >

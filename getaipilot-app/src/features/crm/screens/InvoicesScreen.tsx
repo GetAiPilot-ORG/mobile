@@ -1,4 +1,4 @@
-import { getColors, useTheme } from '@/theme';
+import { getColors, useTheme } from '../../../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
@@ -17,11 +17,25 @@ const STATUS_COLOR: Record<InvoiceStatus, { bg: string; text: string }> = {
   CANCELLED: { bg: '#FEF2F2', text: '#EF4444' },
 };
 
-export function InvoicesScreen() {
+export interface InvoicesScreenProps {
+  onBack?: () => void;
+}
+
+export function InvoicesScreen({ onBack }: InvoicesScreenProps = {}) {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const router = useRouter();
   const [filter, setFilter] = useState<string | undefined>(undefined);
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/products/crm');
+    }
+  };
 
   const { data, isLoading, isRefetching, refetch } = useQuery({
     queryKey: ['crm-invoices', filter],
@@ -67,9 +81,27 @@ export function InvoicesScreen() {
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: bg }]} edges={['top']}>
       <View style={s.header}>
-        <View>
-          <Text style={[s.title, { color: text }]}>Invoices</Text>
-          <Text style={[s.subtitle, { color: sub }]}>{data?.total_count ?? 0} total invoices</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Pressable
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: card,
+            }}
+            onPress={handleBack}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
+            <Ionicons name="chevron-back" size={20} color={text} />
+          </Pressable>
+          <View>
+            <Text style={[s.title, { color: text }]}>Invoices</Text>
+            <Text style={[s.subtitle, { color: sub }]}>{data?.total_count ?? 0} total invoices</Text>
+          </View>
         </View>
         <Pressable
           style={s.createBtn}

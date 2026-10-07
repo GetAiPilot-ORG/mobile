@@ -34,15 +34,29 @@ export const getParentRoute = (pathname: string): string => {
     return '/(tabs)/tools';
   }
 
-  // 2. CRM sub-screens -> go to CRM overview or Products tab
+  // 2. Pricing / Plans routes -> go to Account or Products tab
+  if (pathname === '/pricing' || pathname === '/plans') {
+    return '/(tabs)/account';
+  }
+  if (pathname.startsWith('/account/plans')) {
+    return '/(tabs)/account';
+  }
+
+  // 3. CRM sub-screens -> go to CRM overview or Products tab
   if (pathname.startsWith('/products/crm/leads/')) {
+    return '/products/crm';
+  }
+  if (pathname.startsWith('/products/crm/pipeline')) {
     return '/products/crm';
   }
   if (pathname.startsWith('/products/crm')) {
     return '/(tabs)/products';
   }
+  if (pathname.startsWith('/crm/')) {
+    return '/products/crm';
+  }
 
-  // 3. WhatsApp sub-screens -> go to WhatsApp overview or Products tab
+  // 4. WhatsApp sub-screens -> go to WhatsApp overview or Products tab
   if (pathname.startsWith('/products/whatsapp/broadcasts/')) {
     return '/products/whatsapp';
   }
@@ -53,32 +67,39 @@ export const getParentRoute = (pathname: string): string => {
     return '/(tabs)/products';
   }
 
-  // 3.5 Social sub-screens -> go to Social overview
+  // 5. Social sub-screens -> go to Social overview or Products tab
   if (pathname.startsWith('/products/social/plans')) {
     return '/products/social';
   }
+  if (pathname.startsWith('/products/social')) {
+    return '/(tabs)/products';
+  }
 
-  // 4. Other products -> go to Products tab
+  // 6. Other products -> go to Products tab
   if (
     pathname.startsWith('/products/voice') ||
-    pathname.startsWith('/products/social') ||
     pathname.startsWith('/products/telegram') ||
     pathname.startsWith('/products/')
   ) {
     return '/(tabs)/products';
   }
 
-  // 5. Account sub-screens -> go to Account tab
+  // 7. Referral -> go to Account tab or Home
+  if (pathname.startsWith('/Referral') || pathname.startsWith('/referral')) {
+    return '/(tabs)/account';
+  }
+
+  // 8. Account sub-screens -> go to Account tab
   if (pathname.startsWith('/account/')) {
     return '/(tabs)/account';
   }
 
-  // 6. Admin sub-screens -> go to Admin tab
+  // 9. Admin sub-screens -> go to Admin tab
   if (pathname.startsWith('/admin/')) {
     return '/(tabs)/admin';
   }
 
-  // 7. Inbox sub-screens -> go to Inbox tab
+  // 10. Inbox sub-screens -> go to Inbox tab
   if (pathname.startsWith('/inbox/')) {
     return '/(tabs)/inbox';
   }

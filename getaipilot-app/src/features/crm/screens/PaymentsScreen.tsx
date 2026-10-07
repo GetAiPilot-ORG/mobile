@@ -1,4 +1,4 @@
-import { getColors, useTheme } from '@/theme';
+import { getColors, useTheme } from '../../../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { ActivityIndicator, FlatList, Linking, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
@@ -16,9 +16,26 @@ const METHOD_ICON: Record<string, string> = {
   card: 'card-outline',
 };
 
-export function PaymentsScreen() {
+import { useRouter } from 'expo-router';
+
+export interface PaymentsScreenProps {
+  onBack?: () => void;
+}
+
+export function PaymentsScreen({ onBack }: PaymentsScreenProps = {}) {
+  const router = useRouter();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/products/crm');
+    }
+  };
 
   const { data, isLoading, isRefetching, refetch } = useQuery({
     queryKey: ['crm-payments'],
@@ -43,9 +60,27 @@ export function PaymentsScreen() {
   return (
     <SafeAreaView style={[{ flex: 1, backgroundColor: bg }]} edges={['top']}>
       <View style={s.header}>
-        <View>
-          <Text style={[s.title, { color: text }]}>Payments</Text>
-          <Text style={[s.subtitle, { color: sub }]}>₹{totalCollected.toLocaleString('en-IN')} collected</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Pressable
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: card,
+            }}
+            onPress={handleBack}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
+            <Ionicons name="chevron-back" size={20} color={text} />
+          </Pressable>
+          <View>
+            <Text style={[s.title, { color: text }]}>Payments</Text>
+            <Text style={[s.subtitle, { color: sub }]}>₹{totalCollected.toLocaleString('en-IN')} collected</Text>
+          </View>
         </View>
         <Pressable style={s.createBtn} onPress={() => Linking.openURL(`${WEB_APP_URL}/dashboard/crm/payments/record`).catch(() => { })}>
           <Ionicons name="add" size={18} color="#FFF" />

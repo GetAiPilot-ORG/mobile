@@ -69,9 +69,26 @@ const LABELS: string[] = [
   'Converted',
 ];
 
-export function QuotationsScreen() {
+import { useRouter } from 'expo-router';
+
+export interface QuotationsScreenProps {
+  onBack?: () => void;
+}
+
+export function QuotationsScreen({ onBack }: QuotationsScreenProps = {}) {
+  const router = useRouter();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/products/crm');
+    }
+  };
 
   const [filter, setFilter] = useState<QuotationStatus | undefined>(
     undefined,
@@ -358,28 +375,46 @@ export function QuotationsScreen() {
     >
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <Text
-            style={[
-              styles.title,
-              {
-                color: text,
-              },
-            ]}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Pressable
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: card,
+            }}
+            onPress={handleBack}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
           >
-            Quotations
-          </Text>
+            <Ionicons name="chevron-back" size={20} color={text} />
+          </Pressable>
+          <View style={styles.headerContent}>
+            <Text
+              style={[
+                styles.title,
+                {
+                  color: text,
+                },
+              ]}
+            >
+              Quotations
+            </Text>
 
-          <Text
-            style={[
-              styles.subtitle,
-              {
-                color: sub,
-              },
-            ]}
-          >
-            {data?.total_count ?? 0} total quotations
-          </Text>
+            <Text
+              style={[
+                styles.subtitle,
+                {
+                  color: sub,
+                },
+              ]}
+            >
+              {data?.total_count ?? 0} total quotations
+            </Text>
+          </View>
         </View>
 
         <Pressable

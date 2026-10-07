@@ -5,9 +5,11 @@
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useRouter } from "expo-router";
 import {
   ActivityIndicator,
+  BackHandler,
   Platform,
   RefreshControl,
   ScrollView,
@@ -135,6 +137,41 @@ export const TelegramScreen: React.FC = () => {
 
   const mainScrollRef = useRef<ScrollView>(null);
   const queryClient = useQueryClient();
+  const router = useRouter();
+
+  // Safe navigation back handler
+  const handleBack = () => {
+    if (activeModal) {
+      setActiveModal(null);
+      return true;
+    }
+    if (isLoginModalOpen) {
+      setIsLoginModalOpen(false);
+      return true;
+    }
+    if (activeTab !== "hub") {
+      setActiveTab("hub");
+      mainScrollRef.current?.scrollTo({ y: 0, animated: true });
+      return true;
+    }
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(tabs)/products");
+    }
+    return true;
+  };
+
+  useEffect(() => {
+    const onHardwareBack = () => {
+      return handleBack();
+    };
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      onHardwareBack
+    );
+    return () => subscription.remove();
+  }, [activeModal, isLoginModalOpen, activeTab]);
 
   // ── Shared data queries ─────────────────────────────────────────────────────
   const {
@@ -340,6 +377,7 @@ export const TelegramScreen: React.FC = () => {
       <AppTopBar
         title="Telegram Dashboard"
         subtitle="Bots, routing, monetization & automations"
+        onBackPress={handleBack}
       />
 
       <ScrollView
@@ -491,7 +529,10 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 110,
+    paddingBottom: 120,
+    width: "100%",
+    maxWidth: 1100,
+    alignSelf: "center",
     gap: 0,
   },
 });

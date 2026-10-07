@@ -18,7 +18,7 @@ import {
   ProductFloatingBottomBar,
   ProductTabItem,
 } from "../../../components/ProductFloatingBottomBar";
-import { useTheme, getColors } from "@/theme";
+import { useTheme, getColors } from "../../../theme";
 import { voiceApi } from "../api/voiceApi";
 import {
   CreateAgentModal,
@@ -285,6 +285,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 8,
     width: "100%",
+    maxWidth: 1100,
+    alignSelf: "center",
   },
   headerLeft: {
     flexDirection: "row",
@@ -319,5 +321,7 @@ const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
     width: "100%",
+    maxWidth: 1100,
+    alignSelf: "center",
   },
 });

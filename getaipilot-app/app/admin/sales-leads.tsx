@@ -56,8 +56,9 @@ export default function SalesLeadsScreen() {
   if (!isAdmin) {
     return (
       <AppScreen safeArea={false} backgroundColor={colors.background}>
+        <AppTopBar title="Sales Leads Central" showBack={true} />
         <View style={styles.deniedWrapper}>
-          <Text style={styles.deniedText}>Admin access required.</Text>
+          <Text style={styles.deniedText}>Admin access required to view sales leads.</Text>
         </View>
       </AppScreen>
     );
