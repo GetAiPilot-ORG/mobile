@@ -227,8 +227,17 @@ export const useAuthStore = create<AuthState>((set, get) => {
     loadSession: async () => {
       set({ isLoading: true, authStatus: "hydrating" });
       try {
-        const token = await authStorage.getAccessToken();
+        let token = await authStorage.getAccessToken();
         if (!token) {
+          // Check if Supabase has an active session before declaring unauthenticated
+          const { data: sbData } = await supabase.auth
+            .getSession()
+            .catch(() => ({ data: { session: null } }));
+          if (sbData?.session?.access_token) {
+            await get().syncSession(sbData.session);
+            return;
+          }
+
           set({
             user: null,
             tenantMapping: null,
