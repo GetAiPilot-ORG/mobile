@@ -198,7 +198,7 @@ export default function FreeToolsScreen() {
     <AppScreen safeArea={false}>
       <AppTopBar
         title="Free Tools Hub"
-        subtitle="Complete Utility Inventory (10 Tools)"
+        // subtitle="Complete Utility Inventory (10 Tools)"
         showBack={false}
         showPlanBadge={true}
       />

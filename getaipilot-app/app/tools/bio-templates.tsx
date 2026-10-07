@@ -301,7 +301,7 @@ export default function BioTemplatesScreen() {
     <AppScreen safeArea={false} backgroundColor={colors.background}>
       <AppTopBar
         title="Bio Templates"
-        subtitle="Your downloaded templates"
+        // subtitle="Your downloaded templates"
         showBack
       />
 

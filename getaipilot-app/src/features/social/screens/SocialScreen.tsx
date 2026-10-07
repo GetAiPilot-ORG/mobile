@@ -449,7 +449,7 @@ export const SocialScreen: React.FC = () => {
     <AppScreen backgroundColor={colors.background}>
       <AppTopBar
         title="SocialPilot"
-        subtitle="Cross-Platform Social Publishing"
+        // subtitle="Cross-Platform Social Publishing"
         onBackPress={handleBack}
       />
 

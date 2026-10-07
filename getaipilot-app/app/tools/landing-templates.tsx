@@ -170,7 +170,7 @@ export default function LandingTemplatesScreen() {
     <AppScreen safeArea={false} backgroundColor={colors.background}>
       <AppTopBar
         title="Landing Templates"
-        subtitle="100+ Category Layouts"
+        // subtitle="100+ Category Layouts"
         showBack={true}
       />
 

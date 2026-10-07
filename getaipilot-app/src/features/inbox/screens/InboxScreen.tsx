@@ -183,7 +183,7 @@ export const InboxScreen: React.FC = () => {
     <AppScreen>
       <AppTopBar
         title="Inbox"
-        subtitle="LiveChat & Conversations"
+        // subtitle="LiveChat & Conversations"
         showBack={false}
         rightElement={
           <View style={styles.headerRightActions}>

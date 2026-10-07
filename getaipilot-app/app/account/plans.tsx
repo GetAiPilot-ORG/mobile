@@ -786,7 +786,7 @@ export default function OverallPricingScreen() {
     <AppScreen safeArea={false} backgroundColor={colors.background}>
       <AppTopBar
         title="Overall Pricing & Plans"
-        subtitle="GetAiPilot Ecosystem Subscriptions"
+        // subtitle="GetAiPilot Ecosystem Subscriptions"
         showBack={true}
         onBackPress={handleBack}
       />

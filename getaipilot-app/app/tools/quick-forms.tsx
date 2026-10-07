@@ -264,7 +264,9 @@ export default function SimpleQuickFormsScreen() {
   if (loading) {
     return (
       <AppScreen safeArea={false}>
-        <AppTopBar title="QuickForms" subtitle="Manage your forms" />
+        <AppTopBar title="QuickForms" 
+        // subtitle="Manage your forms" 
+        />
         <QuickFormsSkeleton />
       </AppScreen>
     );
@@ -274,11 +276,11 @@ export default function SimpleQuickFormsScreen() {
     <AppScreen safeArea={false}>
       <AppTopBar
         title="QuickForms"
-        subtitle={
-          forms.length > 0
-            ? `${forms.length} form${forms.length === 1 ? "" : "s"}`
-            : "Create your first form"
-        }
+        // subtitle={
+        //   forms.length > 0
+        //     ? `${forms.length} form${forms.length === 1 ? "" : "s"}`
+        //     : "Create your first form"
+        // }
       />
 
       <View style={styles.container}>

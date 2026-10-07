@@ -49,7 +49,9 @@ export default function LinkShortenerScreen() {
 
   return (
     <AppScreen safeArea={false} backgroundColor={colors.background}>
-      <AppTopBar title="Instant Link Shortener" subtitle="Custom Slugs & Analytics" showBack={true} />
+      <AppTopBar title="Instant Link Shortener" 
+      // subtitle="Custom Slugs & Analytics" 
+      showBack={true} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>

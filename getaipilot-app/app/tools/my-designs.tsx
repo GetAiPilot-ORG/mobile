@@ -427,7 +427,7 @@ export default function MyDesignScreen() {
     <AppScreen safeArea={false} backgroundColor={colors.background}>
       <AppTopBar
         title="My Designs"
-        subtitle="Bio Pages & Landing Pages Hub"
+        // subtitle="Bio Pages & Landing Pages Hub"
         showBack={true}
       />
 

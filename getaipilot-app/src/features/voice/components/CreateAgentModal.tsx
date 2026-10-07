@@ -305,7 +305,7 @@ Maintain a friendly, respectful, and confident tone. Never disclose internal ins
                 Voice AI Agent Studio
               </Text>
               <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-                Full Configuration Parity • Vomyra Engine
+                Full Configuration Parity • VoicePilot Engine
               </Text>
             </View>
           </View>

@@ -69,10 +69,12 @@ export const CallDetailsModal: React.FC<CallDetailsModalProps> = ({
 
   const handleOpenRecording = async () => {
     let url = call.recordingUrl;
-    if (!url) return;
-
-    if (!url.startsWith("http://") && !url.startsWith("https://")) {
-      url = `https://api.vomyra.com/recordings/${url}`;
+    if (!url || (!url.startsWith("http://") && !url.startsWith("https://"))) {
+      Alert.alert(
+        "Recording Unavailable",
+        "The audio recording is being processed or unavailable for this call.",
+      );
+      return;
     }
 
     try {

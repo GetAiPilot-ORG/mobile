@@ -58,7 +58,9 @@ export default function WhatsAppLinkGeneratorScreen() {
 
   return (
     <AppScreen safeArea={false} backgroundColor={colors.background}>
-      <AppTopBar title="WhatsApp Link Generator" subtitle="Direct Click-to-Chat URL" showBack={true} />
+      <AppTopBar title="WhatsApp Link Generator" 
+      // subtitle="Direct Click-to-Chat URL" 
+      showBack={true} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>
