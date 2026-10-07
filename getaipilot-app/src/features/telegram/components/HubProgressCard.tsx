@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useTheme, getColors } from '@/theme';
+import { useTheme, getColors } from '../../../theme';
 
 interface HubProgressCardProps {
   total: number;

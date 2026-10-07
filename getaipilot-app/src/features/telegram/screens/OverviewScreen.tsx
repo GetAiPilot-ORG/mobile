@@ -9,7 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useTheme, getColors } from '@/theme';
+import { useTheme, getColors } from '../../../theme';
 
 import { DashboardAnalyticsCharts, HubProgressCard, ToolCard } from '../components';
 import { StatCard } from '../components/ui/StatCard';
@@ -85,7 +85,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
             </View>
           </View>
 
-          <View style={styles.headerBtnGroup}>
+          {/* <View style={styles.headerBtnGroup}>
             <Pressable
               style={[styles.refreshBtn, isDark ? styles.refreshBtnDark : styles.refreshBtnLight, isRefetching && { opacity: 0.6 }]}
               onPress={onRefresh}
@@ -99,7 +99,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
               <Ionicons name="add" size={15} color="#FFFFFF" />
               <Text style={styles.connectBtnText}>Connect Bot</Text>
             </Pressable>
-          </View>
+          </View> */}
         </View>
 
         {/* 6 KPI Cards */}

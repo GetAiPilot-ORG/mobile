@@ -15,7 +15,7 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
-import { useTheme, getColors } from "@/theme";
+import { useTheme, getColors } from "../../../theme";
 
 import { AppScreen } from "../../../components/AppScreen";
 import { AppTopBar } from "../../../components/AppTopBar";
@@ -34,6 +34,7 @@ import {
   ReportBotModal,
   SubManagerModal,
   TelegramLoginModal,
+  TrackerModal,
 } from "../components";
 import { TelegramToolKey } from "../types";
 
@@ -376,7 +377,7 @@ export const TelegramScreen: React.FC = () => {
     <AppScreen safeArea={false} backgroundColor={color.background}>
       <AppTopBar
         title="Telegram Dashboard"
-        subtitle="Bots, routing, monetization & automations"
+        // subtitle="Bots, routing, monetization & automations"
         onBackPress={handleBack}
       />
 
@@ -490,6 +491,15 @@ export const TelegramScreen: React.FC = () => {
             return {};
           }}
           isLoading={false}
+        />
+      )}
+      {activeModal === "tracker" && (
+        <TrackerModal
+          visible={true}
+          onClose={() => {
+            setActiveModal(null);
+            queryClient.invalidateQueries({ queryKey: ["telegram_all_data"] });
+          }}
         />
       )}
       {activeModal === "sub_manager" && (
