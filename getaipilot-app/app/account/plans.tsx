@@ -159,6 +159,19 @@ export default function OverallPricingScreen() {
       .sort((a, b) => a.amount - b.amount);
   }, [allPlans]);
 
+  const availableCategories = useMemo(() => {
+    return CATEGORIES.filter((cat) => {
+      if (cat.key === "all") return true;
+      if (cat.key === "all-in-one") return gapProPlans.length > 0;
+      if (cat.key === "calling") return voicePlans.length > 0;
+      if (cat.key === "whatsapp") return whatsappPlans.length > 0;
+      if (cat.key === "telegram") return telegramPlans.length > 0;
+      if (cat.key === "crm") return crmPlans.length > 0;
+      if (cat.key === "social") return socialPlans.length > 0;
+      return true;
+    });
+  }, [gapProPlans.length, voicePlans.length, whatsappPlans.length, telegramPlans.length, crmPlans.length, socialPlans.length]);
+
   const handleSelectPlan = (plan: PricingPlan) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const isAddon = isAddonPlan(plan);
@@ -905,168 +918,143 @@ export default function OverallPricingScreen() {
         ) : (
           <View style={{ gap: 26 }}>
             {/* ========================================================================= */}
-            {/* SECTION 1: GAP PRO PLANS (At the top, horizontal swipeable carousel)      */}
+            {/* SECTION 1: GAP PRO PLANS (At the top, only if GAP Pro tiers exist)        */}
             {/* ========================================================================= */}
-            <View
-              style={[
-                styles.sectionContainer,
-                styles.proSectionBox,
-                {
-                  backgroundColor: isDark ? "#09081c" : "#FBF9FF",
-                  borderColor: isDark ? "#8B5CF6" : "#DDD6FE",
-                },
-              ]}
-            >
-              {/* Section Header */}
-              <View style={styles.sectionHeaderRow}>
-                <View style={styles.sectionHeaderLeft}>
-                  <View
-                    style={[
-                      styles.sectionIconBadge,
-                      { backgroundColor: isDark ? "rgba(139, 92, 246, 0.25)" : "#EDE9FE" },
-                    ]}
-                  >
-                    <Ionicons name="diamond" size={17} color="#8B5CF6" />
-                  </View>
-                  <View>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                      GAP Pro All-in-One Plans
-                    </Text>
-                    <Text
+            {gapProPlans.length > 0 && (
+              <View
+                style={[
+                  styles.sectionContainer,
+                  styles.proSectionBox,
+                  {
+                    backgroundColor: isDark ? "#09081c" : "#FBF9FF",
+                    borderColor: isDark ? "#8B5CF6" : "#DDD6FE",
+                  },
+                ]}
+              >
+                {/* Section Header */}
+                <View style={styles.sectionHeaderRow}>
+                  <View style={styles.sectionHeaderLeft}>
+                    <View
                       style={[
-                        styles.sectionSubtitle,
-                        { color: isDark ? "#C4B5FD" : "#6B21A8" },
+                        styles.sectionIconBadge,
+                        { backgroundColor: isDark ? "rgba(139, 92, 246, 0.25)" : "#EDE9FE" },
                       ]}
                     >
-                      5-in-1 Unified Suite • All Automation Engines Included
+                      <Ionicons name="diamond" size={17} color="#8B5CF6" />
+                    </View>
+                    <View>
+                      <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                        GAP Pro All-in-One Plans
+                      </Text>
+                      <Text
+                        style={[
+                          styles.sectionSubtitle,
+                          { color: isDark ? "#C4B5FD" : "#6B21A8" },
+                        ]}
+                      >
+                        5-in-1 Unified Suite • All Automation Engines Included
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.scrollHintBadge}>
+                    <Ionicons name="swap-horizontal" size={13} color="#8B5CF6" />
+                    <Text style={styles.scrollHintText}>
+                      {gapProPlans.length} Tiers ⇄
                     </Text>
                   </View>
                 </View>
 
-                <View style={styles.scrollHintBadge}>
-                  <Ionicons name="swap-horizontal" size={13} color="#8B5CF6" />
-                  <Text style={styles.scrollHintText}>
-                    {gapProPlans.length} Tiers ⇄
-                  </Text>
-                </View>
-              </View>
-
-              {/* Duration Filter: Monthly, Quarterly, Half-Yearly, Yearly */}
-              <View style={styles.proIntervalWrapper}>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.proIntervalScroll}
-                >
-                  {GAP_PRO_INTERVALS.map((inv) => {
-                    const isSelected = gapProInterval === inv.key;
-                    return (
-                      <Pressable
-                        key={inv.key}
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          setGapProInterval(inv.key);
-                        }}
-                        style={[
-                          styles.proIntervalChip,
-                          {
-                            backgroundColor: isSelected
-                              ? "#8B5CF6"
-                              : isDark
-                                ? "#161331"
-                                : "#EDE9FE",
-                            borderColor: isSelected
-                              ? "#7C3AED"
-                              : isDark
-                                ? "rgba(139, 92, 246, 0.4)"
-                                : "#DDD6FE",
-                          },
-                        ]}
-                      >
-                        <Ionicons
-                          name={
-                            inv.key === "year"
-                              ? "trophy"
-                              : inv.key === "six_months"
-                                ? "shield-checkmark"
-                                : inv.key === "quarterly"
-                                  ? "flash"
-                                  : "calendar"
-                          }
-                          size={13}
-                          color={isSelected ? "#ffffff" : isDark ? "#C4B5FD" : "#7C3AED"}
-                        />
-                        <Text
+                {/* Duration Filter: Monthly, Quarterly, Half-Yearly, Yearly */}
+                <View style={styles.proIntervalWrapper}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.proIntervalScroll}
+                  >
+                    {GAP_PRO_INTERVALS.map((inv) => {
+                      const isSelected = gapProInterval === inv.key;
+                      return (
+                        <Pressable
+                          key={inv.key}
+                          onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            setGapProInterval(inv.key);
+                          }}
                           style={[
-                            styles.proIntervalChipText,
+                            styles.proIntervalChip,
                             {
-                              color: isSelected
-                                ? "#ffffff"
+                              backgroundColor: isSelected
+                                ? "#8B5CF6"
                                 : isDark
-                                  ? "#DDD6FE"
-                                  : "#6D28D9",
-                              fontWeight: isSelected ? "800" : "600",
+                                  ? "#161331"
+                                  : "#EDE9FE",
+                              borderColor: isSelected
+                                ? "#7C3AED"
+                                : isDark
+                                  ? "rgba(139, 92, 246, 0.4)"
+                                  : "#DDD6FE",
                             },
                           ]}
                         >
-                          {inv.label}
-                        </Text>
-                        {Boolean(inv.badge) && (
-                          <View
+                          <Ionicons
+                            name={
+                              inv.key === "year"
+                                ? "trophy"
+                                : inv.key === "six_months"
+                                  ? "shield-checkmark"
+                                  : inv.key === "quarterly"
+                                    ? "flash"
+                                    : "calendar"
+                            }
+                            size={13}
+                            color={isSelected ? "#ffffff" : isDark ? "#C4B5FD" : "#7C3AED"}
+                          />
+                          <Text
                             style={[
-                              styles.proIntervalChipBadge,
+                              styles.proIntervalChipText,
                               {
-                                backgroundColor: isSelected
-                                  ? "rgba(255, 255, 255, 0.25)"
+                                color: isSelected
+                                  ? "#ffffff"
                                   : isDark
-                                    ? "rgba(16, 185, 129, 0.2)"
-                                    : "#DCFCE7",
+                                    ? "#DDD6FE"
+                                    : "#6D28D9",
+                                fontWeight: isSelected ? "800" : "600",
                               },
                             ]}
                           >
-                            <Text
+                            {inv.label}
+                          </Text>
+                          {Boolean(inv.badge) && (
+                            <View
                               style={[
-                                styles.proIntervalChipBadgeText,
-                                { color: isSelected ? "#ffffff" : "#059669" },
+                                styles.proIntervalChipBadge,
+                                {
+                                  backgroundColor: isSelected
+                                    ? "rgba(255, 255, 255, 0.25)"
+                                    : isDark
+                                      ? "rgba(16, 185, 129, 0.2)"
+                                      : "#DCFCE7",
+                                },
                               ]}
                             >
-                              {inv.badge}
-                            </Text>
-                          </View>
-                        )}
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-              </View>
-
-              {/* Horizontal Scroll Area for GAP Pro */}
-              {gapProPlans.length === 0 ? (
-                <View
-                  style={[
-                    styles.emptyHorizontalBox,
-                    { backgroundColor: isDark ? "#060515" : "#F4F0FF" },
-                  ]}
-                >
-                  <Ionicons name="diamond-outline" size={28} color="#8B5CF6" />
-                  <Text
-                    style={[
-                      styles.innerEmptyTitle,
-                      { color: colors.text },
-                    ]}
-                  >
-                    No GAP Pro plans available
-                  </Text>
-                  <Text
-                    style={[
-                      styles.innerEmptyDesc,
-                      { color: colors.textMuted },
-                    ]}
-                  >
-                    Please verify your network connection or pull to refresh.
-                  </Text>
+                              <Text
+                                style={[
+                                  styles.proIntervalChipBadgeText,
+                                  { color: isSelected ? "#ffffff" : "#059669" },
+                                ]}
+                              >
+                                {inv.badge}
+                              </Text>
+                            </View>
+                          )}
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
                 </View>
-              ) : (
+
+                {/* Horizontal Scroll Area for GAP Pro */}
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -1077,8 +1065,8 @@ export default function OverallPricingScreen() {
                 >
                   {gapProPlans.map((plan) => renderPlanCard(plan, true))}
                 </ScrollView>
-              )}
-            </View>
+              </View>
+            )}
 
             {/* ========================================================================= */}
             {/* SECTION 2: OTHER PLANS & ADD-ONS (Below it, horizontal swipeable carousel)*/}
@@ -1094,7 +1082,7 @@ export default function OverallPricingScreen() {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.categoryScroll}
               >
-                {CATEGORIES.map((cat) => {
+                {availableCategories.map((cat) => {
                   const isSelected = selectedCategory === cat.key;
                   const meta = CATEGORY_META[cat.key];
                   return (

@@ -609,12 +609,10 @@ export class HubAdapter {
   }
 
   /**
-   * Fetches active ecosystem pricing plans from public.pricing_plans and VoicePilot DB
+   * Fetches active ecosystem pricing plans from public.pricing_plans
    */
   public static async getPricingPlans(category?: string) {
     const client = this.adminClient;
-    let hubPlans: any[] = [];
-
     try {
       let query = client
         .from('pricing_plans')
@@ -623,94 +621,25 @@ export class HubAdapter {
         .order('amount', { ascending: true });
 
       if (category && category !== 'all') {
-        query = query.eq('category', category);
+        const cat = category.toLowerCase();
+        if (cat === 'calling' || cat === 'voice') {
+          query = query.in('category', ['calling', 'voice']);
+        } else {
+          query = query.eq('category', cat);
+        }
       }
 
       const { data, error } = await query;
-      if (!error && data) {
-        hubPlans = data;
+      if (!error && Array.isArray(data)) {
+        return data;
+      }
+      if (error) {
+        console.warn('[HubAdapter] getPricingPlans error:', error.message);
       }
     } catch (err: any) {
       console.warn('[HubAdapter] getPricingPlans error:', err?.message);
     }
 
-    // If querying calling/voice or all plans, ensure VoicePilot live plans are merged
-    if (!category || category === 'all' || category === 'calling' || category === 'voice') {
-      try {
-        const voiceClient = (VoiceAdapter as any).voiceSupabase;
-        if (voiceClient) {
-          const { data: vPlans, error: vErr } = await voiceClient
-            .from('plans')
-            .select('*')
-            .eq('is_active', true)
-            .order('price_monthly', { ascending: true });
-
-          if (!vErr && vPlans && vPlans.length > 0) {
-            const mappedVoicePlans = vPlans
-              .filter((vp: any) => vp.id !== 'sidebar_permissions' && vp.id !== 'enterprise')
-              .map((vp: any) => {
-                const feats = vp.features || {};
-                return {
-                  id: vp.id,
-                  plan_name: `calling_${vp.id}`,
-                  plan_label: vp.name || 'Voice Plan',
-                  currency: 'INR',
-                  amount: Math.round((Number(vp.price_monthly) || 0) * 100),
-                  duration: 'monthly',
-                  is_active: true,
-                  category: 'calling',
-                  description: feats.description || `${vp.included_credits} AI calling minutes included.`,
-                  features: feats.feature_list || [
-                    `${vp.included_credits} AI Calling Minutes`,
-                    `₹${feats.extra_min_rate || 5}.00 / min per-minute rate`,
-                    `1 Dedicated Virtual Phone Line Included`,
-                    `Hindi, English & Hinglish Support`,
-                    `Custom AI System Prompts`,
-                  ],
-                  is_popular: Boolean(feats.is_popular || vp.id === 'call_pro'),
-                  included_call_minutes: Number(vp.included_credits) || 0,
-                  extra_call_rate_paise: Math.round((Number(feats.extra_min_rate) || 5) * 100),
-                  included_numbers: vp.id === 'call_elite' ? 2 : 1,
-                  included_channels: 1,
-                  billing_note: feats.feeNote || `Includes ${vp.included_credits} AI calling minutes.`,
-                };
-              });
-
-            const numberAddon = {
-              id: 'calling_number',
-              plan_name: 'calling_dedicated_number',
-              plan_label: 'Dedicated Phone Number',
-              currency: 'INR',
-              amount: 149900,
-              duration: 'monthly',
-              is_active: true,
-              category: 'calling',
-              description: 'Add an extra dedicated virtual phone line to your workspace.',
-              features: [
-                '1 Dedicated Virtual Phone Number (30 Days)',
-                'Inbound & Outbound Calling Enabled',
-                'Bind to Any AI Voice Assistant Bot',
-                'Instant KYC Verification Linkage',
-                'TRAI & DND Compliant Routing',
-              ],
-              is_popular: false,
-              included_call_minutes: 0,
-              extra_call_rate_paise: 0,
-              included_numbers: 1,
-              included_channels: 1,
-              billing_note: 'Dedicated virtual phone line valid for 30 days.',
-              is_addon: true,
-            };
-
-            const otherPlans = hubPlans.filter((p: any) => p.category !== 'calling' && p.category !== 'voice');
-            return [...otherPlans, ...mappedVoicePlans, numberAddon];
-          }
-        }
-      } catch (voiceErr: any) {
-        console.warn('[HubAdapter] Voice plans sync error:', voiceErr?.message);
-      }
-    }
-
-    return hubPlans;
+    return [];
   }
 }

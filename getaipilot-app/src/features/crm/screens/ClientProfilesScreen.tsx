@@ -90,23 +90,29 @@ export function ClientProfilesScreen({ onBack }: ClientProfilesScreenProps = {})
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#06B6D4" />}
           contentContainerStyle={{ paddingHorizontal: 16, gap: 8, paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <Pressable style={[s.row, { backgroundColor: card, borderColor: border }]} onPress={() => open(item)}>
-              <View style={[s.avatar, { backgroundColor: '#ECFEFF' }]}>
-                <Text style={s.avatarText}>{item.legal_name.charAt(0).toUpperCase()}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[s.name, { color: text }]}>{item.legal_name}</Text>
-                {item.gstin && <Text style={[s.sub, { color: sub }]}>GST: {item.gstin}</Text>}
-                {item.billing_address_city && (
-                  <Text style={[s.sub, { color: sub }]}>
-                    {[item.billing_address_city, item.billing_address_state].filter(Boolean).join(', ')}
-                  </Text>
-                )}
-              </View>
-              <Ionicons name="open-outline" size={16} color={sub} />
-            </Pressable>
-          )}
+          renderItem={({ item }) => {
+            const displayName = item.legal_name || 'Client';
+            const initial = (displayName.trim().charAt(0) || 'C').toUpperCase();
+            const location = [item.billing_address_city, item.billing_address_state].filter(Boolean).join(', ');
+
+            return (
+              <Pressable style={[s.row, { backgroundColor: card, borderColor: border }]} onPress={() => open(item)}>
+                <View style={[s.avatar, { backgroundColor: '#ECFEFF' }]}>
+                  <Text style={s.avatarText}>{initial}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.name, { color: text }]}>{displayName}</Text>
+                  {Boolean(item.gstin) && (
+                    <Text style={[s.sub, { color: sub }]}>GST: {item.gstin}</Text>
+                  )}
+                  {Boolean(location) && (
+                    <Text style={[s.sub, { color: sub }]}>{location}</Text>
+                  )}
+                </View>
+                <Ionicons name="open-outline" size={16} color={sub} />
+              </Pressable>
+            );
+          }}
         />
       )}
     </SafeAreaView>

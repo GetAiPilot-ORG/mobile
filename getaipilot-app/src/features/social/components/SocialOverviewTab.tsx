@@ -1,10 +1,13 @@
 import {
-  Ionicons } from '@expo/vector-icons';
+  Ionicons
+} from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React,
-  { useMemo,
-  useState } from 'react';
+{
+  useMemo,
+  useState
+} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -1204,9 +1207,9 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
             </Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={[styles.planBadge, { backgroundColor: 'rgba(236, 72, 153, 0.15)' }]}>
+            {/* <View style={[styles.planBadge, { backgroundColor: 'rgba(236, 72, 153, 0.15)' }]}>
               <Text style={styles.planBadgeText}>{currentPlanName.toUpperCase()}</Text>
-            </View>
+            </View> */}
             <View style={[styles.statusPill, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
               <View style={[styles.liveDot, { backgroundColor: '#22c55e' }]} />
               <Text style={[styles.statusPillText, { color: '#22c55e' }]}>
@@ -1322,7 +1325,7 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
         </View>
 
         {/* Compare All Plans In-App Screen Action */}
-        <Pressable
+        {/* <Pressable
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             router.push('/products/social/plans' as any);
@@ -1332,7 +1335,7 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
           <Ionicons name="sparkles" size={15} color="#ec4899" />
           <Text style={styles.manageBillingLinkText}>Compare All Plans & Upgrades</Text>
           <Ionicons name="chevron-forward" size={15} color="#ec4899" />
-        </Pressable>
+        </Pressable> */}
       </View>
 
       {/* 6. Next Scheduled Broadcast Spotlight (if pending queue exists) */}

@@ -185,7 +185,7 @@ Escalate to the appropriate department when necessary, and clearly inform the ca
 }
 
 export class VoiceAdapter {
-  private static baseUrl = env.VOICE_SERVICE_URL || "http://127.0.0.1:8000";
+  private static baseUrl = env.VOICE_SERVICE_URL || "https://app.getaipilot.com";
   private static voiceSupabase: SupabaseClient = createClient(
     env.VOICE_SUPABASE_URL || env.SUPABASE_URL,
     env.VOICE_SUPABASE_SERVICE_ROLE_KEY ||
@@ -513,7 +513,7 @@ export class VoiceAdapter {
 
     // 2. Fetch Live Real Call Logs from Vomyra API
     const vomyraApiKey = env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx";
-    const vomyraBaseUrl = env.VOMYRA_BASE_URL || "https://api.vomyra.com";
+    const vomyraBaseUrl = env.VOICE_SERVICE_URL || env.VOMYRA_BASE_URL || "https://app.getaipilot.com";
 
     let rawCalls: any[] = [];
     try {
@@ -613,7 +613,7 @@ export class VoiceAdapter {
       const recordingUrl = c.recording_url
         ? c.recording_url.startsWith("http")
           ? c.recording_url
-          : `https://api.vomyra.com/recordings/${c.recording_url}`
+          : `https://app.getaipilot.com/recordings/${c.recording_url}`
         : null;
 
       const callTime = c.created_at
@@ -678,7 +678,7 @@ export class VoiceAdapter {
 
   public static async getCallDetails(user: JWTPayload, callId: string) {
     const vomyraApiKey = env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx";
-    const vomyraBaseUrl = env.VOMYRA_BASE_URL || "https://api.vomyra.com";
+    const vomyraBaseUrl = env.VOICE_SERVICE_URL || env.VOMYRA_BASE_URL || "https://app.getaipilot.com";
 
     try {
       const res = await fetch(`${vomyraBaseUrl}/v1/calls/${callId}`, {
@@ -711,7 +711,7 @@ export class VoiceAdapter {
         const recordingUrl = c.recording_url
           ? c.recording_url.startsWith("http")
             ? c.recording_url
-            : `https://api.vomyra.com/recordings/${c.recording_url}`
+            : `https://app.getaipilot.com/recordings/${c.recording_url}`
           : null;
 
         return {
@@ -744,7 +744,7 @@ export class VoiceAdapter {
 
   public static async getCallTranscript(user: JWTPayload, callId: string) {
     const vomyraApiKey = env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx";
-    const vomyraBaseUrl = env.VOMYRA_BASE_URL || "https://api.vomyra.com";
+    const vomyraBaseUrl = env.VOICE_SERVICE_URL || env.VOMYRA_BASE_URL || "https://app.getaipilot.com";
 
     try {
       const res = await fetch(`${vomyraBaseUrl}/v1/calls/${callId}/transcript`, {
@@ -762,7 +762,7 @@ export class VoiceAdapter {
 
   public static async getCallRecording(user: JWTPayload, callId: string) {
     const vomyraApiKey = env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx";
-    const vomyraBaseUrl = env.VOMYRA_BASE_URL || "https://api.vomyra.com";
+    const vomyraBaseUrl = env.VOICE_SERVICE_URL || env.VOMYRA_BASE_URL || "https://app.getaipilot.com";
 
     try {
       const res = await fetch(`${vomyraBaseUrl}/v1/calls/${callId}/recording`, {
@@ -941,7 +941,7 @@ export class VoiceAdapter {
     );
 
     const vomyraApiKey = env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx";
-    const vomyraBaseUrl = env.VOMYRA_BASE_URL || "https://api.vomyra.com";
+    const vomyraBaseUrl = env.VOICE_SERVICE_URL || env.VOMYRA_BASE_URL || "https://app.getaipilot.com";
 
     const res = await fetch(`${vomyraBaseUrl}/v1/calls`, {
       method: "POST",
@@ -1022,7 +1022,7 @@ export class VoiceAdapter {
     const ctx = await this.resolveVoiceContext(user);
     const workspaceId = ctx.voiceWorkspaceId;
     const vomyraApiKey = env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx";
-    const vomyraBaseUrl = env.VOMYRA_BASE_URL || "https://api.vomyra.com";
+    const vomyraBaseUrl = env.VOICE_SERVICE_URL || env.VOMYRA_BASE_URL || "https://app.getaipilot.com";
 
     // 1. Create on Vomyra Provider
     let realVomyraId: string | null = null;
@@ -1101,7 +1101,7 @@ export class VoiceAdapter {
     ) {
       try {
         const vomyraApiKey = env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx";
-        const vomyraBaseUrl = env.VOMYRA_BASE_URL || "https://api.vomyra.com";
+        const vomyraBaseUrl = env.VOICE_SERVICE_URL || env.VOMYRA_BASE_URL || "https://app.getaipilot.com";
         await fetch(
           `${vomyraBaseUrl}/v1/assistants/${existing.provider_resource_id}`,
           {
@@ -1221,7 +1221,7 @@ export class VoiceAdapter {
 
         const vomyraApiKey =
           env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx";
-        const vomyraBaseUrl = env.VOMYRA_BASE_URL || "https://api.vomyra.com";
+        const vomyraBaseUrl = env.VOICE_SERVICE_URL || env.VOMYRA_BASE_URL || "https://app.getaipilot.com";
 
         const vRes = await fetch(`${vomyraBaseUrl}/v1/calls?limit=100`, {
           headers: { "x-api-key": vomyraApiKey },
@@ -1489,7 +1489,7 @@ export class VoiceAdapter {
 
     // 6. Immediately trigger live outbound calls to Vomyra
     const vomyraApiKey = env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx";
-    const vomyraBaseUrl = env.VOMYRA_BASE_URL || "https://api.vomyra.com";
+    const vomyraBaseUrl = env.VOICE_SERVICE_URL || env.VOMYRA_BASE_URL || "https://app.getaipilot.com";
 
     let dispatchedCount = 0;
     let failedCount = 0;
@@ -1664,7 +1664,7 @@ export class VoiceAdapter {
 
   public static async getAvailableNumbers(user: JWTPayload) {
     const vomyraApiKey = env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx";
-    const vomyraBaseUrl = env.VOMYRA_BASE_URL || "https://api.vomyra.com";
+    const vomyraBaseUrl = env.VOICE_SERVICE_URL || env.VOMYRA_BASE_URL || "https://app.getaipilot.com";
 
     try {
       const vRes = await fetch(`${vomyraBaseUrl}/v1/numbers`, {
@@ -1791,7 +1791,7 @@ export class VoiceAdapter {
     if (astData?.provider_resource_id) {
       try {
         const vomyraApiKey = env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx";
-        const vomyraBaseUrl = env.VOMYRA_BASE_URL || "https://api.vomyra.com";
+        const vomyraBaseUrl = env.VOICE_SERVICE_URL || env.VOMYRA_BASE_URL || "https://app.getaipilot.com";
 
         await fetch(`${vomyraBaseUrl}/v1/numbers/assignment`, {
           method: "PUT",

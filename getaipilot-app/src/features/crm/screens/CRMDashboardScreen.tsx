@@ -176,23 +176,7 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
             </Pressable>
             <View style={{ flex: 1 }}>
               <Text style={[s.headerTitle, { color: text }]} numberOfLines={1}>CRM Dashboard</Text>
-              <Text style={[s.headerSub, { color: sub }]} numberOfLines={1}>
-                {org?.name || "Your Organization"}
-              </Text>
             </View>
-          </View>
-          <View
-            style={[
-              s.tierBadge,
-              { backgroundColor: isPro ? colors.products.crm : colors.mutedForeground },
-            ]}
-          >
-            <Ionicons
-              name={isPro ? "star" : "star-outline"}
-              size={12}
-              color="#FFF"
-            />
-            <Text style={s.tierText}>{planTier.toUpperCase()}</Text>
           </View>
         </View>
 
