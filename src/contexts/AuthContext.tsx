@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: userWithMeta.email,
       full_name: userWithMeta.name,
       role: userWithMeta.role,
-      is_admin: userWithMeta.role === 'Admin' || userWithMeta.role === 'Owner',
+      is_admin: Boolean(userWithMeta.role?.toLowerCase() === 'admin' || (userWithMeta as any).is_admin === true),
       onboarding_completed: true,
       account_status: 'active',
     };
@@ -118,7 +118,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [isAuthenticated, userWithMeta]);
 
-  const isAdmin = Boolean(userWithMeta?.role === 'Admin' || userWithMeta?.role === 'Owner');
+  const isAdmin = Boolean(
+    userWithMeta?.role?.toLowerCase() === 'admin' ||
+    (userWithMeta as any)?.is_admin === true
+  );
   const onboardingComplete = true;
   const accountStatus: 'active' | 'suspended' | 'banned' = 'active';
 

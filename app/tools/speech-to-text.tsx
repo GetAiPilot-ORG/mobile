@@ -8,14 +8,12 @@ import {
   ActivityIndicator,
   Alert,
   Share,
-  useColorScheme,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
-import { colors } from '../../src/theme/colors';
-
+import { useTheme, getColors } from '@/theme';
 
 const LANGUAGES = [
   { code: 'en', label: 'English (US/UK)' },
@@ -25,8 +23,8 @@ const LANGUAGES = [
 ];
 
 export default function SpeechToTextScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [isRecording, setIsRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
@@ -40,13 +38,13 @@ export default function SpeechToTextScreen() {
 
   // Dynamic Theme Mapping
   const theme = {
-    bg: isDark ? colors.backgroundDark : colors.background,
-    card: isDark ? colors.surfaceDark : colors.card,
-    cardBorder: isDark ? colors.borderDark : colors.border,
-    text: isDark ? colors.foregroundDark : colors.foreground,
+    bg: colors.background,
+    card: colors.card,
+    cardBorder: colors.border,
+    text: colors.foreground,
     mutedText: colors.mutedForeground,
     inputBg: isDark ? '#141416' : '#FFFFFF',
-    primary: colors.primary, // GetAiPilot Electric Blue
+    primary: colors.primary,
     primarySoft: colors.accentSoft,
   };
 

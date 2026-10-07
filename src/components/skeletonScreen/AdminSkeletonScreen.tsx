@@ -1,8 +1,12 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Skeleton, SkeletonCard, SkeletonCircle, SkeletonRow, SkeletonText } from "../Skeleton";
+import { useTheme, getColors } from '@/theme';
 
 export function SalesLeadsSkeleton() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+
   return (
     <View style={{ paddingTop: 10 }}>
       {[1, 2, 3, 4].map((i) => (
@@ -26,6 +30,9 @@ export function SalesLeadsSkeleton() {
 }
 
 export function AdminTabSkeleton() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+
   return (
     <View style={{ paddingTop: 10 }}>
       {/* Metrics Row */}

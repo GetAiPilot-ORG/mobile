@@ -11,7 +11,6 @@ import {
   ScrollView,
   TouchableWithoutFeedback,
   Keyboard,
-  useColorScheme,
 } from 'react-native';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
@@ -19,14 +18,17 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../src/lib/supabase';
 import { isValidEmail } from '../../src/lib/validators';
+import { useAuthStore } from '../../src/core/store/authStore';
+import { useTheme, getColors } from '@/theme';
 
 const brandLogo = require('../../assets/images/logo.jpg');
 
 export default function SignupScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const syncSession = useAuthStore((s) => s.syncSession);
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -91,8 +93,18 @@ export default function SignupScreen() {
       if (data?.session) {
         setFeedback({
           type: 'success',
-          message: 'Account created successfully! Redirecting...',
+          message: 'Account created successfully! Preparing your workspace...',
         });
+
+        await syncSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+          user: data.session.user,
+        });
+
+        setTimeout(() => {
+          router.replace('/(tabs)');
+        }, 1000);
       } else {
         setFeedback({
           type: 'success',

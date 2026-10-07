@@ -11,12 +11,12 @@ import {
   View,
   StyleSheet,
   ActivityIndicator,
-  useColorScheme,
   Platform,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { NetworkStatusScreen } from "../components/StatusScreen";
 import { LayoutSkeletonScreen } from "../components/skeletonScreen";
+import { useTheme, getColors } from '@/theme';
 
 export interface NetworkContextType {
   isOnline: boolean;
@@ -49,8 +49,8 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
 
   const prevOnlineRef = useRef<boolean>(true);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const updateState = useCallback((state: NetInfoState) => {
     const online =

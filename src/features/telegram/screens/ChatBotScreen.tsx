@@ -1,22 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
-  Image,
   Linking,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  View,
-  useColorScheme,
-  ActivityIndicator,
+  View
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import * as Clipboard from 'expo-clipboard';
 import { supabase } from '../../../lib/supabase';
 import { TelegramToolKey } from '../types';
 
@@ -32,9 +29,9 @@ interface ChatMessage {
   isError?: boolean;
 }
 
+import { getColors, useTheme } from '@/theme';
 import { useQuery } from '@tanstack/react-query';
 import { telegramSupabase } from '../api/telegramSupabase';
-import { useAuthStore } from '../../../core/store/authStore';
 
 interface ChatUser {
   id: string;
@@ -44,13 +41,13 @@ interface ChatUser {
 }
 
 export const ChatBotScreen: React.FC<Props> = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
-  const card = isDark ? styles.cardDark : styles.cardLight;
-  const txt = isDark ? styles.textDark : styles.textLight;
-  const border = isDark ? styles.borderDark : styles.borderLight;
-  const inputStyle = isDark ? styles.inputDark : styles.inputLight;
+  const card = { backgroundColor: colors.card, borderColor: colors.border };
+  const txt = { color: colors.text };
+  const border = { borderColor: colors.border };
+  const inputStyle = { backgroundColor: colors.card, borderColor: colors.border };
 
   // Bot states
   const [isBotListening, setIsBotListening] = useState(true);
@@ -192,7 +189,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
           <ActivityIndicator size="small" color="#0284C7" />
         </View>
       ) : bots.length === 0 ? (
-        <View style={{ padding: 24, alignItems: 'center', backgroundColor: isDark ? '#1E2430' : '#F8FAFC', borderRadius: 16, borderWidth: 1, borderColor: border.borderColor }}>
+        <View style={{ padding: 24, alignItems: 'center', backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: border.borderColor }}>
           <Ionicons name="chatbubbles-outline" size={32} color="#0284C7" style={{ marginBottom: 10 }} />
           <Text style={[styles.mainTitle, txt, { fontSize: 18, marginBottom: 6 }]}>No ChatBots Connected</Text>
           <Text style={[styles.mainSub, { textAlign: 'center', marginBottom: 16 }]}>Connect an AI assistant to handle your Telegram bot's user queries automatically.</Text>
@@ -222,7 +219,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
             </View>
 
             {/* Specs Table */}
-            <View style={[styles.specsTable, isDark ? styles.specsTableDark : styles.specsTableLight]}>
+            <View style={[styles.specsTable, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.specRow}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
                   <Ionicons name="person-circle-outline" size={14} color="#64748B" />
@@ -304,7 +301,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
             {/* Footer Actions: Edit | Pause | Delete */}
             <View style={styles.cardFooterRow}>
               <Pressable
-                style={[styles.footerBtn, isDark ? styles.footerBtnDark : styles.footerBtnLight]}
+                style={[styles.footerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setSupportBotName(bot.support_name || '');
@@ -318,7 +315,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
               </Pressable>
 
               <Pressable
-                style={[styles.footerBtn, isDark ? styles.footerBtnDark : styles.footerBtnLight]}
+                style={[styles.footerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   Alert.alert('Status Update', 'Bot paused/resumed.');
@@ -328,7 +325,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
               </Pressable>
 
               <Pressable
-                style={[styles.footerBtn, isDark ? styles.footerBtnDark : styles.footerBtnLight]}
+                style={[styles.footerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   Alert.alert('Delete Bot', 'Are you sure you want to remove this bot?', [
@@ -353,9 +350,9 @@ export const ChatBotScreen: React.FC<Props> = () => {
         presentationStyle="pageSheet"
         onRequestClose={() => setIsChatsDrawerOpen(false)}
       >
-        <View style={[styles.modalContainer, isDark ? styles.modalContainerDark : styles.modalContainerLight]}>
+        <View style={[styles.modalContainer, { backgroundColor: colors.card }]}>
           {/* Top Modal Header */}
-          <View style={[styles.modalTopHeader, isDark ? styles.borderDark : styles.borderLight]}>
+          <View style={[styles.modalTopHeader, { borderColor: colors.border }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <View style={styles.botIconMini}>
                 <Ionicons name="hardware-chip" size={18} color="#0284C7" />
@@ -366,12 +363,12 @@ export const ChatBotScreen: React.FC<Props> = () => {
               </View>
             </View>
             <Pressable style={styles.closeBtn} onPress={() => setIsChatsDrawerOpen(false)}>
-              <Ionicons name="close" size={20} color={isDark ? '#CBD5E1' : '#475569'} />
+              <Ionicons name="close" size={20} color={colors.text} />
             </Pressable>
           </View>
 
           {/* Active Users Horizontal Switcher */}
-          <View style={[styles.activeUsersSection, isDark ? styles.borderDark : styles.borderLight]}>
+          <View style={[styles.activeUsersSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={styles.activeUsersLabel}>ACTIVE USERS ({chatUsers.length})</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
               {chatUsers.map((u) => {
@@ -381,7 +378,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
                     key={u.id}
                     style={[
                       styles.userPill,
-                      isDark ? styles.userPillDark : styles.userPillLight,
+                      { backgroundColor: colors.card, borderColor: colors.border },
                       isSelected && styles.userPillActive,
                     ]}
                     onPress={() => {
@@ -410,7 +407,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
             </View>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <Pressable style={styles.chatActionBtn} onPress={handleCopyChat}>
-                <Ionicons name="copy-outline" size={14} color={isDark ? '#CBD5E1' : '#475569'} />
+                <Ionicons name="copy-outline" size={14} color={colors.text} />
                 <Text style={[styles.chatActionText, txt]}>Copy Chat</Text>
               </Pressable>
               <Pressable style={styles.chatActionBtnDanger} onPress={handleResetChat}>
@@ -442,9 +439,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
                       styles.msgBubble,
                       isUser
                         ? styles.msgBubbleUser
-                        : isDark
-                        ? styles.msgBubbleBotDark
-                        : styles.msgBubbleBotLight,
+                        : { backgroundColor: colors.card, borderColor: colors.border },
                     ]}
                   >
                     <Text style={[styles.msgText, isUser ? { color: '#FFFFFF' } : txt]}>
@@ -464,7 +459,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
           </ScrollView>
 
           {/* Prompt Refine Training Banner */}
-          <View style={[styles.refineBanner, isDark ? styles.refineBannerDark : styles.refineBannerLight]}>
+          <View style={[styles.refineBanner, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Ionicons name="sparkles" size={18} color="#8B5CF6" />
               <Text style={styles.refineText} numberOfLines={2}>
@@ -493,9 +488,9 @@ export const ChatBotScreen: React.FC<Props> = () => {
         presentationStyle="pageSheet"
         onRequestClose={() => setIsConfigModalOpen(false)}
       >
-        <View style={[styles.modalContainer, isDark ? styles.modalContainerDark : styles.modalContainerLight]}>
+        <View style={[styles.modalContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {/* Header */}
-          <View style={[styles.modalTopHeader, isDark ? styles.borderDark : styles.borderLight]}>
+          <View style={[styles.modalTopHeader, { borderColor: colors.border }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <View style={styles.botIconMini}>
                 <Ionicons name="hardware-chip" size={18} color="#0284C7" />
@@ -509,7 +504,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
               </View>
             </View>
             <Pressable style={styles.closeBtn} onPress={() => setIsConfigModalOpen(false)}>
-              <Ionicons name="close" size={20} color={isDark ? '#CBD5E1' : '#475569'} />
+              <Ionicons name="close" size={20} color={colors.text} />
             </Pressable>
           </View>
 
@@ -586,7 +581,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 </>
               ) : (
                 <Pressable
-                  style={[styles.imageRagBox, isDark ? styles.imageRagBoxDark : styles.imageRagBoxLight]}
+                  style={[styles.imageRagBox, { backgroundColor: colors.card, borderColor: colors.border }]}
                   onPress={() => Alert.alert('Upload Image', 'Upload screenshot or product flyer to RAG vector database')}
                 >
                   <Ionicons name="cloud-upload-outline" size={26} color="#64748B" />
@@ -601,7 +596,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 PDF KNOWLEDGE DOCUMENTS ({pdfDocuments.length} UPLOADED)
               </Text>
               <Pressable
-                style={[styles.pdfUploadBox, isDark ? styles.pdfUploadBoxDark : styles.pdfUploadBoxLight]}
+                style={[styles.pdfUploadBox, { backgroundColor: colors.card, borderColor: colors.border }]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   Alert.alert('Upload PDF', 'Choose business PDF documentation to train the bot.');
@@ -612,7 +607,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
               </Pressable>
 
               {pdfDocuments.map((doc) => (
-                <View key={doc.id} style={[styles.pdfDocItem, isDark ? styles.pdfDocItemDark : styles.pdfDocItemLight]}>
+                <View key={doc.id} style={[styles.pdfDocItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Ionicons name="document-text" size={18} color="#10B981" />
                     <Text style={[styles.pdfDocName, txt]}>{doc.name}</Text>

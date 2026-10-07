@@ -1,7 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: 'class',
-  important: 'html',
   content: [
     './app/**/*.{js,jsx,ts,tsx}',
     './src/**/*.{js,jsx,ts,tsx}',
@@ -14,51 +13,51 @@ module.exports = {
         // Canvas Backgrounds
         background: {
           light: '#F8F9FA',
-          dark: '#000000',
+          dark: '#05080D',
           DEFAULT: '#F8F9FA',
         },
         
         // Surface Cards
         surface: {
           light: '#FFFFFF',
-          dark: '#1C1C1E',
+          dark: '#0A111B',
           DEFAULT: '#FFFFFF',
         },
         
         // Grouped Surfaces
         'surface-grouped': {
           light: '#F2F4F7',
-          dark: '#1C1C1E',
+          dark: '#08111C',
           DEFAULT: '#F2F4F7',
         },
         
         // Borders & Dividers
         border: {
           light: '#E5E7EB',
-          dark: '#262C36',
+          dark: '#1B334A',
           DEFAULT: '#E5E7EB',
         },
         
-        'border-dark': '#262C36',
-        'card-dark': '#161B22',
-        'card-border-dark': '#262C36',
-        'pricing-dark': '#0F172A',
-        'pricing-border-dark': '#1E293B',
+        'border-dark': '#1B334A',
+        'card-dark': '#0B1420',
+        'card-border-dark': '#234563',
+        'pricing-dark': '#0D1724',
+        'pricing-border-dark': '#234563',
         'pricing-border-light': '#E2E8F0',
         'track-light': '#E3E3E8',
-        'track-dark': '#161B22',
-        'tab-active-dark': '#262C36',
+        'track-dark': '#0B1420',
+        'tab-active-dark': '#101C2A',
         
         // Text Colors
         foreground: {
           light: '#000000',
-          dark: '#FFFFFF',
+          dark: '#F7FAFC',
           DEFAULT: '#000000',
         },
         
         'foreground-muted': {
           light: '#6B7280',
-          dark: '#8E8E93',
+          dark: '#8FA3B8',
           DEFAULT: '#6B7280',
         },
         

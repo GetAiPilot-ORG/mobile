@@ -8,10 +8,10 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
-  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTheme, getColors } from '@/theme';
 
 interface TelegramBroadcastModalProps {
   visible: boolean;
@@ -28,8 +28,8 @@ export const TelegramBroadcastModal: React.FC<TelegramBroadcastModalProps> = ({
   onSubmit,
   isLoading,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [selectedChannelId, setSelectedChannelId] = useState<string>(
     channels[0]?.chat_id ? String(channels[0].chat_id) : ''

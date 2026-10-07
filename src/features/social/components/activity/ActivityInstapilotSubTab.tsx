@@ -1,6 +1,11 @@
-import { Ionicons } from '@expo/vector-icons';
+import {
+  Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React,
+  { useEffect,
+  useMemo,
+  useRef,
+  useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -11,11 +16,11 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { InstapilotConversation } from '../../types';
 import { openSocialHandoff } from '../../utils/socialHandoff';
+import { useTheme, getColors } from '@/theme';
 
 export interface ActivityInstapilotSubTabProps {
   connectedAccounts: any[];
@@ -34,8 +39,8 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
   onSyncInstapilot,
   onSelectInstapilotConv,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [instapilotSearch, setInstapilotSearch] = useState('');
   const [instapilotFilter, setInstapilotFilter] = useState<'all' | 'leads' | 'active'>('all');

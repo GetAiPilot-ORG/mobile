@@ -1,15 +1,17 @@
 import React from "react";
-import { ScrollView, StyleSheet, View, useColorScheme } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { Skeleton, SkeletonCard, SkeletonCircle, SkeletonRow, SkeletonText } from "../Skeleton";
+import { useTheme, getColors } from '@/theme';
 
 export function HomeSkeleton() {
-  const isDark = useColorScheme() === "dark";
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.container}
-      style={{ backgroundColor: isDark ? "#000000" : "#F2F2F7" }}
+      style={{ backgroundColor: colors.background }}
     >
       {/* Top Header / Greeting */}
       <View style={styles.header}>

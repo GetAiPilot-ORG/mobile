@@ -1,19 +1,46 @@
-import '../src/global.css';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Stack, useRouter, useSegments } from 'expo-router';
-import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
-import 'react-native-gesture-handler';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { GlobalErrorBoundary } from '../src/components/GlobalErrorBoundary';
-import { OfflineNotice } from '../src/components/OfflineNotice';
-import { LayoutSkeletonScreen } from '../src/components/skeletonScreen';
-import { AuthProvider } from '../src/contexts/AuthContext';
-import { NetworkProvider, useNetwork } from '../src/contexts/NetworkContext';
-import { RazorpayProvider } from '../src/contexts/RazorpayContext';
-import { ThemeProvider, useTheme } from '../src/contexts/ThemeContext';
-import { useAuthStore } from '../src/core/store/authStore';
+import "../src/global.css";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Stack, useRouter, useSegments } from "expo-router";
+import * as Linking from "expo-linking";
+import { useEffect } from "react";
+import { LogBox, Platform, StyleSheet, View } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import "react-native-gesture-handler";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { GlobalErrorBoundary } from "../src/components/GlobalErrorBoundary";
+import { OfflineNotice } from "../src/components/OfflineNotice";
+import { LayoutSkeletonScreen } from "../src/components/skeletonScreen";
+import { AuthProvider } from "../src/contexts/AuthContext";
+import { NetworkProvider, useNetwork } from "../src/contexts/NetworkContext";
+import { RazorpayProvider } from "../src/contexts/RazorpayContext";
+import { ThemeProvider, useTheme, getColors } from "@/theme";
+import { useAuthStore } from "../src/core/store/authStore";
+import { captureReferralParam, handlePendingReferral } from "../src/services/referralService";
+
+// Suppress known deprecation noise in development & Web runtimes
+LogBox.ignoreLogs([
+  '"shadow*" style props are deprecated. Use "boxShadow".',
+  "props.pointerEvents is deprecated. Use style.pointerEvents",
+  "Animated: `useNativeDriver` is not supported",
+  "[Layout children]: Too many screens defined",
+]);
+
+if (Platform.OS === "web" && typeof window !== "undefined") {
+  const originalWarn = console.warn;
+  console.warn = (...args: any[]) => {
+    const firstArg = typeof args[0] === "string" ? args[0] : "";
+    if (
+      firstArg.includes('"shadow*" style props are deprecated') ||
+      firstArg.includes("props.pointerEvents is deprecated") ||
+      firstArg.includes("Animated: `useNativeDriver` is not supported") ||
+      firstArg.includes("Too many screens defined")
+    ) {
+      return;
+    }
+    originalWarn(...args);
+  };
+}
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,24 +48,26 @@ export const queryClient = new QueryClient({
       staleTime: 1000 * 30,
       gcTime: 1000 * 60 * 10,
       retry: (failureCount, error: any) => {
-        // Do not retry 400, 401, 403, 404 or 502 errors to prevent request storms
-        const msg = (error?.message || '').toLowerCase();
-        const status = error?.status || error?.statusCode || (error?.response ? error.response.status : undefined);
+        const msg = (error?.message || "").toLowerCase();
+        const status =
+          error?.status ||
+          error?.statusCode ||
+          (error?.response ? error.response.status : undefined);
         if (
           status === 400 ||
           status === 401 ||
           status === 403 ||
           status === 404 ||
           status === 502 ||
-          msg.includes('400') ||
-          msg.includes('401') ||
-          msg.includes('403') ||
-          msg.includes('404') ||
-          msg.includes('forbidden') ||
-          msg.includes('not authenticated') ||
-          msg.includes('session expired') ||
-          msg.includes('unauthorized') ||
-          msg.includes('unavailable')
+          msg.includes("400") ||
+          msg.includes("401") ||
+          msg.includes("403") ||
+          msg.includes("404") ||
+          msg.includes("forbidden") ||
+          msg.includes("not authenticated") ||
+          msg.includes("session expired") ||
+          msg.includes("unauthorized") ||
+          msg.includes("unavailable")
         ) {
           return false;
         }
@@ -47,6 +76,37 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+/**
+ * Global deep link listener for referral codes (?ref=XYZ or ?referral=XYZ)
+ */
+function ReferralLinkListener() {
+  useEffect(() => {
+    const processUrl = async (rawUrl: string | null) => {
+      if (!rawUrl) return;
+      try {
+        const capturedCode = await captureReferralParam(rawUrl);
+        if (capturedCode) {
+          // If a user session is active, attempt linking immediately
+          await handlePendingReferral(capturedCode);
+        }
+      } catch (e) {
+        console.warn("[ReferralLinkListener] Link capture error:", e);
+      }
+    };
+
+    Linking.getInitialURL().then(processUrl).catch(() => {});
+    const sub = Linking.addEventListener("url", (event) => {
+      processUrl(event.url);
+    });
+
+    return () => {
+      sub.remove();
+    };
+  }, []);
+
+  return null;
+}
 
 /**
  * Authoritative, single-point auth route guard.
@@ -60,22 +120,26 @@ function AuthRouteGuard() {
 
   useEffect(() => {
     // 1. NEVER navigate during hydration
-    if (authStatus === 'hydrating') return;
+    if (authStatus === "hydrating") return;
 
     // 2. Identify active route group
     const segment0 = segments[0] as string | undefined;
-    const inAuthGroup = segment0 === '(auth)';
+    const inAuthGroup = segment0 === "(auth)";
 
-    if (authStatus === 'unauthenticated' && !inAuthGroup) {
+    if (authStatus === "unauthenticated" && !inAuthGroup) {
       if (__DEV__) {
-        console.log('[AuthGuard] Unauthenticated user on protected route -> navigating to login');
+        console.log(
+          "[AuthGuard] Unauthenticated user on protected route -> navigating to login",
+        );
       }
-      router.replace('/(auth)/login' as any);
-    } else if (authStatus === 'authenticated' && inAuthGroup) {
+      router.replace("/(auth)/login" as any);
+    } else if (authStatus === "authenticated" && inAuthGroup) {
       if (__DEV__) {
-        console.log('[AuthGuard] Authenticated user on auth route -> navigating to tabs');
+        console.log(
+          "[AuthGuard] Authenticated user on auth route -> navigating to tabs",
+        );
       }
-      router.replace('/(tabs)' as any);
+      router.replace("/(tabs)" as any);
     }
   }, [authStatus, segments]);
 
@@ -87,7 +151,7 @@ function SplashOverlay() {
   const { networkChecked } = useNetwork();
 
   // Display layout skeleton while checking network or hydrating authentication state
-  if (networkChecked && authStatus !== 'hydrating') {
+  if (networkChecked && authStatus !== "hydrating") {
     return null;
   }
 
@@ -100,75 +164,118 @@ function SplashOverlay() {
 
 function RootThemedContainer({ children }: { children: React.ReactNode }) {
   const { isDark } = useTheme();
+  const colors = getColors(isDark);
   return (
-    <View
-      style={[
-        styles.rootContainer,
-        { backgroundColor: isDark ? '#000000' : '#F8F9FA' },
-      ]}
-    >
+    <View style={[styles.rootContainer, { backgroundColor: colors.background }]}>
+      <StatusBar style={isDark ? "light" : "dark"} />
       {children}
     </View>
   );
 }
 
+function ThemedNavigationStack() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.background },
+        gestureEnabled: true,
+        fullScreenGestureEnabled: true,
+        gestureDirection: "horizontal",
+        animation: "default",
+        animationDuration: 250,
+      }}
+    >
+      <Stack.Screen
+        name="(tabs)"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="(auth)/login"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="(auth)/signup"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="(auth)/forgot-password"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="onboarding"
+        options={{
+          headerShown: false,
+          gestureEnabled: false,
+        }}
+      />
+      <Stack.Screen
+        name="Referral"
+        options={{
+          headerShown: false,
+          presentation: "card",
+          gestureEnabled: true,
+        }}
+      />
+      <Stack.Screen
+        name="pricing"
+        options={{
+          headerShown: false,
+          presentation: "modal",
+          gestureEnabled: true,
+        }}
+      />
+      <Stack.Screen
+        name="account/plans"
+        options={{
+          headerShown: false,
+          presentation: "modal",
+          gestureEnabled: true,
+        }}
+      />
+      <Stack.Screen
+        name="products/social/plans"
+        options={{
+          headerShown: false,
+          gestureEnabled: true,
+        }}
+      />
+      <Stack.Screen
+        name="+not-found"
+        options={{
+          headerShown: false,
+        }}
+      />
+    </Stack>
+  );
+}
+
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView
+      style={{ flex: 1, flexDirection: "column", width: "100%" }}
+    >
       <GlobalErrorBoundary>
         <SafeAreaProvider>
-          <NetworkProvider>
-            <QueryClientProvider client={queryClient}>
-              <ThemeProvider>
+          <ThemeProvider>
+            <NetworkProvider>
+              <QueryClientProvider client={queryClient}>
                 <RootThemedContainer>
                   <AuthProvider>
                     <RazorpayProvider>
+                      <ReferralLinkListener />
                       <AuthRouteGuard />
-                      {/* Native Stack for iOS screen transitions & gesture-driven back navigations */}
-                      <Stack
-                        screenOptions={{
-                          headerShown: false,
-                          gestureEnabled: true,
-                          fullScreenGestureEnabled: true,
-                          gestureDirection: 'horizontal',
-                          animation: 'default',
-                          animationDuration: 250,
-                        }}
-                      >
-                        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                        <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
-                        <Stack.Screen name="(auth)/signup" options={{ headerShown: false }} />
-                        <Stack.Screen name="(auth)/forgot-password" options={{ headerShown: false }} />
-                        <Stack.Screen
-                          name="account/plans"
-                          options={{
-                            headerShown: false,
-                            presentation: 'modal',
-                            gestureEnabled: true,
-                          }}
-                        />
-                        <Stack.Screen
-                          name="products/social/plans"
-                          options={{
-                            headerShown: false,
-                            gestureEnabled: true,
-                          }}
-                        />
-                        <Stack.Screen
-                          name="+not-found"
-                          options={{
-                            headerShown: false,
-                          }}
-                        />
-                      </Stack>
+                      <ThemedNavigationStack />
                       <OfflineNotice />
                       <SplashOverlay />
                     </RazorpayProvider>
                   </AuthProvider>
                 </RootThemedContainer>
-              </ThemeProvider>
-            </QueryClientProvider>
-          </NetworkProvider>
+              </QueryClientProvider>
+            </NetworkProvider>
+          </ThemeProvider>
         </SafeAreaProvider>
       </GlobalErrorBoundary>
     </GestureHandlerRootView>
@@ -178,9 +285,10 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   rootContainer: {
     flex: 1,
+    flexDirection: "column",
+    width: "100%",
   },
   splashContainer: {
     zIndex: 99999,
   },
 });
-

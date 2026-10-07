@@ -1,3 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -12,12 +15,9 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 
+import { getColors, useTheme } from '@/theme';
 import { telegramApi } from '../api/telegramApi';
 import { telegramSupabase } from '../api/telegramSupabase';
 import { ReactionAutopilotRule, ReactionOrder, TelegramToolKey } from '../types';
@@ -46,8 +46,8 @@ const CAMPAIGN_TYPES = [
 ];
 
 export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const queryClient = useQueryClient();
 
   // Active Sub-Tab
@@ -230,12 +230,12 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
     return o.status === statusFilter;
   });
 
-  const card = isDark ? styles.cardDark : styles.cardLight;
-  const txt = isDark ? styles.textDark : styles.textLight;
-  const border = isDark ? styles.borderDark : styles.borderLight;
+  const card = { backgroundColor: colors.card };
+  const txt = { color: colors.text };
+  const border = { borderColor: colors.border };
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? '#000000' : '#F8FAFC' }]}>
+    <View style={[styles.container, { backgroundColor: colors.card }]}>
       {/* Top Header Card */}
       <View style={[styles.heroHeader, card]}>
         <View style={styles.titleRow}>
@@ -252,7 +252,7 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
         </View>
 
         {/* Balance & Top Up Bar */}
-        <View style={[styles.balanceCard, isDark ? styles.balanceCardDark : styles.balanceCardLight]}>
+        <View style={[styles.balanceCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.balanceLeft}>
             <View style={styles.walletIconCircle}>
               <Ionicons name="wallet-outline" size={16} color="#0284C7" />
@@ -390,7 +390,7 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
               const limit = rule.posts_limit ?? (rule as any).postsLimit;
 
               return (
-                <View key={rule.id} style={[styles.ruleCard, isDark ? styles.itemDark : styles.itemLight]}>
+                <View key={rule.id} style={[styles.ruleCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <View style={styles.ruleTop}>
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -465,7 +465,7 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
           {/* Post URL Input */}
           <Text style={styles.inputLabel}>TELEGRAM POST LINK *</Text>
           <TextInput
-            style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+            style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border }]}
             value={postLink}
             onChangeText={setPostLink}
             placeholder="https://t.me/channel_name/123"
@@ -566,7 +566,7 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
             </View>
           ) : (
             filteredOrders.map((ord: any, idx: number) => (
-              <View key={ord.id || idx} style={[styles.orderItem, isDark ? styles.itemDark : styles.itemLight]}>
+              <View key={ord.id || idx} style={[styles.orderItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={styles.orderLeft}>
                   <Text style={[styles.orderLink, txt]} numberOfLines={1}>{ord.link || ord.target_post_url || 'Telegram Order'}</Text>
                   <Text style={styles.orderMeta}>
@@ -597,7 +597,7 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
 
             <Text style={styles.inputLabel}>CHANNEL USERNAME OR ID *</Text>
             <TextInput
-              style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+              style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border }]}
               value={newChannel}
               onChangeText={setNewChannel}
               placeholder="@my_trading_channel"
@@ -609,7 +609,7 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
               <View style={{ flex: 1 }}>
                 <Text style={styles.inputLabel}>MIN REACTION</Text>
                 <TextInput
-                  style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+                  style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border }]}
                   value={newMinQty}
                   onChangeText={setNewMinQty}
                   keyboardType="numeric"
@@ -618,7 +618,7 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
               <View style={{ flex: 1 }}>
                 <Text style={styles.inputLabel}>MAX REACTION</Text>
                 <TextInput
-                  style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
+                  style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border }]}
                   value={newMaxQty}
                   onChangeText={setNewMaxQty}
                   keyboardType="numeric"

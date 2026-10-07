@@ -1,7 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
+import {
+  Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React,
+  { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -12,10 +14,10 @@ import {
   StyleSheet,
   Text,
   View,
-  useColorScheme,
 } from 'react-native';
 import { getChannelMeta, getStatusMeta } from './socialActivityHelpers';
 import { openSocialHandoff } from '../../utils/socialHandoff';
+import { useTheme, getColors } from '@/theme';
 
 export interface ActivityQueueSubTabProps {
   queueLoading: boolean;
@@ -34,8 +36,8 @@ export const ActivityQueueSubTab: React.FC<ActivityQueueSubTabProps> = ({
   onRetryPost,
   entitlementsData,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const router = useRouter();
   const [queueStatusFilter, setQueueStatusFilter] = useState<'ALL' | 'scheduled' | 'sent' | 'failed'>('ALL');
 

@@ -1,5 +1,7 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { useCrmTheme } from '../hooks/useCrmTheme';
+import { getColors } from '@/theme';
 
 interface LeadFiltersProps {
   selectedStatus: string;
@@ -10,6 +12,9 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
   selectedStatus,
   onSelectStatus,
 }) => {
+  const { isDark, accentColor, accentSoft, accentBorder } = useCrmTheme();
+  const colors = getColors(isDark);
+
   const statuses = [
     { id: 'all', label: 'All Deals' },
     { id: 'active', label: 'Active Pipeline' },
@@ -19,17 +24,34 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
 
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.container}>
-      {statuses.map((st) => (
-        <Pressable
-          key={st.id}
-          style={[styles.pill, selectedStatus === st.id && styles.activePill]}
-          onPress={() => onSelectStatus(st.id)}
-        >
-          <Text style={[styles.text, selectedStatus === st.id && styles.activeText]}>
-            {st.label}
-          </Text>
-        </Pressable>
-      ))}
+      {statuses.map((st) => {
+        const isActive = selectedStatus === st.id;
+        return (
+          <Pressable
+            key={st.id}
+            style={[
+              styles.pill,
+              {
+                backgroundColor: isActive ? accentColor : colors.surface,
+                borderColor: isActive ? accentColor : colors.border,
+              },
+            ]}
+            onPress={() => onSelectStatus(st.id)}
+          >
+            <Text
+              style={[
+                styles.text,
+                {
+                  color: isActive ? '#FFFFFF' : colors.textSecondary,
+                  fontWeight: isActive ? '700' : '600',
+                },
+              ]}
+            >
+              {st.label}
+            </Text>
+          </Pressable>
+        );
+      })}
     </ScrollView>
   );
 };
@@ -43,22 +65,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 18,
-    backgroundColor: '#0f172a',
     marginRight: 8,
     borderWidth: 1,
-    borderColor: '#1e293b',
-  },
-  activePill: {
-    backgroundColor: '#6366f1',
-    borderColor: '#6366f1',
   },
   text: {
-    color: '#94a3b8',
     fontSize: 12,
-    fontWeight: '600',
-  },
-  activeText: {
-    color: '#ffffff',
-    fontWeight: '700',
   },
 });

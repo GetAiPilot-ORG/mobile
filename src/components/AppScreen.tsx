@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleProp, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, getColors } from '@/theme';
 
 export interface AppScreenProps {
   children: React.ReactNode;
@@ -21,7 +21,8 @@ export function AppScreen({
   className = '',
 }: AppScreenProps) {
   const insets = useSafeAreaInsets();
-  const { isDark, colors } = useTheme();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const defaultBg = backgroundColor || colors.background;
 
@@ -36,15 +37,17 @@ export function AppScreen({
     paddingBottom = insets.bottom;
   }
 
-  const bgClass = isDark ? 'bg-[#000000]' : 'bg-[#F8F9FA]';
+  const bgClass = isDark ? 'bg-[#05080D]' : 'bg-[#F8F9FA]';
   const paddingClass = padding ? 'p-lg' : '';
 
   return (
     <View
-      className={`flex-1 ${bgClass} ${paddingClass} ${className}`}
+      className={`flex-1 flex-col w-full ${paddingClass} ${className}`}
       style={[
         {
           flex: 1,
+          flexDirection: 'column',
+          width: '100%',
           backgroundColor: defaultBg,
           paddingTop,
           paddingBottom,

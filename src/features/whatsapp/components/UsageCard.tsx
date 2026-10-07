@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { useTheme } from '../../../contexts/ThemeContext';
+import { useTheme, getColors } from '@/theme';
 import { WhatsAppUsage } from '../types';
 
 const moneyIcon = require('../../../../assets/images/money.png');
@@ -14,6 +14,7 @@ interface UsageCardProps {
 
 export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading, isConnected = true }) => {
   const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const rawBalance = usage?.credits_balance ?? 0;
   const balance = isLoading

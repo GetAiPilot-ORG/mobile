@@ -7,13 +7,13 @@ import {
   Pressable,
   ScrollView,
   Image,
-  useColorScheme,
   ActivityIndicator,
   Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
+import { useTheme, getColors } from '@/theme';
 
 interface PostDetailsModalProps {
   visible: boolean;
@@ -32,8 +32,8 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
   onCancel,
   isActionLoading,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const [copiedCaption, setCopiedCaption] = useState(false);
 
   if (!post) return null;

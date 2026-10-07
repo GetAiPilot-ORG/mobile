@@ -1,14 +1,23 @@
 import { apiClient } from '../../../core/api/client';
 import {
   CRMActivity,
+  CRMBillingProfile,
   CRMContact,
   CRMDashboardSummary,
   CRMDeal,
+  CRMInvoice,
   CRMMember,
+  CRMOrganization,
+  CRMPayment,
+  CRMQuotation,
   CRMTask,
   DealStage,
+  PaginatedBillingProfilesResponse,
   PaginatedContactsResponse,
+  PaginatedInvoicesResponse,
   PaginatedLeadsResponse,
+  PaginatedPaymentsResponse,
+  PaginatedQuotationsResponse,
 } from '../types';
 
 export interface LeadFilterParams {
@@ -52,6 +61,10 @@ export const crmApi = {
 
   getMembers: async (): Promise<CRMMember[]> => {
     return await apiClient.get<CRMMember[]>('/mobile/v1/crm/members');
+  },
+
+  getOrganization: async (): Promise<CRMOrganization> => {
+    return await apiClient.get<CRMOrganization>('/mobile/v1/crm/organization');
   },
 
   // ── Leads ──────────────────────────────────────────────────────────────────
@@ -207,4 +220,81 @@ export const crmApi = {
   addLeadNote: async (id: string, note: string): Promise<CRMActivity> => {
     return await apiClient.post<CRMActivity>(`/mobile/v1/crm/leads/${id}/notes`, { note });
   },
+
+  // ── Invoices ──────────────────────────────────────────────────────────────
+  getInvoices: async (params?: { status?: string; contact_id?: string; limit?: number; offset?: number }): Promise<PaginatedInvoicesResponse> => {
+    return await apiClient.get<PaginatedInvoicesResponse>('/mobile/v1/crm/invoices', { params });
+  },
+
+  getInvoice: async (id: string): Promise<CRMInvoice> => {
+    return await apiClient.get<CRMInvoice>(`/mobile/v1/crm/invoices/${id}`);
+  },
+
+  createInvoice: async (data: Partial<CRMInvoice>): Promise<CRMInvoice> => {
+    return await apiClient.post<CRMInvoice>('/mobile/v1/crm/invoices', data);
+  },
+
+  updateInvoice: async (id: string, patch: Partial<CRMInvoice>): Promise<CRMInvoice> => {
+    return await apiClient.patch<CRMInvoice>(`/mobile/v1/crm/invoices/${id}`, patch);
+  },
+
+  deleteInvoice: async (id: string): Promise<{ success: boolean; id: string }> => {
+    return await apiClient.delete<{ success: boolean; id: string }>(`/mobile/v1/crm/invoices/${id}`);
+  },
+
+  // ── Quotations ────────────────────────────────────────────────────────────
+  getQuotations: async (params?: { status?: string; contact_id?: string; limit?: number }): Promise<PaginatedQuotationsResponse> => {
+    return await apiClient.get<PaginatedQuotationsResponse>('/mobile/v1/crm/quotations', { params });
+  },
+
+  getQuotation: async (id: string): Promise<CRMQuotation> => {
+    return await apiClient.get<CRMQuotation>(`/mobile/v1/crm/quotations/${id}`);
+  },
+
+  createQuotation: async (data: Partial<CRMQuotation>): Promise<CRMQuotation> => {
+    return await apiClient.post<CRMQuotation>('/mobile/v1/crm/quotations', data);
+  },
+
+  updateQuotation: async (id: string, patch: Partial<CRMQuotation>): Promise<CRMQuotation> => {
+    return await apiClient.patch<CRMQuotation>(`/mobile/v1/crm/quotations/${id}`, patch);
+  },
+
+  deleteQuotation: async (id: string): Promise<{ success: boolean; id: string }> => {
+    return await apiClient.delete<{ success: boolean; id: string }>(`/mobile/v1/crm/quotations/${id}`);
+  },
+
+  // ── Billing Profiles (Client Profiles) ───────────────────────────────────
+  getBillingProfiles: async (params?: { contact_id?: string; limit?: number }): Promise<PaginatedBillingProfilesResponse> => {
+    return await apiClient.get<PaginatedBillingProfilesResponse>('/mobile/v1/crm/billing-profiles', { params });
+  },
+
+  getBillingProfile: async (id: string): Promise<CRMBillingProfile> => {
+    return await apiClient.get<CRMBillingProfile>(`/mobile/v1/crm/billing-profiles/${id}`);
+  },
+
+  createBillingProfile: async (data: Partial<CRMBillingProfile>): Promise<CRMBillingProfile> => {
+    return await apiClient.post<CRMBillingProfile>('/mobile/v1/crm/billing-profiles', data);
+  },
+
+  updateBillingProfile: async (id: string, patch: Partial<CRMBillingProfile>): Promise<CRMBillingProfile> => {
+    return await apiClient.patch<CRMBillingProfile>(`/mobile/v1/crm/billing-profiles/${id}`, patch);
+  },
+
+  deleteBillingProfile: async (id: string): Promise<{ success: boolean; id: string }> => {
+    return await apiClient.delete<{ success: boolean; id: string }>(`/mobile/v1/crm/billing-profiles/${id}`);
+  },
+
+  // ── Payments ──────────────────────────────────────────────────────────────
+  getPayments: async (params?: { invoice_id?: string; limit?: number; offset?: number }): Promise<PaginatedPaymentsResponse> => {
+    return await apiClient.get<PaginatedPaymentsResponse>('/mobile/v1/crm/payments', { params });
+  },
+
+  createPayment: async (data: Partial<CRMPayment>): Promise<CRMPayment> => {
+    return await apiClient.post<CRMPayment>('/mobile/v1/crm/payments', data);
+  },
+
+  deletePayment: async (id: string): Promise<{ success: boolean; id: string }> => {
+    return await apiClient.delete<{ success: boolean; id: string }>(`/mobile/v1/crm/payments/${id}`);
+  },
 };
+

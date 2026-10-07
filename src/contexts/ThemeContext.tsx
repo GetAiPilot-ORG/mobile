@@ -3,6 +3,7 @@ import { Appearance, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme as useNativeWindColorScheme } from 'nativewind';
 import { getColors, AppColors } from '../theme/colors';
+export { getColors, AppColors };
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 
@@ -31,8 +32,8 @@ const ThemeContext = createContext<ThemeContextType>({
   isDark: defaultIsDark,
   tailwindClass: defaultIsDark ? 'dark' : 'light',
   colors: getColors(defaultIsDark),
-  setThemeMode: async () => {},
-  toggleTheme: async () => {},
+  setThemeMode: async () => { },
+  toggleTheme: async () => { },
 });
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -116,12 +117,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         document.documentElement.classList.add('dark');
         document.documentElement.classList.remove('light');
         document.documentElement.setAttribute('data-theme', 'dark');
-        document.documentElement.style.backgroundColor = '#000000';
-        document.body.style.backgroundColor = '#000000';
+        document.documentElement.style.colorScheme = 'dark';
+        document.documentElement.style.backgroundColor = '#05080D';
+        document.body.style.backgroundColor = '#05080D';
       } else {
         document.documentElement.classList.add('light');
         document.documentElement.classList.remove('dark');
         document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.style.colorScheme = 'light';
         document.documentElement.style.backgroundColor = '#F8F9FA';
         document.body.style.backgroundColor = '#F8F9FA';
       }

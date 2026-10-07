@@ -1,3 +1,7 @@
+import { getColors, useTheme } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import {
   Platform,
@@ -7,13 +11,9 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import * as Clipboard from 'expo-clipboard';
-import { TelegramToolKey } from '../types';
 import { StatCard } from '../components/ui/StatCard';
+import { TelegramToolKey } from '../types';
 
 type TrackerSection = 'joins' | 'connect' | 'links';
 
@@ -25,16 +25,16 @@ interface TrackerScreenProps {
 }
 
 export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerDash, trackerLinks, onOpenModal }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const [trackerSection, setTrackerSection] = useState<TrackerSection>('joins');
   const [userSearch, setUserSearch] = useState('');
   const [userFilter, setUserFilter] = useState<'All' | 'Active' | 'Bot Start' | 'Leave' | 'Pending'>('All');
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
 
-  const card = isDark ? styles.cardDark : styles.cardLight;
-  const txt = isDark ? styles.textDark : styles.textLight;
-  const border = isDark ? styles.borderDark : styles.borderLight;
+  const card = { backgroundColor: colors.background, borderColor: colors.border };
+  const txt = { color: colors.text };
+  const border = { borderColor: colors.border };
 
   const filteredUsers = (trackerDash?.newUsers || []).filter((u: any) => {
     const nameStr = (u.name || u.first_name || '').toLowerCase();
@@ -91,13 +91,13 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
         ] as { key: TrackerSection; icon: string; label: string; badge: number | null }[]).map((tab) => (
           <Pressable
             key={tab.key}
-            style={[styles.segTab, trackerSection === tab.key && (isDark ? styles.segTabActiveDark : styles.segTabActiveLight)]}
+            style={[styles.segTab, trackerSection === tab.key && { backgroundColor: colors.background }]}
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setTrackerSection(tab.key);
             }}
           >
-            <Ionicons name={tab.icon as any} size={14} color={trackerSection === tab.key ? '#0284C7' : isDark ? '#94A3B8' : '#64748B'} />
+            <Ionicons name={tab.icon as any} size={14} color={trackerSection === tab.key ? '#0284C7' : colors.text} />
             <Text style={[styles.segTabText, trackerSection === tab.key && styles.segTabTextActive, txt]}>{tab.label}</Text>
             {tab.badge !== null && (
               <View style={[styles.segBadge, trackerSection === tab.key && styles.segBadgeActive]}>
@@ -111,26 +111,62 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
       {/* ANALYTICS */}
       {trackerSection === 'joins' && (
         <View style={{ gap: 14 }}>
-          {/* 6 KPI Cards */}
-          <View style={styles.kpiGrid}>
-            {[
-              { icon: 'people', color: '#0284C7', bg: 'rgba(2,132,199,0.12)', val: kpis.totalJoins, label: 'TOTAL JOINS', hint: 'Active Channel Members' },
-              { icon: 'calendar', color: '#10B981', bg: 'rgba(16,185,129,0.12)', val: `+${kpis.todaysJoins}`, label: "TODAY'S JOINS", hint: 'New joins today' },
-              { icon: 'calendar-outline', color: '#10B981', bg: 'rgba(16,185,129,0.12)', val: `+${kpis.thisMonthJoins}`, label: 'THIS MONTH', hint: 'New joins this month' },
-              { icon: 'sparkles-outline', color: '#2563EB', bg: 'rgba(37,99,235,0.12)', val: kpis.botStarts, label: 'BOT STARTS', hint: 'Total bot interactions' },
-              { icon: 'time-outline', color: '#D97706', bg: 'rgba(217,119,6,0.12)', val: kpis.pendingJoins, label: 'PENDING JOINS', hint: 'Started but not joined' },
-              { icon: 'trending-up-outline', color: '#DB2777', bg: 'rgba(219,39,119,0.12)', val: `${kpis.conversionRate}%`, label: 'CONVERSION', hint: 'Starts to Joins' },
-            ].map((k, i) => (
+          {/* 6 KPI Cards in Solid 2-Column Grid */}
+          <View style={styles.metricsContainer}>
+            <View style={styles.metricsRow}>
               <StatCard
-                key={i}
-                label={k.label}
-                value={k.val}
-                icon={k.icon}
-                color={k.color}
-                bg={k.bg}
-                sub={k.hint}
+                label="TOTAL JOINS"
+                value={kpis.totalJoins}
+                icon="people"
+                color="#0284C7"
+                bg="rgba(2,132,199,0.12)"
+                sub="Active Channel Members"
               />
-            ))}
+              <StatCard
+                label="TODAY'S JOINS"
+                value={`+${kpis.todaysJoins}`}
+                icon="calendar"
+                color="#10B981"
+                bg="rgba(16,185,129,0.12)"
+                sub="New joins today"
+              />
+            </View>
+            <View style={styles.metricsRow}>
+              <StatCard
+                label="THIS MONTH"
+                value={`+${kpis.thisMonthJoins}`}
+                icon="calendar-outline"
+                color="#10B981"
+                bg="rgba(16,185,129,0.12)"
+                sub="New joins this month"
+              />
+              <StatCard
+                label="BOT STARTS"
+                value={kpis.botStarts}
+                icon="sparkles-outline"
+                color="#2563EB"
+                bg="rgba(37,99,235,0.12)"
+                sub="Total bot interactions"
+              />
+            </View>
+            <View style={styles.metricsRow}>
+              <StatCard
+                label="PENDING JOINS"
+                value={kpis.pendingJoins}
+                icon="time-outline"
+                color="#D97706"
+                bg="rgba(217,119,6,0.12)"
+                sub="Started not joined"
+              />
+              <StatCard
+                label="CONVERSION"
+                value={`${kpis.conversionRate}%`}
+                icon="trending-up-outline"
+                color="#DB2777"
+                bg="rgba(219,39,119,0.12)"
+                sub="Starts to Joins"
+              />
+            </View>
           </View>
 
           {/* Channel Breakdown */}
@@ -147,7 +183,7 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
               </View>
             </View>
             {(trackerDash?.channels || []).map((chan: any) => (
-              <View key={chan.channel_id} style={[styles.chanCard, isDark ? styles.chanCardDark : styles.chanCardLight]}>
+              <View key={chan.channel_id} style={[styles.chanCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={styles.chanCardHeader}>
                   <Text style={[styles.chanName, txt]}>{chan.channel_name}</Text>
                   <View style={styles.periodPill}>
@@ -206,7 +242,7 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
                 {(['All', 'Active', 'Bot Start', 'Leave', 'Pending'] as const).map((st) => (
                   <Pressable
                     key={st}
-                    style={[styles.filterPill, userFilter === st && styles.filterPillActive, isDark ? styles.filterPillDark : styles.filterPillLight]}
+                    style={[styles.filterPill, userFilter === st && styles.filterPillActive, { backgroundColor: colors.background, borderColor: colors.border }]}
                     onPress={() => {
                       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       setUserFilter(st);
@@ -221,7 +257,7 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
               const sc = statusColor(user.status);
               const userNameStr = user.name || user.first_name || 'User';
               return (
-                <View key={user.id || String(Math.random())} style={[styles.userRow, isDark ? styles.userRowDark : styles.userRowLight]}>
+                <View key={user.id || String(Math.random())} style={[styles.userRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
                     <View style={styles.userAvatar}>
                       <Text style={styles.userAvatarText}>{userNameStr.charAt(0).toUpperCase()}</Text>
@@ -385,6 +421,8 @@ const styles = StyleSheet.create({
   segBadgeActive: { backgroundColor: 'rgba(2,132,199,0.15)' },
   segBadgeText: { fontSize: 9, fontWeight: '800', color: '#64748B' },
   segBadgeTextActive: { color: '#0284C7' },
+  metricsContainer: { width: '100%', alignSelf: 'stretch', gap: 10, marginBottom: 12 },
+  metricsRow: { flexDirection: 'row', gap: 10, width: '100%', alignSelf: 'stretch', marginBottom: 10 },
   kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 12, width: '100%' },
   kpiIconWrap: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   kpiNumber: { fontSize: 22, fontWeight: '800' },

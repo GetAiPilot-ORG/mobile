@@ -1,10 +1,17 @@
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { Skeleton, SkeletonCard, SkeletonCircle, SkeletonRow, SkeletonText } from "../Skeleton";
+import { useTheme, getColors } from '@/theme';
 
 export function DashboardSkeleton() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 50, paddingBottom: 120 }}>
+    <ScrollView
+      contentContainerStyle={{ padding: 16, paddingTop: 50, paddingBottom: 120 }}
+      style={{ backgroundColor: colors.background }}
+    >
       {/* Workspace Header */}
       <View style={{ marginBottom: 20 }}>
         <SkeletonText width={120} height={12} style={styles.mb6} />

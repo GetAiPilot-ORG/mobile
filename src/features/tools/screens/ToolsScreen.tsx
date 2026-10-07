@@ -1,22 +1,24 @@
 import * as Linking from "expo-linking";
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import {
+  useRouter } from "expo-router";
+import React,
+  { useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { apiClient } from "../../../core/api/client";
+import { useTheme, getColors } from '@/theme';
 
 export const ToolsScreen: React.FC = () => {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const [openingTool, setOpeningTool] = useState<string | null>(null);
 
   const nativeTools = [

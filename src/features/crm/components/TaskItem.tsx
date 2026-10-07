@@ -1,7 +1,8 @@
 import React from 'react';
-import { StyleSheet, Text, View, Pressable, useColorScheme } from 'react-native';
+import { StyleSheet, Text, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CRMTask, TaskPriority } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 interface TaskItemProps {
   task: CRMTask;
@@ -11,15 +12,15 @@ interface TaskItemProps {
 }
 
 const PRIORITY_CONFIG: Record<TaskPriority, { label: string; color: string; bg: string }> = {
-  low: { label: 'Low', color: '#6B7280', bg: 'rgba(156, 163, 175, 0.15)' },
-  medium: { label: 'Medium', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.15)' },
-  high: { label: 'High', color: '#D97706', bg: 'rgba(245, 158, 11, 0.15)' },
-  urgent: { label: 'Urgent', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.15)' },
+  low: { label: 'Low', color: '#8A8D91', bg: 'rgba(138, 141, 145, 0.15)' },
+  medium: { label: 'Medium', color: '#647D8C', bg: 'rgba(100, 125, 140, 0.15)' },
+  high: { label: 'High', color: '#B8863B', bg: 'rgba(184, 134, 59, 0.15)' },
+  urgent: { label: 'Urgent', color: '#B85C5C', bg: 'rgba(184, 92, 92, 0.15)' },
 };
 
 export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onDelete }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const isDone = task.status === 'done';
   const priorityCfg = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.medium;
@@ -32,9 +33,9 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onD
     <Pressable
       style={({ pressed }) => [
         styles.card,
-        isDark ? styles.cardDark : styles.cardLight,
-        isDone && (isDark ? styles.cardDoneDark : styles.cardDoneLight),
-        pressed && (isDark ? styles.cardPressedDark : styles.cardPressedLight),
+        { backgroundColor: colors.card, borderColor: colors.cardBorder },
+        isDone && { opacity: 0.6, backgroundColor: colors.surfaceSecondary },
+        pressed && { backgroundColor: colors.cardHover },
       ]}
       onPress={onPress}
     >
@@ -53,8 +54,8 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onD
           <Text
             style={[
               styles.title,
-              { color: isDark ? '#FFFFFF' : '#0F172A' },
-              isDone && (isDark ? styles.titleDoneDark : styles.titleDoneLight),
+              { color: colors.text },
+              isDone && { textDecorationLine: 'line-through', color: colors.mutedText },
             ]}
             numberOfLines={2}
           >
@@ -65,7 +66,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onD
             <Text
               style={[
                 styles.description,
-                { color: isDark ? '#9CA3AF' : '#64748B' },
+                { color: colors.mutedText },
                 isDone && styles.descDone,
               ]}
               numberOfLines={1}
@@ -78,18 +79,18 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onD
           {task.contact || task.deal ? (
             <View style={styles.contextRow}>
               {task.contact ? (
-                <View style={[styles.contextPill, { backgroundColor: isDark ? '#222630' : '#F1F5F9' }]}>
-                  <Ionicons name="person-outline" size={10} color={isDark ? '#9CA3AF' : '#64748B'} />
-                  <Text style={[styles.contextText, { color: isDark ? '#D1D5DB' : '#334155' }]} numberOfLines={1}>
+                <View style={[styles.contextPill, { backgroundColor: colors.surfaceSecondary }]}>
+                  <Ionicons name="person-outline" size={10} color={colors.iconMuted} />
+                  <Text style={[styles.contextText, { color: colors.textSecondary }]} numberOfLines={1}>
                     {`${task.contact.first_name || ''} ${task.contact.last_name || ''}`.trim()}
                   </Text>
                 </View>
               ) : null}
 
               {task.deal ? (
-                <View style={[styles.contextPill, { backgroundColor: isDark ? '#222630' : '#F1F5F9' }]}>
-                  <Ionicons name="briefcase-outline" size={10} color={isDark ? '#9CA3AF' : '#64748B'} />
-                  <Text style={[styles.contextText, { color: isDark ? '#D1D5DB' : '#334155' }]} numberOfLines={1}>
+                <View style={[styles.contextPill, { backgroundColor: colors.surfaceSecondary }]}>
+                  <Ionicons name="briefcase-outline" size={10} color={colors.iconMuted} />
+                  <Text style={[styles.contextText, { color: colors.textSecondary }]} numberOfLines={1}>
                     {task.deal.title}
                   </Text>
                 </View>
@@ -107,13 +108,13 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onD
       </View>
 
       {/* Bottom info row */}
-      <View style={[styles.footer, { borderTopColor: isDark ? '#222630' : '#F1F5F9' }]}>
+      <View style={[styles.footer, { borderTopColor: colors.divider }]}>
         <View style={styles.dueRow}>
           {task.due_date ? (
             <View
               style={[
                 styles.dueBadge,
-                { backgroundColor: isDark ? '#222630' : '#F1F5F9' },
+                { backgroundColor: colors.surfaceSecondary },
                 isOverdue && styles.dueOverdue,
                 isToday && styles.dueToday,
               ]}
@@ -121,27 +122,27 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onD
               <Ionicons
                 name="calendar-outline"
                 size={11}
-                color={isOverdue ? '#EF4444' : isToday ? '#F59E0B' : isDark ? '#9CA3AF' : '#64748B'}
+                color={isOverdue ? colors.destructive : isToday ? colors.warning : colors.iconMuted}
               />
               <Text
                 style={[
                   styles.dueText,
-                  { color: isDark ? '#9CA3AF' : '#64748B' },
-                  isOverdue && styles.dueTextOverdue,
-                  isToday && styles.dueTextToday,
+                  { color: colors.mutedText },
+                  isOverdue && { color: colors.destructive, fontWeight: '600' },
+                  isToday && { color: colors.warning, fontWeight: '600' },
                 ]}
               >
                 {isOverdue ? `Overdue: ${task.due_date}` : isToday ? 'Due Today' : task.due_date}
               </Text>
             </View>
           ) : (
-            <Text style={[styles.noDueDate, { color: isDark ? '#6B7280' : '#94A3B8' }]}>No due date</Text>
+            <Text style={[styles.noDueDate, { color: colors.textMuted }]}>No due date</Text>
           )}
 
           {task.assignee ? (
             <View style={styles.assigneePill}>
-              <Ionicons name="person-circle-outline" size={12} color={isDark ? '#9CA3AF' : '#64748B'} />
-              <Text style={[styles.assigneeText, { color: isDark ? '#9CA3AF' : '#64748B' }]} numberOfLines={1}>
+              <Ionicons name="person-circle-outline" size={12} color={colors.iconMuted} />
+              <Text style={[styles.assigneeText, { color: colors.mutedText }]} numberOfLines={1}>
                 {task.assignee.name}
               </Text>
             </View>
@@ -164,33 +165,11 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-  },
-  cardDark: {
-    backgroundColor: '#181A20',
-    borderColor: '#262A34',
-  },
-  cardLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 2,
-  },
-  cardDoneDark: {
-    opacity: 0.6,
-    backgroundColor: '#14161B',
-  },
-  cardDoneLight: {
-    opacity: 0.6,
-    backgroundColor: '#F8FAFC',
-  },
-  cardPressedDark: {
-    backgroundColor: '#20232B',
-  },
-  cardPressedLight: {
-    backgroundColor: '#F1F5F9',
   },
   contentRow: {
     flexDirection: 'row',
@@ -221,12 +200,10 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   titleDoneDark: {
-    textDecorationLine: 'line-through',
-    color: '#9CA3AF',
+    textDecorationLine: 'line-through' as const,
   },
   titleDoneLight: {
-    textDecorationLine: 'line-through',
-    color: '#94A3B8',
+    textDecorationLine: 'line-through' as const,
   },
   description: {
     fontSize: 12,
@@ -283,21 +260,21 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   dueOverdue: {
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: 'rgba(184, 92, 92, 0.15)',
   },
   dueToday: {
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    backgroundColor: 'rgba(184, 134, 59, 0.15)',
   },
   dueText: {
     fontSize: 11,
   },
   dueTextOverdue: {
-    color: '#EF4444',
-    fontWeight: '600',
+    color: '#B85C5C',
+    fontWeight: '600' as const,
   },
   dueTextToday: {
-    color: '#F59E0B',
-    fontWeight: '600',
+    color: '#B8863B',
+    fontWeight: '600' as const,
   },
   noDueDate: {
     fontSize: 11,

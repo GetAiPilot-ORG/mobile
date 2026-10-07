@@ -1,4 +1,5 @@
-import { useTheme } from '../contexts/ThemeContext';
+import { Appearance } from 'react-native';
+import { useTheme } from '@/theme';
 
 export function useColorScheme(): 'light' | 'dark' {
   try {
@@ -9,5 +10,6 @@ export function useColorScheme(): 'light' | 'dark' {
   } catch (e) {
     // fallback if used outside provider
   }
-  return 'light';
+  return Appearance.getColorScheme() === 'dark' ? 'dark' : 'light';
 }
+

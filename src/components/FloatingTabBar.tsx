@@ -1,21 +1,18 @@
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import React from 'react';
 import {
-  View,
-  Text,
+  LayoutAnimation,
+  Platform,
   Pressable,
   StyleSheet,
-  Platform,
-  LayoutAnimation,
-  UIManager,
+  Text,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
-import { useTheme } from '../contexts/ThemeContext';
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+import { useTheme, getColors } from '@/theme';
+import { usePlatformSubscription } from '../hooks/usePlatformSubscription';
+import { useAuth } from '../contexts/AuthContext';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -36,6 +33,17 @@ const TAB_CONFIG: Record<string, TabItemConfig> = {
     activeIcon: 'chatbubbles',
     inactiveIcon: 'chatbubbles-outline',
   },
+
+  team: {
+    label: 'Team',
+    activeIcon: 'people',
+    inactiveIcon: 'people-outline',
+  },
+  planner: {
+    label: 'Planner',
+    activeIcon: 'calendar',
+    inactiveIcon: 'calendar-outline',
+  },
   tools: {
     label: 'Tools',
     activeIcon: 'telescope',
@@ -45,6 +53,16 @@ const TAB_CONFIG: Record<string, TabItemConfig> = {
     label: 'Activity',
     activeIcon: 'pulse',
     inactiveIcon: 'pulse-outline',
+  },
+  admin: {
+    label: 'Admin',
+    activeIcon: 'shield-checkmark',
+    inactiveIcon: 'shield-checkmark-outline'
+  },
+  communication: {
+    label: 'Connect',
+    activeIcon: 'mail',
+    inactiveIcon: 'mail-outline',
   },
 };
 
@@ -74,15 +92,36 @@ const tabSpringAnimation = {
 export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const { user, profile } = useAuth();
+  const { isAdmin: isPlatformAdmin } = usePlatformSubscription();
+
+  const userRole = (user?.role || profile?.role || '').toLowerCase();
+  const isAdmin = Boolean(
+    userRole === 'admin' ||
+    (user as any)?.is_admin === true ||
+    profile?.is_admin === true
+  );
 
   // Bottom floating offset based on safe area
   const bottomOffset = Math.max(insets.bottom, 12);
 
-  // Filter visible routes: strictly the 4 main tabs (Home, Inbox, Tools, Activity)
+  // Filter visible routes: Home, Inbox, Tools, Activity, and Admin ONLY for admin users
   const visibleRoutes = state.routes.filter((route: any) => {
     const descriptor = descriptors[route.key];
     const options = descriptor ? descriptor.options : {};
-    return options.href !== null && !!TAB_CONFIG[route.name] && route.name !== 'products';
+
+    // Explicitly hide products, account, fleet from bottom bar
+    if (route.name === 'products' || route.name === 'account' || route.name === 'fleet') {
+      return false;
+    }
+
+    // Admin tab (shield-checkmark) should ONLY show when the user is admin
+    if (route.name === 'admin') {
+      return Boolean(isAdmin);
+    }
+
+    return options.href !== null && !!TAB_CONFIG[route.name];
   });
 
   const currentRouteName = state.routes[state.index]?.name;
@@ -92,11 +131,14 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   );
 
   return (
-    <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
+    <View style={[styles.floatingWrapper, { bottom: bottomOffset }]}>
       <View
         style={[
           styles.tabBarContainer,
-          isDark ? styles.tabBarContainerDark : styles.tabBarContainerLight,
+          {
+            backgroundColor: colors.card,
+            borderColor: colors.border,
+          },
         ]}
       >
         {visibleRoutes.map((route: { key: string; name: string }, index: number) => {
@@ -144,18 +186,18 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
                 onLongPress={onLongPress}
                 style={[
                   styles.activePill,
-                  isDark ? styles.activePillDark : styles.activePillLight,
+                  { backgroundColor: colors.primary },
                 ]}
               >
                 <Ionicons
                   name={iconName}
                   size={19}
-                  color={isDark ? '#000000' : '#FFFFFF'}
+                  color={isDark ? '#FFFFFF' : '#FFFFFF'}
                 />
                 <Text
                   style={[
                     styles.activeLabel,
-                    isDark ? styles.activeLabelDark : styles.activeLabelLight,
+                    { color: colors.primaryForeground },
                   ]}
                   numberOfLines={1}
                 >
@@ -176,13 +218,17 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
               onLongPress={onLongPress}
               style={[
                 styles.inactiveButton,
-                isDark ? styles.inactiveButtonDark : styles.inactiveButtonLight,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(255, 255, 255, 0.07)'
+                    : 'rgba(0, 0, 0, 0.04)',
+                },
               ]}
             >
               <Ionicons
                 name={iconName}
                 size={20}
-                color={isDark ? '#9CA3AF' : '#64748B'}
+                color={colors.textMuted}
               />
             </Pressable>
           );
@@ -199,6 +245,7 @@ const styles = StyleSheet.create({
     right: 16,
     alignItems: 'center',
     zIndex: 9999,
+    pointerEvents: 'box-none' as any,
   },
   tabBarContainer: {
     flexDirection: 'row',
@@ -222,11 +269,11 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   tabBarContainerDark: {
-    backgroundColor: '#121214',
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: '#0A111B',
+    borderColor: '#234563',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
+    shadowOpacity: 0.45,
     shadowRadius: 24,
     elevation: 14,
   },
@@ -245,7 +292,9 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   activePillDark: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(47, 140, 255, 0.16)',
+    borderWidth: 1,
+    borderColor: '#3E9BFF',
   },
   activePillLight: {
     backgroundColor: '#0F172A',
@@ -256,7 +305,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   activeLabelDark: {
-    color: '#000000',
+    color: '#FFFFFF',
   },
   activeLabelLight: {
     color: '#FFFFFF',
@@ -269,7 +318,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
   },
   inactiveButtonDark: {
-    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
   },
   inactiveButtonLight: {
     backgroundColor: 'rgba(0, 0, 0, 0.04)',

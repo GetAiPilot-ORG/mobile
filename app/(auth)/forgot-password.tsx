@@ -1,21 +1,21 @@
-import React, { useState } from 'react';
+import { getColors, useTheme } from '@/theme';
+import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
   ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
   TouchableWithoutFeedback,
-  Keyboard,
-  useColorScheme,
+  View,
 } from 'react-native';
-import { Image } from 'expo-image';
-import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../src/lib/supabase';
 import { isValidEmail } from '../../src/lib/validators';
@@ -25,8 +25,8 @@ const brandLogo = require('../../assets/images/logo.jpg');
 export default function ForgotPasswordScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -83,7 +83,7 @@ export default function ForgotPasswordScreen() {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={[styles.container, isDark && styles.containerDark]}
+        style={[styles.container, { backgroundColor: colors.backgroundLight, borderWidth: 1, borderColor: colors.border }]}
       >
         <ScrollView
           contentContainerStyle={[
@@ -95,7 +95,7 @@ export default function ForgotPasswordScreen() {
         >
           {/* Top Brand Logo Section */}
           <View style={styles.logoSection}>
-            <View style={[styles.logoWrapper, isDark && styles.logoWrapperDark]}>
+            <View style={[styles.logoWrapper, { backgroundColor: colors.backgroundLight, borderWidth: 1, borderColor: colors.border }]}>
               <Image
                 source={brandLogo}
                 style={styles.logoImage}
@@ -106,10 +106,10 @@ export default function ForgotPasswordScreen() {
           </View>
 
           {/* Heading */}
-          <Text style={[styles.heading, isDark && styles.headingDark]}>
+          <Text style={[styles.heading, { color: colors.primary }]}>
             Reset your account{'\n'}password
           </Text>
-          <Text style={[styles.subheading, isDark && styles.subheadingDark]}>
+          <Text style={[styles.subheading, { color: colors.textSecondary }]}>
             Enter the email associated with your GetAiPilot account and we'll send you reset instructions.
           </Text>
 
@@ -133,12 +133,12 @@ export default function ForgotPasswordScreen() {
           )}
 
           {/* Grouped iOS Input Fields Card */}
-          <View style={[styles.inputGroup, isDark && styles.inputGroupDark]}>
+          <View style={[styles.inputGroup, { backgroundColor: colors.backgroundLight, borderColor: colors.border }]}>
             <View style={styles.inputRow}>
               <TextInput
-                style={[styles.nativeInput, isDark && styles.nativeInputDark]}
+                style={[styles.nativeInput, { backgroundColor: colors.backgroundLight, borderColor: colors.border, color: colors.text }]}
                 placeholder="Account email address"
-                placeholderTextColor={isDark ? '#636366' : '#8E8E93'}
+                placeholderTextColor={colors.backgroundLight}
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
@@ -185,13 +185,13 @@ export default function ForgotPasswordScreen() {
 
           {/* Secondary Action Button ("Back to Log in") */}
           <Pressable
-            style={[styles.secondaryButton, isDark && styles.secondaryButtonDark]}
+            style={[styles.secondaryButton, { backgroundColor: colors.backgroundLight, borderColor: colors.border }]}
             onPress={() => {
               triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
               router.back();
             }}
           >
-            <Text style={[styles.secondaryButtonText, isDark && styles.secondaryButtonTextDark]}>
+            <Text style={[styles.secondaryButtonText, { color: colors.primary }]}>
               Back to Log in
             </Text>
           </Pressable>

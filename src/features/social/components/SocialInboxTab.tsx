@@ -1,7 +1,12 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  Ionicons } from '@expo/vector-icons';
+import { useMutation,
+  useQuery,
+  useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo,
+  useRef,
+  useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -12,7 +17,6 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme
 } from 'react-native';
 import { apiClient } from '../../../core/api/client';
 import {
@@ -20,6 +24,7 @@ import {
   SocialInboxMessageItem,
   SocialInboxReplyPayload,
 } from '../types';
+import { useTheme, getColors } from '@/theme';
 
 
 const QUICK_REPLIES = [
@@ -46,8 +51,8 @@ const formatMessageTime = (dateStr?: string | null) => {
 };
 
 export const SocialInboxTab = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const queryClient = useQueryClient();
   const messagesScrollRef = useRef<ScrollView>(null);
 

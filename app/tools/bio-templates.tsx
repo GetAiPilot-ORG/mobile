@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -19,7 +19,7 @@ import {
   openAuthenticatedTemplate,
 } from "../../src/lib/template-deep-link";
 import { supabase } from "../../src/lib/supabase";
-import { colors } from "../../src/theme/colors";
+import { useTheme, getColors, AppColors } from "@/theme";
 import { TemplatesListSkeleton } from "../../src/components/skeletonScreen";
 
 type TemplateFormData = {
@@ -44,6 +44,10 @@ type TemplateSubmission = {
 };
 
 export default function BioTemplatesScreen() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [templates, setTemplates] = useState<TemplateSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -407,7 +411,7 @@ const formatDate = (date?: string) => {
 
 /* ---------------- Styles ---------------- */
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   listContent: {
     padding: 16,
     paddingBottom: 40,

@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, getColors } from '@/theme';
 
 interface ProductCardProps {
   name: string;
@@ -25,6 +25,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onPress,
 }) => {
   const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -35,7 +36,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     <Pressable
       style={({ pressed }) => [
         styles.card,
-        isDark ? styles.cardDark : styles.cardLight,
+        {
+          backgroundColor: colors.card,
+          borderColor: colors.cardBorder,
+        },
+        !isDark && styles.cardLightShadow,
         pressed && { opacity: 0.8, transform: [{ scale: 0.99 }] },
       ]}
       onPress={handlePress}
@@ -52,11 +57,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         {/* Title & Description */}
         <View style={styles.titleInfo}>
-          <Text style={[styles.name, isDark ? styles.nameDark : styles.nameLight]} numberOfLines={1}>
+          <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
             {name}
           </Text>
           <Text
-            style={[styles.description, isDark ? styles.descriptionDark : styles.descriptionLight]}
+            style={[styles.description, { color: colors.textMuted }]}
             numberOfLines={2}
           >
             {description}
@@ -64,7 +69,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </View>
 
         {/* Apple iOS Chevron */}
-        <Ionicons name="chevron-forward" size={18} color="#8E8E93" style={styles.chevron} />
+        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} style={styles.chevron} />
       </View>
     </Pressable>
   );
@@ -77,18 +82,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  cardLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E5E7EB',
+  cardLightShadow: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 3,
     elevation: 1,
-  },
-  cardDark: {
-    backgroundColor: '#161B22',
-    borderColor: '#262C36',
   },
   contentRow: {
     flexDirection: 'row',
@@ -121,21 +120,9 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
     marginBottom: 3,
   },
-  nameLight: {
-    color: '#000000',
-  },
-  nameDark: {
-    color: '#FFFFFF',
-  },
   description: {
     fontSize: 12,
     lineHeight: 16,
-  },
-  descriptionLight: {
-    color: '#6B7280',
-  },
-  descriptionDark: {
-    color: '#8E8E93',
   },
   chevron: {
     marginLeft: 4,

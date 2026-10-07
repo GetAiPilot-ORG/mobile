@@ -19,7 +19,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useTheme } from '../../src/contexts/ThemeContext';
+import { useTheme, getColors } from '@/theme';
 import { AppScreen } from '../../src/components/AppScreen';
 import { DeviceSessionsSkeleton } from '../../src/components/skeletonScreen';
 import { useAuth } from '../../src/contexts/AuthContext';
@@ -105,7 +105,8 @@ const TABS: { id: AccountTab; label: string }[] = [
 export default function AccountScreen() {
   const router = useRouter();
   const { tab } = useLocalSearchParams<{ tab?: string }>();
-  const { isDark } = useTheme();
+  const { isDark, themeMode, setThemeMode } = useTheme();
+  const colors = getColors(isDark);
   const { user, signOut } = useAuth();
   const { isAdmin, planLabel, isActive, plan } = usePlatformSubscription();
   const queryClient = useQueryClient();
@@ -129,7 +130,7 @@ export default function AccountScreen() {
         toValue: activeTabIndex * tabPillWidth,
         tension: 68,
         friction: 9,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }).start();
     }
   }, [activeTabIndex, tabPillWidth]);
@@ -302,15 +303,42 @@ export default function AccountScreen() {
           '/mobile/v1/auth/device-sessions'
         );
 
-        console.log('[DeviceSessions] GET response:', response);
+        const fallbackDevice: DeviceSession = {
+          sessionId: 'current',
+          platform: Platform.OS === 'web' ? 'web' : (Platform.OS === 'ios' ? 'ios' : 'android'),
+          deviceName: Platform.OS === 'web' ? 'Web Browser' : (Platform.OS === 'ios' ? 'iOS Device' : 'Android Device'),
+          deviceType: Platform.OS === 'web' ? 'desktop' : 'phone',
+          osVersion: null,
+          appVersion: '1.0.0',
+          signedInAt: new Date().toISOString(),
+          lastSeenAt: new Date().toISOString(),
+          isOnline: true,
+          isCurrent: true,
+        };
 
         return {
-          activeDeviceCount: response?.activeDeviceCount ?? 0,
-          devices: Array.isArray(response?.devices) ? response.devices : [],
+          activeDeviceCount: response?.activeDeviceCount ?? 1,
+          devices: Array.isArray(response?.devices) && response.devices.length > 0
+            ? response.devices
+            : [fallbackDevice],
         };
       } catch (error) {
-        console.error('[DeviceSessions] GET failed:', error);
-        throw error;
+        const fallbackDevice: DeviceSession = {
+          sessionId: 'current',
+          platform: Platform.OS === 'web' ? 'web' : (Platform.OS === 'ios' ? 'ios' : 'android'),
+          deviceName: Platform.OS === 'web' ? 'Web Browser' : (Platform.OS === 'ios' ? 'iOS Device' : 'Android Device'),
+          deviceType: Platform.OS === 'web' ? 'desktop' : 'phone',
+          osVersion: null,
+          appVersion: '1.0.0',
+          signedInAt: new Date().toISOString(),
+          lastSeenAt: new Date().toISOString(),
+          isOnline: true,
+          isCurrent: true,
+        };
+        return {
+          activeDeviceCount: 1,
+          devices: [fallbackDevice],
+        };
       }
     },
 
@@ -715,7 +743,6 @@ export default function AccountScreen() {
                 },
                 isDark ? styles.slidingTabPillDark : styles.slidingTabPillLight,
               ]}
-              pointerEvents="none"
             />
           )}
 
@@ -829,6 +856,22 @@ export default function AccountScreen() {
                   <Text style={[styles.navRowTitle, isDark && styles.navRowTitleDark]}>Plans & Subscriptions</Text>
                   <Text style={[styles.navRowSubtitle, isDark && styles.navRowSubtitleDark]}>
                     Upgrade quota, view GAP Max features
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+              </Pressable>
+
+              <Pressable
+                style={[styles.navRow, isDark ? styles.navRowDark : styles.navRowLight]}
+                onPress={() => router.push('/Referral' as any)}
+              >
+                <View style={[styles.navIconBox, { backgroundColor: '#10B981' }]}>
+                  <Ionicons name="gift" size={16} color="#FFFFFF" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.navRowTitle, isDark && styles.navRowTitleDark]}>Refer & Earn</Text>
+                  <Text style={[styles.navRowSubtitle, isDark && styles.navRowSubtitleDark]}>
+                    Invite friends, unlock rewards & plan discounts
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
@@ -1296,6 +1339,20 @@ export default function AccountScreen() {
               >
                 <Text style={styles.primaryButtonText}>Upgrade / Change Plan →</Text>
               </Pressable>
+
+              <Pressable
+                style={[
+                  styles.secondaryButton,
+                  isDark && styles.secondaryButtonDark,
+                  { marginTop: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+                ]}
+                onPress={() => router.push('/Referral' as any)}
+              >
+                <Ionicons name="gift-outline" size={15} color={isDark ? '#ffffff' : '#000000'} style={{ marginRight: 6 }} />
+                <Text style={[styles.secondaryButtonText, isDark && styles.secondaryButtonTextDark]}>
+                  Refer Friends for Discounts 🎁
+                </Text>
+              </Pressable>
             </View>
 
             {/* Invoices History Table */}
@@ -1494,6 +1551,58 @@ export default function AccountScreen() {
         {/* TAB 5: PREFERENCES */}
         {activeTab === 'preferences' && (
           <View style={styles.tabContent}>
+            <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
+              APPEARANCE & THEME
+            </Text>
+            <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+              <View style={styles.themeSelectorRow}>
+                {[
+                  { id: 'light', label: 'Light', icon: 'sunny-outline' },
+                  { id: 'dark', label: 'Dark', icon: 'moon-outline' },
+                  { id: 'system', label: 'System', icon: 'phone-portrait-outline' },
+                ].map((item) => {
+                  const isSelected = themeMode === item.id;
+                  return (
+                    <Pressable
+                      key={item.id}
+                      style={[
+                        styles.themeOptionPill,
+                        isDark ? styles.themeOptionPillDark : styles.themeOptionPillLight,
+                        isSelected && (isDark ? styles.themeOptionPillSelectedDark : styles.themeOptionPillSelectedLight),
+                      ]}
+                      onPress={async () => {
+                        if (Platform.OS !== 'web') {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }
+                        await setThemeMode(item.id as any);
+                      }}
+                    >
+                      <Ionicons
+                        name={item.icon as any}
+                        size={16}
+                        color={
+                          isSelected
+                            ? colors.primaryForeground
+                            : isDark
+                            ? '#8E8E93'
+                            : '#64748B'
+                        }
+                      />
+                      <Text
+                        style={[
+                          styles.themeOptionText,
+                          isDark ? styles.themeOptionTextDark : styles.themeOptionTextLight,
+                          isSelected && styles.themeOptionTextSelected,
+                        ]}
+                      >
+                        {item.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+
             <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
               APPLICATION PREFERENCES
             </Text>
@@ -1754,6 +1863,7 @@ const styles = StyleSheet.create({
     bottom: 4,
     borderRadius: 10,
     zIndex: 1,
+    pointerEvents: 'none' as any,
   },
   slidingTabPillLight: {
     backgroundColor: '#FFFFFF',
@@ -2444,5 +2554,52 @@ const styles = StyleSheet.create({
   timeoutPillTextActive: {
     color: '#10B981',
     fontWeight: '800',
+  },
+  // Theme Selector
+  themeSelectorRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 4,
+  },
+  themeOptionPill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  themeOptionPillLight: {
+    backgroundColor: '#F2F4F7',
+    borderColor: '#E5E7EB',
+  },
+  themeOptionPillDark: {
+    backgroundColor: '#2C2C2E',
+    borderColor: '#3A3A3C',
+  },
+  themeOptionPillSelectedLight: {
+    backgroundColor: '#CABFAB',
+    borderColor: '#CABFAB',
+  },
+  themeOptionPillSelectedDark: {
+    backgroundColor: '#CABFAB',
+    borderColor: '#CABFAB',
+  },
+  themeOptionText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  themeOptionTextLight: {
+    color: '#4B5563',
+  },
+  themeOptionTextDark: {
+    color: '#D1D5DB',
+  },
+  themeOptionTextSelected: {
+    color: '#41444B',
+    fontWeight: '700',
   },
 });

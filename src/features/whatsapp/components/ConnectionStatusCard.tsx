@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, Pressable, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
-import { useTheme } from '../../../contexts/ThemeContext';
+import { useTheme, getColors } from '@/theme';
 import { WhatsAppConnection } from '../types';
 
 interface ConnectionStatusCardProps {
@@ -22,6 +22,7 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
   hasMultipleAccounts = false,
 }) => {
   const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const isConnected = connection?.connected === true && Boolean(connection?.phone_number);
 
