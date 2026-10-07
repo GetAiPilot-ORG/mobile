@@ -1,3 +1,4 @@
+import { getColors, useTheme } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
@@ -13,7 +14,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  useColorScheme,
   View,
 } from "react-native";
 import { DedicatedNumber, VoiceContact, voiceApi } from "../api/voiceApi";
@@ -35,8 +35,8 @@ function getInitials(name: string): string {
 }
 
 export const ContactsScreen: React.FC = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const themeColors = getColors(isDark);
   const queryClient = useQueryClient();
 
   const [activeSubTab, setActiveSubTab] = useState<
@@ -142,7 +142,7 @@ export const ContactsScreen: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["voice", "numbers"] });
       queryClient.invalidateQueries({ queryKey: ["voice", "overview"] });
       setSelectedNumberToAssign(null);
-      Alert.alert("Success", "Assistant bound to phone line successfully.");      
+      Alert.alert("Success", "Assistant bound to phone line successfully.");
     },
     onError: (err: any) => {
       Alert.alert(
@@ -217,20 +217,21 @@ export const ContactsScreen: React.FC = () => {
   ).length;
 
   const colors = {
-    background: isDark ? "#000000" : "#F8F9FA",
-    surface: isDark ? "#141418" : "#FFFFFF",
-    surfaceAlt: isDark ? "#1C1C22" : "#F1F3F9",
-    border: isDark ? "#282832" : "#E2E8F0",
-    text: isDark ? "#FFFFFF" : "#0F172A",
-    textSecondary: isDark ? "#94A3B8" : "#64748B",
-    primary: "#5844E3",
-    primaryLight: isDark ? "rgba(88, 68, 227, 0.15)" : "#EEF2FF",
-    green: "#16A34A",
-    greenLight: isDark ? "rgba(22, 163, 74, 0.15)" : "#DCFCE7",
-    amber: "#D97706",
-    amberLight: isDark ? "rgba(245, 158, 11, 0.15)" : "#FEF3C7",
-    red: "#EF4444",
-    redLight: isDark ? "rgba(239, 68, 68, 0.12)" : "#FEE2E2",
+    ...themeColors,
+    background: themeColors.background,
+    surface: themeColors.surface,
+    surfaceAlt: themeColors.surfaceSecondary,
+    border: themeColors.border,
+    text: themeColors.text,
+    textSecondary: themeColors.textMuted,
+    primary: themeColors.products.voice || "#5844E3",
+    primaryLight: themeColors.products.voiceSoft || (isDark ? "rgba(88, 68, 227, 0.15)" : "#EEF2FF"),
+    green: themeColors.success,
+    greenLight: themeColors.successSoft,
+    amber: themeColors.warning,
+    amberLight: themeColors.warningSoft,
+    red: themeColors.destructive,
+    redLight: themeColors.destructiveSoft,
   };
 
   const filteredContacts = contacts.filter((cnt) => {
@@ -271,15 +272,15 @@ export const ContactsScreen: React.FC = () => {
           {activeSubTab === "contacts"
             ? "Contacts & Leads"
             : activeSubTab === "numbers"
-            ? "Dedicated Phone Lines"
-            : "AI Voice Assistants"}
+              ? "Dedicated Phone Lines"
+              : "AI Voice Assistants"}
         </Text>
         <Text style={[styles.subHeading, { color: colors.textSecondary }]}>
           {activeSubTab === "contacts"
             ? "Manage customer phone numbers and outbound lists."
             : activeSubTab === "numbers"
-            ? "Virtual phone lines bound to AI Assistants for calling."
-            : "Your AI workforce and their assigned caller IDs."}
+              ? "Virtual phone lines bound to AI Assistants for calling."
+              : "Your AI workforce and their assigned caller IDs."}
         </Text>
       </View>
 
@@ -367,8 +368,8 @@ export const ContactsScreen: React.FC = () => {
                     activeSubTab === "numbers"
                       ? "rgba(255, 255, 255, 0.25)"
                       : isDark
-                      ? "rgba(245, 158, 11, 0.2)"
-                      : "#FEF3C7",
+                        ? "rgba(245, 158, 11, 0.2)"
+                        : "#FEF3C7",
                 },
               ]}
             >
@@ -843,7 +844,7 @@ export const ContactsScreen: React.FC = () => {
               ]}
             >
               <Image
-                source={require("../../../../assets/images/logo.png")}
+                source={require("../../../../assets/images/logobag.png")}
                 style={{ width: 22, height: 22, borderRadius: 5 }}
                 resizeMode="contain"
               />
@@ -941,8 +942,8 @@ export const ContactsScreen: React.FC = () => {
                             backgroundColor: isExpired
                               ? colors.amberLight
                               : isAssigned
-                              ? colors.greenLight
-                              : colors.primaryLight,
+                                ? colors.greenLight
+                                : colors.primaryLight,
                           },
                         ]}
                       >
@@ -953,8 +954,8 @@ export const ContactsScreen: React.FC = () => {
                             isExpired
                               ? colors.amber
                               : isAssigned
-                              ? colors.green
-                              : colors.primary
+                                ? colors.green
+                                : colors.primary
                           }
                         />
                       </View>
@@ -976,8 +977,8 @@ export const ContactsScreen: React.FC = () => {
                                 backgroundColor: isExpired
                                   ? colors.amberLight
                                   : isAssigned
-                                  ? colors.greenLight
-                                  : colors.primaryLight,
+                                    ? colors.greenLight
+                                    : colors.primaryLight,
                               },
                             ]}
                           >
@@ -988,16 +989,16 @@ export const ContactsScreen: React.FC = () => {
                                   color: isExpired
                                     ? "#D97706"
                                     : isAssigned
-                                    ? colors.green
-                                    : colors.primary,
+                                      ? colors.green
+                                      : colors.primary,
                                 },
                               ]}
                             >
                               {isExpired
                                 ? "Plan Expired"
                                 : isAssigned
-                                ? "Active / Bound"
-                                : "Unassigned"}
+                                  ? "Active / Bound"
+                                  : "Unassigned"}
                             </Text>
                           </View>
                         </View>
@@ -1011,8 +1012,8 @@ export const ContactsScreen: React.FC = () => {
                           {num.assistants?.name
                             ? `Bound to: ${num.assistants.name}`
                             : isAssigned
-                            ? "Bound to Voice Assistant"
-                            : "Available (Tap to Bind)"}
+                              ? "Bound to Voice Assistant"
+                              : "Available (Tap to Bind)"}
                         </Text>
                       </View>
 

@@ -1,3 +1,7 @@
+import { getColors, useTheme } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import {
   Alert,
@@ -9,12 +13,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import * as Clipboard from 'expo-clipboard';
-import { TelegramToolKey } from '../types';
 import { StatCard } from '../components/ui/StatCard';
-import { useTheme, getColors } from '@/theme';
+import { TelegramToolKey } from '../types';
 
 type SubSection = 'pages' | 'revenue' | 'channels';
 
@@ -54,9 +54,9 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
   const [pageActiveMap, setPageActiveMap] = useState<Record<string, boolean>>({});
   const [launchExpanded, setLaunchExpanded] = useState(false);
 
-  const card = isDark ? styles.cardDark : styles.cardLight;
-  const txt = isDark ? styles.textDark : styles.textLight;
-  const border = isDark ? styles.borderDark : styles.borderLight;
+  const card = { backgroundColor: colors.card, borderColor: colors.border };
+  const txt = { color: colors.text };
+  const border = { borderColor: colors.border };
 
   const filteredTxns = (stats.transactions || []).filter((tx: any) => {
     const q = txnSearch.toLowerCase();
@@ -97,7 +97,7 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
               <Text style={styles.activeBadgeText}>Bot Active</Text>
             </View>
           </View>
-          <Text style={[styles.headerSub, isDark ? { color: '#94A3B8' } : { color: '#64748B' }]} numberOfLines={1}>VIP Community & Subscription Hub</Text>
+          <Text style={[styles.headerSub, { color: colors.textSecondary }]} numberOfLines={1}>VIP Community & Subscription Hub</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Pressable style={styles.newBtn} onPress={() => onOpenModal('sub_manager')}>
@@ -110,29 +110,65 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
         </View>
       </View>
 
-      {/* 4 KPI Cards 2x2 */}
-      <View style={styles.statsGrid}>
-        {[
-          { label: 'TOTAL REVENUE', val: `₹${stats.totalRevenue}`, sub: 'Net earnings', icon: 'trending-up', bg: isDark ? 'rgba(99,102,241,0.15)' : '#EEF2FF', color: '#6366F1', isRevenue: true },
-          { label: 'ACTIVE SUBSCRIBERS', val: String(stats.activeSubscribers), sub: '0 all-time joined', icon: 'pulse', bg: isDark ? 'rgba(16,185,129,0.15)' : '#ECFDF5', color: '#10B981' },
-          { label: 'SUBSCRIPTION PAGES', val: String(stats.subscriptionPages), sub: 'Hosted checkouts', icon: 'globe-outline', bg: isDark ? 'rgba(2,132,199,0.15)' : '#F0F9FF', color: '#0284C7' },
-          { label: 'BOT AUTOMATED ACCESS', val: stats.botAutomatedAccess, sub: 'Single-use invites', icon: 'shield-checkmark-outline', bg: isDark ? 'rgba(148,163,184,0.15)' : '#F8FAFC', color: '#64748B' },
-        ].map((k, i) => (
+      {/* 4 KPI Cards in Solid 2-Column Grid */}
+      <View style={styles.metricsContainer}>
+        {/* Row 1 */}
+        <View style={styles.metricsRow}>
           <StatCard
-            key={i}
-            label={k.label}
-            value={k.val}
-            icon={k.icon}
-            color={k.color}
-            bg={k.bg}
-            sub={k.sub}
-            isRevenue={k.isRevenue}
+            label="TOTAL REVENUE"
+            value={`₹${stats.totalRevenue}`}
+            icon="trending-up"
+            color="#6366F1"
+            bg={isDark ? 'rgba(99,102,241,0.15)' : '#EEF2FF'}
+            sub="Net earnings"
+            isRevenue
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSubSection('revenue');
+            }}
           />
-        ))}
+          <StatCard
+            label="ACTIVE SUBSCRIBERS"
+            value={String(stats.activeSubscribers)}
+            icon="pulse"
+            color="#10B981"
+            bg={isDark ? 'rgba(16,185,129,0.15)' : '#ECFDF5'}
+            sub="Active members"
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSubSection('channels');
+            }}
+          />
+        </View>
+
+        {/* Row 2 */}
+        <View style={styles.metricsRow}>
+          <StatCard
+            label="SUBSCRIPTION PAGES"
+            value={String(stats.subscriptionPages)}
+            icon="globe"
+            color="#0284C7"
+            bg={isDark ? 'rgba(2,132,199,0.15)' : '#F0F9FF'}
+            sub="Hosted checkouts"
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSubSection('pages');
+            }}
+          />
+          <StatCard
+            label="BOT ACCESS"
+            value={stats.botAutomatedAccess || "Active"}
+            icon="shield-checkmark"
+            color="#8B5CF6"
+            bg={isDark ? 'rgba(139,92,246,0.15)' : '#F3E8FF'}
+            sub="Single-use invites"
+            onPress={() => onOpenModal('sub_manager')}
+          />
+        </View>
       </View>
 
       {/* Launch Readiness Accordion */}
-      <Pressable style={[styles.launchBanner, isDark ? styles.launchBannerDark : styles.launchBannerLight]} onPress={() => setLaunchExpanded(!launchExpanded)}>
+      <Pressable style={[styles.launchBanner, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => setLaunchExpanded(!launchExpanded)}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Ionicons name="rocket-outline" size={16} color="#10B981" />
           <Text style={[styles.launchTitle, txt]}>Launch Readiness</Text>
@@ -290,7 +326,7 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 {(['All', 'Success', 'On Hold'] as const).map((f) => (
-                  <Pressable key={f} style={[styles.filterPill, txnFilter === f && styles.filterPillActive, isDark ? styles.filterPillDark : styles.filterPillLight]} onPress={() => setTxnFilter(f)}>
+                  <Pressable key={f} style={[styles.filterPill, txnFilter === f && styles.filterPillActive, { backgroundColor: colors.background, borderColor: colors.border }]} onPress={() => setTxnFilter(f)}>
                     <Text style={[styles.filterPillText, txnFilter === f && styles.filterPillTextActive, txt]}>{f}</Text>
                   </Pressable>
                 ))}
@@ -309,7 +345,7 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
                 const statusVal = (tx.status || 'SUCCESS').toUpperCase();
 
                 return (
-                  <View key={tx.id || paymentId} style={[styles.txnRow, isDark ? styles.txnRowDark : styles.txnRowLight]}>
+                  <View key={tx.id || paymentId} style={[styles.txnRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
                     <View style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
                       <Text style={[styles.txnId, txt]} numberOfLines={1}>{paymentId}</Text>
                       <Text style={styles.txnDate} numberOfLines={1}>{formattedDate}</Text>
@@ -421,6 +457,8 @@ const styles = StyleSheet.create({
   newBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#0284C7', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 8 },
   newBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
   iconBtn: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  metricsContainer: { width: '100%', alignSelf: 'stretch', gap: 10, marginBottom: 12 },
+  metricsRow: { flexDirection: 'row', gap: 10, width: '100%', alignSelf: 'stretch', marginBottom: 10 },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 12, width: '100%' },
   statCard: { width: '48%', padding: 12, borderRadius: 14, borderWidth: 1 },
   statHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },

@@ -13,7 +13,7 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
-import { getColors, useTheme } from "../../../contexts/ThemeContext";
+import { useTheme, getColors } from "@/theme";
 
 import { AppScreen } from "../../../components/AppScreen";
 import { AppTopBar } from "../../../components/AppTopBar";
@@ -329,8 +329,13 @@ export const TelegramScreen: React.FC = () => {
   };
 
   const openModal = (key: TelegramToolKey) => {
-    if (Platform.OS !== "web")
+    if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    if (key === 'tracker') {
+      handleTabChange('bots');
+      return;
+    }
     setActiveModal(key);
   };
 
@@ -479,7 +484,7 @@ export const TelegramScreen: React.FC = () => {
           onStartLogin={async () => ({ success: true, message: "" })}
           onVerifyOtp={async () => ({ success: true, message: "" })}
           onSubmitPassword={async () => ({ success: true, message: "" })}
-          onSuccess={() => {}}
+          onSuccess={() => { }}
         />
       )}
     </AppScreen>
@@ -487,11 +492,13 @@ export const TelegramScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, width: '100%' },
   content: {
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 110,
+    width: '100%',
+    alignItems: 'stretch',
     gap: 0,
   },
 });

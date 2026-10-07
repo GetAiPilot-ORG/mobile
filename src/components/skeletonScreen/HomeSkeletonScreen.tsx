@@ -11,7 +11,7 @@ export function HomeSkeleton() {
     <ScrollView
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.container}
-      style={{ backgroundColor: isDark ? "#000000" : "#F2F2F7" }}
+      style={{ backgroundColor: colors.background }}
     >
       {/* Top Header / Greeting */}
       <View style={styles.header}>

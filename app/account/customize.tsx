@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { AppScreen } from '../../src/components/AppScreen';
-import { useTheme, ThemeMode, ThemeSelector, spacing, radius } from '@/features/theme';
+import { useTheme, getColors, ThemeMode, ThemeSelector, spacing, radius } from '@/features/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface ShortcutConfig {
@@ -48,7 +48,8 @@ const PREF_STORAGE_KEY = '@gap_app_customize_shortcuts';
 
 export default function CustomizeAppScreen() {
   const router = useRouter();
-  const { themeMode, setThemeMode, isDark, colors } = useTheme();
+  const { themeMode, setThemeMode, isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [shortcuts, setShortcuts] = useState<ShortcutConfig[]>(DEFAULT_SHORTCUTS);
   const [compactView, setCompactView] = useState(false);

@@ -1215,11 +1215,30 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
 
               {/* Secondary Option: Launch Official Web Gateway */}
               <Pressable
-                onPress={() => {
-                  if (!order) return;
+                onPress={async () => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  const checkoutUrl = `${BFF_BASE_URL}/mobile/v1/payments/razorpay/checkout-page?orderId=${encodeURIComponent(order.orderId)}&keyId=${encodeURIComponent(order.keyId)}&amount=${encodeURIComponent(options.amount)}&planName=${encodeURIComponent(options.planName)}&planId=${encodeURIComponent(options.planId)}&billingInterval=${encodeURIComponent(options.billingInterval)}&userId=${encodeURIComponent(currentUser?.id || '')}&product=${encodeURIComponent(options.product || 'social')}&email=${encodeURIComponent(customerEmail)}&name=${encodeURIComponent(customerName)}&phone=${encodeURIComponent(customerPhone)}`;
-                  Linking.openURL(checkoutUrl);
+                  try {
+                    let activeOrder = order;
+                    if (!activeOrder) {
+                      setIsInitializing(true);
+                      activeOrder = await RazorpayApiService.createOrder({
+                        amount: options.amount,
+                        currency: options.currency || 'INR',
+                        product: options.product || 'social',
+                        planId: options.planId,
+                        planName: options.planName,
+                        billingInterval: options.billingInterval,
+                        notes: options.notes,
+                      });
+                      setOrder(activeOrder);
+                    }
+                    const checkoutUrl = `${BFF_BASE_URL}/mobile/v1/payments/razorpay/checkout-page?orderId=${encodeURIComponent(activeOrder.orderId)}&keyId=${encodeURIComponent(activeOrder.keyId)}&amount=${encodeURIComponent(options.amount)}&planName=${encodeURIComponent(options.planName)}&planId=${encodeURIComponent(options.planId)}&billingInterval=${encodeURIComponent(options.billingInterval)}&userId=${encodeURIComponent(currentUser?.id || '')}&product=${encodeURIComponent(options.product || 'social')}&email=${encodeURIComponent(customerEmail)}&name=${encodeURIComponent(customerName)}&phone=${encodeURIComponent(customerPhone)}`;
+                    await Linking.openURL(checkoutUrl);
+                  } catch (e: any) {
+                    setErrorMessage(e?.message || 'Failed to open Razorpay gateway');
+                  } finally {
+                    setIsInitializing(false);
+                  }
                 }}
                 style={styles.openOfficialBtn}
               >

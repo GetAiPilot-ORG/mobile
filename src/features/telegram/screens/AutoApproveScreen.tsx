@@ -1,3 +1,6 @@
+import { getColors, useTheme } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import React from 'react';
 import {
   Image,
@@ -7,11 +10,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { useAuthStore } from '../../../core/store/authStore';
 import { TelegramToolKey } from '../types';
-import { useTheme, getColors } from '@/theme';
 
 interface Props {
   chats?: any[];
@@ -29,8 +29,8 @@ export const AutoApproveScreen: React.FC<Props> = () => {
     (user as any)?.user_metadata?.telegram_user_id ||
     null;
 
-  const card = isDark ? styles.cardDark : styles.cardLight;
-  const txt = isDark ? styles.textDark : styles.textLight;
+  const card = { backgroundColor: colors.card };
+  const txt = { color: colors.text };
 
   const handleConnect = async () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -51,7 +51,7 @@ export const AutoApproveScreen: React.FC<Props> = () => {
     <View style={styles.container}>
       <View style={[styles.card, card]}>
         {/* App Icon */}
-        <View style={[styles.iconWrapper, isDark ? styles.iconWrapperDark : styles.iconWrapperLight]}>
+        <View style={[styles.iconWrapper, { backgroundColor: colors.card }]}>
           <Image
             source={require('../../../../assets/images/autoapprove-icon.jpg')}
             style={styles.botIcon}
@@ -77,7 +77,7 @@ export const AutoApproveScreen: React.FC<Props> = () => {
 
         {/* Connected Telegram ID Pill */}
         {telegramUserId ? (
-          <View style={[styles.idPill, isDark ? styles.idPillDark : styles.idPillLight]}>
+          <View style={[styles.idPill, { backgroundColor: colors.card }]}>
             <Ionicons name="shield-checkmark" size={16} color="#0284C7" />
             <Text style={[styles.idPillText, txt]}>
               Connected Telegram ID: {telegramUserId}

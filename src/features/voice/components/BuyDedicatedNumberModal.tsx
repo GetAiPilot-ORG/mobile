@@ -6,9 +6,9 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
-  useColorScheme,
   ActivityIndicator,
 } from "react-native";
+import { useTheme, getColors } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
@@ -23,8 +23,8 @@ interface BuyDedicatedNumberModalProps {
 export const BuyDedicatedNumberModal: React.FC<
   BuyDedicatedNumberModalProps
 > = ({ visible, availableNumbers, onClose, onClaim, isLoading }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   const [selectedNumber, setSelectedNumber] = useState<string>(
     availableNumbers[0]?.phone_number || "",

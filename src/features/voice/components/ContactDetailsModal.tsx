@@ -6,9 +6,9 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
-  useColorScheme,
   Alert,
 } from "react-native";
+import { useTheme, getColors } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { VoiceContact } from "../api/voiceApi";
@@ -32,8 +32,8 @@ export const ContactDetailsModal: React.FC<ContactDetailsModalProps> = ({
   onDelete,
   onInspectCall,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   if (!contact) return null;
 

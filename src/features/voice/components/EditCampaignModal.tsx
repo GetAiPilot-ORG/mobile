@@ -7,10 +7,10 @@ import {
   Pressable,
   TextInput,
   ScrollView,
-  useColorScheme,
   ActivityIndicator,
   Platform,
 } from "react-native";
+import { useTheme, getColors } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { VoiceCampaign } from "../api/voiceApi";
@@ -34,8 +34,8 @@ export const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
   onSubmit,
   isLoading,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const themeColors = getColors(isDark);
 
   const [name, setName] = useState("");
   const [category, setCategory] = useState("Outreach");
@@ -47,21 +47,22 @@ export const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const colors = {
-    background: isDark ? "#0D1117" : "#FFFFFF",
+    ...themeColors,
+    background: themeColors.background,
     modalOverlay: isDark ? "rgba(0, 0, 0, 0.75)" : "rgba(15, 23, 42, 0.45)",
-    cardBg: isDark ? "#161B22" : "#FFFFFF",
-    surfaceAlt: isDark ? "#1C2128" : "#F8FAFC",
-    border: isDark ? "#30363D" : "#E2E8F0",
-    text: isDark ? "#F0F6FC" : "#0F172A",
-    textSecondary: isDark ? "#8B949E" : "#64748B",
-    primary: "#5B3AF5",
-    primaryLight: isDark ? "rgba(91, 58, 245, 0.15)" : "#EEF2FF",
-    green: "#16A34A",
-    greenLight: isDark ? "rgba(22, 163, 74, 0.15)" : "#DCFCE7",
-    amber: "#D97706",
-    amberLight: isDark ? "rgba(245, 158, 11, 0.15)" : "#FEF3C7",
-    danger: "#EF4444",
-    dangerLight: isDark ? "rgba(239, 68, 68, 0.12)" : "#FEE2E2",
+    cardBg: themeColors.surface,
+    surfaceAlt: themeColors.surfaceSecondary,
+    border: themeColors.border,
+    text: themeColors.text,
+    textSecondary: themeColors.textMuted,
+    primary: themeColors.products.voice || "#5B3AF5",
+    primaryLight: themeColors.products.voiceSoft || (isDark ? "rgba(91, 58, 245, 0.15)" : "#EEF2FF"),
+    green: themeColors.success,
+    greenLight: themeColors.successSoft,
+    amber: themeColors.warning,
+    amberLight: themeColors.warningSoft,
+    danger: themeColors.destructive,
+    dangerLight: themeColors.destructiveSoft,
   };
 
   useEffect(() => {

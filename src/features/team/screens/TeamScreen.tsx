@@ -1,8 +1,11 @@
 import {
-  Ionicons } from '@expo/vector-icons';
-import { useMutation,
+  Ionicons
+} from '@expo/vector-icons';
+import {
+  useMutation,
   useQuery,
-  useQueryClient } from '@tanstack/react-query';
+  useQueryClient
+} from '@tanstack/react-query';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -17,13 +20,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { getColors, useTheme } from '@/theme';
 import {
   AttendanceRecord,
   CRMMember,
   LeaveRequest,
 } from '../../crm/types';
 import { teamApi } from '../api/team.api';
-import { useTheme, getColors } from '@/theme';
 
 type TabType =
   | 'members'
@@ -123,12 +126,12 @@ export function TeamScreen() {
   // Theme
   // ─────────────────────────────────────────────
 
-  const bg = isDark ? '#0F1015' : '#F8FAFC';
-  const card = isDark ? '#1A1D26' : '#FFFFFF';
-  const text = isDark ? '#FFFFFF' : '#0F172A';
-  const sub = isDark ? '#9CA3AF' : '#64748B';
-  const border = isDark ? '#262A34' : '#E2E8F0';
-  const inputBg = isDark ? '#262A34' : '#F8FAFC';
+  const bg = colors.background;
+  const card = colors.card;
+  const text = colors.text;
+  const sub = colors.textSecondary;
+  const border = colors.border;
+  const inputBg = colors.surface;
 
   // ─────────────────────────────────────────────
   // Members
@@ -386,12 +389,8 @@ export function TeamScreen() {
             styles.memberAvatar,
             {
               backgroundColor: item.is_active
-                ? isDark
-                  ? '#172554'
-                  : '#EFF6FF'
-                : isDark
-                  ? '#262A34'
-                  : '#F1F5F9',
+                ? colors.surface
+                : colors.card,
             },
           ]}
         >
@@ -400,8 +399,8 @@ export function TeamScreen() {
               styles.memberAvatarText,
               {
                 color: item.is_active
-                  ? '#3B82F6'
-                  : '#64748B',
+                  ? colors.surface
+                  : colors.card,
               },
             ]}
           >
@@ -504,7 +503,7 @@ export function TeamScreen() {
   }) => {
     const statusColor =
       ATTENDANCE_STATUS_COLOR[item.status] || {
-        bg: isDark ? '#262A34' : '#F1F5F9',
+        bg: colors.surface,
         text: sub,
       };
 
@@ -614,7 +613,7 @@ export function TeamScreen() {
   }) => {
     const statusColor =
       LEAVE_STATUS_COLOR[item.status] || {
-        bg: isDark ? '#262A34' : '#F1F5F9',
+        bg: colors.background,
         text: sub,
       };
 
@@ -1065,9 +1064,7 @@ export function TeamScreen() {
                   style={[
                     styles.emptyIcon,
                     {
-                      backgroundColor: isDark
-                        ? '#1A1D26'
-                        : '#EFF6FF',
+                      backgroundColor: colors.surface,
                     },
                   ]}
                 >

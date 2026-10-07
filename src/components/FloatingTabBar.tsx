@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, getColors } from '@/theme';
 import { usePlatformSubscription } from '../hooks/usePlatformSubscription';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -91,7 +91,8 @@ const tabSpringAnimation = {
 
 export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
   const insets = useSafeAreaInsets();
-  const { isDark, colors } = useTheme();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const { user, profile } = useAuth();
   const { isAdmin: isPlatformAdmin } = usePlatformSubscription();
 
@@ -191,7 +192,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
                 <Ionicons
                   name={iconName}
                   size={19}
-                  color={colors.primaryForeground}
+                  color={isDark ? '#FFFFFF' : '#FFFFFF'}
                 />
                 <Text
                   style={[
@@ -217,13 +218,17 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
               onLongPress={onLongPress}
               style={[
                 styles.inactiveButton,
-                isDark ? styles.inactiveButtonDark : styles.inactiveButtonLight,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(255, 255, 255, 0.07)'
+                    : 'rgba(0, 0, 0, 0.04)',
+                },
               ]}
             >
               <Ionicons
                 name={iconName}
                 size={20}
-                color={colors.tabInactive || colors.mutedForeground}
+                color={colors.textMuted}
               />
             </Pressable>
           );
@@ -264,11 +269,11 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   tabBarContainerDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
+    backgroundColor: '#0A111B',
+    borderColor: '#234563',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
+    shadowOpacity: 0.45,
     shadowRadius: 24,
     elevation: 14,
   },
@@ -287,7 +292,9 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   activePillDark: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(47, 140, 255, 0.16)',
+    borderWidth: 1,
+    borderColor: '#3E9BFF',
   },
   activePillLight: {
     backgroundColor: '#0F172A',
@@ -298,7 +305,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   activeLabelDark: {
-    color: '#000000',
+    color: '#FFFFFF',
   },
   activeLabelLight: {
     color: '#FFFFFF',
@@ -311,7 +318,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
   },
   inactiveButtonDark: {
-    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
   },
   inactiveButtonLight: {
     backgroundColor: 'rgba(0, 0, 0, 0.04)',

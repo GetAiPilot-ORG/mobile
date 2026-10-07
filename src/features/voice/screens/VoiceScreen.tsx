@@ -18,7 +18,7 @@ import {
   ProductFloatingBottomBar,
   ProductTabItem,
 } from "../../../components/ProductFloatingBottomBar";
-import { useTheme } from "../../../contexts/ThemeContext";
+import { useTheme, getColors } from "@/theme";
 import { voiceApi } from "../api/voiceApi";
 import {
   CreateAgentModal,
@@ -157,13 +157,15 @@ export const VoiceScreen: React.FC = () => {
     Math.max(insets.top, statusBarHeight) +
     (Platform.OS === "android" ? 10 : 6);
 
+  const themeColors = getColors(isDark);
   const colors = {
-    background: isDark ? "#000000" : "#F7F8FA",
-    headerBg: isDark ? "#000000" : "#F7F8FA",
-    text: isDark ? "#FFFFFF" : "#0F172A",
-    textSecondary: isDark ? "#94A3B8" : "#64748B",
-    primary: "#5844E3",
-    border: isDark ? "#2A2A2E" : "#E8EAF0",
+    ...themeColors,
+    background: themeColors.background,
+    headerBg: themeColors.background,
+    text: themeColors.text,
+    textSecondary: themeColors.textMuted,
+    primary: themeColors.products.voice || "#5844E3",
+    border: themeColors.border,
   };
 
   return (

@@ -1,5 +1,7 @@
+import { getColors, useTheme } from '@/theme';
 import {
-  Ionicons } from '@expo/vector-icons';
+  Ionicons
+} from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import {
@@ -14,7 +16,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LeaveRequest } from '../../crm/types';
 import { teamApi } from '../api/team.api';
-import { useTheme, getColors } from '@/theme';
 
 type TabType = 'email' | 'wfh';
 
@@ -30,11 +31,11 @@ export function CommunicationScreen() {
   const colors = getColors(isDark);
   const [activeTab, setActiveTab] = useState<TabType>('wfh');
 
-  const bg = isDark ? '#0F1015' : '#F8FAFC';
-  const card = isDark ? '#1A1D26' : '#FFFFFF';
-  const text = isDark ? '#FFFFFF' : '#0F172A';
-  const sub = isDark ? '#9CA3AF' : '#64748B';
-  const border = isDark ? '#262A34' : '#E2E8F0';
+  const bg = colors.background;
+  const card = colors.card;
+  const text = colors.text;
+  const sub = colors.textSecondary;
+  const border = colors.border;
 
   const { data: wfhData, isLoading: wfhLoading, refetch: refetchWFH, isRefetching: wfhRefetching } = useQuery({
     queryKey: ['team-wfh'],
@@ -128,7 +129,7 @@ export function CommunicationScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         {activeTab === 'email' && (
           <View style={{ paddingHorizontal: 16, gap: 10, paddingTop: 8 }}>
-            <View style={[s.infoCard, { backgroundColor: isDark ? '#1A1D26' : '#EFF6FF', borderColor: '#BFDBFE' }]}>
+            <View style={[s.infoCard, { backgroundColor: colors.surface, borderColor: '#BFDBFE' }]}>
               <Ionicons name="mail" size={28} color="#3B82F6" />
               <View>
                 <Text style={[s.infoTitle, { color: text }]}>Email</Text>

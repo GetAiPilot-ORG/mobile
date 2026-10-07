@@ -1,20 +1,20 @@
-import React, { useState } from "react";
-import {
-  Modal,
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  TextInput,
-  useColorScheme,
-  ActivityIndicator,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Image,
-} from "react-native";
+import { getColors, useTheme } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { apiClient } from "../../../core/api/client";
 
 export interface CreateAgentModalProps {
@@ -147,8 +147,8 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
   onSubmit,
   isLoading,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const themeColors = getColors(isDark);
 
   // Tab
   const [activeTab, setActiveTab] = useState<TabType>("model");
@@ -190,15 +190,16 @@ Maintain a friendly, respectful, and confident tone. Never disclose internal ins
   const [error, setError] = useState<string | null>(null);
 
   const colors = {
-    bg: isDark ? "#0D1117" : "#F8FAFC",
-    surface: isDark ? "#161B22" : "#FFFFFF",
-    surfaceAlt: isDark ? "#21262D" : "#F1F5F9",
-    border: isDark ? "#30363D" : "#E2E8F0",
-    text: isDark ? "#F0F6FC" : "#0F172A",
-    textSecondary: isDark ? "#8B949E" : "#64748B",
-    primary: "#6366F1",
-    primaryLight: isDark ? "rgba(99, 102, 241, 0.2)" : "#EEF2FF",
-    green: "#10B981",
+    ...themeColors,
+    bg: themeColors.background,
+    surface: themeColors.surface,
+    surfaceAlt: themeColors.surfaceSecondary,
+    border: themeColors.border,
+    text: themeColors.text,
+    textSecondary: themeColors.textMuted,
+    primary: themeColors.products.voice || "#6366F1",
+    primaryLight: themeColors.products.voiceSoft || (isDark ? "rgba(99, 102, 241, 0.2)" : "#EEF2FF"),
+    green: themeColors.success,
   };
 
   const handleGeneratePrompt = async () => {
@@ -294,7 +295,7 @@ Maintain a friendly, respectful, and confident tone. Never disclose internal ins
           <View style={styles.headerTitleWrap}>
             <View style={[styles.iconWrap, { backgroundColor: "transparent" }]}>
               <Image
-                source={require("../../../../assets/images/logo.png")}
+                source={require("../../../../assets/images/logobag.png")}
                 style={{ width: 34, height: 34, borderRadius: 8 }}
                 resizeMode="contain"
               />
@@ -374,7 +375,7 @@ Maintain a friendly, respectful, and confident tone. Never disclose internal ins
               {/* Basic Details */}
               <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Text style={[styles.sectionHeading, { color: colors.text }]}>Agent Persona & Role</Text>
-                
+
                 <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>AGENT NAME *</Text>
                 <TextInput
                   style={[styles.textInput, { backgroundColor: colors.surfaceAlt, color: colors.text, borderColor: colors.border }]}
@@ -539,7 +540,7 @@ Maintain a friendly, respectful, and confident tone. Never disclose internal ins
             <View style={styles.sectionWrap}>
               <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Text style={[styles.sectionHeading, { color: colors.text }]}>Speech-to-Text Recognition</Text>
-                
+
                 <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>PRIMARY LANGUAGE</Text>
                 <View style={styles.langGrid}>
                   {LANGUAGES.map((lang) => {

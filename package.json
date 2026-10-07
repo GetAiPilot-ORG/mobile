@@ -3,28 +3,30 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
-    "@expo/ui": "~57.0.18",
+    "@expo/ui": "~57.0.21",
     "@expo/vector-icons": "^15.0.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/netinfo": "12.0.1",
     "@supabase/supabase-js": "^2.116.0",
     "@tanstack/react-query": "^5.102.8",
+    "ci": "^2.3.0",
     "expo": "~57.0.23",
     "expo-asset": "~57.0.17",
+    "expo-build-properties": "~57.0.22",
     "expo-clipboard": "~57.0.2",
     "expo-constants": "~57.0.17",
     "expo-dev-client": "~57.0.19",
     "expo-device": "~57.0.2",
-    "expo-document-picker": "~57.0.2",
+    "expo-document-picker": "~57.0.3",
     "expo-font": "~57.0.3",
-    "expo-glass-effect": "~57.0.3",
+    "expo-glass-effect": "~57.0.4",
     "expo-haptics": "~57.0.3",
     "expo-image": "~57.0.5",
-    "expo-image-picker": "~57.0.18",
+    "expo-image-picker": "~57.0.20",
     "expo-linear-gradient": "~57.0.2",
-    "expo-linking": "~57.0.10",
+    "expo-linking": "~57.0.11",
     "expo-local-authentication": "~57.0.3",
-    "expo-router": "~57.0.21",
+    "expo-router": "~57.0.24",
     "expo-secure-store": "~57.0.4",
     "expo-splash-screen": "~57.0.9",
     "expo-status-bar": "~57.0.1",
@@ -38,7 +40,7 @@
     "react-native": "0.86.3",
     "react-native-gesture-handler": "~2.32.0",
     "react-native-qrcode-svg": "^6.3.23",
-    "react-native-reanimated": "~4.5.1",
+    "react-native-reanimated": "4.5.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-svg": "15.15.4",
@@ -52,6 +54,7 @@
   "devDependencies": {
     "@expo/ngrok": "^4.1.3",
     "@types/react": "~19.2.2",
+    "eas-cli": "^24.11.0",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.2",
     "typescript": "~6.0.3"
@@ -66,5 +69,10 @@
     "bff:start": "npm --prefix Getaipilot-bff run start",
     "bff:build": "npm --prefix Getaipilot-bff run build"
   },
-  "private": true
+  "private": true,
+  "allowScripts": {
+    "dtrace-provider@0.8.8": true,
+    "protobufjs@7.6.6": true,
+    "unrs-resolver@1.12.2": true
+  }
 }

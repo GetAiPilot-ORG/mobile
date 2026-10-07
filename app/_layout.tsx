@@ -1,44 +1,46 @@
-import '../src/global.css';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Stack, useRouter, useSegments } from 'expo-router';
-import { useEffect } from 'react';
-import { LogBox, Platform, StyleSheet, View } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-gesture-handler';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import "../src/global.css";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Stack, useRouter, useSegments } from "expo-router";
+import * as Linking from "expo-linking";
+import { useEffect } from "react";
+import { LogBox, Platform, StyleSheet, View } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import "react-native-gesture-handler";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { GlobalErrorBoundary } from "../src/components/GlobalErrorBoundary";
+import { OfflineNotice } from "../src/components/OfflineNotice";
+import { LayoutSkeletonScreen } from "../src/components/skeletonScreen";
+import { AuthProvider } from "../src/contexts/AuthContext";
+import { NetworkProvider, useNetwork } from "../src/contexts/NetworkContext";
+import { RazorpayProvider } from "../src/contexts/RazorpayContext";
+import { ThemeProvider, useTheme, getColors } from "@/theme";
+import { useAuthStore } from "../src/core/store/authStore";
+import { captureReferralParam, handlePendingReferral } from "../src/services/referralService";
 
 // Suppress known deprecation noise in development & Web runtimes
 LogBox.ignoreLogs([
   '"shadow*" style props are deprecated. Use "boxShadow".',
-  'props.pointerEvents is deprecated. Use style.pointerEvents',
-  'Animated: `useNativeDriver` is not supported',
-  '[Layout children]: Too many screens defined',
+  "props.pointerEvents is deprecated. Use style.pointerEvents",
+  "Animated: `useNativeDriver` is not supported",
+  "[Layout children]: Too many screens defined",
 ]);
 
-if (Platform.OS === 'web' && typeof window !== 'undefined') {
+if (Platform.OS === "web" && typeof window !== "undefined") {
   const originalWarn = console.warn;
   console.warn = (...args: any[]) => {
-    const firstArg = typeof args[0] === 'string' ? args[0] : '';
+    const firstArg = typeof args[0] === "string" ? args[0] : "";
     if (
       firstArg.includes('"shadow*" style props are deprecated') ||
-      firstArg.includes('props.pointerEvents is deprecated') ||
-      firstArg.includes('Animated: `useNativeDriver` is not supported') ||
-      firstArg.includes('Too many screens defined')
+      firstArg.includes("props.pointerEvents is deprecated") ||
+      firstArg.includes("Animated: `useNativeDriver` is not supported") ||
+      firstArg.includes("Too many screens defined")
     ) {
       return;
     }
     originalWarn(...args);
   };
 }
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { GlobalErrorBoundary } from '../src/components/GlobalErrorBoundary';
-import { OfflineNotice } from '../src/components/OfflineNotice';
-import { LayoutSkeletonScreen } from '../src/components/skeletonScreen';
-import { AuthProvider } from '../src/contexts/AuthContext';
-import { NetworkProvider, useNetwork } from '../src/contexts/NetworkContext';
-import { RazorpayProvider } from '../src/contexts/RazorpayContext';
-import { ThemeProvider, useTheme } from '../src/contexts/ThemeContext';
-import { useAuthStore } from '../src/core/store/authStore';
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,7 +48,6 @@ export const queryClient = new QueryClient({
       staleTime: 1000 * 30,
       gcTime: 1000 * 60 * 10,
       retry: (failureCount, error: any) => {
-        // Do not retry 400, 401, 403, 404 or 502 errors to prevent request storms
         const msg = (error?.message || "").toLowerCase();
         const status =
           error?.status ||
@@ -75,6 +76,37 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+/**
+ * Global deep link listener for referral codes (?ref=XYZ or ?referral=XYZ)
+ */
+function ReferralLinkListener() {
+  useEffect(() => {
+    const processUrl = async (rawUrl: string | null) => {
+      if (!rawUrl) return;
+      try {
+        const capturedCode = await captureReferralParam(rawUrl);
+        if (capturedCode) {
+          // If a user session is active, attempt linking immediately
+          await handlePendingReferral(capturedCode);
+        }
+      } catch (e) {
+        console.warn("[ReferralLinkListener] Link capture error:", e);
+      }
+    };
+
+    Linking.getInitialURL().then(processUrl).catch(() => {});
+    const sub = Linking.addEventListener("url", (event) => {
+      processUrl(event.url);
+    });
+
+    return () => {
+      sub.remove();
+    };
+  }, []);
+
+  return null;
+}
 
 /**
  * Authoritative, single-point auth route guard.
@@ -131,7 +163,8 @@ function SplashOverlay() {
 }
 
 function RootThemedContainer({ children }: { children: React.ReactNode }) {
-  const { isDark, colors } = useTheme();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   return (
     <View style={[styles.rootContainer, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? "light" : "dark"} />
@@ -141,7 +174,8 @@ function RootThemedContainer({ children }: { children: React.ReactNode }) {
 }
 
 function ThemedNavigationStack() {
-  const { colors } = useTheme();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   return (
     <Stack
       screenOptions={{
@@ -169,6 +203,29 @@ function ThemedNavigationStack() {
       <Stack.Screen
         name="(auth)/forgot-password"
         options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="onboarding"
+        options={{
+          headerShown: false,
+          gestureEnabled: false,
+        }}
+      />
+      <Stack.Screen
+        name="Referral"
+        options={{
+          headerShown: false,
+          presentation: "card",
+          gestureEnabled: true,
+        }}
+      />
+      <Stack.Screen
+        name="pricing"
+        options={{
+          headerShown: false,
+          presentation: "modal",
+          gestureEnabled: true,
+        }}
       />
       <Stack.Screen
         name="account/plans"
@@ -208,6 +265,7 @@ export default function RootLayout() {
                 <RootThemedContainer>
                   <AuthProvider>
                     <RazorpayProvider>
+                      <ReferralLinkListener />
                       <AuthRouteGuard />
                       <ThemedNavigationStack />
                       <OfflineNotice />

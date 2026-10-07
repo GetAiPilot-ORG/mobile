@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { View, TextInput, StyleSheet, Pressable, Text } from 'react-native';
-import { useTheme, getColors } from '@/theme';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface SearchInputProps {
   value: string;
@@ -16,73 +16,81 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   onClear,
 }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isDark && styles.containerDark]}>
       <Text style={styles.searchIcon}>🔍</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, isDark && styles.inputDark]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={colors.inputPlaceholder}
+        placeholderTextColor={isDark ? '#72869A' : '#9CA3AF'}
         autoCapitalize="none"
         autoCorrect={false}
       />
       {value.length > 0 && (
         <Pressable
-          style={styles.clearBtn}
+          style={[styles.clearBtn, isDark && styles.clearBtnDark]}
           onPress={() => {
             onChangeText('');
             if (onClear) onClear();
           }}
           hitSlop={8}
         >
-          <Text style={styles.clearText}>✕</Text>
+          <Text style={[styles.clearText, isDark && styles.clearTextDark]}>✕</Text>
         </Pressable>
       )}
     </View>
   );
 };
 
-function createStyles(colors: ReturnType<typeof getColors>) {
-  return StyleSheet.create({
-    container: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: colors.card,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 12,
-      paddingHorizontal: 12,
-      height: 44,
-      marginBottom: 14,
-    },
-    searchIcon: {
-      fontSize: 14,
-      marginRight: 8,
-    },
-    input: {
-      flex: 1,
-      fontSize: 14,
-      color: colors.foreground,
-      paddingVertical: 0,
-    },
-    clearBtn: {
-      width: 20,
-      height: 20,
-      borderRadius: 10,
-      backgroundColor: colors.muted,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    clearText: {
-      fontSize: 11,
-      color: colors.mutedForeground,
-      fontWeight: 'bold',
-    },
-  });
-}
-
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
+    marginBottom: 14,
+  },
+  containerDark: {
+    backgroundColor: '#0A1420',
+    borderColor: '#1B334A',
+  },
+  searchIcon: {
+    fontSize: 14,
+    marginRight: 8,
+  },
+  input: {
+    flex: 1,
+    fontSize: 14,
+    color: '#000000',
+    paddingVertical: 0,
+  },
+  inputDark: {
+    color: '#F7FAFC',
+  },
+  clearBtn: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#F2F4F7',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  clearBtnDark: {
+    backgroundColor: '#101C2A',
+  },
+  clearText: {
+    fontSize: 11,
+    color: '#6B7280',
+    fontWeight: 'bold',
+  },
+  clearTextDark: {
+    color: '#8FA3B8',
+  },
+});
