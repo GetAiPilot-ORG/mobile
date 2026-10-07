@@ -14,7 +14,7 @@ export function resolveBffBaseUrl(): string {
   }
 
   if (Platform.OS === 'web') {
-    return 'http://localhost:4000';
+    return process.env.EXPO_PUBLIC_BFF_URL || 'http://localhost:4000';
   }
 
   // Physical Android device or iOS on same Wi-Fi LAN
@@ -22,16 +22,16 @@ export function resolveBffBaseUrl(): string {
   if (hostUri) {
     const ip = hostUri.split(':')[0];
     if (ip && ip !== 'localhost' && ip !== '127.0.0.1') {
-      return `http://${ip}:4000`;
+      return  process.env.EXPO_PUBLIC_BFF_URL || `http://${ip}:4000`;
     }
   }
 
   // Android emulator loopback alias
   if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:4000';
+    return process.env.EXPO_PUBLIC_BFF_URL || 'http://10.0.2.2:4000';
   }
 
-  return 'http://localhost:4000';
+  return process.env.EXPO_PUBLIC_BFF_URL || 'http://localhost:4000';
 }
 
 export const BFF_BASE_URL = resolveBffBaseUrl();

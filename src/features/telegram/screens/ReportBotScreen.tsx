@@ -840,7 +840,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
               <View style={styles.urlInputRow}>
                 <TextInput
                   style={[styles.input, { borderColor: colors.border, backgroundColor: colors.card }, { flex: 1 }]}
-                  placeholder="https://example.com/logo.png"
+                  placeholder="https://example.com/logobag.png"
                   placeholderTextColor="#94A3B8"
                   value={customLogoInput}
                   onChangeText={setCustomLogoInput}

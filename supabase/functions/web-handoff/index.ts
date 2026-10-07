@@ -113,7 +113,7 @@ function sanitizeWebAppUrl(candidateUrl?: string): string {
     ) {
       return url.origin;
     }
-  } catch {}
+  } catch { }
 
   return DEFAULT_WEB_APP_URL;
 }
@@ -367,7 +367,7 @@ async function resolveAuthenticatedUser(
       if (!error && user?.email) {
         return { id: user.id, email: user.email };
       }
-    } catch {}
+    } catch { }
 
     // 2. Try decoding JWT payload (for BFF tokens or custom tokens)
     try {
@@ -388,7 +388,7 @@ async function resolveAuthenticatedUser(
           }
         }
       }
-    } catch {}
+    } catch { }
   }
 
   // 3. Fallback to provided email if present
@@ -603,7 +603,7 @@ async function consumeHandoff(body: RequestBody): Promise<Response> {
   });
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", {
       headers: corsHeaders,

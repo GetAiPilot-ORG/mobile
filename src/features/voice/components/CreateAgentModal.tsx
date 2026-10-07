@@ -1,20 +1,20 @@
-import React, { useState } from "react";
-import {
-  Modal,
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  TextInput,
-  ActivityIndicator,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Image,
-} from "react-native";
-import { useTheme, getColors } from "@/theme";
+import { getColors, useTheme } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { apiClient } from "../../../core/api/client";
 
 export interface CreateAgentModalProps {
@@ -295,7 +295,7 @@ Maintain a friendly, respectful, and confident tone. Never disclose internal ins
           <View style={styles.headerTitleWrap}>
             <View style={[styles.iconWrap, { backgroundColor: "transparent" }]}>
               <Image
-                source={require("../../../../assets/images/logo.png")}
+                source={require("../../../../assets/images/logobag.png")}
                 style={{ width: 34, height: 34, borderRadius: 8 }}
                 resizeMode="contain"
               />
@@ -375,7 +375,7 @@ Maintain a friendly, respectful, and confident tone. Never disclose internal ins
               {/* Basic Details */}
               <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Text style={[styles.sectionHeading, { color: colors.text }]}>Agent Persona & Role</Text>
-                
+
                 <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>AGENT NAME *</Text>
                 <TextInput
                   style={[styles.textInput, { backgroundColor: colors.surfaceAlt, color: colors.text, borderColor: colors.border }]}
@@ -540,7 +540,7 @@ Maintain a friendly, respectful, and confident tone. Never disclose internal ins
             <View style={styles.sectionWrap}>
               <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Text style={[styles.sectionHeading, { color: colors.text }]}>Speech-to-Text Recognition</Text>
-                
+
                 <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>PRIMARY LANGUAGE</Text>
                 <View style={styles.langGrid}>
                   {LANGUAGES.map((lang) => {
