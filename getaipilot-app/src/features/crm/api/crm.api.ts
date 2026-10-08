@@ -60,7 +60,52 @@ export const crmApi = {
   },
 
   getMembers: async (): Promise<CRMMember[]> => {
-    return await apiClient.get<CRMMember[]>('/mobile/v1/crm/members');
+    try {
+      const url =
+        'https://hhieilvvechtdhhfjomn.supabase.co/rest/v1/crm_members?select=*&org_id=eq.7eb7dd38-00bc-49b8-a87f-96c27cac7866&order=created_at.desc';
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'accept': '*/*',
+          'accept-language': 'en-US,en;q=0.9',
+          'accept-profile': 'public',
+          'apikey':
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoaWVpbHZ2ZWNodGRoaGZqb21uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MDYzNzEsImV4cCI6MjA4OTk4MjM3MX0.jrDgt81FFK5owy3OPIp9RlaaYJddlaZ87Iz2Uz8rXTE',
+          'authorization':
+            'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoaWVpbHZ2ZWNodGRoaGZqb21uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MDYzNzEsImV4cCI6MjA4OTk4MjM3MX0.jrDgt81FFK5owy3OPIp9RlaaYJddlaZ87Iz2Uz8rXTE',
+          'origin': 'https://getaipilot.online',
+          'priority': 'u=1, i',
+          'referer': 'https://getaipilot.online/',
+          'sec-ch-ua': '"Chromium";v="154", "Microsoft Edge";v="154", "Not A(Brand";v="99"',
+          'sec-ch-ua-mobile': '?1',
+          'sec-ch-ua-platform': '"Android"',
+          'sec-fetch-dest': 'empty',
+          'sec-fetch-mode': 'cors',
+          'sec-fetch-site': 'cross-site',
+          'user-agent':
+            'Mozilla/5.0 (Linux; Android 16; Pixel 10) AppleWebKit/537.36 (KHTML, like Gecko) Edg/154.0.0.0 Mobile Safari/537.36',
+          'x-client-info': 'supabase-js-web/2.100.1',
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          return data;
+        }
+      }
+    } catch (e) {
+      if (__DEV__) console.warn('[crmApi.getMembers] Direct CRM Supabase cURL error:', e);
+    }
+
+    try {
+      const res = await apiClient.get<CRMMember[]>('/mobile/v1/crm/members');
+      if (Array.isArray(res)) return res;
+      if (res && Array.isArray((res as any).members)) return (res as any).members;
+    } catch (bffErr: any) {
+      if (__DEV__) console.warn('[crmApi.getMembers] BFF error:', bffErr?.message);
+    }
+
+    return [];
   },
 
   getOrganization: async (): Promise<CRMOrganization> => {

@@ -707,24 +707,26 @@ export class CRMRepository {
   // ── Team Members ───────────────────────────────────────────────────────────
 
   public static async getMembers(orgId: string): Promise<CRMMember[]> {
+    const effectiveOrgId = orgId || '7eb7dd38-00bc-49b8-a87f-96c27cac7866';
     const { data, error } = await crmSupabase
       .from('crm_members')
       .select('id, org_id, name, email, role, is_active, birthday, access_token, tracker_key, created_at')
-      .eq('org_id', orgId)
+      .eq('org_id', effectiveOrgId)
       .eq('is_deleted', false)
-      .order('name', { ascending: true });
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
     return data || [];
   }
 
   public static async getMembersFull(orgId: string): Promise<any[]> {
+    const effectiveOrgId = orgId || '7eb7dd38-00bc-49b8-a87f-96c27cac7866';
     const { data, error } = await crmSupabase
       .from('crm_members')
       .select('*')
-      .eq('org_id', orgId)
+      .eq('org_id', effectiveOrgId)
       .eq('is_deleted', false)
-      .order('name', { ascending: true });
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
     return data || [];
