@@ -7,3 +7,5 @@ export * from './useActivities';
 export * from './useTasks';
 export * from './usePipelines';
 export * from './useMembers';
+export * from './useBillingProfiles';
+export * from './usePayments';

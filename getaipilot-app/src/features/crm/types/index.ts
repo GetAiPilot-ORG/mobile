@@ -16,6 +16,8 @@ export interface CRMMember {
   email: string;
   role: string;
   is_active: boolean;
+  access_token?: string | null;
+  tracker_key?: string | null;
   birthday?: string | null;
   focus_score?: number;
   current_activity?: Record<string, any>;
@@ -395,6 +397,7 @@ export interface LeaveRequest {
   created_at: string;
   updated_at: string;
   member?: CRMMember | null;
+  reviewer?: CRMMember | null;
 }
 
 export interface PresenceLog {

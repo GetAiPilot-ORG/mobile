@@ -645,7 +645,7 @@ const styles = StyleSheet.create({
   },
   actionsList: {
     gap: 10,
-    width: "100%",
+    // justifyContent: 'space-around'
   },
   actionCard: {
     flexDirection: "row",
@@ -656,11 +656,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     gap: 12,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 5,
-    elevation: 1,
   },
   actionIconCircle: {
     width: 38,

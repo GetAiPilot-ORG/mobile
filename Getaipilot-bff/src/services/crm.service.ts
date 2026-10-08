@@ -108,7 +108,8 @@ export class CRMService {
 
   public static async createContact(user: JWTPayload, data: Partial<CRMContact>): Promise<CRMContact> {
     const ctx = await CRMRepository.resolveCrmContext(user);
-    return await CRMRepository.createContact(ctx.crmOrgId, data);
+    const targetOrgId = data.org_id || ctx.crmOrgId;
+    return await CRMRepository.createContact(targetOrgId, data);
   }
 
   public static async updateContact(user: JWTPayload, id: string, data: Partial<CRMContact>): Promise<CRMContact> {

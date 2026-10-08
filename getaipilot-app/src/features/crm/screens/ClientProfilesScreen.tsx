@@ -1,10 +1,14 @@
 import { getColors, useTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
-import { ActivityIndicator, FlatList, Linking, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Linking, Platform, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { crmApi } from '../api/crm.api';
+import { CreateBillingProfileModal } from '../components/CreateBillingProfileModal';
+import { useCreateBillingProfile } from '../hooks/useBillingProfiles';
 import { CRMBillingProfile } from '../types';
 
 const WEB_APP_URL = 'https://getaipilot.in';
@@ -17,6 +21,9 @@ export function ClientProfilesScreen({ onBack }: ClientProfilesScreenProps = {})
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const router = useRouter();
+
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const createProfile = useCreateBillingProfile();
 
   const handleBack = () => {
     if (onBack) {
@@ -66,10 +73,18 @@ export function ClientProfilesScreen({ onBack }: ClientProfilesScreenProps = {})
           </Pressable>
           <View>
             <Text style={[s.title, { color: text }]}>Client Profiles</Text>
-            <Text style={[s.subtitle, { color: sub }]}>{data?.total_count ?? 0} billing profiles</Text>
+            <Text style={[s.subtitle, { color: sub }]}>{data?.total_count ?? profiles.length} billing profiles</Text>
           </View>
         </View>
-        <Pressable style={s.createBtn} onPress={() => Linking.openURL(`${WEB_APP_URL}/dashboard/crm/billing-profiles/create`).catch(() => { })}>
+        <Pressable
+          style={s.createBtn}
+          onPress={() => {
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+            }
+            setShowCreateModal(true);
+          }}
+        >
           <Ionicons name="add" size={18} color="#FFF" />
           <Text style={s.createBtnText}>Create</Text>
         </Pressable>
@@ -115,6 +130,25 @@ export function ClientProfilesScreen({ onBack }: ClientProfilesScreenProps = {})
           }}
         />
       )}
+
+      {/* Create Billing Profile Modal */}
+      <CreateBillingProfileModal
+        visible={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={async (profile) => {
+          try {
+            await createProfile.mutateAsync(profile);
+            if (Platform.OS !== 'web') {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+            }
+            Alert.alert('Profile Created 🎉', `${profile.legal_name || 'Billing profile'} was added.`);
+          } catch (err: any) {
+            Alert.alert('Error', err?.message || 'Failed to create billing profile');
+            throw err;
+          }
+        }}
+        isLoading={createProfile.isPending}
+      />
     </SafeAreaView>
   );
 }

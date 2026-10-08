@@ -709,7 +709,7 @@ export class CRMRepository {
   public static async getMembers(orgId: string): Promise<CRMMember[]> {
     const { data, error } = await crmSupabase
       .from('crm_members')
-      .select('id, org_id, name, email, role, is_active, birthday, created_at')
+      .select('id, org_id, name, email, role, is_active, birthday, access_token, tracker_key, created_at')
       .eq('org_id', orgId)
       .eq('is_deleted', false)
       .order('name', { ascending: true });
@@ -1082,7 +1082,7 @@ export class CRMRepository {
   public static async getLeaveRequests(orgId: string, filters: { member_id?: string; status?: string; leave_type?: string; limit?: number } = {}): Promise<{ requests: any[]; total_count: number }> {
     let query = crmSupabase
       .from('leave_requests')
-      .select('*, member:crm_members(id, name, email, role)', { count: 'exact' })
+      .select('*, member:crm_members!member_id(id, name, email, role), reviewer:crm_members!reviewed_by(id, name, email)', { count: 'exact' })
       .eq('org_id', orgId);
 
     if (filters.member_id) query = query.eq('member_id', filters.member_id);
