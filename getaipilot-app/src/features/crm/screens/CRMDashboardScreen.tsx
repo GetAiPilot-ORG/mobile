@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useCallback } from "react";
 import {
+  Dimensions,
   Linking,
   Pressable,
   RefreshControl,
@@ -17,6 +18,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { teamApi } from "../../team/api/team.api";
 import { crmApi } from "../api/crm.api";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const OVERVIEW_CARD_WIDTH = Math.floor((SCREEN_WIDTH - 32 - 10) / 2);
 
 const WEB_APP_URL = "https://getaipilot.in";
 
@@ -50,7 +54,7 @@ const ENTITY_TILES = [
   //   label: "Invoices",
   //   icon: "receipt",
   //   color: "#B8863B",
-  //   bg: "#F5EEDD",
+  //   bg: "#F5EEDD", 
   //   route: "/crm/invoices",
   // },
   // {
@@ -119,11 +123,11 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
     await Promise.all([refetchOrg(), refetchDash(), refetchTeam()]);
   }, [refetchOrg, refetchDash, refetchTeam]);
 
-  const bg = colors.background
-  const card = colors.surface
-  const text = colors.text
-  const sub = colors.text
-  const border = colors.border
+  const bg = colors.background;
+  const card = colors.surface;
+  const text = colors.text;
+  const sub = colors.textMuted || colors.textSecondary || colors.text;
+  const border = colors.border;
 
   const planTier = org?.subscription_tier || "free";
   const isPro = planTier !== "free";
@@ -523,10 +527,9 @@ const s = StyleSheet.create({
     flexWrap: "wrap",
     gap: 10,
     marginBottom: 8,
-    justifyContent: "space-between",
   },
   overviewCard: {
-    width: "47%",
+    width: OVERVIEW_CARD_WIDTH,
     borderRadius: 14,
     borderWidth: 1,
     padding: 14,

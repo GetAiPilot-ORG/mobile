@@ -694,8 +694,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   metaGridCard: {
-    width: "48%",
-    flexGrow: 1,
+    width: "48.5%",
     padding: 9,
     borderRadius: 10,
     borderWidth: StyleSheet.hairlineWidth,

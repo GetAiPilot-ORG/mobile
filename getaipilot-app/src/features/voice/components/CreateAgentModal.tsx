@@ -985,7 +985,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   langCard: {
-    width: "48%",
+    width: "48.5%",
     flexDirection: "row",
     alignItems: "center",
     padding: 12,

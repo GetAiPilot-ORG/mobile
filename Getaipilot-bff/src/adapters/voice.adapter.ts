@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { env } from "../config/env.js";
 import { JWTPayload } from "../types/index.js";
+import { HubAdapter } from "./hub.adapter.js";
 
 export interface VoiceCallFilter {
   limit?: number;
@@ -467,6 +468,101 @@ export class VoiceAdapter {
       | string,
   ) {
     return this.getOverview(userOrOrgId);
+  }
+
+  /**
+   * Generates an authentic SSO handoff URL to GAP VoicePilot Web.
+   * Directs user to https://voice.getaipilot.online/dashboard/phone-numbers
+   * or the requested target path with an authenticated Supabase session.
+   */
+  public static async getVoiceHandoffUrl(
+    user: JWTPayload | { user_id?: string; organization_id?: string; email?: string },
+    target: string = '/dashboard/phone-numbers',
+  ): Promise<string> {
+    const VOICE_BASE = 'https://voice.getaipilot.online';
+    const cleanPath = target.startsWith('http')
+      ? target
+      : `${VOICE_BASE}${target.startsWith('/') ? '' : '/'}${target}`;
+
+    try {
+      const email = (user as any).email;
+      if (email) {
+        const { data: hubLinkData, error: hubLinkErr } = await HubAdapter.generateMagicLink(email);
+
+        let hubTokenHash =
+          hubLinkData?.properties?.hashed_token ||
+          (hubLinkData as any)?.hashed_token;
+
+        if (!hubTokenHash && (hubLinkData?.properties?.action_link || (hubLinkData as any)?.action_link)) {
+          try {
+            const u = new URL(hubLinkData?.properties?.action_link || (hubLinkData as any)?.action_link);
+            hubTokenHash = u.searchParams.get('token');
+          } catch {}
+        }
+
+        if (!hubLinkErr && hubTokenHash) {
+          const hubVerifyRes = await fetch(`${env.SUPABASE_URL}/auth/v1/verify`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              apikey: env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify({
+              type: 'magiclink',
+              token_hash: hubTokenHash,
+            }),
+          });
+
+          if (hubVerifyRes.ok) {
+            const hubSession: any = await hubVerifyRes.json();
+            const hubUserToken = hubSession?.access_token;
+
+            if (hubUserToken) {
+              const ssoEdgeRes = await fetch(`${env.SUPABASE_URL}/functions/v1/voice-sso`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${hubUserToken}`,
+                },
+                body: JSON.stringify({ voice_pilot_url: null }),
+              });
+
+              if (ssoEdgeRes.ok) {
+                const ssoEdgeData: any = await ssoEdgeRes.json();
+                if (ssoEdgeData?.launch_url) {
+                  try {
+                    const launchUrl = new URL(ssoEdgeData.launch_url);
+                    const ssoJwt = launchUrl.searchParams.get('token');
+                    if (ssoJwt) {
+                      const exchangeRes = await fetch(`${VOICE_BASE}/api/auth/sso`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: ssoJwt }),
+                      });
+                      if (exchangeRes.ok) {
+                        const exchangeData: any = await exchangeRes.json();
+                        if (exchangeData?.magic_link_url) {
+                          const magicUrl = new URL(exchangeData.magic_link_url);
+                          magicUrl.searchParams.set('redirect_to', cleanPath);
+                          return magicUrl.toString();
+                        }
+                      }
+                    }
+                  } catch (exErr) {
+                    console.warn('[VOICE ADAPTER] Magic link customization error:', exErr);
+                  }
+                  return ssoEdgeData.launch_url;
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (err: any) {
+      console.warn('[VOICE ADAPTER] Error generating SSO handoff URL:', err.message);
+    }
+
+    return cleanPath;
   }
 
   // --- 2. Call Logs ---

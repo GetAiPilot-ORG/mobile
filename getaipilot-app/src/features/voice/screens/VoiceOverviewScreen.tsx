@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 import { Bot, Database, Megaphone, Phone, PhoneCall } from "lucide-react-native";
 import React from "react";
 import {
+  Dimensions,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -16,6 +17,9 @@ import {
 import { useTheme, getColors } from "@/theme";
 import { VoiceOverview, voiceApi } from "../api/voiceApi";
 import { openVoiceWebBilling } from "../utils/voiceBilling";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const METRIC_CARD_WIDTH = Math.floor((SCREEN_WIDTH - 32 - 12) / 2);
 
 interface Props {
   onNavigateTab?: (
@@ -595,8 +599,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   metricCard: {
-    width: "48%",
-    flexGrow: 1,
+    width: METRIC_CARD_WIDTH,
     padding: 14,
     borderRadius: 16,
     borderWidth: 1,
