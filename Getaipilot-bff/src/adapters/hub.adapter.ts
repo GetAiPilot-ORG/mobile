@@ -60,12 +60,18 @@ export class HubAdapter {
   );
 
   /**
-   * Generates a Supabase auth magic link / token_hash for seamless SSO
+   * Generates a Supabase auth magic link / token_hash for seamless SSO or mobile deep linking
    */
-  public static async generateMagicLink(email: string) {
+  public static async generateMagicLink(
+    email: string,
+    redirectTo: string = 'getaipilot://auth/callback'
+  ) {
     return await this.adminClient.auth.admin.generateLink({
       type: 'magiclink',
       email,
+      options: {
+        redirectTo,
+      },
     });
   }
 
