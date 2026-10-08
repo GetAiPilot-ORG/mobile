@@ -111,25 +111,36 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
       {/* ANALYTICS */}
       {trackerSection === 'joins' && (
         <View style={{ gap: 14 }}>
-          {/* 6 KPI Cards */}
-          <View style={styles.kpiGrid}>
+          {/* 6 KPI Cards in 3 Rows */}
+          <View style={{ gap: 8, marginBottom: 12 }}>
             {[
-              { icon: 'people', color: '#0284C7', bg: 'rgba(2,132,199,0.12)', val: kpis.totalJoins, label: 'TOTAL JOINS', hint: 'Active Channel Members' },
-              { icon: 'calendar', color: '#10B981', bg: 'rgba(16,185,129,0.12)', val: `+${kpis.todaysJoins}`, label: "TODAY'S JOINS", hint: 'New joins today' },
-              { icon: 'calendar-outline', color: '#10B981', bg: 'rgba(16,185,129,0.12)', val: `+${kpis.thisMonthJoins}`, label: 'THIS MONTH', hint: 'New joins this month' },
-              { icon: 'sparkles-outline', color: '#2563EB', bg: 'rgba(37,99,235,0.12)', val: kpis.botStarts, label: 'BOT STARTS', hint: 'Total bot interactions' },
-              { icon: 'time-outline', color: '#D97706', bg: 'rgba(217,119,6,0.12)', val: kpis.pendingJoins, label: 'PENDING JOINS', hint: 'Started but not joined' },
-              { icon: 'trending-up-outline', color: '#DB2777', bg: 'rgba(219,39,119,0.12)', val: `${kpis.conversionRate}%`, label: 'CONVERSION', hint: 'Starts to Joins' },
-            ].map((k, i) => (
-              <StatCard
-                key={i}
-                label={k.label}
-                value={k.val}
-                icon={k.icon}
-                color={k.color}
-                bg={k.bg}
-                sub={k.hint}
-              />
+              [
+                { icon: 'people', color: '#0284C7', bg: 'rgba(2,132,199,0.12)', val: kpis.totalJoins, label: 'TOTAL JOINS', hint: 'Active Channel Members' },
+                { icon: 'calendar', color: '#10B981', bg: 'rgba(16,185,129,0.12)', val: `+${kpis.todaysJoins}`, label: "TODAY'S JOINS", hint: 'New joins today' },
+              ],
+              [
+                { icon: 'calendar-outline', color: '#10B981', bg: 'rgba(16,185,129,0.12)', val: `+${kpis.thisMonthJoins}`, label: 'THIS MONTH', hint: 'New joins this month' },
+                { icon: 'sparkles-outline', color: '#2563EB', bg: 'rgba(37,99,235,0.12)', val: kpis.botStarts, label: 'BOT STARTS', hint: 'Total bot interactions' },
+              ],
+              [
+                { icon: 'time-outline', color: '#D97706', bg: 'rgba(217,119,6,0.12)', val: kpis.pendingJoins, label: 'PENDING JOINS', hint: 'Started but not joined' },
+                { icon: 'trending-up-outline', color: '#DB2777', bg: 'rgba(219,39,119,0.12)', val: `${kpis.conversionRate}%`, label: 'CONVERSION', hint: 'Starts to Joins' },
+              ],
+            ].map((pair, rowIndex) => (
+              <View key={rowIndex} style={{ flexDirection: 'row', width: '100%', gap: 10 }}>
+                {pair.map((k, colIndex) => (
+                  <View key={colIndex} style={{ flex: 1, minWidth: 0 }}>
+                    <StatCard
+                      label={k.label}
+                      value={k.val}
+                      icon={k.icon}
+                      color={k.color}
+                      bg={k.bg}
+                      sub={k.hint}
+                    />
+                  </View>
+                ))}
+              </View>
             ))}
           </View>
 

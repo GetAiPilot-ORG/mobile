@@ -110,25 +110,56 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
         </View>
       </View>
 
-      {/* 4 KPI Cards 2x2 */}
-      <View style={styles.statsGrid}>
-        {[
-          { label: 'TOTAL REVENUE', val: `₹${stats.totalRevenue}`, sub: 'Net earnings', icon: 'trending-up', bg: isDark ? 'rgba(99,102,241,0.15)' : '#EEF2FF', color: '#6366F1', isRevenue: true },
-          { label: 'ACTIVE SUBSCRIBERS', val: String(stats.activeSubscribers), sub: '0 all-time joined', icon: 'pulse', bg: isDark ? 'rgba(16,185,129,0.15)' : '#ECFDF5', color: '#10B981' },
-          { label: 'SUBSCRIPTION PAGES', val: String(stats.subscriptionPages), sub: 'Hosted checkouts', icon: 'globe-outline', bg: isDark ? 'rgba(2,132,199,0.15)' : '#F0F9FF', color: '#0284C7' },
-          { label: 'BOT AUTOMATED ACCESS', val: stats.botAutomatedAccess, sub: 'Single-use invites', icon: 'shield-checkmark-outline', bg: isDark ? 'rgba(148,163,184,0.15)' : '#F8FAFC', color: '#64748B' },
-        ].map((k, i) => (
-          <StatCard
-            key={i}
-            label={k.label}
-            value={k.val}
-            icon={k.icon}
-            color={k.color}
-            bg={k.bg}
-            sub={k.sub}
-            isRevenue={k.isRevenue}
-          />
-        ))}
+      {/* 4 KPI Cards 2x2 in 2 Guaranteed Rows */}
+      <View style={{ gap: 8, marginBottom: 12 }}>
+        {/* Row 1 */}
+        <View style={{ flexDirection: 'row', width: '100%', gap: 10 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <StatCard
+              label="TOTAL REVENUE"
+              value={`₹${stats.totalRevenue}`}
+              sub="Net earnings"
+              icon="trending-up"
+              bg={isDark ? 'rgba(99,102,241,0.15)' : '#EEF2FF'}
+              color="#6366F1"
+              isRevenue={true}
+            />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <StatCard
+              label="ACTIVE SUBSCRIBERS"
+              value={String(stats.activeSubscribers)}
+              sub="0 all-time joined"
+              icon="pulse"
+              bg={isDark ? 'rgba(16,185,129,0.15)' : '#ECFDF5'}
+              color="#10B981"
+            />
+          </View>
+        </View>
+
+        {/* Row 2 */}
+        <View style={{ flexDirection: 'row', width: '100%', gap: 10 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <StatCard
+              label="SUBSCRIPTION PAGES"
+              value={String(stats.subscriptionPages)}
+              sub="Hosted checkouts"
+              icon="globe-outline"
+              bg={isDark ? 'rgba(2,132,199,0.15)' : '#F0F9FF'}
+              color="#0284C7"
+            />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <StatCard
+              label="BOT AUTOMATED ACCESS"
+              value={stats.botAutomatedAccess}
+              sub="Single-use invites"
+              icon="shield-checkmark-outline"
+              bg={isDark ? 'rgba(148,163,184,0.15)' : '#F8FAFC'}
+              color="#64748B"
+            />
+          </View>
+        </View>
       </View>
 
       {/* Launch Readiness Accordion */}

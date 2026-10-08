@@ -95,34 +95,89 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
       </View>
 
       {/* KPI Grid */}
-      <View style={styles.kpiGrid}>
-        {kpis.map((k) => (
-          <StatCard
-            key={k.key}
-            label={k.label.toUpperCase()}
-            value={k.value}
-            icon={k.icon}
-            color={k.color}
-            bg={k.bg}
-            sub={k.label}
-            onPress={() => {
-              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setAfSection(k.key as AfSection);
-            }}
-          />
-        ))}
-        <StatCard
-          label="TEXT ACTIONS"
-          value={forwardRules.some(r => r.header || r.footer) ? "Configured" : "None"}
-          icon="text-outline"
-          color="#10B981"
-          bg="rgba(16,185,129,0.12)"
-          sub="Text Actions"
-          onPress={() => {
-            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setAfSection('headers');
-          }}
-        />
+      <View style={{ gap: 8, marginBottom: 12 }}>
+        {/* Row 1 */}
+        <View style={{ flexDirection: 'row', width: '100%', gap: 10 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <StatCard
+              label={kpis[0].label.toUpperCase()}
+              value={kpis[0].value}
+              icon={kpis[0].icon}
+              color={kpis[0].color}
+              bg={kpis[0].bg}
+              sub={kpis[0].label}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setAfSection(kpis[0].key as AfSection);
+              }}
+            />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <StatCard
+              label={kpis[1].label.toUpperCase()}
+              value={kpis[1].value}
+              icon={kpis[1].icon}
+              color={kpis[1].color}
+              bg={kpis[1].bg}
+              sub={kpis[1].label}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setAfSection(kpis[1].key as AfSection);
+              }}
+            />
+          </View>
+        </View>
+
+        {/* Row 2 */}
+        <View style={{ flexDirection: 'row', width: '100%', gap: 10 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <StatCard
+              label={kpis[2].label.toUpperCase()}
+              value={kpis[2].value}
+              icon={kpis[2].icon}
+              color={kpis[2].color}
+              bg={kpis[2].bg}
+              sub={kpis[2].label}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setAfSection(kpis[2].key as AfSection);
+              }}
+            />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <StatCard
+              label={kpis[3].label.toUpperCase()}
+              value={kpis[3].value}
+              icon={kpis[3].icon}
+              color={kpis[3].color}
+              bg={kpis[3].bg}
+              sub={kpis[3].label}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setAfSection(kpis[3].key as AfSection);
+              }}
+            />
+          </View>
+        </View>
+
+        {/* Row 3 */}
+        <View style={{ flexDirection: 'row', width: '100%', gap: 10 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <StatCard
+              label="TEXT ACTIONS"
+              value={forwardRules.some(r => r.header || r.footer) ? "Configured" : "None"}
+              icon="text-outline"
+              color="#10B981"
+              bg="rgba(16,185,129,0.12)"
+              sub="Text Actions"
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setAfSection('headers');
+              }}
+            />
+          </View>
+          <View style={{ flex: 1 }} />
+        </View>
       </View>
 
       {/* MAPPINGS */}

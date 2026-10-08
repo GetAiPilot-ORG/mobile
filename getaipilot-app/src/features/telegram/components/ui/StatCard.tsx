@@ -12,9 +12,10 @@ interface StatCardProps {
   sub: string;
   onPress?: () => void;
   isRevenue?: boolean;
+  style?: any;
 }
 
-export const StatCard: React.FC<StatCardProps> = ({ label, value, icon, color, bg, sub, onPress, isRevenue }) => {
+export const StatCard: React.FC<StatCardProps> = ({ label, value, icon, color, bg, sub, onPress, isRevenue, style }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
 
@@ -26,6 +27,7 @@ export const StatCard: React.FC<StatCardProps> = ({ label, value, icon, color, b
           backgroundColor: colors.card,
           borderColor: colors.cardBorder,
         },
+        style,
         pressed && styles.metricCardPressed,
       ]}
       onPress={onPress}
@@ -47,7 +49,16 @@ export const StatCard: React.FC<StatCardProps> = ({ label, value, icon, color, b
 };
 
 const styles = StyleSheet.create({
-  metricCard: { width: '48.5%', padding: 10, borderRadius: 12, borderWidth: 1, justifyContent: 'space-between', minHeight: 88, marginBottom: 8 },
+  metricCard: {
+    flex: 1,
+    minWidth: 0,
+    width: '100%',
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'space-between',
+    minHeight: 88,
+  },
   metricCardPressed: { opacity: 0.75 },
   metricHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   metricLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 0.4, flex: 1 },

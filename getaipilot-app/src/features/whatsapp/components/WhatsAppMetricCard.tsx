@@ -66,6 +66,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 14,
     flex: 1,
+    minWidth: 0,
+    width: '100%',
     borderWidth: 1,
     justifyContent: 'space-between',
   },

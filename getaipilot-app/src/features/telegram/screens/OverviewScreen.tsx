@@ -102,27 +102,38 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
           </View> */}
         </View>
 
-        {/* 6 KPI Cards */}
-        <View style={[styles.metricsGrid, isDark ? styles.borderDark : styles.borderLight, { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }]}>
+        {/* 6 KPI Cards in 3 Guaranteed 2-Item Rows */}
+        <View style={[styles.metricsContainer, isDark ? styles.borderDark : styles.borderLight]}>
           {[
-            { label: 'TRACKED BOTS', value: botsList.length, color: '#0284C7', icon: 'hardware-chip-outline', bg: 'rgba(2,132,199,0.12)', tab: 'bots', sub: 'Connected bots' },
-            { label: 'CHANNELS', value: (chats || []).length, color: '#10B981', icon: 'megaphone-outline', bg: 'rgba(16,185,129,0.12)', tab: 'bots', sub: 'Mapped channels' },
-            { label: 'DEEP LINKS', value: deepLinksCount, color: '#06B6D4', icon: 'link-outline', bg: 'rgba(6,182,212,0.12)', tab: 'bots', sub: 'Tracked join links' },
-            { label: 'FORWARDS', value: (forwardRules || []).length, color: '#8B5CF6', icon: 'git-compare-outline', bg: 'rgba(139,92,246,0.12)', tab: 'automations', sub: 'Active rules' },
-            { label: 'SUB PAGES', value: subManagerPages.length || (subPlans || []).length, color: '#EC4899', icon: 'wallet-outline', bg: 'rgba(236,72,153,0.12)', tab: 'sub_manager', sub: 'Monetized pages' },
-            { label: 'REVENUE', value: `₹${(realRevenue ?? 0).toLocaleString()}`, color: '#F59E0B', icon: 'cash-outline', bg: 'rgba(245,158,11,0.12)', tab: 'sub_manager', sub: 'Total collected', isRevenue: true },
-          ].map((m, i) => (
-            <StatCard
-              key={i}
-              label={m.label}
-              value={m.value}
-              icon={m.icon}
-              color={m.color}
-              bg={m.bg}
-              sub={m.sub}
-              onPress={() => onNavigate(m.tab)}
-              isRevenue={m.isRevenue}
-            />
+            [
+              { label: 'TRACKED BOTS', value: botsList.length, color: '#0284C7', icon: 'hardware-chip-outline', bg: 'rgba(2,132,199,0.12)', tab: 'bots', sub: 'Connected bots' },
+              { label: 'CHANNELS', value: (chats || []).length, color: '#10B981', icon: 'megaphone-outline', bg: 'rgba(16,185,129,0.12)', tab: 'bots', sub: 'Mapped channels' },
+            ],
+            [
+              { label: 'DEEP LINKS', value: deepLinksCount, color: '#06B6D4', icon: 'link-outline', bg: 'rgba(6,182,212,0.12)', tab: 'bots', sub: 'Tracked join links' },
+              { label: 'FORWARDS', value: (forwardRules || []).length, color: '#8B5CF6', icon: 'git-compare-outline', bg: 'rgba(139,92,246,0.12)', tab: 'automations', sub: 'Active rules' },
+            ],
+            [
+              { label: 'SUB PAGES', value: subManagerPages.length || (subPlans || []).length, color: '#EC4899', icon: 'wallet-outline', bg: 'rgba(236,72,153,0.12)', tab: 'sub_manager', sub: 'Monetized pages' },
+              { label: 'REVENUE', value: `₹${(realRevenue ?? 0).toLocaleString()}`, color: '#F59E0B', icon: 'cash-outline', bg: 'rgba(245,158,11,0.12)', tab: 'sub_manager', sub: 'Total collected', isRevenue: true },
+            ],
+          ].map((pair, rowIndex) => (
+            <View key={rowIndex} style={styles.metricsRow}>
+              {pair.map((m, colIndex) => (
+                <View key={colIndex} style={styles.metricCardWrapper}>
+                  <StatCard
+                    label={m.label}
+                    value={m.value}
+                    icon={m.icon}
+                    color={m.color}
+                    bg={m.bg}
+                    sub={m.sub}
+                    onPress={() => onNavigate(m.tab)}
+                    isRevenue={m.isRevenue}
+                  />
+                </View>
+              ))}
+            </View>
           ))}
         </View>
       </View>
@@ -195,8 +206,9 @@ const styles = StyleSheet.create({
   refreshBtnDark: { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.12)' },
   refreshBtnText: { fontSize: 12, fontWeight: '700' },
   connectBtn: { flex: 1, height: 38, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#0284C7', borderRadius: 10 },
-  connectBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
-  metricsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 8, borderTopWidth: 1, paddingTop: 12, marginTop: 4 },
+  metricsContainer: { width: '100%', borderTopWidth: 1, paddingTop: 12, marginTop: 4, gap: 8 },
+  metricsRow: { flexDirection: 'row', width: '100%', gap: 10 },
+  metricCardWrapper: { flex: 1, minWidth: 0 },
   metricCard: { width: '48.5%', padding: 10, borderRadius: 12, borderWidth: 1, justifyContent: 'space-between', minHeight: 88 },
   metricCardLight: { backgroundColor: 'rgba(248,250,252,0.9)', borderColor: '#E2E8F0' },
   metricCardDark: { backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' },
