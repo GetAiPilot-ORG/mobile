@@ -53,30 +53,6 @@ export async function getVoiceSsoUrl(
 
       const launchUrl = edgeRes.data?.launch_url;
       if (launchUrl) {
-        try {
-          const parsed = new URL(launchUrl);
-          const ssoToken = parsed.searchParams.get('token');
-          if (ssoToken) {
-            // Exchange with voice.getaipilot.online
-            const exchangeRes = await fetch(`${VOICE_WEB_BASE_URL}/api/auth/sso`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ token: ssoToken }),
-            });
-
-            if (exchangeRes.ok) {
-              const exchangeData: any = await exchangeRes.json();
-              if (exchangeData?.magic_link_url) {
-                const magicUrl = new URL(exchangeData.magic_link_url);
-                magicUrl.searchParams.set('redirect_to', cleanTarget);
-                console.log('[VoiceSSO] Resolved client magic SSO URL:', magicUrl.toString());
-                return magicUrl.toString();
-              }
-            }
-          }
-        } catch (exErr) {
-          console.warn('[VoiceSSO] Client token exchange error:', exErr);
-        }
         return launchUrl;
       }
     }

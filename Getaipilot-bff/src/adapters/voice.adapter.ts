@@ -530,27 +530,6 @@ export class VoiceAdapter {
               if (ssoEdgeRes.ok) {
                 const ssoEdgeData: any = await ssoEdgeRes.json();
                 if (ssoEdgeData?.launch_url) {
-                  try {
-                    const launchUrl = new URL(ssoEdgeData.launch_url);
-                    const ssoJwt = launchUrl.searchParams.get('token');
-                    if (ssoJwt) {
-                      const exchangeRes = await fetch(`${VOICE_BASE}/api/auth/sso`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ token: ssoJwt }),
-                      });
-                      if (exchangeRes.ok) {
-                        const exchangeData: any = await exchangeRes.json();
-                        if (exchangeData?.magic_link_url) {
-                          const magicUrl = new URL(exchangeData.magic_link_url);
-                          magicUrl.searchParams.set('redirect_to', cleanPath);
-                          return magicUrl.toString();
-                        }
-                      }
-                    }
-                  } catch (exErr) {
-                    console.warn('[VOICE ADAPTER] Magic link customization error:', exErr);
-                  }
                   return ssoEdgeData.launch_url;
                 }
               }

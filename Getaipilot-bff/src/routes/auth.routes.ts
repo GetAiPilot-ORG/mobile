@@ -650,6 +650,92 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // POST /mobile/v1/auth/sso-url - Generate authentic SSO URL for Web App
+  fastify.post('/sso-url', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const body = (request.body || {}) as { redirectPath?: string; webAppUrl?: string };
+    const redirectPath = body.redirectPath && body.redirectPath.startsWith('/') ? body.redirectPath : '/free-tools/dashboard';
+    const rawWebAppUrl = (body.webAppUrl || 'https://getaipilot.in').replace(/\/+$/, '');
+
+    // 1. Check if we have an active upstream Supabase session
+    const upstreamSession = UpstreamSessionService.getSession(user.session_id, user.user_id);
+    if (upstreamSession?.accessToken && upstreamSession?.refreshToken) {
+      const ssoUrl = `${rawWebAppUrl}/auth/callback?next=${encodeURIComponent(
+        redirectPath
+      )}#access_token=${encodeURIComponent(
+        upstreamSession.accessToken
+      )}&refresh_token=${encodeURIComponent(
+        upstreamSession.refreshToken
+      )}&token_type=bearer`;
+
+      return reply.send({
+        success: true,
+        ssoUrl,
+      });
+    }
+
+    // 2. Generate magiclink token_hash via Supabase Admin
+    try {
+      const callbackUrl = `${rawWebAppUrl}/auth/callback?next=${encodeURIComponent(redirectPath)}`;
+      const { data, error } = await HubAdapter.generateMagicLink(user.email, callbackUrl);
+      if (data?.properties?.action_link) {
+        return reply.send({
+          success: true,
+          ssoUrl: data.properties.action_link,
+        });
+      }
+    } catch (e: any) {
+      request.log.warn(e, '[SSO_URL_GENERATE_ERROR]');
+    }
+
+    // 3. Fallback to direct web URL
+    return reply.send({
+      success: true,
+      ssoUrl: `${rawWebAppUrl}${redirectPath}`,
+    });
+  });
+
+  fastify.get('/sso-url', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const query = (request.query || {}) as { redirectPath?: string; webAppUrl?: string };
+    const redirectPath = query.redirectPath && query.redirectPath.startsWith('/') ? query.redirectPath : '/free-tools/dashboard';
+    const rawWebAppUrl = (query.webAppUrl || 'https://getaipilot.in').replace(/\/+$/, '');
+
+    const upstreamSession = UpstreamSessionService.getSession(user.session_id, user.user_id);
+    if (upstreamSession?.accessToken && upstreamSession?.refreshToken) {
+      const ssoUrl = `${rawWebAppUrl}/auth/callback?next=${encodeURIComponent(
+        redirectPath
+      )}#access_token=${encodeURIComponent(
+        upstreamSession.accessToken
+      )}&refresh_token=${encodeURIComponent(
+        upstreamSession.refreshToken
+      )}&token_type=bearer`;
+
+      return reply.send({
+        success: true,
+        ssoUrl,
+      });
+    }
+
+    try {
+      const callbackUrl = `${rawWebAppUrl}/auth/callback?next=${encodeURIComponent(redirectPath)}`;
+      const { data } = await HubAdapter.generateMagicLink(user.email, callbackUrl);
+      if (data?.properties?.action_link) {
+        return reply.send({
+          success: true,
+          ssoUrl: data.properties.action_link,
+        });
+      }
+    } catch (e: any) {
+      request.log.warn(e, '[SSO_URL_GENERATE_ERROR]');
+    }
+
+    return reply.send({
+      success: true,
+      ssoUrl: `${rawWebAppUrl}${redirectPath}`,
+    });
+  });
+
   // GET /mobile/v1/auth/mobile-redirect - Web Bridge that automatically opens the mobile app
   fastify.get('/mobile-redirect', async (_request, reply) => {
     return reply.type('text/html').send(`<!DOCTYPE html>
