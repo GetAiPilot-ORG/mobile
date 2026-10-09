@@ -64,6 +64,14 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
     { key: 'delays', label: 'Delay (sec)', value: delaySec, icon: 'time-outline', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
   ];
 
+  const targetCount = [
+    ...new Set(
+      forwardRules.flatMap((r) =>
+        r.receivers_names || r.receivers || (r.target_chat_title ? [r.target_chat_title] : [])
+      ).filter(Boolean)
+    ),
+  ].length;
+
   return (
     <>
       {/* Hero Card */}
@@ -94,89 +102,92 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
         </View>
       </View>
 
-      {/* KPI Grid */}
-      <View style={{ gap: 8, marginBottom: 12 }}>
+      {/* 6 KPI Cards in Solid 2-Column Grid */}
+      <View style={styles.metricsContainer}>
         {/* Row 1 */}
-        <View style={{ flexDirection: 'row', width: '100%', gap: 10 }}>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <StatCard
-              label={kpis[0].label.toUpperCase()}
-              value={kpis[0].value}
-              icon={kpis[0].icon}
-              color={kpis[0].color}
-              bg={kpis[0].bg}
-              sub={kpis[0].label}
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setAfSection(kpis[0].key as AfSection);
-              }}
-            />
-          </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <StatCard
-              label={kpis[1].label.toUpperCase()}
-              value={kpis[1].value}
-              icon={kpis[1].icon}
-              color={kpis[1].color}
-              bg={kpis[1].bg}
-              sub={kpis[1].label}
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setAfSection(kpis[1].key as AfSection);
-              }}
-            />
-          </View>
+        <View style={styles.metricsRow}>
+          <StatCard
+            label={'ACTIVE MAPPINGS'}
+            value={(forwardRules || []).length}
+            icon={'arrow-redo'}
+            color={'#0284C7'}
+            bg={'rgba(2,132,199,0.15)'}
+            sub={'Source routes'}
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setAfSection('mappings');
+            }}
+          />
+          <StatCard
+            label={'TEXT FILTERS'}
+            value={filtersCount}
+            icon={'filter'}
+            color={'#8B5CF6'}
+            bg={'rgba(139,92,246,0.15)'}
+            sub={'Word replace'}
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setAfSection('filters');
+            }}
+          />
         </View>
 
         {/* Row 2 */}
-        <View style={{ flexDirection: 'row', width: '100%', gap: 10 }}>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <StatCard
-              label={kpis[2].label.toUpperCase()}
-              value={kpis[2].value}
-              icon={kpis[2].icon}
-              color={kpis[2].color}
-              bg={kpis[2].bg}
-              sub={kpis[2].label}
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setAfSection(kpis[2].key as AfSection);
-              }}
-            />
-          </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <StatCard
-              label={kpis[3].label.toUpperCase()}
-              value={kpis[3].value}
-              icon={kpis[3].icon}
-              color={kpis[3].color}
-              bg={kpis[3].bg}
-              sub={kpis[3].label}
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setAfSection(kpis[3].key as AfSection);
-              }}
-            />
-          </View>
+        <View style={styles.metricsRow}>
+          <StatCard
+            label={'BLOCKED WORDS'}
+            value={blockedCount}
+            icon={'shield'}
+            color={'#EF4444'}
+            bg={'rgba(239,68,68,0.15)'}
+            sub={'Blacklist terms'}
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setAfSection('blocked');
+            }}
+          />
+          <StatCard
+            label={'DELAY BUFFER'}
+            value={`${delaySec}s`}
+            icon={'time'}
+            color={'#F59E0B'}
+            bg={'rgba(245,158,11,0.15)'}
+            sub={'Anti-flood delay'}
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setAfSection('delays');
+            }}
+          />
         </View>
 
         {/* Row 3 */}
-        <View style={{ flexDirection: 'row', width: '100%', gap: 10 }}>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <StatCard
-              label="TEXT ACTIONS"
-              value={forwardRules.some(r => r.header || r.footer) ? "Configured" : "None"}
-              icon="text-outline"
-              color="#10B981"
-              bg="rgba(16,185,129,0.12)"
-              sub="Text Actions"
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setAfSection('headers');
-              }}
-            />
-          </View>
-          <View style={{ flex: 1 }} />
+        <View style={styles.metricsRow}>
+          <StatCard
+            label={'TEXT ACTIONS'}
+            value={forwardRules.some(r => r.header || r.footer) ? 'Configured' : 'None'}
+            icon={'document-text'}
+            color={'#10B981'}
+            bg={'rgba(16,185,129,0.15)'}
+            sub={'Prefix & Suffix'}
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setAfSection('headers');
+            }}
+          />
+          <StatCard
+            label={'TARGET CHANNELS'}
+            value={targetCount || (forwardRules.length > 0 ? forwardRules.length : 0)}
+            icon={'paper-plane'}
+            color={'#06B6D4'}
+            bg={'rgba(6,182,212,0.15)'}
+            sub={'Receiving chats'}
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onOpenModal('autoforward');
+            }}
+          />
+        </View>
+      </View>
         </View>
       </View>
 
@@ -371,6 +382,8 @@ const styles = StyleSheet.create({
   activeText: { color: '#64748B', fontSize: 11, fontWeight: '600' },
   openBotBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#0284C7', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 8 },
   openBotBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
+  metricsContainer: { width: '100%', alignSelf: 'stretch', gap: 10, marginBottom: 14 },
+  metricsRow: { flexDirection: 'row', gap: 10, width: '100%', alignSelf: 'stretch', marginBottom: 10 },
   kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 12, width: '100%' },
   kpiCard: { width: '47%', padding: 12, borderRadius: 14, borderWidth: 1 },
   kpiCardActive: { borderColor: '#0284C7', borderWidth: 2 },

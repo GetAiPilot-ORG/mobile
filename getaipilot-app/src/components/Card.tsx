@@ -31,10 +31,16 @@ export const Card: React.FC<CardProps> = ({
     xl: 'p-xl',
   };
 
-  const dynamicCardStyle = {
-    backgroundColor: variant === 'outlined' ? 'transparent' : colors.card,
-    borderColor: colors.cardBorder,
-    borderWidth: 1,
+  const variantStyles: Record<CardVariant, string> = {
+    default: isDark
+      ? 'bg-[#0B1420] border border-[#234563]'
+      : 'bg-white border border-[#E5E7EB]',
+    elevated: isDark
+      ? 'bg-[#0B1420] border border-[#234563]'
+      : 'bg-white border border-[#E5E7EB] shadow-sm',
+    outlined: isDark
+      ? 'bg-transparent border border-[#1B334A]'
+      : 'bg-transparent border border-[#E5E7EB]',
   };
 
   return (

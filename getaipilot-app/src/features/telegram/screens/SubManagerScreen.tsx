@@ -110,55 +110,62 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
         </View>
       </View>
 
-      {/* 4 KPI Cards 2x2 in 2 Guaranteed Rows */}
-      <View style={{ gap: 8, marginBottom: 12 }}>
+      {/* 4 KPI Cards in Solid 2-Column Grid */}
+      <View style={styles.metricsContainer}>
         {/* Row 1 */}
-        <View style={{ flexDirection: 'row', width: '100%', gap: 10 }}>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <StatCard
-              label="TOTAL REVENUE"
-              value={`₹${stats.totalRevenue}`}
-              sub="Net earnings"
-              icon="trending-up"
-              bg={isDark ? 'rgba(99,102,241,0.15)' : '#EEF2FF'}
-              color="#6366F1"
-              isRevenue={true}
-            />
-          </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <StatCard
-              label="ACTIVE SUBSCRIBERS"
-              value={String(stats.activeSubscribers)}
-              sub="0 all-time joined"
-              icon="pulse"
-              bg={isDark ? 'rgba(16,185,129,0.15)' : '#ECFDF5'}
-              color="#10B981"
-            />
-          </View>
+        <View style={styles.metricsRow}>
+          <StatCard
+            label={'TOTAL REVENUE'}
+            value={`₹${stats.totalRevenue}`}
+            icon={'trending-up'}
+            color={'#6366F1'}
+            bg={isDark ? 'rgba(99,102,241,0.15)' : '#EEF2FF'}
+            sub={'Net earnings'}
+            isRevenue
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSubSection('revenue');
+            }}
+          />
+          <StatCard
+            label={'ACTIVE SUBSCRIBERS'}
+            value={String(stats.activeSubscribers)}
+            icon={'pulse'}
+            color={'#10B981'}
+            bg={isDark ? 'rgba(16,185,129,0.15)' : '#ECFDF5'}
+            sub={'Active members'}
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSubSection('channels');
+            }}
+          />
         </View>
 
         {/* Row 2 */}
-        <View style={{ flexDirection: 'row', width: '100%', gap: 10 }}>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <StatCard
-              label="SUBSCRIPTION PAGES"
-              value={String(stats.subscriptionPages)}
-              sub="Hosted checkouts"
-              icon="globe-outline"
-              bg={isDark ? 'rgba(2,132,199,0.15)' : '#F0F9FF'}
-              color="#0284C7"
-            />
-          </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <StatCard
-              label="BOT AUTOMATED ACCESS"
-              value={stats.botAutomatedAccess}
-              sub="Single-use invites"
-              icon="shield-checkmark-outline"
-              bg={isDark ? 'rgba(148,163,184,0.15)' : '#F8FAFC'}
-              color="#64748B"
-            />
-          </View>
+        <View style={styles.metricsRow}>
+          <StatCard
+            label={'SUBSCRIPTION PAGES'}
+            value={String(stats.subscriptionPages)}
+            icon={'globe'}
+            color={'#0284C7'}
+            bg={isDark ? 'rgba(2,132,199,0.15)' : '#F0F9FF'}
+            sub={'Hosted checkouts'}
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSubSection('pages');
+            }}
+          />
+          <StatCard
+            label={'BOT ACCESS'}
+            value={stats.botAutomatedAccess || 'Active'}
+            icon={'shield-checkmark'}
+            color={'#8B5CF6'}
+            bg={isDark ? 'rgba(139,92,246,0.15)' : '#F3E8FF'}
+            sub={'Single-use invites'}
+            onPress={() => onOpenModal('sub_manager')}
+          />
+        </View>
+      </View>
         </View>
       </View>
 
@@ -452,6 +459,8 @@ const styles = StyleSheet.create({
   newBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#0284C7', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 8 },
   newBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
   iconBtn: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  metricsContainer: { width: '100%', alignSelf: 'stretch', gap: 10, marginBottom: 12 },
+  metricsRow: { flexDirection: 'row', gap: 10, width: '100%', alignSelf: 'stretch', marginBottom: 10 },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 12, width: '100%' },
   statCard: { width: '48%', padding: 12, borderRadius: 14, borderWidth: 1 },
   statHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },

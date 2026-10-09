@@ -24,6 +24,81 @@ const CATEGORIES: { key: TelegramCategory; label: string; icon: string }[] = [
   { key: 'growth', label: 'Growth', icon: 'trending-up-outline' },
 ];
 
+const DEFAULT_TELEGRAM_TOOLS: TelegramHubTool[] = [
+  {
+    key: 'tracker',
+    title: 'GAP Tracker',
+    description: 'Connect Telegram bots, track channel joins, and generate deep tracking invite links.',
+    badge: 'POPULAR',
+    isCompleted: true,
+    statusText: 'Active',
+    icon: 'share-social',
+  },
+  {
+    key: 'sub_manager',
+    title: 'GAP Sub Manager',
+    description: 'Manage gated subscription landing pages and process recurring community payments.',
+    badge: 'MONETIZE',
+    isCompleted: true,
+    statusText: 'Active',
+    icon: 'card',
+  },
+  {
+    key: 'autoforward',
+    title: 'GAP Autoforwarding',
+    description: 'Mirror and auto-forward messages across public and private Telegram channels automatically.',
+    badge: 'AUTOMATION',
+    isCompleted: true,
+    statusText: 'Active',
+    icon: 'git-compare-outline',
+  },
+  {
+    key: 'report_bot',
+    title: 'GAP Report Bot',
+    description: 'Turn Telegram trading calls and chart screenshots into branded SEBI research report PDFs.',
+    badge: 'SEBI',
+    isCompleted: true,
+    statusText: 'Active',
+    icon: 'document-text',
+  },
+  {
+    key: 'reactions',
+    title: 'GAP Reactions',
+    description: 'Boost your post engagement with automated Telegram reaction emoji delivery.',
+    badge: 'ENGAGEMENT',
+    isCompleted: true,
+    statusText: 'Active',
+    icon: 'sparkles',
+  },
+  {
+    key: 'auto_approve',
+    title: 'Auto-Approve Bot',
+    description: 'Instantly and automatically accept new group or channel join requests 24/7.',
+    badge: 'SMART GATE',
+    isCompleted: true,
+    statusText: 'Active',
+    icon: 'checkmark-circle-outline',
+  },
+  {
+    key: 'chatbot',
+    title: 'AI Chat Bot',
+    description: 'Deploy intelligent ChatGPT-powered Telegram bots to handle user support & sales queries.',
+    badge: 'AI DRIVEN',
+    isCompleted: true,
+    statusText: 'Active',
+    icon: 'chatbubbles',
+  },
+  {
+    key: 'broadcast',
+    title: 'Broadcast Msg',
+    description: 'Send high-converting instant announcements and mass broadcasts to all your bot subscribers.',
+    badge: 'BROADCAST',
+    isCompleted: true,
+    statusText: 'Active',
+    icon: 'megaphone',
+  },
+];
+
 interface OverviewScreenProps {
   summary: any;
   realRevenue: number;
@@ -59,7 +134,19 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
 
   const hub = summary?.hub || { totalModules: 8, completedModules: 8, tools: [] };
 
-  const filteredTools = (hub.tools || []).filter((tool: TelegramHubTool) => {
+  const toolsSource: TelegramHubTool[] =
+    hub.tools && hub.tools.length > 0
+      ? hub.tools.map((t: TelegramHubTool) => {
+          const defaultDef = DEFAULT_TELEGRAM_TOOLS.find((d) => d.key === t.key);
+          return {
+            ...t,
+            badge: t.badge || defaultDef?.badge,
+            description: t.description || t.statusText || defaultDef?.description || '',
+          };
+        })
+      : DEFAULT_TELEGRAM_TOOLS;
+
+  const filteredTools = toolsSource.filter((tool: TelegramHubTool) => {
     if (selectedCategory === 'all') return true;
     if (selectedCategory === 'automation') return ['autoforward', 'auto_approve', 'chatbot', 'reactions'].includes(tool.key);
     if (selectedCategory === 'monetization') return ['sub_manager', 'report_bot'].includes(tool.key);
@@ -101,6 +188,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
             </Pressable>
           </View> */}
         </View>
+      </View>
 
         {/* 6 KPI Cards in 3 Guaranteed 2-Item Rows */}
         <View style={[styles.metricsContainer, isDark ? styles.borderDark : styles.borderLight]}>
@@ -135,6 +223,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
               ))}
             </View>
           ))}
+        </View>
         </View>
       </View>
 
@@ -206,8 +295,22 @@ const styles = StyleSheet.create({
   refreshBtnDark: { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.12)' },
   refreshBtnText: { fontSize: 12, fontWeight: '700' },
   connectBtn: { flex: 1, height: 38, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#0284C7', borderRadius: 10 },
-  metricsContainer: { width: '100%', borderTopWidth: 1, paddingTop: 12, marginTop: 4, gap: 8 },
-  metricsRow: { flexDirection: 'row', width: '100%', gap: 10 },
+  metricsContainer: {
+    width: '100%',
+    borderTopWidth: 1,
+    paddingTop: 12,
+    marginTop: 4,
+    gap: 8,
+    alignSelf: 'stretch',
+    marginBottom: 14,
+  },
+  metricsRow: {
+    flexDirection: 'row',
+    width: '100%',
+    gap: 10,
+    alignSelf: 'stretch',
+    marginBottom: 10,
+  },
   metricCardWrapper: { flex: 1, minWidth: 0 },
   metricCard: { width: '48.5%', padding: 10, borderRadius: 12, borderWidth: 1, justifyContent: 'space-between', minHeight: 88 },
   metricCardLight: { backgroundColor: 'rgba(248,250,252,0.9)', borderColor: '#E2E8F0' },
