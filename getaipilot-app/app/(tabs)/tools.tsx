@@ -235,11 +235,14 @@ export default function FreeToolsScreen() {
             return (
               <Pressable
                 key={cat}
-                className="px-3.5 py-1.5 rounded-full mr-2 border active:opacity-80"
-                style={{
-                  backgroundColor: isActive ? colors.primary : colors.card,
-                  borderColor: isActive ? colors.primary : colors.border,
-                }}
+                className="px-3.5 py-1.5 rounded-full mr-2 border"
+                style={({ pressed }) => [
+                  {
+                    backgroundColor: isActive ? colors.primary : colors.card,
+                    borderColor: isActive ? colors.primary : colors.border,
+                    opacity: pressed ? 0.8 : 1,
+                  },
+                ]}
                 onPress={() => setSelectedCategory(cat)}
               >
                 <Text

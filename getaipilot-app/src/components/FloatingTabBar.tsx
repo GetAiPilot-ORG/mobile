@@ -96,6 +96,10 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   const { user, profile } = useAuth();
   const { isAdmin: isPlatformAdmin } = usePlatformSubscription();
 
+  if (!state?.routes || !descriptors || !navigation) {
+    return null;
+  }
+
   const userRole = (user?.role || profile?.role || '').toLowerCase();
   const isAdmin = Boolean(
     userRole === 'admin' ||
@@ -107,7 +111,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   const bottomOffset = Math.max(insets.bottom, 12);
 
   // Filter visible routes: Home, Inbox, Tools, Activity, and Admin ONLY for admin users
-  const visibleRoutes = state.routes.filter((route: any) => {
+  const visibleRoutes = (state.routes || []).filter((route: any) => {
     const descriptor = descriptors[route.key];
     const options = descriptor ? descriptor.options : {};
 
@@ -180,8 +184,8 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
                 key={route.key}
                 accessibilityRole="button"
                 accessibilityState={{ selected: true }}
-                accessibilityLabel={options.tabBarAccessibilityLabel}
-                testID={options.tabBarButtonTestID}
+                accessibilityLabel={options?.tabBarAccessibilityLabel}
+                testID={options?.tabBarButtonTestID}
                 onPress={onPress}
                 onLongPress={onLongPress}
                 style={[
@@ -212,8 +216,8 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
               key={route.key}
               accessibilityRole="button"
               accessibilityState={{ selected: false }}
-              accessibilityLabel={options.tabBarAccessibilityLabel}
-              testID={options.tabBarButtonTestID}
+              accessibilityLabel={options?.tabBarAccessibilityLabel}
+              testID={options?.tabBarButtonTestID}
               onPress={onPress}
               onLongPress={onLongPress}
               style={[

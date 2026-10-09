@@ -192,9 +192,10 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Back"
+            style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] }]}
           >
             <View
-              className={`w-10 h-10 rounded-full justify-center items-center mr-3 border shadow-sm active:opacity-70 active:scale-95 ${isDark
+              className={`w-10 h-10 rounded-full justify-center items-center mr-3 border ${isDark
                 ? 'bg-[#0A111B] border-[#1B334A]'
                 : 'bg-[#F8F5EF] border-[#D2CABA]'
                 }`}
@@ -215,9 +216,10 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Profile Account"
+            style={({ pressed }) => [{ opacity: pressed ? 0.75 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] }]}
           >
             <View
-              className={`w-[42px] h-[42px] rounded-full justify-center items-center mr-2.5 border-[1.5px] shadow-sm shrink-0 active:opacity-75 active:scale-95 ${isDark ? 'border-[#1B334A]' : 'border-[#D2CABA]'
+              className={`w-[42px] h-[42px] rounded-full justify-center items-center mr-2.5 border-[1.5px] shrink-0 ${isDark ? 'border-[#1B334A]' : 'border-[#D2CABA]'
                 }`}
             >
 
@@ -292,12 +294,21 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel={`Current workspace plan: ${planLabel || 'Free'}. Tap to view and upgrade plans`}
+            style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] }]}
           >
             <View
-              className={`flex-row items-center gap-1.5 h-9 px-3 rounded-full border-[1.5px] shrink-0 self-center shadow-sm active:opacity-70 active:scale-95 ${isDark
-                ? 'bg-[#2F8CFF]/15 border-[#2F8CFF]/40'
-                : 'bg-[#0A84FF]/10 border-[#0A84FF]/25'
-                }`}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+                height: 36,
+                paddingHorizontal: 12,
+                borderRadius: 18,
+                borderWidth: 1.5,
+                borderColor: isDark ? 'rgba(47, 140, 255, 0.4)' : 'rgba(10, 132, 255, 0.25)',
+                backgroundColor: isDark ? 'rgba(47, 140, 255, 0.15)' : 'rgba(10, 132, 255, 0.1)',
+                alignSelf: 'center',
+              }}
             >
               <View
                 className="w-[7px] h-[7px] rounded-full shrink-0"

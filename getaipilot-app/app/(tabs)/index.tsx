@@ -365,8 +365,15 @@ export default function HomeScreen() {
         {/* Dual Telemetry Widgets (Apple Inset Dual Cards) */}
         <View className="flex-row gap-3 mb-4 w-full">
           <Pressable
-            className="flex-1 flex-row items-center p-3 rounded-2xl border shadow-sm active:opacity-75 min-w-0 gap-2.5"
-            style={{ flexBasis: 0, backgroundColor: color.card, borderColor: color.border }}
+            className="flex-1 flex-row items-center p-3 rounded-2xl border min-w-0 gap-2.5"
+            style={({ pressed }) => [
+              {
+                flexBasis: 0,
+                backgroundColor: color.card,
+                borderColor: color.border,
+                opacity: pressed ? 0.75 : 1,
+              },
+            ]}
             onPress={() => {
               triggerHaptic();
               router.push("/account/plans" as any);
@@ -402,8 +409,15 @@ export default function HomeScreen() {
           </Pressable>
 
           <Pressable
-            className="flex-1 flex-row items-center p-3 rounded-2xl border shadow-sm active:opacity-75 min-w-0 gap-2.5"
-            style={{ flexBasis: 0, backgroundColor: color.card, borderColor: color.border }}
+            className="flex-1 flex-row items-center p-3 rounded-2xl border min-w-0 gap-2.5"
+            style={({ pressed }) => [
+              {
+                flexBasis: 0,
+                backgroundColor: color.card,
+                borderColor: color.border,
+                opacity: pressed ? 0.75 : 1,
+              },
+            ]}
             onPress={() => {
               triggerHaptic();
               router.push("/(tabs)/activity" as any);
@@ -441,8 +455,14 @@ export default function HomeScreen() {
 
         {/* Signed-in device summary. Full device management lives in Account > Security. */}
         <Pressable
-          className="flex-row items-center p-3.5 rounded-2xl border mb-4 shadow-sm active:opacity-80"
-          style={{ backgroundColor: color.card, borderColor: color.border }}
+          className="flex-row items-center p-3.5 rounded-2xl border mb-4"
+          style={({ pressed }) => [
+            {
+              backgroundColor: color.card,
+              borderColor: color.border,
+              opacity: pressed ? 0.8 : 1,
+            },
+          ]}
           onPress={() => {
             triggerHaptic();
             router.push({
@@ -539,8 +559,14 @@ export default function HomeScreen() {
 
         {/* Overall Ecosystem Pricing & Upgrades Tile */}
         <Pressable
-          className="rounded-2xl p-3.5 border mb-3.5 gap-2.5 shadow-sm active:opacity-85"
-          style={{ backgroundColor: color.card, borderColor: color.border }}
+          className="rounded-2xl p-3.5 border mb-3.5 gap-2.5"
+          style={({ pressed }) => [
+            {
+              backgroundColor: color.card,
+              borderColor: color.border,
+              opacity: pressed ? 0.85 : 1,
+            },
+          ]}
           onPress={() => {
             triggerHaptic();
             router.push("/account/plans" as any);
@@ -677,8 +703,11 @@ export default function HomeScreen() {
           style={{ backgroundColor: color.tabBackground }}
         >
           <Pressable
-            className="flex-1 py-2 rounded-lg items-center justify-center active:opacity-80"
-            style={selectedFilter === "all" ? { backgroundColor: color.card } : undefined}
+            className="flex-1 py-2 rounded-lg items-center justify-center"
+            style={({ pressed }) => [
+              selectedFilter === "all" ? { backgroundColor: color.card } : undefined,
+              pressed && { opacity: 0.8 },
+            ]}
             onPress={() => {
               triggerHaptic();
               setSelectedFilter("all");
@@ -695,8 +724,11 @@ export default function HomeScreen() {
           </Pressable>
 
           <Pressable
-            className="flex-1 py-2 rounded-lg items-center justify-center active:opacity-80"
-            style={selectedFilter === "bots" ? { backgroundColor: color.card } : undefined}
+            className="flex-1 py-2 rounded-lg items-center justify-center"
+            style={({ pressed }) => [
+              selectedFilter === "bots" ? { backgroundColor: color.card } : undefined,
+              pressed && { opacity: 0.8 },
+            ]}
             onPress={() => {
               triggerHaptic();
               setSelectedFilter("bots");
@@ -713,8 +745,11 @@ export default function HomeScreen() {
           </Pressable>
 
           <Pressable
-            className="flex-1 py-2 rounded-lg items-center justify-center active:opacity-80"
-            style={selectedFilter === "tools" ? { backgroundColor: color.card } : undefined}
+            className="flex-1 py-2 rounded-lg items-center justify-center"
+            style={({ pressed }) => [
+              selectedFilter === "tools" ? { backgroundColor: color.card } : undefined,
+              pressed && { opacity: 0.8 },
+            ]}
             onPress={() => {
               triggerHaptic();
               setSelectedFilter("tools");
@@ -764,7 +799,8 @@ export default function HomeScreen() {
               {filteredEngines.map((item) => (
                 <Pressable
                   key={item.id}
-                  className="items-center justify-center active:opacity-75"
+                  className="items-center justify-center"
+                  style={({ pressed }) => [{ opacity: pressed ? 0.75 : 1 }]}
                   onPress={() => {
                     triggerHaptic();
                     router.push(item.route as any);
@@ -816,7 +852,8 @@ export default function HomeScreen() {
                 return (
                   <View key={tool.id}>
                     <Pressable
-                      className="flex-row items-center py-3 px-3.5 gap-3 active:opacity-75"
+                      className="flex-row items-center py-3 px-3.5 gap-3"
+                      style={({ pressed }) => [{ opacity: pressed ? 0.75 : 1 }]}
                       onPress={() => {
                         triggerHaptic();
                         router.push(tool.route as any);
