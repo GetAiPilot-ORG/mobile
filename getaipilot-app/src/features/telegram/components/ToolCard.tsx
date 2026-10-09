@@ -1,10 +1,8 @@
-import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, Platform } from 'react-native';
 import { useTheme, getColors } from '@/theme';
 import { TelegramHubTool } from '../types';
 

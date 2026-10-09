@@ -166,8 +166,6 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
           />
         </View>
       </View>
-        </View>
-      </View>
 
       {/* Launch Readiness Accordion */}
       <Pressable style={[styles.launchBanner, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => setLaunchExpanded(!launchExpanded)}>

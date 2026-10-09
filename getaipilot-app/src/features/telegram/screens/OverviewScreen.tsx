@@ -224,8 +224,6 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
             </View>
           ))}
         </View>
-        </View>
-      </View>
 
       {/* Analytics Charts */}
       <DashboardAnalyticsCharts

@@ -188,8 +188,6 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
           />
         </View>
       </View>
-        </View>
-      </View>
 
       {/* MAPPINGS */}
       {afSection === 'mappings' && (
