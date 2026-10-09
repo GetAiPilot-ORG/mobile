@@ -308,36 +308,44 @@ export const WhatsAppHomeScreen: React.FC = () => {
               {/* Metrics 2x2 Grid */}
               <View style={styles.gridContainer}>
                 <View style={styles.gridRow}>
-                  <WhatsAppMetricCard
-                    label="Contacts"
-                    value={totalContactsCount.toLocaleString()}
-                    subtext="Synchronized audience"
-                    ioniconsName="people"
-                    iconColor="#A855F7"
-                  />
-                  <WhatsAppMetricCard
-                    label="Templates"
-                    value={approvedTemplatesCount}
-                    subtext="Approved by Meta"
-                    ioniconsName="document-text"
-                    iconColor="#3B82F6"
-                  />
+                  <View style={styles.metricCardWrapper}>
+                    <WhatsAppMetricCard
+                      label="Contacts"
+                      value={totalContactsCount.toLocaleString()}
+                      subtext="Synchronized audience"
+                      ioniconsName="people"
+                      iconColor="#A855F7"
+                    />
+                  </View>
+                  <View style={styles.metricCardWrapper}>
+                    <WhatsAppMetricCard
+                      label="Templates"
+                      value={approvedTemplatesCount}
+                      subtext="Approved by Meta"
+                      ioniconsName="document-text"
+                      iconColor="#3B82F6"
+                    />
+                  </View>
                 </View>
                 <View style={styles.gridRow}>
-                  <WhatsAppMetricCard
-                    label="Broadcasts"
-                    value={totalBroadcastsCount}
-                    subtext="Campaigns executed"
-                    ioniconsName="megaphone"
-                    iconColor="#F43F5E"
-                  />
-                  <WhatsAppMetricCard
-                    label="Delivery Rate"
-                    value={deliveryRate}
-                    subtext="Cloud SLA"
-                    ioniconsName="flash"
-                    iconColor="#F59E0B"
-                  />
+                  <View style={styles.metricCardWrapper}>
+                    <WhatsAppMetricCard
+                      label="Broadcasts"
+                      value={totalBroadcastsCount}
+                      subtext="Campaigns executed"
+                      ioniconsName="megaphone"
+                      iconColor="#F43F5E"
+                    />
+                  </View>
+                  <View style={styles.metricCardWrapper}>
+                    <WhatsAppMetricCard
+                      label="Delivery Rate"
+                      value={deliveryRate}
+                      subtext="Cloud SLA"
+                      ioniconsName="flash"
+                      iconColor="#F59E0B"
+                    />
+                  </View>
                 </View>
               </View>
 
@@ -360,13 +368,11 @@ export const WhatsAppHomeScreen: React.FC = () => {
                 {navigationItems.map((item) => (
                   <Pressable
                     key={item.key}
-                    style={({ pressed }) => [
-                      styles.actionCard,
-                      isDark ? styles.actionCardDark : styles.actionCardLight,
-                      pressed && styles.actionCardPressed,
-                    ]}
+                    className={`flex-row gap-3 items-center justify-between w-full p-3.5 rounded-2xl border ${isDark ? 'bg-[#1C1C1E] border-[#2C2C2E]' : 'bg-white border-[#E5E7EB]'
+                      }`}
                     onPress={item.onPress}
                   >
+
                     <View
                       style={[
                         styles.actionIcon,
@@ -672,23 +678,32 @@ const styles = StyleSheet.create({
   },
   gridContainer: {
     width: "100%",
-    gap: 10,
+    gap: Platform.OS === "web" ? 12 : 10,
     marginBottom: 12,
   },
   gridRow: {
     flexDirection: "row",
     width: "100%",
-    gap: 10,
+    alignSelf: "stretch",
+    gap: Platform.OS === "web" ? 12 : 10,
+  },
+  metricCardWrapper: {
+    flex: 1,
+    minWidth: 0,
+    flexBasis: 0,
   },
   actionsList: {
+    width: "100%",
     gap: 10,
   },
   actionCard: {
     flexDirection: "row",
     alignItems: "center",
+    width: "100%",
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
+    gap: 12,
   },
   actionCardDark: {
     backgroundColor: "#1C1C1E",
@@ -713,10 +728,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 14,
+    flexShrink: 0,
   },
   actionDetails: {
     flex: 1,
+    minWidth: 0,
   },
   actionTitle: {
     fontSize: 15,

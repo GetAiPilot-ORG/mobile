@@ -74,10 +74,10 @@ export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading, isConnec
       <View style={[styles.statsBar, isDark ? styles.statsBarDark : styles.statsBarLight]}>
         {/* Sent */}
         <View style={styles.statCol}>
-          <Text style={[styles.statLabel, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+          <Text style={[styles.statLabel, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]} numberOfLines={1} ellipsizeMode="tail">
             Sent
           </Text>
-          <Text style={[styles.statValue, isDark ? styles.textLight : styles.textDark]}>
+          <Text style={[styles.statValue, isDark ? styles.textLight : styles.textDark]} numberOfLines={1} ellipsizeMode="tail">
             {sent.toLocaleString()}
           </Text>
         </View>
@@ -86,10 +86,10 @@ export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading, isConnec
 
         {/* Delivered */}
         <View style={styles.statCol}>
-          <Text style={[styles.statLabel, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+          <Text style={[styles.statLabel, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]} numberOfLines={1} ellipsizeMode="tail">
             Delivered
           </Text>
-          <Text style={[styles.statValue, { color: '#22C55E' }]}>
+          <Text style={[styles.statValue, { color: '#22C55E' }]} numberOfLines={1} ellipsizeMode="tail">
             {delivered.toLocaleString()}
           </Text>
         </View>
@@ -98,7 +98,7 @@ export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading, isConnec
 
         {/* Failed */}
         <View style={styles.statCol}>
-          <Text style={[styles.statLabel, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+          <Text style={[styles.statLabel, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]} numberOfLines={1} ellipsizeMode="tail">
             Failed
           </Text>
           <Text
@@ -106,6 +106,8 @@ export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading, isConnec
               styles.statValue,
               { color: failed > 0 ? '#EF4444' : isDark ? '#8E8E93' : '#94A3B8' },
             ]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
           >
             {failed.toLocaleString()}
           </Text>
@@ -115,10 +117,10 @@ export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading, isConnec
 
         {/* Delivery % */}
         <View style={styles.statCol}>
-          <Text style={[styles.statLabel, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+          <Text style={[styles.statLabel, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]} numberOfLines={1} ellipsizeMode="tail">
             Delivery %
           </Text>
-          <Text style={[styles.statValue, isDark ? styles.textLight : styles.textDark]}>
+          <Text style={[styles.statValue, isDark ? styles.textLight : styles.textDark]} numberOfLines={1} ellipsizeMode="tail">
             {deliveryRate}%
           </Text>
         </View>
@@ -215,6 +217,8 @@ const styles = StyleSheet.create({
   },
   statCol: {
     flex: 1,
+    minWidth: 0,
+    flexBasis: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },

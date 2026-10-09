@@ -7,6 +7,7 @@ import { Bot, Database, Megaphone, Phone, PhoneCall } from "lucide-react-native"
 import React from "react";
 import {
   Dimensions,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -267,134 +268,149 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
         {/* Row 1: AI Assistants & Dedicated Phone Lines */}
         <View style={styles.gridRow}>
           {/* Card 1: AI Assistants */}
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              if (onOpenCreateAssistant) {
-                onOpenCreateAssistant();
-              }
-            }}
-            style={[
-              styles.metricCard,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
-            <View style={styles.metricHeaderRow}>
-              <View
-                style={[
-                  styles.metricIconWrap,
-                  { backgroundColor: colors.primaryLight },
-                ]}
-              >
-                <Bot size={17} color={colors.primary} strokeWidth={2.2} />
+          <View style={styles.metricCardWrapper}>
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                if (onOpenCreateAssistant) {
+                  onOpenCreateAssistant();
+                }
+              }}
+              style={({ pressed }) => [
+                styles.metricCard,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+                pressed && styles.pressed,
+              ]}
+            >
+              <View style={styles.metricHeaderRow}>
+                <View
+                  style={[
+                    styles.metricIconWrap,
+                    { backgroundColor: colors.primaryLight },
+                  ]}
+                >
+                  <Bot size={17} color={colors.primary} strokeWidth={2.2} />
+                </View>
+                <Text style={[styles.metricLabel, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
+                  AI Assistants
+                </Text>
               </View>
-              <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
-                AI Assistants
+              <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
+                {totalAssistantsCount}
               </Text>
-            </View>
-            <Text style={[styles.metricValue, { color: colors.text }]}>
-              {totalAssistantsCount}
-            </Text>
-          </Pressable>
+            </Pressable>
+          </View>
 
           {/* Card 2: Dedicated Phone Lines */}
-          <Pressable
-            onPress={() => navigate("contacts")}
-            style={[
-              styles.metricCard,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
-            <View style={styles.metricHeaderRow}>
-              <View
-                style={[
-                  styles.metricIconWrap,
-                  {
-                    backgroundColor: isDark
-                      ? "rgba(99, 102, 241, 0.15)"
-                      : "#EEF2FF",
-                  },
-                ]}
-              >
-                <PhoneCall size={17} color="#6366F1" strokeWidth={2.2} />
+          <View style={styles.metricCardWrapper}>
+            <Pressable
+              onPress={() => navigate("contacts")}
+              style={({ pressed }) => [
+                styles.metricCard,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+                pressed && styles.pressed,
+              ]}
+            >
+              <View style={styles.metricHeaderRow}>
+                <View
+                  style={[
+                    styles.metricIconWrap,
+                    {
+                      backgroundColor: isDark
+                        ? "rgba(99, 102, 241, 0.15)"
+                        : "#EEF2FF",
+                    },
+                  ]}
+                >
+                  <PhoneCall size={17} color="#6366F1" strokeWidth={2.2} />
+                </View>
+                <Text style={[styles.metricLabel, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
+                  Phone Lines
+                </Text>
               </View>
-              <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
-                Phone Lines
+              <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
+                {data?.totalNumbersCount ?? numbers.length}
               </Text>
-            </View>
-            <Text style={[styles.metricValue, { color: colors.text }]}>
-              {data?.totalNumbersCount ?? numbers.length}
-            </Text>
-          </Pressable>
+            </Pressable>
+          </View>
         </View>
 
         {/* Row 2: Total Calls & Voice Wallet */}
         <View style={styles.gridRow}>
           {/* Card 3: Total Calls */}
-          <Pressable
-            onPress={() => navigate("calls")}
-            style={[
-              styles.metricCard,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
-            <View style={styles.metricHeaderRow}>
-              <View
-                style={[
-                  styles.metricIconWrap,
-                  {
-                    backgroundColor: isDark
-                      ? "rgba(14, 165, 233, 0.15)"
-                      : "#E0F2FE",
-                  },
-                ]}
-              >
-                <Phone size={17} color="#0EA5E9" strokeWidth={2.2} />
-              </View>
-              <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
-                Total Calls
-              </Text>
-            </View>
-            <Text style={[styles.metricValue, { color: colors.text }]}>
-              {totalCallsCount}
-            </Text>
-          </Pressable>
-
-          {/* Card 4: Wallet Status */}
-          <View
-            style={[
-              styles.metricCard,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
-            <View style={styles.metricHeaderRow}>
-              <View
-                style={[
-                  styles.metricIconWrap,
-                  {
-                    backgroundColor: isDark
-                      ? "rgba(22, 163, 74, 0.15)"
-                      : "#DCFCE7",
-                  },
-                ]}
-              >
-                <Database size={17} color={colors.green} strokeWidth={2.2} />
-              </View>
-              <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
-                Voice Wallet
-              </Text>
-            </View>
-            <Text
-              style={[
-                styles.metricValue,
-                {
-                  color: colors.green,
-                  fontSize: 19,
-                },
+          <View style={styles.metricCardWrapper}>
+            <Pressable
+              onPress={() => navigate("calls")}
+              style={({ pressed }) => [
+                styles.metricCard,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+                pressed && styles.pressed,
               ]}
             >
-              {rawMinutes.toLocaleString()} Mins
-            </Text>
+              <View style={styles.metricHeaderRow}>
+                <View
+                  style={[
+                    styles.metricIconWrap,
+                    {
+                      backgroundColor: isDark
+                        ? "rgba(14, 165, 233, 0.15)"
+                        : "#E0F2FE",
+                    },
+                  ]}
+                >
+                  <Phone size={17} color="#0EA5E9" strokeWidth={2.2} />
+                </View>
+                <Text style={[styles.metricLabel, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
+                  Total Calls
+                </Text>
+              </View>
+              <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
+                {totalCallsCount}
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* Card 4: Wallet Status */}
+          <View style={styles.metricCardWrapper}>
+            <Pressable
+              onPress={() => openVoiceWebBilling(queryClient, isDark)}
+              style={({ pressed }) => [
+                styles.metricCard,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+                pressed && styles.pressed,
+              ]}
+            >
+              <View style={styles.metricHeaderRow}>
+                <View
+                  style={[
+                    styles.metricIconWrap,
+                    {
+                      backgroundColor: isDark
+                        ? "rgba(22, 163, 74, 0.15)"
+                        : "#DCFCE7",
+                    },
+                  ]}
+                >
+                  <Database size={17} color={colors.green} strokeWidth={2.2} />
+                </View>
+                <Text style={[styles.metricLabel, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
+                  Voice Wallet
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles.metricValue,
+                  {
+                    color: colors.green,
+                    fontSize: Platform.OS === 'web' ? 20 : 18,
+                  },
+                ]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {rawMinutes.toLocaleString()} Mins
+              </Text>
+            </Pressable>
           </View>
         </View>
       </View>
@@ -410,11 +426,8 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
         <View style={styles.actionsList}>
           {/* Action 1: Create Assistant */}
           <Pressable
-            style={({ pressed }) => [
-              styles.actionCard,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-              pressed && styles.pressed,
-            ]}
+            className={`flex-row gap-3 items-center justify-between w-full p-3.5 rounded-2xl border ${isDark ? 'bg-[#1C1C1E] border-[#2C2C2E]' : 'bg-white border-[#E5E7EB]'
+              }`}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               if (onOpenCreateAssistant) {
@@ -444,11 +457,8 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
 
           {/* Action 2: Start Campaign */}
           <Pressable
-            style={({ pressed }) => [
-              styles.actionCard,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-              pressed && styles.pressed,
-            ]}
+            className={`flex-row gap-3 items-center justify-between w-full p-3.5 rounded-2xl border ${isDark ? 'bg-[#1C1C1E] border-[#2C2C2E]' : 'bg-white border-[#E5E7EB]'
+              }`}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               if (onOpenCreateCampaign) {
@@ -483,11 +493,8 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
 
           {/* Action 3: View Call Logs */}
           <Pressable
-            style={({ pressed }) => [
-              styles.actionCard,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-              pressed && styles.pressed,
-            ]}
+            className={`flex-row gap-3 items-center justify-between w-full p-3.5 rounded-2xl border ${isDark ? 'bg-[#1C1C1E] border-[#2C2C2E]' : 'bg-white border-[#E5E7EB]'
+              }`}
             onPress={() => navigate("calls")}
           >
             <View
@@ -559,10 +566,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
+    minWidth: 0,
   },
   heroTextWrapper: {
     flex: 1,
     justifyContent: "center",
+    minWidth: 0,
   },
   heroBoldCount: {
     color: "#FFFFFF",
@@ -597,17 +606,25 @@ const styles = StyleSheet.create({
   },
   gridContainer: {
     width: "100%",
-    gap: 12,
+    gap: Platform.OS === "web" ? 12 : 10,
   },
   gridRow: {
     flexDirection: "row",
     width: "100%",
-    gap: 12,
+    alignSelf: "stretch",
+    gap: Platform.OS === "web" ? 12 : 10,
+  },
+  metricCardWrapper: {
+    flex: 1,
+    minWidth: 0,
+    flexBasis: 0,
   },
   metricCard: {
     flex: 1,
+    width: "100%",
     minWidth: 0,
-    padding: 14,
+    flexBasis: Platform.OS === "web" ? "auto" : 0,
+    padding: Platform.OS === "web" ? 14 : 12,
     borderRadius: 16,
     borderWidth: 1,
     shadowColor: "#000000",
@@ -615,13 +632,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.03,
     shadowRadius: 5,
     elevation: 1,
-    minHeight: 96,
+    minHeight: Platform.OS === "web" ? 96 : 88,
     justifyContent: "space-between",
   },
   metricHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    width: "100%",
   },
   metricIconWrap: {
     width: 28,
@@ -629,6 +647,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
   },
   metricLabel: {
     fontSize: 12,
@@ -637,8 +656,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   metricValue: {
-    fontSize: 22,
-    lineHeight: 26,
+    fontSize: Platform.OS === "web" ? 22 : 20,
+    lineHeight: Platform.OS === "web" ? 26 : 24,
     fontWeight: "800",
     letterSpacing: -0.4,
     marginTop: 4,

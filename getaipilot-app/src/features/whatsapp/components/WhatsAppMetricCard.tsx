@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, getColors } from '@/theme';
 
@@ -31,7 +31,7 @@ export const WhatsAppMetricCard: React.FC<WhatsAppMetricCardProps> = ({
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
       {/* Top row with Label & Icon badge */}
       <View style={styles.topRow}>
-        <Text style={[styles.label, { color: colors.textMuted }]} numberOfLines={1}>
+        <Text style={[styles.label, { color: colors.textMuted }]} numberOfLines={1} ellipsizeMode="tail">
           {label}
         </Text>
         <View style={[styles.iconCircle, { backgroundColor: `${iconColor}15` }]}>
@@ -44,19 +44,19 @@ export const WhatsAppMetricCard: React.FC<WhatsAppMetricCardProps> = ({
       </View>
 
       {/* Value */}
-      <Text style={[styles.value, { color: colors.text }]} numberOfLines={1}>
+      <Text style={[styles.value, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
         {value}
       </Text>
 
       {/* Subtext */}
       {subtext ? (
-        <Text style={[styles.subtext, { color: colors.textMuted }]} numberOfLines={1}>
+        <Text style={[styles.subtext, { color: colors.textMuted }]} numberOfLines={1} ellipsizeMode="tail">
           {subtext}
         </Text>
       ) : null}
 
       {/* Optional Trend */}
-      {trend ? <Text style={styles.trend} numberOfLines={1}>{trend}</Text> : null}
+      {trend ? <Text style={styles.trend} numberOfLines={1} ellipsizeMode="tail">{trend}</Text> : null}
     </View>
   );
 };
@@ -64,12 +64,14 @@ export const WhatsAppMetricCard: React.FC<WhatsAppMetricCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     borderRadius: 16,
-    padding: 14,
+    padding: Platform.OS === 'web' ? 14 : 12,
     flex: 1,
     minWidth: 0,
+    flexBasis: Platform.OS === 'web' ? 'auto' : 0,
     width: '100%',
     borderWidth: 1,
     justifyContent: 'space-between',
+    minHeight: Platform.OS === 'web' ? 96 : 88,
   },
   cardDark: {
     backgroundColor: '#1C1C1E',
@@ -89,11 +91,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+    width: '100%',
   },
   label: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '600',
     letterSpacing: -0.1,
+    flex: 1,
+    marginRight: 6,
   },
   iconCircle: {
     width: 28,
@@ -101,12 +106,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   emojiIcon: {
     fontSize: 14,
   },
   value: {
-    fontSize: 22,
+    fontSize: Platform.OS === 'web' ? 22 : 20,
     fontWeight: '700',
     letterSpacing: -0.3,
     marginBottom: 2,
