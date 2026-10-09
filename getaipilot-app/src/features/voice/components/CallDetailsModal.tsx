@@ -69,10 +69,12 @@ export const CallDetailsModal: React.FC<CallDetailsModalProps> = ({
 
   const handleOpenRecording = async () => {
     let url = call.recordingUrl;
-    if (!url) return;
-
-    if (!url.startsWith("http://") && !url.startsWith("https://")) {
-      url = `https://api.vomyra.com/recordings/${url}`;
+    if (!url || (!url.startsWith("http://") && !url.startsWith("https://"))) {
+      Alert.alert(
+        "Recording Unavailable",
+        "The audio recording is being processed or unavailable for this call.",
+      );
+      return;
     }
 
     try {
@@ -692,8 +694,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   metaGridCard: {
-    width: "48%",
-    flexGrow: 1,
+    width: "48.5%",
     padding: 9,
     borderRadius: 10,
     borderWidth: StyleSheet.hairlineWidth,

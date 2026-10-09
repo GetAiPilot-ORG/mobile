@@ -356,7 +356,7 @@ export default function FileLinkerScreen() {
     <AppScreen safeArea={false} backgroundColor={theme.background}>
       <AppTopBar
         title="File Linker"
-        subtitle="Upload & share files instantly"
+        // subtitle="Upload & share files instantly"
         showBack={true}
       />
 

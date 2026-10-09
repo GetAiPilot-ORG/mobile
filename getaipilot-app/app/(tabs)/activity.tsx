@@ -224,7 +224,6 @@ export default function ConnectedPlatformsPage() {
     <AppScreen safeArea={false}>
       <AppTopBar
         title="Ecosystem Activity"
-        subtitle="Real-time Workspace Telemetry"
         showBack={false}
         showPlanBadge={true}
       />

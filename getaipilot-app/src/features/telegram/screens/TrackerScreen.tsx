@@ -115,58 +115,59 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
           <View style={styles.metricsContainer}>
             <View style={styles.metricsRow}>
               <StatCard
-                label="TOTAL JOINS"
+                label={'TOTAL JOINS'}
                 value={kpis.totalJoins}
-                icon="people"
-                color="#0284C7"
-                bg="rgba(2,132,199,0.12)"
-                sub="Active Channel Members"
+                icon={'people'}
+                color={'#0284C7'}
+                bg={'rgba(2,132,199,0.12)'}
+                sub={'Active Channel Members'}
               />
               <StatCard
-                label="TODAY'S JOINS"
+                label={'TODAY\'S JOINS'}
                 value={`+${kpis.todaysJoins}`}
-                icon="calendar"
-                color="#10B981"
-                bg="rgba(16,185,129,0.12)"
-                sub="New joins today"
+                icon={'calendar'}
+                color={'#10B981'}
+                bg={'rgba(16,185,129,0.12)'}
+                sub={'New joins today'}
               />
             </View>
             <View style={styles.metricsRow}>
               <StatCard
-                label="THIS MONTH"
+                label={'THIS MONTH'}
                 value={`+${kpis.thisMonthJoins}`}
-                icon="calendar-outline"
-                color="#10B981"
-                bg="rgba(16,185,129,0.12)"
-                sub="New joins this month"
+                icon={'calendar-outline'}
+                color={'#10B981'}
+                bg={'rgba(16,185,129,0.12)'}
+                sub={'New joins this month'}
               />
               <StatCard
-                label="BOT STARTS"
+                label={'BOT STARTS'}
                 value={kpis.botStarts}
-                icon="sparkles-outline"
-                color="#2563EB"
-                bg="rgba(37,99,235,0.12)"
-                sub="Total bot interactions"
+                icon={'sparkles-outline'}
+                color={'#2563EB'}
+                bg={'rgba(37,99,235,0.12)'}
+                sub={'Total bot interactions'}
               />
             </View>
             <View style={styles.metricsRow}>
               <StatCard
-                label="PENDING JOINS"
+                label={'PENDING JOINS'}
                 value={kpis.pendingJoins}
-                icon="time-outline"
-                color="#D97706"
-                bg="rgba(217,119,6,0.12)"
-                sub="Started not joined"
+                icon={'time-outline'}
+                color={'#D97706'}
+                bg={'rgba(217,119,6,0.12)'}
+                sub={'Started not joined'}
               />
               <StatCard
-                label="CONVERSION"
+                label={'CONVERSION'}
                 value={`${kpis.conversionRate}%`}
-                icon="trending-up-outline"
-                color="#DB2777"
-                bg="rgba(219,39,119,0.12)"
-                sub="Starts to Joins"
+                icon={'trending-up-outline'}
+                color={'#DB2777'}
+                bg={'rgba(219,39,119,0.12)'}
+                sub={'Starts to Joins'}
               />
             </View>
+          </View>
           </View>
 
           {/* Channel Breakdown */}

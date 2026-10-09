@@ -549,8 +549,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#6D3CF5",
     borderRadius: 4,
   },
-  metricsRow: { flexDirection: "row", gap: 8 },
-  metricCard: { flex: 1, borderRadius: 14, padding: 12, borderWidth: 1 },
+  metricsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  metricCard: {
+    width: "48.5%",
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+  },
   metricLabel: {
     fontSize: 10.5,
     color: "#65656B",

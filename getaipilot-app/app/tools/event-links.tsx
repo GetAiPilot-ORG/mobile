@@ -130,7 +130,9 @@ export default function EventLinksScreen() {
 
   return (
     <AppScreen safeArea={false} backgroundColor={theme.bg}>
-      <AppTopBar title="Event Links Studio" subtitle="1-Click Calendar & RSVP Invitations" showBack={true} />
+      <AppTopBar title="Event Links Studio" 
+      // subtitle="1-Click Calendar & RSVP Invitations" 
+      showBack={true} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* 1-Tap Starter Templates */}

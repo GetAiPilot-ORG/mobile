@@ -6,14 +6,18 @@ import {
   useQuery,
   useQueryClient
 } from '@tanstack/react-query';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   View,
@@ -27,6 +31,7 @@ import {
   LeaveRequest,
 } from '../../crm/types';
 import { teamApi } from '../api/team.api';
+import { AddMemberModal } from '../components/AddMemberModal';
 
 type TabType =
   | 'members'
@@ -44,11 +49,11 @@ const TABS: {
       label: 'Members',
       icon: 'people-outline',
     },
-    {
-      key: 'attendance',
-      label: 'Attendance',
-      icon: 'time-outline',
-    },
+    // {
+    //   key: 'attendance',
+    //   label: 'Attendance',
+    //   icon: 'time-outline',
+    // },
     {
       key: 'leave',
       label: 'Leave',
@@ -119,8 +124,62 @@ export function TeamScreen() {
 
   const [activeTab, setActiveTab] =
     useState<TabType>('members');
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
 
   const queryClient = useQueryClient();
+
+  const createMemberMutation = useMutation({
+    mutationFn: (member: Partial<CRMMember>) => teamApi.createMember(member),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['team-members'] });
+      queryClient.invalidateQueries({ queryKey: ['crm', 'members'] });
+      Alert.alert('Success', 'Team member added successfully');
+    },
+    onError: (err: any) => {
+      Alert.alert('Error', err?.message || 'Failed to add team member');
+    },
+  });
+
+  const [copiedMemberId, setCopiedMemberId] = useState<string | null>(null);
+
+  const getMemberMagicLink = (member: CRMMember) => {
+    const token = member.access_token || member.id;
+    return `https://getaipilot.online/crm/login?token=${encodeURIComponent(token)}&email=${encodeURIComponent(member.email || '')}`;
+  };
+
+  const handleCopyMagicLink = async (member: CRMMember) => {
+    try {
+      const link = getMemberMagicLink(member);
+      await Clipboard.setStringAsync(link);
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
+      }
+      setCopiedMemberId(member.id);
+      setTimeout(() => {
+        setCopiedMemberId((prev) => (prev === member.id ? null : prev));
+      }, 2500);
+
+      Alert.alert(
+        'Magic Link Copied 📋',
+        `Magic login link for ${member.name || 'member'} copied to clipboard:\n\n${link}`,
+        [
+          { text: 'OK', style: 'cancel' },
+          {
+            text: 'Share Link',
+            onPress: () => {
+              Share.share({
+                title: `CRM Access for ${member.name}`,
+                message: `Hi ${member.name}, here is your magic login link to access GetAiPilot CRM:\n\n${link}`,
+                url: link,
+              }).catch(() => { });
+            },
+          },
+        ]
+      );
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Failed to copy magic link');
+    }
+  };
 
   // ─────────────────────────────────────────────
   // Theme
@@ -163,7 +222,7 @@ export function TeamScreen() {
       teamApi.getAttendance({
         limit: 50,
       }),
-    enabled: activeTab === 'attendance',
+    // enabled: activeTab === 'attendance',
   });
 
   // ─────────────────────────────────────────────
@@ -325,11 +384,9 @@ export function TeamScreen() {
   const isLoading =
     activeTab === 'members'
       ? membersLoading
-      : activeTab === 'attendance'
-        ? attendanceLoading
-        : activeTab === 'leave'
-          ? leaveLoading
-          : presenceLoading;
+      : activeTab === 'leave'
+        ? leaveLoading
+        : presenceLoading;
 
   // ─────────────────────────────────────────────
   // Refresh state
@@ -338,11 +395,9 @@ export function TeamScreen() {
   const isRefetching =
     activeTab === 'members'
       ? membersRefetching
-      : activeTab === 'attendance'
-        ? attendanceRefetching
-        : activeTab === 'leave'
-          ? leaveRefetching
-          : presenceRefetching;
+      : activeTab === 'leave'
+        ? leaveRefetching
+        : presenceRefetching;
 
   // ─────────────────────────────────────────────
   // Refresh
@@ -373,6 +428,7 @@ export function TeamScreen() {
   }) => {
     const firstLetter =
       item.name?.trim()?.charAt(0)?.toUpperCase() || '?';
+    const isCopied = copiedMemberId === item.id;
 
     return (
       <View
@@ -388,9 +444,7 @@ export function TeamScreen() {
           style={[
             styles.memberAvatar,
             {
-              backgroundColor: item.is_active
-                ? colors.surface
-                : colors.card,
+              backgroundColor: isDark ? '#1E293B' : '#EFF6FF',
             },
           ]}
         >
@@ -398,9 +452,7 @@ export function TeamScreen() {
             style={[
               styles.memberAvatarText,
               {
-                color: item.is_active
-                  ? colors.surface
-                  : colors.card,
+                color: '#3B82F6',
               },
             ]}
           >
@@ -480,19 +532,42 @@ export function TeamScreen() {
           </View>
         </View>
 
-        <Pressable
-          style={styles.deleteButton}
-          onPress={() =>
-            confirmDelete(item.id, 'member')
-          }
-          hitSlop={10}
-        >
-          <Ionicons
-            name="trash-outline"
-            size={18}
-            color="#EF4444"
-          />
-        </Pressable>
+        <View style={styles.memberCardActions}>
+          <Pressable
+            style={[
+              styles.actionIconButton,
+              {
+                backgroundColor: isCopied
+                  ? '#ECFDF5'
+                  : isDark
+                    ? '#1E1B4B'
+                    : '#EEF2FF',
+              },
+            ]}
+            onPress={() => handleCopyMagicLink(item)}
+            hitSlop={6}
+          >
+            <Ionicons
+              name={isCopied ? 'checkmark' : 'link-outline'}
+              size={16}
+              color={isCopied ? '#10B981' : '#6366F1'}
+            />
+          </Pressable>
+
+          <Pressable
+            style={styles.deleteButton}
+            onPress={() =>
+              confirmDelete(item.id, 'member')
+            }
+            hitSlop={6}
+          >
+            <Ionicons
+              name="trash-outline"
+              size={16}
+              color="#EF4444"
+            />
+          </Pressable>
+        </View>
       </View>
     );
   };
@@ -664,13 +739,9 @@ export function TeamScreen() {
               },
             ]}
           >
-            {new Date(
-              item.start_date,
-            ).toLocaleDateString('en-IN')}
+            {item.start_date ? new Date(item.start_date).toLocaleDateString('en-IN') : 'N/A'}
             {' → '}
-            {new Date(
-              item.end_date,
-            ).toLocaleDateString('en-IN')}
+            {item.end_date ? new Date(item.end_date).toLocaleDateString('en-IN') : 'N/A'}
           </Text>
 
           {!!item.reason && (
@@ -727,12 +798,90 @@ export function TeamScreen() {
     );
   };
 
+  const isToolStarted = (member: CRMMember) => {
+    if (!member) return false;
+    const act = member.current_activity;
+    if (act && typeof act === 'object' && Object.keys(act).length > 0) {
+      if (act.status === 'stopped' || act.is_running === false) return false;
+      return true;
+    }
+    if ((member.focus_score ?? 0) > 0) return true;
+    return false;
+  };
+
+  const renderPresenceStats = () => {
+    const members = presenceData?.members ?? [];
+    const totalMembers = members.length;
+    const activeNow = members.filter(isToolStarted).length;
+    const trackerSync = members.filter((m) => Boolean(m.tracker_key)).length;
+
+    return (
+      <View
+        style={[
+          styles.presenceStatsCard,
+          {
+            backgroundColor: card,
+            borderColor: border,
+          },
+        ]}
+      >
+        {/* Active Now */}
+        <View style={styles.presenceStatItem}>
+          <View style={styles.presenceIndicatorRow}>
+            <View style={[styles.presenceDot, { backgroundColor: '#10B981' }]} />
+            <Text style={[styles.presenceStatNum, { color: '#10B981' }]}>
+              {activeNow}
+            </Text>
+          </View>
+          <Text style={[styles.presenceStatLabel, { color: sub }]}>
+            Active Now
+          </Text>
+        </View>
+
+        <View style={[styles.presenceStatDivider, { backgroundColor: border }]} />
+
+        {/* Tracker Sync */}
+        <View style={styles.presenceStatItem}>
+          <View style={styles.presenceIndicatorRow}>
+            <Ionicons name="sync-outline" size={13} color="#3B82F6" />
+            <Text style={[styles.presenceStatNum, { color: '#3B82F6' }]}>
+              {trackerSync}
+            </Text>
+          </View>
+          <Text style={[styles.presenceStatLabel, { color: sub }]}>
+            Tracker Sync
+          </Text>
+        </View>
+
+        <View style={[styles.presenceStatDivider, { backgroundColor: border }]} />
+
+        {/* Total Members */}
+        <View style={styles.presenceStatItem}>
+          <Text style={[styles.presenceStatNum, { color: text }]}>
+            {totalMembers}
+          </Text>
+          <Text style={[styles.presenceStatLabel, { color: sub }]}>
+            Total Members
+          </Text>
+        </View>
+      </View>
+    );
+  };
+
   const renderPresence = ({
     item,
   }: {
-    item: any;
+    item: CRMMember;
   }) => {
-    const isIdle = Boolean(item.is_idle);
+    const memberName = item.name || 'Unknown';
+    const memberRole = item.role || 'Member';
+    const act = item.current_activity || {};
+    const hasStarted = isToolStarted(item);
+    const activityText = hasStarted
+      ? act.active_window || act.window || act.app || act.title || 'Tool Started · Active'
+      : item.last_login_at
+        ? `Offline · Last seen ${new Date(item.last_login_at).toLocaleDateString('en-IN')}`
+        : 'Tool Not Started · Offline';
 
     return (
       <View
@@ -748,20 +897,14 @@ export function TeamScreen() {
           style={[
             styles.memberAvatar,
             {
-              backgroundColor: isIdle
-                ? '#FEF2F2'
-                : '#ECFDF5',
+              backgroundColor: hasStarted ? '#ECFDF5' : (isDark ? '#1E293B' : '#F1F5F9'),
             },
           ]}
         >
           <Ionicons
-            name={
-              isIdle
-                ? 'moon-outline'
-                : 'radio-button-on'
-            }
+            name={hasStarted ? 'radio-button-on' : 'radio-button-off'}
             size={20}
-            color={isIdle ? '#EF4444' : '#10B981'}
+            color={hasStarted ? '#10B981' : '#94A3B8'}
           />
         </View>
 
@@ -775,35 +918,33 @@ export function TeamScreen() {
             ]}
             numberOfLines={1}
           >
-            {item.member?.name || 'Unknown'}
+            {memberName}
           </Text>
 
-          {!!item.active_window && (
-            <Text
-              style={[
-                styles.memberEmail,
-                {
-                  color: sub,
-                },
-              ]}
-              numberOfLines={1}
-            >
-              {item.active_window}
-            </Text>
-          )}
+          <Text
+            style={[
+              styles.memberEmail,
+              {
+                color: sub,
+              },
+            ]}
+            numberOfLines={1}
+          >
+            {memberRole} · {activityText}
+          </Text>
 
-          {!!item.logged_at && (
+          {item.focus_score !== undefined && item.focus_score > 0 && (
             <Text
               style={[
                 styles.memberEmail,
                 {
-                  color: sub,
+                  color: '#8B5CF6',
+                  fontWeight: '600',
+                  marginTop: 2,
                 },
               ]}
             >
-              {new Date(
-                item.logged_at,
-              ).toLocaleTimeString('en-IN')}
+              Focus Score: {item.focus_score}%
             </Text>
           )}
         </View>
@@ -812,9 +953,7 @@ export function TeamScreen() {
           style={[
             styles.roleBadge,
             {
-              backgroundColor: isIdle
-                ? '#FEF2F2'
-                : '#ECFDF5',
+              backgroundColor: hasStarted ? '#ECFDF5' : '#F1F5F9',
             },
           ]}
         >
@@ -822,65 +961,31 @@ export function TeamScreen() {
             style={[
               styles.roleText,
               {
-                color: isIdle
-                  ? '#EF4444'
-                  : '#10B981',
+                color: hasStarted ? '#10B981' : '#64748B',
+                fontWeight: '700',
               },
             ]}
           >
-            {isIdle ? 'Idle' : 'Active'}
+            {hasStarted ? 'Tool Started' : 'Not Started'}
           </Text>
         </View>
       </View>
     );
   };
-  const addBtnConfig: Record<
-    TabType,
-    {
-      label: string;
-      color: string;
-    }
-  > = {
-    members: {
-      label: 'Add Member',
-      color: '#3B82F6',
-    },
-
-    attendance: {
-      label: 'Log',
-      color: '#10B981',
-    },
-
-    leave: {
-      label: 'Request',
-      color: '#F59E0B',
-    },
-
-    presence: {
-      label: 'Refresh',
-      color: '#8B5CF6',
-    },
-  };
-
-  const btnConf = addBtnConfig[activeTab]
 
   const listData =
     activeTab === 'members'
       ? membersData?.members ?? []
-      : activeTab === 'attendance'
-        ? attendanceData?.records ?? []
-        : activeTab === 'leave'
-          ? leaveData?.requests ?? []
-          : presenceData?.logs ?? [];
+      : activeTab === 'leave'
+        ? leaveData?.requests ?? []
+        : presenceData?.members ?? [];
 
   const renderItem =
     activeTab === 'members'
       ? renderMember
-      : activeTab === 'attendance'
-        ? renderAttendance
-        : activeTab === 'leave'
-          ? renderLeave
-          : renderPresence;
+      : activeTab === 'leave'
+        ? renderLeave
+        : renderPresence;
 
   // ─────────────────────────────────────────────
   // Return
@@ -922,38 +1027,47 @@ export function TeamScreen() {
           </Text>
         </View>
 
-        <Pressable
-          style={[
-            styles.createBtn,
-            {
-              backgroundColor: btnConf.color,
-            },
-          ]}
-          onPress={() => {
-            if (activeTab === 'presence') {
-              onRefresh();
-            } else {
-              Alert.alert(
-                'Coming Soon',
-                `${btnConf.label} functionality will be available here.`,
-              );
-            }
-          }}
-        >
-          <Ionicons
-            name={
-              activeTab === 'presence'
-                ? 'refresh-outline'
-                : 'add'
-            }
-            size={17}
-            color="#FFFFFF"
-          />
+        {activeTab === 'members' && (
+          <Pressable
+            style={[
+              styles.createBtn,
+              {
+                backgroundColor: '#3B82F6',
+              },
+            ]}
+            onPress={() => setShowAddMemberModal(true)}
+          >
+            <Ionicons
+              name="add"
+              size={17}
+              color="#FFFFFF"
+            />
+            <Text style={styles.createBtnText}>
+              Add Member
+            </Text>
+          </Pressable>
+        )}
 
-          <Text style={styles.createBtnText}>
-            {btnConf.label}
-          </Text>
-        </Pressable>
+        {activeTab === 'presence' && (
+          <Pressable
+            style={[
+              styles.createBtn,
+              {
+                backgroundColor: '#8B5CF6',
+              },
+            ]}
+            onPress={onRefresh}
+          >
+            <Ionicons
+              name="refresh-outline"
+              size={17}
+              color="#FFFFFF"
+            />
+            <Text style={styles.createBtnText}>
+              Refresh
+            </Text>
+          </Pressable>
+        )}
       </View>
 
       {/* Tabs */}
@@ -1041,6 +1155,9 @@ export function TeamScreen() {
               `${activeTab}-${index}`
             }
             renderItem={renderItem as any}
+            ListHeaderComponent={
+              activeTab === 'presence' ? renderPresenceStats : null
+            }
             contentContainerStyle={[
               styles.listContent,
               listData.length === 0 &&
@@ -1069,9 +1186,9 @@ export function TeamScreen() {
                   ]}
                 >
                   <Ionicons
-                    name="file-tray-outline"
+                    name={activeTab === 'presence' ? 'desktop-outline' : 'file-tray-outline'}
                     size={30}
-                    color="#3B82F6"
+                    color={activeTab === 'presence' ? '#8B5CF6' : '#3B82F6'}
                   />
                 </View>
 
@@ -1083,7 +1200,7 @@ export function TeamScreen() {
                     },
                   ]}
                 >
-                  No records found
+                  {activeTab === 'presence' ? 'No Tool Started' : 'No records found'}
                 </Text>
 
                 <Text
@@ -1094,14 +1211,24 @@ export function TeamScreen() {
                     },
                   ]}
                 >
-                  There are no {activeTab} records
-                  available yet.
+                  {activeTab === 'presence'
+                    ? 'Only team members who have started the tracking tool appear here. Currently, no member tool session is running.'
+                    : `There are no ${activeTab} records available yet.`}
                 </Text>
               </View>
             }
           />
         )}
       </View>
+
+      <AddMemberModal
+        visible={showAddMemberModal}
+        onClose={() => setShowAddMemberModal(false)}
+        isLoading={createMemberMutation.isPending}
+        onSubmit={async (member) => {
+          await createMemberMutation.mutateAsync(member);
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -1230,12 +1357,43 @@ const styles = StyleSheet.create({
     gap: 8,
   },
 
+  memberCardActions: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 8,
+  },
+
+  actionIconButton: {
+    width: 30,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+  },
+
   deleteButton: {
     width: 30,
     height: 30,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 8,
+  },
+
+  magicLinkPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 8,
+  },
+
+  magicLinkText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
 
   // Avatar
@@ -1334,5 +1492,46 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     textAlign: 'center',
+  },
+
+  // Presence Stats
+  presenceStatsCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  presenceStatItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  presenceStatDivider: {
+    width: 1,
+    height: 28,
+  },
+  presenceStatNum: {
+    fontSize: 18,
+    fontWeight: '800',
+    lineHeight: 22,
+  },
+  presenceStatLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  presenceIndicatorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  presenceDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
 });

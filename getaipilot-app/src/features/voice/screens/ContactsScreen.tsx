@@ -25,7 +25,10 @@ import {
   EditContactModal,
   TriggerCallModal,
 } from "../components";
-import { openVoiceWebBilling } from "../utils/voiceBilling";
+import {
+  openVoicePhoneNumbersSSO,
+  openVoiceWebBilling,
+} from "../utils/voiceBilling";
 
 function getInitials(name: string): string {
   if (!name) return "VP";
@@ -181,7 +184,7 @@ export const ContactsScreen: React.FC = () => {
         [
           {
             text: "Renew on VoicePilot 🌐",
-            onPress: () => openVoiceWebBilling(queryClient, isDark),
+            onPress: () => openVoicePhoneNumbersSSO(queryClient, isDark),
           },
           { text: "Dismiss", style: "cancel" },
         ],
@@ -828,7 +831,7 @@ export const ContactsScreen: React.FC = () => {
 
           {/* Web Billing Banner */}
           <Pressable
-            onPress={() => openVoiceWebBilling(queryClient, isDark)}
+            onPress={() => openVoicePhoneNumbersSSO(queryClient, isDark)}
             style={[
               styles.webManageBanner,
               {
@@ -909,7 +912,7 @@ export const ContactsScreen: React.FC = () => {
                 Get a dedicated telecom line for your assistants on VoicePilot.
               </Text>
               <Pressable
-                onPress={() => openVoiceWebBilling(queryClient, isDark)}
+                onPress={() => openVoicePhoneNumbersSSO(queryClient, isDark)}
                 style={styles.addNumberWebButton}
               >
                 <Ionicons name="globe-outline" size={14} color="#FFFFFF" />

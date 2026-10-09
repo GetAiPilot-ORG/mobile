@@ -80,7 +80,7 @@ export const CrmStatCard: React.FC<CrmStatCardProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    minWidth: 140,
+    minWidth: 0,
     borderRadius: 16,
     overflow: 'hidden',
     shadowColor: '#000000',

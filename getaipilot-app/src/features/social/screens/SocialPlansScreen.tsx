@@ -268,7 +268,7 @@ export const SocialPlansScreen: React.FC = () => {
     <AppScreen safeArea={false} backgroundColor={isDark ? '#000000' : '#F8FAFC'}>
       <AppTopBar
         title="SocialPilot Plans"
-        subtitle="Multi-Channel Quotas & Pricing"
+        // subtitle="Multi-Channel Quotas & Pricing"
         showBack={true}
       />
 

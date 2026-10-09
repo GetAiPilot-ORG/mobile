@@ -1,10 +1,13 @@
 import {
-  Ionicons } from '@expo/vector-icons';
+  Ionicons
+} from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React,
-  { useMemo,
-  useState } from 'react';
+{
+  useMemo,
+  useState
+} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -52,95 +55,6 @@ const BILLING_INTERVALS: { key: BillingInterval; label: string; discountBadge?: 
   { key: 'year', label: 'Yearly', discountBadge: '30% OFF' },
 ];
 
-const DEFAULT_PLANS: SocialPlan[] = [
-  {
-    id: 'free',
-    name: 'Free',
-    tagline: 'Best for getting started & exploring social automation',
-    prices: { month: 0, year: 0 },
-    features: {
-      publishing: true,
-      scheduling: true,
-      analytics: true,
-      autodm: true,
-      approval_workflow: false,
-      api: false,
-      priority_support: false,
-    },
-    limits: {
-      social_accounts: 3,
-      scheduled_queue: 10,
-      team_members: 1,
-      history_days: 7,
-      autodm_accounts: 3,
-      autodm_automations: 1,
-      autodm_replies_per_month: 50,
-      contacts: 100,
-    },
-  },
-  {
-    id: 'slite',
-    name: 'Starter',
-    tagline: 'For growing creators, influencers & brand channels',
-    isPopular: true,
-    prices: {
-      month: 999,
-      quarterly: 899.1,
-      six_months: 799.2,
-      year: 699.3,
-    },
-    features: {
-      publishing: true,
-      scheduling: true,
-      analytics: true,
-      autodm: true,
-      approval_workflow: false,
-      api: false,
-      priority_support: true,
-    },
-    limits: {
-      social_accounts: 10,
-      scheduled_queue: 1000000,
-      team_members: 1,
-      history_days: 90,
-      autodm_accounts: 10,
-      autodm_automations: 1000000,
-      autodm_replies_per_month: 1000000,
-      contacts: 1000000,
-    },
-  },
-  {
-    id: 'sgrowth',
-    name: 'Growth',
-    tagline: 'Full agency firepower, unlimited queue & multi-seat team access',
-    prices: {
-      month: 1999,
-      quarterly: 1799.1,
-      six_months: 1599.2,
-      year: 1399.3,
-    },
-    features: {
-      publishing: true,
-      scheduling: true,
-      analytics: true,
-      autodm: true,
-      approval_workflow: true,
-      api: true,
-      priority_support: true,
-    },
-    limits: {
-      social_accounts: 30,
-      scheduled_queue: 1000000,
-      team_members: 10,
-      history_days: 365,
-      autodm_accounts: 30,
-      autodm_automations: 1000000,
-      autodm_replies_per_month: 1000000,
-      contacts: 1000000,
-    },
-  },
-];
-
 const SUPPORTED_PLATFORMS = [
   { key: 'instagram', label: 'Instagram', icon: 'logo-instagram', color: '#e1306c' },
   { key: 'facebook', label: 'Facebook', icon: 'logo-facebook', color: '#1877f2' },
@@ -160,9 +74,6 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
   overviewData,
   statsData,
   entitlementsData,
-  plansData,
-  plansLoading,
-  onRetryPlans,
   connectedList,
   postsList,
   queueList,
@@ -1296,9 +1207,9 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
             </Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={[styles.planBadge, { backgroundColor: 'rgba(236, 72, 153, 0.15)' }]}>
+            {/* <View style={[styles.planBadge, { backgroundColor: 'rgba(236, 72, 153, 0.15)' }]}>
               <Text style={styles.planBadgeText}>{currentPlanName.toUpperCase()}</Text>
-            </View>
+            </View> */}
             <View style={[styles.statusPill, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
               <View style={[styles.liveDot, { backgroundColor: '#22c55e' }]} />
               <Text style={[styles.statusPillText, { color: '#22c55e' }]}>
@@ -1414,7 +1325,7 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
         </View>
 
         {/* Compare All Plans In-App Screen Action */}
-        <Pressable
+        {/* <Pressable
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             router.push('/products/social/plans' as any);
@@ -1424,7 +1335,7 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
           <Ionicons name="sparkles" size={15} color="#ec4899" />
           <Text style={styles.manageBillingLinkText}>Compare All Plans & Upgrades</Text>
           <Ionicons name="chevron-forward" size={15} color="#ec4899" />
-        </Pressable>
+        </Pressable> */}
       </View>
 
       {/* 6. Next Scheduled Broadcast Spotlight (if pending queue exists) */}

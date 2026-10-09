@@ -45,7 +45,7 @@ export default function ProductsScreen() {
     <AppScreen safeArea={false}>
       <AppTopBar
         title="Product Suite"
-        subtitle="Connected AI Automation Engines"
+        // subtitle="Connected AI Automation Engines"
         showPlanBadge={true}
       />
 

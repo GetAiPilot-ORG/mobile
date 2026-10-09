@@ -671,11 +671,13 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   gridContainer: {
+    width: "100%",
     gap: 10,
     marginBottom: 12,
   },
   gridRow: {
     flexDirection: "row",
+    width: "100%",
     gap: 10,
   },
   actionsList: {

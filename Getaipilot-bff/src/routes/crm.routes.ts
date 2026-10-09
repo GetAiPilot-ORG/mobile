@@ -81,14 +81,19 @@ export async function crmRoutes(fastify: FastifyInstance) {
   const leadCreateSchema = z.object({
     first_name: z.string().min(1),
     last_name: z.string().optional().default(''),
-    email: z.string().email().nullable().optional(),
+    email: z
+      .string()
+      .optional()
+      .nullable()
+      .transform(val => (val && val.trim() ? val.trim() : null)),
     phone: z.string().nullable().optional(),
     company: z.string().nullable().optional(),
     job_title: z.string().nullable().optional(),
-    status: z.enum(['lead', 'prospect', 'customer', 'churned']).optional().default('lead'),
+    status: z.enum(['lead', 'prospect', 'customer', 'churned']).optional().default('prospect'),
     assigned_to: z.string().nullable().optional(),
     notes: z.string().nullable().optional(),
     tags: z.array(z.string()).optional(),
+    org_id: z.string().optional(),
   });
 
   const createLeadHandler = async (request: any, reply: any) => {

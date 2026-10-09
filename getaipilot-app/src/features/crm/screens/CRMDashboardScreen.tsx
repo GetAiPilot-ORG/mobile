@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useCallback } from "react";
 import {
+  Dimensions,
   Linking,
   Pressable,
   RefreshControl,
@@ -17,6 +18,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { teamApi } from "../../team/api/team.api";
 import { crmApi } from "../api/crm.api";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const OVERVIEW_CARD_WIDTH = Math.floor((SCREEN_WIDTH - 32 - 10) / 2);
 
 const WEB_APP_URL = "https://getaipilot.in";
 
@@ -45,22 +49,22 @@ const ENTITY_TILES = [
     bg: "#E6F2EC",
     route: "/crm/tasks",
   },
-  {
-    key: "invoices",
-    label: "Invoices",
-    icon: "receipt",
-    color: "#B8863B",
-    bg: "#F5EEDD",
-    route: "/crm/invoices",
-  },
-  {
-    key: "quotations",
-    label: "Quotations",
-    icon: "document-text",
-    color: "#B85C5C",
-    bg: "#F5E8E8",
-    route: "/crm/quotations",
-  },
+  // {
+  //   key: "invoices",
+  //   label: "Invoices",
+  //   icon: "receipt",
+  //   color: "#B8863B",
+  //   bg: "#F5EEDD", 
+  //   route: "/crm/invoices",
+  // },
+  // {
+  //   key: "quotations",
+  //   label: "Quotations",
+  //   icon: "document-text",
+  //   color: "#B85C5C",
+  //   bg: "#F5E8E8",
+  //   route: "/crm/quotations",
+  // },
   {
     key: "billing-profiles",
     label: "Client Profiles",
@@ -119,11 +123,11 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
     await Promise.all([refetchOrg(), refetchDash(), refetchTeam()]);
   }, [refetchOrg, refetchDash, refetchTeam]);
 
-  const bg = colors.background
-  const card = colors.surface
-  const text = colors.text
-  const sub = colors.text
-  const border = colors.border
+  const bg = colors.background;
+  const card = colors.surface;
+  const text = colors.text;
+  const sub = colors.textMuted || colors.textSecondary || colors.text;
+  const border = colors.border;
 
   const planTier = org?.subscription_tier || "free";
   const isPro = planTier !== "free";
@@ -176,23 +180,7 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
             </Pressable>
             <View style={{ flex: 1 }}>
               <Text style={[s.headerTitle, { color: text }]} numberOfLines={1}>CRM Dashboard</Text>
-              <Text style={[s.headerSub, { color: sub }]} numberOfLines={1}>
-                {org?.name || "Your Organization"}
-              </Text>
             </View>
-          </View>
-          <View
-            style={[
-              s.tierBadge,
-              { backgroundColor: isPro ? colors.products.crm : colors.mutedForeground },
-            ]}
-          >
-            <Ionicons
-              name={isPro ? "star" : "star-outline"}
-              size={12}
-              color="#FFF"
-            />
-            <Text style={s.tierText}>{planTier.toUpperCase()}</Text>
           </View>
         </View>
 
@@ -453,8 +441,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 4,
     width: "100%",
-    maxWidth: 1100,
-    alignSelf: "center",
   },
   header: {
     flexDirection: "row",
@@ -543,7 +529,7 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   overviewCard: {
-    width: "47%",
+    width: OVERVIEW_CARD_WIDTH,
     borderRadius: 14,
     borderWidth: 1,
     padding: 14,

@@ -603,6 +603,234 @@ export async function authRoutes(fastify: FastifyInstance) {
     return reply.send({ success: true });
   });
 
+  // POST /mobile/v1/auth/magic-link - Generate Magic Link with mobile deep link redirect
+  fastify.post('/magic-link', async (request, reply) => {
+    const schema = z.object({
+      email: z.string().email(),
+      redirectTo: z.string().optional(),
+    });
+
+    const parsed = schema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({
+        statusCode: 400,
+        error: 'BadRequest',
+        message: 'Valid email is required',
+      });
+    }
+
+    const { email, redirectTo } = parsed.data;
+    const targetRedirect = redirectTo || 'getaipilot://auth/callback';
+
+    try {
+      const { data, error } = await HubAdapter.generateMagicLink(email, targetRedirect);
+      if (error) {
+        return reply.status(400).send({
+          statusCode: 400,
+          error: 'MagicLinkError',
+          message: error.message,
+        });
+      }
+
+      return reply.send({
+        success: true,
+        message: 'Magic link generated successfully',
+        action_link: data?.properties?.action_link,
+        hashed_token: data?.properties?.hashed_token,
+        email_otp: data?.properties?.email_otp,
+        redirect_to: data?.properties?.redirect_to,
+      });
+    } catch (err: any) {
+      request.log.error(err, '[MAGIC_LINK_ERROR]');
+      return reply.status(500).send({
+        statusCode: 500,
+        error: 'InternalServerError',
+        message: err.message || 'Failed to generate magic link',
+      });
+    }
+  });
+
+  // POST /mobile/v1/auth/sso-url - Generate authentic SSO URL for Web App
+  fastify.post('/sso-url', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const body = (request.body || {}) as { redirectPath?: string; webAppUrl?: string };
+    const redirectPath = body.redirectPath && body.redirectPath.startsWith('/') ? body.redirectPath : '/free-tools/dashboard';
+    const rawWebAppUrl = (body.webAppUrl || 'https://getaipilot.in').replace(/\/+$/, '');
+
+    // 1. Check if we have an active upstream Supabase session
+    const upstreamSession = UpstreamSessionService.getSession(user.session_id, user.user_id);
+    if (upstreamSession?.accessToken && upstreamSession?.refreshToken) {
+      const ssoUrl = `${rawWebAppUrl}/auth/callback?next=${encodeURIComponent(
+        redirectPath
+      )}#access_token=${encodeURIComponent(
+        upstreamSession.accessToken
+      )}&refresh_token=${encodeURIComponent(
+        upstreamSession.refreshToken
+      )}&token_type=bearer`;
+
+      return reply.send({
+        success: true,
+        ssoUrl,
+      });
+    }
+
+    // 2. Generate magiclink token_hash via Supabase Admin
+    try {
+      const callbackUrl = `${rawWebAppUrl}/auth/callback?next=${encodeURIComponent(redirectPath)}`;
+      const { data, error } = await HubAdapter.generateMagicLink(user.email, callbackUrl);
+      if (data?.properties?.action_link) {
+        return reply.send({
+          success: true,
+          ssoUrl: data.properties.action_link,
+        });
+      }
+    } catch (e: any) {
+      request.log.warn(e, '[SSO_URL_GENERATE_ERROR]');
+    }
+
+    // 3. Fallback to direct web URL
+    return reply.send({
+      success: true,
+      ssoUrl: `${rawWebAppUrl}${redirectPath}`,
+    });
+  });
+
+  fastify.get('/sso-url', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const query = (request.query || {}) as { redirectPath?: string; webAppUrl?: string };
+    const redirectPath = query.redirectPath && query.redirectPath.startsWith('/') ? query.redirectPath : '/free-tools/dashboard';
+    const rawWebAppUrl = (query.webAppUrl || 'https://getaipilot.in').replace(/\/+$/, '');
+
+    const upstreamSession = UpstreamSessionService.getSession(user.session_id, user.user_id);
+    if (upstreamSession?.accessToken && upstreamSession?.refreshToken) {
+      const ssoUrl = `${rawWebAppUrl}/auth/callback?next=${encodeURIComponent(
+        redirectPath
+      )}#access_token=${encodeURIComponent(
+        upstreamSession.accessToken
+      )}&refresh_token=${encodeURIComponent(
+        upstreamSession.refreshToken
+      )}&token_type=bearer`;
+
+      return reply.send({
+        success: true,
+        ssoUrl,
+      });
+    }
+
+    try {
+      const callbackUrl = `${rawWebAppUrl}/auth/callback?next=${encodeURIComponent(redirectPath)}`;
+      const { data } = await HubAdapter.generateMagicLink(user.email, callbackUrl);
+      if (data?.properties?.action_link) {
+        return reply.send({
+          success: true,
+          ssoUrl: data.properties.action_link,
+        });
+      }
+    } catch (e: any) {
+      request.log.warn(e, '[SSO_URL_GENERATE_ERROR]');
+    }
+
+    return reply.send({
+      success: true,
+      ssoUrl: `${rawWebAppUrl}${redirectPath}`,
+    });
+  });
+
+  // GET /mobile/v1/auth/mobile-redirect - Web Bridge that automatically opens the mobile app
+  fastify.get('/mobile-redirect', async (_request, reply) => {
+    return reply.type('text/html').send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GetAiPilot - Redirecting to App...</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #0B0F19;
+      color: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 36px 28px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(59, 130, 246, 0.2);
+      border-top-color: #3B82F6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 24px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    h1 {
+      font-size: 22px;
+      margin: 0 0 8px;
+      font-weight: 700;
+    }
+    p {
+      color: #94A3B8;
+      font-size: 14px;
+      line-height: 1.5;
+      margin: 0 0 24px;
+    }
+    .btn {
+      display: inline-block;
+      width: 100%;
+      padding: 14px 20px;
+      background: linear-gradient(135deg, #2563EB, #1D4ED8);
+      color: #FFFFFF;
+      font-weight: 600;
+      text-decoration: none;
+      border-radius: 14px;
+      box-sizing: border-box;
+      transition: opacity 0.2s;
+    }
+    .btn:active {
+      opacity: 0.85;
+    }
+  </style>
+  <script>
+    function triggerAppHandoff() {
+      var hash = window.location.hash || '';
+      var search = window.location.search || '';
+      var deepLink = 'getaipilot://auth/callback' + (search ? search : '') + (hash ? hash : '');
+      var btn = document.getElementById('open-app-btn');
+      if (btn) btn.href = deepLink;
+      window.location.href = deepLink;
+    }
+    window.onload = triggerAppHandoff;
+  </script>
+</head>
+<body>
+  <div class="card">
+    <div class="spinner"></div>
+    <h1>Authentication Verified!</h1>
+    <p>Opening your GetAiPilot mobile application. If it doesn't open automatically, tap below:</p>
+    <a id="open-app-btn" class="btn" href="getaipilot://auth/callback">Open in GetAiPilot App</a>
+  </div>
+</body>
+</html>`);
+  });
+
   // POST /mobile/v1/auth/logout
   fastify.post('/logout', { preHandler: [authenticateToken] }, async (request, reply) => {
     const user = request.user as JWTPayload | undefined;

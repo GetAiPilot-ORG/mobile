@@ -107,24 +107,24 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
         {/* Row 1 */}
         <View style={styles.metricsRow}>
           <StatCard
-            label="ACTIVE MAPPINGS"
+            label={'ACTIVE MAPPINGS'}
             value={(forwardRules || []).length}
-            icon="arrow-redo"
-            color="#0284C7"
-            bg="rgba(2,132,199,0.15)"
-            sub="Source routes"
+            icon={'arrow-redo'}
+            color={'#0284C7'}
+            bg={'rgba(2,132,199,0.15)'}
+            sub={'Source routes'}
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setAfSection('mappings');
             }}
           />
           <StatCard
-            label="TEXT FILTERS"
+            label={'TEXT FILTERS'}
             value={filtersCount}
-            icon="filter"
-            color="#8B5CF6"
-            bg="rgba(139,92,246,0.15)"
-            sub="Word replace"
+            icon={'filter'}
+            color={'#8B5CF6'}
+            bg={'rgba(139,92,246,0.15)'}
+            sub={'Word replace'}
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setAfSection('filters');
@@ -135,24 +135,24 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
         {/* Row 2 */}
         <View style={styles.metricsRow}>
           <StatCard
-            label="BLOCKED WORDS"
+            label={'BLOCKED WORDS'}
             value={blockedCount}
-            icon="shield"
-            color="#EF4444"
-            bg="rgba(239,68,68,0.15)"
-            sub="Blacklist terms"
+            icon={'shield'}
+            color={'#EF4444'}
+            bg={'rgba(239,68,68,0.15)'}
+            sub={'Blacklist terms'}
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setAfSection('blocked');
             }}
           />
           <StatCard
-            label="DELAY BUFFER"
+            label={'DELAY BUFFER'}
             value={`${delaySec}s`}
-            icon="time"
-            color="#F59E0B"
-            bg="rgba(245,158,11,0.15)"
-            sub="Anti-flood delay"
+            icon={'time'}
+            color={'#F59E0B'}
+            bg={'rgba(245,158,11,0.15)'}
+            sub={'Anti-flood delay'}
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setAfSection('delays');
@@ -163,29 +163,31 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
         {/* Row 3 */}
         <View style={styles.metricsRow}>
           <StatCard
-            label="TEXT ACTIONS"
-            value={forwardRules.some(r => r.header || r.footer) ? "Configured" : "None"}
-            icon="document-text"
-            color="#10B981"
-            bg="rgba(16,185,129,0.15)"
-            sub="Prefix & Suffix"
+            label={'TEXT ACTIONS'}
+            value={forwardRules.some(r => r.header || r.footer) ? 'Configured' : 'None'}
+            icon={'document-text'}
+            color={'#10B981'}
+            bg={'rgba(16,185,129,0.15)'}
+            sub={'Prefix & Suffix'}
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setAfSection('headers');
             }}
           />
           <StatCard
-            label="TARGET CHANNELS"
+            label={'TARGET CHANNELS'}
             value={targetCount || (forwardRules.length > 0 ? forwardRules.length : 0)}
-            icon="paper-plane"
-            color="#06B6D4"
-            bg="rgba(6,182,212,0.15)"
-            sub="Receiving chats"
+            icon={'paper-plane'}
+            color={'#06B6D4'}
+            bg={'rgba(6,182,212,0.15)'}
+            sub={'Receiving chats'}
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               onOpenModal('autoforward');
             }}
           />
+        </View>
+      </View>
         </View>
       </View>
 

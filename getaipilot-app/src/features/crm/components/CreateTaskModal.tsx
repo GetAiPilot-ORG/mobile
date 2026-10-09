@@ -25,6 +25,7 @@ interface CreateTaskModalProps {
   defaultContactId?: string;
   defaultDealId?: string;
   isLoading?: boolean;
+  orgId?: string;
 }
 
 const PRIORITIES: Array<{ key: TaskPriority; label: string; color: string }> = [
@@ -41,6 +42,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   defaultContactId,
   defaultDealId,
   isLoading,
+  orgId,
 }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
@@ -85,6 +87,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         contact_id: contactId || null,
         deal_id: dealId || null,
         assigned_to: assignedTo || null,
+        ...(orgId ? { org_id: orgId } : {}),
       });
       handleClose();
     } catch (err: any) {

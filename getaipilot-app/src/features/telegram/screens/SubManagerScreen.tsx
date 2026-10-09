@@ -115,12 +115,12 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
         {/* Row 1 */}
         <View style={styles.metricsRow}>
           <StatCard
-            label="TOTAL REVENUE"
+            label={'TOTAL REVENUE'}
             value={`₹${stats.totalRevenue}`}
-            icon="trending-up"
-            color="#6366F1"
+            icon={'trending-up'}
+            color={'#6366F1'}
             bg={isDark ? 'rgba(99,102,241,0.15)' : '#EEF2FF'}
-            sub="Net earnings"
+            sub={'Net earnings'}
             isRevenue
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -128,12 +128,12 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
             }}
           />
           <StatCard
-            label="ACTIVE SUBSCRIBERS"
+            label={'ACTIVE SUBSCRIBERS'}
             value={String(stats.activeSubscribers)}
-            icon="pulse"
-            color="#10B981"
+            icon={'pulse'}
+            color={'#10B981'}
             bg={isDark ? 'rgba(16,185,129,0.15)' : '#ECFDF5'}
-            sub="Active members"
+            sub={'Active members'}
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSubSection('channels');
@@ -144,26 +144,28 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
         {/* Row 2 */}
         <View style={styles.metricsRow}>
           <StatCard
-            label="SUBSCRIPTION PAGES"
+            label={'SUBSCRIPTION PAGES'}
             value={String(stats.subscriptionPages)}
-            icon="globe"
-            color="#0284C7"
+            icon={'globe'}
+            color={'#0284C7'}
             bg={isDark ? 'rgba(2,132,199,0.15)' : '#F0F9FF'}
-            sub="Hosted checkouts"
+            sub={'Hosted checkouts'}
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSubSection('pages');
             }}
           />
           <StatCard
-            label="BOT ACCESS"
-            value={stats.botAutomatedAccess || "Active"}
-            icon="shield-checkmark"
-            color="#8B5CF6"
+            label={'BOT ACCESS'}
+            value={stats.botAutomatedAccess || 'Active'}
+            icon={'shield-checkmark'}
+            color={'#8B5CF6'}
             bg={isDark ? 'rgba(139,92,246,0.15)' : '#F3E8FF'}
-            sub="Single-use invites"
+            sub={'Single-use invites'}
             onPress={() => onOpenModal('sub_manager')}
           />
+        </View>
+      </View>
         </View>
       </View>
 

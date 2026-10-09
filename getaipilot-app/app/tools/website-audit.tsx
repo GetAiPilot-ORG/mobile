@@ -161,7 +161,7 @@ export default function WebsiteAuditScreen() {
       await Share.share({
         message: `📊 Website Audit Report for ${results.url}\n⭐ Overall Grade: ${results.grade} (${results.overallScore}/100)\n⚡ Performance: ${results.metrics.performance}/100\n🔍 SEO: ${results.metrics.seo}/100\n📱 Mobile: ${results.metrics.mobile}/100\n🛡️ Security: ${results.metrics.security}/100\n\nAudited with GetAiPilot Mobile.`,
       });
-    } catch {}
+    } catch { }
   };
 
   const getScoreColor = (score: number) => {
@@ -172,7 +172,9 @@ export default function WebsiteAuditScreen() {
 
   return (
     <AppScreen safeArea={false} backgroundColor={theme.bg}>
-      <AppTopBar title="Website SEO & Speed" subtitle="Core Web Vitals Scanner" showBack={true} />
+      <AppTopBar title="Website SEO & Speed"
+        // subtitle="Core Web Vitals Scanner" 
+        showBack={true} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Scanner Card */}
@@ -301,7 +303,7 @@ export default function WebsiteAuditScreen() {
             {/* Core Web Vitals Telemetry Row */}
             <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
               <Text style={[styles.cardHeading, { color: theme.text }]}>Core Web Vitals</Text>
-              
+
               <View style={styles.vitalsRow}>
                 <View style={styles.vitalItem}>
                   <Text style={[styles.vitalLabel, { color: theme.mutedText }]}>First Paint (FCP)</Text>

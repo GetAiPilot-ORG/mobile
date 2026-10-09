@@ -11,5 +11,10 @@ export default function ContactsPage() {
       router.replace('/products/crm');
     }
   };
-  return <ContactsScreen onSelectContact={() => {}} onBack={handleBack} />;
+  return (
+    <ContactsScreen
+      onSelectContact={(id) => router.push(`/products/crm/leads/${id}` as any)}
+      onBack={handleBack}
+    />
+  );
 }

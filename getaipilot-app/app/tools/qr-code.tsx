@@ -139,7 +139,9 @@ export default function QRCodeGeneratorScreen() {
 
   return (
     <AppScreen safeArea={false} backgroundColor={theme.bg}>
-      <AppTopBar title="QR Code Studio" subtitle="High-Resolution Custom QR Generator" showBack={true} />
+      <AppTopBar title="QR Code Studio" 
+      // subtitle="High-Resolution Custom QR Generator" 
+      showBack={true} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Category Selector Grid */}

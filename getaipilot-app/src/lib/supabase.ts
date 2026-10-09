@@ -6,14 +6,11 @@ import "react-native-url-polyfill/auto";
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || "";
 
-const isClient = typeof window !== "undefined";
-
 const safeStorage = {
   getItem: async (key: string): Promise<string | null> => {
-    if (!isClient) return null;
     if (Platform.OS === "web") {
       try {
-        return window.localStorage.getItem(key);
+        return typeof window !== "undefined" ? window.localStorage.getItem(key) : null;
       } catch {
         return null;
       }
@@ -21,20 +18,18 @@ const safeStorage = {
     return AsyncStorage.getItem(key);
   },
   setItem: async (key: string, value: string): Promise<void> => {
-    if (!isClient) return;
     if (Platform.OS === "web") {
       try {
-        window.localStorage.setItem(key, value);
+        if (typeof window !== "undefined") window.localStorage.setItem(key, value);
       } catch {}
       return;
     }
     return AsyncStorage.setItem(key, value);
   },
   removeItem: async (key: string): Promise<void> => {
-    if (!isClient) return;
     if (Platform.OS === "web") {
       try {
-        window.localStorage.removeItem(key);
+        if (typeof window !== "undefined") window.localStorage.removeItem(key);
       } catch {}
       return;
     }
@@ -45,8 +40,8 @@ const safeStorage = {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: safeStorage,
-    autoRefreshToken: isClient,
-    persistSession: isClient,
+    autoRefreshToken: true,
+    persistSession: true,
     detectSessionInUrl: false,
     storageKey: "getaipilot-auth-token",
   },
