@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, getColors } from '@/theme';
 
@@ -29,48 +29,52 @@ export const StatCard: React.FC<StatCardProps> = ({
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const valStr = String(value ?? '');
-  const valFontSize = valStr.length > 7 ? 18 : valStr.length > 5 ? 21 : 24;
+  const valFontSize = valStr.length > 7 ? 'text-lg' : valStr.length > 5 ? 'text-xl' : 'text-2xl';
 
   return (
     <Pressable
-      style={({ pressed }) => [
-        styles.metricCard,
+      className="flex-1 min-w-0 w-full p-2.5 rounded-xl border justify-between min-h-[88px] active:opacity-75"
+      style={[
         {
           backgroundColor: colors.card,
           borderColor: colors.cardBorder,
         },
         style,
-        pressed && styles.metricCardPressed,
       ]}
       onPress={onPress}
       disabled={!onPress}
     >
-      <View style={styles.metricHeaderRow}>
-        <Text style={[styles.metricLabel, { color: colors.textMuted }]} numberOfLines={1}>
+      <View className="flex-row justify-between items-center mb-1">
+        <Text
+          className="text-[9px] font-extrabold tracking-wider flex-1"
+          style={{ color: colors.textMuted }}
+          numberOfLines={1}
+        >
           {label}
         </Text>
-        <View style={[styles.metricIconWrap, { backgroundColor: bg }]}>
+        <View
+          className="w-[22px] h-[22px] rounded-md items-center justify-center"
+          style={{ backgroundColor: bg }}
+        >
           <Ionicons name={icon as any} size={13} color={color} />
         </View>
       </View>
 
       <Text
-        style={[
-          styles.metricValue,
-          {
-            color: colors.text,
-            fontSize: valFontSize,
-          },
-          isRevenue && styles.metricValueRevenue,
-        ]}
+        className={`${valFontSize} font-extrabold tracking-tight ${isRevenue ? 'font-black' : ''}`}
+        style={{ color: colors.text }}
         numberOfLines={1}
       >
         {value}
       </Text>
 
       {sub ? (
-        <View style={styles.metricFooterRow}>
-          <Text style={[styles.metricSub, { color: colors.textMuted }]} numberOfLines={1}>
+        <View className="flex-row justify-between items-center mt-1">
+          <Text
+            className="text-[10px] font-medium flex-1"
+            style={{ color: colors.textMuted }}
+            numberOfLines={1}
+          >
             {sub}
           </Text>
         </View>
@@ -78,26 +82,3 @@ export const StatCard: React.FC<StatCardProps> = ({
     </Pressable>
   );
 };
-
-const styles = StyleSheet.create({
-
-  metricCard: {
-    flex: 1,
-    minWidth: 0,
-    width: '100%',
-    padding: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    justifyContent: 'space-between',
-    minHeight: 88,
-  },
-  metricCardPressed: { opacity: 0.75 },
-  metricHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  metricLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 0.4, flex: 1 },
-  metricIconWrap: { width: 22, height: 22, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
-  metricValue: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
-  metricValueRevenue: { fontWeight: '900' },
-  metricFooterRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
-  metricSub: { fontSize: 10, fontWeight: '500', flex: 1 },
-});
-

@@ -13,7 +13,6 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -48,7 +47,6 @@ export default function HomeScreen() {
   const { isDark } = useTheme();
   const color = getColors(isDark);
 
-  const styles = useMemo(() => createStyles(color, isDark), [color, isDark]);
   const { user } = useAuth();
   const {
     planLabel,
@@ -310,11 +308,14 @@ export default function HomeScreen() {
       <AppTopBar showPlanBadge={true} />
 
       <ScrollView
-        style={[styles.scrollView, { backgroundColor: color.background }]}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { backgroundColor: color.background },
-        ]}
+        className="flex-1 w-full"
+        style={{ backgroundColor: color.background }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 8,
+          paddingBottom: 130,
+          width: "100%",
+        }}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -326,19 +327,18 @@ export default function HomeScreen() {
       >
         {/* iOS Native Search Field */}
         <View
-          style={[
-            styles.searchBarContainer,
-            isDark && styles.searchBarContainerDark,
-          ]}
+          className="flex-row items-center rounded-2xl px-3 h-10 mb-4 border shadow-sm"
+          style={{ backgroundColor: color.card, borderColor: color.border }}
         >
           <Ionicons
             name="search"
             size={16}
             color={color.iconPrimary}
-            style={styles.searchIcon}
+            className="mr-2"
           />
           <TextInput
-            style={[styles.searchInput]}
+            className="flex-1 text-sm py-1.5"
+            style={{ color: color.textPrimary }}
             placeholder="Search bots, automation & tools..."
             placeholderTextColor={color.inputPlaceholder}
             value={searchQuery}
@@ -363,33 +363,34 @@ export default function HomeScreen() {
         </View>
 
         {/* Dual Telemetry Widgets (Apple Inset Dual Cards) */}
-        <View style={styles.heroRow}>
+        <View className="flex-row gap-3 mb-4 w-full">
           <Pressable
-            style={[styles.heroCard]}
+            className="flex-1 flex-row items-center p-3 rounded-2xl border shadow-sm active:opacity-75 min-w-0 gap-2.5"
+            style={{ flexBasis: 0, backgroundColor: color.card, borderColor: color.border }}
             onPress={() => {
               triggerHaptic();
               router.push("/account/plans" as any);
             }}
           >
             <View
-              style={[
-                styles.heroIconBox,
-                { backgroundColor: color.accentSoft },
-              ]}
+              className="w-8 h-8 rounded-xl justify-center items-center"
+              style={{ backgroundColor: color.accentSoft }}
             >
               <Ionicons name="diamond" size={17} color={color.primary} />
             </View>
-            <View style={styles.heroCardTextCol}>
+            <View className="flex-1 min-w-0 justify-center">
               <Text
-                style={[
-                  styles.heroCardEyebrow,
-                  isDark && styles.heroCardEyebrowDark,
-                ]}
+                className="text-[10px] font-medium mb-0.5"
+                style={{ color: color.textSecondary }}
                 numberOfLines={1}
               >
                 Workspace Plan
               </Text>
-              <Text style={[styles.heroCardTitle]} numberOfLines={1}>
+              <Text
+                className="text-[13.5px] font-bold tracking-tight"
+                style={{ color: color.textPrimary }}
+                numberOfLines={1}
+              >
                 {planLabel || "GAP Pro Max"}
               </Text>
             </View>
@@ -401,31 +402,32 @@ export default function HomeScreen() {
           </Pressable>
 
           <Pressable
-            style={[styles.heroCard]}
+            className="flex-1 flex-row items-center p-3 rounded-2xl border shadow-sm active:opacity-75 min-w-0 gap-2.5"
+            style={{ flexBasis: 0, backgroundColor: color.card, borderColor: color.border }}
             onPress={() => {
               triggerHaptic();
               router.push("/(tabs)/activity" as any);
             }}
           >
             <View
-              style={[
-                styles.heroIconBox,
-                { backgroundColor: "rgba(48, 209, 88, 0.15)" },
-              ]}
+              className="w-8 h-8 rounded-xl justify-center items-center"
+              style={{ backgroundColor: "rgba(48, 209, 88, 0.15)" }}
             >
               <Ionicons name="rocket" size={17} color="#30D158" />
             </View>
-            <View style={styles.heroCardTextCol}>
+            <View className="flex-1 min-w-0 justify-center">
               <Text
-                style={[
-                  styles.heroCardEyebrow,
-                  isDark && styles.heroCardEyebrowDark,
-                ]}
+                className="text-[10px] font-medium mb-0.5"
+                style={{ color: color.textSecondary }}
                 numberOfLines={1}
               >
                 Automation Fleet
               </Text>
-              <Text style={[styles.heroCardTitle]} numberOfLines={1}>
+              <Text
+                className="text-[13.5px] font-bold tracking-tight"
+                style={{ color: color.textPrimary }}
+                numberOfLines={1}
+              >
                 5 Engines
               </Text>
             </View>
@@ -439,7 +441,8 @@ export default function HomeScreen() {
 
         {/* Signed-in device summary. Full device management lives in Account > Security. */}
         <Pressable
-          style={[styles.loginSecurityCard]}
+          className="flex-row items-center p-3.5 rounded-2xl border mb-4 shadow-sm active:opacity-80"
+          style={{ backgroundColor: color.card, borderColor: color.border }}
           onPress={() => {
             triggerHaptic();
             router.push({
@@ -451,10 +454,8 @@ export default function HomeScreen() {
           accessibilityLabel="View logged-in devices in account security"
         >
           <View
-            style={[
-              styles.loginSecurityIcon,
-              { backgroundColor: "rgba(16, 185, 129, 0.15)" },
-            ]}
+            className="w-10 h-10 rounded-xl justify-center items-center mr-3"
+            style={{ backgroundColor: "rgba(16, 185, 129, 0.15)" }}
           >
             <Ionicons
               name="shield-checkmark-outline"
@@ -462,11 +463,22 @@ export default function HomeScreen() {
               color="#10B981"
             />
           </View>
-          <View style={styles.loginSecurityContent}>
-            <View style={styles.loginSecurityHeader}>
-              <Text style={[styles.loginSecurityTitle]}>Login security</Text>
-              <View style={styles.loginSecurityCount}>
-                <Text style={styles.loginSecurityCountText}>
+          <View className="flex-1 min-w-0">
+            <View className="flex-row items-center justify-between gap-2">
+              <Text
+                className="text-[14.5px] font-bold"
+                style={{ color: color.textPrimary }}
+              >
+                Login security
+              </Text>
+              <View
+                className="px-2 py-0.5 rounded-lg"
+                style={{ backgroundColor: color.successSoft }}
+              >
+                <Text
+                  className="text-[10.5px] font-extrabold"
+                  style={{ color: color.success }}
+                >
                   {isLoadingDevices
                     ? "Checking…"
                     : `${deviceSessions?.activeDeviceCount ?? 0} active`}
@@ -474,9 +486,9 @@ export default function HomeScreen() {
               </View>
             </View>
             {deviceSessions?.devices.length ? (
-              <View style={styles.loginDeviceList}>
+              <View className="mt-1.5 gap-1">
                 {deviceSessions.devices.slice(0, 2).map((device) => (
-                  <View key={device.sessionId} style={styles.loginDeviceRow}>
+                  <View key={device.sessionId} className="flex-row items-center gap-1.5">
                     <Ionicons
                       name={
                         device.platform === "web"
@@ -487,10 +499,8 @@ export default function HomeScreen() {
                       color={color.iconPrimary}
                     />
                     <Text
-                      style={[
-                        styles.loginDeviceText,
-                        isDark && styles.loginDeviceTextDark,
-                      ]}
+                      className="flex-1 text-xs"
+                      style={{ color: color.textSecondary }}
                       numberOfLines={1}
                     >
                       {device.deviceName} ·{" "}
@@ -501,10 +511,8 @@ export default function HomeScreen() {
                 ))}
                 {deviceSessions.activeDeviceCount > 2 && (
                   <Text
-                    style={[
-                      styles.loginMoreDevices,
-                      isDark && styles.loginMoreDevicesDark,
-                    ]}
+                    className="text-[11.5px] font-bold ml-4"
+                    style={{ color: color.primary }}
                   >
                     +{deviceSessions.activeDeviceCount - 2} more device
                     {deviceSessions.activeDeviceCount - 2 === 1 ? "" : "s"}
@@ -513,10 +521,8 @@ export default function HomeScreen() {
               </View>
             ) : (
               <Text
-                style={[
-                  styles.loginSecuritySubtitle,
-                  isDark && styles.loginSecuritySubtitleDark,
-                ]}
+                className="text-xs mt-1"
+                style={{ color: color.textSecondary }}
               >
                 {isLoadingDevices
                   ? "Loading signed-in devices"
@@ -533,10 +539,8 @@ export default function HomeScreen() {
 
         {/* Overall Ecosystem Pricing & Upgrades Tile */}
         <Pressable
-          style={[
-            styles.pricingTile,
-            isDark ? styles.pricingTileDark : styles.pricingTileLight,
-          ]}
+          className="rounded-2xl p-3.5 border mb-3.5 gap-2.5 shadow-sm active:opacity-85"
+          style={{ backgroundColor: color.card, borderColor: color.border }}
           onPress={() => {
             triggerHaptic();
             router.push("/account/plans" as any);
@@ -544,26 +548,30 @@ export default function HomeScreen() {
           accessibilityRole="button"
           accessibilityLabel="Explore overall pricing plans and ecosystem quotas"
         >
-          <View style={styles.pricingTileHeader}>
-            <View style={styles.pricingTileBadgeRow}>
+          <View className="flex-row justify-between items-center">
+            <View className="flex-row items-center gap-1.5">
               <View
-                style={[
-                  styles.pricingBadge,
-                  {
-                    backgroundColor: color.accentSoft,
-                  },
-                ]}
+                className="flex-row items-center gap-1 px-2 py-1 rounded-md"
+                style={{ backgroundColor: color.accentSoft }}
               >
                 <Ionicons name="sparkles" size={11} color={color.primary} />
-                <Text style={styles.pricingBadgeText}>ECOSYSTEM PRICING</Text>
+                <Text
+                  className="text-[10px] font-extrabold tracking-wider"
+                  style={{ color: color.foreground }}
+                >
+                  ECOSYSTEM PRICING
+                </Text>
               </View>
               <View
-                style={[
-                  styles.pricingSaveBadge,
-                  { backgroundColor: color.accentSoft },
-                ]}
+                className="px-2 py-1 rounded-md"
+                style={{ backgroundColor: color.accentSoft }}
               >
-                <Text style={[styles.pricingSaveBadgeText, { color: color.accent }]}>FROM ₹799/MO</Text>
+                <Text
+                  className="text-[10px] font-extrabold tracking-wider"
+                  style={{ color: color.accent }}
+                >
+                  FROM ₹799/MO
+                </Text>
               </View>
             </View>
             <Ionicons
@@ -573,87 +581,67 @@ export default function HomeScreen() {
             />
           </View>
 
-          <View style={styles.pricingTileBody}>
+          <View className="gap-0.5">
             <Text
-              style={[
-                styles.pricingTileTitle,
-                isDark && styles.pricingTileTitleDark,
-              ]}
+              className="text-[15px] font-extrabold tracking-tight"
+              style={{ color: color.textPrimary }}
             >
               Scale Your Automation Fleet
             </Text>
             <Text
-              style={[
-                styles.pricingTileDesc,
-                isDark && styles.pricingTileDescDark,
-              ]}
+              className="text-[11.5px]"
+              style={{ color: color.textSecondary }}
             >
               Voice AI Calling · Social Pilot · WhatsApp · Telegram · Smart CRM
             </Text>
           </View>
 
           {/* Pricing Quick Snapshot Pills */}
-          <View style={styles.pricingPillRow}>
+          <View className="flex-row flex-wrap gap-1.5 mt-0.5">
             <View
-              style={[
-                styles.pricePill,
-                { backgroundColor: color.tabBackground },
-              ]}
+              className="flex-row items-center gap-1 px-2 py-1 rounded-lg"
+              style={{ backgroundColor: color.tabBackground }}
             >
               <Ionicons name="call" size={11} color={color.products.voice} />
               <Text
-                style={[
-                  styles.pricePillText,
-                  { color: color.textPrimary },
-                ]}
+                className="text-[10.5px] font-bold"
+                style={{ color: color.textPrimary }}
               >
                 Voice AI ₹1,499
               </Text>
             </View>
             <View
-              style={[
-                styles.pricePill,
-                { backgroundColor: color.tabBackground },
-              ]}
+              className="flex-row items-center gap-1 px-2 py-1 rounded-lg"
+              style={{ backgroundColor: color.tabBackground }}
             >
               <Ionicons name="share-social" size={11} color={color.products.social} />
               <Text
-                style={[
-                  styles.pricePillText,
-                  { color: color.textPrimary },
-                ]}
+                className="text-[10.5px] font-bold"
+                style={{ color: color.textPrimary }}
               >
                 Social ₹999
               </Text>
             </View>
             <View
-              style={[
-                styles.pricePill,
-                { backgroundColor: color.tabBackground },
-              ]}
+              className="flex-row items-center gap-1 px-2 py-1 rounded-lg"
+              style={{ backgroundColor: color.tabBackground }}
             >
               <Ionicons name="logo-whatsapp" size={11} color={color.products.whatsapp} />
               <Text
-                style={[
-                  styles.pricePillText,
-                  { color: color.textPrimary },
-                ]}
+                className="text-[10.5px] font-bold"
+                style={{ color: color.textPrimary }}
               >
                 WA ₹999
               </Text>
             </View>
             <View
-              style={[
-                styles.pricePill,
-                { backgroundColor: color.tabBackground },
-              ]}
+              className="flex-row items-center gap-1 px-2 py-1 rounded-lg"
+              style={{ backgroundColor: color.tabBackground }}
             >
               <Ionicons name="people" size={11} color={color.products.crm} />
               <Text
-                style={[
-                  styles.pricePillText,
-                  { color: color.textPrimary },
-                ]}
+                className="text-[10.5px] font-bold"
+                style={{ color: color.textPrimary }}
               >
                 CRM ₹799
               </Text>
@@ -662,92 +650,81 @@ export default function HomeScreen() {
 
           {/* Bottom Action Strip */}
           <View
-            style={[
-              styles.pricingActionStrip,
-              { borderTopColor: color.border },
-            ]}
+            className="flex-row justify-between items-center pt-2 border-t mt-0.5"
+            style={{ borderColor: color.border }}
           >
             <Text
-              style={[
-                styles.pricingActionStripText,
-                { color: color.textSecondary },
-              ]}
+              className="text-[11px] font-medium"
+              style={{ color: color.textSecondary }}
             >
               Compare all plans, quotas & features
             </Text>
-            <View style={styles.pricingActionStripBtn}>
-              <Text style={styles.pricingActionStripBtnText}>View Plans</Text>
+            <View className="flex-row items-center gap-1">
+              <Text
+                className="text-[11.5px] font-bold"
+                style={{ color: color.primary }}
+              >
+                View Plans
+              </Text>
               <Ionicons name="arrow-forward" size={12} color={color.primary} />
             </View>
           </View>
         </Pressable>
 
         {/* iOS Native Segmented Filter Bar */}
-        <View style={[styles.segmentedTrack]}>
+        <View
+          className="flex-row rounded-xl p-1 mb-5 gap-1 w-full"
+          style={{ backgroundColor: color.tabBackground }}
+        >
           <Pressable
-            style={[
-              styles.segmentedTab,
-              selectedFilter === "all" && styles.segmentedTabActive,
-            ]}
+            className="flex-1 py-2 rounded-lg items-center justify-center active:opacity-80"
+            style={selectedFilter === "all" ? { backgroundColor: color.card } : undefined}
             onPress={() => {
               triggerHaptic();
               setSelectedFilter("all");
             }}
           >
             <Text
-              style={[
-                styles.segmentedTabText,
-                selectedFilter === "all" &&
-                (isDark
-                  ? styles.segmentedTabTextActiveDark
-                  : styles.segmentedTabTextActive),
-              ]}
+              className="text-xs font-semibold"
+              style={{
+                color: selectedFilter === "all" ? color.textPrimary : color.textSecondary,
+              }}
             >
               All Engines
             </Text>
           </Pressable>
 
           <Pressable
-            style={[
-              styles.segmentedTab,
-              selectedFilter === "bots" && styles.segmentedTabActive,
-            ]}
+            className="flex-1 py-2 rounded-lg items-center justify-center active:opacity-80"
+            style={selectedFilter === "bots" ? { backgroundColor: color.card } : undefined}
             onPress={() => {
               triggerHaptic();
               setSelectedFilter("bots");
             }}
           >
             <Text
-              style={[
-                styles.segmentedTabText,
-                selectedFilter === "bots" &&
-                (isDark
-                  ? styles.segmentedTabTextActiveDark
-                  : styles.segmentedTabTextActive),
-              ]}
+              className="text-xs font-semibold"
+              style={{
+                color: selectedFilter === "bots" ? color.textPrimary : color.textSecondary,
+              }}
             >
               Automation Hub
             </Text>
           </Pressable>
 
           <Pressable
-            style={[
-              styles.segmentedTab,
-              selectedFilter === "tools" && styles.segmentedTabActive,
-            ]}
+            className="flex-1 py-2 rounded-lg items-center justify-center active:opacity-80"
+            style={selectedFilter === "tools" ? { backgroundColor: color.card } : undefined}
             onPress={() => {
               triggerHaptic();
               setSelectedFilter("tools");
             }}
           >
             <Text
-              style={[
-                styles.segmentedTabText,
-                selectedFilter === "tools" &&
-                (isDark
-                  ? styles.segmentedTabTextActiveDark
-                  : styles.segmentedTabTextActive),
-              ]}
+              className="text-xs font-semibold"
+              style={{
+                color: selectedFilter === "tools" ? color.textPrimary : color.textSecondary,
+              }}
             >
               Studio Tools
             </Text>
@@ -756,13 +733,11 @@ export default function HomeScreen() {
 
         {/* SECTION 1: Automation Engines */}
         {(selectedFilter === "all" || selectedFilter === "bots") && (
-          <View style={styles.sectionBlock}>
-            <View style={styles.sectionHeaderRow}>
+          <View className="mb-6">
+            <View className="flex-row justify-between items-center px-1 mb-2">
               <Text
-                style={[
-                  styles.sectionHeaderTitle,
-                  isDark && styles.sectionHeaderTitleDark,
-                ]}
+                className="text-[13px] font-semibold tracking-tight"
+                style={{ color: color.textSecondary }}
               >
                 Automation Engines
               </Text>
@@ -772,18 +747,24 @@ export default function HomeScreen() {
                   router.push("/(tabs)/products" as any);
                 }}
               >
-                <Text style={styles.sectionActionText}>See All ›</Text>
+                <Text
+                  className="text-[13px] font-medium"
+                  style={{ color: color.primary }}
+                >
+                  See All ›
+                </Text>
               </Pressable>
             </View>
 
             {/* Inset Grouped Icon Grid */}
             <View
-              style={[styles.gridContainer, isDark && styles.gridContainerDark]}
+              className="flex-row justify-between items-center p-3.5 rounded-2xl border shadow-sm"
+              style={{ backgroundColor: color.card, borderColor: color.border }}
             >
               {filteredEngines.map((item) => (
                 <Pressable
                   key={item.id}
-                  style={styles.gridItem}
+                  className="items-center justify-center active:opacity-75"
                   onPress={() => {
                     triggerHaptic();
                     router.push(item.route as any);
@@ -791,7 +772,7 @@ export default function HomeScreen() {
                 >
                   <Image
                     source={item.logo}
-                    style={styles.gridLogoImage}
+                    className="w-[50px] h-[50px] rounded-xl"
                     resizeMode="contain"
                   />
                 </Pressable>
@@ -802,13 +783,11 @@ export default function HomeScreen() {
 
         {/* SECTION 2: Studio & Utilities (Apple HIG Inset Grouped List) */}
         {(selectedFilter === "all" || selectedFilter === "tools") && (
-          <View style={styles.sectionBlock}>
-            <View style={styles.sectionHeaderRow}>
+          <View className="mb-6">
+            <View className="flex-row justify-between items-center px-1 mb-2">
               <Text
-                style={[
-                  styles.sectionHeaderTitle,
-                  isDark && styles.sectionHeaderTitleDark,
-                ]}
+                className="text-[13px] font-semibold tracking-tight"
+                style={{ color: color.textSecondary }}
               >
                 Studio & Utilities
               </Text>
@@ -818,33 +797,34 @@ export default function HomeScreen() {
                   router.push("/(tabs)/tools" as any);
                 }}
               >
-                <Text style={styles.sectionActionText}>Explore Tools ›</Text>
+                <Text
+                  className="text-[13px] font-medium"
+                  style={{ color: color.primary }}
+                >
+                  Explore Tools ›
+                </Text>
               </Pressable>
             </View>
 
             {/* Apple HIG Inset Grouped Unified Card with Hairline Dividers */}
             <View
-              style={[
-                styles.groupedListContainer,
-                isDark && styles.groupedListContainerDark,
-              ]}
+              className="rounded-2xl border overflow-hidden shadow-sm"
+              style={{ backgroundColor: color.card, borderColor: color.border }}
             >
               {filteredTools.map((tool, index) => {
                 const isLast = index === filteredTools.length - 1;
                 return (
                   <View key={tool.id}>
                     <Pressable
-                      style={styles.groupedListItem}
+                      className="flex-row items-center py-3 px-3.5 gap-3 active:opacity-75"
                       onPress={() => {
                         triggerHaptic();
                         router.push(tool.route as any);
                       }}
                     >
                       <View
-                        style={[
-                          styles.toolIconBox,
-                          { backgroundColor: tool.iconBg },
-                        ]}
+                        className="w-8 h-8 rounded-lg justify-center items-center"
+                        style={{ backgroundColor: tool.iconBg }}
                       >
                         <Ionicons
                           name={tool.icon as any}
@@ -852,20 +832,16 @@ export default function HomeScreen() {
                           color="#FFFFFF"
                         />
                       </View>
-                      <View style={styles.toolInfo}>
+                      <View className="flex-1 min-w-0">
                         <Text
-                          style={[
-                            styles.toolName,
-                            isDark && styles.toolNameDark,
-                          ]}
+                          className="text-[14.5px] font-bold tracking-tight mb-0.5"
+                          style={{ color: color.textPrimary }}
                         >
                           {tool.name}
                         </Text>
                         <Text
-                          style={[
-                            styles.toolDesc,
-                            isDark && styles.toolDescDark,
-                          ]}
+                          className="text-[11.5px]"
+                          style={{ color: color.textSecondary }}
                           numberOfLines={1}
                         >
                           {tool.desc}
@@ -879,10 +855,8 @@ export default function HomeScreen() {
                     </Pressable>
                     {!isLast && (
                       <View
-                        style={[
-                          styles.hairlineDivider,
-                          isDark && styles.hairlineDividerDark,
-                        ]}
+                        className="h-[1px] ml-14"
+                        style={{ backgroundColor: color.border }}
                       />
                     )}
                   </View>
@@ -893,14 +867,15 @@ export default function HomeScreen() {
         )}
         <Pressable
           onPress={() => router.push('/Referral' as any)}
-          style={styles.referralCard}
+          // className="mx-2.5 my-2 rounded-2xl overflow-hidden border shadow-sm"
+          style={{ borderColor: color.border }}
           accessibilityRole="button"
           accessibilityLabel="Refer AI Automation Services"
         >
           <Image
             source={require('../../assets/images/referral.png')}
-            style={[styles.referralImage, { width: width }]}
-            resizeMode="cover"
+            style={{ height: height * 0.45, width: width * 0.92, borderRadius: 16 }}
+            resizeMode='cover'
           />
         </Pressable>
       </ScrollView>
@@ -908,452 +883,3 @@ export default function HomeScreen() {
   );
 }
 
-function createStyles(color: ReturnType<typeof getColors>, isDark: boolean) {
-  return StyleSheet.create({
-    scrollView: {
-      flex: 1,
-      width: "100%",
-      backgroundColor: color.background,
-    },
-    referralCard: {
-      marginHorizontal: 10,
-      marginVertical: 8,
-      borderRadius: 16,
-      overflow: 'hidden',
-    },
-
-    referralImage: {
-      height: height * 0.5,
-      borderRadius: 16
-    },
-    scrollContent: {
-      paddingHorizontal: 16,
-      paddingTop: 8,
-      paddingBottom: 130,
-      width: "100%",
-    },
-    avatarBtn: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: color.primary,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    avatarBtnText: {
-      fontSize: 13,
-      fontWeight: "800",
-      color: color.primaryForeground,
-    },
-    // ─── iOS Native Search Field ───────────────────────────────────
-    searchBarContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: color.card,
-      borderRadius: 12,
-      paddingHorizontal: 10,
-      height: 38,
-      marginBottom: 16,
-      borderWidth: 1,
-      borderColor: color.border,
-    },
-    searchBarContainerDark: {
-      backgroundColor: color.card,
-      borderWidth: 1,
-      borderColor: color.border,
-    },
-    searchIcon: {
-      marginRight: 6,
-    },
-    searchInput: {
-      flex: 1,
-      fontSize: 14,
-      color: color.textPrimary,
-      paddingVertical: 6,
-    },
-    // ─── Dual Telemetry Widgets ────────────────────────────────────
-    heroRow: {
-      flexDirection: "row",
-      gap: 12,
-      marginBottom: 16,
-    },
-    heroCard: {
-      flex: 1,
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: color.card,
-      borderRadius: 16,
-      paddingVertical: 11,
-      paddingHorizontal: 12,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: color.border,
-      gap: 9,
-    },
-    heroIconBox: {
-      width: 32,
-      height: 32,
-      borderRadius: 9,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    heroCardTextCol: {
-      flex: 1,
-      justifyContent: "center",
-    },
-    heroCardEyebrow: {
-      fontSize: 10,
-      fontWeight: "500",
-      color: color.textSecondary,
-      marginBottom: 2,
-    },
-    heroCardEyebrowDark: {
-      color: color.textSecondary,
-    },
-    heroCardTitle: {
-      fontSize: 13.5,
-      fontWeight: "700",
-      color: color.textPrimary,
-      letterSpacing: -0.2,
-    },
-    loginSecurityCard: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: color.card,
-      borderRadius: 16,
-      padding: 13,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: color.border,
-      marginBottom: 16,
-    },
-    loginSecurityIcon: {
-      width: 38,
-      height: 38,
-      borderRadius: 11,
-      justifyContent: "center",
-      alignItems: "center",
-      marginRight: 11,
-    },
-    loginSecurityContent: {
-      flex: 1,
-    },
-    loginSecurityHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 8,
-    },
-    loginSecurityTitle: {
-      fontSize: 14.5,
-      fontWeight: "700",
-      color: color.textPrimary,
-    },
-    loginSecurityCount: {
-      backgroundColor: color.successSoft,
-      borderRadius: 8,
-      paddingHorizontal: 7,
-      paddingVertical: 3,
-    },
-    loginSecurityCountText: {
-      color: color.success,
-      fontSize: 10.5,
-      fontWeight: "800",
-    },
-    loginSecuritySubtitle: {
-      color: color.textSecondary,
-      fontSize: 12,
-      marginTop: 3,
-    },
-    loginSecuritySubtitleDark: {
-      color: color.textSecondary,
-    },
-    loginDeviceList: {
-      marginTop: 5,
-      gap: 3,
-    },
-    loginDeviceRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 5,
-    },
-    loginDeviceText: {
-      flex: 1,
-      color: color.textSecondary,
-      fontSize: 12,
-    },
-    loginDeviceTextDark: {
-      color: color.textSecondary,
-    },
-    loginMoreDevices: {
-      color: color.primary,
-      fontSize: 11.5,
-      fontWeight: "700",
-      marginLeft: 18,
-    },
-    loginMoreDevicesDark: {
-      color: color.primary,
-    },
-    // ─── iOS Native Segmented Track ────────────────────────────────
-    segmentedTrack: {
-      flexDirection: "row",
-      backgroundColor: color.tabBackground,
-      borderRadius: 10,
-      padding: 3,
-      marginBottom: 20,
-    },
-    segmentedTab: {
-      flex: 1,
-      paddingVertical: 7,
-      borderRadius: 8,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    segmentedTabActive: {
-      backgroundColor: color.card,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 2,
-      elevation: 1,
-    },
-    segmentedTabText: {
-      fontSize: 12,
-      fontWeight: "500",
-      color: color.textSecondary,
-    },
-    segmentedTabTextActive: {
-      color: color.textPrimary,
-      fontWeight: "600",
-    },
-    segmentedTabTextActiveDark: {
-      color: color.textPrimary,
-      fontWeight: "600",
-    },
-    // ─── Section Header (Apple HIG Style) ──────────────────────────
-    sectionBlock: {
-      marginBottom: 24,
-    },
-    sectionHeaderRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingHorizontal: 4,
-      marginBottom: 8,
-    },
-    sectionHeaderTitle: {
-      fontSize: 13,
-      fontWeight: "600",
-      color: color.textSecondary,
-      letterSpacing: -0.2,
-    },
-    sectionHeaderTitleDark: {
-      color: color.textSecondary,
-    },
-    sectionActionText: {
-      fontSize: 13,
-      fontWeight: "500",
-      color: color.primary,
-    },
-    // ─── Inset Grouped Grid (5 Engines Row) ────────────────────────
-    gridContainer: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      backgroundColor: color.card,
-      borderRadius: 18,
-      paddingVertical: 14,
-      paddingHorizontal: 14,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: color.border,
-    },
-    gridContainerDark: {
-      backgroundColor: color.card,
-      borderColor: color.border,
-    },
-    gridItem: {
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    gridLogoImage: {
-      width: 50,
-      height: 50,
-      borderRadius: 13,
-    },
-    // ─── Inset Grouped List (Apple HIG Settings Style) ─────────────
-    groupedListContainer: {
-      backgroundColor: color.card,
-      borderRadius: 18,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: color.border,
-      overflow: "hidden",
-    },
-    groupedListContainerDark: {
-      backgroundColor: color.card,
-      borderColor: color.border,
-    },
-    groupedListItem: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingVertical: 12,
-      paddingHorizontal: 14,
-      gap: 12,
-    },
-    toolIconBox: {
-      width: 32,
-      height: 32,
-      borderRadius: 8,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    toolInfo: {
-      flex: 1,
-    },
-    toolName: {
-      fontSize: 14.5,
-      fontWeight: "700",
-      color: color.textPrimary,
-      letterSpacing: -0.2,
-      marginBottom: 1,
-    },
-    toolNameDark: {
-      color: color.textPrimary,
-    },
-    toolDesc: {
-      fontSize: 11.5,
-      color: color.textSecondary,
-    },
-    toolDescDark: {
-      color: color.textSecondary,
-    },
-    hairlineDivider: {
-      height: StyleSheet.hairlineWidth,
-      backgroundColor: color.border,
-      marginLeft: 58,
-    },
-    hairlineDividerDark: {
-      backgroundColor: color.border,
-    },
-    pricingTile: {
-      borderRadius: 16,
-      padding: 14,
-      gap: 10,
-      borderWidth: 1,
-      marginBottom: 12,
-    },
-    pricingTileLight: {
-      backgroundColor: color.card,
-      borderColor: color.border,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.05,
-      shadowRadius: 8,
-      elevation: 2,
-    },
-    pricingTileDark: {
-      backgroundColor: color.card,
-      borderColor: color.border,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.2,
-      shadowRadius: 8,
-      elevation: 2,
-    },
-    pricingTileHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-    },
-    pricingTileBadgeRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-    },
-    pricingBadge: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 4,
-      paddingHorizontal: 7,
-      paddingVertical: 3,
-      borderRadius: 6,
-      backgroundColor: color.accentSoft,
-    },
-    pricingBadgeText: {
-      fontSize: 10,
-      fontWeight: "800",
-      color: color.foreground,
-      letterSpacing: 0.5,
-    },
-    pricingSaveBadge: {
-      paddingHorizontal: 7,
-      paddingVertical: 3,
-      borderRadius: 6,
-      backgroundColor: color.accentSoft,
-    },
-    pricingSaveBadgeText: {
-      fontSize: 10,
-      fontWeight: "800",
-      color: color.accent,
-      letterSpacing: 0.5,
-    },
-    pricingTileBody: {
-      gap: 2,
-    },
-    pricingTileTitle: {
-      fontSize: 15,
-      fontWeight: "800",
-      color: color.textPrimary,
-      letterSpacing: -0.2,
-    },
-    pricingTileTitleDark: {
-      color: color.textPrimary,
-    },
-    pricingTileDesc: {
-      fontSize: 11.5,
-      color: color.textSecondary,
-    },
-    pricingTileDescDark: {
-      color: color.textSecondary,
-    },
-    pricingPillRow: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: 6,
-      marginTop: 2,
-    },
-    pricePill: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 4,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 7,
-    },
-    pricePillText: {
-      fontSize: 10.5,
-      fontWeight: "700",
-    },
-    pricingActionStrip: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingTop: 8,
-      borderTopWidth: 1,
-      borderColor: color.border,
-      marginTop: 2,
-    },
-    pricingActionStripText: {
-      fontSize: 11,
-      fontWeight: "500",
-      color: color.textSecondary,
-    },
-    pricingActionStripBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 3,
-    },
-    pricingActionStripBtnText: {
-      fontSize: 11.5,
-      fontWeight: "700",
-      color: color.primary,
-    },
-  });
-}

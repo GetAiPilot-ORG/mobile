@@ -8,7 +8,6 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   View
 } from "react-native";
@@ -69,7 +68,6 @@ export default function ConnectedPlatformsPage() {
   const router = useRouter();
   const { isDark } = useTheme();
   const color = getColors(isDark);
-  const styles = useMemo(() => createStyles(color, isDark), [color, isDark]);
   const { user } = useAuth();
   const { hasWhatsApp, hasTelegram, hasVoice, hasCRM, hasSocial } =
     usePlatformSubscription();
@@ -232,8 +230,9 @@ export default function ConnectedPlatformsPage() {
         <ActivityScreenSkeleton />
       ) : (
         <ScrollView
-          style={[styles.scrollView, { backgroundColor: color.background }]}
-          contentContainerStyle={styles.scrollContent}
+          className="flex-1"
+          style={{ backgroundColor: color.background }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 130 }}
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
@@ -245,30 +244,38 @@ export default function ConnectedPlatformsPage() {
         >
           {/* Apple Segmented Control */}
           <View
-            style={[styles.segmentedTrack, isDark && styles.segmentedTrackDark]}
+            className="flex-row rounded-[10px] p-[3px] mb-4 border"
+            style={{
+              backgroundColor: color.tabBackground,
+              borderColor: isDark ? color.border : "transparent",
+            }}
           >
             {PLATFORMS.map((p) => {
               const isSelected = activePlatform === p.key;
               return (
                 <Pressable
                   key={p.key}
+                  className="flex-1 py-[7px] rounded-lg items-center justify-center"
                   style={[
-                    styles.segmentedTab,
-                    isSelected &&
-                      (isDark
-                        ? styles.segmentedTabActiveDark
-                        : styles.segmentedTabActiveLight),
+                    isSelected && {
+                      backgroundColor: color.card,
+                    },
+                    isSelected && !isDark && {
+                      elevation: 1,
+                      shadowColor: "#000000",
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 2,
+                    },
                   ]}
                   onPress={() => handleSelectTab(p.key)}
                 >
                   <Text
-                    style={[
-                      styles.segmentedTabText,
-                      isSelected &&
-                        (isDark
-                          ? styles.segmentedTabTextActiveDark
-                          : styles.segmentedTabTextActiveLight),
-                    ]}
+                    className="text-[11.5px]"
+                    style={{
+                      color: isSelected ? color.textPrimary : color.textSecondary,
+                      fontWeight: isSelected ? "700" : "600",
+                    }}
                     numberOfLines={1}
                   >
                     {p.label}
@@ -279,13 +286,17 @@ export default function ConnectedPlatformsPage() {
           </View>
 
           {/* Inset Grouped Telemetry Widget Card */}
-          <View style={[styles.widgetCard, isDark && styles.widgetCardDark]}>
-            <View style={styles.widgetHeader}>
+          <View
+            className="rounded-[18px] p-4 mb-[22px] border"
+            style={{
+              backgroundColor: color.card,
+              borderColor: color.border,
+            }}
+          >
+            <View className="flex-row items-center mb-4">
               <View
-                style={[
-                  styles.widgetIconBox,
-                  { backgroundColor: `${currentPlatformMeta.color}20` },
-                ]}
+                className="w-[38px] h-[38px] rounded-[10px] justify-center items-center mr-2.5"
+                style={{ backgroundColor: `${currentPlatformMeta.color}20` }}
               >
                 <Ionicons
                   name={currentPlatformMeta.icon as any}
@@ -293,13 +304,17 @@ export default function ConnectedPlatformsPage() {
                   color={currentPlatformMeta.color}
                 />
               </View>
-              <View style={{ flex: 1 }}>
+              <View className="flex-1 min-w-0">
                 <Text
-                  style={[styles.widgetTitle, isDark && styles.widgetTitleDark]}
+                  className="text-[15.5px] font-bold tracking-tight"
+                  style={{ color: color.textPrimary }}
                 >
                   {currentPlatformMeta.label} Status
                 </Text>
-                <Text style={styles.widgetSub}>
+                <Text
+                  className="text-[11.5px] mt-0.5"
+                  style={{ color: color.textSecondary }}
+                >
                   {activePlatform === "whatsapp" &&
                     (hasWhatsApp
                       ? "Meta Cloud API Gateway Active"
@@ -312,18 +327,21 @@ export default function ConnectedPlatformsPage() {
                     `${platformData?.social?.connectedCount || 0} Accounts Synced`}
                 </Text>
               </View>
-              <View style={styles.statusPill}>
+              <View
+                className="flex-row items-center gap-1 px-2 py-1 rounded-md"
+                style={{
+                  backgroundColor: isDark
+                    ? "rgba(255,255,255,0.08)"
+                    : "rgba(0,0,0,0.04)",
+                }}
+              >
                 <View
-                  style={[
-                    styles.statusDot,
-                    { backgroundColor: currentPlatformMeta.color },
-                  ]}
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ backgroundColor: currentPlatformMeta.color }}
                 />
                 <Text
-                  style={[
-                    styles.statusPillText,
-                    { color: currentPlatformMeta.color },
-                  ]}
+                  className="text-[10.5px] font-extrabold uppercase tracking-wider"
+                  style={{ color: currentPlatformMeta.color }}
                 >
                   Online
                 </Text>
@@ -331,12 +349,16 @@ export default function ConnectedPlatformsPage() {
             </View>
 
             {/* Metric Columns */}
-            <View style={styles.metricsRow}>
+            <View
+              className="flex-row justify-between py-3 border-y mb-3.5"
+              style={{ borderColor: color.border }}
+            >
               {activePlatform === "whatsapp" && (
                 <>
-                  <View style={styles.metricCol}>
+                  <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      style={[styles.metricVal, isDark && styles.metricValDark]}
+                      className="text-base font-extrabold tracking-tight"
+                      style={{ color: color.textPrimary }}
                     >
                       ₹
                       {(
@@ -346,139 +368,228 @@ export default function ConnectedPlatformsPage() {
                           : 10000) / 100
                       ).toFixed(2)}
                     </Text>
-                    <Text style={styles.metricLbl}>Wallet Balance</Text>
-                  </View>
-                  <View style={styles.metricCol}>
                     <Text
-                      style={[styles.metricVal, isDark && styles.metricValDark]}
+                      className="text-[10.5px] mt-0.5"
+                      style={{ color: color.textSecondary }}
+                    >
+                      Wallet Balance
+                    </Text>
+                  </View>
+                  <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
+                    <Text
+                      className="text-base font-extrabold tracking-tight"
+                      style={{ color: color.textPrimary }}
                     >
                       99.8%
                     </Text>
-                    <Text style={styles.metricLbl}>Delivery Rate</Text>
-                  </View>
-                  <View style={styles.metricCol}>
                     <Text
-                      style={[styles.metricVal, isDark && styles.metricValDark]}
+                      className="text-[10.5px] mt-0.5"
+                      style={{ color: color.textSecondary }}
+                    >
+                      Delivery Rate
+                    </Text>
+                  </View>
+                  <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
+                    <Text
+                      className="text-base font-extrabold tracking-tight"
+                      style={{ color: color.textPrimary }}
                     >
                       &lt; 2s
                     </Text>
-                    <Text style={styles.metricLbl}>Latency</Text>
+                    <Text
+                      className="text-[10.5px] mt-0.5"
+                      style={{ color: color.textSecondary }}
+                    >
+                      Latency
+                    </Text>
                   </View>
                 </>
               )}
 
               {activePlatform === "telegram" && (
                 <>
-                  <View style={styles.metricCol}>
+                  <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      style={[styles.metricVal, isDark && styles.metricValDark]}
+                      className="text-base font-extrabold tracking-tight"
+                      style={{ color: color.textPrimary }}
                     >
                       {platformData?.telegram?.forwardRulesCount || 0}
                     </Text>
-                    <Text style={styles.metricLbl}>Forward Rules</Text>
-                  </View>
-                  <View style={styles.metricCol}>
                     <Text
-                      style={[styles.metricVal, isDark && styles.metricValDark]}
+                      className="text-[10.5px] mt-0.5"
+                      style={{ color: color.textSecondary }}
+                    >
+                      Forward Rules
+                    </Text>
+                  </View>
+                  <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
+                    <Text
+                      className="text-base font-extrabold tracking-tight"
+                      style={{ color: color.textPrimary }}
                     >
                       {platformData?.telegram?.trackerCount || 0}
                     </Text>
-                    <Text style={styles.metricLbl}>Trackers</Text>
-                  </View>
-                  <View style={styles.metricCol}>
                     <Text
-                      style={[styles.metricVal, isDark && styles.metricValDark]}
+                      className="text-[10.5px] mt-0.5"
+                      style={{ color: color.textSecondary }}
+                    >
+                      Trackers
+                    </Text>
+                  </View>
+                  <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
+                    <Text
+                      className="text-base font-extrabold tracking-tight"
+                      style={{ color: color.textPrimary }}
                     >
                       0ms
                     </Text>
-                    <Text style={styles.metricLbl}>Drop Rate</Text>
+                    <Text
+                      className="text-[10.5px] mt-0.5"
+                      style={{ color: color.textSecondary }}
+                    >
+                      Drop Rate
+                    </Text>
                   </View>
                 </>
               )}
 
               {activePlatform === "voice" && (
                 <>
-                  <View style={styles.metricCol}>
+                  <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      style={[styles.metricVal, isDark && styles.metricValDark]}
+                      className="text-base font-extrabold tracking-tight"
+                      style={{ color: color.textPrimary }}
                     >
                       650ms
                     </Text>
-                    <Text style={styles.metricLbl}>WebRTC Latency</Text>
-                  </View>
-                  <View style={styles.metricCol}>
                     <Text
-                      style={[styles.metricVal, isDark && styles.metricValDark]}
+                      className="text-[10.5px] mt-0.5"
+                      style={{ color: color.textSecondary }}
+                    >
+                      WebRTC Latency
+                    </Text>
+                  </View>
+                  <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
+                    <Text
+                      className="text-base font-extrabold tracking-tight"
+                      style={{ color: color.textPrimary }}
                     >
                       2,500
                     </Text>
-                    <Text style={styles.metricLbl}>Quota Minutes</Text>
-                  </View>
-                  <View style={styles.metricCol}>
                     <Text
-                      style={[styles.metricVal, isDark && styles.metricValDark]}
+                      className="text-[10.5px] mt-0.5"
+                      style={{ color: color.textSecondary }}
+                    >
+                      Quota Minutes
+                    </Text>
+                  </View>
+                  <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
+                    <Text
+                      className="text-base font-extrabold tracking-tight"
+                      style={{ color: color.textPrimary }}
                     >
                       100%
                     </Text>
-                    <Text style={styles.metricLbl}>ASR Accuracy</Text>
+                    <Text
+                      className="text-[10.5px] mt-0.5"
+                      style={{ color: color.textSecondary }}
+                    >
+                      ASR Accuracy
+                    </Text>
                   </View>
                 </>
               )}
 
               {activePlatform === "crm" && (
                 <>
-                  <View style={styles.metricCol}>
+                  <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      style={[styles.metricVal, isDark && styles.metricValDark]}
+                      className="text-base font-extrabold tracking-tight"
+                      style={{ color: color.textPrimary }}
                     >
                       {platformData?.crm?.formsCount || 0}
                     </Text>
-                    <Text style={styles.metricLbl}>Intake Forms</Text>
-                  </View>
-                  <View style={styles.metricCol}>
                     <Text
-                      style={[styles.metricVal, isDark && styles.metricValDark]}
+                      className="text-[10.5px] mt-0.5"
+                      style={{ color: color.textSecondary }}
+                    >
+                      Intake Forms
+                    </Text>
+                  </View>
+                  <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
+                    <Text
+                      className="text-base font-extrabold tracking-tight"
+                      style={{ color: color.textPrimary }}
                     >
                       {platformData?.crm?.totalClicks || 0}
                     </Text>
-                    <Text style={styles.metricLbl}>Link Clicks</Text>
-                  </View>
-                  <View style={styles.metricCol}>
                     <Text
-                      style={[styles.metricVal, isDark && styles.metricValDark]}
+                      className="text-[10.5px] mt-0.5"
+                      style={{ color: color.textSecondary }}
+                    >
+                      Link Clicks
+                    </Text>
+                  </View>
+                  <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
+                    <Text
+                      className="text-base font-extrabold tracking-tight"
+                      style={{ color: color.textPrimary }}
                     >
                       Instant
                     </Text>
-                    <Text style={styles.metricLbl}>Lead Alert</Text>
+                    <Text
+                      className="text-[10.5px] mt-0.5"
+                      style={{ color: color.textSecondary }}
+                    >
+                      Lead Alert
+                    </Text>
                   </View>
                 </>
               )}
 
               {activePlatform === "social" && (
                 <>
-                  <View style={styles.metricCol}>
+                  <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      style={[styles.metricVal, isDark && styles.metricValDark]}
+                      className="text-base font-extrabold tracking-tight"
+                      style={{ color: color.textPrimary }}
                     >
                       {platformData?.social?.connectedCount || 0}
                     </Text>
-                    <Text style={styles.metricLbl}>Accounts</Text>
-                  </View>
-                  <View style={styles.metricCol}>
                     <Text
-                      style={[styles.metricVal, isDark && styles.metricValDark]}
+                      className="text-[10.5px] mt-0.5"
+                      style={{ color: color.textSecondary }}
+                    >
+                      Accounts
+                    </Text>
+                  </View>
+                  <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
+                    <Text
+                      className="text-base font-extrabold tracking-tight"
+                      style={{ color: color.textPrimary }}
                     >
                       100%
                     </Text>
-                    <Text style={styles.metricLbl}>Queue Sync</Text>
-                  </View>
-                  <View style={styles.metricCol}>
                     <Text
-                      style={[styles.metricVal, isDark && styles.metricValDark]}
+                      className="text-[10.5px] mt-0.5"
+                      style={{ color: color.textSecondary }}
+                    >
+                      Queue Sync
+                    </Text>
+                  </View>
+                  <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
+                    <Text
+                      className="text-base font-extrabold tracking-tight"
+                      style={{ color: color.textPrimary }}
                     >
                       Auto
                     </Text>
-                    <Text style={styles.metricLbl}>Scheduler</Text>
+                    <Text
+                      className="text-[10.5px] mt-0.5"
+                      style={{ color: color.textSecondary }}
+                    >
+                      Scheduler
+                    </Text>
                   </View>
                 </>
               )}
@@ -486,21 +597,17 @@ export default function ConnectedPlatformsPage() {
 
             {/* Action CTA */}
             <Pressable
-              style={[
-                styles.openEngineBtn,
-                {
-                  backgroundColor: isDark
-                    ? `${currentPlatformMeta.color}22`
-                    : `${currentPlatformMeta.color}15`,
-                },
-              ]}
+              className="py-2.5 rounded-[10px] items-center justify-center"
+              style={{
+                backgroundColor: isDark
+                  ? `${currentPlatformMeta.color}22`
+                  : `${currentPlatformMeta.color}15`,
+              }}
               onPress={() => router.push(currentPlatformMeta.route as any)}
             >
               <Text
-                style={[
-                  styles.openEngineBtnText,
-                  { color: isDark ? currentPlatformMeta.color : "#0A84FF" },
-                ]}
+                className="text-[13px] font-bold"
+                style={{ color: isDark ? currentPlatformMeta.color : "#0A84FF" }}
               >
                 Configure {currentPlatformMeta.label} Dashboard ›
               </Text>
@@ -508,14 +615,23 @@ export default function ConnectedPlatformsPage() {
           </View>
 
           {/* Section: Activity Audit Log */}
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionHeaderTitle}>
+          <View className="mb-2 px-1">
+            <Text
+              className="text-xs font-bold tracking-wider uppercase"
+              style={{ color: color.textSecondary }}
+            >
               RECENT ECOSYSTEM TELEMETRY
             </Text>
           </View>
 
           {/* Inset Grouped Audit List */}
-          <View style={[styles.auditCard, isDark && styles.auditCardDark]}>
+          <View
+            className="rounded-[18px] border overflow-hidden"
+            style={{
+              backgroundColor: color.card,
+              borderColor: color.border,
+            }}
+          >
             {[
               {
                 id: "1",
@@ -551,32 +667,38 @@ export default function ConnectedPlatformsPage() {
               },
             ].map((item, idx, arr) => (
               <View key={item.id}>
-                <View style={styles.auditRow}>
+                <View className="flex-row items-center py-3 px-3.5">
                   <Ionicons
                     name={item.icon as any}
                     size={20}
                     color={item.color}
-                    style={styles.auditIcon}
+                    className="mr-3"
                   />
-                  <View style={styles.auditInfo}>
+                  <View className="flex-1 min-w-0">
                     <Text
-                      style={[
-                        styles.auditTitle,
-                        isDark && styles.auditTitleDark,
-                      ]}
+                      className="text-[13.5px] font-semibold tracking-tight"
+                      style={{ color: color.textPrimary }}
                     >
                       {item.title}
                     </Text>
-                    <Text style={styles.auditSub}>{item.sub}</Text>
+                    <Text
+                      className="text-[11px] mt-0.5"
+                      style={{ color: color.textSecondary }}
+                    >
+                      {item.sub}
+                    </Text>
                   </View>
-                  <Text style={styles.auditTime}>{item.time}</Text>
+                  <Text
+                    className="text-[11px] font-medium ml-2"
+                    style={{ color: color.textSecondary }}
+                  >
+                    {item.time}
+                  </Text>
                 </View>
                 {idx < arr.length - 1 && (
                   <View
-                    style={[
-                      styles.hairlineDivider,
-                      isDark && styles.hairlineDividerDark,
-                    ]}
+                    className="h-[1px] ml-11"
+                    style={{ backgroundColor: color.border }}
                   />
                 )}
               </View>
@@ -586,222 +708,4 @@ export default function ConnectedPlatformsPage() {
       )}
     </AppScreen>
   );
-}
-
-function createStyles(color: ReturnType<typeof getColors>, isDark: boolean) {
-  return StyleSheet.create({
-    scrollView: {
-      flex: 1,
-    },
-    scrollViewLight: {
-      backgroundColor: color.background,
-    },
-    scrollViewDark: {
-      backgroundColor: color.background,
-    },
-    scrollContent: {
-      paddingHorizontal: 16,
-      paddingTop: 14,
-      paddingBottom: 130,
-    },
-    segmentedTrack: {
-      flexDirection: "row",
-      backgroundColor: color.tabBackground,
-      borderRadius: 10,
-      padding: 3,
-      marginBottom: 16,
-    },
-    segmentedTrackDark: {
-      backgroundColor: color.tabBackground,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: color.border,
-    },
-    segmentedTab: {
-      flex: 1,
-      paddingVertical: 7,
-      borderRadius: 8,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    segmentedTabActiveLight: {
-      backgroundColor: color.card,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 2,
-      elevation: 1,
-    },
-    segmentedTabActiveDark: {
-      backgroundColor: color.card,
-    },
-    segmentedTabText: {
-      fontSize: 11.5,
-      fontWeight: "600",
-      color: color.textSecondary,
-    },
-    segmentedTabTextActiveLight: {
-      color: color.textPrimary,
-      fontWeight: "700",
-    },
-    segmentedTabTextActiveDark: {
-      color: color.textPrimary,
-      fontWeight: "700",
-    },
-    widgetCard: {
-      backgroundColor: color.card,
-      borderRadius: 18,
-      padding: 16,
-      marginBottom: 22,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: color.border,
-    },
-    widgetCardDark: {
-      backgroundColor: color.card,
-      borderColor: color.border,
-    },
-    widgetHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: 16,
-    },
-    widgetIconBox: {
-      width: 38,
-      height: 38,
-      borderRadius: 10,
-      justifyContent: "center",
-      alignItems: "center",
-      marginRight: 10,
-    },
-    widgetTitle: {
-      fontSize: 15.5,
-      fontWeight: "700",
-      color: color.textPrimary,
-      letterSpacing: -0.2,
-    },
-    widgetTitleDark: {
-      color: color.textPrimary,
-    },
-    widgetSub: {
-      fontSize: 11.5,
-      color: color.textSecondary,
-      marginTop: 1,
-    },
-    statusPill: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 4,
-      backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)",
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 6,
-    },
-    statusDot: {
-      width: 6,
-      height: 6,
-      borderRadius: 3,
-    },
-    statusPillText: {
-      fontSize: 10.5,
-      fontWeight: "800",
-      textTransform: "uppercase",
-    },
-    metricsRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      paddingVertical: 12,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderColor: color.border,
-      marginBottom: 14,
-    },
-    metricCol: {
-      flex: 1,
-      alignItems: "center",
-    },
-    metricVal: {
-      fontSize: 16,
-      fontWeight: "800",
-      color: color.textPrimary,
-      letterSpacing: -0.3,
-    },
-    metricValDark: {
-      color: color.textPrimary,
-    },
-    metricLbl: {
-      fontSize: 10.5,
-      color: color.textSecondary,
-      marginTop: 2,
-    },
-    openEngineBtn: {
-      paddingVertical: 10,
-      borderRadius: 10,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    openEngineBtnText: {
-      fontSize: 13,
-      fontWeight: "700",
-    },
-    sectionHeaderRow: {
-      marginBottom: 8,
-      paddingHorizontal: 4,
-    },
-    sectionHeaderTitle: {
-      fontSize: 12,
-      fontWeight: "700",
-      color: color.textSecondary,
-      letterSpacing: 0.5,
-      textTransform: "uppercase",
-    },
-    auditCard: {
-      backgroundColor: color.card,
-      borderRadius: 18,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: color.border,
-      overflow: "hidden",
-    },
-    auditCardDark: {
-      backgroundColor: color.card,
-      borderColor: color.border,
-    },
-    auditRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingVertical: 12,
-      paddingHorizontal: 14,
-    },
-    auditIcon: {
-      marginRight: 12,
-    },
-    auditInfo: {
-      flex: 1,
-    },
-    auditTitle: {
-      fontSize: 13.5,
-      fontWeight: "600",
-      color: color.textPrimary,
-      letterSpacing: -0.2,
-    },
-    auditTitleDark: {
-      color: color.textPrimary,
-    },
-    auditSub: {
-      fontSize: 11,
-      color: color.textSecondary,
-      marginTop: 1,
-    },
-    auditTime: {
-      fontSize: 11,
-      color: color.textSecondary,
-      fontWeight: "500",
-    },
-    hairlineDivider: {
-      height: StyleSheet.hairlineWidth,
-      backgroundColor: color.border,
-      marginLeft: 46,
-    },
-    hairlineDividerDark: {
-      backgroundColor: color.border,
-    },
-  });
 }

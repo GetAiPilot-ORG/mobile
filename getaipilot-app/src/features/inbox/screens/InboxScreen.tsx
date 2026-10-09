@@ -8,7 +8,6 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View
@@ -35,7 +34,6 @@ export const InboxScreen: React.FC = () => {
   const queryClient = useQueryClient();
   const { isDark } = useTheme();
   const color = getColors(isDark);
-  const styles = useMemo(() => createStyles(color, isDark), [color, isDark]);
 
   const [activeTab, setActiveTab] = useState<
     "ALL" | "UNREAD" | "UNASSIGNED" | "MINE" | "BOT_ACTIVE"
@@ -183,42 +181,49 @@ export const InboxScreen: React.FC = () => {
     <AppScreen>
       <AppTopBar
         title="Inbox"
-        // subtitle="LiveChat & Conversations"
         showBack={false}
         rightElement={
-          <View style={styles.headerRightActions}>
+          <View className="flex-row items-center gap-2">
             {unreadTotal > 0 && (
-              <View style={styles.unreadTotalBadge}>
-                <Text style={styles.unreadTotalText}>{unreadTotal} Unread</Text>
+              <View
+                className="px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: color.primary }}
+              >
+                <Text className="text-white text-[10.5px] font-extrabold">{unreadTotal} Unread</Text>
               </View>
             )}
             <Pressable
-              style={styles.newChatBtn}
+              className="flex-row items-center px-3 py-1.5 rounded-full shadow-sm active:opacity-85"
+              style={{ backgroundColor: color.primary }}
               onPress={() => setShowNewChatModal(true)}
             >
               <Ionicons
                 name="chatbubble-ellipses"
                 size={14}
                 color="#ffffff"
-                style={{ marginRight: 5 }}
+                className="mr-1"
               />
-              <Text style={styles.newChatBtnText}>+ New Chat</Text>
+              <Text className="text-white text-xs font-bold">+ New Chat</Text>
             </Pressable>
           </View>
         }
       />
 
-      <View style={styles.container}>
+      <View className=" px-3.5">
         {/* Search Bar */}
-        <View style={styles.searchBar}>
+        <View
+          className="flex-row items-center rounded-2xl px-3 py-2 border mb-2.5 shadow-sm"
+          style={{ backgroundColor: color.card, borderColor: color.border }}
+        >
           <Ionicons
             name="search"
             size={16}
             color={color.textSecondary}
-            style={styles.searchIcon}
+            className="mr-2"
           />
           <TextInput
-            style={styles.searchInput}
+            className="flex-1 text-[13.5px]"
+            style={{ color: color.textPrimary }}
             placeholder="Search contacts, numbers or messages..."
             placeholderTextColor={color.textSecondary}
             value={searchQuery}
@@ -236,39 +241,55 @@ export const InboxScreen: React.FC = () => {
         </View>
 
         {/* Filter Tabs Horizontal Scroll */}
+
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.tabsScroll}
+          contentContainerStyle={{ paddingHorizontal: 2, paddingVertical: 4 }}
+          className="mb-3 shrink-0"
         >
           {[
-            { id: "ALL", label: "All Chats", icon: "chatbubbles" },
-            { id: "UNREAD", label: "Unread", icon: "mail-unread" },
-            { id: "UNASSIGNED", label: "Unassigned", icon: "person-add" },
-            { id: "MINE", label: "Assigned to Me", icon: "person" },
-            { id: "BOT_ACTIVE", label: "AI Active", icon: "hardware-chip" },
+            { id: "ALL", label: "All Chats", icon: "chatbubbles-outline" },
+            { id: "UNREAD", label: "Unread", icon: "mail-unread-outline" },
+            { id: "UNASSIGNED", label: "Unassigned", icon: "person-add-outline" },
+            { id: "MINE", label: "Assigned to Me", icon: "person-outline" },
+            { id: "BOT_ACTIVE", label: "AI Active", icon: "hardware-chip-outline" },
           ].map((tab) => {
             const isActive = activeTab === tab.id;
+
             return (
               <Pressable
                 key={tab.id}
-                style={[
-                  styles.tabPill,
-                  isActive && styles.activeTabPill,
-                ]}
                 onPress={() => setActiveTab(tab.id as any)}
+                className="flex-row items-center justify-center gap-2 px-4 py-2.5 mr-2 rounded-full border"
+                style={({ pressed }) => [
+                  {
+                    backgroundColor: isActive ? color.primary : color.card,
+                    borderColor: isActive ? color.primary : color.border,
+                    opacity: pressed ? 0.8 : 1,
+                  },
+                  isActive && {
+                    elevation: 2,
+                    shadowColor: "#000000",
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 2,
+                  },
+                ]}
               >
                 <Ionicons
                   name={tab.icon as any}
-                  size={13}
-                  color={isActive ? "#ffffff" : color.textSecondary}
-                  style={{ marginRight: 5 }}
+                  size={15}
+                  color={isActive ? "#FFFFFF" : color.textSecondary}
                 />
+
                 <Text
-                  style={[
-                    styles.tabText,
-                    isActive && styles.activeTabText,
-                  ]}
+                  numberOfLines={1}
+                  className="text-xs"
+                  style={{
+                    color: isActive ? "#FFFFFF" : color.textSecondary,
+                    fontWeight: isActive ? "700" : "500",
+                  }}
                 >
                   {tab.label}
                 </Text>
@@ -276,6 +297,7 @@ export const InboxScreen: React.FC = () => {
             );
           })}
         </ScrollView>
+
 
         {/* Conversation List */}
         {isLoading && !conversations ? (
@@ -290,7 +312,7 @@ export const InboxScreen: React.FC = () => {
                 onPress={() => handleOpenConversation(item)}
               />
             )}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={{ paddingBottom: 130 }}
             refreshControl={
               <RefreshControl
                 refreshing={isRefetching}
@@ -299,31 +321,38 @@ export const InboxScreen: React.FC = () => {
               />
             }
             ListEmptyComponent={
-              <View style={styles.emptyContainer}>
+              <View className="p-10 items-center">
                 <Ionicons
                   name="chatbubble-ellipses-outline"
                   size={48}
                   color={color.border}
                 />
-                <Text style={styles.emptyTitle}>
+                <Text
+                  className="text-[15px] font-bold mt-2.5 mb-1.5"
+                  style={{ color: color.textPrimary }}
+                >
                   No conversations found
                 </Text>
-                <Text style={styles.emptySubtitle}>
+                <Text
+                  className="text-[12.5px] text-center leading-[18px]"
+                  style={{ color: color.textSecondary }}
+                >
                   {activeTab !== "ALL"
                     ? `No conversations match the '${activeTab}' filter.`
                     : "Incoming messages from WhatsApp customers will appear here in real time."}
                 </Text>
                 <Pressable
-                  style={styles.emptyNewChatBtn}
+                  className="flex-row items-center px-3.5 py-2 rounded-xl mt-3.5 active:opacity-85"
+                  style={{ backgroundColor: color.primary }}
                   onPress={() => setShowNewChatModal(true)}
                 >
                   <Ionicons
                     name="add"
                     size={16}
                     color="#ffffff"
-                    style={{ marginRight: 4 }}
+                    className="mr-1"
                   />
-                  <Text style={styles.emptyNewChatBtnText}>
+                  <Text className="text-white text-[12.5px] font-bold">
                     Start New Conversation
                   </Text>
                 </Pressable>
@@ -341,14 +370,23 @@ export const InboxScreen: React.FC = () => {
           animationType="slide"
           onRequestClose={() => setShowNewChatModal(false)}
         >
-          <View style={styles.modalOverlay}>
-            <View style={styles.newChatModalBox}>
-              <View style={styles.modalHeader}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.modalTitle}>
+          <View className="flex-1 bg-black/60 justify-end">
+            <View
+              className="rounded-t-3xl p-4.5 max-h-[80%] border p-4"
+              style={{ backgroundColor: color.card, borderColor: color.border }}
+            >
+              <View className="flex-row justify-between items-start mb-3">
+                <View className="flex-1">
+                  <Text
+                    className="text-[17px] font-extrabold"
+                    style={{ color: color.textPrimary }}
+                  >
                     Start New WhatsApp Chat
                   </Text>
-                  <Text style={styles.modalSub}>
+                  <Text
+                    className="text-xs mt-0.5 leading-4"
+                    style={{ color: color.textSecondary }}
+                  >
                     Select a contact from your workspace to open live chat.
                   </Text>
                 </View>
@@ -365,15 +403,19 @@ export const InboxScreen: React.FC = () => {
               </View>
 
               {/* Search Contacts */}
-              <View style={styles.contactSearchBox}>
+              <View
+                className="flex-row items-center rounded-xl px-3 py-2 border mb-2.5"
+                style={{ backgroundColor: color.background, borderColor: color.border }}
+              >
                 <Ionicons
                   name="search"
                   size={15}
                   color={color.textSecondary}
-                  style={{ marginRight: 8 }}
+                  className="mr-2"
                 />
                 <TextInput
-                  style={styles.contactSearchInput}
+                  className="flex-1 text-[13px]"
+                  style={{ color: color.textPrimary }}
                   placeholder="Search contacts by name or phone..."
                   placeholderTextColor={color.textSecondary}
                   value={contactSearchQuery}
@@ -387,14 +429,14 @@ export const InboxScreen: React.FC = () => {
                 showsVerticalScrollIndicator={false}
               >
                 {isLoadingContacts ? (
-                  <View style={{ paddingVertical: 10 }}>
+                  <View className="py-2.5">
                     {[1, 2, 3].map((i) => (
                       <SkeletonRow
                         key={i}
                         style={{ paddingVertical: 10, paddingHorizontal: 12 }}
                       >
                         <SkeletonCircle size={40} style={{ marginRight: 12 }} />
-                        <View style={{ flex: 1 }}>
+                        <View className="flex-1">
                           <SkeletonText
                             width={120}
                             height={14}
@@ -406,12 +448,10 @@ export const InboxScreen: React.FC = () => {
                     ))}
                   </View>
                 ) : filteredContacts.length === 0 ? (
-                  <View style={{ padding: 20, alignItems: "center" }}>
+                  <View className="p-5 items-center">
                     <Text
-                      style={{
-                        color: color.textSecondary,
-                        fontSize: 13,
-                      }}
+                      className="text-[13px]"
+                      style={{ color: color.textSecondary }}
                     >
                       No contacts found
                     </Text>
@@ -420,19 +460,29 @@ export const InboxScreen: React.FC = () => {
                   filteredContacts.map((cnt) => (
                     <Pressable
                       key={cnt.id}
-                      style={styles.contactItemRow}
+                      className="flex-row items-center p-3 rounded-xl mb-2 border active:opacity-75"
+                      style={{ backgroundColor: color.card, borderColor: color.border }}
                       onPress={() => handleStartChatWithContact(cnt)}
                     >
-                      <View style={styles.contactItemAvatar}>
-                        <Text style={styles.contactItemAvatarText}>
+                      <View
+                        className="w-9 h-9 rounded-full justify-center items-center mr-2.5"
+                        style={{ backgroundColor: color.primary }}
+                      >
+                        <Text className="text-white text-[15px] font-bold">
                           {cnt.name ? cnt.name.charAt(0).toUpperCase() : "C"}
                         </Text>
                       </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.contactItemName}>
+                      <View className="flex-1 min-w-0">
+                        <Text
+                          className="text-sm font-bold"
+                          style={{ color: color.textPrimary }}
+                        >
                           {cnt.name || cnt.custom_name || "Contact"}
                         </Text>
-                        <Text style={styles.contactItemPhone}>
+                        <Text
+                          className="text-[11.5px] mt-0.5"
+                          style={{ color: color.textSecondary }}
+                        >
                           +{cnt.phone || cnt.wa_id}
                         </Text>
                       </View>
@@ -473,218 +523,3 @@ export const InboxScreen: React.FC = () => {
     </AppScreen>
   );
 };
-
-function createStyles(color: ReturnType<typeof getColors>, isDark: boolean) {
-  return StyleSheet.create({
-    container: {
-      flex: 1,
-      paddingHorizontal: 14,
-    },
-    headerRightActions: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-    },
-    unreadTotalBadge: {
-      backgroundColor: color.primary,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-      borderRadius: 10,
-    },
-    unreadTotalText: {
-      color: "#ffffff",
-      fontSize: 10.5,
-      fontWeight: "800",
-    },
-    newChatBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: color.primary,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 14,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.15,
-      shadowRadius: 3,
-      elevation: 2,
-    },
-    newChatBtnText: {
-      color: "#ffffff",
-      fontSize: 12,
-      fontWeight: "700",
-    },
-    searchBar: {
-      flexDirection: "row",
-      alignItems: "center",
-      borderRadius: 14,
-      paddingHorizontal: 12,
-      paddingVertical: 9,
-      borderWidth: 1,
-      backgroundColor: color.card,
-      borderColor: color.border,
-      marginBottom: 10,
-    },
-    searchIcon: {
-      marginRight: 8,
-    },
-    searchInput: {
-      flex: 1,
-      fontSize: 13.5,
-      color: color.textPrimary,
-    },
-    tabsScroll: {
-      flexGrow: 0,
-      marginBottom: 12,
-    },
-    tabPill: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: 13,
-      paddingVertical: 6.5,
-      borderRadius: 16,
-      marginRight: 6,
-      borderWidth: 1,
-      backgroundColor: color.card,
-      borderColor: color.border,
-    },
-    activeTabPill: {
-      backgroundColor: color.primary,
-      borderColor: color.primary,
-    },
-    tabText: {
-      fontSize: 11.5,
-      fontWeight: "600",
-      color: color.textSecondary,
-    },
-    activeTabText: {
-      color: "#ffffff",
-      fontWeight: "800",
-    },
-    listContent: {
-      paddingBottom: 130,
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    loadingText: {
-      fontSize: 13,
-      marginTop: 12,
-      color: color.textSecondary,
-    },
-    emptyContainer: {
-      padding: 40,
-      alignItems: "center",
-    },
-    emptyTitle: {
-      fontSize: 15,
-      fontWeight: "700",
-      marginTop: 10,
-      marginBottom: 6,
-      color: color.textPrimary,
-    },
-    emptySubtitle: {
-      fontSize: 12.5,
-      textAlign: "center",
-      lineHeight: 18,
-      color: color.textSecondary,
-    },
-    emptyNewChatBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: color.primary,
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-      borderRadius: 12,
-      marginTop: 14,
-    },
-    emptyNewChatBtnText: {
-      color: "#ffffff",
-      fontSize: 12.5,
-      fontWeight: "700",
-    },
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: "rgba(0, 0, 0, 0.6)",
-      justifyContent: "flex-end",
-    },
-    newChatModalBox: {
-      borderTopLeftRadius: 24,
-      borderTopRightRadius: 24,
-      padding: 18,
-      maxHeight: "80%",
-      borderWidth: 1,
-      backgroundColor: color.card,
-      borderColor: color.border,
-    },
-    modalHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "flex-start",
-      marginBottom: 12,
-    },
-    modalTitle: {
-      fontSize: 17,
-      fontWeight: "800",
-      color: color.textPrimary,
-    },
-    modalSub: {
-      fontSize: 12,
-      marginTop: 2,
-      lineHeight: 16,
-      color: color.textSecondary,
-    },
-    contactSearchBox: {
-      flexDirection: "row",
-      alignItems: "center",
-      borderRadius: 12,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderWidth: 1,
-      backgroundColor: color.background,
-      borderColor: color.border,
-      marginBottom: 10,
-    },
-    contactSearchInput: {
-      flex: 1,
-      fontSize: 13,
-      color: color.textPrimary,
-    },
-    contactItemRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      padding: 12,
-      borderRadius: 12,
-      marginBottom: 8,
-      borderWidth: 1,
-      backgroundColor: color.card,
-      borderColor: color.border,
-    },
-    contactItemAvatar: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: color.primary,
-      justifyContent: "center",
-      alignItems: "center",
-      marginRight: 10,
-    },
-    contactItemAvatarText: {
-      color: "#ffffff",
-      fontSize: 15,
-      fontWeight: "700",
-    },
-    contactItemName: {
-      fontSize: 14,
-      fontWeight: "700",
-      color: color.textPrimary,
-    },
-    contactItemPhone: {
-      fontSize: 11.5,
-      marginTop: 2,
-      color: color.textSecondary,
-    },
-  });
-}

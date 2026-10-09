@@ -7,8 +7,6 @@ import {
   BackHandler,
   Platform,
   Pressable,
-  StatusBar,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -123,9 +121,9 @@ export const VoiceScreen: React.FC = () => {
       }
       if (router.canGoBack()) {
         router.back();
-      } else {
-        router.replace("/(tabs)/products");
+        return true;
       }
+      router.replace("/(tabs)/products");
       return true;
     };
 
@@ -134,7 +132,7 @@ export const VoiceScreen: React.FC = () => {
       onHardwareBack,
     );
     return () => sub.remove();
-  }, [activeTab, router]);
+  }, [activeTab]);
 
   const handleBack = () => {
     if (Platform.OS !== "web") {
@@ -151,11 +149,10 @@ export const VoiceScreen: React.FC = () => {
     }
   };
 
-  const statusBarHeight =
-    Platform.OS === "android" ? StatusBar.currentHeight || 28 : 0;
-  const topPadding =
-    Math.max(insets.top, statusBarHeight) +
-    (Platform.OS === "android" ? 10 : 6);
+  const topPadding = Math.max(
+    insets.top,
+    Platform.OS === "ios" ? 44 : 12,
+  );
 
   const themeColors = getColors(isDark);
   const colors = {
@@ -164,7 +161,7 @@ export const VoiceScreen: React.FC = () => {
     headerBg: themeColors.background,
     text: themeColors.text,
     textSecondary: themeColors.textMuted,
-    primary: themeColors.products.voice || "#5844E3",
+    primary: themeColors.products?.voice || "#5844E3",
     border: themeColors.border,
   };
 
@@ -172,19 +169,21 @@ export const VoiceScreen: React.FC = () => {
     <AppScreen safeArea={false}>
       {/* 1. TOP HEADER */}
       <View
-        style={[
-          styles.headerContainer,
-          {
-            paddingTop: topPadding,
-            backgroundColor: colors.headerBg,
-          },
-        ]}
+        className="flex-row items-center justify-between px-4 pb-2 w-full max-w-[1100px] self-center"
+        style={{
+          paddingTop: topPadding,
+          backgroundColor: colors.headerBg,
+        }}
       >
-        <View style={styles.headerLeft}>
+        <View className="flex-row items-center gap-1.5">
           <Pressable
             onPress={handleBack}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={styles.backButton}
+            className="w-10 h-10 rounded-full justify-center items-center mr-2 border active:opacity-70 active:scale-95 shadow-sm"
+            style={{
+              backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+              borderColor: isDark ? "#2C2C2E" : "#E5E7EB",
+            }}
           >
             <Ionicons
               name="chevron-back"
@@ -193,8 +192,11 @@ export const VoiceScreen: React.FC = () => {
             />
           </Pressable>
 
-          <View style={styles.brandTitleContainer}>
-            <Text style={[styles.brandMainTitle, { color: colors.text }]}>
+          <View className="justify-center">
+            <Text
+              className="text-xl font-extrabold tracking-tight"
+              style={{ color: colors.text }}
+            >
               Voice Pilot
             </Text>
           </View>
@@ -203,12 +205,10 @@ export const VoiceScreen: React.FC = () => {
 
       {/* 2. ACTIVE SCREEN CONTENT */}
       <View
-        style={[
-          styles.container,
-          { backgroundColor: colors.background },
-        ]}
+        className="flex-1 w-full"
+        style={{ backgroundColor: colors.background }}
       >
-        <View style={styles.screenContainer}>
+        <View className="flex-1 w-full max-w-[1100px] self-center">
           {activeTab === "overview" && (
             <VoiceOverviewScreen
               onNavigateTab={(tab) => setActiveTab(tab)}
@@ -276,52 +276,3 @@ export const VoiceScreen: React.FC = () => {
     </AppScreen>
   );
 };
-
-const styles = StyleSheet.create({
-  headerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    width: "100%",
-    maxWidth: 1100,
-    alignSelf: "center",
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  backButton: {
-    paddingRight: 2,
-    paddingVertical: 4,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  brandTitleContainer: {
-    justifyContent: "center",
-  },
-  brandMainTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    letterSpacing: -0.5,
-  },
-  brandSubTitle: {
-    fontSize: 12.5,
-    fontWeight: "600",
-    letterSpacing: -0.2,
-    marginTop: -1,
-  },
-
-  container: {
-    flex: 1,
-    width: "100%",
-  },
-  screenContainer: {
-    flex: 1,
-    width: "100%",
-    maxWidth: 1100,
-    alignSelf: "center",
-  },
-});

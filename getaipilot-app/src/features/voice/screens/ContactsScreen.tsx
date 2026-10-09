@@ -11,7 +11,6 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -258,8 +257,15 @@ export const ContactsScreen: React.FC = () => {
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.content}
+      className="flex-1 w-full"
+      style={{ backgroundColor: colors.background }}
+      contentContainerStyle={{
+        paddingHorizontal: 16,
+        paddingTop: 6,
+        paddingBottom: 100,
+        gap: 12,
+        width: "100%",
+      }}
       refreshControl={
         <RefreshControl
           refreshing={isContactsRefetching}
@@ -270,15 +276,21 @@ export const ContactsScreen: React.FC = () => {
       showsVerticalScrollIndicator={false}
     >
       {/* 1. TITLE SECTION */}
-      <View style={styles.headingSection}>
-        <Text style={[styles.mainHeading, { color: colors.text }]}>
+      <View className="pt-0.5 gap-0.5 w-full">
+        <Text
+          className="text-2xl leading-7 font-extrabold tracking-tight"
+          style={{ color: colors.text }}
+        >
           {activeSubTab === "contacts"
             ? "Contacts & Leads"
             : activeSubTab === "numbers"
               ? "Dedicated Phone Lines"
               : "AI Voice Assistants"}
         </Text>
-        <Text style={[styles.subHeading, { color: colors.textSecondary }]}>
+        <Text
+          className="text-[12.5px] leading-[17px] font-medium"
+          style={{ color: colors.textSecondary }}
+        >
           {activeSubTab === "contacts"
             ? "Manage customer phone numbers and outbound lists."
             : activeSubTab === "numbers"
@@ -289,18 +301,12 @@ export const ContactsScreen: React.FC = () => {
 
       {/* 2. 3-WAY SUB-TAB SWITCHER */}
       <View
-        style={[
-          styles.subTabBar,
-          { backgroundColor: colors.surface, borderColor: colors.border },
-        ]}
+        className="flex-row items-center p-1 rounded-2xl border w-full gap-1 mb-1"
+        style={{ backgroundColor: colors.surface, borderColor: colors.border }}
       >
         <Pressable
-          style={[
-            styles.subTabItem,
-            activeSubTab === "contacts" && {
-              backgroundColor: colors.primary,
-            },
-          ]}
+          className="flex-1 flex-row items-center justify-center py-2 px-2 rounded-xl gap-1.5 active:opacity-80"
+          style={activeSubTab === "contacts" ? { backgroundColor: colors.primary } : undefined}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setActiveSubTab("contacts");
@@ -314,28 +320,22 @@ export const ContactsScreen: React.FC = () => {
             }
           />
           <Text
-            style={[
-              styles.subTabText,
-              {
-                color:
-                  activeSubTab === "contacts"
-                    ? "#FFFFFF"
-                    : colors.textSecondary,
-                fontWeight: activeSubTab === "contacts" ? "700" : "600",
-              },
-            ]}
+            className="text-xs tracking-tight"
+            style={{
+              color:
+                activeSubTab === "contacts"
+                  ? "#FFFFFF"
+                  : colors.textSecondary,
+              fontWeight: activeSubTab === "contacts" ? "700" : "600",
+            }}
           >
             Contacts ({totalContacts})
           </Text>
         </Pressable>
 
         <Pressable
-          style={[
-            styles.subTabItem,
-            activeSubTab === "numbers" && {
-              backgroundColor: colors.primary,
-            },
-          ]}
+          className="flex-1 flex-row items-center justify-center py-2 px-2 rounded-xl gap-1.5 active:opacity-80"
+          style={activeSubTab === "numbers" ? { backgroundColor: colors.primary } : undefined}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setActiveSubTab("numbers");
@@ -349,41 +349,35 @@ export const ContactsScreen: React.FC = () => {
             }
           />
           <Text
-            style={[
-              styles.subTabText,
-              {
-                color:
-                  activeSubTab === "numbers"
-                    ? "#FFFFFF"
-                    : colors.textSecondary,
-                fontWeight: activeSubTab === "numbers" ? "700" : "600",
-              },
-            ]}
+            className="text-xs tracking-tight"
+            style={{
+              color:
+                activeSubTab === "numbers"
+                  ? "#FFFFFF"
+                  : colors.textSecondary,
+              fontWeight: activeSubTab === "numbers" ? "700" : "600",
+            }}
           >
             Lines ({totalNumbers})
           </Text>
           {expiredNumbersCount > 0 && (
             <View
-              style={[
-                styles.expiredBadgeDot,
-                {
-                  backgroundColor:
-                    activeSubTab === "numbers"
-                      ? "rgba(255, 255, 255, 0.25)"
-                      : isDark
-                        ? "rgba(245, 158, 11, 0.2)"
-                        : "#FEF3C7",
-                },
-              ]}
+              className="px-1.5 py-0.5 rounded-full items-center justify-center"
+              style={{
+                backgroundColor:
+                  activeSubTab === "numbers"
+                    ? "rgba(255, 255, 255, 0.25)"
+                    : isDark
+                      ? "rgba(245, 158, 11, 0.2)"
+                      : "#FEF3C7",
+              }}
             >
               <Text
-                style={[
-                  styles.expiredBadgeDotText,
-                  {
-                    color:
-                      activeSubTab === "numbers" ? "#FFFFFF" : "#D97706",
-                  },
-                ]}
+                className="text-[10px] font-bold"
+                style={{
+                  color:
+                    activeSubTab === "numbers" ? "#FFFFFF" : "#D97706",
+                }}
               >
                 {expiredNumbersCount}
               </Text>
@@ -392,12 +386,8 @@ export const ContactsScreen: React.FC = () => {
         </Pressable>
 
         <Pressable
-          style={[
-            styles.subTabItem,
-            activeSubTab === "assistants" && {
-              backgroundColor: colors.primary,
-            },
-          ]}
+          className="flex-1 flex-row items-center justify-center py-2 px-2 rounded-xl gap-1.5 active:opacity-80"
+          style={activeSubTab === "assistants" ? { backgroundColor: colors.primary } : undefined}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setActiveSubTab("assistants");
@@ -411,16 +401,14 @@ export const ContactsScreen: React.FC = () => {
             }
           />
           <Text
-            style={[
-              styles.subTabText,
-              {
-                color:
-                  activeSubTab === "assistants"
-                    ? "#FFFFFF"
-                    : colors.textSecondary,
-                fontWeight: activeSubTab === "assistants" ? "700" : "600",
-              },
-            ]}
+            className="text-xs tracking-tight"
+            style={{
+              color:
+                activeSubTab === "assistants"
+                  ? "#FFFFFF"
+                  : colors.textSecondary,
+              fontWeight: activeSubTab === "assistants" ? "700" : "600",
+            }}
           >
             Agents ({assistants.length})
           </Text>
@@ -429,17 +417,14 @@ export const ContactsScreen: React.FC = () => {
 
       {/* 3. CONTACTS TAB VIEW */}
       {activeSubTab === "contacts" && (
-        <View style={styles.tabContentContainer}>
-          <View style={styles.topActionsRow}>
+        <View className="gap-2.5">
+          <View className="flex-row gap-2 w-full">
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Import CSV"
               onPress={handleImportCsv}
-              style={({ pressed }) => [
-                styles.importCsvBtn,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-                pressed && { opacity: 0.8 },
-              ]}
+              className="flex-1 h-[42px] rounded-xl border flex-row items-center justify-center gap-1.5 active:opacity-80"
+              style={{ backgroundColor: colors.surface, borderColor: colors.border }}
             >
               <Ionicons
                 name="cloud-upload-outline"
@@ -447,7 +432,8 @@ export const ContactsScreen: React.FC = () => {
                 color={colors.primary}
               />
               <Text
-                style={[styles.importCsvBtnText, { color: colors.primary }]}
+                className="text-[13px] font-bold"
+                style={{ color: colors.primary }}
               >
                 Import CSV
               </Text>
@@ -460,80 +446,86 @@ export const ContactsScreen: React.FC = () => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 setIsCreateModalOpen(true);
               }}
-              style={({ pressed }) => [
-                styles.addContactBtn,
-                { backgroundColor: colors.primary },
-                pressed && { opacity: 0.85 },
-              ]}
+              className="flex-1 h-[42px] rounded-xl flex-row items-center justify-center gap-1.5 active:opacity-85"
+              style={{ backgroundColor: colors.primary }}
             >
               <Ionicons name="add" size={16} color="#FFFFFF" />
-              <Text style={styles.addContactBtnText}>Add Contact</Text>
+              <Text className="text-white text-[13.5px] font-bold">Add Contact</Text>
             </Pressable>
           </View>
 
           {/* 3-Metric Stats Row */}
-          <View style={styles.statsRow}>
+          <View className="flex-row gap-2 w-full">
             <View
-              style={[
-                styles.statCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
+              className="flex-1 p-2.5 rounded-xl border min-h-[68px] justify-between shadow-sm min-w-0"
+              style={{ flexBasis: 0, backgroundColor: colors.surface, borderColor: colors.border }}
             >
-              <View style={styles.statHeader}>
+              <View className="flex-row items-center gap-1">
                 <Ionicons
                   name="people-outline"
                   size={13}
                   color={colors.primary}
                 />
                 <Text
-                  style={[styles.statLabel, { color: colors.textSecondary }]}
+                  className="text-[11px] font-semibold flex-1 min-w-0"
+                  style={{ color: colors.textSecondary }}
+                  numberOfLines={1}
                 >
                   Contacts
                 </Text>
               </View>
-              <Text style={[styles.statValue, { color: colors.text }]}>
+              <Text
+                className="text-[19px] font-extrabold tracking-tight mt-0.5"
+                style={{ color: colors.text }}
+              >
                 {totalContacts}
               </Text>
             </View>
 
             <View
-              style={[
-                styles.statCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
+              className="flex-1 p-2.5 rounded-xl border min-h-[68px] justify-between shadow-sm min-w-0"
+              style={{ flexBasis: 0, backgroundColor: colors.surface, borderColor: colors.border }}
             >
-              <View style={styles.statHeader}>
+              <View className="flex-row items-center gap-1">
                 <Ionicons
                   name="shield-checkmark-outline"
                   size={13}
                   color={colors.green}
                 />
                 <Text
-                  style={[styles.statLabel, { color: colors.textSecondary }]}
+                  className="text-[11px] font-semibold flex-1 min-w-0"
+                  style={{ color: colors.textSecondary }}
+                  numberOfLines={1}
                 >
                   Reachability
                 </Text>
               </View>
-              <Text style={[styles.statValue, { color: colors.text }]}>
+              <Text
+                className="text-[19px] font-extrabold tracking-tight mt-0.5"
+                style={{ color: colors.text }}
+              >
                 {totalContacts > 0 ? "100%" : "0%"}
               </Text>
             </View>
 
             <View
-              style={[
-                styles.statCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
+              className="flex-1 p-2.5 rounded-xl border min-h-[68px] justify-between shadow-sm min-w-0"
+              style={{ flexBasis: 0, backgroundColor: colors.surface, borderColor: colors.border }}
             >
-              <View style={styles.statHeader}>
+              <View className="flex-row items-center gap-1">
                 <Ionicons name="star" size={13} color={colors.amber} />
                 <Text
-                  style={[styles.statLabel, { color: colors.textSecondary }]}
+                  className="text-[11px] font-semibold flex-1 min-w-0"
+                  style={{ color: colors.textSecondary }}
+                  numberOfLines={1}
                 >
                   Active Leads
                 </Text>
               </View>
-              <Text style={[styles.statValue, { color: colors.text }]}>
+              <Text
+                className="text-[19px] font-extrabold tracking-tight mt-0.5"
+                style={{ color: colors.text }}
+              >
                 {activeLeads}
               </Text>
             </View>
@@ -541,15 +533,13 @@ export const ContactsScreen: React.FC = () => {
 
           {/* Search Input */}
           <View
-            style={[
-              styles.searchBar,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
+            className="flex-row items-center h-10 rounded-xl border px-2.5 gap-1.5"
+            style={{ backgroundColor: colors.surface, borderColor: colors.border }}
           >
             <Ionicons name="search" size={15} color={colors.textSecondary} />
             <TextInput
+              className="flex-1 text-[13px] font-medium py-0 h-full"
               style={[
-                styles.searchInput,
                 { color: colors.text },
                 Platform.OS === "web"
                   ? ({ outlineStyle: "none", outlineWidth: 0 } as any)
@@ -572,17 +562,18 @@ export const ContactsScreen: React.FC = () => {
           </View>
 
           {/* Filter Dropdowns Row */}
-          <View style={styles.dropdownRow}>
+          <View className="flex-row gap-2">
             <Pressable
-              style={[
-                styles.dropdownPill,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
+              className="flex-1 h-9 rounded-xl border flex-row items-center justify-between px-2.5 active:opacity-80"
+              style={{ backgroundColor: colors.surface, borderColor: colors.border }}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
             >
-              <Text style={[styles.dropdownPillText, { color: colors.text }]}>
+              <Text
+                className="text-xs font-semibold"
+                style={{ color: colors.text }}
+              >
                 {statusFilter}
               </Text>
               <Ionicons
@@ -593,15 +584,16 @@ export const ContactsScreen: React.FC = () => {
             </Pressable>
 
             <Pressable
-              style={[
-                styles.dropdownPill,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
+              className="flex-1 h-9 rounded-xl border flex-row items-center justify-between px-2.5 active:opacity-80"
+              style={{ backgroundColor: colors.surface, borderColor: colors.border }}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
             >
-              <Text style={[styles.dropdownPillText, { color: colors.text }]}>
+              <Text
+                className="text-xs font-semibold"
+                style={{ color: colors.text }}
+              >
                 {sourceFilter}
               </Text>
               <Ionicons
@@ -621,34 +613,32 @@ export const ContactsScreen: React.FC = () => {
             />
           ) : filteredContacts.length === 0 ? (
             <View
-              style={[
-                styles.emptyCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
+              className="rounded-2xl border py-9 px-4 items-center justify-center gap-2"
+              style={{ backgroundColor: colors.surface, borderColor: colors.border }}
             >
               <View
-                style={[
-                  styles.emptyIconCircle,
-                  { backgroundColor: colors.primaryLight },
-                ]}
+                className="w-[60px] h-[60px] rounded-full items-center justify-center mb-0.5"
+                style={{ backgroundColor: colors.primaryLight }}
               >
                 <Ionicons name="people" size={30} color={colors.primary} />
               </View>
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>
+              <Text
+                className="text-base font-extrabold tracking-tight"
+                style={{ color: colors.text }}
+              >
                 No contacts found
               </Text>
               <Text
-                style={[styles.emptySubtitle, { color: colors.textSecondary }]}
+                className="text-xs font-medium text-center max-w-[220px] leading-4"
+                style={{ color: colors.textSecondary }}
               >
                 Add Contact or Import CSV to begin.
               </Text>
             </View>
           ) : (
             <View
-              style={[
-                styles.contactsListCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
+              className="rounded-2xl border overflow-hidden"
+              style={{ backgroundColor: colors.surface, borderColor: colors.border }}
             >
               {filteredContacts.map((cnt, idx, arr) => {
                 const initials = getInitials(cnt.name);
@@ -659,56 +649,44 @@ export const ContactsScreen: React.FC = () => {
                 return (
                   <View key={cnt.id || idx}>
                     <Pressable
-                      style={({ pressed }) => [
-                        styles.contactRow,
-                        pressed && { opacity: 0.75 },
-                      ]}
+                      className="flex-row items-center py-2.5 px-3 gap-2.5 active:opacity-75"
                       onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                         setSelectedContact(cnt);
                       }}
                     >
                       <View
-                        style={[
-                          styles.avatarCircle,
-                          { backgroundColor: colors.primaryLight },
-                        ]}
+                        className="w-[34px] h-[34px] rounded-full items-center justify-center"
+                        style={{ backgroundColor: colors.primaryLight }}
                       >
                         <Text
-                          style={[
-                            styles.avatarInitials,
-                            { color: colors.primary },
-                          ]}
+                          className="text-xs font-extrabold"
+                          style={{ color: colors.primary }}
                         >
                           {initials}
                         </Text>
                       </View>
 
-                      <View style={styles.contactMainInfo}>
+                      <View className="flex-1 min-w-0 gap-0.5">
                         <Text
-                          style={[
-                            styles.contactNameText,
-                            { color: colors.text },
-                          ]}
+                          className="text-[13.5px] font-bold tracking-tight"
+                          style={{ color: colors.text }}
                           numberOfLines={1}
                         >
                           {cnt.name}
                         </Text>
                         <Text
-                          style={[
-                            styles.contactRoleText,
-                            { color: colors.textSecondary },
-                          ]}
+                          className="text-[11.5px] font-medium"
+                          style={{ color: colors.textSecondary }}
+                          numberOfLines={1}
                         >
                           {cnt.phone} • {role}
                         </Text>
                       </View>
 
                       <Pressable
-                        style={[
-                          styles.quickCallBtn,
-                          { backgroundColor: colors.primaryLight },
-                        ]}
+                        className="w-[30px] h-[30px] rounded-full items-center justify-center mr-0.5 active:opacity-70"
+                        style={{ backgroundColor: colors.primaryLight }}
                         onPress={(e) => {
                           e.stopPropagation();
                           Haptics.impactAsync(
@@ -733,10 +711,8 @@ export const ContactsScreen: React.FC = () => {
 
                     {idx < arr.length - 1 && (
                       <View
-                        style={[
-                          styles.contactDivider,
-                          { backgroundColor: colors.border },
-                        ]}
+                        className="h-[1px] ml-14"
+                        style={{ backgroundColor: colors.border }}
                       />
                     )}
                   </View>
@@ -749,81 +725,92 @@ export const ContactsScreen: React.FC = () => {
 
       {/* 4. PHONE LINES TAB VIEW */}
       {activeSubTab === "numbers" && (
-        <View style={styles.tabContentContainer}>
-          <View style={styles.statsRow}>
+        <View className="gap-2.5">
+          <View className="flex-row gap-2 w-full">
             <View
-              style={[
-                styles.statCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
+              className="flex-1 p-2.5 rounded-xl border min-h-[68px] justify-between shadow-sm min-w-0"
+              style={{ flexBasis: 0, backgroundColor: colors.surface, borderColor: colors.border }}
             >
-              <View style={styles.statHeader}>
+              <View className="flex-row items-center gap-1">
                 <Ionicons
                   name="phone-portrait-outline"
                   size={13}
                   color={colors.primary}
                 />
                 <Text
-                  style={[styles.statLabel, { color: colors.textSecondary }]}
+                  className="text-[11px] font-semibold flex-1 min-w-0"
+                  style={{ color: colors.textSecondary }}
+                  numberOfLines={1}
                 >
                   Lines
                 </Text>
               </View>
-              <Text style={[styles.statValue, { color: colors.text }]}>
+              <Text
+                className="text-[19px] font-extrabold tracking-tight mt-0.5"
+                style={{ color: colors.text }}
+              >
                 {totalNumbers}
               </Text>
             </View>
 
             <View
-              style={[
-                styles.statCard,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: isDark ? colors.border : "#DCFCE7",
-                },
-              ]}
+              className="flex-1 p-2.5 rounded-xl border min-h-[68px] justify-between shadow-sm min-w-0"
+              style={{
+                flexBasis: 0,
+                backgroundColor: colors.surface,
+                borderColor: isDark ? colors.border : "#DCFCE7",
+              }}
             >
-              <View style={styles.statHeader}>
+              <View className="flex-row items-center gap-1">
                 <Ionicons
                   name="checkmark-circle-outline"
                   size={13}
                   color={colors.green}
                 />
                 <Text
-                  style={[styles.statLabel, { color: colors.green }]}
+                  className="text-[11px] font-semibold flex-1 min-w-0"
+                  style={{ color: colors.green }}
+                  numberOfLines={1}
                 >
                   Bound
                 </Text>
               </View>
-              <Text style={[styles.statValue, { color: colors.green }]}>
+              <Text
+                className="text-[19px] font-extrabold tracking-tight mt-0.5"
+                style={{ color: colors.green }}
+              >
                 {activeNumbersCount}
               </Text>
             </View>
 
             <View
-              style={[
-                styles.statCard,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: isDark
-                    ? colors.border
-                    : "rgba(245, 158, 11, 0.25)",
-                },
-              ]}
+              className="flex-1 p-2.5 rounded-xl border min-h-[68px] justify-between shadow-sm min-w-0"
+              style={{
+                flexBasis: 0,
+                backgroundColor: colors.surface,
+                borderColor: isDark
+                  ? colors.border
+                  : "rgba(245, 158, 11, 0.25)",
+              }}
             >
-              <View style={styles.statHeader}>
+              <View className="flex-row items-center gap-1">
                 <Ionicons
                   name="pause-circle-outline"
                   size={13}
                   color={colors.amber}
                 />
                 <Text
-                  style={[styles.statLabel, { color: colors.amber }]}
+                  className="text-[11px] font-semibold flex-1 min-w-0"
+                  style={{ color: colors.amber }}
+                  numberOfLines={1}
                 >
                   Expired
                 </Text>
               </View>
-              <Text style={[styles.statValue, { color: colors.amber }]}>
+              <Text
+                className="text-[19px] font-extrabold tracking-tight mt-0.5"
+                style={{ color: colors.amber }}
+              >
                 {expiredNumbersCount}
               </Text>
             </View>
@@ -832,19 +819,15 @@ export const ContactsScreen: React.FC = () => {
           {/* Web Billing Banner */}
           <Pressable
             onPress={() => openVoicePhoneNumbersSSO(queryClient, isDark)}
-            style={[
-              styles.webManageBanner,
-              {
-                backgroundColor: isDark ? "#121320" : "#EEF2FF",
-                borderColor: isDark ? "#282664" : "#C7D2FE",
-              },
-            ]}
+            className="flex-row items-center p-2.5 rounded-xl border gap-2.5 active:opacity-85"
+            style={{
+              backgroundColor: isDark ? "#121320" : "#EEF2FF",
+              borderColor: isDark ? "#282664" : "#C7D2FE",
+            }}
           >
             <View
-              style={[
-                styles.webManageIconCircle,
-                { backgroundColor: isDark ? "#1E1B4B" : "#EEF2FF" },
-              ]}
+              className="w-[30px] h-[30px] rounded-full items-center justify-center"
+              style={{ backgroundColor: isDark ? "#1E1B4B" : "#EEF2FF" }}
             >
               <Image
                 source={require("../../../../assets/images/logobag.png")}
@@ -852,20 +835,18 @@ export const ContactsScreen: React.FC = () => {
                 resizeMode="contain"
               />
             </View>
-            <View style={styles.webManageInfo}>
+            <View className="flex-1 min-w-0 gap-0.5">
               <Text
-                style={[
-                  styles.webManageTitle,
-                  { color: isDark ? "#FFFFFF" : "#1E1B4B" },
-                ]}
+                className="text-[13px] font-bold tracking-tight"
+                style={{ color: isDark ? "#FFFFFF" : "#1E1B4B" }}
+                numberOfLines={1}
               >
                 Add Dedicated Phone Lines
               </Text>
               <Text
-                style={[
-                  styles.webManageSubtitle,
-                  { color: isDark ? "#94A3B8" : "#4338CA" },
-                ]}
+                className="text-[11px] font-medium"
+                style={{ color: isDark ? "#94A3B8" : "#4338CA" }}
+                numberOfLines={1}
               >
                 Buy &amp; renew business numbers on VoicePilot Web
               </Text>
@@ -886,16 +867,12 @@ export const ContactsScreen: React.FC = () => {
             />
           ) : numbers.length === 0 ? (
             <View
-              style={[
-                styles.emptyCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
+              className="rounded-2xl border py-9 px-4 items-center justify-center gap-2"
+              style={{ backgroundColor: colors.surface, borderColor: colors.border }}
             >
               <View
-                style={[
-                  styles.emptyIconCircle,
-                  { backgroundColor: colors.primaryLight },
-                ]}
+                className="w-[60px] h-[60px] rounded-full items-center justify-center mb-0.5"
+                style={{ backgroundColor: colors.primaryLight }}
               >
                 <Ionicons
                   name="phone-portrait-outline"
@@ -903,30 +880,32 @@ export const ContactsScreen: React.FC = () => {
                   color={colors.primary}
                 />
               </View>
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>
+              <Text
+                className="text-base font-extrabold tracking-tight"
+                style={{ color: colors.text }}
+              >
                 No phone lines found
               </Text>
               <Text
-                style={[styles.emptySubtitle, { color: colors.textSecondary }]}
+                className="text-xs font-medium text-center max-w-[220px] leading-4"
+                style={{ color: colors.textSecondary }}
               >
                 Get a dedicated telecom line for your assistants on VoicePilot.
               </Text>
               <Pressable
                 onPress={() => openVoicePhoneNumbersSSO(queryClient, isDark)}
-                style={styles.addNumberWebButton}
+                className="mt-2.5 flex-row items-center justify-center bg-[#4F46E5] py-2 px-3.5 rounded-lg gap-1.5 active:opacity-85"
               >
                 <Ionicons name="globe-outline" size={14} color="#FFFFFF" />
-                <Text style={styles.addNumberWebText}>
+                <Text className="text-white text-xs font-bold">
                   Get Dedicated Line · ₹1,499/mo
                 </Text>
               </Pressable>
             </View>
           ) : (
             <View
-              style={[
-                styles.contactsListCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
+              className="rounded-2xl border overflow-hidden"
+              style={{ backgroundColor: colors.surface, borderColor: colors.border }}
             >
               {numbers.map((num, idx, arr) => {
                 const isExpired = num.isExpired || num.status === "expired";
@@ -935,20 +914,18 @@ export const ContactsScreen: React.FC = () => {
                 return (
                   <View key={num.id || idx}>
                     <Pressable
-                      style={styles.numberRow}
+                      className="flex-row items-center py-2.5 px-3 gap-2.5 active:opacity-75"
                       onPress={() => handleAssignBot(num)}
                     >
                       <View
-                        style={[
-                          styles.numberIconCircle,
-                          {
-                            backgroundColor: isExpired
-                              ? colors.amberLight
-                              : isAssigned
-                                ? colors.greenLight
-                                : colors.primaryLight,
-                          },
-                        ]}
+                        className="w-[34px] h-[34px] rounded-full items-center justify-center"
+                        style={{
+                          backgroundColor: isExpired
+                            ? colors.amberLight
+                            : isAssigned
+                              ? colors.greenLight
+                              : colors.primaryLight,
+                        }}
                       >
                         <Ionicons
                           name="phone-portrait"
@@ -963,39 +940,34 @@ export const ContactsScreen: React.FC = () => {
                         />
                       </View>
 
-                      <View style={styles.numberMainInfo}>
-                        <View style={styles.numberHeaderRow}>
+                      <View className="flex-1 min-w-0 gap-0.5">
+                        <View className="flex-row items-center justify-between gap-1.5">
                           <Text
-                            style={[
-                              styles.numberPhoneText,
-                              { color: colors.text },
-                            ]}
+                            className="text-sm font-extrabold tracking-tight"
+                            style={{ color: colors.text }}
+                            numberOfLines={1}
                           >
                             {num.phone_number}
                           </Text>
                           <View
-                            style={[
-                              styles.numberStatusBadge,
-                              {
-                                backgroundColor: isExpired
-                                  ? colors.amberLight
-                                  : isAssigned
-                                    ? colors.greenLight
-                                    : colors.primaryLight,
-                              },
-                            ]}
+                            className="px-1.5 py-0.5 rounded"
+                            style={{
+                              backgroundColor: isExpired
+                                ? colors.amberLight
+                                : isAssigned
+                                  ? colors.greenLight
+                                  : colors.primaryLight,
+                            }}
                           >
                             <Text
-                              style={[
-                                styles.numberStatusText,
-                                {
-                                  color: isExpired
-                                    ? "#D97706"
-                                    : isAssigned
-                                      ? colors.green
-                                      : colors.primary,
-                                },
-                              ]}
+                              className="text-[10px] font-bold"
+                              style={{
+                                color: isExpired
+                                  ? "#D97706"
+                                  : isAssigned
+                                    ? colors.green
+                                    : colors.primary,
+                              }}
                             >
                               {isExpired
                                 ? "Plan Expired"
@@ -1007,10 +979,9 @@ export const ContactsScreen: React.FC = () => {
                         </View>
 
                         <Text
-                          style={[
-                            styles.numberSubText,
-                            { color: colors.textSecondary },
-                          ]}
+                          className="text-[11.5px] font-medium"
+                          style={{ color: colors.textSecondary }}
+                          numberOfLines={1}
                         >
                           {num.assistants?.name
                             ? `Bound to: ${num.assistants.name}`
@@ -1029,10 +1000,8 @@ export const ContactsScreen: React.FC = () => {
 
                     {idx < arr.length - 1 && (
                       <View
-                        style={[
-                          styles.contactDivider,
-                          { backgroundColor: colors.border },
-                        ]}
+                        className="h-[1px] ml-14"
+                        style={{ backgroundColor: colors.border }}
                       />
                     )}
                   </View>
@@ -1045,8 +1014,8 @@ export const ContactsScreen: React.FC = () => {
 
       {/* 5. AI ASSISTANTS TAB VIEW */}
       {activeSubTab === "assistants" && (
-        <View style={styles.tabContentContainer}>
-          <View style={styles.topActionsRow}>
+        <View className="gap-2.5">
+          <View className="flex-row gap-2 w-full">
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Create Voice Agent"
@@ -1054,88 +1023,96 @@ export const ContactsScreen: React.FC = () => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 setIsCreateAgentOpen(true);
               }}
-              style={({ pressed }) => [
-                styles.addContactBtn,
-                { backgroundColor: colors.primary },
-                pressed && { opacity: 0.85 },
-              ]}
+              className="flex-1 h-[42px] rounded-xl flex-row items-center justify-center gap-1.5 active:opacity-85"
+              style={{ backgroundColor: colors.primary }}
             >
               <Ionicons name="add" size={16} color="#FFFFFF" />
-              <Text style={styles.addContactBtnText}>Create Voice Agent</Text>
+              <Text className="text-white text-[13.5px] font-bold">Create Voice Agent</Text>
             </Pressable>
           </View>
 
           {/* Stats Row */}
-          <View style={styles.statsRow}>
+          <View className="flex-row gap-2 w-full">
             <View
-              style={[
-                styles.statCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
+              className="flex-1 p-2.5 rounded-xl border min-h-[68px] justify-between shadow-sm min-w-0"
+              style={{ flexBasis: 0, backgroundColor: colors.surface, borderColor: colors.border }}
             >
-              <View style={styles.statHeader}>
+              <View className="flex-row items-center gap-1">
                 <Ionicons name="mic-outline" size={13} color={colors.primary} />
                 <Text
-                  style={[styles.statLabel, { color: colors.textSecondary }]}
+                  className="text-[11px] font-semibold flex-1 min-w-0"
+                  style={{ color: colors.textSecondary }}
+                  numberOfLines={1}
                 >
                   Agents
                 </Text>
               </View>
-              <Text style={[styles.statValue, { color: colors.text }]}>
+              <Text
+                className="text-[19px] font-extrabold tracking-tight mt-0.5"
+                style={{ color: colors.text }}
+              >
                 {assistants.length}
               </Text>
             </View>
 
             <View
-              style={[
-                styles.statCard,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: isDark ? colors.border : "#DCFCE7",
-                },
-              ]}
+              className="flex-1 p-2.5 rounded-xl border min-h-[68px] justify-between shadow-sm min-w-0"
+              style={{
+                flexBasis: 0,
+                backgroundColor: colors.surface,
+                borderColor: isDark ? colors.border : "#DCFCE7",
+              }}
             >
-              <View style={styles.statHeader}>
+              <View className="flex-row items-center gap-1">
                 <Ionicons
                   name="phone-portrait-outline"
                   size={13}
                   color={colors.green}
                 />
                 <Text
-                  style={[styles.statLabel, { color: colors.green }]}
+                  className="text-[11px] font-semibold flex-1 min-w-0"
+                  style={{ color: colors.green }}
+                  numberOfLines={1}
                 >
                   Bound Lines
                 </Text>
               </View>
-              <Text style={[styles.statValue, { color: colors.green }]}>
+              <Text
+                className="text-[19px] font-extrabold tracking-tight mt-0.5"
+                style={{ color: colors.green }}
+              >
                 {boundAssistantsCount}
               </Text>
             </View>
 
             <View
-              style={[
-                styles.statCard,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: isDark
-                    ? colors.border
-                    : "rgba(245, 158, 11, 0.25)",
-                },
-              ]}
+              className="flex-1 p-2.5 rounded-xl border min-h-[68px] justify-between shadow-sm min-w-0"
+              style={{
+                flexBasis: 0,
+                backgroundColor: colors.surface,
+                borderColor: isDark
+                  ? colors.border
+                  : "rgba(245, 158, 11, 0.25)",
+              }}
             >
-              <View style={styles.statHeader}>
+              <View className="flex-row items-center gap-1">
                 <Ionicons
                   name="alert-circle-outline"
                   size={13}
                   color={colors.amber}
                 />
                 <Text
-                  style={[styles.statLabel, { color: colors.amber }]}
+                  className="text-[11px] font-semibold flex-1 min-w-0"
+                  style={{ color: colors.amber }}
+                  numberOfLines={1}
                 >
                   Unassigned
                 </Text>
               </View>
-              <Text style={[styles.statValue, { color: colors.amber }]}>
+              <Text
+                className="text-[19px] font-extrabold tracking-tight mt-0.5"
+                style={{ color: colors.amber }}
+              >
                 {Math.max(0, assistants.length - boundAssistantsCount)}
               </Text>
             </View>
@@ -1150,30 +1127,30 @@ export const ContactsScreen: React.FC = () => {
             />
           ) : assistants.length === 0 ? (
             <View
-              style={[
-                styles.emptyCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
+              className="rounded-2xl border py-9 px-4 items-center justify-center gap-2"
+              style={{ backgroundColor: colors.surface, borderColor: colors.border }}
             >
               <View
-                style={[
-                  styles.emptyIconCircle,
-                  { backgroundColor: colors.primaryLight },
-                ]}
+                className="w-[60px] h-[60px] rounded-full items-center justify-center mb-0.5"
+                style={{ backgroundColor: colors.primaryLight }}
               >
                 <Ionicons name="mic-outline" size={30} color={colors.primary} />
               </View>
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>
+              <Text
+                className="text-base font-extrabold tracking-tight"
+                style={{ color: colors.text }}
+              >
                 No Voice Agents Found
               </Text>
               <Text
-                style={[styles.emptySubtitle, { color: colors.textSecondary }]}
+                className="text-xs font-medium text-center max-w-[220px] leading-4"
+                style={{ color: colors.textSecondary }}
               >
                 Create your first AI voice assistant to begin calling prospects.
               </Text>
             </View>
           ) : (
-            <View style={styles.assistantListContainer}>
+            <View className="gap-2.5">
               {assistants.map((ast) => {
                 const boundLine = numbers.find(
                   (n) =>
@@ -1186,24 +1163,20 @@ export const ContactsScreen: React.FC = () => {
                 return (
                   <View
                     key={ast.id}
-                    style={[
-                      styles.assistantCardItem,
-                      {
-                        backgroundColor: colors.surface,
-                        borderColor: colors.border,
-                      },
-                    ]}
+                    className="rounded-2xl border p-3 gap-2.5 shadow-sm"
+                    style={{
+                      backgroundColor: colors.surface,
+                      borderColor: colors.border,
+                    }}
                   >
-                    <View style={styles.astCardHeader}>
+                    <View className="flex-row items-center gap-2.5">
                       <View
-                        style={[
-                          styles.astAvatarWrap,
-                          {
-                            backgroundColor: isAssigned
-                              ? colors.greenLight
-                              : colors.primaryLight,
-                          },
-                        ]}
+                        className="w-[34px] h-[34px] rounded-xl items-center justify-center"
+                        style={{
+                          backgroundColor: isAssigned
+                            ? colors.greenLight
+                            : colors.primaryLight,
+                        }}
                       >
                         <Ionicons
                           name="mic"
@@ -1211,43 +1184,38 @@ export const ContactsScreen: React.FC = () => {
                           color={isAssigned ? colors.green : colors.primary}
                         />
                       </View>
-                      <View style={{ flex: 1, gap: 1 }}>
-                        <View style={styles.astNameRow}>
+                      <View className="flex-1 min-w-0 gap-0.5">
+                        <View className="flex-row items-center justify-between gap-1.5">
                           <Text
-                            style={[styles.astTitleText, { color: colors.text }]}
+                            className="text-sm font-bold tracking-tight"
+                            style={{ color: colors.text }}
                             numberOfLines={1}
                           >
                             {ast.name}
                           </Text>
                           <View
-                            style={[
-                              styles.astStatusBadge,
-                              {
-                                backgroundColor: isAssigned
-                                  ? colors.greenLight
-                                  : colors.primaryLight,
-                              },
-                            ]}
+                            className="px-1.5 py-0.5 rounded"
+                            style={{
+                              backgroundColor: isAssigned
+                                ? colors.greenLight
+                                : colors.primaryLight,
+                            }}
                           >
                             <Text
-                              style={[
-                                styles.astStatusBadgeText,
-                                {
-                                  color: isAssigned
-                                    ? colors.green
-                                    : colors.primary,
-                                },
-                              ]}
+                              className="text-[9.5px] font-bold capitalize"
+                              style={{
+                                color: isAssigned
+                                  ? colors.green
+                                  : colors.primary,
+                              }}
                             >
                               {ast.status || "active"}
                             </Text>
                           </View>
                         </View>
                         <Text
-                          style={[
-                            styles.astVoiceText,
-                            { color: colors.textSecondary },
-                          ]}
+                          className="text-[11px] font-medium"
+                          style={{ color: colors.textSecondary }}
                           numberOfLines={1}
                         >
                           Voice:{" "}
@@ -1257,24 +1225,20 @@ export const ContactsScreen: React.FC = () => {
                     </View>
 
                     <View
-                      style={[
-                        styles.astLineBar,
-                        {
-                          backgroundColor: colors.surfaceAlt,
-                          borderColor: colors.border,
-                        },
-                      ]}
+                      className="flex-row items-center justify-between px-2.5 py-1.5 rounded-lg border"
+                      style={{
+                        backgroundColor: colors.surfaceAlt,
+                        borderColor: colors.border,
+                      }}
                     >
-                      <View style={styles.astLineLeft}>
+                      <View className="flex-row items-center gap-1.5 flex-1 min-w-0">
                         <View
-                          style={[
-                            styles.statusDot,
-                            {
-                              backgroundColor: isAssigned
-                                ? colors.green
-                                : colors.textSecondary,
-                            },
-                          ]}
+                          className="w-1.5 h-1.5 rounded-full"
+                          style={{
+                            backgroundColor: isAssigned
+                              ? colors.green
+                              : colors.textSecondary,
+                          }}
                         />
                         <Ionicons
                           name="phone-portrait"
@@ -1282,15 +1246,12 @@ export const ContactsScreen: React.FC = () => {
                           color={isAssigned ? colors.green : colors.textSecondary}
                         />
                         <Text
-                          style={[
-                            styles.astLineNumberText,
-                            {
-                              color: isAssigned
-                                ? colors.text
-                                : colors.textSecondary,
-                              fontWeight: isAssigned ? "700" : "500",
-                            },
-                          ]}
+                          className={`text-[11.5px] ${isAssigned ? 'font-bold' : 'font-medium'}`}
+                          style={{
+                            color: isAssigned
+                              ? colors.text
+                              : colors.textSecondary,
+                          }}
                           numberOfLines={1}
                         >
                           {isAssigned
@@ -1300,51 +1261,43 @@ export const ContactsScreen: React.FC = () => {
                       </View>
 
                       <View
-                        style={[
-                          styles.astLinePill,
-                          {
-                            backgroundColor: isAssigned
-                              ? colors.greenLight
-                              : colors.amberLight,
-                          },
-                        ]}
+                        className="px-1.5 py-0.5 rounded ml-2"
+                        style={{
+                          backgroundColor: isAssigned
+                            ? colors.greenLight
+                            : colors.amberLight,
+                        }}
                       >
                         <Text
-                          style={[
-                            styles.astLinePillText,
-                            {
-                              color: isAssigned ? colors.green : colors.amber,
-                            },
-                          ]}
+                          className="text-[9.5px] font-bold"
+                          style={{
+                            color: isAssigned ? colors.green : colors.amber,
+                          }}
                         >
                           {isAssigned ? "Active" : "Unbound"}
                         </Text>
                       </View>
                     </View>
 
-                    <View style={styles.astActionsRow}>
+                    <View className="flex-row items-center gap-2">
                       <Pressable
-                        style={[
-                          styles.astTestCallBtn,
-                          { backgroundColor: colors.primary },
-                        ]}
+                        className="flex-1 flex-row items-center justify-center gap-1.5 h-9 rounded-lg active:opacity-85"
+                        style={{ backgroundColor: colors.primary }}
                         onPress={() => {
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                           setCallTarget({ assistantId: ast.id });
                         }}
                       >
                         <Ionicons name="call" size={13} color="#FFFFFF" />
-                        <Text style={styles.astTestCallText}>Test Call</Text>
+                        <Text className="text-white text-xs font-bold">Test Call</Text>
                       </Pressable>
 
                       <Pressable
-                        style={[
-                          styles.astManageLineBtn,
-                          {
-                            backgroundColor: colors.surfaceAlt,
-                            borderColor: colors.border,
-                          },
-                        ]}
+                        className="flex-1 flex-row items-center justify-center gap-1.5 h-9 rounded-lg border active:opacity-80"
+                        style={{
+                          backgroundColor: colors.surfaceAlt,
+                          borderColor: colors.border,
+                        }}
                         onPress={() => {
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                           if (boundLine) {
@@ -1362,10 +1315,8 @@ export const ContactsScreen: React.FC = () => {
                           color={colors.text}
                         />
                         <Text
-                          style={[
-                            styles.astManageLineText,
-                            { color: colors.text },
-                          ]}
+                          className="text-xs font-semibold"
+                          style={{ color: colors.text }}
                         >
                           {isAssigned ? "Manage Line" : "Assign Line"}
                         </Text>
@@ -1457,441 +1408,3 @@ export const ContactsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    width: "100%",
-  },
-  content: {
-    paddingHorizontal: 16,
-    paddingTop: 6,
-    paddingBottom: 100,
-    gap: 12,
-    width: "100%",
-  },
-  headingSection: {
-    paddingTop: 2,
-    gap: 2,
-    width: "100%",
-  },
-  eyebrowText: {
-    fontSize: 10.5,
-    fontWeight: "700",
-    letterSpacing: 0.8,
-  },
-  mainHeading: {
-    fontSize: 24,
-    lineHeight: 29,
-    fontWeight: "800",
-    letterSpacing: -0.5,
-  },
-  subHeading: {
-    fontSize: 12.5,
-    lineHeight: 17,
-    fontWeight: "500",
-  },
-  topActionsRow: {
-    flexDirection: "row",
-    gap: 8,
-    width: "100%",
-  },
-  importCsvBtn: {
-    flex: 1,
-    height: 42,
-    borderRadius: 12,
-    borderWidth: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 5,
-  },
-  importCsvBtnText: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  addContactBtn: {
-    flex: 1,
-    height: 42,
-    borderRadius: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 5,
-  },
-  addContactBtnText: {
-    color: "#FFFFFF",
-    fontSize: 13.5,
-    fontWeight: "700",
-  },
-  statsRow: {
-    flexDirection: "row",
-    gap: 8,
-    width: "100%",
-  },
-  statCard: {
-    flex: 1,
-    padding: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    minHeight: 68,
-    justifyContent: "space-between",
-  },
-  statHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  statLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    flex: 1,
-  },
-  statValue: {
-    fontSize: 19,
-    fontWeight: "800",
-    letterSpacing: -0.3,
-    marginTop: 2,
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    height: 40,
-    borderRadius: 10,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    gap: 6,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: "500",
-    paddingVertical: 0,
-    height: "100%",
-  },
-  dropdownRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  dropdownPill: {
-    flex: 1,
-    height: 36,
-    borderRadius: 10,
-    borderWidth: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 10,
-  },
-  dropdownPillText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  emptyCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingVertical: 36,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  emptyIconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 2,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    letterSpacing: -0.2,
-  },
-  emptySubtitle: {
-    fontSize: 12,
-    fontWeight: "500",
-    textAlign: "center",
-    maxWidth: 220,
-    lineHeight: 16,
-  },
-  contactsListCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  contactRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    gap: 10,
-  },
-  avatarCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarInitials: {
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  contactMainInfo: {
-    flex: 1,
-    gap: 1,
-  },
-  contactNameText: {
-    fontSize: 13.5,
-    fontWeight: "700",
-    letterSpacing: -0.2,
-  },
-  contactRoleText: {
-    fontSize: 11.5,
-    fontWeight: "500",
-  },
-  quickCallBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 2,
-  },
-  contactDivider: {
-    height: StyleSheet.hairlineWidth,
-    marginLeft: 56,
-  },
-  subTabBar: {
-    flexDirection: "row",
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 3,
-    gap: 3,
-  },
-  subTabItem: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 7,
-    paddingHorizontal: 4,
-    borderRadius: 9,
-    gap: 4,
-  },
-  subTabText: {
-    fontSize: 12,
-  },
-  expiredBadgeDot: {
-    backgroundColor: "#EF4444",
-    borderRadius: 8,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-  },
-  expiredBadgeDotText: {
-    color: "#FFFFFF",
-    fontSize: 9.5,
-    fontWeight: "800",
-  },
-  tabContentContainer: {
-    gap: 10,
-  },
-  numberRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 11,
-    paddingHorizontal: 12,
-    gap: 10,
-  },
-  numberIconCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  numberMainInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  numberHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 6,
-  },
-  numberPhoneText: {
-    fontSize: 14,
-    fontWeight: "800",
-    letterSpacing: -0.2,
-  },
-  numberStatusBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 5,
-  },
-  numberStatusText: {
-    fontSize: 10,
-    fontWeight: "700",
-  },
-  numberSubText: {
-    fontSize: 11.5,
-    fontWeight: "500",
-  },
-  webManageBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 10,
-  },
-  webManageIconCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  webManageInfo: {
-    flex: 1,
-    gap: 1,
-  },
-  webManageTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    letterSpacing: -0.1,
-  },
-  webManageSubtitle: {
-    fontSize: 11,
-    fontWeight: "500",
-  },
-  addNumberWebButton: {
-    marginTop: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#4F46E5",
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    gap: 6,
-  },
-  addNumberWebText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  assistantListContainer: {
-    gap: 10,
-  },
-  assistantCardItem: {
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 12,
-    gap: 9,
-  },
-  astCardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  astAvatarWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  astNameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 6,
-  },
-  astTitleText: {
-    fontSize: 14,
-    fontWeight: "700",
-    letterSpacing: -0.1,
-  },
-  astStatusBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 1.5,
-    borderRadius: 4,
-  },
-  astStatusBadgeText: {
-    fontSize: 9.5,
-    fontWeight: "700",
-    textTransform: "capitalize",
-  },
-  astVoiceText: {
-    fontSize: 11,
-    fontWeight: "500",
-  },
-  astLineBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  astLineLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    flex: 1,
-  },
-  statusDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-  },
-  astLineNumberText: {
-    fontSize: 11.5,
-  },
-  astLinePill: {
-    paddingHorizontal: 6,
-    paddingVertical: 1.5,
-    borderRadius: 4,
-  },
-  astLinePillText: {
-    fontSize: 9.5,
-    fontWeight: "700",
-  },
-  astActionsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  astTestCallBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 5,
-    height: 36,
-    borderRadius: 8,
-  },
-  astTestCallText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  astManageLineBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 5,
-    height: 36,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  astManageLineText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-});

@@ -10,7 +10,6 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -134,7 +133,6 @@ export const WhatsAppHomeScreen: React.FC = () => {
     connectedAccounts.find((a) => a.id === selectedAccountId) ||
     connectedAccounts[0];
 
-  // Effective connection state based on selected connected account or global status
   const currentConnection = activeAccount
     ? {
       connected: true,
@@ -201,7 +199,7 @@ export const WhatsAppHomeScreen: React.FC = () => {
   ];
 
   return (
-    <View style={[styles.rootContainer, { backgroundColor: color.background }]}>
+    <View className="flex-1" style={{ backgroundColor: color.background }}>
       {activeTab === "contacts" && (
         <WhatsAppContactsScreen onBack={() => setActiveTab("home")} />
       )}
@@ -213,27 +211,28 @@ export const WhatsAppHomeScreen: React.FC = () => {
       )}
 
       {activeTab === "home" && (
-        <View style={styles.safeArea}>
+        <View className="flex-1">
           {/* Standard Safe Header with Circular Back Button */}
           <View
-            style={[
-              styles.header,
-              {
-                paddingTop: Math.max(
-                  insets.top,
-                  Platform.OS === "ios" ? 44 : 12,
-                ),
-              },
-              isDark ? styles.headerDark : styles.headerLight,
-            ]}
+            className={`flex-row items-center px-4 py-3 border-b ${
+              isDark
+                ? "bg-black border-white/[0.08]"
+                : "bg-white border-black/[0.06]"
+            }`}
+            style={{
+              paddingTop: Math.max(
+                insets.top,
+                Platform.OS === "ios" ? 44 : 12,
+              ),
+            }}
           >
-            <View style={styles.headerLeftRow}>
+            <View className="flex-row items-center flex-1">
               <Pressable
-                style={({ pressed }) => [
-                  styles.backButton,
-                  isDark ? styles.backButtonDark : styles.backButtonLight,
-                  pressed && styles.backButtonPressed,
-                ]}
+                className={`w-10 h-10 rounded-full justify-center items-center mr-3 border active:opacity-70 active:scale-95 shadow-sm ${
+                  isDark
+                    ? "bg-[#1C1C1E] border-[#2C2C2E]"
+                    : "bg-white border-[#E5E7EB]"
+                }`}
                 onPress={() => {
                   if (Platform.OS !== "web") {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -256,10 +255,9 @@ export const WhatsAppHomeScreen: React.FC = () => {
               </Pressable>
 
               <Text
-                style={[
-                  styles.title,
-                  isDark ? styles.textLight : styles.textDark,
-                ]}
+                className={`text-xl font-bold tracking-tight ${
+                  isDark ? "text-white" : "text-slate-900"
+                }`}
               >
                 WhatsApp Business
               </Text>
@@ -270,8 +268,8 @@ export const WhatsAppHomeScreen: React.FC = () => {
             <WhatsAppHomeSkeleton />
           ) : (
             <ScrollView
-              style={styles.container}
-              contentContainerStyle={styles.content}
+              className="flex-1"
+              contentContainerStyle={{ padding: 16 }}
               refreshControl={
                 <RefreshControl
                   refreshing={statusRefetching}
@@ -292,23 +290,20 @@ export const WhatsAppHomeScreen: React.FC = () => {
               <UsageCard usage={usage} isConnected={isConnected} />
 
               {/* Section Header: Overview & Capabilities */}
-              <View style={styles.sectionHeaderRow}>
+              <View className="mb-2 mt-4 px-1">
                 <Text
-                  style={[
-                    styles.sectionTitle,
-                    isDark
-                      ? styles.textSecondaryDark
-                      : styles.textSecondaryLight,
-                  ]}
+                  className={`text-xs font-semibold tracking-wider uppercase ${
+                    isDark ? "text-[#8E8E93]" : "text-[#64748B]"
+                  }`}
                 >
                   Overview & Capabilities
                 </Text>
               </View>
 
               {/* Metrics 2x2 Grid */}
-              <View style={styles.gridContainer}>
-                <View style={styles.gridRow}>
-                  <View style={styles.metricCardWrapper}>
+              <View className="w-full gap-3 mb-2">
+                <View className="flex-row gap-3 w-full">
+                  <View className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
                     <WhatsAppMetricCard
                       label="Contacts"
                       value={totalContactsCount.toLocaleString()}
@@ -317,7 +312,7 @@ export const WhatsAppHomeScreen: React.FC = () => {
                       iconColor="#A855F7"
                     />
                   </View>
-                  <View style={styles.metricCardWrapper}>
+                  <View className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
                     <WhatsAppMetricCard
                       label="Templates"
                       value={approvedTemplatesCount}
@@ -327,8 +322,8 @@ export const WhatsAppHomeScreen: React.FC = () => {
                     />
                   </View>
                 </View>
-                <View style={styles.gridRow}>
-                  <View style={styles.metricCardWrapper}>
+                <View className="flex-row gap-3 w-full">
+                  <View className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
                     <WhatsAppMetricCard
                       label="Broadcasts"
                       value={totalBroadcastsCount}
@@ -337,7 +332,7 @@ export const WhatsAppHomeScreen: React.FC = () => {
                       iconColor="#F43F5E"
                     />
                   </View>
-                  <View style={styles.metricCardWrapper}>
+                  <View className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
                     <WhatsAppMetricCard
                       label="Delivery Rate"
                       value={deliveryRate}
@@ -350,34 +345,32 @@ export const WhatsAppHomeScreen: React.FC = () => {
               </View>
 
               {/* Section Header: Product Navigation */}
-              <View style={styles.sectionHeaderRow}>
+              <View className="mb-2 mt-4 px-1">
                 <Text
-                  style={[
-                    styles.sectionTitle,
-                    isDark
-                      ? styles.textSecondaryDark
-                      : styles.textSecondaryLight,
-                  ]}
+                  className={`text-xs font-semibold tracking-wider uppercase ${
+                    isDark ? "text-[#8E8E93]" : "text-[#64748B]"
+                  }`}
                 >
                   Product Navigation
                 </Text>
               </View>
 
               {/* Quick Actions Navigation List */}
-              <View style={styles.actionsList}>
+              <View className="flex-col gap-2.5 mb-2">
                 {navigationItems.map((item) => (
                   <Pressable
                     key={item.key}
-                    className={`flex-row gap-3 items-center justify-between w-full p-3.5 rounded-2xl border ${isDark ? 'bg-[#1C1C1E] border-[#2C2C2E]' : 'bg-white border-[#E5E7EB]'
-                      }`}
+                    className={`flex-row gap-3 items-center justify-between w-full p-3.5 rounded-2xl border active:opacity-75 ${
+                      isDark
+                        ? "bg-[#1C1C1E] border-[#2C2C2E]"
+                        : "bg-white border-[#E5E7EB]"
+                    }`}
                     onPress={item.onPress}
                   >
-
                     <View
-                      style={[
-                        styles.actionIcon,
-                        { backgroundColor: isDark ? "#2C2C2E" : "#F1F5F9" },
-                      ]}
+                      className={`w-10 h-10 rounded-xl items-center justify-center ${
+                        isDark ? "bg-[#2C2C2E]" : "bg-[#F1F5F9]"
+                      }`}
                     >
                       <Ionicons
                         name={item.icon as any}
@@ -385,22 +378,18 @@ export const WhatsAppHomeScreen: React.FC = () => {
                         color={item.color}
                       />
                     </View>
-                    <View style={styles.actionDetails}>
+                    <View className="flex-1">
                       <Text
-                        style={[
-                          styles.actionTitle,
-                          isDark ? styles.textLight : styles.textDark,
-                        ]}
+                        className={`text-[15px] font-bold tracking-tight mb-0.5 ${
+                          isDark ? "text-white" : "text-slate-900"
+                        }`}
                       >
                         {item.title}
                       </Text>
                       <Text
-                        style={[
-                          styles.actionSub,
-                          isDark
-                            ? styles.textSecondaryDark
-                            : styles.textSecondaryLight,
-                        ]}
+                        className={`text-xs font-normal ${
+                          isDark ? "text-[#8E8E93]" : "text-[#64748B]"
+                        }`}
                       >
                         {item.subtitle}
                       </Text>
@@ -437,419 +426,105 @@ export const WhatsAppHomeScreen: React.FC = () => {
         animationType="fade"
         onRequestClose={() => setShowAccountSwitcher(false)}
       >
-        <View style={styles.modalOverlay}>
+        <View className="flex-1 bg-black/60 justify-end sm:justify-center items-center p-4">
           <View
-            style={[
-              styles.switcherBox,
-              isDark ? styles.switcherBoxDark : styles.switcherBoxLight,
-            ]}
+            className={`w-full max-w-[420px] rounded-3xl p-5 border shadow-2xl ${
+              isDark
+                ? "bg-[#1C1C1E] border-[#2C2C2E]"
+                : "bg-white border-[#E5E7EB]"
+            }`}
           >
-            <View style={styles.switcherHeader}>
+            <View className="flex-row justify-between items-center mb-4">
               <View>
                 <Text
-                  style={[
-                    styles.switcherTitle,
-                    isDark ? styles.textLight : styles.textDark,
-                  ]}
+                  className={`text-lg font-bold ${
+                    isDark ? "text-white" : "text-slate-900"
+                  }`}
                 >
-                  WhatsApp Accounts
+                  Switch Account
                 </Text>
                 <Text
-                  style={[
-                    styles.switcherSub,
-                    isDark
-                      ? styles.textSecondaryDark
-                      : styles.textSecondaryLight,
-                  ]}
+                  className={`text-xs ${
+                    isDark ? "text-[#8E8E93]" : "text-[#64748B]"
+                  }`}
                 >
-                  Select active business phone number for this workspace
+                  Select active WhatsApp phone number
                 </Text>
               </View>
               <Pressable
                 onPress={() => setShowAccountSwitcher(false)}
-                hitSlop={10}
+                className={`w-7 h-7 rounded-full items-center justify-center ${
+                  isDark ? "bg-[#2C2C2E]" : "bg-[#F1F5F9]"
+                }`}
               >
                 <Ionicons
-                  name="close-circle"
-                  size={24}
-                  color={isDark ? "#636366" : "#C7C7CC"}
+                  name="close"
+                  size={18}
+                  color={isDark ? "#FFFFFF" : "#000000"}
                 />
               </Pressable>
             </View>
 
-            <ScrollView
-              style={{ maxHeight: 300 }}
-              showsVerticalScrollIndicator={false}
-            >
-              {connectedAccounts.map((acc) => {
-                const isSelected = activeAccount?.id === acc.id;
-
+            <View className="gap-2.5">
+              {connectedAccounts.map((account) => {
+                const isSelected = activeAccount?.id === account.id;
                 return (
                   <Pressable
-                    key={acc.id}
-                    style={({ pressed }) => [
-                      styles.accountRow,
-                      isDark ? styles.accountRowDark : styles.accountRowLight,
-                      isSelected &&
-                      (isDark
-                        ? styles.accountRowSelectedDark
-                        : styles.accountRowSelectedLight),
-                      pressed && { opacity: 0.75 },
-                    ]}
+                    key={account.id}
+                    className={`flex-row items-center p-3 rounded-2xl border active:opacity-75 ${
+                      isSelected
+                        ? isDark
+                          ? "bg-[#0A84FF]/15 border-[#0A84FF]"
+                          : "bg-[#007AFF]/10 border-[#007AFF]"
+                        : isDark
+                        ? "bg-[#2C2C2E] border-transparent"
+                        : "bg-[#F8F9FA] border-transparent"
+                    }`}
                     onPress={() => {
-                      if (Platform.OS !== "web") Haptics.selectionAsync();
-                      setSelectedAccountId(acc.id);
+                      if (Platform.OS !== "web") {
+                        Haptics.selectionAsync();
+                      }
+                      setSelectedAccountId(account.id);
                       setShowAccountSwitcher(false);
                     }}
                   >
-                    <View style={styles.accountAvatar}>
-                      <Ionicons
-                        name="logo-whatsapp"
-                        size={20}
-                        color="#22C55E"
-                      />
+                    <View
+                      className={`w-9 h-9 rounded-xl items-center justify-center mr-3 ${
+                        isDark ? "bg-[#3A3A3C]" : "bg-white"
+                      }`}
+                    >
+                      <Ionicons name="logo-whatsapp" size={20} color="#22C55E" />
                     </View>
-
-                    <View style={styles.accountDetails}>
+                    <View className="flex-1">
                       <Text
-                        style={[
-                          styles.accountName,
-                          isDark ? styles.textLight : styles.textDark,
-                        ]}
-                        numberOfLines={1}
+                        className={`text-sm font-bold ${
+                          isDark ? "text-white" : "text-slate-900"
+                        }`}
                       >
-                        {acc.name || "WhatsApp Number"}
+                        {account.name || "WhatsApp Business"}
                       </Text>
-                      <View style={styles.accountPhoneRow}>
-                        <Text
-                          style={[
-                            styles.accountPhone,
-                            isDark
-                              ? styles.textSecondaryDark
-                              : styles.textSecondaryLight,
-                          ]}
-                        >
-                          {acc.display_phone_number || "No Phone Number"}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.dotSeparator,
-                            isDark
-                              ? styles.textSecondaryDark
-                              : styles.textSecondaryLight,
-                          ]}
-                        >
-                          •
-                        </Text>
-                        <View
-                          style={[
-                            styles.statusMiniDot,
-                            { backgroundColor: "#22C55E" },
-                          ]}
-                        />
-                        <Text
-                          style={[styles.statusMiniText, { color: "#22C55E" }]}
-                        >
-                          Connected
-                        </Text>
-                      </View>
+                      <Text
+                        className={`text-xs ${
+                          isDark ? "text-[#8E8E93]" : "text-[#64748B]"
+                        }`}
+                      >
+                        {account.display_phone_number}
+                      </Text>
                     </View>
-
                     {isSelected && (
                       <Ionicons
                         name="checkmark-circle"
-                        size={22}
-                        color="#007AFF"
-                        style={{ marginLeft: 8 }}
+                        size={20}
+                        color={isDark ? "#0A84FF" : "#007AFF"}
                       />
                     )}
                   </Pressable>
                 );
               })}
-            </ScrollView>
+            </View>
           </View>
         </View>
       </Modal>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  rootContainer: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  headerDark: {
-    backgroundColor: "#000000",
-    borderBottomColor: "#2C2C2E",
-  },
-  headerLight: {
-    backgroundColor: "#FFFFFF",
-    borderBottomColor: "#E5E7EB",
-  },
-  headerLeftRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  accountPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 5.5,
-    borderRadius: 14,
-    maxWidth: 150,
-  },
-  accountPillDark: {
-    backgroundColor: "#1C1C1E",
-  },
-  accountPillLight: {
-    backgroundColor: "#F2F2F7",
-  },
-  accountPillText: {
-    fontSize: 12,
-    fontWeight: "600",
-    flexShrink: 1,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-    borderWidth: 1,
-  },
-  backButtonLight: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  backButtonDark: {
-    backgroundColor: "#1C1C1E",
-    borderColor: "#2C2C2E",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  backButtonPressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.94 }],
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "700",
-    letterSpacing: -0.4,
-  },
-  container: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    width: "100%",
-    maxWidth: 1100,
-    alignSelf: "center",
-  },
-  sectionHeaderRow: {
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    letterSpacing: -0.2,
-  },
-  gridContainer: {
-    width: "100%",
-    gap: Platform.OS === "web" ? 12 : 10,
-    marginBottom: 12,
-  },
-  gridRow: {
-    flexDirection: "row",
-    width: "100%",
-    alignSelf: "stretch",
-    gap: Platform.OS === "web" ? 12 : 10,
-  },
-  metricCardWrapper: {
-    flex: 1,
-    minWidth: 0,
-    flexBasis: 0,
-  },
-  actionsList: {
-    width: "100%",
-    gap: 10,
-  },
-  actionCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: "100%",
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    gap: 12,
-  },
-  actionCardDark: {
-    backgroundColor: "#1C1C1E",
-    borderColor: "#2C2C2E",
-  },
-  actionCardLight: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  actionCardPressed: {
-    opacity: 0.75,
-    transform: [{ scale: 0.99 }],
-  },
-  actionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    flexShrink: 0,
-  },
-  actionDetails: {
-    flex: 1,
-    minWidth: 0,
-  },
-  actionTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    letterSpacing: -0.2,
-    marginBottom: 2,
-  },
-  actionSub: {
-    fontSize: 12,
-    fontWeight: "400",
-    lineHeight: 16,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  switcherBox: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    paddingBottom: 32,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  switcherBoxDark: {
-    backgroundColor: "#1C1C1E",
-    borderColor: "#2C2C2E",
-  },
-  switcherBoxLight: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E5EA",
-  },
-  switcherHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 16,
-  },
-  switcherTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-  },
-  switcherSub: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  accountRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  accountRowDark: {
-    backgroundColor: "#2C2C2E",
-    borderColor: "#3A3A3C",
-  },
-  accountRowLight: {
-    backgroundColor: "#F2F2F7",
-    borderColor: "#E5E5EA",
-  },
-  accountRowSelectedDark: {
-    borderColor: "#0A84FF",
-    backgroundColor: "rgba(10, 132, 255, 0.12)",
-  },
-  accountRowSelectedLight: {
-    borderColor: "#007AFF",
-    backgroundColor: "rgba(0, 122, 255, 0.08)",
-  },
-  accountAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(34, 197, 94, 0.12)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 10,
-  },
-  accountDetails: {
-    flex: 1,
-  },
-  accountName: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 2,
-  },
-  accountPhoneRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  accountPhone: {
-    fontSize: 12,
-  },
-  dotSeparator: {
-    fontSize: 10,
-  },
-  statusMiniDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  statusMiniText: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  textLight: {
-    color: "#FFFFFF",
-  },
-  textDark: {
-    color: "#000000",
-  },
-  textSecondaryDark: {
-    color: "#8E8E93",
-  },
-  textSecondaryLight: {
-    color: "#6B7280",
-  },
-});

@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { View, ViewProps } from 'react-native';
-import { useTheme, getColors } from '@/theme';
+import { useTheme } from '@/theme';
 
 export type CardVariant = 'default' | 'elevated' | 'outlined';
 
@@ -20,15 +20,14 @@ export const Card: React.FC<CardProps> = ({
   ...props
 }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
 
   const paddingMap = {
     none: 'p-0',
-    xs: 'p-xs',
-    sm: 'p-sm',
-    md: 'p-md',
-    lg: 'p-lg',
-    xl: 'p-xl',
+    xs: 'p-1',
+    sm: 'p-2',
+    md: 'p-3',
+    lg: 'p-4',
+    xl: 'p-6',
   };
 
   const variantStyles: Record<CardVariant, string> = {
@@ -36,8 +35,8 @@ export const Card: React.FC<CardProps> = ({
       ? 'bg-[#0B1420] border border-[#234563]'
       : 'bg-white border border-[#E5E7EB]',
     elevated: isDark
-      ? 'bg-[#0B1420] border border-[#234563]'
-      : 'bg-white border border-[#E5E7EB] shadow-sm',
+      ? 'bg-[#0B1420] border border-[#234563] shadow-md'
+      : 'bg-white border border-[#E5E7EB] shadow-md',
     outlined: isDark
       ? 'bg-transparent border border-[#1B334A]'
       : 'bg-transparent border border-[#E5E7EB]',
@@ -45,17 +44,11 @@ export const Card: React.FC<CardProps> = ({
 
   return (
     <View
-      className={`
-        rounded-lg
-        ${variant === 'elevated' && !isDark ? 'shadow-sm' : ''}
-        ${paddingMap[padding]}
-        ${className}
-      `}
-      style={[dynamicCardStyle, style]}
+      className={`rounded-2xl ${variantStyles[variant]} ${paddingMap[padding]} ${className}`}
+      style={style}
       {...props}
     >
       {children}
     </View>
   );
 };
-

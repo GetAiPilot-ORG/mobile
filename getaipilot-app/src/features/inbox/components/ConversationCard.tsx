@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NormalizedConversation } from '../types';
 import { ChannelBadge } from './ChannelBadge';
@@ -42,7 +42,6 @@ const formatMessageTime = (dateStr?: string) => {
 export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation, onPress }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
-  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   const time = formatMessageTime(conversation.last_message.created_at);
 
@@ -80,43 +79,61 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation
 
   return (
     <Pressable
-      style={({ pressed }) => [
-        styles.container,
-        pressed && styles.pressed,
-      ]}
+      className="flex-row items-center p-3 rounded-2xl mb-2.5 border shadow-sm active:opacity-85 active:scale-[0.995]"
+      style={{
+        backgroundColor: colors.card,
+        borderColor: colors.border,
+      }}
       onPress={onPress}
     >
-      <View style={styles.avatar}>
-        <Text style={styles.avatarLetter}>
+      <View
+        className="w-[46px] h-[46px] rounded-full justify-center items-center mr-3 relative"
+        style={{ backgroundColor: colors.primary }}
+      >
+        <Text className="text-white text-lg font-bold">
           {conversation.contact.name ? conversation.contact.name.charAt(0).toUpperCase() : 'W'}
         </Text>
         {isBotActive && (
-          <View style={styles.botDot}>
-            <Text style={{ fontSize: 8 }}>🤖</Text>
+          <View
+            className="absolute -bottom-0.5 -right-0.5 rounded-full p-0.5 border"
+            style={{ backgroundColor: colors.card, borderColor: colors.primary }}
+          >
+            <Text className="text-[8px]">🤖</Text>
           </View>
         )}
       </View>
 
-      <View style={styles.content}>
-        <View style={styles.topRow}>
-          <Text style={styles.name} numberOfLines={1}>
+      <View className="flex-1 min-w-0">
+        <View className="flex-row justify-between items-center mb-0.5">
+          <Text
+            className="text-[15px] font-bold flex-1 min-w-0 mr-2"
+            style={{ color: colors.textPrimary }}
+            numberOfLines={1}
+          >
             {conversation.contact.name}
           </Text>
-          <Text style={styles.time}>{time}</Text>
+          <Text className="text-[11px]" style={{ color: colors.textSecondary }}>
+            {time}
+          </Text>
         </View>
 
-        <View style={styles.metaRow}>
-          <Text style={styles.handle} numberOfLines={1}>
+        <View className="flex-row justify-between items-center mb-1 gap-1.5">
+          <Text
+            className="text-[11.5px] flex-1 min-w-0"
+            style={{ color: colors.textSecondary }}
+            numberOfLines={1}
+          >
             +{conversation.contact.handle_or_phone}
           </Text>
 
           {/* 24-Hour Meta Window Badge */}
           {windowStatus && (
             <View
-              style={[
-                styles.windowPill,
-                windowStatus.expired ? styles.windowClosedPill : styles.windowOpenPill,
-              ]}
+              className={`flex-row items-center gap-1 px-1.5 py-0.5 rounded-full border ${
+                windowStatus.expired
+                  ? 'bg-red-500/10 border-red-500/30'
+                  : 'bg-emerald-500/10 border-emerald-500/30'
+              }`}
             >
               <Ionicons
                 name={windowStatus.expired ? 'alert-circle' : 'time'}
@@ -124,10 +141,9 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation
                 color={windowStatus.expired ? '#f87171' : '#16a34a'}
               />
               <Text
-                style={[
-                  styles.windowPillText,
-                  { color: windowStatus.expired ? '#dc2626' : '#15803d' },
-                ]}
+                className={`text-[9.5px] font-extrabold ${
+                  windowStatus.expired ? 'text-red-600' : 'text-emerald-700'
+                }`}
               >
                 {windowStatus.expired ? '24h Closed' : `24h: ${windowStatus.text}`}
               </Text>
@@ -137,25 +153,44 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation
           <ChannelBadge channel={conversation.channel} />
         </View>
 
-        <View style={styles.bottomRow}>
-          <Text style={styles.lastMessage} numberOfLines={1}>
+        <View className="flex-row justify-between items-center gap-2">
+          <Text
+            className="text-[12.5px] flex-1 min-w-0"
+            style={{ color: colors.textSecondary }}
+            numberOfLines={1}
+          >
             {conversation.last_message.direction === 'outbound' ? 'You: ' : ''}
             {conversation.last_message.content || 'Media message'}
           </Text>
 
-          <View style={styles.bottomBadges}>
+          <View className="flex-row items-center gap-1.5">
             {assignedName ? (
-              <View style={styles.agentTag}>
+              <View
+                className="flex-row items-center gap-1 px-1.5 py-0.5 rounded-md border max-w-[90px]"
+                style={{
+                  backgroundColor: isDark ? colors.surfaceDark : colors.background,
+                  borderColor: colors.border,
+                }}
+              >
                 <Ionicons name="person" size={10} color={colors.textSecondary} />
-                <Text style={styles.agentTagText} numberOfLines={1}>
+                <Text
+                  className="text-[9.5px] font-semibold"
+                  style={{ color: colors.textSecondary }}
+                  numberOfLines={1}
+                >
                   {assignedName}
                 </Text>
               </View>
             ) : null}
 
             {conversation.unread_count > 0 && (
-              <View style={styles.unreadBadge}>
-                <Text style={styles.unreadText}>{conversation.unread_count}</Text>
+              <View
+                className="px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: colors.primary }}
+              >
+                <Text className="text-white text-[10px] font-extrabold">
+                  {conversation.unread_count}
+                </Text>
               </View>
             )}
           </View>
@@ -164,149 +199,3 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation
     </Pressable>
   );
 };
-
-function createStyles(colors: ReturnType<typeof getColors>, isDark: boolean) {
-  return StyleSheet.create({
-    container: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: 13,
-      borderRadius: 16,
-      marginBottom: 10,
-      borderWidth: 1,
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: isDark ? 0.25 : 0.04,
-      shadowRadius: 5,
-      elevation: 2,
-    },
-    pressed: {
-      opacity: 0.88,
-      transform: [{ scale: 0.995 }],
-    },
-    avatar: {
-      width: 46,
-      height: 46,
-      borderRadius: 23,
-      backgroundColor: colors.primary,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginRight: 12,
-      position: 'relative',
-    },
-    avatarLetter: {
-      color: '#ffffff',
-      fontSize: 18,
-      fontWeight: '700',
-    },
-    botDot: {
-      position: 'absolute',
-      bottom: -2,
-      right: -2,
-      borderRadius: 10,
-      padding: 1,
-      borderWidth: 1,
-      backgroundColor: colors.card,
-      borderColor: colors.primary,
-    },
-    content: {
-      flex: 1,
-    },
-    topRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 3,
-    },
-    name: {
-      fontSize: 15,
-      fontWeight: '700',
-      flex: 1,
-      color: colors.textPrimary,
-    },
-    time: {
-      fontSize: 11,
-      marginLeft: 8,
-      color: colors.textSecondary,
-    },
-    metaRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 5,
-      gap: 6,
-    },
-    handle: {
-      fontSize: 11.5,
-      flex: 1,
-      color: colors.textSecondary,
-    },
-    windowPill: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 3,
-      paddingHorizontal: 6,
-      paddingVertical: 2,
-      borderRadius: 10,
-      borderWidth: 1,
-    },
-    windowOpenPill: {
-      backgroundColor: 'rgba(16, 185, 129, 0.12)',
-      borderColor: 'rgba(16, 185, 129, 0.3)',
-    },
-    windowClosedPill: {
-      backgroundColor: 'rgba(239, 68, 68, 0.12)',
-      borderColor: 'rgba(239, 68, 68, 0.3)',
-    },
-    windowPillText: {
-      fontSize: 9.5,
-      fontWeight: '800',
-    },
-    bottomRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      gap: 8,
-    },
-    lastMessage: {
-      fontSize: 12.5,
-      flex: 1,
-      color: colors.textSecondary,
-    },
-    bottomBadges: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-    },
-    agentTag: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 3,
-      paddingHorizontal: 7,
-      paddingVertical: 2.5,
-      borderRadius: 8,
-      maxWidth: 90,
-      backgroundColor: isDark ? colors.surfaceDark : colors.background,
-      borderColor: colors.border,
-      borderWidth: 1,
-    },
-    agentTagText: {
-      fontSize: 9.5,
-      fontWeight: '600',
-      color: colors.textSecondary,
-    },
-    unreadBadge: {
-      backgroundColor: colors.primary,
-      borderRadius: 10,
-      paddingHorizontal: 7,
-      paddingVertical: 1.5,
-    },
-    unreadText: {
-      color: '#ffffff',
-      fontSize: 10,
-      fontWeight: '800',
-    },
-  });
-}

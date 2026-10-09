@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 
 export type StatusVariant =
@@ -52,52 +52,23 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
 
   return (
     <View
-      style={[
-        styles.badge,
-        { backgroundColor: bg },
-        size === 'sm' && styles.badgeSm,
-      ]}
+      className={`flex-row items-center self-start ${
+        size === 'sm' ? 'px-1.5 py-0.5 rounded' : 'px-2 py-1 rounded-md'
+      }`}
+      style={{ backgroundColor: bg }}
     >
-      <View style={[styles.dot, { backgroundColor: textColor }]} />
+      <View
+        className="w-1.5 h-1.5 rounded-full mr-1.5"
+        style={{ backgroundColor: textColor }}
+      />
       <Text
-        style={[
-          styles.text,
-          { color: textColor },
-          size === 'sm' && styles.textSm,
-        ]}
+        className={`font-semibold tracking-tight ${
+          size === 'sm' ? 'text-[10px]' : 'text-[11.5px]'
+        }`}
+        style={{ color: textColor }}
       >
         {displayLabel}
       </Text>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    alignSelf: 'flex-start',
-  },
-  badgeSm: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 5,
-  },
-  text: {
-    fontSize: 11.5,
-    fontWeight: '600',
-    letterSpacing: -0.1,
-  },
-  textSm: {
-    fontSize: 10,
-  },
-});

@@ -6,12 +6,10 @@ import { useRouter } from "expo-router";
 import { Bot, Database, Megaphone, Phone, PhoneCall } from "lucide-react-native";
 import React from "react";
 import {
-  Dimensions,
   Platform,
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -69,13 +67,13 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
   const colors = {
     ...themeColors,
     background: themeColors.background,
-    surface: themeColors.surface,
+    surface: themeColors.card,
     surfaceAlt: themeColors.surfaceSecondary,
     border: themeColors.border,
     text: themeColors.text,
     textSecondary: themeColors.textMuted,
-    primary: themeColors.products.voice || "#5B3AF5",
-    primaryLight: themeColors.products.voiceSoft || (isDark ? "rgba(91, 58, 245, 0.2)" : "#EDE9FE"),
+    primary: themeColors.products?.voice || "#5B3AF5",
+    primaryLight: themeColors.products?.voiceSoft || (isDark ? "rgba(91, 58, 245, 0.2)" : "#EDE9FE"),
     green: themeColors.success,
     greenLight: themeColors.successSoft,
     chevron: themeColors.iconMuted,
@@ -98,8 +96,15 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.content}
+      className="flex-1 w-full"
+      style={{ backgroundColor: colors.background }}
+      contentContainerStyle={{
+        paddingHorizontal: 16,
+        paddingTop: 8,
+        paddingBottom: 130,
+        gap: 16,
+        width: "100%",
+      }}
       refreshControl={
         <RefreshControl
           refreshing={isRefetching}
@@ -114,161 +119,208 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
       showsVerticalScrollIndicator={false}
     >
       {/* 1. EXECUTIVE PULSE BRIEFING TITLE */}
-      <View style={styles.headingSection}>
-        <Text style={[styles.mainHeading, { color: colors.text }]}>
+      <View className="pt-0.5 gap-1 w-full">
+        <Text
+          className="text-2xl font-extrabold tracking-tight"
+          style={{ color: colors.text }}
+        >
           Executive Pulse Briefing
         </Text>
-        <Text style={[styles.subHeading, { color: colors.textSecondary }]}>
-          Your AI workforce is ready.
+        <Text className="text-sm font-medium" style={{ color: colors.textSecondary }}>
+          Your AI voice workforce is active and ready.
         </Text>
       </View>
 
-      {/* EXPIRED PLAN NOTICE BANNER (Premium, subtle aesthetic) */}
+      {/* EXPIRED PLAN NOTICE BANNER */}
+
       {data?.isPlanExpired && (
         <View
-          style={[
-            styles.expiredBanner,
-            {
-              backgroundColor: isDark ? "#1C1917" : "#FFFBEB",
-              borderColor: isDark ? "rgba(245, 158, 11, 0.25)" : "#FDE68A",
-            },
-          ]}
+          className={`rounded-2xl p-4 border gap-4 ${isDark
+            ? "bg-stone-900 border-amber-500/30"
+            : "bg-amber-50 border-amber-200"
+            }`}
         >
-          <View style={styles.expiredBannerHeader}>
+          {/* Header */}
+          <View className="flex-row items-start gap-3">
             <View
-              style={[
-                styles.expiredIconWrap,
-                {
-                  backgroundColor: isDark
-                    ? "rgba(245, 158, 11, 0.2)"
-                    : "#FEF3C7",
-                },
-              ]}
+              className={`w-10 h-10 rounded-xl items-center justify-center ${isDark ? "bg-amber-500/15" : "bg-amber-100"
+                }`}
             >
               <Ionicons
-                name="alert-circle"
-                size={22}
+                name="alert-circle-outline"
+                size={23}
                 color="#D97706"
               />
             </View>
-            <View style={styles.expiredTextWrap}>
-              <View style={styles.expiredTitleRow}>
-                <Text style={[styles.expiredTitle, { color: colors.text }]}>
+
+            <View className="flex-1 gap-1">
+              <View className="flex-row flex-wrap items-center gap-2">
+                <Text
+                  className="text-base font-bold"
+                  style={{ color: colors.text }}
+                >
                   {data?.planName || "Voice Plan"}
                 </Text>
-                <View style={styles.planStatusPill}>
-                  <Text style={styles.planStatusPillText}>Plan Expired</Text>
+
+                <View
+                  className={`px-2.5 py-1 rounded-full ${isDark ? "bg-red-500/15" : "bg-red-100"
+                    }`}
+                >
+                  <Text className="text-[10px] font-bold text-red-500">
+                    EXPIRED
+                  </Text>
                 </View>
               </View>
+
               <Text
-                style={[
-                  styles.expiredDesc,
-                  { color: isDark ? "#D6D3D1" : "#78716C" },
-                ]}
+                className={`text-xs leading-5 ${isDark ? "text-stone-300" : "text-stone-600"
+                  }`}
               >
-                Your balance of {creditDisplay} is preserved. Dedicated lines are paused until renewed.
+                Your balance of {creditDisplay} is safe. Dedicated lines
+                are paused until you renew your plan.
               </Text>
             </View>
           </View>
 
+          {/* Divider */}
           <View
-            style={[
-              styles.expiredTagsRow,
-              { borderTopColor: isDark ? "rgba(245, 158, 11, 0.15)" : "#FDE68A" },
-            ]}
-          >
+            className={`h-px ${isDark ? "bg-amber-500/20" : "bg-amber-200"
+              }`}
+          />
+
+          {/* Footer actions */}
+          <View className="flex-row items-center justify-between gap-3">
             <Pressable
-              style={[
-                styles.expiredTag,
-                {
-                  backgroundColor: isDark
-                    ? "rgba(255, 255, 255, 0.06)"
-                    : "rgba(245, 158, 11, 0.12)",
-                },
-              ]}
+              className={`flex-row items-center gap-1.5 px-3 py-2 rounded-xl flex-1 ${isDark ? "bg-white/5" : "bg-amber-100/70"
+                }`}
               onPress={() => navigate("contacts")}
             >
               <Ionicons
                 name="phone-portrait-outline"
+                size={15}
+                color="#D97706"
+              />
+
+              <Text
+                className="text-xs font-semibold text-amber-600 flex-1"
+                numberOfLines={1}
+              >
+                {data?.expiredNumbersCount ?? 1} Inactive Line(s)
+              </Text>
+
+              <Ionicons
+                name="chevron-forward"
                 size={13}
                 color="#D97706"
               />
-              <Text
-                style={[
-                  styles.expiredTagText,
-                  { color: "#D97706" },
-                ]}
-                numberOfLines={1}
-              >
-                {data?.expiredNumbersCount ?? 1} Line(s) Inactive
-              </Text>
-              <Ionicons name="chevron-forward" size={11} color="#D97706" />
             </Pressable>
 
             <Pressable
-              style={[
-                styles.renewActionBtn,
-                { backgroundColor: colors.primary },
-              ]}
+              className="flex-row items-center justify-center gap-2 px-4 py-3 rounded-xl"
+              style={{ backgroundColor: colors.primary }}
               onPress={() => openVoiceWebBilling(queryClient, isDark)}
             >
-              <Ionicons name="sparkles" size={13} color="#FFFFFF" />
-              <Text style={styles.renewActionText}>Renew Plan</Text>
-              <Ionicons name="arrow-forward" size={12} color="#FFFFFF" />
+              <Ionicons name="refresh-circle-outline" size={16} color="#FFFFFF" />
+
+              <Text className="text-xs font-bold text-white">
+                Renew Plan
+              </Text>
+
+              <Ionicons name="arrow-forward" size={13} color="#FFFFFF" />
             </Pressable>
           </View>
         </View>
       )}
 
-      {/* 2. TOP HERO GRADIENT CARD (Executive Calling Fleet Overview) */}
+
+      {/* 2. TOP HERO GRADIENT CARD */}
+
       <LinearGradient
         colors={["#5844E3", "#5136EE", "#3B50DF"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.heroGradientCard}
+        className="w-full rounded-2xl p-4 shadow-lg shadow-indigo-500/20"
+        style={{ borderRadius: 16 }}
       >
-        {/* Left Column: Active Campaigns */}
-        <Pressable
-          style={styles.heroColumn}
-          onPress={() => navigate("campaigns")}
-        >
-          <Ionicons name="megaphone-outline" size={28} color="#FFFFFF" />
-          <View style={styles.heroTextWrapper}>
-            <Text style={styles.heroBoldCount} numberOfLines={1}>
-              {activeCampaignsCount} Active
-            </Text>
-            <Text style={styles.heroSubText} numberOfLines={1}>
-              Campaigns
-            </Text>
-          </View>
-        </Pressable>
+        <View className="flex-row items-center p-4">
+          {/* Active Campaigns */}
+          <Pressable
+            className="flex-1 flex-row items-center gap-3 active:opacity-80"
+            style={{ minWidth: 0 }}
+            onPress={() => navigate("campaigns")}
+          >
+            <View className="w-10 h-10 rounded-xl bg-white/15 items-center justify-center">
+              <Ionicons
+                name="megaphone-outline"
+                size={20}
+                color="#FFFFFF"
+              />
+            </View>
 
-        {/* Vertical Divider */}
-        <View style={styles.heroDivider} />
+            <View className="flex-1" style={{ minWidth: 0 }}>
+              <Text
+                className="text-white text-base font-extrabold tracking-tight"
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
+                {activeCampaignsCount} Active
+              </Text>
 
-        {/* Right Column: AI Mins */}
-        <Pressable
-          style={styles.heroColumn}
-          onPress={() => openVoiceWebBilling(queryClient, isDark)}
-        >
-          <Ionicons name="flash" size={26} color="#FFFFFF" />
-          <View style={styles.heroTextWrapper}>
-            <Text style={styles.heroBoldMins} numberOfLines={1}>
-              {rawMinutes.toLocaleString()} Mins
-            </Text>
-            <Text style={styles.heroSubMins} numberOfLines={1}>
-              AI Voice Balance
-            </Text>
-          </View>
-        </Pressable>
+              <Text
+                className="text-white/80 text-xs font-medium mt-1"
+                numberOfLines={1}
+              >
+                Campaigns
+              </Text>
+            </View>
+          </Pressable>
+
+          {/* Divider */}
+          <View className="w-px h-10 bg-white/25 mx-3" />
+
+          {/* AI Voice Balance */}
+          <Pressable
+            className="flex-1 flex-row items-center gap-3 active:opacity-80"
+            style={{ minWidth: 0 }}
+            onPress={() => openVoiceWebBilling(queryClient, isDark)}
+          >
+            <View className="w-10 h-10 rounded-xl bg-white/15 items-center justify-center">
+              <Ionicons
+                name="flash-outline"
+                size={20}
+                color="#FFFFFF"
+              />
+            </View>
+
+            <View className="flex-1" style={{ minWidth: 0 }}>
+              <Text
+                className="text-white text-base font-extrabold tracking-tight"
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
+                {rawMinutes.toLocaleString()} Mins
+              </Text>
+
+              <Text
+                className="text-white/80 text-xs font-medium mt-1"
+                numberOfLines={1}
+              >
+                AI Voice Balance
+              </Text>
+            </View>
+          </Pressable>
+        </View>
       </LinearGradient>
 
-      {/* 3. 2x2 METRICS GRID (Comprehensive Fleet Telemetry) */}
-      <View style={styles.gridContainer}>
+
+      {/* 3. 2x2 METRICS GRID */}
+      <View className="w-full gap-3">
         {/* Row 1: AI Assistants & Dedicated Phone Lines */}
-        <View style={styles.gridRow}>
+        <View className="flex-row gap-3 w-full">
           {/* Card 1: AI Assistants */}
-          <View style={styles.metricCardWrapper}>
+          <View className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
             <Pressable
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -276,158 +328,187 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
                   onOpenCreateAssistant();
                 }
               }}
-              style={({ pressed }) => [
-                styles.metricCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-                pressed && styles.pressed,
-              ]}
+              className="rounded-2xl p-3.5 border justify-between active:opacity-75 shadow-sm min-h-[96px]"
+              style={{
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              }}
             >
-              <View style={styles.metricHeaderRow}>
+              <View className="flex-row items-center justify-between mb-2">
                 <View
-                  style={[
-                    styles.metricIconWrap,
-                    { backgroundColor: colors.primaryLight },
-                  ]}
+                  className="w-8 h-8 rounded-xl items-center justify-center shrink-0"
+                  style={{ backgroundColor: colors.primaryLight }}
                 >
                   <Bot size={17} color={colors.primary} strokeWidth={2.2} />
                 </View>
-                <Text style={[styles.metricLabel, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
+                <Ionicons name="chevron-forward" size={14} color={colors.chevron} />
+              </View>
+              <View>
+                <Text
+                  className="text-2xl font-extrabold tracking-tight"
+                  style={{ color: colors.text }}
+                  numberOfLines={1}
+                >
+                  {totalAssistantsCount}
+                </Text>
+                <Text
+                  className="text-xs font-medium mt-0.5"
+                  style={{ color: colors.textSecondary }}
+                  numberOfLines={1}
+                >
                   AI Assistants
                 </Text>
               </View>
-              <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
-                {totalAssistantsCount}
-              </Text>
             </Pressable>
           </View>
 
           {/* Card 2: Dedicated Phone Lines */}
-          <View style={styles.metricCardWrapper}>
+          <View className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
             <Pressable
               onPress={() => navigate("contacts")}
-              style={({ pressed }) => [
-                styles.metricCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-                pressed && styles.pressed,
-              ]}
+              className="rounded-2xl p-3.5 border justify-between active:opacity-75 shadow-sm min-h-[96px]"
+              style={{
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              }}
             >
-              <View style={styles.metricHeaderRow}>
+              <View className="flex-row items-center justify-between mb-2">
                 <View
-                  style={[
-                    styles.metricIconWrap,
-                    {
-                      backgroundColor: isDark
-                        ? "rgba(99, 102, 241, 0.15)"
-                        : "#EEF2FF",
-                    },
-                  ]}
+                  className="w-8 h-8 rounded-xl items-center justify-center shrink-0"
+                  style={{
+                    backgroundColor: isDark
+                      ? "rgba(99, 102, 241, 0.15)"
+                      : "#EEF2FF",
+                  }}
                 >
                   <PhoneCall size={17} color="#6366F1" strokeWidth={2.2} />
                 </View>
-                <Text style={[styles.metricLabel, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
+                <Ionicons name="chevron-forward" size={14} color={colors.chevron} />
+              </View>
+              <View>
+                <Text
+                  className="text-2xl font-extrabold tracking-tight"
+                  style={{ color: colors.text }}
+                  numberOfLines={1}
+                >
+                  {data?.totalNumbersCount ?? numbers.length}
+                </Text>
+                <Text
+                  className="text-xs font-medium mt-0.5"
+                  style={{ color: colors.textSecondary }}
+                  numberOfLines={1}
+                >
                   Phone Lines
                 </Text>
               </View>
-              <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
-                {data?.totalNumbersCount ?? numbers.length}
-              </Text>
             </Pressable>
           </View>
         </View>
 
         {/* Row 2: Total Calls & Voice Wallet */}
-        <View style={styles.gridRow}>
+        <View className="flex-row gap-3 w-full">
           {/* Card 3: Total Calls */}
-          <View style={styles.metricCardWrapper}>
+          <View className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
             <Pressable
               onPress={() => navigate("calls")}
-              style={({ pressed }) => [
-                styles.metricCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-                pressed && styles.pressed,
-              ]}
+              className="rounded-2xl p-3.5 border justify-between active:opacity-75 shadow-sm min-h-[96px]"
+              style={{
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              }}
             >
-              <View style={styles.metricHeaderRow}>
+              <View className="flex-row items-center justify-between mb-2">
                 <View
-                  style={[
-                    styles.metricIconWrap,
-                    {
-                      backgroundColor: isDark
-                        ? "rgba(14, 165, 233, 0.15)"
-                        : "#E0F2FE",
-                    },
-                  ]}
+                  className="w-8 h-8 rounded-xl items-center justify-center shrink-0"
+                  style={{
+                    backgroundColor: isDark
+                      ? "rgba(14, 165, 233, 0.15)"
+                      : "#E0F2FE",
+                  }}
                 >
                   <Phone size={17} color="#0EA5E9" strokeWidth={2.2} />
                 </View>
-                <Text style={[styles.metricLabel, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
+                <Ionicons name="chevron-forward" size={14} color={colors.chevron} />
+              </View>
+              <View>
+                <Text
+                  className="text-2xl font-extrabold tracking-tight"
+                  style={{ color: colors.text }}
+                  numberOfLines={1}
+                >
+                  {totalCallsCount}
+                </Text>
+                <Text
+                  className="text-xs font-medium mt-0.5"
+                  style={{ color: colors.textSecondary }}
+                  numberOfLines={1}
+                >
                   Total Calls
                 </Text>
               </View>
-              <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
-                {totalCallsCount}
-              </Text>
             </Pressable>
           </View>
 
           {/* Card 4: Wallet Status */}
-          <View style={styles.metricCardWrapper}>
+          <View className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
             <Pressable
               onPress={() => openVoiceWebBilling(queryClient, isDark)}
-              style={({ pressed }) => [
-                styles.metricCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-                pressed && styles.pressed,
-              ]}
+              className="rounded-2xl p-3.5 border justify-between active:opacity-75 shadow-sm min-h-[96px]"
+              style={{
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              }}
             >
-              <View style={styles.metricHeaderRow}>
+              <View className="flex-row items-center justify-between mb-2">
                 <View
-                  style={[
-                    styles.metricIconWrap,
-                    {
-                      backgroundColor: isDark
-                        ? "rgba(22, 163, 74, 0.15)"
-                        : "#DCFCE7",
-                    },
-                  ]}
+                  className="w-8 h-8 rounded-xl items-center justify-center shrink-0"
+                  style={{
+                    backgroundColor: isDark
+                      ? "rgba(16, 185, 129, 0.15)"
+                      : "#DCFCE7",
+                  }}
                 >
                   <Database size={17} color={colors.green} strokeWidth={2.2} />
                 </View>
-                <Text style={[styles.metricLabel, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
-                  Voice Wallet
+                <Ionicons name="chevron-forward" size={14} color={colors.chevron} />
+              </View>
+              <View>
+                <Text
+                  className="text-2xl font-extrabold tracking-tight text-emerald-500"
+                  numberOfLines={1}
+                >
+                  {rawMinutes.toLocaleString()}
+                </Text>
+                <Text
+                  className="text-xs font-medium mt-0.5"
+                  style={{ color: colors.textSecondary }}
+                  numberOfLines={1}
+                >
+                  AI Mins Balance
                 </Text>
               </View>
-              <Text
-                style={[
-                  styles.metricValue,
-                  {
-                    color: colors.green,
-                    fontSize: Platform.OS === 'web' ? 20 : 18,
-                  },
-                ]}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {rawMinutes.toLocaleString()} Mins
-              </Text>
             </Pressable>
           </View>
         </View>
       </View>
 
-
-
-      {/* 5. QUICK ACTIONS SECTION */}
-      <View style={styles.quickActionsSection}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+      {/* 4. QUICK ACTIONS SECTION */}
+      <View className="gap-2.5 w-full">
+        <Text
+          className="text-xs font-bold tracking-wider uppercase px-1"
+          style={{ color: colors.textSecondary }}
+        >
           Quick Actions
         </Text>
 
-        <View style={styles.actionsList}>
+        <View className="flex-col gap-2.5">
           {/* Action 1: Create Assistant */}
           <Pressable
-            className={`flex-row gap-3 items-center justify-between w-full p-3.5 rounded-2xl border ${isDark ? 'bg-[#1C1C1E] border-[#2C2C2E]' : 'bg-white border-[#E5E7EB]'
-              }`}
+            className="flex-row items-center justify-between w-full p-3.5 rounded-2xl border active:opacity-75 shadow-sm shadow-black/5"
+            style={{
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            }}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               if (onOpenCreateAssistant) {
@@ -437,28 +518,44 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
               }
             }}
           >
-            <View
-              style={[
-                styles.actionIconCircle,
-                { backgroundColor: colors.primary },
-              ]}
-            >
-              <Bot size={18} color="#FFFFFF" strokeWidth={2.2} />
+            <View className="flex-row items-center gap-3 flex-1 mr-2 min-w-0">
+              <View
+                className="w-10 h-10 rounded-xl items-center justify-center shrink-0"
+                style={{ backgroundColor: colors.primaryLight }}
+              >
+                <Bot size={20} color={colors.primary} strokeWidth={2.2} />
+              </View>
+              <View className="flex-1 min-w-0">
+                <Text
+                  className="text-[15px] font-bold tracking-tight"
+                  style={{ color: colors.text }}
+                  numberOfLines={1}
+                >
+                  Create Assistant
+                </Text>
+                <Text
+                  className="text-xs mt-0.5"
+                  style={{ color: colors.textSecondary }}
+                  numberOfLines={1}
+                >
+                  Configure AI voice persona & instructions
+                </Text>
+              </View>
             </View>
-            <Text style={[styles.actionTitle, { color: colors.text }]}>
-              Create Assistant
-            </Text>
             <Ionicons
               name="chevron-forward"
-              size={19}
+              size={18}
               color={colors.chevron}
             />
           </Pressable>
 
           {/* Action 2: Start Campaign */}
           <Pressable
-            className={`flex-row gap-3 items-center justify-between w-full p-3.5 rounded-2xl border ${isDark ? 'bg-[#1C1C1E] border-[#2C2C2E]' : 'bg-white border-[#E5E7EB]'
-              }`}
+            className="flex-row items-center justify-between w-full p-3.5 rounded-2xl border active:opacity-75 shadow-sm shadow-black/5"
+            style={{
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            }}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               if (onOpenCreateCampaign) {
@@ -468,49 +565,86 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
               }
             }}
           >
-            <View
-              style={[
-                styles.actionIconCircle,
-                { backgroundColor: colors.primary },
-              ]}
-            >
-              <Ionicons
-                name="play"
-                size={16}
-                color="#FFFFFF"
-                style={{ marginLeft: 2 }}
-              />
+            <View className="flex-row items-center gap-3 flex-1 mr-2 min-w-0">
+              <View
+                className="w-10 h-10 rounded-xl items-center justify-center shrink-0"
+                style={{
+                  backgroundColor: isDark
+                    ? "rgba(16, 185, 129, 0.15)"
+                    : "#DCFCE7",
+                }}
+              >
+                <Ionicons
+                  name="play"
+                  size={18}
+                  color="#10B981"
+                  style={{ marginLeft: 2 }}
+                />
+              </View>
+              <View className="flex-1 min-w-0">
+                <Text
+                  className="text-[15px] font-bold tracking-tight"
+                  style={{ color: colors.text }}
+                  numberOfLines={1}
+                >
+                  Start Campaign
+                </Text>
+                <Text
+                  className="text-xs mt-0.5"
+                  style={{ color: colors.textSecondary }}
+                  numberOfLines={1}
+                >
+                  Launch outbound telecalling to contacts
+                </Text>
+              </View>
             </View>
-            <Text style={[styles.actionTitle, { color: colors.text }]}>
-              Start Campaign
-            </Text>
             <Ionicons
               name="chevron-forward"
-              size={19}
+              size={18}
               color={colors.chevron}
             />
           </Pressable>
 
           {/* Action 3: View Call Logs */}
           <Pressable
-            className={`flex-row gap-3 items-center justify-between w-full p-3.5 rounded-2xl border ${isDark ? 'bg-[#1C1C1E] border-[#2C2C2E]' : 'bg-white border-[#E5E7EB]'
-              }`}
+            className="flex-row items-center justify-between w-full p-3.5 rounded-2xl border active:opacity-75 shadow-sm shadow-black/5"
+            style={{
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            }}
             onPress={() => navigate("calls")}
           >
-            <View
-              style={[
-                styles.actionIconCircle,
-                { backgroundColor: colors.primary },
-              ]}
-            >
-              <Ionicons name="list" size={18} color="#FFFFFF" />
+            <View className="flex-row items-center gap-3 flex-1 mr-2 min-w-0">
+              <View
+                className="w-10 h-10 rounded-xl items-center justify-center shrink-0"
+                style={{
+                  backgroundColor: isDark
+                    ? "rgba(14, 165, 233, 0.15)"
+                    : "#E0F2FE",
+                }}
+              >
+                <Ionicons name="list" size={18} color="#0EA5E9" />
+              </View>
+              <View className="flex-1 min-w-0">
+                <Text
+                  className="text-[15px] font-bold tracking-tight"
+                  style={{ color: colors.text }}
+                  numberOfLines={1}
+                >
+                  View Call Logs
+                </Text>
+                <Text
+                  className="text-xs mt-0.5"
+                  style={{ color: colors.textSecondary }}
+                  numberOfLines={1}
+                >
+                  Review call transcripts and recordings
+                </Text>
+              </View>
             </View>
-            <Text style={[styles.actionTitle, { color: colors.text }]}>
-              View Call Logs
-            </Text>
             <Ionicons
               name="chevron-forward"
-              size={19}
+              size={18}
               color={colors.chevron}
             />
           </Pressable>
@@ -519,278 +653,3 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    width: "100%",
-  },
-  content: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 110,
-    gap: 16,
-    width: "100%",
-  },
-  headingSection: {
-    paddingTop: 2,
-    gap: 4,
-    width: "100%",
-  },
-  mainHeading: {
-    fontSize: 27,
-    lineHeight: 33,
-    fontWeight: "800",
-    letterSpacing: -0.6,
-  },
-  subHeading: {
-    fontSize: 15,
-    lineHeight: 21,
-    fontWeight: "500",
-  },
-  heroGradientCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: "100%",
-    borderRadius: 20,
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-    shadowColor: "#5B3AF5",
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.22,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  heroColumn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    minWidth: 0,
-  },
-  heroTextWrapper: {
-    flex: 1,
-    justifyContent: "center",
-    minWidth: 0,
-  },
-  heroBoldCount: {
-    color: "#FFFFFF",
-    fontSize: 15.5,
-    fontWeight: "800",
-    letterSpacing: -0.3,
-  },
-  heroSubText: {
-    color: "rgba(255, 255, 255, 0.88)",
-    fontSize: 12.5,
-    fontWeight: "600",
-    marginTop: 1,
-  },
-  heroBoldMins: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
-    letterSpacing: -0.3,
-    lineHeight: 20,
-  },
-  heroSubMins: {
-    color: "rgba(255, 255, 255, 0.88)",
-    fontSize: 12.5,
-    fontWeight: "600",
-    marginTop: 1,
-  },
-  heroDivider: {
-    width: 1,
-    height: 38,
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
-    marginHorizontal: 10,
-  },
-  gridContainer: {
-    width: "100%",
-    gap: Platform.OS === "web" ? 12 : 10,
-  },
-  gridRow: {
-    flexDirection: "row",
-    width: "100%",
-    alignSelf: "stretch",
-    gap: Platform.OS === "web" ? 12 : 10,
-  },
-  metricCardWrapper: {
-    flex: 1,
-    minWidth: 0,
-    flexBasis: 0,
-  },
-  metricCard: {
-    flex: 1,
-    width: "100%",
-    minWidth: 0,
-    flexBasis: Platform.OS === "web" ? "auto" : 0,
-    padding: Platform.OS === "web" ? 14 : 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 5,
-    elevation: 1,
-    minHeight: Platform.OS === "web" ? 96 : 88,
-    justifyContent: "space-between",
-  },
-  metricHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    width: "100%",
-  },
-  metricIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  metricLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    letterSpacing: -0.1,
-    flex: 1,
-  },
-  metricValue: {
-    fontSize: Platform.OS === "web" ? 22 : 20,
-    lineHeight: Platform.OS === "web" ? 26 : 24,
-    fontWeight: "800",
-    letterSpacing: -0.4,
-    marginTop: 4,
-  },
-  quickActionsSection: {
-    gap: 12,
-    marginTop: 4,
-    width: "100%",
-  },
-  sectionTitle: {
-    fontSize: 18.5,
-    fontWeight: "800",
-    letterSpacing: -0.3,
-  },
-  actionsList: {
-    gap: 10,
-    // justifyContent: 'space-around'
-  },
-  actionCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: "100%",
-    paddingVertical: 13,
-    paddingHorizontal: 15,
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 12,
-  },
-  actionIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  actionTitle: {
-    flex: 1,
-    fontSize: 14.5,
-    fontWeight: "700",
-    letterSpacing: -0.2,
-  },
-  pressed: {
-    opacity: 0.78,
-  },
-  expiredBanner: {
-    borderRadius: 16,
-    borderWidth: 1,
-    width: "100%",
-    padding: 14,
-    gap: 10,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 5,
-    elevation: 1,
-  },
-  expiredBannerHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-  },
-  expiredIconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 11,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  expiredTextWrap: {
-    flex: 1,
-    gap: 3,
-  },
-  expiredTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  expiredTitle: {
-    fontSize: 14.5,
-    fontWeight: "700",
-    letterSpacing: -0.2,
-  },
-  planStatusPill: {
-    backgroundColor: "rgba(245, 158, 11, 0.15)",
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 5,
-  },
-  planStatusPillText: {
-    color: "#D97706",
-    fontSize: 10,
-    fontWeight: "700",
-  },
-  expiredDesc: {
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: "500",
-  },
-  expiredTagsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-    paddingTop: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  expiredTag: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 7,
-    flexShrink: 1,
-  },
-  expiredTagText: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  renewActionBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 11,
-    paddingVertical: 6,
-    borderRadius: 8,
-    flexShrink: 0,
-  },
-  renewActionText: {
-    fontSize: 11.5,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
-});

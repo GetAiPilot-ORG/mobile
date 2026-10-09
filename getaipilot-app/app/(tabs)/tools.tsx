@@ -1,9 +1,8 @@
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -135,16 +134,6 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     badge: "Free",
     route: "/tools/qr-code",
   },
-  // {
-  //   id: "website-audit",
-  //   title: "Website Health Audit",
-  //   category: "AI Audio",
-  //   description:
-  //     "Instantly audit SEO, performance, UX, and conversion with an AI health score.",
-  //   icon: "🔍",
-  //   badge: "AI Score",
-  //   route: "/tools/website-audit",
-  // },
 ];
 
 const CATEGORIES = ["All", "Templates", "Messaging", "Utilities", "AI Audio"];
@@ -153,7 +142,6 @@ export default function FreeToolsScreen() {
   const router = useRouter();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
-  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [openingToolId, setOpeningToolId] = useState<string | null>(null);
@@ -198,19 +186,32 @@ export default function FreeToolsScreen() {
     <AppScreen safeArea={false}>
       <AppTopBar
         title="Free Tools Hub"
-        // subtitle="Complete Utility Inventory (10 Tools)"
         showBack={false}
         showPlanBadge={true}
       />
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={{ padding: 16, paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Hero Card */}
-        <View style={[styles.heroCard, isDark && styles.heroCardDark]}>
-          <Text style={styles.heroTitle}>Production Utilities</Text>
-          <Text style={[styles.heroSub, isDark && styles.heroSubDark]}>
+        <View
+          className="rounded-2xl p-4 mb-4 border shadow-sm"
+          style={{
+            backgroundColor: colors.card,
+            borderColor: colors.border,
+          }}
+        >
+          <Text
+            className="text-lg font-black tracking-tight"
+            style={{ color: colors.foreground }}
+          >
+            Production Utilities
+          </Text>
+          <Text
+            className="text-[13px] mt-1 leading-[18px]"
+            style={{ color: colors.mutedForeground }}
+          >
             Zero-cost growth tools powered by GetAIPilot infrastructure. No
             credit card required.
           </Text>
@@ -227,33 +228,35 @@ export default function FreeToolsScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.categoryScroll}
+          className="flex-row mb-4"
         >
-          {CATEGORIES.map((cat) => (
-            <Pressable
-              key={cat}
-              style={[
-                styles.categoryChip,
-                isDark && styles.categoryChipDark,
-                selectedCategory === cat && styles.categoryChipActive,
-              ]}
-              onPress={() => setSelectedCategory(cat)}
-            >
-              <Text
-                style={[
-                  styles.categoryText,
-                  isDark && styles.categoryTextDark,
-                  selectedCategory === cat && styles.categoryTextActive,
-                ]}
+          {CATEGORIES.map((cat) => {
+            const isActive = selectedCategory === cat;
+            return (
+              <Pressable
+                key={cat}
+                className="px-3.5 py-1.5 rounded-full mr-2 border active:opacity-80"
+                style={{
+                  backgroundColor: isActive ? colors.primary : colors.card,
+                  borderColor: isActive ? colors.primary : colors.border,
+                }}
+                onPress={() => setSelectedCategory(cat)}
               >
-                {cat}
-              </Text>
-            </Pressable>
-          ))}
+                <Text
+                  className="text-xs font-bold"
+                  style={{
+                    color: isActive ? colors.primaryForeground : colors.mutedForeground,
+                  }}
+                >
+                  {cat}
+                </Text>
+              </Pressable>
+            );
+          })}
         </ScrollView>
 
         {/* Tools Grid */}
-        <View style={styles.toolsList}>
+        <View className="mt-1">
           {filteredTools.map((tool) => (
             <ToolCard
               key={tool.id}
@@ -269,75 +272,4 @@ export default function FreeToolsScreen() {
       </ScrollView>
     </AppScreen>
   );
-}
-
-function createStyles(colors: ReturnType<typeof getColors>, isDark: boolean) {
-  return StyleSheet.create({
-    scrollContent: {
-      padding: 16,
-      paddingBottom: 140,
-    },
-    heroCard: {
-      backgroundColor: colors.card,
-      borderRadius: 18,
-      padding: 18,
-      marginBottom: 16,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    heroCardDark: {
-      backgroundColor: colors.card,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    heroTitle: {
-      fontSize: 18,
-      fontWeight: "900",
-      color: colors.foreground,
-    },
-    heroSub: {
-      fontSize: 13,
-      color: colors.mutedForeground,
-      marginTop: 4,
-      lineHeight: 18,
-    },
-    heroSubDark: {
-      color: colors.mutedForeground,
-    },
-    categoryScroll: {
-      flexDirection: "row",
-      marginBottom: 16,
-    },
-    categoryChip: {
-      paddingHorizontal: 14,
-      paddingVertical: 7,
-      borderRadius: 20,
-      backgroundColor: colors.card,
-      marginRight: 8,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    categoryChipDark: {
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-    },
-    categoryChipActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
-    },
-    categoryText: {
-      fontSize: 12,
-      fontWeight: "700",
-      color: colors.mutedForeground,
-    },
-    categoryTextDark: {
-      color: colors.mutedForeground,
-    },
-    categoryTextActive: {
-      color: colors.primaryForeground,
-    },
-    toolsList: {
-      marginTop: 4,
-    },
-  });
 }

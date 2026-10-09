@@ -1,7 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { useTheme, getColors } from '@/theme';
+import { useTheme } from '@/theme';
 import { WhatsAppUsage } from '../types';
 
 const moneyIcon = require('../../../../assets/images/money.png');
@@ -14,7 +14,6 @@ interface UsageCardProps {
 
 export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading, isConnected = true }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
 
   const rawBalance = usage?.credits_balance ?? 0;
   const balance = isLoading
@@ -29,34 +28,41 @@ export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading, isConnec
     sent > 0 ? Math.round((delivered / sent) * 100) : 0;
 
   return (
-    <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+    <View
+      className={`w-full rounded-2xl p-4 border mb-3 shadow-sm ${
+        isDark ? 'bg-[#1C1C1E] border-[#2C2C2E]' : 'bg-white border-[#E5E7EB]'
+      }`}
+    >
       {/* Wallet Top Header */}
-      <View style={styles.topRow}>
-        <View style={styles.walletHeaderLeft}>
-          <View style={styles.walletIconCircle}>
-            <Image source={moneyIcon} style={styles.moneyIcon} contentFit="contain" />
+      <View className="flex-row items-center justify-between mb-1.5">
+        <View className="flex-row items-center gap-2">
+          <View className="w-8 h-8 items-center justify-center">
+            <Image source={moneyIcon} style={{ width: 32, height: 32 }} contentFit="contain" />
           </View>
-          <Text style={[styles.label, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+          <Text
+            className={`text-[13px] font-semibold tracking-tight ${
+              isDark ? 'text-[#8E8E93]' : 'text-[#64748B]'
+            }`}
+          >
             WhatsApp Cloud Wallet
           </Text>
         </View>
 
-        <View style={styles.statusDotRow}>
+        <View className="flex-row items-center gap-1.5">
           <View
-            style={[
-              styles.statusDot,
-              { backgroundColor: isConnected ? '#22C55E' : (isDark ? '#636366' : '#94A3B8') },
-            ]}
+            className="w-1.5 h-1.5 rounded-full"
+            style={{ backgroundColor: isConnected ? '#22C55E' : isDark ? '#636366' : '#94A3B8' }}
           />
           <Text
-            style={[
-              styles.statusDotText,
-              {
-                color: isConnected
-                  ? (isDark ? '#34C759' : '#16A34A')
-                  : (isDark ? '#8E8E93' : '#64748B'),
-              },
-            ]}
+            className={`text-xs font-medium ${
+              isConnected
+                ? isDark
+                  ? 'text-emerald-400'
+                  : 'text-emerald-600'
+                : isDark
+                ? 'text-[#8E8E93]'
+                : 'text-[#64748B]'
+            }`}
           >
             {isConnected ? 'Active' : 'Inactive'}
           </Text>
@@ -64,48 +70,93 @@ export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading, isConnec
       </View>
 
       {/* Main Balance Display */}
-      <View style={styles.balanceContainer}>
-        <Text style={[styles.balance, isDark ? styles.textLight : styles.textDark]}>
+      <View className="mt-0.5 mb-3.5">
+        <Text
+          className={`text-2xl sm:text-3xl font-bold tracking-tight ${
+            isDark ? 'text-white' : 'text-slate-900'
+          }`}
+        >
           {balance}
         </Text>
       </View>
 
       {/* Sleek Integrated Stats Bar */}
-      <View style={[styles.statsBar, isDark ? styles.statsBarDark : styles.statsBarLight]}>
+      <View
+        className={`flex-row items-center rounded-xl py-2.5 px-1 border ${
+          isDark
+            ? 'bg-[#121214] border-white/[0.05]'
+            : 'bg-[#F8F9FA] border-[#F2F4F7]'
+        }`}
+      >
         {/* Sent */}
-        <View style={styles.statCol}>
-          <Text style={[styles.statLabel, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]} numberOfLines={1} ellipsizeMode="tail">
+        <View className="flex-1 min-w-0 items-center justify-center" style={{ flexBasis: 0 }}>
+          <Text
+            className={`text-[11px] font-medium mb-0.5 ${
+              isDark ? 'text-[#8E8E93]' : 'text-[#64748B]'
+            }`}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             Sent
           </Text>
-          <Text style={[styles.statValue, isDark ? styles.textLight : styles.textDark]} numberOfLines={1} ellipsizeMode="tail">
+          <Text
+            className={`text-[15px] font-bold tracking-tight ${
+              isDark ? 'text-white' : 'text-slate-900'
+            }`}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {sent.toLocaleString()}
           </Text>
         </View>
 
-        <View style={[styles.colDivider, isDark ? styles.colDividerDark : styles.colDividerLight]} />
+        <View
+          className={`w-[1px] h-5.5 ${
+            isDark ? 'bg-white/[0.08]' : 'bg-black/[0.08]'
+          }`}
+        />
 
         {/* Delivered */}
-        <View style={styles.statCol}>
-          <Text style={[styles.statLabel, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]} numberOfLines={1} ellipsizeMode="tail">
+        <View className="flex-1 min-w-0 items-center justify-center" style={{ flexBasis: 0 }}>
+          <Text
+            className={`text-[11px] font-medium mb-0.5 ${
+              isDark ? 'text-[#8E8E93]' : 'text-[#64748B]'
+            }`}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             Delivered
           </Text>
-          <Text style={[styles.statValue, { color: '#22C55E' }]} numberOfLines={1} ellipsizeMode="tail">
+          <Text
+            className="text-[15px] font-bold tracking-tight text-emerald-500"
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {delivered.toLocaleString()}
           </Text>
         </View>
 
-        <View style={[styles.colDivider, isDark ? styles.colDividerDark : styles.colDividerLight]} />
+        <View
+          className={`w-[1px] h-5.5 ${
+            isDark ? 'bg-white/[0.08]' : 'bg-black/[0.08]'
+          }`}
+        />
 
         {/* Failed */}
-        <View style={styles.statCol}>
-          <Text style={[styles.statLabel, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]} numberOfLines={1} ellipsizeMode="tail">
+        <View className="flex-1 min-w-0 items-center justify-center" style={{ flexBasis: 0 }}>
+          <Text
+            className={`text-[11px] font-medium mb-0.5 ${
+              isDark ? 'text-[#8E8E93]' : 'text-[#64748B]'
+            }`}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             Failed
           </Text>
           <Text
-            style={[
-              styles.statValue,
-              { color: failed > 0 ? '#EF4444' : isDark ? '#8E8E93' : '#94A3B8' },
-            ]}
+            className={`text-[15px] font-bold tracking-tight ${
+              failed > 0 ? 'text-red-500' : isDark ? 'text-[#8E8E93]' : 'text-[#94A3B8]'
+            }`}
             numberOfLines={1}
             ellipsizeMode="tail"
           >
@@ -113,14 +164,30 @@ export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading, isConnec
           </Text>
         </View>
 
-        <View style={[styles.colDivider, isDark ? styles.colDividerDark : styles.colDividerLight]} />
+        <View
+          className={`w-[1px] h-5.5 ${
+            isDark ? 'bg-white/[0.08]' : 'bg-black/[0.08]'
+          }`}
+        />
 
         {/* Delivery % */}
-        <View style={styles.statCol}>
-          <Text style={[styles.statLabel, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]} numberOfLines={1} ellipsizeMode="tail">
+        <View className="flex-1 min-w-0 items-center justify-center" style={{ flexBasis: 0 }}>
+          <Text
+            className={`text-[11px] font-medium mb-0.5 ${
+              isDark ? 'text-[#8E8E93]' : 'text-[#64748B]'
+            }`}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             Delivery %
           </Text>
-          <Text style={[styles.statValue, isDark ? styles.textLight : styles.textDark]} numberOfLines={1} ellipsizeMode="tail">
+          <Text
+            className={`text-[15px] font-bold tracking-tight ${
+              isDark ? 'text-white' : 'text-slate-900'
+            }`}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {deliveryRate}%
           </Text>
         </View>
@@ -128,130 +195,3 @@ export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading, isConnec
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    marginBottom: 12,
-  },
-  cardDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
-  },
-  cardLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  walletHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
-  },
-  walletIconCircle: {
-    width: 34,
-    height: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  moneyIcon: {
-    width: 32,
-    height: 32,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: -0.2,
-  },
-  statusDotRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#22C55E',
-  },
-  statusDotText: {
-    fontSize: 11.5,
-    fontWeight: '500',
-  },
-  balanceContainer: {
-    marginTop: 2,
-    marginBottom: 14,
-  },
-  balance: {
-    fontSize: 28,
-    fontWeight: '700',
-    letterSpacing: -0.6,
-  },
-  statsBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-    borderWidth: 1,
-  },
-  statsBarDark: {
-    backgroundColor: '#121214',
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  statsBarLight: {
-    backgroundColor: '#F8F9FA',
-    borderColor: '#F2F4F7',
-  },
-  statCol: {
-    flex: 1,
-    minWidth: 0,
-    flexBasis: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    marginBottom: 3,
-  },
-  statValue: {
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-  },
-  colDivider: {
-    width: StyleSheet.hairlineWidth,
-    height: 22,
-  },
-  colDividerDark: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  colDividerLight: {
-    backgroundColor: 'rgba(0, 0, 0, 0.08)',
-  },
-  textLight: {
-    color: '#FFFFFF',
-  },
-  textDark: {
-    color: '#000000',
-  },
-  textSecondaryDark: {
-    color: '#8E8E93',
-  },
-  textSecondaryLight: {
-    color: '#6B7280',
-  },
-});

@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import React from 'react';
+import { View, Text, Pressable } from 'react-native';
 import { useTheme, getColors } from '@/theme';
 
 interface ToolCardProps {
@@ -21,96 +21,59 @@ export const ToolCard: React.FC<ToolCardProps> = ({
 }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
-  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
-    <Pressable style={styles.card} onPress={onPress}>
-      <View style={styles.topRow}>
-        <View style={styles.iconBox}>
-          <Text style={styles.iconText}>{icon}</Text>
+    <Pressable
+      className="rounded-2xl p-3.5 mb-3 border shadow-sm active:opacity-80 active:scale-[0.99]"
+      style={{
+        backgroundColor: colors.card,
+        borderColor: colors.border,
+      }}
+      onPress={onPress}
+    >
+      <View className="flex-row items-center mb-2">
+        <View
+          className="w-10 h-10 rounded-xl justify-center items-center mr-3"
+          style={{ backgroundColor: colors.accentSoft }}
+        >
+          <Text className="text-lg">{icon}</Text>
         </View>
-        <View style={styles.headerInfo}>
-          <Text style={styles.category}>{category}</Text>
-          <Text style={styles.title} numberOfLines={1}>
+        <View className="flex-1 min-w-0">
+          <Text
+            className="text-[11px] font-medium tracking-tight"
+            style={{ color: colors.mutedForeground }}
+          >
+            {category}
+          </Text>
+          <Text
+            className="text-[15px] font-extrabold mt-0.5"
+            style={{ color: colors.foreground }}
+            numberOfLines={1}
+          >
             {title}
           </Text>
         </View>
         {badge ? (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{badge}</Text>
+          <View
+            className="px-2 py-0.5 rounded-md"
+            style={{ backgroundColor: colors.badgeNeutral }}
+          >
+            <Text
+              className="text-[10px] font-bold"
+              style={{ color: colors.badgeNeutralText }}
+            >
+              {badge}
+            </Text>
           </View>
         ) : null}
       </View>
-      <Text style={styles.desc} numberOfLines={2}>
+      <Text
+        className="text-[12.5px] leading-[17px]"
+        style={{ color: colors.mutedForeground }}
+        numberOfLines={2}
+      >
         {description}
       </Text>
     </Pressable>
   );
 };
-
-function createStyles(colors: ReturnType<typeof getColors>) {
-  return StyleSheet.create({
-    card: {
-      backgroundColor: colors.card,
-      borderRadius: 14,
-      padding: 14,
-      marginBottom: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.04,
-      shadowRadius: 4,
-      elevation: 1,
-    },
-    topRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 8,
-    },
-    iconBox: {
-      width: 40,
-      height: 40,
-      borderRadius: 10,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginRight: 12,
-      backgroundColor: colors.accentSoft,
-    },
-    iconText: {
-      fontSize: 18,
-    },
-    headerInfo: {
-      flex: 1,
-    },
-    category: {
-      fontSize: 11,
-      fontWeight: '500',
-      color: colors.mutedForeground,
-      letterSpacing: -0.1,
-    },
-    title: {
-      fontSize: 15,
-      fontWeight: '800',
-      color: colors.foreground,
-      marginTop: 1,
-    },
-    badge: {
-      backgroundColor: colors.badgeNeutral,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-      borderRadius: 6,
-    },
-    badgeText: {
-      fontSize: 10,
-      fontWeight: '700',
-      color: colors.badgeNeutralText,
-    },
-    desc: {
-      fontSize: 12.5,
-      color: colors.mutedForeground,
-      lineHeight: 17,
-    },
-  });
-}
-

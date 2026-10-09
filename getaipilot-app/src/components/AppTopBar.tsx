@@ -5,12 +5,9 @@ import { useRouter, usePathname } from 'expo-router';
 import { useAuthStore } from '../core/store/authStore';
 import { useTheme, getColors } from '@/theme';
 import React, { useEffect } from 'react';
-import { BackHandler, Platform, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, Platform, Pressable, StatusBar, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 import { usePlatformSubscription } from '../hooks/usePlatformSubscription';
-
-const brandLogo = require("../../assets/images/logo.jpg");
 
 export interface AppTopBarProps {
   title?: string;
@@ -185,12 +182,10 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
 
   return (
     <View
-      style={[
-        styles.container,
-        { paddingTop: topPadding, backgroundColor: colors.background },
-      ]}
+      className="flex-row items-center justify-between w-full px-4 pb-3.5 shrink-0"
+      style={{ paddingTop: topPadding, backgroundColor: colors.background }}
     >
-      <View style={styles.leftSection}>
+      <View className="flex-row items-center flex-1 mr-2.5 min-w-0">
         {shouldShowBack ? (
           <Pressable
             onPress={handleBack}
@@ -199,10 +194,10 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
             accessibilityLabel="Back"
           >
             <View
-              style={[
-                styles.backButton,
-                isDark ? styles.backButtonDark : styles.backButtonLight,
-              ]}
+              className={`w-10 h-10 rounded-full justify-center items-center mr-3 border shadow-sm active:opacity-70 active:scale-95 ${isDark
+                ? 'bg-[#0A111B] border-[#1B334A]'
+                : 'bg-[#F8F5EF] border-[#D2CABA]'
+                }`}
             >
               <Ionicons
                 name="chevron-back"
@@ -222,26 +217,34 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
             accessibilityLabel="Profile Account"
           >
             <View
-              style={[
-                styles.profileBtn,
-                isDark ? styles.profileBtnDark : styles.profileBtnLight,
-              ]}
+              className={`w-[42px] h-[42px] rounded-full justify-center items-center mr-2.5 border-[1.5px] shadow-sm shrink-0 active:opacity-75 active:scale-95 ${isDark ? 'border-[#1B334A]' : 'border-[#D2CABA]'
+                }`}
             >
+
               {avatarUrl ? (
-                <Image source={{ uri: avatarUrl }} style={styles.profileAvatarImg} contentFit="cover" />
+                <Image
+                  source={{ uri: avatarUrl }}
+                  style={{ width: 45, height: 45, borderRadius: 50, borderWidth: 2, borderColor: "#CABFAB" }}
+                  // className="w-[42px] h-[42px] rounded-full shrink-0"
+                  contentFit='cover'
+                />
               ) : (
-                <View style={styles.profileAvatarCircle}>
-                  <Text style={styles.profileAvatarText}>{avatarInitial}</Text>
+                <View className="w-[42px] h-[42px] rounded-full bg-[#CABFAB] items-center justify-center shrink-0">
+                  <Text className="text-[#41444B] text-lg font-bold">
+                    {avatarInitial}
+                  </Text>
                 </View>
               )}
+
             </View>
           </Pressable>
         ) : null}
 
-        <View style={styles.titleWrapper}>
+        <View className="flex-1 justify-center min-w-0">
           {title ? (
             <Text
-              style={[styles.title, isDark ? styles.titleDark : styles.titleLight]}
+              className={`text-[17px] font-bold tracking-tight ${isDark ? 'text-[#F7FAFC]' : 'text-[#41444B]'
+                }`}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
@@ -250,14 +253,16 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
           ) : (
             <>
               <Text
-                style={[styles.title, isDark ? styles.titleDark : styles.titleLight]}
+                className={`text-[17px] font-bold tracking-tight ${isDark ? 'text-[#F7FAFC]' : 'text-[#41444B]'
+                  }`}
                 numberOfLines={1}
                 ellipsizeMode="tail"
               >
                 {displayName}
               </Text>
               <Text
-                style={[styles.subtitle, isDark ? styles.subtitleDark : styles.subtitleLight]}
+                className={`text-xs mt-0.5 tracking-tight font-normal ${isDark ? 'text-[#8FA3B8]' : 'text-[#6B7076]'
+                  }`}
                 numberOfLines={1}
                 ellipsizeMode="tail"
               >
@@ -267,7 +272,8 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
           )}
           {title && subtitle ? (
             <Text
-              style={[styles.subtitle, isDark ? styles.subtitleDark : styles.subtitleLight]}
+              className={`text-xs mt-0.5 tracking-tight font-normal ${isDark ? 'text-[#8FA3B8]' : 'text-[#6B7076]'
+                }`}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
@@ -278,9 +284,9 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
       </View>
 
       {rightElement ? (
-        <View style={styles.rightSection}>{rightElement}</View>
+        <View className="flex-row items-center shrink-0">{rightElement}</View>
       ) : displayPlanBadge ? (
-        <View style={styles.rightSection}>
+        <View className="flex-row items-center shrink-0">
           <Pressable
             onPress={handlePlanBadgePress}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -288,28 +294,24 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
             accessibilityLabel={`Current workspace plan: ${planLabel || 'Free'}. Tap to view and upgrade plans`}
           >
             <View
-              style={[
-                styles.planBadge,
-                isDark ? styles.planBadgeDark : styles.planBadgeLight,
-              ]}
+              className={`flex-row items-center gap-1.5 h-9 px-3 rounded-full border-[1.5px] shrink-0 self-center shadow-sm active:opacity-70 active:scale-95 ${isDark
+                ? 'bg-[#2F8CFF]/15 border-[#2F8CFF]/40'
+                : 'bg-[#0A84FF]/10 border-[#0A84FF]/25'
+                }`}
             >
               <View
-                style={[
-                  styles.planDot,
-                  { backgroundColor: isActive ? '#30D158' : '#F59E0B' },
-                ]}
+                className="w-[7px] h-[7px] rounded-full shrink-0"
+                style={{ backgroundColor: isActive ? '#30D158' : '#F59E0B' }}
               />
               <Ionicons
                 name="sparkles"
                 size={13}
                 color={isActive ? '#0A84FF' : '#F59E0B'}
-                style={styles.planSparkles}
+                className="shrink-0"
               />
               <Text
-                style={[
-                  styles.planBadgeText,
-                  isDark ? styles.planBadgeTextDark : styles.planBadgeTextLight,
-                ]}
+                className={`text-[13px] font-bold tracking-tight shrink-0 ${isDark ? 'text-[#38BDF8]' : 'text-[#0A84FF]'
+                  }`}
                 numberOfLines={1}
                 ellipsizeMode="tail"
               >
@@ -319,224 +321,14 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
                 name="chevron-forward"
                 size={13}
                 color={isDark ? '#60A5FA' : '#0A84FF'}
-                style={styles.planChevron}
+                className="ml-0.5 shrink-0"
               />
             </View>
           </Pressable>
         </View>
       ) : (
-        <View style={styles.rightEmpty} />
+        <View className="w-0 h-0" />
       )}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: "100%",
-    paddingHorizontal: 16,
-    paddingBottom: 14,
-    borderBottomWidth: 0,
-    flexShrink: 0,
-  },
-  containerLight: {
-    backgroundColor: 'transparent',
-    borderBottomWidth: 0,
-  },
-  containerDark: {
-    backgroundColor: 'transparent',
-    borderBottomWidth: 0,
-  },
-  leftSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    marginRight: 10,
-    minWidth: 0,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    borderWidth: 1,
-  },
-  backButtonLight: {
-    backgroundColor: '#F8F5EF',
-    borderColor: '#D2CABA',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  backButtonDark: {
-    backgroundColor: '#0A111B',
-    borderColor: '#1B334A',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  backButtonPressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.94 }],
-  },
-  profileBtn: {
-    width: 42,
-    height: 42,
-    minWidth: 42,
-    minHeight: 42,
-    maxWidth: 42,
-    maxHeight: 42,
-    borderRadius: 21,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 11,
-    borderWidth: 1.5,
-    flexShrink: 0,
-  },
-  profileBtnLight: {
-    borderColor: '#D2CABA',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  profileBtnDark: {
-    borderColor: '#1B334A',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  profileBtnPressed: {
-    opacity: 0.75,
-    transform: [{ scale: 0.94 }],
-  },
-  profileAvatarImg: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 21,
-  },
-  profileAvatarCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#CABFAB',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexShrink: 0,
-  },
-  profileAvatarText: {
-    color: '#41444B',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  titleWrapper: {
-    flex: 1,
-    justifyContent: 'center',
-    minWidth: 0,
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
-  titleLight: {
-    color: '#41444B',
-  },
-  titleDark: {
-    color: '#F7FAFC',
-  },
-  subtitle: {
-    fontSize: 12,
-    marginTop: 2,
-    letterSpacing: -0.1,
-    fontWeight: '400',
-  },
-  subtitleLight: {
-    color: '#6B7076',
-  },
-  subtitleDark: {
-    color: '#8FA3B8',
-  },
-  rightSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexShrink: 0,
-  },
-  rightEmpty: {
-    width: 0,
-    height: 0,
-  },
-  planBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'nowrap',
-    gap: 6,
-    height: 36,
-    paddingHorizontal: 12,
-    borderRadius: 18,
-    borderWidth: 1.5,
-    flexShrink: 0,
-    alignSelf: 'center',
-  },
-  planBadgeLight: {
-    backgroundColor: 'rgba(10, 132, 255, 0.08)',
-    borderColor: 'rgba(10, 132, 255, 0.25)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  planBadgeDark: {
-    backgroundColor: 'rgba(47, 140, 255, 0.14)',
-    borderColor: 'rgba(47, 140, 255, 0.42)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  planBadgePressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.95 }],
-  },
-  planDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    marginRight: 6,
-    flexShrink: 0,
-  },
-  planSparkles: {
-    marginRight: 6,
-    flexShrink: 0,
-  },
-  planChevron: {
-    marginLeft: 4,
-    flexShrink: 0,
-  },
-  planBadgeText: {
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-    flexShrink: 0,
-  },
-  planBadgeTextLight: {
-    color: '#0A84FF',
-  },
-  planBadgeTextDark: {
-    color: '#38BDF8',
-  },
-});

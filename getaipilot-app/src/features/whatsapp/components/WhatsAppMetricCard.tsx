@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, Platform } from 'react-native';
+import { Text, View, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, getColors } from '@/theme';
 
@@ -28,116 +28,74 @@ export const WhatsAppMetricCard: React.FC<WhatsAppMetricCardProps> = ({
   const colors = getColors(isDark);
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+    <View
+      className={`flex-1 w-full min-w-0 rounded-2xl p-3 sm:p-3.5 border justify-between shadow-sm ${
+        isDark ? 'bg-[#1C1C1E] border-[#2C2C2E]' : 'bg-white border-[#E5E7EB]'
+      }`}
+      style={{
+        flexBasis: Platform.OS === 'web' ? 'auto' : 0,
+        minHeight: Platform.OS === 'web' ? 96 : 88,
+        backgroundColor: colors.card,
+        borderColor: colors.cardBorder,
+      }}
+    >
       {/* Top row with Label & Icon badge */}
-      <View style={styles.topRow}>
-        <Text style={[styles.label, { color: colors.textMuted }]} numberOfLines={1} ellipsizeMode="tail">
+      <View className="flex-row items-center justify-between mb-2 w-full">
+        <Text
+          className={`text-xs font-semibold tracking-tight flex-1 mr-1.5 ${
+            isDark ? 'text-[#8E8E93]' : 'text-[#6B7280]'
+          }`}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
           {label}
         </Text>
-        <View style={[styles.iconCircle, { backgroundColor: `${iconColor}15` }]}>
+        <View
+          className="w-7 h-7 rounded-lg items-center justify-center shrink-0"
+          style={{ backgroundColor: `${iconColor}15` }}
+        >
           {ioniconsName ? (
             <Ionicons name={ioniconsName} size={15} color={iconColor} />
           ) : (
-            <Text style={styles.emojiIcon}>{icon || '📊'}</Text>
+            <Text className="text-sm">{icon || '📊'}</Text>
           )}
         </View>
       </View>
 
       {/* Value */}
-      <Text style={[styles.value, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
+      <Text
+        className={`text-xl sm:text-2xl font-bold tracking-tight mb-0.5 ${
+          isDark ? 'text-white' : 'text-slate-900'
+        }`}
+        numberOfLines={1}
+        ellipsizeMode="tail"
+      >
         {value}
       </Text>
 
       {/* Subtext */}
       {subtext ? (
-        <Text style={[styles.subtext, { color: colors.textMuted }]} numberOfLines={1} ellipsizeMode="tail">
+        <Text
+          className={`text-xs font-normal ${
+            isDark ? 'text-[#8E8E93]' : 'text-[#6B7280]'
+          }`}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
           {subtext}
         </Text>
       ) : null}
 
       {/* Optional Trend */}
-      {trend ? <Text style={styles.trend} numberOfLines={1} ellipsizeMode="tail">{trend}</Text> : null}
+      {trend ? (
+        <Text
+          className="text-[11px] font-semibold text-emerald-500 mt-1"
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
+          {trend}
+        </Text>
+      ) : null}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: 16,
-    padding: Platform.OS === 'web' ? 14 : 12,
-    flex: 1,
-    minWidth: 0,
-    flexBasis: Platform.OS === 'web' ? 'auto' : 0,
-    width: '100%',
-    borderWidth: 1,
-    justifyContent: 'space-between',
-    minHeight: Platform.OS === 'web' ? 96 : 88,
-  },
-  cardDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
-  },
-  cardLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-    width: '100%',
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: -0.1,
-    flex: 1,
-    marginRight: 6,
-  },
-  iconCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  emojiIcon: {
-    fontSize: 14,
-  },
-  value: {
-    fontSize: Platform.OS === 'web' ? 22 : 20,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-    marginBottom: 2,
-  },
-  subtext: {
-    fontSize: 12,
-    fontWeight: '400',
-  },
-  trend: {
-    color: '#34C759',
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  textLight: {
-    color: '#FFFFFF',
-  },
-  textDark: {
-    color: '#000000',
-  },
-  textSecondaryDark: {
-    color: '#8E8E93',
-  },
-  textSecondaryLight: {
-    color: '#6B7280',
-  },
-});
-

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useTheme, getColors } from '@/theme';
+import { Pressable, Text, View } from 'react-native';
+import { useTheme } from '@/theme';
 import { WhatsAppBroadcast } from '../types';
 
 interface BroadcastCardProps {
@@ -10,7 +10,6 @@ interface BroadcastCardProps {
 
 export const BroadcastCard: React.FC<BroadcastCardProps> = ({ broadcast, onPress }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
 
   const isCompleted = broadcast.status === 'completed';
   const isQueued = broadcast.status === 'queued' || broadcast.status === 'preparing';
@@ -40,20 +39,25 @@ export const BroadcastCard: React.FC<BroadcastCardProps> = ({ broadcast, onPress
 
   return (
     <Pressable
-      style={({ pressed }) => [
-        styles.card,
-        isDark ? styles.cardDark : styles.cardLight,
-        pressed && styles.cardPressed,
-      ]}
+      className={`w-full rounded-2xl p-4 border mb-3 active:opacity-75 active:scale-[0.99] shadow-sm ${
+        isDark ? 'bg-[#1C1C1E] border-[#2C2C2E]' : 'bg-white border-[#E5E7EB]'
+      }`}
       onPress={() => onPress && onPress(broadcast)}
     >
-      <View style={styles.headerRow}>
-        <View style={styles.titleContainer}>
-          <Text style={[styles.name, isDark ? styles.textPrimaryDark : styles.textPrimaryLight]} numberOfLines={1}>
+      <View className="flex-row items-start justify-between mb-3">
+        <View className="flex-1 mr-2.5">
+          <Text
+            className={`text-base font-bold tracking-tight mb-0.5 ${
+              isDark ? 'text-[#F8FAFC]' : 'text-[#0F172A]'
+            }`}
+            numberOfLines={1}
+          >
             {broadcast.name}
           </Text>
           <Text
-            style={[styles.templateName, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}
+            className={`text-xs font-medium tracking-tight ${
+              isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
+            }`}
             numberOfLines={1}
             ellipsizeMode="tail"
           >
@@ -61,172 +65,65 @@ export const BroadcastCard: React.FC<BroadcastCardProps> = ({ broadcast, onPress
           </Text>
         </View>
 
-        <View style={[styles.statusBadge, { backgroundColor: statusBg }]}>
-          <Text style={[styles.statusText, { color: statusText }]}>
+        <View className="px-2.5 py-1 rounded-full" style={{ backgroundColor: statusBg }}>
+          <Text className="text-xs font-semibold tracking-tight" style={{ color: statusText }}>
             {broadcast.status.charAt(0).toUpperCase() + broadcast.status.slice(1).toLowerCase()}
           </Text>
         </View>
       </View>
 
       {/* Metrics Row - Clean iOS Inset Box */}
-      <View style={[styles.metricsRow, isDark ? styles.metricsRowDark : styles.metricsRowLight]}>
-        <View style={styles.metricItem}>
-          <Text style={[styles.metricLabel, isDark ? styles.textMutedDark : styles.textMutedLight]}>Audience</Text>
-          <Text style={[styles.metricValue, isDark ? styles.textPrimaryDark : styles.textPrimaryLight]}>
+      <View
+        className={`flex-row justify-between rounded-xl py-2.5 px-3 mb-2 ${
+          isDark ? 'bg-white/[0.05]' : 'bg-[#F8F9FA]'
+        }`}
+      >
+        <View className="items-center flex-1">
+          <Text className={`text-[11px] font-medium mb-0.5 ${isDark ? 'text-[#8E8E93]' : 'text-[#64748B]'}`}>
+            Audience
+          </Text>
+          <Text className={`text-[15px] font-bold tracking-tight ${isDark ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>
             {broadcast.recipients_count.toLocaleString()}
           </Text>
         </View>
 
-        <View style={styles.metricItem}>
-          <Text style={[styles.metricLabel, isDark ? styles.textMutedDark : styles.textMutedLight]}>Delivered</Text>
-          <Text style={[styles.metricValue, isDark ? styles.textPrimaryDark : styles.textPrimaryLight]}>
+        <View className="items-center flex-1">
+          <Text className={`text-[11px] font-medium mb-0.5 ${isDark ? 'text-[#8E8E93]' : 'text-[#64748B]'}`}>
+            Delivered
+          </Text>
+          <Text className={`text-[15px] font-bold tracking-tight ${isDark ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>
             {broadcast.delivered_count.toLocaleString()}
           </Text>
         </View>
 
-        <View style={styles.metricItem}>
-          <Text style={[styles.metricLabel, isDark ? styles.textMutedDark : styles.textMutedLight]}>Read</Text>
-          <Text style={[styles.metricValue, isDark ? styles.textPrimaryDark : styles.textPrimaryLight]}>
+        <View className="items-center flex-1">
+          <Text className={`text-[11px] font-medium mb-0.5 ${isDark ? 'text-[#8E8E93]' : 'text-[#64748B]'}`}>
+            Read
+          </Text>
+          <Text className={`text-[15px] font-bold tracking-tight ${isDark ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>
             {broadcast.read_count.toLocaleString()}
           </Text>
         </View>
 
-        <View style={styles.metricItem}>
-          <Text style={[styles.metricLabel, isDark ? styles.textMutedDark : styles.textMutedLight]}>Success Rate</Text>
-          <Text style={[styles.metricValue, isDark ? styles.textPrimaryDark : styles.textPrimaryLight]}>
+        <View className="items-center flex-1">
+          <Text className={`text-[11px] font-medium mb-0.5 ${isDark ? 'text-[#8E8E93]' : 'text-[#64748B]'}`}>
+            Success Rate
+          </Text>
+          <Text className={`text-[15px] font-bold tracking-tight ${isDark ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>
             {deliveryRate}%
           </Text>
         </View>
       </View>
 
       {/* Footer without harsh divider lines */}
-      <View style={styles.footerRow}>
-        <Text style={[styles.costText, isDark ? styles.textSecondaryDark : styles.textSecondaryLight]}>
+      <View className="flex-row items-center justify-between pt-1">
+        <Text className={`text-xs font-semibold ${isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>
           Cost: ₹{((broadcast.actual_cost_paise || broadcast.estimated_cost_paise || 0) / 100).toFixed(2)}
         </Text>
-        <Text style={[styles.dateText, isDark ? styles.textMutedDark : styles.textMutedLight]}>
+        <Text className={`text-xs font-normal ${isDark ? 'text-[#8E8E93]' : 'text-[#94A3B8]'}`}>
           {new Date(broadcast.created_at).toLocaleDateString()}
         </Text>
       </View>
     </Pressable>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    marginBottom: 12,
-  },
-  cardDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
-  },
-  cardLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E5E7EB',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  cardPressed: {
-    opacity: 0.75,
-    transform: [{ scale: 0.99 }],
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  titleContainer: {
-    flex: 1,
-    marginRight: 10,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-    marginBottom: 2,
-  },
-  templateName: {
-    fontSize: 12,
-    fontWeight: '500',
-    letterSpacing: -0.1,
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 100,
-  },
-  statusText: {
-    fontSize: 11.5,
-    fontWeight: '600',
-    letterSpacing: -0.1,
-  },
-  metricsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 8,
-  },
-  metricsRowDark: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  metricsRowLight: {
-    backgroundColor: '#F8F9FA',
-  },
-  metricItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  metricLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    letterSpacing: -0.1,
-    marginBottom: 3,
-  },
-  metricValue: {
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 4,
-  },
-  costText: {
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: -0.1,
-  },
-  dateText: {
-    fontSize: 11.5,
-    fontWeight: '400',
-  },
-  textPrimaryDark: {
-    color: '#F8FAFC',
-  },
-  textPrimaryLight: {
-    color: '#0F172A',
-  },
-  textSecondaryDark: {
-    color: '#94A3B8',
-  },
-  textSecondaryLight: {
-    color: '#64748B',
-  },
-  textMutedDark: {
-    color: '#64748B',
-  },
-  textMutedLight: {
-    color: '#94A3B8',
-  },
-});
