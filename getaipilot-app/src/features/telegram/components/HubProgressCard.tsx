@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useTheme, getColors } from '../../../theme';
 
 interface HubProgressCardProps {
@@ -18,7 +18,7 @@ export const HubProgressCard: React.FC<HubProgressCardProps> = ({
   isRefreshing,
 }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark)
+  const colors = getColors(isDark);
   const percentage = Math.round((completed / (total || 1)) * 100);
 
   const handleRefresh = () => {
@@ -27,162 +27,71 @@ export const HubProgressCard: React.FC<HubProgressCardProps> = ({
   };
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.card }]}>
-      <View style={styles.header}>
-        <View style={styles.titleRow}>
-          <View style={styles.iconBox}>
+    <View
+      className="rounded-2xl p-3.5 mb-3.5 border shadow-sm shadow-black/5"
+      style={{ backgroundColor: colors.card, borderColor: colors.cardBorder }}
+    >
+      <View className="flex-row justify-between items-center gap-2 mb-3">
+        <View className="flex-1 flex-row items-center gap-2.5 min-w-0">
+          <View className="w-9 h-9 rounded-[10px] bg-[#0284C7]/10 justify-center items-center flex-shrink-0">
             <Ionicons name="apps" size={18} color="#0284C7" />
           </View>
-          <View style={styles.titleTextWrap}>
-            <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
+          <View className="flex-1 min-w-0">
+            <Text
+              className="text-sm font-bold tracking-tight"
+              style={{ color: colors.text }}
+              numberOfLines={1}
+            >
               Connected Platforms Hub
             </Text>
-            <Text style={styles.subtitle} numberOfLines={1}>
+            <Text className="text-[11px] text-[#64748B] mt-0.5" numberOfLines={1}>
               {completed}/{total} platform modules configured
             </Text>
           </View>
         </View>
         <Pressable
-          style={[styles.refreshBtn, isRefreshing && styles.refreshBtnDisabled]}
+          className={`flex-row items-center gap-1 bg-[#0284C7]/10 px-2 py-1.5 rounded-lg border border-[#0284C7]/20 flex-shrink-0 active:opacity-70 ${
+            isRefreshing ? 'opacity-60' : ''
+          }`}
           onPress={handleRefresh}
           disabled={isRefreshing}
           hitSlop={6}
         >
           <Ionicons name="refresh" size={12} color="#0284C7" />
-          <Text style={styles.refreshText}>{isRefreshing ? 'Checking...' : 'Refresh'}</Text>
+          <Text className="text-[11px] font-bold text-[#0284C7]">
+            {isRefreshing ? 'Checking...' : 'Refresh'}
+          </Text>
         </Pressable>
       </View>
 
-      <View style={{ ...styles.progressContainer, backgroundColor: colors.backgroundSecondary }}>
-        <View style={styles.progressHeader}>
-          <Text style={styles.progressLabel}>SETUP PROGRESS</Text>
-          <Text style={[styles.progressVal, percentage === 100 && { color: '#10B981' }]}>
+      <View
+        className="mt-0.5 p-2.5 rounded-xl"
+        style={{ backgroundColor: colors.backgroundSecondary }}
+      >
+        <View className="flex-row justify-between items-center mb-1.5">
+          <Text className="text-[10px] font-bold tracking-wider text-[#64748B]">
+            SETUP PROGRESS
+          </Text>
+          <Text
+            className="text-[11px] font-bold"
+            style={{ color: percentage === 100 ? '#10B981' : '#0284C7' }}
+          >
             {completed}/{total} Completed ({percentage}%)
           </Text>
         </View>
-        <View style={[styles.progressBarBg, { backgroundColor: colors.card }]}>
+        <View
+          className="h-1.5 rounded-full overflow-hidden"
+          style={{ backgroundColor: colors.card }}
+        >
           <View
-            style={[
-              styles.progressBarFill,
-              { width: `${percentage}%` },
-              percentage === 100 && { backgroundColor: '#10B981' },
-            ]}
+            className="h-full rounded-full"
+            style={{
+              width: `${percentage}%`,
+              backgroundColor: percentage === 100 ? '#10B981' : '#0284C7',
+            }}
           />
         </View>
       </View>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 14,
-    borderWidth: 1,
-  },
-  cardLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  cardDark: {
-    backgroundColor: '#121212',
-    borderColor: '#27272A',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  titleRow: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    minWidth: 0,
-  },
-  iconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: 'rgba(2, 132, 199, 0.12)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexShrink: 0,
-  },
-  titleTextWrap: {
-    flex: 1,
-    minWidth: 0,
-  },
-  title: {
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-  },
-  textLight: { color: '#0F172A' },
-  textDark: { color: '#F8FAFC' },
-  subtitle: {
-    color: '#64748B',
-    fontSize: 11,
-    marginTop: 1,
-  },
-  refreshBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(2, 132, 199, 0.08)',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(2, 132, 199, 0.2)',
-    flexShrink: 0,
-  },
-  refreshBtnDisabled: {
-    opacity: 0.6,
-  },
-  refreshText: {
-    color: '#0284C7',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  progressContainer: {
-    marginTop: 2,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  progressLabel: {
-    color: '#64748B',
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  progressVal: {
-    color: '#0284C7',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  progressBarBg: {
-    height: 6,
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressBarBgLight: { backgroundColor: '#E2E8F0' },
-  progressBarBgDark: { backgroundColor: '#27272A' },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#0284C7',
-    borderRadius: 3,
-  },
-});

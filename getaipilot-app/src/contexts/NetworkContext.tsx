@@ -116,29 +116,29 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
         refresh,
       }}
     >
-      {/* 1. Initial network checking screen */}
-      {!networkChecked ? (
-        <LayoutSkeletonScreen />
-      ) : (
-        <>
-          {children}
+      {children}
 
-          {/* 2. Global Offline UI design displayed everywhere when offline - NO Alert */}
-          {!isOnline && (
-            <View
-              style={[
-                StyleSheet.absoluteFill,
-                styles.overlay,
-                { backgroundColor: isDark ? "#000000" : "#F2F2F7" },
-              ]}
-            >
-              <NetworkStatusScreen
-                onRetry={refresh}
-                isChecking={isChecking}
-              />
-            </View>
-          )}
-        </>
+      {/* 1. Initial network checking screen */}
+      {!networkChecked && (
+        <View style={[StyleSheet.absoluteFill, { zIndex: 99998 }]}>
+          <LayoutSkeletonScreen />
+        </View>
+      )}
+
+      {/* 2. Global Offline UI design displayed everywhere when offline - NO Alert */}
+      {networkChecked && !isOnline && (
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            styles.overlay,
+            { backgroundColor: isDark ? "#000000" : "#F2F2F7", zIndex: 99999 },
+          ]}
+        >
+          <NetworkStatusScreen
+            onRetry={refresh}
+            isChecking={isChecking}
+          />
+        </View>
       )}
     </NetworkContext.Provider>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface MetricCardProps {
@@ -19,86 +19,55 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   badgeColor = '#16B882',
   icon,
 }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
 
   return (
     <View
-      style={[
-        styles.card,
-        {
-          backgroundColor: colors.card,
-          borderColor: colors.cardBorder,
-        },
-      ]}
+      className="flex-1 min-w-0 rounded-2xl p-3.5 border shadow-sm"
+      style={{
+        flexBasis: 0,
+        backgroundColor: colors.card,
+        borderColor: colors.cardBorder,
+      }}
     >
-      <View style={styles.topRow}>
-        <Text style={[styles.label, { color: colors.mutedForeground }]} numberOfLines={1}>
+      <View className="flex-row justify-between items-center mb-1.5">
+        <Text
+          className="text-[12.5px] font-medium tracking-tight flex-1 mr-1"
+          style={{ color: colors.mutedForeground }}
+          numberOfLines={1}
+        >
           {label}
         </Text>
-        {icon ? <Text style={styles.icon}>{icon}</Text> : null}
+        {icon ? <Text className="text-sm">{icon}</Text> : null}
       </View>
-      <View style={styles.valueRow}>
-        <Text style={[styles.value, { color: colors.cardForeground }]}>{value}</Text>
+      <View className="flex-row items-baseline gap-2">
+        <Text
+          className="text-[22px] font-bold tracking-tight"
+          style={{ color: colors.cardForeground }}
+        >
+          {value}
+        </Text>
         {badge ? (
-          <View style={[styles.badge, { backgroundColor: badgeColor + '20' }]}>
-            <Text style={[styles.badgeText, { color: badgeColor }]}>{badge}</Text>
+          <View
+            className="px-1.5 py-0.5 rounded"
+            style={{ backgroundColor: badgeColor + '20' }}
+          >
+            <Text className="text-[10.5px] font-semibold" style={{ color: badgeColor }}>
+              {badge}
+            </Text>
           </View>
         ) : null}
       </View>
 
-      {subtext ? <Text style={[styles.subtext, { color: colors.mutedForeground }]}>{subtext}</Text> : null}
-
-
+      {subtext ? (
+        <Text
+          className="text-[11px] mt-1"
+          style={{ color: colors.mutedForeground }}
+          numberOfLines={1}
+        >
+          {subtext}
+        </Text>
+      ) : null}
     </View>
   );
 };
-const styles = StyleSheet.create({
-  card: {
-    flex: 1,
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  label: {
-    fontSize: 12.5,
-    fontWeight: '500',
-    letterSpacing: -0.1,
-  },
-  icon: {
-    fontSize: 14,
-  },
-  valueRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 8,
-  },
-  value: {
-    fontSize: 22,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-  },
-  badge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  badgeText: {
-    fontSize: 10.5,
-    fontWeight: '600',
-  },
-  subtext: {
-    fontSize: 11,
-    marginTop: 4,
-  },
-});

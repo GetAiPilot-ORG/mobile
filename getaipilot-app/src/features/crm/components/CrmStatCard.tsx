@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, Pressable } from 'react-native';
+import { Text, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCrmTheme } from '../hooks/useCrmTheme';
@@ -33,7 +33,8 @@ export const CrmStatCard: React.FC<CrmStatCardProps> = ({
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.container, pressed && styles.pressed]}
+      className="flex-1 min-w-0 rounded-2xl overflow-hidden shadow-md shadow-black/15 active:opacity-90 active:scale-[0.98]"
+      style={{ flexBasis: 0 }}
       onPress={onPress}
       disabled={!onPress}
     >
@@ -41,119 +42,41 @@ export const CrmStatCard: React.FC<CrmStatCardProps> = ({
         colors={activeGradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.gradient}
+        className="p-4 rounded-2xl border border-white/10"
       >
-        <View style={styles.topRow}>
-          <View style={styles.iconCircle}>
+        <View className="flex-row items-center justify-between mb-3">
+          <View className="w-[34px] h-[34px] rounded-[10px] bg-white/20 items-center justify-center">
             <Ionicons name={icon} size={18} color="#FFFFFF" />
           </View>
           {trend ? (
-            <View style={styles.trendBadge}>
+            <View className="flex-row items-center gap-1 bg-[#10B981]/20 px-1.5 py-0.5 rounded-md">
               <Ionicons name="trending-up" size={12} color="#10B981" />
-              <Text style={styles.trendText}>{trend}</Text>
+              <Text className="text-[#10B981] text-[11px] font-semibold">{trend}</Text>
             </View>
           ) : null}
         </View>
 
-        <Text style={styles.value} numberOfLines={1}>
+        <Text className="text-2xl font-bold text-white tracking-tight" numberOfLines={1}>
           {typeof value === 'number' ? value.toLocaleString() : value}
         </Text>
-        <Text style={styles.label} numberOfLines={1}>
+        <Text className="text-[13px] font-semibold text-white/85 mt-1" numberOfLines={1}>
           {label}
         </Text>
         {sub ? (
-          <Text style={styles.sub} numberOfLines={1}>
+          <Text className="text-[11px] text-white/60 mt-0.5" numberOfLines={1}>
             {sub}
           </Text>
         ) : null}
 
         {typeof progress === 'number' ? (
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressBar, { width: `${Math.min(Math.max(progress * 100, 4), 100)}%` }]} />
+          <View className="h-1 rounded-full bg-white/20 mt-2.5 overflow-hidden">
+            <View
+              className="h-full rounded-full bg-[#10B981]"
+              style={{ width: `${Math.min(Math.max(progress * 100, 4), 100)}%` }}
+            />
           </View>
         ) : null}
       </LinearGradient>
     </Pressable>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    minWidth: 0,
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  pressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.98 }],
-  },
-  gradient: {
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  iconCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  trendBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: 'rgba(16, 185, 129, 0.2)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  trendText: {
-    color: '#10B981',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  value: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    letterSpacing: -0.5,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.85)',
-    marginTop: 4,
-  },
-  sub: {
-    fontSize: 11,
-    color: 'rgba(255, 255, 255, 0.6)',
-    marginTop: 2,
-  },
-  progressTrack: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    marginTop: 10,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    borderRadius: 2,
-    backgroundColor: '#10B981',
-  },
-});

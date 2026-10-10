@@ -168,7 +168,6 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
               />
             </View>
           </View>
-          </View>
 
           {/* Channel Breakdown */}
           <View style={[styles.matrixCard, card]}>

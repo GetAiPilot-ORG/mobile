@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { View, StyleProp, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme, getColors } from '@/theme';
+import { useTheme, getColors } from '../theme';
 
 export interface AppScreenProps {
   children: React.ReactNode;
@@ -28,20 +29,17 @@ export function AppScreen({
   const { isDark } = useTheme();
   const colors = getColors(isDark);
 
-  const defaultBg = backgroundColor || colors.background;
+  // Background color based on the current theme
+  const defaultBg = backgroundColor ?? colors.background;
 
-  let paddingTop = 0;
-  let paddingBottom = 0;
+  // Safe area spacing
+  const paddingTop =
+    safeArea === true || safeArea === 'top' ? insets.top : 0;
 
-  if (safeArea === true || safeArea === 'top') {
-    paddingTop = insets.top;
-  }
+  const paddingBottom =
+    safeArea === true || safeArea === 'bottom' ? insets.bottom : 0;
 
-  if (safeArea === true || safeArea === 'bottom') {
-    paddingBottom = insets.bottom;
-  }
-
-  const bgClass = isDark ? 'bg-[#05080D]' : 'bg-[#F8F9FA]';
+  // NativeWind padding class
   const paddingClass = padding ? 'p-lg' : '';
 
   return (
@@ -60,8 +58,15 @@ export function AppScreen({
         style,
       ]}
     >
-      {maxWidth ? (
-        <View style={{ width: '100%', maxWidth, alignSelf: 'center', flex: 1 }}>
+      {maxWidth != null ? (
+        <View
+          style={{
+            width: '100%',
+            maxWidth,
+            alignSelf: 'center',
+            flex: 1,
+          }}
+        >
           {children}
         </View>
       ) : (

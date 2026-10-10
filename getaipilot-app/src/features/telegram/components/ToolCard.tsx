@@ -1,10 +1,8 @@
-import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View, Platform } from 'react-native';
 import { useTheme, getColors } from '@/theme';
 import { TelegramHubTool } from '../types';
 
@@ -90,7 +88,7 @@ const DEFAULT_VISUAL: ToolVisualConfig = {
 
 export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark)
+  const colors = getColors(isDark);
 
   const visual = TOOL_VISUAL_MAP[tool.key] || DEFAULT_VISUAL;
   const badgeText = tool.badge || visual.badge;
@@ -104,40 +102,45 @@ export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
 
   return (
     <Pressable
-      style={({ pressed }) => [
-        styles.card,
-        { backgroundColor: colors.card, borderColor: colors.border },
-        pressed && styles.cardPressed,
-      ]}
+      className="rounded-2xl border p-3.5 mb-3 active:opacity-85 shadow-sm shadow-black/5"
+      style={{ backgroundColor: colors.card, borderColor: colors.border }}
       onPress={handlePress}
     >
       {/* Top Row: Icon + Title & Badge */}
-      <View style={styles.topRow}>
-        <View style={styles.leftMeta}>
+      <View className="flex-row justify-between items-center mb-2.5">
+        <View className="flex-1 flex-row items-center gap-3 mr-2 min-w-0">
           <LinearGradient
             colors={visual.gradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.iconContainer}
+            className="rounded-xl justify-center items-center shadow-sm shadow-black/20"
+            style={{ width: 44, height: 44, justifyContent: 'center', alignItems: 'center', borderRadius: 50 }}
           >
             <Ionicons name={visual.icon} size={22} color="#FFFFFF" />
           </LinearGradient>
-          <View style={styles.titleWrap}>
+          <View className="flex-1 min-w-0">
             <Text
-              style={[styles.title, isDark ? styles.textDark : styles.textLight]}
+              className="text-[15px] font-bold tracking-tight"
+              style={{ color: colors.text }}
               numberOfLines={1}
             >
               {tool.title}
             </Text>
-            <Text style={styles.subtitleCategory}>
+            <Text className="text-[11px] text-[#64748B] mt-0.5">
               Telegram Integration
             </Text>
           </View>
         </View>
 
         {badgeText ? (
-          <View style={[styles.badgePill, { backgroundColor: visual.badgeBg }]}>
-            <Text style={[styles.badgeText, { color: visual.badgeColor }]}>
+          <View
+            className="px-2 py-1 rounded-full self-start"
+            style={{ backgroundColor: visual.badgeBg }}
+          >
+            <Text
+              className="text-[10px] font-extrabold tracking-wider"
+              style={{ color: visual.badgeColor }}
+            >
               {badgeText}
             </Text>
           </View>
@@ -145,16 +148,28 @@ export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
       </View>
 
       {/* Description */}
-      <Text style={styles.description} numberOfLines={2}>
+      <Text
+        className="text-[12.5px] leading-[18px] text-[#94A3B8] mb-3"
+        numberOfLines={2}
+      >
         {tool.description}
       </Text>
 
       {/* Bottom Footer: Launch action button */}
-      <View style={[styles.footerRow, isDark ? styles.footerBorderDark : styles.footerBorderLight]}>
-        <Text style={[styles.launchText, { color: visual.badgeColor }]}>
+      <View
+        className="flex-row justify-between items-center border-t pt-2.5"
+        style={{ borderTopColor: isDark ? '#27272A' : '#F1F5F9' }}
+      >
+        <Text
+          className="text-xs font-bold tracking-tight"
+          style={{ color: visual.badgeColor }}
+        >
           Launch Module
         </Text>
-        <View style={[styles.arrowWrap, { backgroundColor: visual.badgeBg }]}>
+        <View
+          className="w-6 h-6 rounded-full justify-center items-center"
+          style={{ backgroundColor: visual.badgeBg }}
+        >
           <Ionicons
             name="arrow-forward"
             size={13}
@@ -165,115 +180,3 @@ export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
     </Pressable>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 14,
-    marginBottom: 12,
-  },
-  cardLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  cardDark: {
-    backgroundColor: '#121214',
-    borderColor: '#27272A',
-  },
-  cardPressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.99 }],
-  },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  leftMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-    marginRight: 8,
-  },
-  iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  titleWrap: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-  },
-  subtitleCategory: {
-    fontSize: 11,
-    color: '#64748B',
-    marginTop: 1,
-  },
-  badgePill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3.5,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  textLight: {
-    color: '#0F172A',
-  },
-  textDark: {
-    color: '#F8FAFC',
-  },
-  description: {
-    color: '#94A3B8',
-    fontSize: 12.5,
-    lineHeight: 18,
-    marginBottom: 12,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    paddingTop: 10,
-  },
-  footerBorderLight: {
-    borderTopColor: '#F1F5F9',
-  },
-  footerBorderDark: {
-    borderTopColor: '#27272A',
-  },
-  launchText: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: -0.1,
-  },
-  arrowWrap: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

@@ -9,7 +9,6 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -135,8 +134,8 @@ export const CampaignsScreen: React.FC = () => {
     border: themeColors.border,
     text: themeColors.text,
     textSecondary: themeColors.textMuted,
-    primary: themeColors.products.voice || "#5B3AF5",
-    primaryLight: themeColors.products.voiceSoft || (isDark ? "rgba(91, 58, 245, 0.2)" : "#EDE9FE"),
+    primary: themeColors.products?.voice || "#5B3AF5",
+    primaryLight: themeColors.products?.voiceSoft || (isDark ? "rgba(91, 58, 245, 0.2)" : "#EDE9FE"),
     green: themeColors.success,
     greenLight: themeColors.successSoft,
     blue: themeColors.info,
@@ -153,8 +152,15 @@ export const CampaignsScreen: React.FC = () => {
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.content}
+      className="flex-1 w-full"
+      style={{ backgroundColor: colors.background }}
+      contentContainerStyle={{
+        paddingHorizontal: 16,
+        paddingTop: 8,
+        paddingBottom: 110,
+        gap: 16,
+        width: "100%",
+      }}
       refreshControl={
         <RefreshControl
           refreshing={isRefetching}
@@ -165,17 +171,20 @@ export const CampaignsScreen: React.FC = () => {
       showsVerticalScrollIndicator={false}
     >
       {/* 1. TITLE SECTION */}
-      <View style={styles.headingSection}>
-        <Text style={[styles.mainHeading, { color: colors.text }]}>
+      <View className="pt-0.5 gap-1 w-full">
+        <Text
+          className="text-2xl sm:text-[27px] font-extrabold tracking-tight"
+          style={{ color: colors.text }}
+        >
           Campaigns
         </Text>
-        <Text style={[styles.subHeading, { color: colors.textSecondary }]}>
+        <Text className="text-sm sm:text-base font-medium" style={{ color: colors.textSecondary }}>
           Monitor and manage high-concurrency bulk AI call jobs.
         </Text>
       </View>
 
-      {/* 2. TOP ACTION BUTTONS ROW (Refresh | CSV Template | + Add New Job) */}
-      <View style={styles.topActionsRow}>
+      {/* 2. TOP ACTION BUTTONS ROW */}
+      <View className="flex-row items-center gap-2.5 w-full">
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Refresh"
@@ -185,14 +194,11 @@ export const CampaignsScreen: React.FC = () => {
             }
             refetch();
           }}
-          style={({ pressed }) => [
-            styles.refreshBtn,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-            },
-            pressed && styles.pressed,
-          ]}
+          className="w-10 h-10 rounded-xl border items-center justify-center active:opacity-75 shadow-xs"
+          style={{
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+          }}
         >
           <Ionicons
             name="refresh-outline"
@@ -206,18 +212,15 @@ export const CampaignsScreen: React.FC = () => {
           accessibilityRole="button"
           accessibilityLabel="CSV Template"
           onPress={handleDownloadCsvTemplate}
-          style={({ pressed }) => [
-            styles.csvTemplateBtn,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-            pressed && styles.pressed,
-          ]}
+          className="flex-row items-center gap-2 px-3.5 h-10 rounded-xl border active:opacity-75 shadow-xs"
+          style={{ backgroundColor: colors.surface, borderColor: colors.border }}
         >
           <Ionicons
             name="document-text-outline"
             size={16}
             color={colors.text}
           />
-          <Text style={[styles.csvTemplateBtnText, { color: colors.text }]}>
+          <Text className="text-xs font-bold" style={{ color: colors.text }}>
             CSV Template
           </Text>
         </Pressable>
@@ -231,87 +234,92 @@ export const CampaignsScreen: React.FC = () => {
             }
             setIsCreateModalOpen(true);
           }}
-          style={({ pressed }) => [
-            styles.addNewJobBtn,
-            { backgroundColor: colors.primary },
-            pressed && styles.pressed,
-          ]}
+          className="flex-row items-center gap-1.5 px-4 h-10 rounded-xl flex-1 justify-center active:opacity-75 shadow-md"
+          style={{ backgroundColor: colors.primary }}
         >
           <Ionicons name="add" size={18} color="#FFFFFF" />
-          <Text style={styles.addNewJobBtnText}>Add New Job</Text>
+          <Text className="text-white text-xs font-bold tracking-tight">Add New Job</Text>
         </Pressable>
       </View>
 
-      {/* 3. 3-METRIC STATS ROW (Total Dispatch Jobs | Completed Campaigns | In Progress) */}
-      <View style={styles.statsRow}>
+      {/* 3. 3-METRIC STATS ROW */}
+      <View className="flex-row gap-2.5 w-full">
         {/* Stat 1: Total Dispatch Jobs */}
         <View
-          style={[
-            styles.statCard,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-          ]}
+          className="flex-1 min-w-0 rounded-2xl p-3 border justify-between"
+          style={{
+            flexBasis: 0,
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+          }}
         >
           <Text
-            style={[styles.statLabel, { color: colors.textSecondary }]}
+            className="text-[10.5px] font-bold tracking-wider mb-1"
+            style={{ color: colors.textSecondary }}
             numberOfLines={1}
           >
             TOTAL DISPATCH
           </Text>
-          <Text style={[styles.statValue, { color: colors.text }]}>
+          <Text className="text-xl font-bold tracking-tight" style={{ color: colors.text }}>
             {totalDispatchJobs}
           </Text>
         </View>
 
         {/* Stat 2: Completed Campaigns */}
         <View
-          style={[
-            styles.statCard,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-          ]}
+          className="flex-1 min-w-0 rounded-2xl p-3 border justify-between"
+          style={{
+            flexBasis: 0,
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+          }}
         >
           <Text
-            style={[styles.statLabel, { color: colors.textSecondary }]}
+            className="text-[10.5px] font-bold tracking-wider mb-1"
+            style={{ color: colors.textSecondary }}
             numberOfLines={1}
           >
             COMPLETED
           </Text>
-          <Text style={[styles.statValue, { color: colors.green }]}>
+          <Text className="text-xl font-bold tracking-tight" style={{ color: colors.green }}>
             {completedCampaigns}
           </Text>
         </View>
 
         {/* Stat 3: In Progress */}
         <View
-          style={[
-            styles.statCard,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-          ]}
+          className="flex-1 min-w-0 rounded-2xl p-3 border justify-between"
+          style={{
+            flexBasis: 0,
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+          }}
         >
           <Text
-            style={[styles.statLabel, { color: colors.textSecondary }]}
+            className="text-[10.5px] font-bold tracking-wider mb-1"
+            style={{ color: colors.textSecondary }}
             numberOfLines={1}
           >
             IN PROGRESS
           </Text>
-          <Text style={[styles.statValue, { color: colors.primary }]}>
+          <Text className="text-xl font-bold tracking-tight" style={{ color: colors.primary }}>
             {inProgressCampaigns}
           </Text>
         </View>
       </View>
 
       {/* 4. ACTIVE & HISTORIC JOBS SECTION */}
-      <View style={styles.sectionHeaderRow}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+      <View className="flex-row justify-between items-center mb-0 mt-2 px-1">
+        <Text className="text-xs font-semibold tracking-wider uppercase text-slate-500">
           Active & Historic Jobs
         </Text>
         <View
-          style={[
-            styles.jobsCountBadge,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-          ]}
+          className="px-2 py-0.5 rounded-md border"
+          style={{ backgroundColor: colors.surface, borderColor: colors.border }}
         >
           <Text
-            style={[styles.jobsCountBadgeText, { color: colors.textSecondary }]}
+            className="text-[10px] font-bold"
+            style={{ color: colors.textSecondary }}
           >
             {totalDispatchJobs} JOBS
           </Text>
@@ -328,33 +336,27 @@ export const CampaignsScreen: React.FC = () => {
       ) : campaigns.length === 0 ? (
         /* Empty State */
         <View
-          style={[
-            styles.emptyCard,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-          ]}
+          className="rounded-2xl p-8 border items-center justify-center shadow-sm"
+          style={{ backgroundColor: colors.surface, borderColor: colors.border }}
         >
           <View
-            style={[
-              styles.emptyIconCircle,
-              { backgroundColor: colors.primaryLight },
-            ]}
+            className="w-16 h-16 rounded-full items-center justify-center mb-3"
+            style={{ backgroundColor: colors.primaryLight }}
           >
             <Ionicons name="megaphone-outline" size={32} color={colors.primary} />
           </View>
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>
+          <Text className="text-base font-bold mb-1" style={{ color: colors.text }}>
             No campaign jobs found
           </Text>
-          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+          <Text className="text-xs text-center max-w-[260px]" style={{ color: colors.textSecondary }}>
             Upload contacts or tap Add New Job to queue your first automated outbound calling campaign.
           </Text>
         </View>
       ) : (
         /* Real Campaigns List */
         <View
-          style={[
-            styles.jobsListCard,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-          ]}
+          className="rounded-2xl border overflow-hidden shadow-sm"
+          style={{ backgroundColor: colors.surface, borderColor: colors.border }}
         >
           {campaigns.map((camp, idx, arr) => {
             const status = getStatus(camp);
@@ -366,10 +368,7 @@ export const CampaignsScreen: React.FC = () => {
             return (
               <View key={camp.id || idx}>
                 <Pressable
-                  style={({ pressed }) => [
-                    styles.jobRow,
-                    pressed && styles.jobRowPressed,
-                  ]}
+                  className="flex-row items-center justify-between p-3.5 active:opacity-75"
                   onPress={() => {
                     if (Platform.OS !== "web") {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -377,30 +376,27 @@ export const CampaignsScreen: React.FC = () => {
                     setSelectedCampaign(camp);
                   }}
                 >
-                  <View style={styles.jobMainInfo}>
+                  <View className="flex-1 justify-center mr-3">
                     <Text
-                      style={[styles.jobNameText, { color: colors.text }]}
+                      className="text-[15px] font-bold tracking-tight mb-0.5"
+                      style={{ color: colors.text }}
                       numberOfLines={1}
                     >
                       {camp.name}
                     </Text>
 
                     <Text
-                      style={[
-                        styles.jobDateText,
-                        { color: colors.textSecondary },
-                      ]}
+                      className="text-xs"
+                      style={{ color: colors.textSecondary }}
                     >
                       {formatDate(camp.created_at)}
                     </Text>
                   </View>
 
-                  <View style={styles.jobActionsWrap}>
+                  <View className="flex-row items-center gap-2">
                     <View
-                      style={[
-                        styles.inProgressPill,
-                        { backgroundColor: statusBg },
-                      ]}
+                      className="flex-row items-center gap-1 px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: statusBg }}
                     >
                       <Ionicons
                         name={isCompleted ? "checkmark-circle" : "time-outline"}
@@ -408,10 +404,8 @@ export const CampaignsScreen: React.FC = () => {
                         color={statusColor}
                       />
                       <Text
-                        style={[
-                          styles.inProgressPillText,
-                          { color: statusColor },
-                        ]}
+                        className="text-[11px] font-bold"
+                        style={{ color: statusColor }}
                       >
                         {statusLabel}
                       </Text>
@@ -427,10 +421,8 @@ export const CampaignsScreen: React.FC = () => {
 
                 {idx < arr.length - 1 && (
                   <View
-                    style={[
-                      styles.jobDivider,
-                      { backgroundColor: colors.border },
-                    ]}
+                    className="h-[1px]"
+                    style={{ backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }}
                   />
                 )}
               </View>
@@ -452,255 +444,38 @@ export const CampaignsScreen: React.FC = () => {
       />
 
       <EditCampaignModal
-        visible={Boolean(editingCampaign)}
+        visible={!!editingCampaign}
         campaign={editingCampaign}
         assistants={assistants}
         phoneNumbers={numbers}
         onClose={() => setEditingCampaign(null)}
-        onSubmit={async (campaignId, payload) => {
-          await updateMutation.mutateAsync({ id: campaignId, payload });
+        onSubmit={async (payload) => {
+          if (editingCampaign) {
+            await updateMutation.mutateAsync({
+              id: editingCampaign.id,
+              payload,
+            });
+          }
         }}
         isLoading={updateMutation.isPending}
       />
 
       <CampaignDetailsModal
-        visible={Boolean(selectedCampaign)}
+        visible={!!selectedCampaign}
         campaign={selectedCampaign}
         onClose={() => setSelectedCampaign(null)}
-        onEdit={(campaign) => {
+        onEdit={(camp) => {
           setSelectedCampaign(null);
-          setEditingCampaign(campaign);
+          setEditingCampaign(camp);
         }}
-        onDelete={async (campaignId) => {
-          await deleteMutation.mutateAsync(campaignId);
+        onDelete={async (id) => {
+          await deleteMutation.mutateAsync(id);
         }}
-        onStatusChange={async (campaignId, status) => {
-          await statusMutation.mutateAsync({ id: campaignId, status });
+        onStatusChange={async (id, status) => {
+          await statusMutation.mutateAsync({ id, status });
         }}
-        isActionLoading={statusMutation.isPending || deleteMutation.isPending}
+        isActionLoading={deleteMutation.isPending || statusMutation.isPending}
       />
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    width: "100%",
-  },
-  content: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 110,
-    gap: 14,
-    width: "100%",
-  },
-  headingSection: {
-    paddingTop: 2,
-    gap: 3,
-    width: "100%",
-  },
-  eyebrowText: {
-    fontSize: 10.5,
-    fontWeight: "700",
-    letterSpacing: 0.8,
-  },
-  mainHeading: {
-    fontSize: 27,
-    lineHeight: 33,
-    fontWeight: "800",
-    letterSpacing: -0.6,
-  },
-  subHeading: {
-    fontSize: 13.5,
-    lineHeight: 18,
-    fontWeight: "500",
-  },
-  topActionsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    width: "100%",
-  },
-  refreshBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  csvTemplateBtn: {
-    flex: 1,
-    height: 44,
-    borderRadius: 14,
-    borderWidth: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-  },
-  csvTemplateBtnText: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  addNewJobBtn: {
-    flex: 1.2,
-    height: 44,
-    borderRadius: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    shadowColor: "#5B3AF5",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  addNewJobBtnText: {
-    color: "#FFFFFF",
-    fontSize: 13.5,
-    fontWeight: "700",
-  },
-  statsRow: {
-    flexDirection: "row",
-    gap: 8,
-    width: "100%",
-  },
-  statCard: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    minHeight: 74,
-    justifyContent: "center",
-    gap: 4,
-  },
-  statLabel: {
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 0.4,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: "800",
-    letterSpacing: -0.4,
-  },
-  sectionHeaderRow: {
-    marginTop: 4,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: "100%",
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    letterSpacing: -0.3,
-  },
-  jobsCountBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  jobsCountBadgeText: {
-    fontSize: 10.5,
-    fontWeight: "700",
-    letterSpacing: 0.4,
-  },
-  jobsListCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: "hidden",
-    width: "100%",
-  },
-  jobRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    gap: 10,
-  },
-  jobRowPressed: {
-    opacity: 0.75,
-  },
-  jobMainInfo: {
-    flex: 1,
-    gap: 3,
-    marginRight: 10,
-  },
-  jobNameText: {
-    fontSize: 14.5,
-    fontWeight: "700",
-    letterSpacing: -0.2,
-  },
-  jobDateText: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  jobActionsWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  inProgressPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 7,
-  },
-  inProgressPillText: {
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  viewLogsBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-  },
-  viewLogsText: {
-    fontSize: 11.5,
-    fontWeight: "700",
-  },
-  emptyCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingVertical: 40,
-    paddingHorizontal: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  emptyIconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 4,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    letterSpacing: -0.3,
-  },
-  emptySubtitle: {
-    fontSize: 12.5,
-    fontWeight: "500",
-    textAlign: "center",
-    maxWidth: 240,
-    lineHeight: 17,
-  },
-  jobDivider: {
-    height: StyleSheet.hairlineWidth,
-    marginLeft: 14,
-  },
-  pressed: {
-    opacity: 0.8,
-  },
-});
