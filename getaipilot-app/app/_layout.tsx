@@ -5,6 +5,7 @@ import * as Linking from "expo-linking";
 import { useEffect } from "react";
 import { LogBox, Platform, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import { NavigationBar } from "expo-navigation-bar";
 import "react-native-gesture-handler";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -170,9 +171,11 @@ function SplashOverlay() {
 function RootThemedContainer({ children }: { children: React.ReactNode }) {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+
   return (
     <View style={[styles.rootContainer, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? "light" : "dark"} />
+      {Platform.OS === "android" && <NavigationBar style={isDark ? "dark" : "light"} />}
       {children}
     </View>
   );
