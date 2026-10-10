@@ -1,22 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  Pressable,
-  Platform,
   LayoutAnimation,
   Modal,
-  TouchableWithoutFeedback,
+  Platform,
+  Pressable,
   ScrollView,
-  Animated,
-  LayoutChangeEvent,
   StyleSheet,
+  Text,
+  TouchableWithoutFeedback,
+  View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useTheme } from '@/theme';
+import { useTheme, getColors } from '@/theme';
 
 export type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -61,7 +59,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
   items,
   activeKey,
   onChangeTab,
-  accentColor = '#0A84FF',
+  accentColor,
   moreMenuTitle = 'More Options',
   moreTabLabel = 'More',
   moreTabActiveIcon = 'apps',
@@ -70,27 +68,26 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
 }) => {
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
-  const [containerWidth, setContainerWidth] = useState(0);
   const [isMoreModalVisible, setIsMoreModalVisible] = useState(false);
 
   // Bottom floating offset based on safe area
   const bottomOffset = Math.max(insets.bottom, 12);
-
-  const activeColor = accentColor;
-  const inactiveColor = isDark ? '#8E8E93' : '#64748B';
+  const activeColor = accentColor || colors.primary;
 
   const hasOverflow = items.length > 5;
 
   let visibleItems: (
     | ProductTabItem
     | {
-        key: string;
-        label: string;
-        activeIcon: IoniconsName;
-        inactiveIcon: IoniconsName;
-        description?: string;
-      }
+      key: string;
+      label: string;
+      activeIcon: IoniconsName;
+      inactiveIcon: IoniconsName;
+      description?: string;
+      badge?: number | string;
+    }
   )[];
   let overflowItems: ProductTabItem[];
 
@@ -122,58 +119,6 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
   }
 
   const isOverflowActive = overflowItems.some((item) => item.key === activeKey);
-  const activeIndex = visibleItems.findIndex((item) =>
-    item.key === '__more__' ? isOverflowActive : item.key === activeKey
-  );
-  const safeActiveIndex = activeIndex >= 0 ? activeIndex : 0;
-
-  const paddingHorizontal = 8;
-  const numTabs = visibleItems.length || 4;
-  const availableWidth = Math.max(0, containerWidth - paddingHorizontal * 2);
-  const tabWidth = numTabs > 0 ? availableWidth / numTabs : 0;
-  const pillInset = 4;
-
-  const slideAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (tabWidth > 0) {
-      Animated.spring(slideAnim, {
-        toValue: safeActiveIndex * tabWidth,
-        tension: 80,
-        friction: 10,
-        useNativeDriver: Platform.OS !== 'web',
-      }).start();
-    }
-  }, [safeActiveIndex, tabWidth]);
-
-  const onContainerLayout = (event: LayoutChangeEvent) => {
-    const { width } = event.nativeEvent.layout;
-    if (width > 0 && width !== containerWidth) {
-      setContainerWidth(width);
-    }
-  };
-
-  const handleTabPress = (
-    item:
-      | ProductTabItem
-      | {
-          key: string;
-          label: string;
-          activeIcon: IoniconsName;
-          inactiveIcon: IoniconsName;
-        }
-  ) => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-
-    if (item.key === '__more__') {
-      setIsMoreModalVisible(true);
-    } else {
-      LayoutAnimation.configureNext(tabSpringAnimation);
-      onChangeTab(item.key);
-    }
-  };
 
   const handleSelectOverflowItem = (key: string) => {
     if (Platform.OS !== 'web') {
@@ -185,129 +130,166 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
   };
 
   return (
-    <>
+    <View style={styles.dockRoot} pointerEvents="box-none">
+      {/* 1. Full-bleed Bottom Frosted Backdrop that blurs all scrolled content behind it and fills the bottom screen area */}
       <View
-        pointerEvents="box-none"
-        className="absolute left-4 right-4 items-center z-[9999]"
-        style={{ bottom: bottomOffset }}
+        style={[
+          styles.backdropWrapper,
+          {
+            height: 56 + bottomOffset + 12,
+          },
+        ]}
+        pointerEvents="none"
       >
+        <BlurView
+          intensity={Platform.OS === 'ios' ? 75 : 95}
+          tint={isDark ? 'dark' : 'light'}
+          experimentalBlurMethod="dimezisBlurView"
+          style={[
+            StyleSheet.absoluteFill,
+            Platform.OS === 'web'
+              ? ({ backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' } as any)
+              : undefined,
+          ]}
+        />
         <View
-          onLayout={onContainerLayout}
-          style={{
-            position: 'relative',
-            flexDirection: 'row',
-            alignItems: 'center',
-            width: '100%',
-            maxWidth: 460,
-            height: 64,
-            borderRadius: 32,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            overflow: 'hidden',
-            borderColor: isDark ? 'rgba(35, 69, 99, 0.6)' : 'rgba(0, 0, 0, 0.1)',
-            shadowColor: '#000000',
-            shadowOpacity: isDark ? 0.6 : 0.15,
-            shadowOffset: { width: 0, height: 6 },
-            shadowRadius: 16,
-            elevation: 12,
-          }}
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: isDark
+                ? 'rgba(17, 16, 15, 0.65)'
+                : 'rgba(247, 245, 242, 0.70)',
+              // borderTopWidth: StyleSheet.hairlineWidth,
+              borderTopColor: isDark
+                ? 'rgba(255, 255, 255, 0.08)'
+                : 'rgba(0, 0, 0, 0.06)',
+            },
+          ]}
+        />
+      </View>
+
+      {/* 2. Floating Pill Tab Bar with rounded frosted glassmorphism */}
+      <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
+        <View
+          style={[
+            styles.tabBarContainer,
+            {
+              borderColor: isDark
+                ? 'rgba(255, 255, 255, 0.12)'
+                : 'rgba(0, 0, 0, 0.08)',
+              shadowColor: '#000000',
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: isDark ? 0.45 : 0.12,
+              shadowRadius: 18,
+              elevation: 12,
+            },
+          ]}
         >
-          {/* Background Blur Effect */}
+          {/* Inner Blur on the Pill */}
           <BlurView
-            intensity={Platform.OS === 'ios' ? 85 : 100}
+            intensity={Platform.OS === 'ios' ? 85 : 70}
             tint={isDark ? 'dark' : 'light'}
             experimentalBlurMethod="dimezisBlurView"
-            style={StyleSheet.absoluteFill}
+            style={[
+              StyleSheet.absoluteFill,
+              Platform.OS === 'web'
+                ? ({ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' } as any)
+                : undefined,
+            ]}
           />
-          {/* Glass Tint Overlay */}
           <View
             style={[
               StyleSheet.absoluteFill,
               {
                 backgroundColor: isDark
-                  ? 'rgba(10, 17, 27, 0.50)'
-                  : 'rgba(255, 255, 255, 0.60)',
+                  ? 'rgba(25, 23, 21, 0.09)'
+                  : 'rgba(253, 252, 251, 0)',
               },
             ]}
           />
 
-          {/* Soft Gliding Active Pill */}
-          {tabWidth > 0 && (
-            <Animated.View
-              style={{
-                position: 'absolute',
-                top: 6,
-                bottom: 6,
-                justifyContent: 'center',
-                alignItems: 'center',
-                zIndex: 0,
-                pointerEvents: 'none' as any,
-                width: tabWidth - pillInset * 2,
-                left: paddingHorizontal + pillInset,
-                transform: [{ translateX: slideAnim }],
-              }}
-            >
-              <View
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: 22,
-                  backgroundColor: isDark
-                    ? 'rgba(255, 255, 255, 0.08)'
-                    : `${accentColor}18`,
-                }}
-              />
-            </Animated.View>
-          )}
-
-          {/* Tab Items */}
-          {visibleItems.map((item, index) => {
+          {visibleItems.map((item) => {
             const isMoreTab = item.key === '__more__';
-            const isFocused = safeActiveIndex === index;
+            const isFocused = isMoreTab ? isOverflowActive : activeKey === item.key;
             const iconName = isFocused ? item.activeIcon : item.inactiveIcon;
+
+            const onPress = () => {
+              if (Platform.OS !== 'web') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
+
+              if (isMoreTab) {
+                setIsMoreModalVisible(true);
+              } else {
+                LayoutAnimation.configureNext(tabSpringAnimation);
+                onChangeTab(item.key);
+              }
+            };
+
+            if (isFocused) {
+              return (
+                <Pressable
+                  key={item.key}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: true }}
+                  onPress={onPress}
+                  style={[
+                    styles.activePill,
+                    { backgroundColor: activeColor },
+                  ]}
+                >
+                  <Ionicons
+                    name={iconName}
+                    size={19}
+                    color="#FFFFFF"
+                  />
+                  <Text
+                    style={styles.activeLabel}
+                    numberOfLines={1}
+                  >
+                    {isMoreTab && isOverflowActive
+                      ? overflowItems.find((o) => o.key === activeKey)?.label || item.label
+                      : item.label}
+                  </Text>
+                  {'badge' in item && item.badge ? (
+                    <View style={styles.badgePillActive}>
+                      <Text style={[styles.badgeTextActive, { color: activeColor }]}>
+                        {item.badge}
+                      </Text>
+                    </View>
+                  ) : null}
+                </Pressable>
+              );
+            }
 
             return (
               <Pressable
                 key={item.key}
                 accessibilityRole="button"
-                accessibilityState={isFocused ? { selected: true } : {}}
-                onPress={() => handleTabPress(item)}
-                className="flex-1 items-center justify-center h-full z-10"
+                accessibilityState={{ selected: false }}
+                onPress={onPress}
+                style={[
+                  styles.inactiveButton,
+                  {
+                    backgroundColor: isDark
+                      ? 'rgba(255, 255, 255, 0.07)'
+                      : 'rgba(0, 0, 0, 0.04)',
+                  },
+                ]}
               >
-                <View className="items-center justify-center gap-0.5 shrink w-full">
-                  <View className="relative items-center justify-center">
-                    <Ionicons
-                      name={iconName}
-                      size={isFocused ? 21 : 20}
-                      color={isFocused ? activeColor : inactiveColor}
-                    />
-                    {'badge' in item && item.badge ? (
-                      <View
-                        className="absolute -top-1 -right-2 rounded-full min-w-[14px] h-[14px] px-1 items-center justify-center"
-                        style={{ backgroundColor: activeColor }}
-                      >
-                        <Text className="text-white text-[9px] font-extrabold">{item.badge}</Text>
-                      </View>
-                    ) : isMoreTab && isOverflowActive ? (
-                      <View
-                        className="absolute -top-0.5 -right-1 w-1.5 h-1.5 rounded-full"
-                        style={{ backgroundColor: activeColor }}
-                      />
-                    ) : null}
-                  </View>
-                  <Text
-                    className={`text-[11px] tracking-tight text-center ${
-                      isFocused ? 'font-bold' : 'font-medium'
-                    }`}
-                    style={[
-                      { color: isFocused ? activeColor : inactiveColor },
-                      { maxWidth: tabWidth > 0 ? tabWidth - 8 : 55 },
-                    ]}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {item.label}
-                  </Text>
+                <View style={styles.iconWrap}>
+                  <Ionicons
+                    name={iconName}
+                    size={20}
+                    color={colors.textMuted}
+                  />
+                  {'badge' in item && item.badge ? (
+                    <View style={[styles.badgeInactive, { backgroundColor: activeColor }]}>
+                      <Text style={styles.badgeTextInactive}>{item.badge}</Text>
+                    </View>
+                  ) : isMoreTab && isOverflowActive ? (
+                    <View style={[styles.moreActiveDot, { backgroundColor: activeColor }]} />
+                  ) : null}
                 </View>
               </Pressable>
             );
@@ -324,107 +306,138 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
           onRequestClose={() => setIsMoreModalVisible(false)}
         >
           <TouchableWithoutFeedback onPress={() => setIsMoreModalVisible(false)}>
-            <View className="flex-1 bg-black/60 justify-end items-center">
+            <View style={styles.modalOverlay}>
               <TouchableWithoutFeedback>
                 <View
-                  className={`absolute left-5 right-5 max-w-[380px] rounded-[24px] border p-4 max-h-[340px] shadow-2xl overflow-hidden ${
-                    isDark
-                      ? 'border-[#234563]/80 shadow-black/80'
-                      : 'border-black/10 shadow-black/20'
-                  }`}
-                  style={{
-                    bottom: bottomOffset + 74,
-                    borderRadius: 24,
-                    overflow: 'hidden',
-                  }}
+                  style={[
+                    styles.modalContainer,
+                    {
+                      bottom: bottomOffset + 68,
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                    },
+                  ]}
                 >
                   <BlurView
-                    intensity={Platform.OS === 'ios' ? 80 : 95}
+                    intensity={Platform.OS === 'ios' ? 85 : 95}
                     tint={isDark ? 'dark' : 'light'}
-                    style={StyleSheet.absoluteFill}
+                    experimentalBlurMethod="dimezisBlurView"
+                    style={[
+                      StyleSheet.absoluteFill,
+                      Platform.OS === 'web'
+                        ? ({ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' } as any)
+                        : undefined,
+                    ]}
                   />
                   <View
                     style={[
                       StyleSheet.absoluteFill,
                       {
                         backgroundColor: isDark
-                          ? 'rgba(13, 23, 36, 0.90)'
-                          : 'rgba(255, 255, 255, 0.92)',
+                          ? 'rgba(25, 23, 21, 0.88)'
+                          : 'rgba(253, 252, 251, 0.90)',
                       },
                     ]}
                   />
 
-                  <View className="flex-row justify-between items-center mb-3 pb-2 border-b border-slate-400/20 z-10">
-                    <View className="flex-row items-center gap-2">
+                  <View
+                    style={[
+                      styles.modalHeader,
+                      {
+                        borderBottomColor: isDark
+                          ? 'rgba(255, 255, 255, 0.08)'
+                          : 'rgba(0, 0, 0, 0.06)',
+                      },
+                    ]}
+                  >
+                    <View style={styles.modalHeaderTitleRow}>
                       <View
-                        className="w-7 h-7 rounded-lg items-center justify-center"
-                        style={{ backgroundColor: `${accentColor}18` }}
+                        style={[
+                          styles.modalHeaderIconBox,
+                          { backgroundColor: `${activeColor}18` },
+                        ]}
                       >
-                        <Ionicons name="grid" size={16} color={accentColor} />
+                        <Ionicons name="grid" size={16} color={activeColor} />
                       </View>
-                      <Text className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      <Text
+                        style={[
+                          styles.modalHeaderTitle,
+                          { color: isDark ? '#FFFFFF' : '#0F172A' },
+                        ]}
+                      >
                         {moreMenuTitle}
                       </Text>
                     </View>
                     <Pressable
                       onPress={() => setIsMoreModalVisible(false)}
-                      className="p-1"
+                      style={styles.modalCloseButton}
                       hitSlop={8}
                     >
-                      <Ionicons name="close" size={18} color={isDark ? '#8FA3B8' : '#64748B'} />
+                      <Ionicons
+                        name="close"
+                        size={18}
+                        color={isDark ? '#8FA3B8' : '#64748B'}
+                      />
                     </Pressable>
                   </View>
 
-                  <ScrollView className="grow-0 z-10" showsVerticalScrollIndicator={false}>
+                  <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
                     {overflowItems.map((item, idx) => {
                       const isItemActive = activeKey === item.key;
                       return (
                         <Pressable
                           key={item.key}
-                          className={`flex-row items-center py-2.5 px-2 rounded-xl gap-2.5 ${
-                            isItemActive
-                              ? isDark
-                                ? 'bg-[#2F8CFF]/10'
-                                : 'bg-[#007AFF]/10'
-                              : ''
-                          } ${
-                            idx < overflowItems.length - 1
-                              ? isDark
-                                ? 'border-b border-[#162B3F]'
-                                : 'border-b border-slate-100'
-                              : ''
-                          }`}
+                          style={[
+                            styles.modalItemRow,
+                            isItemActive && {
+                              backgroundColor: `${activeColor}15`,
+                            },
+                            idx < overflowItems.length - 1 && {
+                              borderBottomWidth: StyleSheet.hairlineWidth,
+                              borderBottomColor: isDark
+                                ? 'rgba(255, 255, 255, 0.06)'
+                                : 'rgba(0, 0, 0, 0.05)',
+                            },
+                          ]}
                           onPress={() => handleSelectOverflowItem(item.key)}
                         >
                           <View
-                            className={`w-[34px] h-[34px] rounded-[10px] items-center justify-center ${
-                              isItemActive
-                                ? ''
-                                : isDark
-                                ? 'bg-[#101C2A]'
-                                : 'bg-slate-100'
-                            }`}
-                            style={isItemActive ? { backgroundColor: `${accentColor}20` } : undefined}
+                            style={[
+                              styles.modalItemIconBox,
+                              {
+                                backgroundColor: isItemActive
+                                  ? `${activeColor}20`
+                                  : isDark
+                                    ? 'rgba(255, 255, 255, 0.06)'
+                                    : 'rgba(0, 0, 0, 0.04)',
+                              },
+                            ]}
                           >
                             <Ionicons
                               name={isItemActive ? item.activeIcon : item.inactiveIcon}
                               size={18}
-                              color={isItemActive ? accentColor : isDark ? '#8FA3B8' : '#64748B'}
+                              color={isItemActive ? activeColor : isDark ? '#8FA3B8' : '#64748B'}
                             />
                           </View>
 
-                          <View className="flex-1">
+                          <View style={styles.modalItemTextCol}>
                             <Text
-                              className={`text-[13px] ${
-                                isItemActive ? 'font-bold' : 'font-semibold'
-                              } ${isDark ? 'text-white' : 'text-slate-900'}`}
-                              style={isItemActive ? { color: accentColor } : undefined}
+                              style={[
+                                styles.modalItemLabel,
+                                {
+                                  color: isItemActive
+                                    ? activeColor
+                                    : isDark
+                                      ? '#FFFFFF'
+                                      : '#0F172A',
+                                },
+                                isItemActive && { fontWeight: '700' },
+                              ]}
                             >
                               {item.label}
                             </Text>
                             {item.description ? (
                               <Text
-                                className="text-[11px] text-[#8E8E93] mt-0.5"
+                                style={styles.modalItemDesc}
                                 numberOfLines={1}
                               >
                                 {item.description}
@@ -436,13 +449,13 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
                             <Ionicons
                               name="checkmark-circle"
                               size={18}
-                              color={accentColor}
+                              color={activeColor}
                             />
                           ) : (
                             <Ionicons
                               name="chevron-forward"
                               size={14}
-                              color={isDark ? '#234563' : '#CBD5E1'}
+                              color={isDark ? '#4B5563' : '#CBD5E1'}
                             />
                           )}
                         </Pressable>
@@ -455,6 +468,191 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
           </TouchableWithoutFeedback>
         </Modal>
       )}
-    </>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  dockRoot: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 9999,
+  },
+  backdropWrapper: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  floatingWrapper: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    alignItems: 'center',
+    zIndex: 10000,
+  },
+  tabBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    height: 52,
+    borderRadius: 26,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+    borderWidth: 1,
+    overflow: 'hidden',
+    gap: 6,
+  },
+  activePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+    paddingHorizontal: 15,
+    borderRadius: 22,
+    gap: 6,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  activeLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+    color: '#FFFFFF',
+  },
+  inactiveButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+    width: 44,
+    borderRadius: 22,
+  },
+  iconWrap: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgePillActive: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    marginLeft: 2,
+  },
+  badgeTextActive: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  badgeInactive: {
+    position: 'absolute',
+    top: -5,
+    right: -8,
+    borderRadius: 8,
+    minWidth: 14,
+    height: 14,
+    paddingHorizontal: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeTextInactive: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  moreActiveDot: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    maxWidth: 380,
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 16,
+    maxHeight: 340,
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    zIndex: 10,
+  },
+  modalHeaderTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  modalHeaderIconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalHeaderTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalScroll: {
+    flexGrow: 0,
+    zIndex: 10,
+  },
+  modalItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    gap: 10,
+  },
+  modalItemIconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalItemTextCol: {
+    flex: 1,
+  },
+  modalItemLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  modalItemDesc: {
+    fontSize: 11,
+    color: '#8E8E93',
+    marginTop: 2,
+  },
+});

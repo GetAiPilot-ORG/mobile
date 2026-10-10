@@ -79,15 +79,26 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation
 
   return (
     <Pressable
-      className="flex-row items-center p-3 rounded-2xl mb-2.5 border shadow-sm active:opacity-85 active:scale-[0.995]"
-      style={{
-        backgroundColor: colors.card,
-        borderColor: colors.border,
-      }}
+      className="flex-row items-center p-3.5 rounded-[20px] mb-3 active:opacity-85"
+      style={({ pressed }) => [
+        {
+          backgroundColor: colors.card,
+          borderWidth: 1,
+          borderColor: isDark
+            ? "rgba(255, 255, 255, 0.07)"
+            : colors.cardBorder,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0.25 : 0.04,
+          shadowRadius: 8,
+          elevation: 2,
+          opacity: pressed ? 0.85 : 1,
+        },
+      ]}
       onPress={onPress}
     >
       <View
-        className="w-[46px] h-[46px] rounded-full justify-center items-center mr-3 relative"
+        className="w-[48px] h-[48px] rounded-2xl justify-center items-center mr-3 relative"
         style={{ backgroundColor: colors.primary }}
       >
         <Text className="text-white text-lg font-bold">
@@ -95,10 +106,10 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation
         </Text>
         {isBotActive && (
           <View
-            className="absolute -bottom-0.5 -right-0.5 rounded-full p-0.5 border"
+            className="absolute -bottom-1 -right-1 rounded-full p-0.5 border"
             style={{ backgroundColor: colors.card, borderColor: colors.primary }}
           >
-            <Text className="text-[8px]">🤖</Text>
+            <Text className="text-[9px]">🤖</Text>
           </View>
         )}
       </View>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme, getColors } from '@/theme';
 
 interface ToolCardProps {
@@ -7,6 +8,7 @@ interface ToolCardProps {
   category: string;
   description: string;
   icon: string;
+  iconBg?: string;
   badge?: string;
   onPress: () => void;
 }
@@ -16,64 +18,136 @@ export const ToolCard: React.FC<ToolCardProps> = ({
   category,
   description,
   icon,
+  iconBg,
   badge,
   onPress,
 }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+  const isIonicon = icon && /^[a-z0-9-]+$/i.test(icon);
 
   return (
     <Pressable
-      className="rounded-2xl p-3.5 mb-3 border shadow-sm active:opacity-80 active:scale-[0.99]"
-      style={{
-        backgroundColor: colors.card,
-        borderColor: colors.border,
-      }}
+      className="p-4 rounded-[20px] mb-3.5 justify-between active:opacity-85"
+      style={
+        {
+          backgroundColor: colors.card,
+          shadowColor: colors.primary,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0.25 : 0.04,
+          shadowRadius: 8,
+        }
+      }
       onPress={onPress}
     >
-      <View className="flex-row items-center mb-2">
+      {/* Card Header: Icon + Badge */}
+      <View className="flex-row items-center justify-between mb-3">
         <View
-          className="w-10 h-10 rounded-xl justify-center items-center mr-3"
-          style={{ backgroundColor: colors.accentSoft }}
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 14,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: iconBg || colors.accentSoft,
+          }}
         >
-          <Text className="text-lg">{icon}</Text>
-        </View>
-        <View className="flex-1 min-w-0">
-          <Text
-            className="text-[11px] font-medium tracking-tight"
-            style={{ color: colors.mutedForeground }}
-          >
-            {category}
-          </Text>
-          <Text
-            className="text-[15px] font-extrabold mt-0.5"
-            style={{ color: colors.foreground }}
-            numberOfLines={1}
-          >
-            {title}
-          </Text>
+          {isIonicon ? (
+            <Ionicons name={icon as any} size={21} color="#FFFFFF" />
+          ) : (
+            <Text className="text-xl">{icon}</Text>
+          )}
         </View>
         {badge ? (
           <View
-            className="px-2 py-0.5 rounded-md"
-            style={{ backgroundColor: colors.badgeNeutral }}
+            style={{
+              paddingHorizontal: 8,
+              paddingVertical: 3,
+              borderRadius: 8,
+              backgroundColor: colors.accentSoft,
+            }}
           >
             <Text
-              className="text-[10px] font-bold"
-              style={{ color: colors.badgeNeutralText }}
+              style={{
+                fontSize: 9.5,
+                fontWeight: "800",
+                letterSpacing: 0.8,
+                color: colors.accent,
+              }}
             >
               {badge}
             </Text>
           </View>
         ) : null}
       </View>
-      <Text
-        className="text-[12.5px] leading-[17px]"
-        style={{ color: colors.mutedForeground }}
-        numberOfLines={2}
+
+      {/* Card Body: Category, Title & Description */}
+      <View style={{ gap: 3, marginBottom: 10 }}>
+        <Text
+          style={{
+            fontSize: 9.5,
+            fontWeight: "800",
+            letterSpacing: 1.2,
+            textTransform: "uppercase",
+            color: colors.textSecondary,
+          }}
+        >
+          {category}
+        </Text>
+        <Text
+          style={{
+            fontSize: 15,
+            fontWeight: "800",
+            letterSpacing: -0.3,
+            color: colors.text,
+          }}
+          numberOfLines={1}
+        >
+          {title}
+        </Text>
+        <Text
+          style={{
+            fontSize: 11.5,
+            lineHeight: 16,
+            color: colors.textSecondary,
+          }}
+          numberOfLines={2}
+        >
+          {description}
+        </Text>
+      </View>
+
+      {/* Card Footer: Launch CTA */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingTop: 11,
+          borderTopWidth: 1,
+          borderTopColor: isDark
+            ? "rgba(255,255,255,0.06)"
+            : "rgba(0,0,0,0.05)",
+        }}
       >
-        {description}
-      </Text>
+        <Text
+          style={{ fontSize: 11.5, fontWeight: "700", color: colors.primary }}
+        >
+          Launch Tool
+        </Text>
+        <View
+          style={{
+            width: 22,
+            height: 22,
+            borderRadius: 11,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: colors.primaryMuted,
+          }}
+        >
+          <Ionicons name="arrow-forward" size={11} color={colors.primary} />
+        </View>
+      </View>
     </Pressable>
   );
 };

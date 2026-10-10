@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, StyleProp, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme, getColors } from '@/theme';
+import { useTheme, getColors } from '../theme';
 
 export interface AppScreenProps {
   children: React.ReactNode;

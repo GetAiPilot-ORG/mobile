@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useMemo, useState } from "react";
 import {
+  Dimensions,
   FlatList,
   Modal,
   Pressable,
@@ -29,6 +30,14 @@ import { ConversationCard } from "../components";
 import { useInboxWebSocket } from "../hooks/useInboxWebSocket";
 import { ContactItem, NormalizedConversation } from "../types";
 import { ConversationScreen } from "./ConversationScreen";
+
+const INBOX_TABS = [
+  { id: "ALL", label: "All Chats", icon: "chatbubbles-outline" },
+  { id: "UNREAD", label: "Unread", icon: "mail-unread-outline" },
+  { id: "UNASSIGNED", label: "Unassigned", icon: "person-add-outline" },
+  { id: "MINE", label: "Assigned to Me", icon: "person-outline" },
+  { id: "BOT_ACTIVE", label: "AI Active", icon: "hardware-chip-outline" },
+] as const;
 
 export const InboxScreen: React.FC = () => {
   const queryClient = useQueryClient();
@@ -178,7 +187,7 @@ export const InboxScreen: React.FC = () => {
   };
 
   return (
-    <AppScreen>
+    <AppScreen safeArea={false}>
       <AppTopBar
         title="Inbox"
         showBack={false}
@@ -186,14 +195,14 @@ export const InboxScreen: React.FC = () => {
           <View className="flex-row items-center gap-2">
             {unreadTotal > 0 && (
               <View
-                className="px-2 py-0.5 rounded-full"
+                className="px-2.5 py-0.5 rounded-full"
                 style={{ backgroundColor: color.primary }}
               >
                 <Text className="text-white text-[10.5px] font-extrabold">{unreadTotal} Unread</Text>
               </View>
             )}
             <Pressable
-              className="flex-row items-center px-3 py-1.5 rounded-full shadow-sm active:opacity-85"
+              className="flex-row items-center px-3.5 py-1.5 rounded-full shadow-sm active:opacity-85"
               style={{ backgroundColor: color.primary }}
               onPress={() => setShowNewChatModal(true)}
             >
@@ -201,7 +210,7 @@ export const InboxScreen: React.FC = () => {
                 name="chatbubble-ellipses"
                 size={14}
                 color="#ffffff"
-                className="mr-1"
+                className="mr-1.5"
               />
               <Text className="text-white text-xs font-bold">+ New Chat</Text>
             </Pressable>
@@ -209,17 +218,22 @@ export const InboxScreen: React.FC = () => {
         }
       />
 
-      <View className=" px-3.5">
+      <View className="px-4">
         {/* Search Bar */}
         <View
-          className="flex-row items-center rounded-2xl px-3 py-2 border mb-2.5 shadow-sm"
-          style={{ backgroundColor: color.card, borderColor: color.border }}
+          className="flex-row items-center rounded-[18px] px-3.5 py-2.5 mb-3"
+          style={{
+            backgroundColor: color.card, shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: isDark ? 0.25 : 0.04,
+            shadowRadius: 8,
+          }}
         >
           <Ionicons
             name="search"
-            size={16}
+            size={17}
             color={color.textSecondary}
-            className="mr-2"
+            className="mr-2.5"
           />
           <TextInput
             className="flex-1 text-[13.5px]"
@@ -240,63 +254,69 @@ export const InboxScreen: React.FC = () => {
           ) : null}
         </View>
 
-        {/* Filter Tabs Horizontal Scroll */}
+        {/* Folder-Style Status Tab Bar */}
+        <View style={{ position: "relative", marginBottom: 14 }}>
+          {/* Continuous baseline across full width */}
+          <View
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 1.5,
+              backgroundColor: color.primary,
+            }}
+          />
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 2, paddingVertical: 4 }}
-          className="mb-3 shrink-0"
-        >
-          {[
-            { id: "ALL", label: "All Chats", icon: "chatbubbles-outline" },
-            { id: "UNREAD", label: "Unread", icon: "mail-unread-outline" },
-            { id: "UNASSIGNED", label: "Unassigned", icon: "person-add-outline" },
-            { id: "MINE", label: "Assigned to Me", icon: "person-outline" },
-            { id: "BOT_ACTIVE", label: "AI Active", icon: "hardware-chip-outline" },
-          ].map((tab) => {
-            const isActive = activeTab === tab.id;
+          <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={INBOX_TABS}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ paddingHorizontal: 2 }}
+            renderItem={({ item: tab }) => {
+              const isActive = activeTab === tab.id;
 
-            return (
-              <Pressable
-                key={tab.id}
-                onPress={() => setActiveTab(tab.id as any)}
-                className="flex-row items-center justify-center gap-2 px-4 py-2.5 mr-2 rounded-full border"
-                style={({ pressed }) => [
-                  {
-                    backgroundColor: isActive ? color.primary : color.card,
-                    borderColor: isActive ? color.primary : color.border,
-                    opacity: pressed ? 0.8 : 1,
-                  },
-                  isActive && {
-                    elevation: 2,
-                    shadowColor: "#000000",
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 2,
-                  },
-                ]}
-              >
-                <Ionicons
-                  name={tab.icon as any}
-                  size={15}
-                  color={isActive ? "#FFFFFF" : color.textSecondary}
-                />
-
-                <Text
-                  numberOfLines={1}
-                  className="text-xs"
-                  style={{
-                    color: isActive ? "#FFFFFF" : color.textSecondary,
-                    fontWeight: isActive ? "700" : "500",
-                  }}
+              return (
+                <Pressable
+                  onPress={() => setActiveTab(tab.id as any)}
+                  style={
+                    {
+                      height: 40,
+                      paddingHorizontal: 13,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderTopLeftRadius: isActive ? 10 : 0,
+                      borderTopRightRadius: isActive ? 10 : 0,
+                      borderTopWidth: 1.5,
+                      borderLeftWidth: 1.5,
+                      borderRightWidth: 1.5,
+                      borderBottomWidth: 1.5,
+                      borderTopColor: isActive ? color.primary : "transparent",
+                      borderLeftColor: isActive ? color.primary : "transparent",
+                      borderRightColor: isActive ? color.primary : "transparent",
+                      borderBottomColor: isActive ? color.background : "transparent",
+                      backgroundColor: isActive ? color.background : "transparent",
+                      zIndex: isActive ? 2 : 1,
+                    }
+                  }
                 >
-                  {tab.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      fontSize: 13,
+                      fontWeight: isActive ? "600" : "500",
+                      letterSpacing: -0.1,
+                      color: isActive ? color.primary : color.textSecondary,
+                    }}
+                  >
+                    {tab.label}
+                  </Text>
+                </Pressable>
+              );
+            }}
+          />
+        </View>
 
 
         {/* Conversation List */}
@@ -372,10 +392,14 @@ export const InboxScreen: React.FC = () => {
         >
           <View className="flex-1 bg-black/60 justify-end">
             <View
-              className="rounded-t-3xl p-4.5 max-h-[80%] border p-4"
-              style={{ backgroundColor: color.card, borderColor: color.border }}
+              className="rounded-t-[28px] p-5 max-h-[82%]"
+              style={{
+                backgroundColor: color.card,
+                borderTopWidth: 1,
+                borderTopColor: isDark ? "rgba(255, 255, 255, 0.08)" : color.cardBorder,
+              }}
             >
-              <View className="flex-row justify-between items-start mb-3">
+              <View className="flex-row justify-between items-start mb-3.5">
                 <View className="flex-1">
                   <Text
                     className="text-[17px] font-extrabold"
@@ -404,12 +428,16 @@ export const InboxScreen: React.FC = () => {
 
               {/* Search Contacts */}
               <View
-                className="flex-row items-center rounded-xl px-3 py-2 border mb-2.5"
-                style={{ backgroundColor: color.background, borderColor: color.border }}
+                className="flex-row items-center rounded-2xl px-3.5 py-2.5 mb-3"
+                style={{
+                  backgroundColor: color.background,
+                  borderWidth: 1,
+                  borderColor: isDark ? "rgba(255, 255, 255, 0.07)" : color.cardBorder,
+                }}
               >
                 <Ionicons
                   name="search"
-                  size={15}
+                  size={16}
                   color={color.textSecondary}
                   className="mr-2"
                 />
@@ -460,12 +488,16 @@ export const InboxScreen: React.FC = () => {
                   filteredContacts.map((cnt) => (
                     <Pressable
                       key={cnt.id}
-                      className="flex-row items-center p-3 rounded-xl mb-2 border active:opacity-75"
-                      style={{ backgroundColor: color.card, borderColor: color.border }}
+                      className="flex-row items-center p-3.5 rounded-2xl mb-2.5 active:opacity-75"
+                      style={{
+                        backgroundColor: isDark ? color.surfaceDark : color.surfaceGrouped,
+                        borderWidth: 1,
+                        borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : color.cardBorder,
+                      }}
                       onPress={() => handleStartChatWithContact(cnt)}
                     >
                       <View
-                        className="w-9 h-9 rounded-full justify-center items-center mr-2.5"
+                        className="w-10 h-10 rounded-full justify-center items-center mr-3"
                         style={{ backgroundColor: color.primary }}
                       >
                         <Text className="text-white text-[15px] font-bold">

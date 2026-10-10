@@ -31,9 +31,7 @@
       "package": "com.unreala9.mobile",
       "permissions": [
         "USE_BIOMETRIC",
-        "USE_FINGERPRINT",
-        "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT"
+        "USE_FINGERPRINT"
       ]
     },
     "web": {
@@ -48,6 +46,13 @@
           "ios": {
             "enableSceneSupport": true
           }
+        }
+      ],
+      [
+        "expo-navigation-bar",
+        {
+          "enforceContrast": false,
+          "barStyle": "dark"
         }
       ],
       "expo-router",

@@ -34,7 +34,6 @@ const TAB_CONFIG: Record<string, TabItemConfig> = {
     activeIcon: 'chatbubbles',
     inactiveIcon: 'chatbubbles-outline',
   },
-
   team: {
     label: 'Team',
     activeIcon: 'people',
@@ -58,7 +57,7 @@ const TAB_CONFIG: Record<string, TabItemConfig> = {
   admin: {
     label: 'Admin',
     activeIcon: 'shield-checkmark',
-    inactiveIcon: 'shield-checkmark-outline'
+    inactiveIcon: 'shield-checkmark-outline',
   },
   communication: {
     label: 'Connect',
@@ -121,7 +120,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
       return false;
     }
 
-    // Admin tab (shield-checkmark) should ONLY show when the user is admin
+    // Admin tab should ONLY show when the user is admin
     if (route.name === 'admin') {
       return Boolean(isAdmin);
     }
@@ -150,16 +149,22 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
         <BlurView
           intensity={Platform.OS === 'ios' ? 75 : 95}
           tint={isDark ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFill}
+          experimentalBlurMethod="dimezisBlurView"
+          style={[
+            StyleSheet.absoluteFill,
+            Platform.OS === 'web'
+              ? ({ backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' } as any)
+              : undefined,
+          ]}
         />
         <View
           style={[
             StyleSheet.absoluteFill,
             {
               backgroundColor: isDark
-                ? 'rgba(5, 8, 13, 0.72)'
-                : 'rgba(248, 249, 250, 0.75)',
-              borderTopWidth: StyleSheet.hairlineWidth,
+                ? 'rgba(17, 16, 15, 0.65)'
+                : 'rgba(247, 245, 242, 0.70)',
+              // borderTopWidth: StyleSheet.hairlineWidth,ß
               borderTopColor: isDark
                 ? 'rgba(255, 255, 255, 0.08)'
                 : 'rgba(0, 0, 0, 0.06)',
@@ -187,17 +192,23 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
         >
           {/* Inner Blur on the Pill */}
           <BlurView
-            intensity={Platform.OS === 'ios' ? 85 : 100}
+            intensity={Platform.OS === 'ios' ? 85 : 90}
             tint={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
+            experimentalBlurMethod="dimezisBlurView"
+            style={[
+              StyleSheet.absoluteFill,
+              Platform.OS === 'web'
+                ? ({ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' } as any)
+                : undefined,
+            ]}
           />
           <View
             style={[
               StyleSheet.absoluteFill,
               {
                 backgroundColor: isDark
-                  ? 'rgba(11, 20, 32, 0.85)'
-                  : 'rgba(255, 255, 255, 0.88)',
+                  ? 'rgba(25, 23, 21, 0.70)'
+                  : 'rgba(253, 252, 251, 0.75)',
               },
             ]}
           />
@@ -253,7 +264,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
                   <Ionicons
                     name={iconName}
                     size={19}
-                    color={isDark ? '#FFFFFF' : '#FFFFFF'}
+                    color="#FFFFFF"
                   />
                   <Text
                     style={[
@@ -335,24 +346,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     gap: 6,
   },
-  tabBarContainerLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 18,
-    elevation: 12,
-  },
-  tabBarContainerDark: {
-    backgroundColor: '#0A111B',
-    borderColor: '#234563',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.45,
-    shadowRadius: 24,
-    elevation: 14,
-  },
   activePill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -367,24 +360,10 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 5,
   },
-  activePillDark: {
-    backgroundColor: 'rgba(47, 140, 255, 0.16)',
-    borderWidth: 1,
-    borderColor: '#3E9BFF',
-  },
-  activePillLight: {
-    backgroundColor: '#0F172A',
-  },
   activeLabel: {
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: -0.2,
-  },
-  activeLabelDark: {
-    color: '#FFFFFF',
-  },
-  activeLabelLight: {
-    color: '#FFFFFF',
   },
   inactiveButton: {
     alignItems: 'center',
@@ -392,11 +371,5 @@ const styles = StyleSheet.create({
     height: 44,
     width: 44,
     borderRadius: 22,
-  },
-  inactiveButtonDark: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-  },
-  inactiveButtonLight: {
-    backgroundColor: 'rgba(0, 0, 0, 0.04)',
   },
 });

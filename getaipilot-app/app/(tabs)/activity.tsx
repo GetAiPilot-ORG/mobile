@@ -242,78 +242,156 @@ export default function ConnectedPlatformsPage() {
           }
           showsVerticalScrollIndicator={false}
         >
-          {/* Apple Segmented Control */}
+          {/* Hero Card */}
           <View
-            className="flex-row rounded-[10px] p-[3px] mb-4 border"
-            style={{
-              backgroundColor: color.tabBackground,
-              borderColor: isDark ? color.border : "transparent",
-            }}
-          >
-            {PLATFORMS.map((p) => {
-              const isSelected = activePlatform === p.key;
-              return (
-                <Pressable
-                  key={p.key}
-                  className="flex-1 py-[7px] rounded-lg items-center justify-center"
-                  style={[
-                    isSelected && {
-                      backgroundColor: color.card,
-                    },
-                    isSelected && !isDark && {
-                      elevation: 1,
-                      shadowColor: "#000000",
-                      shadowOffset: { width: 0, height: 1 },
-                      shadowOpacity: 0.1,
-                      shadowRadius: 2,
-                    },
-                  ]}
-                  onPress={() => handleSelectTab(p.key)}
-                >
-                  <Text
-                    className="text-[11.5px]"
-                    style={{
-                      color: isSelected ? color.textPrimary : color.textSecondary,
-                      fontWeight: isSelected ? "700" : "600",
-                    }}
-                    numberOfLines={1}
-                  >
-                    {p.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          {/* Inset Grouped Telemetry Widget Card */}
-          <View
-            className="rounded-[18px] p-4 mb-[22px] border"
+            className="rounded-[22px] p-5 mb-4"
             style={{
               backgroundColor: color.card,
-              borderColor: color.border,
+              borderWidth: 1,
+              borderColor: isDark
+                ? "rgba(255, 255, 255, 0.07)"
+                : color.cardBorder,
+              shadowColor: color.primary,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: isDark ? 0.25 : 0.04,
+              shadowRadius: 8,
+              elevation: 2,
             }}
           >
+            <View className="flex-row items-center gap-2 mb-2">
+              <View
+                className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-lg"
+                style={{ backgroundColor: color.accentSoft }}
+              >
+                <Ionicons name="pulse" size={12} color={color.primary} />
+                <Text
+                  className="text-[10px] font-extrabold tracking-wider"
+                  style={{ color: color.primary }}
+                >
+                  LIVE TELEMETRY
+                </Text>
+              </View>
+            </View>
+            <Text
+              className="text-lg font-extrabold tracking-tight"
+              style={{ color: color.text }}
+            >
+              Ecosystem Activity
+            </Text>
+            <Text
+              className="text-[12.5px] mt-1 leading-[18px]"
+              style={{ color: color.textSecondary }}
+            >
+              Real-time health telemetry, webhook triggers, and automated pipeline events.
+            </Text>
+          </View>
+
+          {/* Platform Tabs (Folder Style matching Tools & Inbox tabs) */}
+          <View style={{ position: "relative", marginVertical: 16 }}>
+            {/* Continuous baseline */}
+            <View
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 1.5,
+                backgroundColor: color.primary,
+              }}
+            />
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 2 }}
+            >
+              {PLATFORMS.map((p) => {
+                const isActive = activePlatform === p.key;
+                return (
+                  <Pressable
+                    key={p.key}
+                    onPress={() => handleSelectTab(p.key)}
+                    style={{
+                      height: 38,
+                      paddingHorizontal: 14,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderTopLeftRadius: isActive ? 10 : 0,
+                      borderTopRightRadius: isActive ? 10 : 0,
+                      borderTopWidth: 1.5,
+                      borderLeftWidth: 1.5,
+                      borderRightWidth: 1.5,
+                      borderBottomWidth: 1.5,
+                      borderTopColor: isActive ? color.primary : "transparent",
+                      borderLeftColor: isActive ? color.primary : "transparent",
+                      borderRightColor: isActive ? color.primary : "transparent",
+                      borderBottomColor: isActive ? color.background : "transparent",
+                      backgroundColor: isActive ? color.background : "transparent",
+                      zIndex: isActive ? 2 : 1,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 12.5,
+                        fontWeight: isActive ? "700" : "500",
+                        letterSpacing: -0.1,
+                        color: isActive ? color.primary : color.textSecondary,
+                      }}
+                    >
+                      {p.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {/* Telemetry Widget Card */}
+          <View
+            className="rounded-[20px] p-4 mb-5"
+            style={{
+              backgroundColor: color.card,
+              borderWidth: 1,
+              borderColor: isDark
+                ? "rgba(255, 255, 255, 0.07)"
+                : color.cardBorder,
+              shadowColor: color.primary,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: isDark ? 0.25 : 0.04,
+              shadowRadius: 8,
+              elevation: 2,
+            }}
+          >
+            {/* Card Header: Squircle Icon + Info + Live Pill */}
             <View className="flex-row items-center mb-4">
               <View
-                className="w-[38px] h-[38px] rounded-[10px] justify-center items-center mr-2.5"
-                style={{ backgroundColor: `${currentPlatformMeta.color}20` }}
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 14,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  backgroundColor: currentPlatformMeta.color,
+                  marginRight: 12,
+                }}
               >
                 <Ionicons
                   name={currentPlatformMeta.icon as any}
-                  size={20}
-                  color={currentPlatformMeta.color}
+                  size={21}
+                  color="#FFFFFF"
                 />
               </View>
               <View className="flex-1 min-w-0">
                 <Text
-                  className="text-[15.5px] font-bold tracking-tight"
-                  style={{ color: color.textPrimary }}
+                  className="text-[15.5px] font-extrabold tracking-tight"
+                  style={{ color: color.text }}
                 >
                   {currentPlatformMeta.label} Status
                 </Text>
                 <Text
                   className="text-[11.5px] mt-0.5"
                   style={{ color: color.textSecondary }}
+                  numberOfLines={1}
                 >
                   {activePlatform === "whatsapp" &&
                     (hasWhatsApp
@@ -328,11 +406,9 @@ export default function ConnectedPlatformsPage() {
                 </Text>
               </View>
               <View
-                className="flex-row items-center gap-1 px-2 py-1 rounded-md"
+                className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-full"
                 style={{
-                  backgroundColor: isDark
-                    ? "rgba(255,255,255,0.08)"
-                    : "rgba(0,0,0,0.04)",
+                  backgroundColor: `${currentPlatformMeta.color}18`,
                 }}
               >
                 <View
@@ -340,7 +416,7 @@ export default function ConnectedPlatformsPage() {
                   style={{ backgroundColor: currentPlatformMeta.color }}
                 />
                 <Text
-                  className="text-[10.5px] font-extrabold uppercase tracking-wider"
+                  className="text-[10px] font-extrabold uppercase tracking-wider"
                   style={{ color: currentPlatformMeta.color }}
                 >
                   Online
@@ -350,15 +426,19 @@ export default function ConnectedPlatformsPage() {
 
             {/* Metric Columns */}
             <View
-              className="flex-row justify-between py-3 border-y mb-3.5"
-              style={{ borderColor: color.border }}
+              className="flex-row justify-between py-3.5 mb-3 border-y"
+              style={{
+                borderColor: isDark
+                  ? "rgba(255,255,255,0.06)"
+                  : "rgba(0,0,0,0.05)",
+              }}
             >
               {activePlatform === "whatsapp" && (
                 <>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
                       className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.textPrimary }}
+                      style={{ color: color.text }}
                     >
                       ₹
                       {(
@@ -378,7 +458,7 @@ export default function ConnectedPlatformsPage() {
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
                       className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.textPrimary }}
+                      style={{ color: color.text }}
                     >
                       99.8%
                     </Text>
@@ -392,7 +472,7 @@ export default function ConnectedPlatformsPage() {
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
                       className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.textPrimary }}
+                      style={{ color: color.text }}
                     >
                       &lt; 2s
                     </Text>
@@ -411,7 +491,7 @@ export default function ConnectedPlatformsPage() {
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
                       className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.textPrimary }}
+                      style={{ color: color.text }}
                     >
                       {platformData?.telegram?.forwardRulesCount || 0}
                     </Text>
@@ -425,7 +505,7 @@ export default function ConnectedPlatformsPage() {
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
                       className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.textPrimary }}
+                      style={{ color: color.text }}
                     >
                       {platformData?.telegram?.trackerCount || 0}
                     </Text>
@@ -439,7 +519,7 @@ export default function ConnectedPlatformsPage() {
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
                       className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.textPrimary }}
+                      style={{ color: color.text }}
                     >
                       0ms
                     </Text>
@@ -458,7 +538,7 @@ export default function ConnectedPlatformsPage() {
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
                       className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.textPrimary }}
+                      style={{ color: color.text }}
                     >
                       650ms
                     </Text>
@@ -472,7 +552,7 @@ export default function ConnectedPlatformsPage() {
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
                       className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.textPrimary }}
+                      style={{ color: color.text }}
                     >
                       2,500
                     </Text>
@@ -486,7 +566,7 @@ export default function ConnectedPlatformsPage() {
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
                       className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.textPrimary }}
+                      style={{ color: color.text }}
                     >
                       100%
                     </Text>
@@ -505,7 +585,7 @@ export default function ConnectedPlatformsPage() {
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
                       className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.textPrimary }}
+                      style={{ color: color.text }}
                     >
                       {platformData?.crm?.formsCount || 0}
                     </Text>
@@ -519,7 +599,7 @@ export default function ConnectedPlatformsPage() {
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
                       className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.textPrimary }}
+                      style={{ color: color.text }}
                     >
                       {platformData?.crm?.totalClicks || 0}
                     </Text>
@@ -533,7 +613,7 @@ export default function ConnectedPlatformsPage() {
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
                       className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.textPrimary }}
+                      style={{ color: color.text }}
                     >
                       Instant
                     </Text>
@@ -552,7 +632,7 @@ export default function ConnectedPlatformsPage() {
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
                       className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.textPrimary }}
+                      style={{ color: color.text }}
                     >
                       {platformData?.social?.connectedCount || 0}
                     </Text>
@@ -566,7 +646,7 @@ export default function ConnectedPlatformsPage() {
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
                       className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.textPrimary }}
+                      style={{ color: color.text }}
                     >
                       100%
                     </Text>
@@ -580,7 +660,7 @@ export default function ConnectedPlatformsPage() {
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
                       className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.textPrimary }}
+                      style={{ color: color.text }}
                     >
                       Auto
                     </Text>
@@ -595,41 +675,70 @@ export default function ConnectedPlatformsPage() {
               )}
             </View>
 
-            {/* Action CTA */}
+            {/* Card Footer: Launch CTA */}
             <Pressable
-              className="py-2.5 rounded-[10px] items-center justify-center"
-              style={{
-                backgroundColor: isDark
-                  ? `${currentPlatformMeta.color}22`
-                  : `${currentPlatformMeta.color}15`,
-              }}
+              className="flex-row items-center justify-between pt-2 active:opacity-85"
               onPress={() => router.push(currentPlatformMeta.route as any)}
             >
               <Text
-                className="text-[13px] font-bold"
-                style={{ color: isDark ? currentPlatformMeta.color : "#0A84FF" }}
+                style={{
+                  fontSize: 11.5,
+                  fontWeight: "700",
+                  color: color.primary,
+                }}
               >
-                Configure {currentPlatformMeta.label} Dashboard ›
+                Configure {currentPlatformMeta.label} Dashboard
               </Text>
+              <View
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 11,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: color.primaryMuted,
+                }}
+              >
+                <Ionicons name="arrow-forward" size={11} color={color.primary} />
+              </View>
             </Pressable>
           </View>
 
           {/* Section: Activity Audit Log */}
-          <View className="mb-2 px-1">
+          <View className="mb-2.5 px-1 flex-row items-center justify-between">
             <Text
-              className="text-xs font-bold tracking-wider uppercase"
+              className="text-[10px] font-extrabold tracking-widest uppercase"
               style={{ color: color.textSecondary }}
             >
               RECENT ECOSYSTEM TELEMETRY
             </Text>
+            <View
+              className="px-2 py-0.5 rounded-md"
+              style={{ backgroundColor: color.accentSoft }}
+            >
+              <Text
+                className="text-[9.5px] font-extrabold"
+                style={{ color: color.accent }}
+              >
+                LIVE
+              </Text>
+            </View>
           </View>
 
           {/* Inset Grouped Audit List */}
           <View
-            className="rounded-[18px] border overflow-hidden"
+            className="rounded-[20px] overflow-hidden"
             style={{
               backgroundColor: color.card,
-              borderColor: color.border,
+              borderWidth: 1,
+              borderColor: isDark
+                ? "rgba(255, 255, 255, 0.07)"
+                : color.cardBorder,
+              shadowColor: color.primary,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: isDark ? 0.25 : 0.04,
+              shadowRadius: 8,
+              elevation: 2,
             }}
           >
             {[
@@ -667,17 +776,28 @@ export default function ConnectedPlatformsPage() {
               },
             ].map((item, idx, arr) => (
               <View key={item.id}>
-                <View className="flex-row items-center py-3 px-3.5">
-                  <Ionicons
-                    name={item.icon as any}
-                    size={20}
-                    color={item.color}
-                    className="mr-3"
-                  />
+                <View className="flex-row items-center py-3.5 px-4">
+                  <View
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 11,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      backgroundColor: `${item.color}18`,
+                      marginRight: 12,
+                    }}
+                  >
+                    <Ionicons
+                      name={item.icon as any}
+                      size={18}
+                      color={item.color}
+                    />
+                  </View>
                   <View className="flex-1 min-w-0">
                     <Text
-                      className="text-[13.5px] font-semibold tracking-tight"
-                      style={{ color: color.textPrimary }}
+                      className="text-[13.5px] font-bold tracking-tight"
+                      style={{ color: color.text }}
                     >
                       {item.title}
                     </Text>
@@ -689,7 +809,7 @@ export default function ConnectedPlatformsPage() {
                     </Text>
                   </View>
                   <Text
-                    className="text-[11px] font-medium ml-2"
+                    className="text-[11px] font-semibold ml-2"
                     style={{ color: color.textSecondary }}
                   >
                     {item.time}
@@ -697,8 +817,12 @@ export default function ConnectedPlatformsPage() {
                 </View>
                 {idx < arr.length - 1 && (
                   <View
-                    className="h-[1px] ml-11"
-                    style={{ backgroundColor: color.border }}
+                    className="h-[1px] ml-14"
+                    style={{
+                      backgroundColor: isDark
+                        ? "rgba(255, 255, 255, 0.06)"
+                        : "rgba(0, 0, 0, 0.05)",
+                    }}
                   />
                 )}
               </View>
