@@ -47,11 +47,10 @@ yarn-error.*
 
 .env
 .env.*
+.env.local
+.env.*.local
 !.env.example
 
-Getaipilot-bff.env
-Getaipilot-bff.env*.local
-Getaipilot-bff.env.*
 
 # TypeScript
 
