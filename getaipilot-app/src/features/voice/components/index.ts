@@ -10,3 +10,4 @@ export * from './CreateContactModal';
 export * from './EditContactModal';
 export * from './ContactDetailsModal';
 export * from './AssignNumberModal';
+export * from './VoicePlanExpiredBanner';

@@ -179,10 +179,9 @@ export const VoiceScreen: React.FC = () => {
           <Pressable
             onPress={handleBack}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            className="w-10 h-10 rounded-full justify-center items-center mr-2 border active:opacity-70 active:scale-95 shadow-sm"
+            className="w-10 h-10 rounded-full justify-center items-center mr-2 active:opacity-70 active:scale-95 shadow-xs"
             style={{
               backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-              borderColor: isDark ? "#2C2C2E" : "#E5E7EB",
             }}
           >
             <Ionicons

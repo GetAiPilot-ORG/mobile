@@ -47,17 +47,11 @@ yarn-error.*
 
 .env
 .env.*
+.env.local
+.env.*.local
 !.env.example
 
-Getaipilot-bff.env
-Getaipilot-bff.env*.local
-Getaipilot-bff.env.*
 
 # TypeScript
 
 *.tsbuildinfo
-
-# Generated native folders (only if generated and not maintained manually)
-
-/ios/
-/android/
