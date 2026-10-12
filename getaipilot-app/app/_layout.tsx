@@ -2,7 +2,7 @@ import "../src/global.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as Linking from "expo-linking";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { LogBox, Platform, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { NavigationBar } from "expo-navigation-bar";
@@ -11,7 +11,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GlobalErrorBoundary } from "../src/components/GlobalErrorBoundary";
 import { OfflineNotice } from "../src/components/OfflineNotice";
-import { LayoutSkeletonScreen } from "../src/components/skeletonScreen";
+import { AnimatedSplashScreen } from "../src/components/splash/AnimatedSplashScreen";
 import { AuthProvider } from "../src/contexts/AuthContext";
 import { NetworkProvider, useNetwork } from "../src/contexts/NetworkContext";
 import { RazorpayProvider } from "../src/contexts/RazorpayContext";
@@ -155,15 +155,21 @@ function AuthRouteGuard() {
 function SplashOverlay() {
   const authStatus = useAuthStore((s) => s.authStatus);
   const { networkChecked } = useNetwork();
+  const [splashFinished, setSplashFinished] = useState(false);
 
-  // Display layout skeleton while checking network or hydrating authentication state
-  if (networkChecked && authStatus !== "hydrating") {
+  // Keep splash visible during animation and session/network checks
+  if (splashFinished && networkChecked && authStatus !== "hydrating") {
     return null;
   }
 
   return (
     <View style={[StyleSheet.absoluteFill, styles.splashContainer]}>
-      <LayoutSkeletonScreen />
+      <AnimatedSplashScreen
+        minDurationMs={2000}
+        onAnimationComplete={() => {
+          setSplashFinished(true);
+        }}
+      />
     </View>
   );
 }

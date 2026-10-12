@@ -590,7 +590,7 @@ const styles = StyleSheet.create({
   statIconBadge: { width: 24, height: 24, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   statVal: { fontSize: 22, fontWeight: '800' },
   statSub: { fontSize: 10, color: '#64748B', marginTop: 2 },
-  launchBanner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderRadius: 12, borderWidth: 1, marginBottom: 4 },
+  launchBanner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderRadius: 12, marginBottom: 14 },
   launchBannerLight: { backgroundColor: '#F0FDF4', borderColor: '#A7F3D0' },
   launchBannerDark: { backgroundColor: 'rgba(16,185,129,0.08)', borderColor: 'rgba(16,185,129,0.2)' },
   launchTitle: { fontSize: 13, fontWeight: '700' },
