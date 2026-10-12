@@ -5,6 +5,7 @@ import * as Linking from "expo-linking";
 import { useEffect } from "react";
 import { LogBox, Platform, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import { NavigationBar } from "expo-navigation-bar";
 import "react-native-gesture-handler";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -18,7 +19,8 @@ import { ThemeProvider, useTheme, getColors } from "@/theme";
 import { useAuthStore } from "../src/core/store/authStore";
 import { captureReferralParam, handlePendingReferral } from "../src/services/referralService";
 
-// Suppress known deprecation noise in development & Web runtimes
+// Suppress all warning popups and known deprecation noise
+LogBox.ignoreAllLogs(true);
 LogBox.ignoreLogs([
   '"shadow*" style props are deprecated. Use "boxShadow".',
   "props.pointerEvents is deprecated. Use style.pointerEvents",
@@ -126,21 +128,25 @@ function AuthRouteGuard() {
     const segment0 = segments[0] as string | undefined;
     const inAuthGroup = segment0 === "(auth)";
 
-    if (authStatus === "unauthenticated" && !inAuthGroup) {
-      if (__DEV__) {
-        console.log(
-          "[AuthGuard] Unauthenticated user on protected route -> navigating to login",
-        );
+    const timer = setTimeout(() => {
+      if (authStatus === "unauthenticated" && !inAuthGroup) {
+        if (__DEV__) {
+          console.log(
+            "[AuthGuard] Unauthenticated user on protected route -> navigating to login",
+          );
+        }
+        router.replace("/(auth)/login" as any);
+      } else if (authStatus === "authenticated" && inAuthGroup) {
+        if (__DEV__) {
+          console.log(
+            "[AuthGuard] Authenticated user on auth route -> navigating to tabs",
+          );
+        }
+        router.replace("/(tabs)" as any);
       }
-      router.replace("/(auth)/login" as any);
-    } else if (authStatus === "authenticated" && inAuthGroup) {
-      if (__DEV__) {
-        console.log(
-          "[AuthGuard] Authenticated user on auth route -> navigating to tabs",
-        );
-      }
-      router.replace("/(tabs)" as any);
-    }
+    }, 1);
+
+    return () => clearTimeout(timer);
   }, [authStatus, segments]);
 
   return null;
@@ -165,9 +171,11 @@ function SplashOverlay() {
 function RootThemedContainer({ children }: { children: React.ReactNode }) {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+
   return (
     <View style={[styles.rootContainer, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? "light" : "dark"} />
+      {Platform.OS === "android" && <NavigationBar style={isDark ? "dark" : "light"} />}
       {children}
     </View>
   );

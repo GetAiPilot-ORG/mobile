@@ -438,7 +438,7 @@ export default function AdminMonetizeScreen() {
               if (router.canGoBack()) {
                 router.back();
               } else {
-                router.replace('/(tabs)/admin');
+                router.replace('/(tabs)/account' as any);
               }
             }}
           >
@@ -519,7 +519,7 @@ export default function AdminMonetizeScreen() {
               if (router.canGoBack()) {
                 router.back();
               } else {
-                router.replace('/(tabs)/admin');
+                router.replace('/(tabs)/account' as any);
               }
             }}
           >

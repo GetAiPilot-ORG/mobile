@@ -145,11 +145,13 @@ export function WhatsAppTemplatesSkeleton() {
 const styles = StyleSheet.create({
   grid: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    width: "100%",
+    gap: 10,
     marginBottom: 10,
   },
   halfCard: {
-    width: "48.5%",
+    flex: 1,
+    minWidth: 0,
   },
   metricCard: {
     padding: 14,

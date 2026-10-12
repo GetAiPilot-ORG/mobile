@@ -5,7 +5,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -160,100 +159,67 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
   return (
     <>
       {/* HERO: Command Center */}
-      <View style={[styles.commandCenterCard, card]}>
-        <View style={styles.commandHeader}>
-          <View style={styles.sessionPillRow}>
-            <View style={styles.syncedBadge}>
-              <View style={styles.dotGreen} />
-              <Text style={styles.syncedBadgeText}>Database Synced</Text>
+      <View
+        className="rounded-2xl border p-3.5 mb-3.5"
+        style={{ backgroundColor: colors.card, borderColor: colors.cardBorder }}
+      >
+        <View className="flex-col gap-2.5">
+          <View className="flex-row items-center gap-2 flex-wrap">
+            <View
+              className="flex-row items-center gap-1.5 px-2 py-1 rounded-full"
+              style={{ backgroundColor: 'rgba(16,185,129,0.1)' }}
+            >
+              <View className="w-[7px] h-[7px] rounded-full bg-[#10B981]" />
+              <Text className="text-[11px] font-bold text-[#10B981]">Database Synced</Text>
             </View>
-            <View style={styles.botCountBadge}>
-              <Text style={styles.botCountBadgeText}>{botsList.length} Bots Connected</Text>
+            <View
+              className="px-2 py-1 rounded-full"
+              style={{ backgroundColor: 'rgba(2,132,199,0.1)' }}
+            >
+              <Text className="text-[11px] font-bold text-[#0284C7]">
+                {botsList.length} Bots Connected
+              </Text>
             </View>
           </View>
-
-          {/* <View style={styles.headerBtnGroup}>
-            <Pressable
-              style={[styles.refreshBtn, isDark ? styles.refreshBtnDark : styles.refreshBtnLight, isRefetching && { opacity: 0.6 }]}
-              onPress={onRefresh}
-              disabled={isRefetching}
-            >
-              <Ionicons name="refresh-outline" size={14} color={isDark ? '#94A3B8' : '#475569'} />
-              <Text style={[styles.refreshBtnText, txt]}>Refresh Data</Text>
-            </Pressable>
-
-            <Pressable style={styles.connectBtn} onPress={() => onOpenModal('tracker')}>
-              <Ionicons name="add" size={15} color="#FFFFFF" />
-              <Text style={styles.connectBtnText}>Connect Bot</Text>
-            </Pressable>
-          </View> */}
         </View>
       </View>
 
-      {/* 6 Standalone KPI Cards - Identical Layout to Tracker */}
-      <View style={styles.metricsContainer}>
-        <View style={styles.metricsRow}>
-          <StatCard
-            label="TRACKED BOTS"
-            value={botsList.length}
-            icon="hardware-chip"
-            color="#0284C7"
-            bg="rgba(2,132,199,0.15)"
-            sub="Connected bots"
-            onPress={() => onNavigate('bots')}
-          />
-          <StatCard
-            label="CHANNELS"
-            value={(chats || []).length}
-            icon="megaphone"
-            color="#10B981"
-            bg="rgba(16,185,129,0.15)"
-            sub="Mapped channels"
-            onPress={() => onNavigate('bots')}
-          />
-        </View>
-
-        <View style={styles.metricsRow}>
-          <StatCard
-            label="DEEP LINKS"
-            value={deepLinksCount}
-            icon="link"
-            color="#06B6D4"
-            bg="rgba(6,182,212,0.15)"
-            sub="Tracked join links"
-            onPress={() => onNavigate('bots')}
-          />
-          <StatCard
-            label="FORWARDS"
-            value={(forwardRules || []).length}
-            icon="git-compare"
-            color="#8B5CF6"
-            bg="rgba(139,92,246,0.15)"
-            sub="Active rules"
-            onPress={() => onNavigate('automations')}
-          />
-        </View>
-
-        <View style={styles.metricsRow}>
-          <StatCard
-            label="SUB PAGES"
-            value={subManagerPages.length || (subPlans || []).length}
-            icon="wallet"
-            color="#EC4899"
-            bg="rgba(236,72,153,0.15)"
-            sub="Monetized pages"
-            onPress={() => onNavigate('sub_manager')}
-          />
-          <StatCard
-            label="REVENUE"
-            value={`₹${(realRevenue ?? 0).toLocaleString()}`}
-            icon="cash"
-            color="#F59E0B"
-            bg="rgba(245,158,11,0.15)"
-            sub="Total collected"
-            onPress={() => onNavigate('sub_manager')}
-          />
-        </View>
+      {/* 6 KPI Cards in 3 Guaranteed 2-Item Rows */}
+      <View
+        className="w-full border-t pt-3 mt-1 gap-2 self-stretch mb-3.5"
+        style={{ borderTopColor: isDark ? '#27272A' : '#E2E8F0' }}
+      >
+        {[
+          [
+            { label: 'TRACKED BOTS', value: botsList.length, color: '#0284C7', icon: 'hardware-chip-outline', bg: 'rgba(2,132,199,0.12)', tab: 'bots', sub: 'Connected bots' },
+            { label: 'CHANNELS', value: (chats || []).length, color: '#10B981', icon: 'megaphone-outline', bg: 'rgba(16,185,129,0.12)', tab: 'bots', sub: 'Mapped channels' },
+          ],
+          [
+            { label: 'DEEP LINKS', value: deepLinksCount, color: '#06B6D4', icon: 'link-outline', bg: 'rgba(6,182,212,0.12)', tab: 'bots', sub: 'Tracked join links' },
+            { label: 'FORWARDS', value: (forwardRules || []).length, color: '#8B5CF6', icon: 'git-compare-outline', bg: 'rgba(139,92,246,0.12)', tab: 'automations', sub: 'Active rules' },
+          ],
+          [
+            { label: 'SUB PAGES', value: subManagerPages.length || (subPlans || []).length, color: '#EC4899', icon: 'wallet-outline', bg: 'rgba(236,72,153,0.12)', tab: 'sub_manager', sub: 'Monetized pages' },
+            { label: 'REVENUE', value: `₹${(realRevenue ?? 0).toLocaleString()}`, color: '#F59E0B', icon: 'cash-outline', bg: 'rgba(245,158,11,0.12)', tab: 'sub_manager', sub: 'Total collected', isRevenue: true },
+          ],
+        ].map((pair, rowIndex) => (
+          <View key={rowIndex} className="flex-row w-full gap-2.5 self-stretch mb-2.5">
+            {pair.map((m, colIndex) => (
+              <View key={colIndex} className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
+                <StatCard
+                  label={m.label}
+                  value={m.value}
+                  icon={m.icon}
+                  color={m.color}
+                  bg={m.bg}
+                  sub={m.sub}
+                  onPress={() => onNavigate(m.tab)}
+                  isRevenue={m.isRevenue}
+                />
+              </View>
+            ))}
+          </View>
+        ))}
       </View>
 
       {/* Analytics Charts */}
@@ -271,24 +237,43 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
       />
 
       {/* Category Filter */}
-      <View style={[styles.categorySection, { backgroundColor: colors.backgroundSecondary }]}>
-        <Text style={[styles.sectionTitle, txt]}>
+      <View className="mb-3.5" style={{ backgroundColor: colors.backgroundSecondary }}>
+        <Text className="text-[15px] font-extrabold mb-2.5" style={{ color: colors.text }}>
           Platform Integration Tools ({filteredTools.length}/8)
         </Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 8, paddingBottom: 4 }}
+        >
           {CATEGORIES.map((cat) => {
             const isSelected = selectedCategory === cat.key;
             return (
               <Pressable
                 key={cat.key}
-                style={[styles.catPill, isDark ? styles.pillDark : styles.pillLight, isSelected && styles.catPillSelected]}
+                className={`flex-row items-center gap-1.5 px-3 py-[7px] rounded-full border ${
+                  isSelected
+                    ? 'bg-[#0284C7] border-[#0284C7]'
+                    : isDark
+                      ? 'bg-[#121212] border-[#27272A]'
+                      : 'bg-[#F8FAFC] border-[#E2E8F0]'
+                }`}
                 onPress={() => {
                   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setSelectedCategory(cat.key);
                 }}
               >
-                <Ionicons name={cat.icon as any} size={13} color={isSelected ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'} />
-                <Text style={[styles.catPillText, txt, isSelected && styles.catPillTextSelected]}>{cat.label}</Text>
+                <Ionicons
+                  name={cat.icon as any}
+                  size={13}
+                  color={isSelected ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
+                />
+                <Text
+                  className={`text-xs ${isSelected ? 'text-white font-bold' : 'font-semibold'}`}
+                  style={isSelected ? undefined : { color: colors.text }}
+                >
+                  {cat.label}
+                </Text>
               </Pressable>
             );
           })}
@@ -303,48 +288,3 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  cardDark: { backgroundColor: '#121212', borderColor: '#27272A' },
-  textLight: { color: '#0F172A' },
-  textDark: { color: '#F8FAFC' },
-  borderLight: { borderTopColor: '#E2E8F0' },
-  borderDark: { borderTopColor: '#27272A' },
-  commandCenterCard: { borderRadius: 16, borderWidth: 1, padding: 14, marginBottom: 14 },
-  commandHeader: { flexDirection: 'column', gap: 10 },
-  sessionPillRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  syncedBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(16,185,129,0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20 },
-  dotGreen: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#10B981' },
-  syncedBadgeText: { fontSize: 11, fontWeight: '700', color: '#10B981' },
-  botCountBadge: { backgroundColor: 'rgba(2,132,199,0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20 },
-  botCountBadgeText: { fontSize: 11, fontWeight: '700', color: '#0284C7' },
-  headerBtnGroup: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 2 },
-  refreshBtn: { flex: 1, height: 38, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1, borderRadius: 10 },
-  refreshBtnLight: { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1' },
-  refreshBtnDark: { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.12)' },
-  refreshBtnText: { fontSize: 12, fontWeight: '700' },
-  connectBtn: { flex: 1, height: 38, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#0284C7', borderRadius: 10 },
-  connectBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
-  metricsContainer: {
-    width: '100%',
-    alignSelf: 'stretch',
-    gap: 10,
-    marginBottom: 14,
-  },
-  metricsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    width: '100%',
-    alignSelf: 'stretch',
-    marginBottom: 10,
-  },
-  categorySection: { marginBottom: 14 },
-  sectionTitle: { fontSize: 15, fontWeight: '800', marginBottom: 10 },
-  categoryScroll: { gap: 8, paddingBottom: 4 },
-  catPill: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
-  pillLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
-  pillDark: { backgroundColor: '#121212', borderColor: '#27272A' },
-  catPillSelected: { backgroundColor: '#0284C7', borderColor: '#0284C7' },
-  catPillText: { fontSize: 12, fontWeight: '600' },
-  catPillTextSelected: { color: '#FFFFFF', fontWeight: '700' },
-});

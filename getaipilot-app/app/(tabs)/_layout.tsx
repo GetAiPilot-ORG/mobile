@@ -21,6 +21,12 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         sceneStyle: { backgroundColor: colors.background },
+        tabBarStyle: {
+          position: "absolute",
+          backgroundColor: "transparent",
+          borderTopWidth: 0,
+          elevation: 0,
+        },
       }}
     >
       <Tabs.Screen
@@ -51,6 +57,18 @@ export default function TabLayout() {
         name="activity"
         options={{
           title: "Activity",
+        }}
+      />
+      <Tabs.Screen
+        name="account"
+        options={{
+          href: null, // Hidden from bottom bar
+        }}
+      />
+      <Tabs.Screen
+        name="fleet"
+        options={{
+          href: null, // Hidden from bottom bar
         }}
       />
     </Tabs>

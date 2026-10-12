@@ -1,6 +1,6 @@
 import React from 'react';
 import { TextInput, TextInputProps, View, Text } from 'react-native';
-import { useTheme, getColors } from '@/theme';
+import { useTheme } from '@/theme';
 
 export type InputVariant = 'default' | 'filled';
 
@@ -25,38 +25,35 @@ export const Input: React.FC<InputProps> = ({
   ...props
 }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
 
   const variantStyles: Record<InputVariant, string> = {
     default: isDark
-      ? 'bg-[#0A1420] border border-[#1B334A] text-[#F7FAFC]'
-      : 'bg-white border border-[#E5E7EB] text-black',
+      ? 'bg-[#0A1420] border border-[#1B334A] text-white'
+      : 'bg-white border border-[#E5E7EB] text-slate-900',
     filled: isDark
-      ? 'bg-[#0A111B] border border-transparent text-[#F7FAFC]'
-      : 'bg-[#F2F4F7] border border-transparent text-black',
+      ? 'bg-[#0A111B] border border-transparent text-white'
+      : 'bg-[#F2F4F7] border border-transparent text-slate-900',
   };
-
-  const placeholderColor = isDark ? '#72869A' : '#9CA3AF';
 
   return (
     <View className={`w-full ${containerClassName}`}>
       {label && (
-        <Text className={`text-label-md mb-xs font-semibold ${isDark ? 'text-[#F7FAFC]' : 'text-foreground'}`}>
+        <Text className={`text-sm mb-1.5 font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
           {label}
         </Text>
       )}
       <TextInput
-        className={`rounded-md px-lg py-md font-body-md ${className}`}
-        placeholderTextColor={placeholderTextColor || colors.textMuted}
-        style={[inputDynamicStyle, style]}
+        className={`rounded-xl px-4 py-3 text-base ${variantStyles[variant]} ${className}`}
+        placeholderTextColor={placeholderTextColor || (isDark ? '#8FA3B8' : '#94A3B8')}
+        style={style}
         {...props}
       />
       {error ? (
-        <Text style={{ color: colors.error }} className="text-label-sm mt-xs font-medium">
+        <Text className="text-xs mt-1 font-medium text-red-500">
           {error}
         </Text>
       ) : helperText ? (
-        <Text className={`text-label-sm mt-xs ${isDark ? 'text-[#8FA3B8]' : 'text-foreground-muted'}`}>
+        <Text className={`text-xs mt-1 ${isDark ? 'text-[#8FA3B8]' : 'text-slate-500'}`}>
           {helperText}
         </Text>
       ) : null}

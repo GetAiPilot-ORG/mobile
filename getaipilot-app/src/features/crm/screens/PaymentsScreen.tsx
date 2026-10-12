@@ -1,9 +1,13 @@
 import { getColors, useTheme } from '../../../theme';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
-import { ActivityIndicator, FlatList, Linking, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Linking, Platform, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { crmApi } from '../api/crm.api';
+import { RecordPaymentModal } from '../components/RecordPaymentModal';
+import { useCreatePayment } from '../hooks/usePayments';
 import { CRMPayment } from '../types';
 
 const WEB_APP_URL = 'https://getaipilot.in';
@@ -26,6 +30,9 @@ export function PaymentsScreen({ onBack }: PaymentsScreenProps = {}) {
   const router = useRouter();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+
+  const [showRecordModal, setShowRecordModal] = useState(false);
+  const createPayment = useCreatePayment();
 
   const handleBack = () => {
     if (onBack) {
@@ -82,7 +89,15 @@ export function PaymentsScreen({ onBack }: PaymentsScreenProps = {}) {
             <Text style={[s.subtitle, { color: sub }]}>₹{totalCollected.toLocaleString('en-IN')} collected</Text>
           </View>
         </View>
-        <Pressable style={s.createBtn} onPress={() => Linking.openURL(`${WEB_APP_URL}/dashboard/crm/payments/record`).catch(() => { })}>
+        <Pressable
+          style={s.createBtn}
+          onPress={() => {
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+            }
+            setShowRecordModal(true);
+          }}
+        >
           <Ionicons name="add" size={18} color="#FFF" />
           <Text style={s.createBtnText}>Record</Text>
         </Pressable>
@@ -128,6 +143,25 @@ export function PaymentsScreen({ onBack }: PaymentsScreenProps = {}) {
           }}
         />
       )}
+
+      {/* Record Payment Modal */}
+      <RecordPaymentModal
+        visible={showRecordModal}
+        onClose={() => setShowRecordModal(false)}
+        onSubmit={async (payment) => {
+          try {
+            await createPayment.mutateAsync(payment);
+            if (Platform.OS !== 'web') {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+            }
+            Alert.alert('Payment Recorded 🎉', `₹${payment.amount} payment was logged successfully.`);
+          } catch (err: any) {
+            Alert.alert('Error', err?.message || 'Failed to record payment');
+            throw err;
+          }
+        }}
+        isLoading={createPayment.isPending}
+      />
     </SafeAreaView>
   );
 }

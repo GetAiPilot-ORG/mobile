@@ -1,7 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, View, Pressable, Linking, Platform } from 'react-native';
+import { Text, View, Pressable, Linking, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme, getColors } from '@/theme';
+import { useTheme } from '@/theme';
 import { WhatsAppTemplate } from '../types';
 
 interface TemplateCardProps {
@@ -46,7 +46,6 @@ function formatDate(template: WhatsAppTemplate): string {
 
 export const TemplateCard: React.FC<TemplateCardProps> = ({ template, onSelect, onPress }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
 
   const isApproved = template.status === 'APPROVED';
   const isPending = template.status === 'PENDING';
@@ -102,19 +101,18 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({ template, onSelect, 
   const renderBodyText = () => {
     const parts = String(bodyText).split(/(\{\{\d+\}\})/g);
     return (
-      <Text style={[styles.bodyText, { color: isDark ? '#e9edef' : '#111b21' }]}>
+      <Text className={`text-xs leading-[18px] font-normal ${isDark ? 'text-[#e9edef]' : 'text-[#111b21]'}`}>
         {parts.map((part, index) => {
           if (/^\{\{\d+\}\}$/.test(part)) {
             return (
               <Text
                 key={`${part}-${index}`}
-                style={[
-                  styles.variableBadge,
-                  {
-                    backgroundColor: isDark ? 'rgba(0, 168, 132, 0.2)' : 'rgba(0, 168, 132, 0.12)',
-                    color: isDark ? '#25d366' : '#008069',
-                  },
-                ]}
+                className="font-bold text-[11px] rounded px-0.5"
+                style={{
+                  fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                  backgroundColor: isDark ? 'rgba(0, 168, 132, 0.2)' : 'rgba(0, 168, 132, 0.12)',
+                  color: isDark ? '#25d366' : '#008069',
+                }}
               >
                 {` ${part} `}
               </Text>
@@ -128,25 +126,35 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({ template, onSelect, 
 
   return (
     <Pressable
-      style={({ pressed }) => [
-        styles.card,
-        isDark ? styles.cardDark : styles.cardLight,
-        pressed && handlePress ? { opacity: 0.85 } : null,
-      ]}
+      className={`w-full rounded-2xl p-3.5 border mb-3.5 shadow-sm active:opacity-85 ${
+        isDark ? 'bg-[#0f172a] border-[#1e293b]' : 'bg-white border-[#e2e8f0]'
+      }`}
       onPress={handlePress}
       disabled={!handlePress}
     >
       {/* 1. Header Row */}
-      <View style={styles.topRow}>
-        <View style={[styles.iconBox, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+      <View className="flex-row items-center mb-3">
+        <View
+          className="w-10 h-10 rounded-xl border items-center justify-center mr-2.5"
+          style={{ backgroundColor: theme.bg, borderColor: theme.border }}
+        >
           <Ionicons name="chatbubble-ellipses-outline" size={20} color={theme.iconColor} />
         </View>
 
-        <View style={styles.infoCol}>
-          <Text style={[styles.templateName, { color: isDark ? '#f8fafc' : '#0f172a' }]} numberOfLines={1}>
+        <View className="flex-1">
+          <Text
+            className={`text-sm font-bold mb-0.5 ${
+              isDark ? 'text-[#f8fafc]' : 'text-[#0f172a]'
+            }`}
+            numberOfLines={1}
+          >
             {template.name}
           </Text>
-          <Text style={[styles.metaSubtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+          <Text
+            className={`text-[11px] font-medium ${
+              isDark ? 'text-[#94a3b8]' : 'text-[#64748b]'
+            }`}
+          >
             {theme.label} • {formatLanguage(template.language)}
           </Text>
         </View>
@@ -154,37 +162,68 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({ template, onSelect, 
 
       {/* 2. Pending Alert if undergoing Meta verification */}
       {isPending && (
-        <View style={styles.pendingBanner}>
-          <View style={styles.pulsingDot} />
-          <Text style={styles.pendingBannerText}>Meta review in progress</Text>
+        <View className="flex-row items-center bg-amber-500/15 border border-amber-500/25 px-2.5 py-1 rounded-lg mb-2.5">
+          <View className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5" />
+          <Text className="text-[10.5px] font-semibold text-amber-400">Meta review in progress</Text>
         </View>
       )}
 
       {/* 3. WhatsApp Mock Chat Wallpaper Canvas */}
-      <View style={[styles.canvasContainer, isDark ? styles.canvasContainerDark : styles.canvasContainerLight]}>
-        {/* Subtle decorative background pattern elements */}
-        <View style={styles.canvasPattern} />
-
+      <View
+        className={`rounded-xl p-3 border mb-3 relative overflow-hidden ${
+          isDark
+            ? 'bg-[#0b141a] border-[#1e293b]'
+            : 'bg-[#efeae2] border-[#e2e8f0]'
+        }`}
+      >
         {/* WhatsApp Chat Bubble */}
-        <View style={[styles.chatBubble, isDark ? styles.chatBubbleDark : styles.chatBubbleLight]}>
+        <View
+          className={`rounded-xl p-3 pb-1.5 border shadow-sm ${
+            isDark
+              ? 'bg-[#1f2c34] border-[#2a3942]'
+              : 'bg-white border-[#e2e8f0]'
+          }`}
+        >
           {/* Header */}
           {headerText ? (
-            <View style={[styles.headerContainer, { borderBottomColor: isDark ? '#2a3942' : '#f1f5f9' }]}>
-              <Text style={[styles.headerText, { color: isDark ? '#e9edef' : '#111b21' }]}>{headerText}</Text>
+            <View
+              className={`border-b pb-1.5 mb-1.5 ${
+                isDark ? 'border-[#2a3942]' : 'border-slate-100'
+              }`}
+            >
+              <Text
+                className={`text-[12.5px] font-extrabold ${
+                  isDark ? 'text-[#e9edef]' : 'text-[#111b21]'
+                }`}
+              >
+                {headerText}
+              </Text>
             </View>
           ) : null}
 
           {/* Body Content with Variable Badges */}
-          <View style={styles.bodyContainer}>{renderBodyText()}</View>
+          <View className="mb-1">{renderBodyText()}</View>
 
           {/* Footer Text */}
           {footerText ? (
-            <Text style={[styles.footerText, { color: isDark ? '#8696a0' : '#667781' }]}>{footerText}</Text>
+            <Text
+              className={`text-[9.5px] mt-1 ${
+                isDark ? 'text-[#8696a0]' : 'text-[#667781]'
+              }`}
+            >
+              {footerText}
+            </Text>
           ) : null}
 
           {/* Timestamp & Sky Blue Double Ticks */}
-          <View style={styles.tickRow}>
-            <Text style={[styles.timeText, { color: isDark ? '#8696a0' : '#667781' }]}>10:38 AM</Text>
+          <View className="flex-row items-center justify-end mt-1">
+            <Text
+              className={`text-[9px] font-medium ${
+                isDark ? 'text-[#8696a0]' : 'text-[#667781]'
+              }`}
+            >
+              10:38 AM
+            </Text>
             <Ionicons
               name={isApproved ? 'checkmark-done' : 'checkmark'}
               size={13}
@@ -196,14 +235,18 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({ template, onSelect, 
 
         {/* Action / CTA Buttons Below Bubble */}
         {buttons.length > 0 && (
-          <View style={styles.buttonsContainer}>
+          <View className="mt-2 gap-1.5">
             {buttons.slice(0, 2).map((btn: any, idx: number) => {
               const isUrl = btn.type === 'URL';
               const isPhone = btn.type === 'PHONE_NUMBER';
               return (
                 <Pressable
                   key={idx}
-                  style={[styles.actionBtn, isDark ? styles.actionBtnDark : styles.actionBtnLight]}
+                  className={`flex-row items-center justify-center border rounded-lg py-1.5 px-3 shadow-xs ${
+                    isDark
+                      ? 'bg-[#182229] border-[#2a3942]'
+                      : 'bg-white border-[#e2e8f0]'
+                  }`}
                   onPress={() => {
                     if (isUrl && btn.url) {
                       Linking.openURL(btn.url).catch(() => {});
@@ -219,7 +262,9 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({ template, onSelect, 
                     style={{ marginRight: 6 }}
                   />
                   <Text
-                    style={[styles.actionBtnText, { color: isDark ? '#38bdf8' : '#0284c7' }]}
+                    className={`text-[11.5px] font-bold ${
+                      isDark ? 'text-[#38bdf8]' : 'text-[#0284c7]'
+                    }`}
                     numberOfLines={1}
                   >
                     {btn.text || 'Action'}
@@ -232,21 +277,20 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({ template, onSelect, 
       </View>
 
       {/* 4. Bottom Footer Status & Date */}
-      <View style={styles.bottomBar}>
-        <View style={styles.dateGroup}>
+      <View className="flex-row items-center justify-between pt-0.5">
+        <View className="flex-row items-center">
           <Ionicons name="calendar-outline" size={13} color={isDark ? '#64748b' : '#94a3b8'} style={{ marginRight: 4 }} />
-          <Text style={[styles.dateText, { color: isDark ? '#64748b' : '#64748b' }]}>{formatDate(template)}</Text>
+          <Text className="text-[11px] font-medium text-slate-500">{formatDate(template)}</Text>
         </View>
 
         <View
-          style={[
-            styles.statusPill,
+          className={`flex-row items-center px-2 py-0.5 rounded-md border ${
             isApproved
-              ? styles.statusApproved
+              ? 'bg-emerald-500/15 border-emerald-500/25'
               : isPending
-              ? styles.statusPending
-              : styles.statusRejected,
-          ]}
+              ? 'bg-amber-500/15 border-amber-500/25'
+              : 'bg-red-500/15 border-red-500/25'
+          }`}
         >
           <Ionicons
             name={
@@ -261,10 +305,8 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({ template, onSelect, 
             style={{ marginRight: 4 }}
           />
           <Text
-            style={[
-              styles.statusText,
-              { color: isApproved ? '#25d366' : isPending ? '#fbbf24' : '#f87171' },
-            ]}
+            className="text-[11px] font-semibold"
+            style={{ color: isApproved ? '#25d366' : isPending ? '#fbbf24' : '#f87171' }}
           >
             {isApproved ? 'Approved' : isPending ? 'Pending' : isRejected ? 'Rejected' : (template.status || 'Approved')}
           </Text>
@@ -273,220 +315,3 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({ template, onSelect, 
     </Pressable>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    marginBottom: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  cardDark: {
-    backgroundColor: '#0f172a',
-    borderColor: '#1e293b',
-  },
-  cardLight: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
-  },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  iconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 11,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  infoCol: {
-    flex: 1,
-  },
-  templateName: {
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  metaSubtitle: {
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  pendingBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(245, 158, 11, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.25)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  pulsingDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: '#f59e0b',
-    marginRight: 6,
-  },
-  pendingBannerText: {
-    fontSize: 10.5,
-    fontWeight: '600',
-    color: '#fbbf24',
-  },
-  canvasContainer: {
-    borderRadius: 14,
-    padding: 12,
-    borderWidth: 1,
-    marginBottom: 12,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  canvasContainerDark: {
-    backgroundColor: '#0b141a',
-    borderColor: '#1e293b',
-  },
-  canvasContainerLight: {
-    backgroundColor: '#efeae2',
-    borderColor: '#e2e8f0',
-  },
-  canvasPattern: {
-    ...StyleSheet.absoluteFill,
-    opacity: 0.15,
-  },
-  chatBubble: {
-    borderRadius: 12,
-    padding: 12,
-    paddingBottom: 6,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  chatBubbleDark: {
-    backgroundColor: '#1f2c34',
-    borderColor: '#2a3942',
-  },
-  chatBubbleLight: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
-  },
-  headerContainer: {
-    borderBottomWidth: 1,
-    paddingBottom: 6,
-    marginBottom: 6,
-  },
-  headerText: {
-    fontSize: 12.5,
-    fontWeight: '800',
-  },
-  bodyContainer: {
-    marginBottom: 4,
-  },
-  bodyText: {
-    fontSize: 12,
-    lineHeight: 18,
-    fontWeight: '400',
-  },
-  variableBadge: {
-    fontWeight: '700',
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 11,
-    borderRadius: 4,
-    paddingHorizontal: 2,
-  },
-  footerText: {
-    fontSize: 9.5,
-    marginTop: 4,
-  },
-  tickRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    marginTop: 4,
-  },
-  timeText: {
-    fontSize: 9,
-    fontWeight: '500',
-  },
-  buttonsContainer: {
-    marginTop: 8,
-    gap: 6,
-  },
-  actionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  actionBtnDark: {
-    backgroundColor: '#182229',
-    borderColor: '#2a3942',
-  },
-  actionBtnLight: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
-  },
-  actionBtnText: {
-    fontSize: 11.5,
-    fontWeight: '700',
-  },
-  bottomBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 2,
-  },
-  dateGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  dateText: {
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 7,
-    borderWidth: 1,
-  },
-  statusApproved: {
-    backgroundColor: 'rgba(37, 211, 102, 0.12)',
-    borderColor: 'rgba(37, 211, 102, 0.25)',
-  },
-  statusPending: {
-    backgroundColor: 'rgba(245, 158, 11, 0.12)',
-    borderColor: 'rgba(245, 158, 11, 0.25)',
-  },
-  statusRejected: {
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
-    borderColor: 'rgba(239, 68, 68, 0.25)',
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-});
-

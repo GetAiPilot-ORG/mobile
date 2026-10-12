@@ -63,7 +63,9 @@ export default function PaymentLinkGeneratorScreen() {
 
   return (
     <AppScreen safeArea={false} backgroundColor={colors.background}>
-      <AppTopBar title="UPI Payment Link Generator" subtitle="Instant Collection Links" showBack={true} />
+      <AppTopBar title="UPI Payment Link Generator" 
+      // subtitle="Instant Collection Links"
+       showBack={true} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>

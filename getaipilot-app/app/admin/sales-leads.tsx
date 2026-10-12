@@ -73,7 +73,9 @@ export default function SalesLeadsScreen() {
 
   return (
     <AppScreen safeArea={false} backgroundColor={colors.background}>
-      <AppTopBar title="Sales Leads Central" subtitle="User Registrations & CRM Outreach" showBack={true} />
+      <AppTopBar title="Sales Leads Central" 
+      // subtitle="User Registrations & CRM Outreach" 
+      showBack={true} />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}

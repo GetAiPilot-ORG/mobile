@@ -123,7 +123,9 @@ export default function HelpCenterScreen() {
 
   return (
     <AppScreen safeArea={false} backgroundColor={isDark ? '#000000' : '#F8FAFC'}>
-      <AppTopBar title="Help & Support" subtitle="Documentation, FAQs & Dedicated Engineering" showBack={true} />
+      <AppTopBar title="Help & Support" 
+      // subtitle="Documentation, FAQs & Dedicated Engineering"
+      showBack={true} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Quick Connect Inset Group */}

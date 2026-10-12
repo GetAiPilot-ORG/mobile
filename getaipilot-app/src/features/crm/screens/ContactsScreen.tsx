@@ -1,8 +1,11 @@
 import { getColors, useTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import {
+  Alert,
   FlatList,
+  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -12,7 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CrmListSkeleton } from '../../../components/skeletonScreen';
-import { CreateLeadModal } from '../components/CreateLeadModal';
+import { CreateContactModal } from '../components/CreateContactModal';
 import { LeadCard } from '../components/LeadCard';
 import { useContacts, useCreateContact } from '../hooks/useContacts';
 
@@ -51,29 +54,35 @@ export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onSelectContact,
           ) : null}
           <View>
             <Text style={[styles.title, { color: colors.text }]}>All Contacts</Text>
-            <Text style={[styles.subtitle, { color: colors.text }]}>Complete customer and partner phonebook</Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>Complete customer and partner phonebook</Text>
           </View>
         </View>
 
-        <Pressable style={styles.addBtn} onPress={() => setShowAddModal(true)} hitSlop={8}>
+        <Pressable
+          style={styles.addBtn}
+          onPress={() =>
+            setShowAddModal(true)
+          }
+          hitSlop={8}
+        >
           <Ionicons name="person-add" size={16} color="#FFFFFF" />
           <Text style={styles.addBtnText}>Contact</Text>
         </Pressable>
       </View>
 
       {/* Search */}
-      <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.text }]}>
-        <Ionicons name="search" size={16} color={colors.text} />
+      <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Ionicons name="search" size={16} color={colors.textMuted} />
         <TextInput
           style={[styles.searchInput, { color: colors.text }]}
           placeholder="Search all contacts & companies..."
-          placeholderTextColor={colors.text}
+          placeholderTextColor={colors.textMuted}
           value={search}
           onChangeText={setSearch}
         />
         {search ? (
           <Pressable onPress={() => setSearch('')}>
-            <Ionicons name="close-circle" size={16} color={colors.text} />
+            <Ionicons name="close-circle" size={16} color={colors.textMuted} />
           </Pressable>
         ) : null}
       </View>
@@ -83,9 +92,9 @@ export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onSelectContact,
         <CrmListSkeleton />
       ) : contacts.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="people-outline" size={48} color={colors.text} />
+          <Ionicons name="people-outline" size={48} color={colors.textMuted} />
           <Text style={[styles.emptyTitle, { color: colors.text }]}>No contacts found</Text>
-          <Text style={[styles.emptySubtitle, { color: colors.text }]}>
+          <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
             {search ? `No records matching "${search}"` : 'Your contact book is currently empty.'}
           </Text>
         </View>
@@ -109,12 +118,21 @@ export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onSelectContact,
         />
       )}
 
-      {/* Add Modal */}
-      <CreateLeadModal
+      {/* Add Contact Modal */}
+      <CreateContactModal
         visible={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSubmit={async (c) => {
-          await createContact.mutateAsync(c);
+          try {
+            await createContact.mutateAsync(c);
+            if (Platform.OS !== 'web') {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
+            Alert.alert('Contact Created 🎉', `${c.first_name || 'Contact'} was added to your CRM directory.`);
+          } catch (err: any) {
+            Alert.alert('Error', err?.message || 'Failed to create contact');
+            throw err;
+          }
         }}
         isLoading={createContact.isPending}
       />

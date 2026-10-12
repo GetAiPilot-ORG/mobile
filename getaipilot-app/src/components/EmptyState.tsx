@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { useTheme, getColors } from '@/theme';
 
 interface EmptyStateProps {
@@ -21,61 +21,42 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   const colors = getColors(isDark);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      <View style={[styles.iconBox, { backgroundColor: colors.muted }]}>
-        <Text style={styles.icon}>{icon}</Text>
+    <View
+      className="items-center justify-center p-8 rounded-2xl border my-3"
+      style={{ backgroundColor: colors.card, borderColor: colors.border }}
+    >
+      <View
+        className="w-14 h-14 rounded-full justify-center items-center mb-4"
+        style={{ backgroundColor: colors.muted }}
+      >
+        <Text className="text-3xl">{icon}</Text>
       </View>
-      <Text style={[styles.title, { color: colors.foreground }]}>{title}</Text>
-      <Text style={[styles.description, { color: colors.mutedForeground }]}>{description}</Text>
+      <Text
+        className="text-[17px] font-extrabold text-center mb-1.5"
+        style={{ color: colors.foreground }}
+      >
+        {title}
+      </Text>
+      <Text
+        className="text-[13px] text-center leading-[18px] mb-4 max-w-[280px]"
+        style={{ color: colors.mutedForeground }}
+      >
+        {description}
+      </Text>
       {actionText && onActionPress && (
-        <Pressable style={[styles.button, { backgroundColor: colors.primary }]} onPress={onActionPress}>
-          <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>{actionText}</Text>
+        <Pressable
+          className="px-5 py-2.5 rounded-lg active:opacity-80"
+          style={{ backgroundColor: colors.primary }}
+          onPress={onActionPress}
+        >
+          <Text
+            className="font-bold text-[13.5px]"
+            style={{ color: colors.primaryForeground }}
+          >
+            {actionText}
+          </Text>
         </Pressable>
       )}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginVertical: 12,
-  },
-  iconBox: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  icon: {
-    fontSize: 28,
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: '800',
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  description: {
-    fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 16,
-    maxWidth: 280,
-  },
-  button: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  buttonText: {
-    fontWeight: '700',
-    fontSize: 13.5,
-  },
-});

@@ -1,4 +1,3 @@
-
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
@@ -8,12 +7,10 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
 import { getColors, useTheme } from "../../../theme";
 import { useWhatsAppBroadcasts } from "../hooks/useWhatsAppBroadcasts";
 import { WhatsAppBroadcast } from "../types";
@@ -53,18 +50,18 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
     return (
       <SafeAreaView
         edges={["top", "left", "right"]}
-        style={[styles.safeArea, { backgroundColor: color.background }]}
+        className="flex-1"
+        style={{ backgroundColor: color.background }}
       >
-        <View style={styles.loadingContainer}>
+        <View className="flex-1 justify-center items-center p-6">
           <ActivityIndicator
             size="large"
             color={isDark ? "#F8FAFC" : "#0A84FF"}
           />
           <Text
-            style={[
-              styles.loadingText,
-              { color: isDark ? "#94A3B8" : "#64748B" },
-            ]}
+            className={`text-sm mt-3 ${
+              isDark ? "text-[#94A3B8]" : "text-[#64748B]"
+            }`}
           >
             Loading broadcast analytics...
           </Text>
@@ -77,23 +74,23 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
     return (
       <SafeAreaView
         edges={["top", "left", "right"]}
-        style={[styles.safeArea, { backgroundColor: color.background }]}
+        className="flex-1"
+        style={{ backgroundColor: color.background }}
       >
-        <View style={styles.loadingContainer}>
+        <View className="flex-1 justify-center items-center p-6">
           <Text
-            style={[
-              styles.errorText,
-              { color: isDark ? "#F8FAFC" : "#0F172A" },
-            ]}
+            className={`text-base font-semibold ${
+              isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
+            }`}
           >
             Broadcast campaign not found
           </Text>
           <Pressable
-            style={({ pressed }) => [
-              styles.backPillButton,
-              isDark ? styles.backPillDark : styles.backPillLight,
-              pressed && styles.backButtonPressed,
-            ]}
+            className={`flex-row items-center px-4 py-2.5 rounded-full border mt-3.5 active:opacity-75 ${
+              isDark
+                ? "bg-[#1C1C1E] border-[#2C2C2E]"
+                : "bg-white border-[#E5E7EB]"
+            }`}
             onPress={handleBack}
           >
             <Ionicons
@@ -103,10 +100,9 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
               style={{ marginRight: 4 }}
             />
             <Text
-              style={[
-                styles.backPillText,
-                { color: isDark ? "#F8FAFC" : "#0F172A" },
-              ]}
+              className={`text-sm font-semibold ${
+                isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
+              }`}
             >
               Return to Broadcasts
             </Text>
@@ -209,19 +205,24 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
   return (
     <SafeAreaView
       edges={["top", "left", "right"]}
-      style={[styles.safeArea, { backgroundColor: color.background }]}
+      className="flex-1"
+      style={{ backgroundColor: color.background }}
     >
-      {/* Header matching Overview Tab */}
+      {/* Header */}
       <View
-        style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}
+        className={`flex-row items-center px-4 py-3 border-b ${
+          isDark
+            ? "bg-black border-white/[0.08]"
+            : "bg-white border-black/[0.06]"
+        }`}
       >
-        <View style={styles.headerLeftRow}>
+        <View className="flex-row items-center flex-1">
           <Pressable
-            style={({ pressed }) => [
-              styles.backButton,
-              isDark ? styles.backButtonDark : styles.backButtonLight,
-              pressed && styles.backButtonPressed,
-            ]}
+            className={`w-10 h-10 rounded-full justify-center items-center mr-3 border active:opacity-70 active:scale-95 shadow-sm ${
+              isDark
+                ? "bg-[#1C1C1E] border-[#2C2C2E]"
+                : "bg-white border-[#E5E7EB]"
+            }`}
             onPress={handleBack}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
@@ -234,10 +235,9 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
             />
           </Pressable>
           <Text
-            style={[
-              styles.title,
-              isDark ? styles.titleDark : styles.titleLight,
-            ]}
+            className={`text-xl font-bold tracking-tight flex-1 ${
+              isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
+            }`}
             numberOfLines={1}
           >
             {broadcast.name}
@@ -246,46 +246,42 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
       </View>
 
       <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.content}
+        className="flex-1"
+        contentContainerStyle={{ padding: 16, paddingBottom: 130 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Campaign Summary Card */}
         <View
-          style={[
-            styles.summaryCard,
-            isDark ? styles.cardDark : styles.cardLight,
-          ]}
+          className={`rounded-2xl p-4 border mb-4 shadow-sm ${
+            isDark ? "bg-[#1C1C1E] border-[#2C2C2E]" : "bg-white border-[#E5E7EB]"
+          }`}
         >
-          <View style={styles.summaryTopRow}>
+          <View className="flex-row justify-between items-center mb-2">
             <Text
-              style={[
-                styles.summaryLabel,
-                isDark ? styles.textMutedDark : styles.textMutedLight,
-              ]}
+              className={`text-xs font-semibold ${
+                isDark ? "text-[#8E8E93]" : "text-[#64748B]"
+              }`}
             >
               Execution Status
             </Text>
-            <View style={[styles.statusBadge, { backgroundColor: statusBg }]}>
-              <Text style={[styles.statusText, { color: statusText }]}>
+            <View className="px-2.5 py-1 rounded-full" style={{ backgroundColor: statusBg }}>
+              <Text className="text-xs font-semibold" style={{ color: statusText }}>
                 {broadcast.status.charAt(0).toUpperCase() +
                   broadcast.status.slice(1).toLowerCase()}
               </Text>
             </View>
           </View>
           <Text
-            style={[
-              styles.campaignName,
-              isDark ? styles.textPrimaryDark : styles.textPrimaryLight,
-            ]}
+            className={`text-xl font-bold tracking-tight mb-1 ${
+              isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
+            }`}
           >
             {broadcast.name}
           </Text>
           <Text
-            style={[
-              styles.templateDetail,
-              isDark ? styles.textSecondaryDark : styles.textSecondaryLight,
-            ]}
+            className={`text-xs font-medium ${
+              isDark ? "text-[#94A3B8]" : "text-[#64748B]"
+            }`}
             numberOfLines={1}
             ellipsizeMode="tail"
           >
@@ -295,55 +291,48 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
 
         {/* Funnel Telemetry Breakdown */}
         <Text
-          style={[
-            styles.sectionTitle,
-            isDark ? styles.textMutedDark : styles.textMutedLight,
-          ]}
+          className={`text-xs font-semibold tracking-wider uppercase mb-2 ml-1 ${
+            isDark ? "text-[#8E8E93]" : "text-[#64748B]"
+          }`}
         >
           Delivery Funnel
         </Text>
         <View
-          style={[
-            styles.funnelGroup,
-            isDark ? styles.cardDark : styles.cardLight,
-          ]}
+          className={`rounded-2xl border mb-5 shadow-sm overflow-hidden ${
+            isDark ? "bg-[#1C1C1E] border-[#2C2C2E]" : "bg-white border-[#E5E7EB]"
+          }`}
         >
           {funnelSteps.map((step, index) => (
             <React.Fragment key={step.label}>
-              <View style={styles.funnelRow}>
+              <View className="flex-row items-center p-3.5">
                 <View
-                  style={[
-                    styles.funnelIconBox,
-                    { backgroundColor: step.bgColor },
-                  ]}
+                  className="w-9 h-9 rounded-xl items-center justify-center mr-3"
+                  style={{ backgroundColor: step.bgColor }}
                 >
                   <Ionicons name={step.icon} size={18} color={step.iconColor} />
                 </View>
-                <View style={styles.funnelTextCol}>
+                <View className="flex-1">
                   <Text
-                    style={[
-                      styles.funnelLabel,
-                      isDark ? styles.textPrimaryDark : styles.textPrimaryLight,
-                    ]}
+                    className={`text-sm font-semibold ${
+                      isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
+                    }`}
                   >
                     {step.label}
                   </Text>
                 </View>
                 <Text
-                  style={[
-                    styles.funnelValue,
-                    isDark ? styles.textPrimaryDark : styles.textPrimaryLight,
-                  ]}
+                  className={`text-base font-bold ${
+                    isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
+                  }`}
                 >
                   {step.value}
                 </Text>
               </View>
               {index < funnelSteps.length - 1 && (
                 <View
-                  style={[
-                    styles.divider,
-                    isDark ? styles.dividerDark : styles.dividerLight,
-                  ]}
+                  className={`h-[1px] ml-15 ${
+                    isDark ? "bg-white/[0.08]" : "bg-black/[0.06]"
+                  }`}
                 />
               )}
             </React.Fragment>
@@ -352,87 +341,45 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
 
         {/* Campaign Metadata Details */}
         <Text
-          style={[
-            styles.sectionTitle,
-            isDark ? styles.textMutedDark : styles.textMutedLight,
-          ]}
+          className={`text-xs font-semibold tracking-wider uppercase mb-2 ml-1 ${
+            isDark ? "text-[#8E8E93]" : "text-[#64748B]"
+          }`}
         >
           Campaign Details
         </Text>
         <View
-          style={[
-            styles.metaGroup,
-            isDark ? styles.cardDark : styles.cardLight,
-          ]}
+          className={`rounded-2xl border mb-8 shadow-sm overflow-hidden ${
+            isDark ? "bg-[#1C1C1E] border-[#2C2C2E]" : "bg-white border-[#E5E7EB]"
+          }`}
         >
-          <View style={styles.metaRow}>
-            <Text
-              style={[
-                styles.metaLabel,
-                isDark ? styles.textSecondaryDark : styles.textSecondaryLight,
-              ]}
-            >
+          <View className="flex-row justify-between items-center p-3.5">
+            <Text className={`text-xs font-medium ${isDark ? "text-[#94A3B8]" : "text-[#64748B]"}`}>
               Audience Segment
             </Text>
-            <Text
-              style={[
-                styles.metaValue,
-                isDark ? styles.textPrimaryDark : styles.textPrimaryLight,
-              ]}
-            >
+            <Text className={`text-sm font-semibold ${isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"}`}>
               {broadcast.audience_tag || "All Contacts"}
             </Text>
           </View>
-          <View
-            style={[
-              styles.divider,
-              isDark ? styles.dividerDark : styles.dividerLight,
-            ]}
-          />
+          <View className={`h-[1px] ${isDark ? "bg-white/[0.08]" : "bg-black/[0.06]"}`} />
 
-          <View style={styles.metaRow}>
-            <Text
-              style={[
-                styles.metaLabel,
-                isDark ? styles.textSecondaryDark : styles.textSecondaryLight,
-              ]}
-            >
+          <View className="flex-row justify-between items-center p-3.5">
+            <Text className={`text-xs font-medium ${isDark ? "text-[#94A3B8]" : "text-[#64748B]"}`}>
               Audience Type
             </Text>
-            <Text
-              style={[
-                styles.metaValue,
-                isDark ? styles.textPrimaryDark : styles.textPrimaryLight,
-              ]}
-            >
+            <Text className={`text-sm font-semibold ${isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"}`}>
               {broadcast.audience_type
                 ? broadcast.audience_type.charAt(0).toUpperCase() +
-                broadcast.audience_type.slice(1).toLowerCase()
+                  broadcast.audience_type.slice(1).toLowerCase()
                 : "Custom"}
             </Text>
           </View>
-          <View
-            style={[
-              styles.divider,
-              isDark ? styles.dividerDark : styles.dividerLight,
-            ]}
-          />
+          <View className={`h-[1px] ${isDark ? "bg-white/[0.08]" : "bg-black/[0.06]"}`} />
 
-          <View style={styles.metaRow}>
-            <Text
-              style={[
-                styles.metaLabel,
-                isDark ? styles.textSecondaryDark : styles.textSecondaryLight,
-              ]}
-            >
+          <View className="flex-row justify-between items-center p-3.5">
+            <Text className={`text-xs font-medium ${isDark ? "text-[#94A3B8]" : "text-[#64748B]"}`}>
               Cost Incurred
             </Text>
-            <Text
-              style={[
-                styles.metaValue,
-                isDark ? styles.textPrimaryDark : styles.textPrimaryLight,
-              ]}
-            >
+            <Text className={`text-sm font-semibold ${isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"}`}>
               ₹
               {(
                 (broadcast.actual_cost_paise ||
@@ -441,28 +388,13 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
               ).toFixed(2)}
             </Text>
           </View>
-          <View
-            style={[
-              styles.divider,
-              isDark ? styles.dividerDark : styles.dividerLight,
-            ]}
-          />
+          <View className={`h-[1px] ${isDark ? "bg-white/[0.08]" : "bg-black/[0.06]"}`} />
 
-          <View style={styles.metaRow}>
-            <Text
-              style={[
-                styles.metaLabel,
-                isDark ? styles.textSecondaryDark : styles.textSecondaryLight,
-              ]}
-            >
+          <View className="flex-row justify-between items-center p-3.5">
+            <Text className={`text-xs font-medium ${isDark ? "text-[#94A3B8]" : "text-[#64748B]"}`}>
               Created At
             </Text>
-            <Text
-              style={[
-                styles.metaValue,
-                isDark ? styles.textPrimaryDark : styles.textPrimaryLight,
-              ]}
-            >
+            <Text className={`text-sm font-semibold ${isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"}`}>
               {new Date(broadcast.created_at).toLocaleString()}
             </Text>
           </View>
@@ -471,258 +403,3 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  headerDark: {
-    backgroundColor: "#000000",
-    borderBottomColor: "rgba(255, 255, 255, 0.08)",
-  },
-  headerLight: {
-    backgroundColor: "#FFFFFF",
-    borderBottomColor: "rgba(0, 0, 0, 0.06)",
-  },
-  headerLeftRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-    borderWidth: 1,
-  },
-  backButtonLight: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  backButtonDark: {
-    backgroundColor: "#1C1C1E",
-    borderColor: "#2C2C2E",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  backButtonPressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.94 }],
-  },
-  backPillButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginTop: 12,
-  },
-  backPillLight: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
-  },
-  backPillDark: {
-    backgroundColor: "#1C1C1E",
-    borderColor: "#2C2C2E",
-  },
-  backPillText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "700",
-    letterSpacing: -0.4,
-    flex: 1,
-  },
-  titleLight: {
-    color: "#0F172A",
-  },
-  titleDark: {
-    color: "#F8FAFC",
-  },
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
-    paddingBottom: 140, // Ensure content scrolls comfortably past floating bottom bar
-  },
-  cardDark: {
-    backgroundColor: "#1C1C1E",
-    borderColor: "#2C2C2E",
-  },
-  cardLight: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  summaryCard: {
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    marginBottom: 20,
-  },
-  summaryTopRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  summaryLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    letterSpacing: -0.1,
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 100,
-  },
-  statusText: {
-    fontSize: 11.5,
-    fontWeight: "600",
-    letterSpacing: -0.1,
-  },
-  campaignName: {
-    fontSize: 18,
-    fontWeight: "700",
-    letterSpacing: -0.3,
-    marginBottom: 4,
-  },
-  templateDetail: {
-    fontSize: 12.5,
-    fontWeight: "500",
-    letterSpacing: -0.1,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    letterSpacing: -0.2,
-    marginBottom: 10,
-    marginLeft: 4,
-  },
-  funnelGroup: {
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: "hidden",
-    marginBottom: 20,
-  },
-  funnelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  funnelIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  funnelTextCol: {
-    flex: 1,
-  },
-  funnelLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    letterSpacing: -0.2,
-  },
-  funnelValue: {
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: -0.2,
-  },
-  metaGroup: {
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: "hidden",
-  },
-  metaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 13,
-    paddingHorizontal: 16,
-  },
-  metaLabel: {
-    fontSize: 13.5,
-    fontWeight: "500",
-    letterSpacing: -0.1,
-  },
-  metaValue: {
-    fontSize: 13.5,
-    fontWeight: "600",
-    letterSpacing: -0.1,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    marginLeft: 16,
-  },
-  dividerDark: {
-    backgroundColor: "#2C2C2E",
-  },
-  dividerLight: {
-    backgroundColor: "#E5E7EB",
-  },
-  textPrimaryDark: {
-    color: "#F8FAFC",
-  },
-  textPrimaryLight: {
-    color: "#0F172A",
-  },
-  textSecondaryDark: {
-    color: "#94A3B8",
-  },
-  textSecondaryLight: {
-    color: "#64748B",
-  },
-  textMutedDark: {
-    color: "#64748B",
-  },
-  textMutedLight: {
-    color: "#94A3B8",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-  },
-  loadingText: {
-    fontSize: 14,
-    marginTop: 12,
-    fontWeight: "500",
-  },
-  errorText: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 16,
-    textAlign: "center",
-  },
-});

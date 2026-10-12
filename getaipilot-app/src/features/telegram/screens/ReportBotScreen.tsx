@@ -55,7 +55,7 @@ const LOGO_PRESETS = [
 ];
 
 export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
-  const { isDark } = useTheme();
+  const { isDark, colors } = useTheme();
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<ReportBotTab>('profile');

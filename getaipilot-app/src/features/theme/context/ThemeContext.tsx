@@ -3,6 +3,7 @@ import { Appearance, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme as useNativeWindColorScheme } from 'nativewind';
 import * as SystemUI from 'expo-system-ui';
+import * as NavigationBar from 'expo-navigation-bar';
 import { getColors, AppColors } from '../constants/colors';
 import { ThemeMode, ThemeContextType } from '../types';
 
@@ -27,8 +28,8 @@ export const ThemeContext = createContext<ThemeContextType>({
   colors: defaultColors,
   color: defaultColors,
   getColors: (dark?: boolean) => getColors(dark !== undefined ? dark : defaultIsDark),
-  setThemeMode: async () => {},
-  toggleTheme: async () => {},
+  setThemeMode: async () => { },
+  toggleTheme: async () => { },
 });
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -120,12 +121,20 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [isDark]);
 
-  // Synchronize SystemUI background color
+  // Synchronize SystemUI background color & Android Navigation Bar
   useEffect(() => {
     try {
-      SystemUI.setBackgroundColorAsync(isDark ? '#41444B' : '#DFD8C8');
+      SystemUI.setBackgroundColorAsync(isDark ? '#05080D' : '#F8F9FA');
     } catch (e) {
       // safe fallback
+    }
+
+    if (Platform.OS === 'android') {
+      try {
+        NavigationBar.setStyle(isDark ? 'dark' : 'light');
+      } catch (e) {
+        // safe fallback
+      }
     }
   }, [isDark]);
 

@@ -25,6 +25,7 @@ interface CreateDealModalProps {
   defaultContactId?: string;
   defaultStage?: DealStage;
   isLoading?: boolean;
+  orgId?: string;
 }
 
 const STAGES: Array<{ key: DealStage; label: string; color: string }> = [
@@ -43,6 +44,7 @@ export const CreateDealModal: React.FC<CreateDealModalProps> = ({
   defaultContactId,
   defaultStage = 'lead',
   isLoading,
+  orgId,
 }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
@@ -93,6 +95,7 @@ export const CreateDealModal: React.FC<CreateDealModalProps> = ({
         probability: probability ? Number(probability) : null,
         assigned_to: assignedTo || null,
         notes: notes.trim() || null,
+        ...(orgId ? { org_id: orgId } : {}),
       });
       handleClose();
     } catch (err: any) {

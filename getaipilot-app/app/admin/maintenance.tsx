@@ -243,7 +243,8 @@ export default function AdminMaintenanceScreen() {
   if (!isAdmin) {
     return (
       <AppScreen safeArea={false} backgroundColor={colors.background}>
-        <AppTopBar title="Maintenance Control" showBack={true} />
+        <AppTopBar title="Maintenance Control" 
+        showBack={true} />
         <View style={styles.deniedContainer}>
           <Text style={styles.deniedTitle}>Access Restricted</Text>
           <Text style={styles.deniedSubtitle}>
@@ -258,7 +259,9 @@ export default function AdminMaintenanceScreen() {
 
   return (
     <AppScreen safeArea={false} backgroundColor={colors.background}>
-      <AppTopBar title="Maintenance Control" subtitle="Central Availability Hub" showBack={true} />
+      <AppTopBar title="Maintenance Control" 
+      // subtitle="Central Availability Hub" 
+      showBack={true} />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}

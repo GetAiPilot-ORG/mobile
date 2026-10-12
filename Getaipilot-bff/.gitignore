@@ -1,0 +1,57 @@
+# Dependencies
+
+node_modules/
+
+# Expo
+
+.expo/
+.eas/
+dist/
+web-build/
+expo-env.d.ts
+
+# Impeccable
+
+.impeccable/
+
+# Claude
+
+.claude/
+
+# Native build files
+
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+
+.metro-health-check*
+
+# Debug logs
+
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+
+.DS_Store
+*.pem
+
+# Environment variables - keep secrets out of Git
+
+.env
+.env.*
+.env.local
+.env.*.local
+!.env.example
+
+
+# TypeScript
+
+*.tsbuildinfo
