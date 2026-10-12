@@ -8,6 +8,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  FlatList,
   StyleSheet,
   Text,
   TextInput,
@@ -224,9 +225,12 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
               <Ionicons name={pageView === 'grid' ? 'list-outline' : 'grid-outline'} size={16} color="#0284C7" />
             </Pressable>
           </View>
-          <View style={pageView === 'grid' ? styles.pagesGrid : { gap: 10 }}>
-            {filteredPages.map((page) => (
-              <View key={page.id} style={[pageView === 'grid' ? styles.pageCardGrid : styles.pageCardList, card]}>
+          <FlatList
+            data={filteredPages}
+            keyExtractor={(page) => String(page.id)}
+            scrollEnabled={false}
+            renderItem={({ item: page }) => (
+              <View key={page.id} style={[pageView === 'grid' ? styles.pageCardGrid : styles.pageCardList, card, { marginBottom: 10 }]}>
                 <View style={styles.pageCardHeader}>
                   <View style={[styles.pageIconCircle, { backgroundColor: page.isActive ? 'rgba(16,185,129,0.12)' : 'rgba(148,163,184,0.12)' }]}>
                     <Ionicons name="globe-outline" size={15} color={page.isActive ? '#10B981' : '#94A3B8'} />
@@ -251,8 +255,13 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
                   </Pressable>
                 </View>
               </View>
-            ))}
-          </View>
+            )}
+            ListEmptyComponent={
+              <View style={{ padding: 20, alignItems: 'center' }}>
+                <Text style={{ color: '#64748B', fontSize: 12 }}>No pages found</Text>
+              </View>
+            }
+          />
           <Pressable style={styles.primaryBtn} onPress={() => onOpenModal('sub_manager')}>
             <Ionicons name="add" size={15} color="#FFFFFF" />
             <Text style={styles.primaryBtnText}>Create New Subscription Page</Text>
@@ -332,13 +341,13 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
                 ))}
               </View>
             </ScrollView>
-            {filteredTxns.length === 0 ? (
-              <View style={{ padding: 20, alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="receipt-outline" size={24} color="#64748B" />
-                <Text style={{ color: '#64748B', fontSize: 12, marginTop: 6, fontWeight: '600' }}>No transactions found</Text>
-              </View>
-            ) : (
-              filteredTxns.map((tx: any) => {
+            <FlatList
+              data={filteredTxns}
+              keyExtractor={(tx: any) => String(tx.id || tx.razorpay_payment_id || Math.random())}
+              scrollEnabled={false}
+              initialNumToRender={15}
+              maxToRenderPerBatch={20}
+              renderItem={({ item: tx }: { item: any }) => {
                 const paymentId = tx.razorpay_payment_id || tx.id || 'Payment';
                 const formattedDate = tx.dateTime || (tx.created_at ? new Date(tx.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent');
                 const amountVal = tx.netPayout ?? tx.amount ?? 0;
@@ -360,8 +369,14 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
                     </View>
                   </View>
                 );
-              })
-            )}
+              }}
+              ListEmptyComponent={
+                <View style={{ padding: 20, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="receipt-outline" size={24} color="#64748B" />
+                  <Text style={{ color: '#64748B', fontSize: 12, marginTop: 6, fontWeight: '600' }}>No transactions found</Text>
+                </View>
+              }
+            />
           </View>
         </View>
       )}
@@ -383,56 +398,82 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
               <Ionicons name="search" size={15} color="#94A3B8" />
               <TextInput style={[styles.searchInput, txt]} placeholder="Search channels..." placeholderTextColor="#94A3B8" value={channelSearch} onChangeText={setChannelSearch} />
             </View>
-            <View style={{ gap: 10, marginTop: 8 }}>
-              {channelTab === 'monetized' && filteredMonetized.map((ch) => {
-                const titleStr = ch.title || ch.channel_name || 'Channel';
-                return (
-                  <View key={ch.id || String(Math.random())} style={[styles.chanCard, border]}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                      <View style={styles.chanAvatar}><Text style={styles.chanAvatarText}>{titleStr.charAt(0).toUpperCase()}</Text></View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.chanTitle, txt]} numberOfLines={1}>{titleStr}</Text>
-                        <Text style={styles.chanId}>ID: {ch.telegram_chat_id || ch.channel_id || 'N/A'}</Text>
+            <View style={{ marginTop: 8 }}>
+              {channelTab === 'monetized' && (
+                <FlatList
+                  data={filteredMonetized}
+                  keyExtractor={(ch, index) => ch.id || ch.channel_id || String(index)}
+                  scrollEnabled={false}
+                  ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+                  renderItem={({ item: ch }) => {
+                    const titleStr = ch.title || ch.channel_name || 'Channel';
+                    return (
+                      <View style={[styles.chanCard, border]}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                          <View style={styles.chanAvatar}><Text style={styles.chanAvatarText}>{titleStr.charAt(0).toUpperCase()}</Text></View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={[styles.chanTitle, txt]} numberOfLines={1}>{titleStr}</Text>
+                            <Text style={styles.chanId}>ID: {ch.telegram_chat_id || ch.channel_id || 'N/A'}</Text>
+                          </View>
+                          <View style={styles.botActiveBadge}>
+                            <Ionicons name="checkmark" size={12} color="#10B981" />
+                            <Text style={styles.botActiveBadgeText}>Bot Active</Text>
+                          </View>
+                        </View>
+                        <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+                          <Pressable style={[styles.chanActionBtn, border]} onPress={() => Alert.alert('Status Check', `${titleStr}: Bot active with full admin rights.`)}>
+                            <Ionicons name="sync" size={12} color="#64748B" />
+                            <Text style={[styles.chanActionBtnText, txt]}>Status</Text>
+                          </Pressable>
+                          <Pressable style={[styles.chanActionBtn, border]} onPress={() => Alert.alert('Guide', 'Ensure @Gapsubmanagerbot is Admin.')}>
+                            <Ionicons name="settings-outline" size={12} color="#64748B" />
+                            <Text style={[styles.chanActionBtnText, txt]}>Guide</Text>
+                          </Pressable>
+                          <Pressable style={styles.createPageBtn} onPress={() => onOpenModal('sub_manager')}>
+                            <Text style={styles.createPageBtnText}>Create Page →</Text>
+                          </Pressable>
+                        </View>
                       </View>
-                      <View style={styles.botActiveBadge}>
-                        <Ionicons name="checkmark" size={12} color="#10B981" />
-                        <Text style={styles.botActiveBadgeText}>Bot Active</Text>
+                    );
+                  }}
+                  ListEmptyComponent={
+                    <View style={[styles.chanCard, border, { alignItems: 'center', paddingVertical: 20 }]}>
+                      <Text style={[{ fontSize: 13, color: '#94A3B8' }, txt]}>No monetized channels found</Text>
+                    </View>
+                  }
+                />
+              )}
+              {channelTab === 'discovered' && (
+                <FlatList
+                  data={filteredDiscovered}
+                  keyExtractor={(disc, index) => disc.id || disc.chat_id || disc.channel_id || String(index)}
+                  scrollEnabled={false}
+                  ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+                  renderItem={({ item: disc }) => {
+                    const discTitle = disc.title || disc.channel_name || 'Channel';
+                    return (
+                      <View style={[styles.chanCard, border]}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                          <View style={[styles.chanAvatar, { backgroundColor: '#F1F5F9' }]}><Text style={[styles.chanAvatarText, { color: '#0284C7' }]}>{discTitle.charAt(0).toUpperCase()}</Text></View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={[styles.chanTitle, txt]}>{discTitle}</Text>
+                            <Text style={styles.chanId}>ID: {disc.chat_id || disc.channel_id || 'N/A'} • {disc.members || 0} Members</Text>
+                          </View>
+                          <Pressable style={styles.createPageBtn} onPress={() => Alert.alert('Activate', `Add @Gapsubmanagerbot as Admin in ${discTitle}.`)}>
+                            <Ionicons name="add" size={13} color="#FFFFFF" />
+                            <Text style={styles.createPageBtnText}>Add Bot</Text>
+                          </Pressable>
+                        </View>
                       </View>
+                    );
+                  }}
+                  ListEmptyComponent={
+                    <View style={[styles.chanCard, border, { alignItems: 'center', paddingVertical: 20 }]}>
+                      <Text style={[{ fontSize: 13, color: '#94A3B8' }, txt]}>No discovered channels found</Text>
                     </View>
-                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-                      <Pressable style={[styles.chanActionBtn, border]} onPress={() => Alert.alert('Status Check', `${titleStr}: Bot active with full admin rights.`)}>
-                        <Ionicons name="sync" size={12} color="#64748B" />
-                        <Text style={[styles.chanActionBtnText, txt]}>Status</Text>
-                      </Pressable>
-                      <Pressable style={[styles.chanActionBtn, border]} onPress={() => Alert.alert('Guide', 'Ensure @Gapsubmanagerbot is Admin.')}>
-                        <Ionicons name="settings-outline" size={12} color="#64748B" />
-                        <Text style={[styles.chanActionBtnText, txt]}>Guide</Text>
-                      </Pressable>
-                      <Pressable style={styles.createPageBtn} onPress={() => onOpenModal('sub_manager')}>
-                        <Text style={styles.createPageBtnText}>Create Page →</Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                );
-              })}
-              {channelTab === 'discovered' && filteredDiscovered.map((disc) => {
-                const discTitle = disc.title || disc.channel_name || 'Channel';
-                return (
-                  <View key={disc.id || String(Math.random())} style={[styles.chanCard, border]}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                      <View style={[styles.chanAvatar, { backgroundColor: '#F1F5F9' }]}><Text style={[styles.chanAvatarText, { color: '#0284C7' }]}>{discTitle.charAt(0).toUpperCase()}</Text></View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.chanTitle, txt]}>{discTitle}</Text>
-                        <Text style={styles.chanId}>ID: {disc.chat_id || disc.channel_id || 'N/A'} • {disc.members || 0} Members</Text>
-                      </View>
-                      <Pressable style={styles.createPageBtn} onPress={() => Alert.alert('Activate', `Add @Gapsubmanagerbot as Admin in ${discTitle}.`)}>
-                        <Ionicons name="add" size={13} color="#FFFFFF" />
-                        <Text style={styles.createPageBtnText}>Add Bot</Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                );
-              })}
+                  }
+                />
+              )}
             </View>
           </View>
         </View>

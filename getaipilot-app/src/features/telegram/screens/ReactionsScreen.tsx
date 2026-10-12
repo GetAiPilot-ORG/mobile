@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Linking,
   Modal,
   Platform,
@@ -365,26 +366,12 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
             </Pressable>
           </View>
 
-          {autopilotCount === 0 ? (
-            <View style={styles.emptyBox}>
-              <Ionicons name="radio-outline" size={36} color="#0284C7" style={{ marginBottom: 8 }} />
-              <Text style={[styles.emptyTitle, txt]}>No Autopilot Channels</Text>
-              <Text style={styles.emptyDesc}>
-                Add {botUsername} to your Telegram channel and register it to start automatic reactions.
-              </Text>
-              <Pressable
-                style={styles.registerBtn}
-                onPress={() => {
-                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setIsAddRuleOpen(true);
-                }}
-              >
-                <Ionicons name="add" size={16} color="#FFFFFF" />
-                <Text style={styles.registerBtnText}>Register Channel</Text>
-              </Pressable>
-            </View>
-          ) : (
-            autopilotRules.map((rule) => {
+          <FlatList
+            data={autopilotRules}
+            keyExtractor={(rule) => String(rule.id)}
+            scrollEnabled={false}
+            ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+            renderItem={({ item: rule }) => {
               const chName = rule.channel_username || (rule as any).channelUsername || 'Channel';
               const isActive = rule.is_active ?? (rule as any).isActive ?? true;
               const minQ = rule.min_quantity ?? (rule as any).minQuantity ?? 10;
@@ -392,7 +379,7 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
               const limit = rule.posts_limit ?? (rule as any).postsLimit;
 
               return (
-                <View key={rule.id} style={[styles.ruleCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={[styles.ruleCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <View style={styles.ruleTop}>
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -428,8 +415,27 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
                   </View>
                 </View>
               );
-            })
-          )}
+            }}
+            ListEmptyComponent={
+              <View style={styles.emptyBox}>
+                <Ionicons name="radio-outline" size={36} color="#0284C7" style={{ marginBottom: 8 }} />
+                <Text style={[styles.emptyTitle, txt]}>No Autopilot Channels</Text>
+                <Text style={styles.emptyDesc}>
+                  Add {botUsername} to your Telegram channel and register it to start automatic reactions.
+                </Text>
+                <Pressable
+                  style={styles.registerBtn}
+                  onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setIsAddRuleOpen(true);
+                  }}
+                >
+                  <Ionicons name="add" size={16} color="#FFFFFF" />
+                  <Text style={styles.registerBtnText}>Register Channel</Text>
+                </Pressable>
+              </View>
+            }
+          />
 
           {/* Footer Notice */}
           <View style={styles.noticeFooter}>
@@ -560,15 +566,13 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
             ))}
           </View>
 
-          {filteredOrders.length === 0 ? (
-            <View style={styles.emptyBox}>
-              <Ionicons name="cube-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
-              <Text style={[styles.emptyTitle, txt]}>No Orders Found</Text>
-              <Text style={styles.emptyDesc}>Submit a boost order or register an autopilot channel to start.</Text>
-            </View>
-          ) : (
-            filteredOrders.map((ord: any, idx: number) => (
-              <View key={ord.id || idx} style={[styles.orderItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <FlatList
+            data={filteredOrders}
+            keyExtractor={(ord, idx) => ord.id || String(idx)}
+            scrollEnabled={false}
+            ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+            renderItem={({ item: ord }: { item: any }) => (
+              <View style={[styles.orderItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={styles.orderLeft}>
                   <Text style={[styles.orderLink, txt]} numberOfLines={1}>{ord.link || ord.target_post_url || 'Telegram Order'}</Text>
                   <Text style={styles.orderMeta}>
@@ -581,8 +585,15 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
                   </Text>
                 </View>
               </View>
-            ))
-          )}
+            )}
+            ListEmptyComponent={
+              <View style={styles.emptyBox}>
+                <Ionicons name="cube-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
+                <Text style={[styles.emptyTitle, txt]}>No Orders Found</Text>
+                <Text style={styles.emptyDesc}>Submit a boost order or register an autopilot channel to start.</Text>
+              </View>
+            }
+          />
         </View>
       )}
 

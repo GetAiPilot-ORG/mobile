@@ -5,6 +5,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import {
+  FlatList,
   Linking,
   Platform,
   Pressable,
@@ -201,18 +202,17 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
               <Text style={styles.sectionSub}>{(forwardRules || []).length} source-to-target forwarding channels configured</Text>
             </View>
           </View>
-          <View style={{ gap: 8, marginTop: 8 }}>
-            {(forwardRules || []).length === 0 ? (
-              <View style={{ padding: 16, alignItems: 'center' }}>
-                <Ionicons name="git-compare-outline" size={24} color="#64748B" style={{ marginBottom: 6 }} />
-                <Text style={{ fontSize: 12, color: '#64748B', fontWeight: '600' }}>No active forwarding rules configured.</Text>
-              </View>
-            ) : (
-              (forwardRules || []).map((rule, idx) => {
+          <View style={{ marginTop: 8 }}>
+            <FlatList
+              data={forwardRules || []}
+              keyExtractor={(rule, idx) => `rule_${rule.id || idx}`}
+              scrollEnabled={false}
+              ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+              renderItem={({ item: rule }) => {
                 const sourceLabel = rule.source_chat_title || rule.sender_name || (rule.sender_id ? `id:${rule.sender_id}` : 'Source Channel');
                 const targetLabel = rule.target_chat_title || (Array.isArray(rule.receivers_names) && rule.receivers_names.length > 0 ? rule.receivers_names.join(', ') : (Array.isArray(rule.receivers) && rule.receivers.length > 0 ? rule.receivers.map((r: any) => `id:${r}`).join(', ') : 'Target Channel'));
                 return (
-                  <View key={`rule_${rule.id || idx}`} style={[styles.mappingRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <View style={[styles.mappingRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
                     <View style={styles.mappingLeft}>
                       <View style={styles.mappingArrow}>
                         <Ionicons name="arrow-redo" size={12} color="#0284C7" />
@@ -225,8 +225,14 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
                     </View>
                   </View>
                 );
-              })
-            )}
+              }}
+              ListEmptyComponent={
+                <View style={{ padding: 16, alignItems: 'center' }}>
+                  <Ionicons name="git-compare-outline" size={24} color="#64748B" style={{ marginBottom: 6 }} />
+                  <Text style={{ fontSize: 12, color: '#64748B', fontWeight: '600' }}>No active forwarding rules configured.</Text>
+                </View>
+              }
+            />
           </View>
         </View>
       )}
@@ -243,18 +249,23 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
               <Text style={styles.sectionSub}>Automatic link and username replacement rules</Text>
             </View>
           </View>
-          <View style={{ gap: 8, marginTop: 8 }}>
-            {filtersList.length === 0 ? (
-              <Text style={{ fontSize: 12, color: '#64748B', padding: 10 }}>No filters configured.</Text>
-            ) : (
-              filtersList.map((item: any, idx: number) => (
-                <View key={idx} style={[styles.filterItem]}>
+          <View style={{ marginTop: 8 }}>
+            <FlatList
+              data={filtersList}
+              keyExtractor={(_, idx) => String(idx)}
+              scrollEnabled={false}
+              ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+              renderItem={({ item }) => (
+                <View style={[styles.filterItem]}>
                   <Text style={styles.filterFrom}>{item.from}</Text>
                   {item.to ? <Ionicons name="arrow-forward" size={14} color="#94A3B8" /> : null}
                   {item.to ? <Text style={styles.filterTo}>{item.to}</Text> : null}
                 </View>
-              ))
-            )}
+              )}
+              ListEmptyComponent={
+                <Text style={{ fontSize: 12, color: '#64748B', padding: 10 }}>No filters configured.</Text>
+              }
+            />
           </View>
           <Pressable style={[styles.primaryBtn, { marginTop: 12 }]} onPress={() => onOpenModal('autoforward')}>
             <Ionicons name="add" size={15} color="#FFFFFF" />

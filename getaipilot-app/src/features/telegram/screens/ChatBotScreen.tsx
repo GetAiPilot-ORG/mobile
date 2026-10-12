@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Linking,
   Modal,
   Pressable,
@@ -370,12 +371,17 @@ export const ChatBotScreen: React.FC<Props> = () => {
           {/* Active Users Horizontal Switcher */}
           <View style={[styles.activeUsersSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={styles.activeUsersLabel}>ACTIVE USERS ({chatUsers.length})</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
-              {chatUsers.map((u) => {
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingVertical: 4 }}
+              ItemSeparatorComponent={() => <View style={{ width: 8 }} />}
+              data={chatUsers}
+              keyExtractor={(u) => u.id}
+              renderItem={({ item: u }) => {
                 const isSelected = activeUser?.telegramUserId === u.telegramUserId;
                 return (
                   <Pressable
-                    key={u.id}
                     style={[
                       styles.userPill,
                       { backgroundColor: colors.card, borderColor: colors.border },
@@ -395,8 +401,8 @@ export const ChatBotScreen: React.FC<Props> = () => {
                     </View>
                   </Pressable>
                 );
-              })}
-            </ScrollView>
+              }}
+            />
           </View>
 
           {/* Chat Messages Area */}
@@ -417,11 +423,16 @@ export const ChatBotScreen: React.FC<Props> = () => {
             </View>
           </View>
 
-          <ScrollView style={styles.chatStream} contentContainerStyle={{ padding: 16, gap: 12 }}>
-            {activeUser ? (chatMessages[activeUser.telegramUserId] || []).map((msg) => {
+          <FlatList
+            style={styles.chatStream}
+            contentContainerStyle={{ padding: 16 }}
+            ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+            data={activeUser ? (chatMessages[activeUser.telegramUserId] || []) : []}
+            keyExtractor={(msg) => msg.id}
+            renderItem={({ item: msg }) => {
               if (msg.isError) {
                 return (
-                  <View key={msg.id} style={styles.errorBubble}>
+                  <View style={styles.errorBubble}>
                     <Text style={styles.errorBubbleText}>{msg.text}</Text>
                     <Text style={styles.errorBubbleTime}>{msg.time}</Text>
                   </View>
@@ -431,7 +442,6 @@ export const ChatBotScreen: React.FC<Props> = () => {
               const isUser = msg.sender === 'user';
               return (
                 <View
-                  key={msg.id}
                   style={[styles.msgRow, isUser ? styles.msgRowUser : styles.msgRowBot]}
                 >
                   <View
@@ -451,12 +461,13 @@ export const ChatBotScreen: React.FC<Props> = () => {
                   </View>
                 </View>
               );
-            }) : (
+            }}
+            ListEmptyComponent={
               <View style={{ alignItems: 'center', padding: 20 }}>
                 <Text style={styles.modalHeaderSub}>No active users found.</Text>
               </View>
-            )}
-          </ScrollView>
+            }
+          />
 
           {/* Prompt Refine Training Banner */}
           <View style={[styles.refineBanner, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -606,27 +617,33 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 <Text style={styles.pdfUploadText}>Click to add PDF documents</Text>
               </Pressable>
 
-              {pdfDocuments.map((doc) => (
-                <View key={doc.id} style={[styles.pdfDocItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Ionicons name="document-text" size={18} color="#10B981" />
-                    <Text style={[styles.pdfDocName, txt]}>{doc.name}</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <View style={styles.trainedBadge}>
-                      <Text style={styles.trainedBadgeText}>{doc.status}</Text>
+              <FlatList
+                data={pdfDocuments}
+                keyExtractor={(doc) => doc.id}
+                scrollEnabled={false}
+                ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+                renderItem={({ item: doc }) => (
+                  <View style={[styles.pdfDocItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Ionicons name="document-text" size={18} color="#10B981" />
+                      <Text style={[styles.pdfDocName, txt]}>{doc.name}</Text>
                     </View>
-                    <Pressable
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setPdfDocuments((prev) => prev.filter((d) => d.id !== doc.id));
-                      }}
-                    >
-                      <Ionicons name="trash-outline" size={16} color="#94A3B8" />
-                    </Pressable>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <View style={styles.trainedBadge}>
+                        <Text style={styles.trainedBadgeText}>{doc.status}</Text>
+                      </View>
+                      <Pressable
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          setPdfDocuments((prev) => prev.filter((d) => d.id !== doc.id));
+                        }}
+                      >
+                        <Ionicons name="trash-outline" size={16} color="#94A3B8" />
+                      </Pressable>
+                    </View>
                   </View>
-                </View>
-              ))}
+                )}
+              />
             </View>
 
             {/* OPENAI OR GEMINI API KEY */}

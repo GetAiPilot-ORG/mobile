@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Image,
   Linking,
   Modal,
@@ -693,23 +694,13 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                   </View>
                 </View>
 
-                {(dashboard?.channels || []).length === 0 ? (
-                  <View style={styles.emptyBox}>
-                    <Ionicons name="radio-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
-                    <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                      No Channels Connected Yet
-                    </Text>
-                    <Text style={styles.emptyDesc}>
-                      Add @ResearchReport233_bot as an Admin to your Telegram trading channel to begin auto-converting calls.
-                    </Text>
-                    <Pressable style={[styles.startBotBtn, { marginTop: 12 }]} onPress={handleStartBot}>
-                      <Ionicons name="add" size={16} color="#FFFFFF" />
-                      <Text style={styles.startBotBtnText}>Connect Channel</Text>
-                    </Pressable>
-                  </View>
-                ) : (
-                  (dashboard?.channels || []).map((ch: any, idx: number) => (
-                    <View key={`ch_${ch.id || idx}`} style={[styles.channelItem, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                <FlatList
+                  data={dashboard?.channels || []}
+                  keyExtractor={(ch, idx) => `ch_${ch.id || idx}`}
+                  scrollEnabled={false}
+                  ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+                  renderItem={({ item: ch }) => (
+                    <View style={[styles.channelItem, { borderColor: colors.border, backgroundColor: colors.card }]}>
                       <View style={styles.channelIcon}>
                         <Ionicons name="megaphone" size={16} color="#0284C7" />
                       </View>
@@ -721,8 +712,23 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                       </View>
                       <Ionicons name="checkmark-circle" size={18} color="#10B981" />
                     </View>
-                  ))
-                )}
+                  )}
+                  ListEmptyComponent={
+                    <View style={styles.emptyBox}>
+                      <Ionicons name="radio-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
+                      <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                        No Channels Connected Yet
+                      </Text>
+                      <Text style={styles.emptyDesc}>
+                        Add @ResearchReport233_bot as an Admin to your Telegram trading channel to begin auto-converting calls.
+                      </Text>
+                      <Pressable style={[styles.startBotBtn, { marginTop: 12 }]} onPress={handleStartBot}>
+                        <Ionicons name="add" size={16} color="#FFFFFF" />
+                        <Text style={styles.startBotBtnText}>Connect Channel</Text>
+                      </Pressable>
+                    </View>
+                  }
+                />
               </View>
             )}
 
@@ -740,19 +746,13 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                   </View>
                 </View>
 
-                {(dashboard?.reports || []).length === 0 ? (
-                  <View style={styles.emptyBox}>
-                    <Ionicons name="document-text-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
-                    <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                      No Reports Generated Yet
-                    </Text>
-                    <Text style={styles.emptyDesc}>
-                      When you post trading calls in your connected channels, formatted SEBI compliance PDFs will appear here.
-                    </Text>
-                  </View>
-                ) : (
-                  (dashboard?.reports || []).map((rep: any) => (
-                    <View key={rep.id} style={[styles.reportItem, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                <FlatList
+                  data={dashboard?.reports || []}
+                  keyExtractor={(rep, idx) => String(rep.id || idx)}
+                  scrollEnabled={false}
+                  ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+                  renderItem={({ item: rep }) => (
+                    <View style={[styles.reportItem, { borderColor: colors.border, backgroundColor: colors.card }]}>
                       <View style={styles.reportIconCircle}>
                         <Ionicons name="document-text" size={18} color="#EF4444" />
                       </View>
@@ -778,8 +778,19 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                         <Ionicons name={rep.pdfUrl ? "download-outline" : "eye-outline"} size={16} color="#0284C7" />
                       </Pressable>
                     </View>
-                  ))
-                )}
+                  )}
+                  ListEmptyComponent={
+                    <View style={styles.emptyBox}>
+                      <Ionicons name="document-text-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
+                      <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                        No Reports Generated Yet
+                      </Text>
+                      <Text style={styles.emptyDesc}>
+                        When you post trading calls in your connected channels, formatted SEBI compliance PDFs will appear here.
+                      </Text>
+                    </View>
+                  }
+                />
               </View>
             )}
           </>

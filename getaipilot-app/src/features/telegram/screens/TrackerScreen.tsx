@@ -7,6 +7,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  FlatList,
   StyleSheet,
   Text,
   TextInput,
@@ -193,40 +194,54 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
                 </Text>
               </View>
             </View>
-            {(trackerDash?.channels || []).map((chan: any) => (
-              <View key={chan.channel_id} style={[styles.chanCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={styles.chanCardHeader}>
-                  <Text style={[styles.chanName, txt]}>{chan.channel_name}</Text>
-                  <View style={styles.periodPill}>
-                    <Text style={styles.periodPillText}>+{chan.period_joins} Joins (7 Days)</Text>
+            <FlatList
+              data={trackerDash?.channels || []}
+              keyExtractor={(chan: any) => String(chan.channel_id)}
+              scrollEnabled={false}
+              ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+              renderItem={({ item: chan }: { item: any }) => (
+                <View style={[styles.chanCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <View style={styles.chanCardHeader}>
+                    <Text style={[styles.chanName, txt]}>{chan.channel_name}</Text>
+                    <View style={styles.periodPill}>
+                      <Text style={styles.periodPillText}>+{chan.period_joins} Joins (7 Days)</Text>
+                    </View>
+                  </View>
+                  <View style={styles.chanStats}>
+                    {[
+                      { label: 'JOINED', val: chan.joined, color: txt },
+                      { label: 'PERIOD', val: `+${chan.period_joins}`, color: { color: '#10B981' } },
+                      { label: 'LEFT', val: chan.left, color: { color: '#EF4444' } },
+                      { label: 'ALL ACTIVE', val: chan.all_active, color: { color: '#0284C7' } },
+                    ].map((s, idx) => (
+                      <View key={idx} style={styles.chanStatItem}>
+                        <Text style={styles.chanStatLbl}>{s.label}</Text>
+                        <Text style={[styles.chanStatVal, s.color as any]}>{s.val}</Text>
+                      </View>
+                    ))}
+                  </View>
+                  <View style={styles.linksWrap}>
+                    <FlatList
+                      data={chan.links || []}
+                      keyExtractor={(link: any) => String(link.id)}
+                      scrollEnabled={false}
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      ItemSeparatorComponent={() => <View style={{ width: 8 }} />}
+                      renderItem={({ item: link }: { item: any }) => (
+                        <View style={styles.linkPill}>
+                          <Ionicons name="link-outline" size={12} color="#0284C7" />
+                          <Text style={[styles.linkPillTitle, txt]}>{link.title}</Text>
+                          <View style={styles.linkPillBadge}>
+                            <Text style={styles.linkPillBadgeText}>+{link.joins} joins</Text>
+                          </View>
+                        </View>
+                      )}
+                    />
                   </View>
                 </View>
-                <View style={styles.chanStats}>
-                  {[
-                    { label: 'JOINED', val: chan.joined, color: txt },
-                    { label: 'PERIOD', val: `+${chan.period_joins}`, color: { color: '#10B981' } },
-                    { label: 'LEFT', val: chan.left, color: { color: '#EF4444' } },
-                    { label: 'ALL ACTIVE', val: chan.all_active, color: { color: '#0284C7' } },
-                  ].map((s, idx) => (
-                    <View key={idx} style={styles.chanStatItem}>
-                      <Text style={styles.chanStatLbl}>{s.label}</Text>
-                      <Text style={[styles.chanStatVal, s.color as any]}>{s.val}</Text>
-                    </View>
-                  ))}
-                </View>
-                <View style={styles.linksWrap}>
-                  {chan.links.map((link: any) => (
-                    <View key={link.id} style={styles.linkPill}>
-                      <Ionicons name="link-outline" size={12} color="#0284C7" />
-                      <Text style={[styles.linkPillTitle, txt]}>{link.title}</Text>
-                      <View style={styles.linkPillBadge}>
-                        <Text style={styles.linkPillBadgeText}>+{link.joins} joins</Text>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            ))}
+              )}
+            />
           </View>
 
           {/* Users Table */}
@@ -264,42 +279,50 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
                 ))}
               </View>
             </ScrollView>
-            {displayedUsers.map((user: any) => {
-              const sc = statusColor(user.status);
-              const userNameStr = user.name || user.first_name || 'User';
-              return (
-                <View key={user.id || String(Math.random())} style={[styles.userRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-                    <View style={styles.userAvatar}>
-                      <Text style={styles.userAvatarText}>{userNameStr.charAt(0).toUpperCase()}</Text>
+            <FlatList
+              data={displayedUsers}
+              keyExtractor={(user: any, index: number) => String(user.id || user.telegram_user_id || `u_${index}`)}
+              scrollEnabled={false}
+              initialNumToRender={15}
+              maxToRenderPerBatch={20}
+              renderItem={({ item: user }: { item: any }) => {
+                const sc = statusColor(user.status);
+                const userNameStr = user.name || user.first_name || 'User';
+                return (
+                  <View key={user.id || String(Math.random())} style={[styles.userRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                      <View style={styles.userAvatar}>
+                        <Text style={styles.userAvatarText}>{userNameStr.charAt(0).toUpperCase()}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.userName, txt]}>{userNameStr}</Text>
+                        <Text style={styles.userSub}>Id: {user.telegram_user_id || 'N/A'} • {user.channel_name || 'Channel'}</Text>
+                        <Text style={styles.userTime}>{user.time_ago || 'Recent'}</Text>
+                      </View>
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.userName, txt]}>{userNameStr}</Text>
-                      <Text style={styles.userSub}>Id: {user.telegram_user_id || 'N/A'} • {user.channel_name || 'Channel'}</Text>
-                      <Text style={styles.userTime}>{user.time_ago || 'Recent'}</Text>
+                    <View style={[styles.statusPill, { backgroundColor: sc.bg, borderColor: sc.border }]}>
+                      <Text style={[styles.statusPillText, { color: sc.text }]}>{user.status}</Text>
                     </View>
                   </View>
-                  <View style={[styles.statusPill, { backgroundColor: sc.bg, borderColor: sc.border }]}>
-                    <Text style={[styles.statusPillText, { color: sc.text }]}>{user.status}</Text>
-                  </View>
-                </View>
-              );
-            })}
-
-            {filteredUsers.length > visibleLimit && (
-              <Pressable
-                style={[styles.loadMoreBtn, { borderColor: colors.border }]}
-                onPress={() => {
-                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setVisibleLimit((prev) => prev + 25);
-                }}
-              >
-                <Text style={styles.loadMoreBtnText}>
-                  Show More ({filteredUsers.length - visibleLimit} remaining)
-                </Text>
-                <Ionicons name="chevron-down" size={14} color="#0284C7" />
-              </Pressable>
-            )}
+                );
+              }}
+              ListFooterComponent={
+                filteredUsers.length > visibleLimit ? (
+                  <Pressable
+                    style={[styles.loadMoreBtn, { borderColor: colors.border }]}
+                    onPress={() => {
+                      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setVisibleLimit((prev) => prev + 25);
+                    }}
+                  >
+                    <Text style={styles.loadMoreBtnText}>
+                      Show More ({filteredUsers.length - visibleLimit} remaining)
+                    </Text>
+                    <Ionicons name="chevron-down" size={14} color="#0284C7" />
+                  </Pressable>
+                ) : null
+              }
+            />
           </View>
         </View>
       )}
@@ -321,38 +344,43 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
               <Text style={{ fontSize: 12, color: '#64748B', textAlign: 'center' }}>Connect your Telegram bot to track joins and generate deep tracking links.</Text>
             </View>
           ) : (
-            botsList.map((bot) => (
-              <View key={bot.id} style={[styles.botCard, card]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <View style={styles.botAvatar}>
-                    <Text style={styles.botAvatarText}>{(bot.bot_name || 'B').charAt(0).toUpperCase()}</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text style={[styles.botTitle, txt]} numberOfLines={1}>{bot.bot_name}</Text>
-                      <View style={styles.activePill}>
-                        <Text style={styles.activePillText}>{bot.status || 'ACTIVE'}</Text>
+            <FlatList
+              data={botsList}
+              keyExtractor={(bot: any) => String(bot.id || bot.bot_username)}
+              scrollEnabled={false}
+              renderItem={({ item: bot }: { item: any }) => (
+                <View key={bot.id} style={[styles.botCard, card, { marginBottom: 10 }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <View style={styles.botAvatar}>
+                      <Text style={styles.botAvatarText}>{(bot.bot_name || 'B').charAt(0).toUpperCase()}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text style={[styles.botTitle, txt]} numberOfLines={1}>{bot.bot_name}</Text>
+                        <View style={styles.activePill}>
+                          <Text style={styles.activePillText}>{bot.status || 'ACTIVE'}</Text>
+                        </View>
                       </View>
+                      <Text style={styles.botUsername}>@{bot.bot_username}</Text>
                     </View>
-                    <Text style={styles.botUsername}>@{bot.bot_username}</Text>
+                    <Pressable style={styles.createLinkBtn} onPress={() => onOpenModal('tracker')}>
+                      <Text style={styles.createLinkBtnText}>Create Link</Text>
+                    </Pressable>
                   </View>
-                  <Pressable style={styles.createLinkBtn} onPress={() => onOpenModal('tracker')}>
-                    <Text style={styles.createLinkBtnText}>Create Link</Text>
-                  </Pressable>
+                  <View style={[styles.mappedRow, border]}>
+                    <Text style={styles.mappedLabel}>MAPPED CHANNELS:</Text>
+                    {bot.channel_name ? (
+                      <View style={styles.channelTag}>
+                        <Ionicons name="radio-button-on" size={10} color="#059669" />
+                        <Text style={styles.channelTagText} numberOfLines={1}>{bot.channel_name}</Text>
+                      </View>
+                    ) : (
+                      <Text style={{ fontSize: 11, color: '#94A3B8' }}>No channels mapped</Text>
+                    )}
+                  </View>
                 </View>
-                <View style={[styles.mappedRow, border]}>
-                  <Text style={styles.mappedLabel}>MAPPED CHANNELS:</Text>
-                  {bot.channel_name ? (
-                    <View style={styles.channelTag}>
-                      <Ionicons name="radio-button-on" size={10} color="#059669" />
-                      <Text style={styles.channelTagText} numberOfLines={1}>{bot.channel_name}</Text>
-                    </View>
-                  ) : (
-                    <Text style={{ fontSize: 11, color: '#94A3B8' }}>No channels mapped</Text>
-                  )}
-                </View>
-              </View>
-            ))
+              )}
+            />
           )}
         </View>
       )}
@@ -374,49 +402,54 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
               <Text style={{ fontSize: 12, color: '#64748B', textAlign: 'center' }}>Create customized invite links for marketing campaigns and monitor conversion rates.</Text>
             </View>
           ) : (
-            (trackerLinks || []).map((link: any, idx: number) => {
-              const linkTitle = link.name || link.title || 'Tracking Link';
-              const botUsername = link.bot?.bot_username || link.bot_username || '';
-              const channelName = link.channel_mapping?.channel_name || link.channel_name || (link.bot?.bot_name ? `${link.bot.bot_name}` : '');
-              const users = link.users || [];
-              const starts = users.length > 0 ? users.length : (link.bot_starts ?? 0);
-              const joined = users.length > 0 ? users.filter((u: any) => (u.joined_channel || u.status === 'Active') && !u.left_channel).length : (link.joined ?? 0);
-              const convRate = starts > 0 ? Math.round((joined / starts) * 100) : (link.conversion_rate ?? 0);
-              const copyUrl = link.deep_link_url || (botUsername ? `https://t.me/${botUsername}?start=${link.slug}` : `https://t.me?start=${link.slug}`);
-              const linkId = link.id || String(idx);
+            <FlatList
+              data={trackerLinks}
+              keyExtractor={(link: any, idx: number) => String(link.id || idx)}
+              scrollEnabled={false}
+              renderItem={({ item: link, index: idx }: { item: any; index: number }) => {
+                const linkTitle = link.name || link.title || 'Tracking Link';
+                const botUsername = link.bot?.bot_username || link.bot_username || '';
+                const channelName = link.channel_mapping?.channel_name || link.channel_name || (link.bot?.bot_name ? `${link.bot.bot_name}` : '');
+                const users = link.users || [];
+                const starts = users.length > 0 ? users.length : (link.bot_starts ?? 0);
+                const joined = users.length > 0 ? users.filter((u: any) => (u.joined_channel || u.status === 'Active') && !u.left_channel).length : (link.joined ?? 0);
+                const convRate = starts > 0 ? Math.round((joined / starts) * 100) : (link.conversion_rate ?? 0);
+                const copyUrl = link.deep_link_url || (botUsername ? `https://t.me/${botUsername}?start=${link.slug}` : `https://t.me?start=${link.slug}`);
+                const linkId = link.id || String(idx);
 
-              return (
-                <View key={linkId} style={[styles.botCard, card]}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <View style={{ flex: 1, paddingRight: 8 }}>
-                      <Text style={[styles.botTitle, txt]} numberOfLines={1}>{linkTitle}</Text>
-                      <Text style={styles.botUsername} numberOfLines={1}>
-                        {channelName ? `${channelName} ` : ''}{botUsername ? `@${botUsername}` : ''}
-                      </Text>
-                      {link.is_auto_fetched ? (
-                        <View style={{ flexDirection: 'row', gap: 4, marginTop: 4 }}>
-                          <View style={{ backgroundColor: 'rgba(2,132,199,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
-                            <Text style={{ fontSize: 9, color: '#0284C7', fontWeight: '700' }}>Auto-Fetched from Telegram</Text>
+                return (
+                  <View key={linkId} style={[styles.botCard, card, { marginBottom: 10 }]}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <View style={{ flex: 1, paddingRight: 8 }}>
+                        <Text style={[styles.botTitle, txt]} numberOfLines={1}>{linkTitle}</Text>
+                        <Text style={styles.botUsername} numberOfLines={1}>
+                          {channelName ? `${channelName} ` : ''}{botUsername ? `@${botUsername}` : ''}
+                        </Text>
+                        {link.is_auto_fetched ? (
+                          <View style={{ flexDirection: 'row', gap: 4, marginTop: 4 }}>
+                            <View style={{ backgroundColor: 'rgba(2,132,199,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                              <Text style={{ fontSize: 9, color: '#0284C7', fontWeight: '700' }}>Auto-Fetched from Telegram</Text>
+                            </View>
                           </View>
-                        </View>
-                      ) : null}
+                        ) : null}
+                      </View>
+                      <Pressable
+                        style={[styles.createLinkBtn, { flexDirection: 'row', gap: 4, alignItems: 'center' }]}
+                        onPress={() => handleCopyLink(copyUrl, linkId)}
+                      >
+                        <Ionicons name={copiedLinkId === linkId ? 'checkmark' : 'copy-outline'} size={13} color="#0284C7" />
+                        <Text style={styles.createLinkBtnText}>{copiedLinkId === linkId ? 'Copied' : 'Copy Link'}</Text>
+                      </Pressable>
                     </View>
-                    <Pressable
-                      style={[styles.createLinkBtn, { flexDirection: 'row', gap: 4, alignItems: 'center' }]}
-                      onPress={() => handleCopyLink(copyUrl, linkId)}
-                    >
-                      <Ionicons name={copiedLinkId === linkId ? 'checkmark' : 'copy-outline'} size={13} color="#0284C7" />
-                      <Text style={styles.createLinkBtnText}>{copiedLinkId === linkId ? 'Copied' : 'Copy Link'}</Text>
-                    </Pressable>
+                    <View style={{ flexDirection: 'row', gap: 14, marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9' }}>
+                      <Text style={styles.botUsername}>Starts: <Text style={{ fontWeight: '700', color: '#0284C7' }}>{starts}</Text></Text>
+                      <Text style={styles.botUsername}>Joins: <Text style={{ fontWeight: '700', color: '#10B981' }}>{joined}</Text></Text>
+                      <Text style={styles.botUsername}>Rate: <Text style={{ fontWeight: '700', color: '#DB2777' }}>{convRate}%</Text></Text>
+                    </View>
                   </View>
-                  <View style={{ flexDirection: 'row', gap: 14, marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9' }}>
-                    <Text style={styles.botUsername}>Starts: <Text style={{ fontWeight: '700', color: '#0284C7' }}>{starts}</Text></Text>
-                    <Text style={styles.botUsername}>Joins: <Text style={{ fontWeight: '700', color: '#10B981' }}>{joined}</Text></Text>
-                    <Text style={styles.botUsername}>Rate: <Text style={{ fontWeight: '700', color: '#DB2777' }}>{convRate}%</Text></Text>
-                  </View>
-                </View>
-              );
-            })
+                );
+              }}
+            />
           )}
         </View>
       )}
