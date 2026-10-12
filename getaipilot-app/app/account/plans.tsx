@@ -37,6 +37,7 @@ import {
   isGapProPlan,
 } from "../../src/services/referralService";
 import { getColors, useTheme } from "../../src/theme";
+import { AnimatedHero } from "../../src/features/telegram/components/ui/AnimatedHero";
 
 const CATEGORIES: { key: PlanCategory; label: string; icon: string }[] = [
   { key: "all", label: "All Plans", icon: "apps" },
@@ -293,10 +294,10 @@ export default function OverallPricingScreen() {
     // GAP Pro interval pricing calculation with dynamic discounts
     const proPricing = isProCard
       ? calculateGapProPricing(
-          plan.amount,
-          gapProInterval,
-          hasReferralDiscount ? discountPercent : 0
-        )
+        plan.amount,
+        gapProInterval,
+        hasReferralDiscount ? discountPercent : 0
+      )
       : null;
 
     const baseAmountInRupees = Math.round(plan.amount / 100);
@@ -327,29 +328,25 @@ export default function OverallPricingScreen() {
           {
             backgroundColor: isDark
               ? isProCard
-                ? "#0d0b26"
+                ? "#120E2C"
                 : isAddon
-                  ? "#111026"
-                  : "#0f172a"
+                  ? "#101026"
+                  : colors.card
               : isProCard
                 ? "#FAF7FF"
                 : isAddon
                   ? "#FAFAFF"
-                  : "#ffffff",
+                  : colors.card,
             borderColor: isProCard
               ? isDark
-                ? "#8B5CF6"
-                : "#A78BFA"
-              : isAddon
-                ? isDark
-                  ? "#6366F1"
-                  : "#4F46E5"
-                : isPopular
-                  ? meta.color
-                  : isDark
-                    ? "#1e293b"
-                    : "#e2e8f0",
-            borderWidth: isProCard ? 1.8 : isAddon ? 1.5 : isPopular ? 2 : 1,
+                ? "rgba(139, 92, 246, 0.45)"
+                : "rgba(167, 139, 250, 0.5)"
+              : isPopular
+                ? `${meta.color}50`
+                : isDark
+                  ? "rgba(255, 255, 255, 0.07)"
+                  : "rgba(0, 0, 0, 0.05)",
+            borderWidth: isProCard ? 1.5 : isPopular ? 1.5 : 1,
           },
         ]}
       >
@@ -795,11 +792,50 @@ export default function OverallPricingScreen() {
     );
   };
 
+  const isWide = windowWidth >= 768;
+  const numColumns = isWide ? 4 : 2;
+  const kpiCardWidth = numColumns === 4 ? "23.5%" : "48.5%";
+
+  const pricingKpis = [
+    {
+      title: "CURRENT STATUS",
+      value: (subscriptionStatus || "ACTIVE").toUpperCase(),
+      icon: "shield-checkmark-outline" as const,
+      color: "#10B981",
+      subtext: planLabel || "GAP Pro Workspace",
+    },
+    {
+      title: "RENEWAL CYCLE",
+      value: expiresAt
+        ? new Date(expiresAt).toLocaleDateString(undefined, {
+          month: "short",
+          day: "numeric",
+        })
+        : "Active Tier",
+      icon: "calendar-outline" as const,
+      color: "#8B5CF6",
+      subtext: expiresAt ? "Auto-renewing cycle" : "Permanent access",
+    },
+    {
+      title: "CATALOG TIERS",
+      value: `${allPlans.length} Plans`,
+      icon: "diamond-outline" as const,
+      color: "#0284C7",
+      subtext: `${availableCategories.length - 1} Product Engines`,
+    },
+    {
+      title: "SPECIAL OFFERS",
+      value: hasReferralDiscount ? `${discountPercent}% OFF` : "Best Value",
+      icon: "gift-outline" as const,
+      color: hasReferralDiscount ? "#EC4899" : "#F59E0B",
+      subtext: hasReferralDiscount ? "Referral perk applied" : "Save up to 40% yearly",
+    },
+  ];
+
   return (
     <AppScreen safeArea={false} backgroundColor={colors.background}>
       <AppTopBar
         title="Overall Pricing & Plans"
-        // subtitle="GetAiPilot Ecosystem Subscriptions"
         showBack={true}
         onBackPress={handleBack}
       />
@@ -815,93 +851,99 @@ export default function OverallPricingScreen() {
           />
         }
       >
-        {/* 1. Active Workspace Subscription Status Card */}
-        <View
-          style={[
-            styles.statusBanner,
-            {
-              backgroundColor: isDark ? "#06131d" : "#eff6ff",
-              borderColor: isDark ? "#1e3a8a44" : "#bfdbfe",
-            },
-          ]}
-        >
-          <View style={styles.statusHeader}>
+        {/* 1. Cyber Animated Hero Banner */}
+        <AnimatedHero
+          variant="pricing"
+          tagText="GETAIPILOT ECOSYSTEM TIERS"
+          tagIcon="diamond"
+          title="GAP Pricing & Plans"
+          subtitle="Enterprise-grade AI engines, modular tiers & all-in-one VIP access"
+        />
+
+        {/* 2. Responsive KPI Command Cards */}
+        <View className="flex-row flex-wrap gap-2.5 w-full">
+          {pricingKpis.map((kpi, idx) => (
             <View
-              style={[
-                styles.activePill,
-                { backgroundColor: isDark ? "rgba(16, 185, 129, 0.2)" : "#dcfce7" },
-              ]}
+              key={idx}
+              className="p-3.5 rounded-2xl flex-col justify-between"
+              style={{
+                backgroundColor: colors.card,
+                width: kpiCardWidth,
+                minHeight: 88,
+              }}
             >
-              <View style={styles.activeDot} />
-              <Text style={styles.activePillText}>
-                {subscriptionStatus ? subscriptionStatus.toUpperCase() : "ACTIVE WORKSPACE"}
+              <View className="flex-row items-center justify-between mb-1">
+                <Text
+                  className="text-[10px] font-bold uppercase tracking-wider"
+                  style={{ color: isDark ? "#94A3B8" : "#64748B" }}
+                  numberOfLines={1}
+                >
+                  {kpi.title}
+                </Text>
+                <View
+                  className="w-6 h-6 rounded-lg items-center justify-center"
+                  style={{ backgroundColor: `${kpi.color}15` }}
+                >
+                  <Ionicons name={kpi.icon} size={13} color={kpi.color} />
+                </View>
+              </View>
+
+              <Text
+                className="text-sm font-extrabold"
+                style={{ color: colors.text }}
+                numberOfLines={1}
+              >
+                {kpi.value}
+              </Text>
+
+              <Text
+                className="text-[10px] font-medium mt-0.5"
+                style={{ color: isDark ? "#64748B" : "#94A3B8" }}
+                numberOfLines={1}
+              >
+                {kpi.subtext}
               </Text>
             </View>
-            <Text style={[styles.planStatusDate, { color: colors.textMuted }]}>
-              {expiresAt
-                ? `Renews ${new Date(expiresAt).toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}`
-                : "Active Tier"}
-            </Text>
-          </View>
-
-          <Text style={[styles.statusPlanName, { color: colors.text }]}>
-            {planLabel || "GAP Pro Max"}
-          </Text>
-          <Text style={[styles.statusPlanDesc, { color: colors.textSecondary }]}>
-            Full multi-engine access enabled: Voice AI, Social Pilot, WhatsApp, Telegram & Smart CRM.
-          </Text>
+          ))}
         </View>
 
-        {/* Referral Discount Active Banner */}
+        {/* 3. Referral Discount Active Banner */}
         {hasReferralDiscount && (
           <View
-            style={[
-              styles.referralBanner,
-              {
-                backgroundColor: isDark ? "rgba(16, 185, 129, 0.12)" : "#ECFDF5",
-                borderColor: isDark ? "rgba(16, 185, 129, 0.3)" : "#A7F3D0",
-              },
-            ]}
+            className="w-full rounded-2xl p-4 flex-row items-center gap-3.5"
+            style={{
+              backgroundColor: isDark ? "rgba(16, 185, 129, 0.12)" : "#ECFDF5",
+            }}
           >
-            <View style={styles.referralBannerIcon}>
+            <View
+              className="w-10 h-10 rounded-xl items-center justify-center"
+              style={{ backgroundColor: "#10B98120" }}
+            >
               <Ionicons name="gift" size={20} color="#10B981" />
             </View>
-            <View style={{ flex: 1 }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 6,
-                  flexWrap: "wrap",
-                }}
-              >
+            <View className="flex-1">
+              <View className="flex-row items-center gap-2 flex-wrap">
                 <Text
-                  style={[
-                    styles.referralBannerTitle,
-                    { color: isDark ? "#34D399" : "#065F46" },
-                  ]}
+                  className="text-xs font-extrabold"
+                  style={{ color: isDark ? "#34D399" : "#065F46" }}
                 >
                   {referralDiscount?.isWelcomeDiscount
                     ? "Welcome Referral Perk Active!"
                     : `${referralDiscount?.milestoneTitle || "Referral Perk"} Active!`}
                 </Text>
-                <View style={styles.referralBadge}>
-                  <Text style={styles.referralBadgeText}>{discountPercent}% OFF GAP PRO</Text>
+                <View className="px-2 py-0.5 rounded-full bg-[#10B981]">
+                  <Text className="text-[9px] font-black text-white">
+                    {discountPercent}% OFF GAP PRO
+                  </Text>
                 </View>
               </View>
               <Text
-                style={[
-                  styles.referralBannerSubtitle,
-                  { color: isDark ? "#A7F3D0" : "#047857" },
-                ]}
+                className="text-[11px] leading-4 mt-0.5"
+                style={{ color: isDark ? "#A7F3D0" : "#047857" }}
               >
                 {referralDiscount?.isWelcomeDiscount
-                  ? `${discountPercent}% Welcome referral discount is automatically applied to all GAP Pro plans!`
-                  : `${referralDiscount?.bonusPerk || `${discountPercent}% discount`} applied to your GAP Pro plan purchase!`}
+                  ? `${discountPercent}% discount is automatically applied to all GAP Pro plans!`
+                  : `${referralDiscount?.bonusPerk || `${discountPercent}% discount`} applied to your purchase!`}
               </Text>
             </View>
           </View>
@@ -1072,19 +1114,36 @@ export default function OverallPricingScreen() {
             {/* SECTION 2: OTHER PLANS & ADD-ONS (Below it, horizontal swipeable carousel)*/}
             {/* ========================================================================= */}
 
-            {/* 3. Category Selector Pills (Scrollable) */}
-            <View style={styles.categorySection}>
-              <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
-                FILTER BY PRODUCT CATEGORY
-              </Text>
+            {/* 3. Modern Category Selector Filter Bar */}
+            <View
+              className="w-full flex-row items-center p-2 rounded-2xl"
+              style={{ backgroundColor: colors.card }}
+            >
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.categoryScroll}
+                contentContainerStyle={{ gap: 8, paddingHorizontal: 2 }}
               >
                 {availableCategories.map((cat) => {
                   const isSelected = selectedCategory === cat.key;
                   const meta = CATEGORY_META[cat.key];
+                  const count =
+                    cat.key === "all"
+                      ? allPlans.length
+                      : cat.key === "all-in-one"
+                        ? gapProPlans.length
+                        : cat.key === "calling"
+                          ? voicePlans.length
+                          : cat.key === "whatsapp"
+                            ? whatsappPlans.length
+                            : cat.key === "telegram"
+                              ? telegramPlans.length
+                              : cat.key === "crm"
+                                ? crmPlans.length
+                                : cat.key === "social"
+                                  ? socialPlans.length
+                                  : 0;
+
                   return (
                     <Pressable
                       key={cat.key}
@@ -1093,33 +1152,61 @@ export default function OverallPricingScreen() {
                         setSelectedCategory(cat.key);
                       }}
                       style={[
-                        styles.categoryPill,
                         {
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 6,
+                          paddingHorizontal: 12,
+                          paddingVertical: 8,
+                          borderRadius: 12,
                           backgroundColor: isSelected
                             ? meta.color
-                            : colors.surface,
-                          borderColor: isSelected
-                            ? meta.color
-                            : colors.border,
+                            : isDark
+                              ? "rgba(255, 255, 255, 0.05)"
+                              : "#F1F5F9",
                         },
                       ]}
                     >
                       <Ionicons
                         name={cat.icon as any}
-                        size={14}
+                        size={13}
                         color={isSelected ? "#ffffff" : meta.color}
                       />
                       <Text
-                        style={[
-                          styles.categoryPillText,
-                          {
-                            color: isSelected ? "#ffffff" : colors.text,
-                            fontWeight: isSelected ? "800" : "600",
-                          },
-                        ]}
+                        style={{
+                          fontSize: 12,
+                          color: isSelected ? "#ffffff" : colors.text,
+                          fontWeight: isSelected ? "800" : "600",
+                        }}
                       >
                         {cat.label}
                       </Text>
+                      <View
+                        style={{
+                          paddingHorizontal: 5,
+                          paddingVertical: 1,
+                          borderRadius: 8,
+                          backgroundColor: isSelected
+                            ? "rgba(255, 255, 255, 0.25)"
+                            : isDark
+                              ? "rgba(255, 255, 255, 0.08)"
+                              : "#E2E8F0",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 9.5,
+                            fontWeight: "800",
+                            color: isSelected
+                              ? "#ffffff"
+                              : isDark
+                                ? "#94A3B8"
+                                : "#64748B",
+                          }}
+                        >
+                          {count}
+                        </Text>
+                      </View>
                     </Pressable>
                   );
                 })}
@@ -1283,20 +1370,13 @@ const styles = StyleSheet.create({
   // Dual Section Container Styles
   sectionContainer: {
     borderRadius: 22,
-    borderWidth: 1.5,
-    padding: 14,
+    padding: 16,
     gap: 14,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
   },
   proSectionBox: {
-    borderWidth: 2,
     shadowColor: "#8B5CF6",
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
   },
   proIntervalWrapper: {
     marginTop: 2,

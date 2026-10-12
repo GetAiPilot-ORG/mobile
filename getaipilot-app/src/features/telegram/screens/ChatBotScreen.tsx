@@ -13,7 +13,8 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  View
+  useWindowDimensions,
+  View,
 } from 'react-native';
 import { supabase } from '../../../lib/supabase';
 import { TelegramToolKey } from '../types';
@@ -33,6 +34,7 @@ interface ChatMessage {
 import { getColors, useTheme } from '@/theme';
 import { useQuery } from '@tanstack/react-query';
 import { telegramSupabase } from '../api/telegramSupabase';
+import { AnimatedHero } from '../components/ui/AnimatedHero';
 
 interface ChatUser {
   id: string;
@@ -162,25 +164,123 @@ export const ChatBotScreen: React.FC<Props> = () => {
     Alert.alert('Settings Saved', 'Bot personality & knowledge base updated successfully!');
   };
 
+  const { width } = useWindowDimensions();
+  const isWide = width >= 768;
+  const numColumns = isWide ? 4 : 2;
+  const cardWidthPercent = numColumns === 4 ? '23.5%' : '48.5%';
+
+  const chatKpis = [
+    {
+      title: 'ACTIVE BOTS',
+      value: `${bots.length} Connected`,
+      icon: 'hardware-chip-outline' as const,
+      color: '#0284C7',
+      subtext: 'Configured agents',
+    },
+    {
+      title: 'AI ENGINE',
+      value: 'OpenAI / LLM',
+      icon: 'sparkles-outline' as const,
+      color: '#38BDF8',
+      subtext: 'Live inference',
+    },
+    {
+      title: 'KNOWLEDGE BASE',
+      value: 'Active Docs',
+      icon: 'document-text-outline' as const,
+      color: '#10B981',
+      subtext: 'Custom prompt memory',
+    },
+    {
+      title: 'ENGINE STATUS',
+      value: '24/7 Listening',
+      icon: 'shield-checkmark-outline' as const,
+      color: '#8B5CF6',
+      subtext: 'Instant user replies',
+    },
+  ];
+
   return (
-    <View style={styles.container}>
-      {/* Top Header */}
-      <View style={styles.headerRow}>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.mainTitle, txt]}>Chat Bot Automation</Text>
-          <Text style={styles.mainSub}>
-            Attach an AI Assistant to your Telegram Bot. Map business details, upload documents, and link API keys to create automated support agents.
+    <View style={styles.container} className="gap-3.5">
+      {/* 1. Cyber Animated Hero Banner */}
+      <AnimatedHero
+        variant="chatbot"
+        tagText="AI AGENT AUTOMATION"
+        tagIcon="hardware-chip-outline"
+        title="Telegram AI ChatBot"
+        subtitle="Attach AI support assistants, knowledge bases & custom LLMs"
+      />
+
+      {/* 2. Responsive KPI Command Cards */}
+      <View className="flex-row flex-wrap gap-2.5 w-full">
+        {chatKpis.map((kpi, idx) => (
+          <View
+            key={idx}
+            className="p-3.5 rounded-2xl flex-col justify-between"
+            style={{
+              backgroundColor: colors.card,
+              width: cardWidthPercent,
+              minHeight: 88,
+            }}
+          >
+            <View className="flex-row items-center justify-between mb-1">
+              <Text
+                className="text-[10px] font-bold uppercase tracking-wider"
+                style={{ color: isDark ? '#94A3B8' : '#64748B' }}
+                numberOfLines={1}
+              >
+                {kpi.title}
+              </Text>
+              <View
+                className="w-6 h-6 rounded-lg items-center justify-center"
+                style={{ backgroundColor: `${kpi.color}15` }}
+              >
+                <Ionicons name={kpi.icon} size={13} color={kpi.color} />
+              </View>
+            </View>
+
+            <Text
+              className="text-sm font-extrabold"
+              style={{ color: colors.text }}
+              numberOfLines={1}
+            >
+              {kpi.value}
+            </Text>
+
+            <Text
+              className="text-[10px] font-medium mt-0.5"
+              style={{ color: isDark ? '#64748B' : '#94A3B8' }}
+              numberOfLines={1}
+            >
+              {kpi.subtext}
+            </Text>
+          </View>
+        ))}
+      </View>
+
+      {/* 3. Action Toolbar */}
+      <View
+        className="w-full flex-row items-center justify-between p-3.5 rounded-2xl"
+        style={{ backgroundColor: colors.card }}
+      >
+        <View className="flex-1 pr-3">
+          <Text className="text-xs font-bold" style={{ color: colors.text }}>
+            Connected Assistants ({bots.length})
+          </Text>
+          <Text className="text-[11px]" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
+            AI agents managing incoming user queries
           </Text>
         </View>
+
         <Pressable
-          style={styles.connectBotBtn}
+          className="flex-row items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0284C7] active:opacity-90 shadow-sm"
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setIsConfigModalOpen(true);
           }}
         >
-          <Ionicons name="add" size={16} color="#FFFFFF" />
-          <Text style={styles.connectBotBtnText}>Connect Telegram Bot</Text>
+          <Ionicons name="add" size={14} color="#FFFFFF" />
+          <Text className="text-white text-xs font-bold">Connect Bot</Text>
         </Pressable>
       </View>
 

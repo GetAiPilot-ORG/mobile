@@ -6,7 +6,6 @@ import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import {
   FlatList,
-  Image,
   Linking,
   Platform,
   Pressable,
@@ -17,6 +16,7 @@ import {
   View,
 } from 'react-native';
 import { StatCard } from '../components/ui/StatCard';
+import { AnimatedHero } from '../components/ui/AnimatedHero';
 import { TelegramToolKey } from '../types';
 
 type AfSection = 'mappings' | 'filters' | 'blocked' | 'delays' | 'headers';
@@ -103,56 +103,14 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
         className="overflow-hidden"
       >
         <View className="flex-col gap-3">
-          {/* Telegram Graphic Banner */}
-          <View className="rounded-xl overflow-hidden relative" style={{ height: 120 }}>
-            <Image
-              source={require('../../../../assets/images/telegram_autoforward_banner.jpg')}
-              style={{ width: '100%', height: '100%' }}
-              resizeMode="cover"
-            />
-            {/* Subtle Gradient / Overlay for Text Legibility */}
-            <View
-              className="absolute inset-0 justify-between p-3"
-              style={{
-                backgroundColor: isDark
-                  ? 'rgba(15, 23, 42, 0.45)'
-                  : 'rgba(255, 255, 255, 0.15)',
-              }}
-            >
-              <View className="flex-row items-center justify-between">
-                <View
-                  className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-full backdrop-blur-md"
-                  style={{ backgroundColor: 'rgba(2, 132, 199, 0.85)' }}
-                >
-                  <Ionicons name="paper-plane" size={11} color="#FFFFFF" />
-                  <Text className="text-[10px] font-extrabold text-white tracking-wider">
-                    TELEGRAM FORWARD HUB
-                  </Text>
-                </View>
-                <View
-                  className="px-2 py-0.5 rounded-full"
-                  style={{ backgroundColor: 'rgba(16, 185, 129, 0.9)' }}
-                >
-                  <Text className="text-[10px] font-black text-white">LIVE MIRROR</Text>
-                </View>
-              </View>
-
-              <View>
-                <Text
-                  className="text-base font-black text-white drop-shadow-md"
-                  style={{ textShadowColor: 'rgba(0,0,0,0.7)', textShadowRadius: 6, textShadowOffset: { width: 0, height: 1 } }}
-                >
-                  Channel Message Routing
-                </Text>
-                <Text
-                  className="text-[11px] font-medium text-slate-200"
-                  style={{ textShadowColor: 'rgba(0,0,0,0.7)', textShadowRadius: 4, textShadowOffset: { width: 0, height: 1 } }}
-                >
-                  Real-time broadcast sync with zero latency
-                </Text>
-              </View>
-            </View>
-          </View>
+          {/* Telegram Animated Graphic Banner */}
+          <AnimatedHero
+            variant="forward"
+            tagText="TELEGRAM FORWARD HUB"
+            tagIcon="paper-plane"
+            title="Channel Message Routing"
+            subtitle="Real-time broadcast sync with zero latency"
+          />
 
           {/* Status Badges & Action */}
           <View className="flex-row p-3 items-center justify-between flex-wrap gap-2">

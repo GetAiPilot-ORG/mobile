@@ -3,13 +3,14 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React from 'react';
 import {
-  Image,
   Linking,
   Pressable,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useAuthStore } from '../../../core/store/authStore';
+import { AnimatedHero } from '../components/ui/AnimatedHero';
 import { TelegramToolKey } from '../types';
 
 interface Props {
@@ -22,6 +23,7 @@ export const AutoApproveScreen: React.FC<Props> = () => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const user = useAuthStore((s) => s.user);
+  const { width } = useWindowDimensions();
 
   const telegramUserId =
     (user as any)?.telegram_user_id ||
@@ -43,86 +45,201 @@ export const AutoApproveScreen: React.FC<Props> = () => {
     }
   };
 
+  const isWide = width >= 768;
+  const numColumns = isWide ? 4 : 2;
+  const cardWidthPercent = numColumns === 4 ? '23.5%' : '48.5%';
+
+  const kpis = [
+    {
+      title: 'ENGINE STATUS',
+      value: 'ACTIVE 24/7',
+      icon: 'shield-checkmark-outline' as const,
+      color: '#10B981',
+      subtext: 'Auto-pilot live',
+    },
+    {
+      title: 'RESPONSE SPEED',
+      value: '< 1.2s',
+      icon: 'flash-outline' as const,
+      color: '#06B6D4',
+      subtext: 'Instant approval',
+    },
+    {
+      title: 'ADMIN BOT',
+      value: '@Gapautoapprovebot',
+      icon: 'hardware-chip-outline' as const,
+      color: '#8B5CF6',
+      subtext: 'Official daemon',
+    },
+    {
+      title: 'CONNECTED USER',
+      value: telegramUserId ? String(telegramUserId) : 'Not Linked',
+      icon: 'person-outline' as const,
+      color: '#3B82F6',
+      subtext: telegramUserId ? 'Verified Account' : 'Tap connect below',
+    },
+  ];
+
+  const features = [
+    {
+      icon: 'flash-outline' as const,
+      title: 'Instant Channel Admission',
+      desc: 'Users who tap your private channel invite link are verified and granted access in real time without admin delay.',
+      color: '#10B981',
+    },
+    {
+      icon: 'shield-outline' as const,
+      title: 'Spam & Bot Filtering',
+      desc: 'Ensures only genuine prospective members pass through while shielding your VIP community from malicious traffic.',
+      color: '#06B6D4',
+    },
+    {
+      icon: 'sync-outline' as const,
+      title: 'Automated 24/7 Operations',
+      desc: 'Never miss subscriber conversions while you sleep. The daemon operates around the clock on dedicated GAP servers.',
+      color: '#8B5CF6',
+    },
+  ];
+
   return (
-    <View className="py-2.5 items-center w-full">
-      <View
-        className="w-full rounded-[20px] border p-6 items-center shadow-sm shadow-black/5"
-        style={{ backgroundColor: colors.card, borderColor: colors.cardBorder }}
-      >
-        {/* App Icon */}
-        <View
-          className="w-24 h-24 rounded-[20px] border p-1 mb-5 justify-center items-center"
-          style={{ backgroundColor: colors.card, borderColor: colors.cardBorder }}
-        >
-          <Image
-            source={require('../../../../assets/images/autoapprove-icon.jpg')}
-            className="w-full h-full rounded-2xl"
-            resizeMode="cover"
-          />
-        </View>
+    <View className="py-2.5 w-full flex-col gap-4">
+      {/* 1. Cyber Animated Hero Banner */}
+      <AnimatedHero
+        variant="auto_approve"
+        tagText="JOIN REQUEST AUTOMATION"
+        tagIcon="checkmark-circle-outline"
+        title="GAP Auto Approve"
+        subtitle="24/7 automated acceptance for private VIP Telegram channels"
+      />
 
-        {/* Category Eyebrow */}
-        <Text className="text-[11.5px] font-extrabold text-[#0284C7] tracking-wider mb-2 uppercase">
-          JOIN REQUEST AUTOMATION
-        </Text>
-
-        {/* Title */}
-        <Text
-          className="text-[26px] font-extrabold mb-2.5 text-center"
-          style={{ color: colors.text }}
-        >
-          GAP Auto Approve
-        </Text>
-
-        {/* Subtitle */}
-        <Text
-          className="text-[14.5px] font-semibold text-center mb-3 max-w-[320px]"
-          style={{ color: isDark ? '#94A3B8' : '#334155' }}
-        >
-          Automatically approve and manage private channel requests.
-        </Text>
-
-        {/* Description */}
-        <Text className="text-[13px] text-[#64748B] leading-[19px] text-center mb-6 max-w-[340px]">
-          Add the bot to your channel as an administrator and let it handle join requests instantly, without manual admin work.
-        </Text>
-
-        {/* Connected Telegram ID Pill */}
-        {telegramUserId ? (
+      {/* 2. Responsive KPI Command Cards */}
+      <View className="flex-row flex-wrap gap-2.5 w-full">
+        {kpis.map((kpi, idx) => (
           <View
-            className="flex-row items-center gap-2 px-4 py-2.5 rounded-xl border mb-6"
-            style={{ backgroundColor: colors.backgroundSecondary, borderColor: colors.cardBorder }}
+            key={idx}
+            className="p-3.5 rounded-2xl flex-col justify-between"
+            style={{
+              backgroundColor: colors.card,
+              width: cardWidthPercent,
+              minHeight: 88,
+            }}
           >
-            <Ionicons name="shield-checkmark" size={16} color="#0284C7" />
-            <Text className="text-[13px] font-bold" style={{ color: colors.text }}>
-              Connected Telegram ID: {telegramUserId}
+            <View className="flex-row items-center justify-between mb-1.5">
+              <Text
+                className="text-[10px] font-bold uppercase tracking-wider"
+                style={{ color: isDark ? '#94A3B8' : '#64748B' }}
+                numberOfLines={1}
+              >
+                {kpi.title}
+              </Text>
+              <View
+                className="w-6 h-6 rounded-lg items-center justify-center"
+                style={{ backgroundColor: `${kpi.color}15` }}
+              >
+                <Ionicons name={kpi.icon} size={13} color={kpi.color} />
+              </View>
+            </View>
+
+            <Text
+              className="text-sm font-extrabold"
+              style={{ color: colors.text }}
+              numberOfLines={1}
+            >
+              {kpi.value}
+            </Text>
+
+            <Text
+              className="text-[10px] font-medium mt-0.5"
+              style={{ color: isDark ? '#64748B' : '#94A3B8' }}
+              numberOfLines={1}
+            >
+              {kpi.subtext}
             </Text>
           </View>
-        ) : null}
+        ))}
+      </View>
+
+      {/* 3. Setup & Features Hub */}
+      <View
+        className="w-full rounded-2xl p-5"
+        style={{ backgroundColor: colors.card }}
+      >
+        <View className="flex-row items-center gap-2 mb-3">
+          <View className="w-2 h-2 rounded-full bg-[#10B981]" />
+          <Text
+            className="text-xs font-bold uppercase tracking-wider"
+            style={{ color: isDark ? '#94A3B8' : '#64748B' }}
+          >
+            HOW IT WORKS
+          </Text>
+        </View>
+
+        <Text
+          className="text-base font-extrabold mb-1"
+          style={{ color: colors.text }}
+        >
+          Effortless Private Channel Scaling
+        </Text>
+        <Text
+          className="text-xs leading-5 mb-4"
+          style={{ color: isDark ? '#94A3B8' : '#64748B' }}
+        >
+          Add the bot to your private Telegram channel with administrator privileges. It will automatically detect incoming member requests and approve them instantaneously.
+        </Text>
+
+        {/* Feature Items */}
+        <View className="flex-col gap-3 mb-5">
+          {features.map((item, i) => (
+            <View
+              key={i}
+              className="p-3.5 rounded-xl flex-row items-start gap-3"
+              style={{ backgroundColor: colors.backgroundSecondary }}
+            >
+              <View
+                className="w-8 h-8 rounded-lg items-center justify-center mt-0.5"
+                style={{ backgroundColor: `${item.color}15` }}
+              >
+                <Ionicons name={item.icon} size={16} color={item.color} />
+              </View>
+              <View className="flex-1">
+                <Text
+                  className="text-xs font-bold mb-1"
+                  style={{ color: colors.text }}
+                >
+                  {item.title}
+                </Text>
+                <Text
+                  className="text-[11px] leading-4"
+                  style={{ color: isDark ? '#94A3B8' : '#64748B' }}
+                >
+                  {item.desc}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
 
         {/* Connect Action Button */}
         <Pressable
-          className="flex-row items-center justify-center gap-2.5 bg-[#024AD8] w-full py-3.5 rounded-xl shadow-md shadow-[#024AD8]/30 mb-5 active:opacity-90"
+          className="flex-row items-center justify-center gap-2.5 bg-[#0284C7] w-full py-3.5 rounded-xl active:opacity-90 shadow-md shadow-[#0284C7]/20"
           onPress={handleConnect}
         >
           <Ionicons name="hardware-chip-outline" size={18} color="#FFFFFF" />
-          <Text className="text-white text-[13.5px] font-extrabold tracking-wide">
-            CONNECT TO TELEGRAM BOT
+          <Text className="text-white text-xs font-extrabold tracking-wide">
+            {telegramUserId ? 'OPEN AUTO APPROVE BOT' : 'CONNECT TO TELEGRAM BOT'}
           </Text>
-          <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+          <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
         </Pressable>
 
-        {/* Secure Redirect Note */}
-        <View
-          className="flex-row items-center gap-1.5 border-t pt-4 w-full justify-center"
-          style={{ borderTopColor: isDark ? '#27272A' : '#E2E8F0' }}
-        >
-          <Ionicons name="open-outline" size={14} color="#64748B" />
-          <Text className="text-xs text-[#64748B] font-semibold">
-            Redirects securely to Telegram app
+        {/* Security Footnote */}
+        <View className="flex-row items-center justify-center gap-1.5 mt-3.5">
+          <Ionicons name="shield-checkmark-outline" size={12} color="#64748B" />
+          <Text className="text-[11px] text-[#64748B] font-medium">
+            Redirects securely to the official Telegram application
           </Text>
         </View>
       </View>
     </View>
   );
 };
+

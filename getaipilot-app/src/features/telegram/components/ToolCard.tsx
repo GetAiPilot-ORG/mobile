@@ -102,7 +102,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
 
   return (
     <Pressable
-      className="rounded-2xl border p-3.5 mb-3 active:opacity-85 shadow-sm shadow-black/5"
+      className="rounded-2xl p-3.5 mb-3 active:opacity-85 shadow-sm shadow-black/5"
       style={{ backgroundColor: colors.card, borderColor: colors.border }}
       onPress={handlePress}
     >
