@@ -2,7 +2,7 @@ import { getColors, useTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Platform,
   Pressable,
@@ -31,22 +31,33 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
   const [userSearch, setUserSearch] = useState('');
   const [userFilter, setUserFilter] = useState<'All' | 'Active' | 'Bot Start' | 'Leave' | 'Pending'>('All');
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
+  const [visibleLimit, setVisibleLimit] = useState(25);
 
   const card = { backgroundColor: colors.background, borderColor: colors.border };
   const txt = { color: colors.text };
   const border = { borderColor: colors.border };
 
-  const filteredUsers = (trackerDash?.newUsers || []).filter((u: any) => {
-    const nameStr = (u.name || u.first_name || '').toLowerCase();
-    const chanStr = (u.channel_name || '').toLowerCase();
-    const q = userSearch.toLowerCase();
-    const matchesSearch =
-      nameStr.includes(q) ||
-      chanStr.includes(q) ||
-      String(u.telegram_user_id || '').includes(q);
-    const matchesFilter = userFilter === 'All' || u.status === userFilter;
-    return matchesSearch && matchesFilter;
-  });
+  const filteredUsers = useMemo(() => {
+    const list = trackerDash?.newUsers || [];
+    const q = userSearch.trim().toLowerCase();
+    if (!q && userFilter === 'All') return list;
+
+    return list.filter((u: any) => {
+      const nameStr = (u.name || u.first_name || '').toLowerCase();
+      const chanStr = (u.channel_name || '').toLowerCase();
+      const matchesSearch =
+        !q ||
+        nameStr.includes(q) ||
+        chanStr.includes(q) ||
+        String(u.telegram_user_id || '').includes(q);
+      const matchesFilter = userFilter === 'All' || u.status === userFilter;
+      return matchesSearch && matchesFilter;
+    });
+  }, [trackerDash?.newUsers, userSearch, userFilter]);
+
+  const displayedUsers = useMemo(() => {
+    return filteredUsers.slice(0, visibleLimit);
+  }, [filteredUsers, visibleLimit]);
 
   const handleCopyLink = async (url: string, id: string) => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -253,7 +264,7 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
                 ))}
               </View>
             </ScrollView>
-            {filteredUsers.map((user: any) => {
+            {displayedUsers.map((user: any) => {
               const sc = statusColor(user.status);
               const userNameStr = user.name || user.first_name || 'User';
               return (
@@ -274,6 +285,21 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
                 </View>
               );
             })}
+
+            {filteredUsers.length > visibleLimit && (
+              <Pressable
+                style={[styles.loadMoreBtn, { borderColor: colors.border }]}
+                onPress={() => {
+                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setVisibleLimit((prev) => prev + 25);
+                }}
+              >
+                <Text style={styles.loadMoreBtnText}>
+                  Show More ({filteredUsers.length - visibleLimit} remaining)
+                </Text>
+                <Ionicons name="chevron-down" size={14} color="#0284C7" />
+              </Pressable>
+            )}
           </View>
         </View>
       )}
@@ -487,4 +513,6 @@ const styles = StyleSheet.create({
   mappedLabel: { fontSize: 9, fontWeight: '800', color: '#94A3B8', letterSpacing: 0.5 },
   channelTag: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(5,150,105,0.1)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
   channelTagText: { fontSize: 11, fontWeight: '600', color: '#059669' },
+  loadMoreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, borderWidth: 1, marginTop: 8, backgroundColor: 'rgba(2,132,199,0.06)' },
+  loadMoreBtnText: { color: '#0284C7', fontSize: 12, fontWeight: '700' },
 });

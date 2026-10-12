@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Modal,
   View,
@@ -235,17 +235,29 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
     }
   };
 
-  const filteredUsers = (dashboard?.newUsers || []).filter((u: any) => {
-    const nameStr = (u.name || u.first_name || '').toLowerCase();
-    const chanStr = (u.channel_name || '').toLowerCase();
-    const q = userSearch.toLowerCase();
-    const matchesSearch =
-      nameStr.includes(q) ||
-      chanStr.includes(q) ||
-      String(u.telegram_user_id || '').includes(q);
-    const matchesFilter = userStatusFilter === 'All' || u.status === userStatusFilter;
-    return matchesSearch && matchesFilter;
-  });
+  const [visibleLimit, setVisibleLimit] = useState(25);
+
+  const filteredUsers = useMemo(() => {
+    const list = dashboard?.newUsers || [];
+    const q = userSearch.trim().toLowerCase();
+    if (!q && userStatusFilter === 'All') return list;
+
+    return list.filter((u: any) => {
+      const nameStr = (u.name || u.first_name || '').toLowerCase();
+      const chanStr = (u.channel_name || '').toLowerCase();
+      const matchesSearch =
+        !q ||
+        nameStr.includes(q) ||
+        chanStr.includes(q) ||
+        String(u.telegram_user_id || '').includes(q);
+      const matchesFilter = userStatusFilter === 'All' || u.status === userStatusFilter;
+      return matchesSearch && matchesFilter;
+    });
+  }, [dashboard?.newUsers, userSearch, userStatusFilter]);
+
+  const displayedUsers = useMemo(() => {
+    return filteredUsers.slice(0, visibleLimit);
+  }, [filteredUsers, visibleLimit]);
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -789,7 +801,7 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
                   </ScrollView>
 
                   {/* User Rows */}
-                  {filteredUsers.map((user) => {
+                  {displayedUsers.map((user) => {
                     const getStatusColor = (status: string) => {
                       switch (status) {
                         case 'Active':
@@ -838,6 +850,24 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
                       </View>
                     );
                   })}
+
+                  {filteredUsers.length > visibleLimit && (
+                    <Pressable
+                      style={[
+                        styles.loadMoreBtn,
+                        isDark ? styles.loadMoreBtnDark : styles.loadMoreBtnLight,
+                      ]}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setVisibleLimit((prev) => prev + 25);
+                      }}
+                    >
+                      <Text style={styles.loadMoreBtnText}>
+                        Show More ({filteredUsers.length - visibleLimit} remaining)
+                      </Text>
+                      <Ionicons name="chevron-down" size={14} color="#0284C7" />
+                    </Pressable>
+                  )}
                 </View>
               </View>
             )}
@@ -1735,6 +1765,30 @@ const styles = StyleSheet.create({
   submitBtnText: {
     color: '#FFFFFF',
     fontSize: 13,
+    fontWeight: '700',
+  },
+  loadMoreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 8,
+    gap: 6,
+  },
+  loadMoreBtnLight: {
+    backgroundColor: 'rgba(2,132,199,0.06)',
+    borderColor: '#E2E8F0',
+  },
+  loadMoreBtnDark: {
+    backgroundColor: 'rgba(2,132,199,0.12)',
+    borderColor: '#334155',
+  },
+  loadMoreBtnText: {
+    color: '#0284C7',
+    fontSize: 12,
     fontWeight: '700',
   },
 });
