@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, Pressable } from 'react-native';
+import { Text, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CRMTask, TaskPriority } from '../types';
 import { useTheme, getColors } from '@/theme';
@@ -31,18 +31,24 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onD
 
   return (
     <Pressable
+      className={`rounded-[14px] p-3.5 mb-2.5 border shadow-sm shadow-black/5 active:opacity-90 ${
+        isDone ? 'opacity-60' : ''
+      }`}
       style={({ pressed }) => [
-        styles.card,
-        { backgroundColor: colors.card, borderColor: colors.cardBorder },
-        isDone && { opacity: 0.6, backgroundColor: colors.surfaceSecondary },
+        {
+          backgroundColor: isDone ? colors.surfaceSecondary : colors.card,
+          borderColor: colors.cardBorder,
+        },
         pressed && { backgroundColor: colors.cardHover },
       ]}
       onPress={onPress}
     >
-      <View style={styles.contentRow}>
+      <View className="flex-row items-start">
         {/* Interactive Checkbox */}
         <Pressable
-          style={[styles.checkbox, isDone && styles.checkboxDone]}
+          className={`w-5 h-5 rounded-md border-2 items-center justify-center mr-3 mt-0.5 ${
+            isDone ? 'bg-[#10B981] border-[#10B981]' : 'border-[#6B7280]'
+          }`}
           onPress={() => onToggle(!isDone)}
           hitSlop={8}
         >
@@ -50,13 +56,12 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onD
         </Pressable>
 
         {/* Info */}
-        <View style={styles.textBlock}>
+        <View className="flex-1 mr-2 min-w-0">
           <Text
-            style={[
-              styles.title,
-              { color: colors.text },
-              isDone && { textDecorationLine: 'line-through', color: colors.mutedText },
-            ]}
+            className={`text-[15px] font-semibold tracking-tight ${
+              isDone ? 'line-through' : ''
+            }`}
+            style={{ color: isDone ? colors.mutedText : colors.text }}
             numberOfLines={2}
           >
             {task.title}
@@ -64,11 +69,8 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onD
 
           {task.description ? (
             <Text
-              style={[
-                styles.description,
-                { color: colors.mutedText },
-                isDone && styles.descDone,
-              ]}
+              className={`text-xs mt-1 ${isDone ? 'line-through' : ''}`}
+              style={{ color: colors.mutedText }}
               numberOfLines={1}
             >
               {task.description}
@@ -77,20 +79,34 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onD
 
           {/* Context pill: Contact or Deal link */}
           {task.contact || task.deal ? (
-            <View style={styles.contextRow}>
+            <View className="flex-row flex-wrap gap-1.5 mt-1.5">
               {task.contact ? (
-                <View style={[styles.contextPill, { backgroundColor: colors.surfaceSecondary }]}>
+                <View
+                  className="flex-row items-center gap-1 px-1.5 py-0.5 rounded"
+                  style={{ backgroundColor: colors.surfaceSecondary }}
+                >
                   <Ionicons name="person-outline" size={10} color={colors.iconMuted} />
-                  <Text style={[styles.contextText, { color: colors.textSecondary }]} numberOfLines={1}>
+                  <Text
+                    className="text-[11px]"
+                    style={{ color: colors.textSecondary }}
+                    numberOfLines={1}
+                  >
                     {`${task.contact.first_name || ''} ${task.contact.last_name || ''}`.trim()}
                   </Text>
                 </View>
               ) : null}
 
               {task.deal ? (
-                <View style={[styles.contextPill, { backgroundColor: colors.surfaceSecondary }]}>
+                <View
+                  className="flex-row items-center gap-1 px-1.5 py-0.5 rounded"
+                  style={{ backgroundColor: colors.surfaceSecondary }}
+                >
                   <Ionicons name="briefcase-outline" size={10} color={colors.iconMuted} />
-                  <Text style={[styles.contextText, { color: colors.textSecondary }]} numberOfLines={1}>
+                  <Text
+                    className="text-[11px]"
+                    style={{ color: colors.textSecondary }}
+                    numberOfLines={1}
+                  >
                     {task.deal.title}
                   </Text>
                 </View>
@@ -100,24 +116,35 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onD
         </View>
 
         {/* Priority Badge */}
-        <View style={[styles.priorityBadge, { backgroundColor: priorityCfg.bg }]}>
-          <Text style={[styles.priorityText, { color: priorityCfg.color }]}>
+        <View
+          className="px-1.5 py-0.5 rounded-md self-start"
+          style={{ backgroundColor: priorityCfg.bg }}
+        >
+          <Text
+            className="text-[10.5px] font-semibold"
+            style={{ color: priorityCfg.color }}
+          >
             {priorityCfg.label}
           </Text>
         </View>
       </View>
 
       {/* Bottom info row */}
-      <View style={[styles.footer, { borderTopColor: colors.divider }]}>
-        <View style={styles.dueRow}>
+      <View
+        className="flex-row items-center justify-between pt-2 mt-2 border-t"
+        style={{ borderTopColor: colors.divider }}
+      >
+        <View className="flex-row items-center gap-2">
           {task.due_date ? (
             <View
-              style={[
-                styles.dueBadge,
-                { backgroundColor: colors.surfaceSecondary },
-                isOverdue && styles.dueOverdue,
-                isToday && styles.dueToday,
-              ]}
+              className="flex-row items-center gap-1 px-1.5 py-0.5 rounded"
+              style={{
+                backgroundColor: isOverdue
+                  ? 'rgba(184, 92, 92, 0.15)'
+                  : isToday
+                    ? 'rgba(184, 134, 59, 0.15)'
+                    : colors.surfaceSecondary,
+              }}
             >
               <Ionicons
                 name="calendar-outline"
@@ -125,24 +152,34 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onD
                 color={isOverdue ? colors.destructive : isToday ? colors.warning : colors.iconMuted}
               />
               <Text
-                style={[
-                  styles.dueText,
-                  { color: colors.mutedText },
-                  isOverdue && { color: colors.destructive, fontWeight: '600' },
-                  isToday && { color: colors.warning, fontWeight: '600' },
-                ]}
+                className={`text-[11px] ${
+                  isOverdue || isToday ? 'font-semibold' : ''
+                }`}
+                style={{
+                  color: isOverdue
+                    ? colors.destructive
+                    : isToday
+                      ? colors.warning
+                      : colors.mutedText,
+                }}
               >
                 {isOverdue ? `Overdue: ${task.due_date}` : isToday ? 'Due Today' : task.due_date}
               </Text>
             </View>
           ) : (
-            <Text style={[styles.noDueDate, { color: colors.textMuted }]}>No due date</Text>
+            <Text className="text-[11px]" style={{ color: colors.textMuted }}>
+              No due date
+            </Text>
           )}
 
           {task.assignee ? (
-            <View style={styles.assigneePill}>
+            <View className="flex-row items-center gap-1">
               <Ionicons name="person-circle-outline" size={12} color={colors.iconMuted} />
-              <Text style={[styles.assigneeText, { color: colors.mutedText }]} numberOfLines={1}>
+              <Text
+                className="text-[11px]"
+                style={{ color: colors.mutedText }}
+                numberOfLines={1}
+              >
                 {task.assignee.name}
               </Text>
             </View>
@@ -150,7 +187,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onD
         </View>
 
         {onDelete ? (
-          <Pressable style={styles.deleteBtn} onPress={onDelete} hitSlop={8}>
+          <Pressable className="p-1" onPress={onDelete} hitSlop={8}>
             <Ionicons name="trash-outline" size={14} color="#EF4444" />
           </Pressable>
         ) : null}
@@ -158,136 +195,3 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onD
     </Pressable>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  contentRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#6B7280',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-    marginTop: 2,
-  },
-  checkboxDone: {
-    backgroundColor: '#10B981',
-    borderColor: '#10B981',
-  },
-  textBlock: {
-    flex: 1,
-    marginRight: 8,
-  },
-  title: {
-    fontSize: 15,
-    fontWeight: '600',
-    letterSpacing: -0.2,
-  },
-  titleDoneDark: {
-    textDecorationLine: 'line-through' as const,
-  },
-  titleDoneLight: {
-    textDecorationLine: 'line-through' as const,
-  },
-  description: {
-    fontSize: 12,
-    marginTop: 3,
-  },
-  descDone: {
-    textDecorationLine: 'line-through',
-  },
-  contextRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 6,
-  },
-  contextPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  contextText: {
-    fontSize: 11,
-  },
-  priorityBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  priorityText: {
-    fontSize: 10.5,
-    fontWeight: '600',
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 8,
-    marginTop: 8,
-    borderTopWidth: 1,
-  },
-  dueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  dueBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  dueOverdue: {
-    backgroundColor: 'rgba(184, 92, 92, 0.15)',
-  },
-  dueToday: {
-    backgroundColor: 'rgba(184, 134, 59, 0.15)',
-  },
-  dueText: {
-    fontSize: 11,
-  },
-  dueTextOverdue: {
-    color: '#B85C5C',
-    fontWeight: '600' as const,
-  },
-  dueTextToday: {
-    color: '#B8863B',
-    fontWeight: '600' as const,
-  },
-  noDueDate: {
-    fontSize: 11,
-  },
-  assigneePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  assigneeText: {
-    fontSize: 11,
-  },
-  deleteBtn: {
-    padding: 4,
-  },
-});

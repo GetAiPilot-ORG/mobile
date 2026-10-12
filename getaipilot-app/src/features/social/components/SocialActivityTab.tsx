@@ -1,14 +1,7 @@
-import {
-  Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import React,
-  { useState } from 'react';
-import { Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import {
   ActivitySubTab,
   InstapilotConversation,
@@ -68,26 +61,30 @@ export const SocialActivityTab: React.FC<SocialActivityTabProps> = ({
   const [activeSubTab, setActiveSubTab] = useState<ActivitySubTab>('queue');
 
   return (
-    <View style={styles.container}>
+    <View className="gap-4">
       {/* Sub-Tabs Top Segmented Navigation (Horizontally scrollable for small screens) */}
-      <View style={[styles.segmentedWrapper, { backgroundColor: isDark ? '#1e293b' : '#e2e8f0' }]}>
+      <View
+        className="rounded-xl p-[3px]"
+        style={{ backgroundColor: isDark ? '#1e293b' : '#e2e8f0' }}
+      >
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.segmentedScroll}
+          contentContainerStyle={{ flexDirection: 'row', alignItems: 'center', gap: 4, minWidth: '100%' }}
         >
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setActiveSubTab('queue');
             }}
-            style={[
-              styles.segmentItem,
-              activeSubTab === 'queue' && [
-                styles.segmentItemActive,
-                { backgroundColor: isDark ? '#0f172a' : '#ffffff' },
-              ],
-            ]}
+            className={`flex-1 min-w-[85px] flex-row items-center justify-center py-2 px-2.5 rounded-[9px] gap-1.5 ${
+              activeSubTab === 'queue' ? 'shadow-sm shadow-black/10' : ''
+            }`}
+            style={{
+              backgroundColor: activeSubTab === 'queue'
+                ? (isDark ? '#0f172a' : '#ffffff')
+                : 'transparent',
+            }}
           >
             <Ionicons
               name="time"
@@ -95,10 +92,8 @@ export const SocialActivityTab: React.FC<SocialActivityTabProps> = ({
               color={activeSubTab === 'queue' ? '#ec4899' : isDark ? '#94a3b8' : '#64748b'}
             />
             <Text
-              style={[
-                styles.segmentText,
-                { color: activeSubTab === 'queue' ? '#ec4899' : isDark ? '#94a3b8' : '#64748b' },
-              ]}
+              className="text-xs font-bold"
+              style={{ color: activeSubTab === 'queue' ? '#ec4899' : isDark ? '#94a3b8' : '#64748b' }}
               numberOfLines={1}
             >
               Queue ({queueList.length})
@@ -110,13 +105,14 @@ export const SocialActivityTab: React.FC<SocialActivityTabProps> = ({
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setActiveSubTab('instapilot');
             }}
-            style={[
-              styles.segmentItem,
-              activeSubTab === 'instapilot' && [
-                styles.segmentItemActive,
-                { backgroundColor: isDark ? '#0f172a' : '#ffffff' },
-              ],
-            ]}
+            className={`flex-1 min-w-[85px] flex-row items-center justify-center py-2 px-2.5 rounded-[9px] gap-1.5 ${
+              activeSubTab === 'instapilot' ? 'shadow-sm shadow-black/10' : ''
+            }`}
+            style={{
+              backgroundColor: activeSubTab === 'instapilot'
+                ? (isDark ? '#0f172a' : '#ffffff')
+                : 'transparent',
+            }}
           >
             <Ionicons
               name="logo-instagram"
@@ -124,10 +120,8 @@ export const SocialActivityTab: React.FC<SocialActivityTabProps> = ({
               color={activeSubTab === 'instapilot' ? '#e1306c' : isDark ? '#94a3b8' : '#64748b'}
             />
             <Text
-              style={[
-                styles.segmentText,
-                { color: activeSubTab === 'instapilot' ? '#e1306c' : isDark ? '#94a3b8' : '#64748b' },
-              ]}
+              className="text-xs font-bold"
+              style={{ color: activeSubTab === 'instapilot' ? '#e1306c' : isDark ? '#94a3b8' : '#64748b' }}
               numberOfLines={1}
             >
               Instapilot
@@ -139,13 +133,14 @@ export const SocialActivityTab: React.FC<SocialActivityTabProps> = ({
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setActiveSubTab('youtube');
             }}
-            style={[
-              styles.segmentItem,
-              activeSubTab === 'youtube' && [
-                styles.segmentItemActive,
-                { backgroundColor: isDark ? '#0f172a' : '#ffffff' },
-              ],
-            ]}
+            className={`flex-1 min-w-[85px] flex-row items-center justify-center py-2 px-2.5 rounded-[9px] gap-1.5 ${
+              activeSubTab === 'youtube' ? 'shadow-sm shadow-black/10' : ''
+            }`}
+            style={{
+              backgroundColor: activeSubTab === 'youtube'
+                ? (isDark ? '#0f172a' : '#ffffff')
+                : 'transparent',
+            }}
           >
             <Ionicons
               name="logo-youtube"
@@ -153,10 +148,8 @@ export const SocialActivityTab: React.FC<SocialActivityTabProps> = ({
               color={activeSubTab === 'youtube' ? '#ff0000' : isDark ? '#94a3b8' : '#64748b'}
             />
             <Text
-              style={[
-                styles.segmentText,
-                { color: activeSubTab === 'youtube' ? '#ff0000' : isDark ? '#94a3b8' : '#64748b' },
-              ]}
+              className="text-xs font-bold"
+              style={{ color: activeSubTab === 'youtube' ? '#ff0000' : isDark ? '#94a3b8' : '#64748b' }}
               numberOfLines={1}
             >
               YouTube
@@ -168,13 +161,14 @@ export const SocialActivityTab: React.FC<SocialActivityTabProps> = ({
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setActiveSubTab('autodm');
             }}
-            style={[
-              styles.segmentItem,
-              activeSubTab === 'autodm' && [
-                styles.segmentItemActive,
-                { backgroundColor: isDark ? '#0f172a' : '#ffffff' },
-              ],
-            ]}
+            className={`flex-1 min-w-[85px] flex-row items-center justify-center py-2 px-2.5 rounded-[9px] gap-1.5 ${
+              activeSubTab === 'autodm' ? 'shadow-sm shadow-black/10' : ''
+            }`}
+            style={{
+              backgroundColor: activeSubTab === 'autodm'
+                ? (isDark ? '#0f172a' : '#ffffff')
+                : 'transparent',
+            }}
           >
             <Ionicons
               name="flash"
@@ -182,10 +176,8 @@ export const SocialActivityTab: React.FC<SocialActivityTabProps> = ({
               color={activeSubTab === 'autodm' ? '#3b82f6' : isDark ? '#94a3b8' : '#64748b'}
             />
             <Text
-              style={[
-                styles.segmentText,
-                { color: activeSubTab === 'autodm' ? '#3b82f6' : isDark ? '#94a3b8' : '#64748b' },
-              ]}
+              className="text-xs font-bold"
+              style={{ color: activeSubTab === 'autodm' ? '#3b82f6' : isDark ? '#94a3b8' : '#64748b' }}
               numberOfLines={1}
             >
               AutoDM
@@ -238,41 +230,3 @@ export const SocialActivityTab: React.FC<SocialActivityTabProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    gap: 16,
-  },
-  segmentedWrapper: {
-    borderRadius: 12,
-    padding: 3,
-  },
-  segmentedScroll: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    minWidth: '100%',
-  },
-  segmentItem: {
-    flex: 1,
-    minWidth: 85,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 9,
-    gap: 5,
-  },
-  segmentItemActive: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  segmentText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-});

@@ -6,7 +6,6 @@ import {
   Image,
   Linking,
   Pressable,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -29,9 +28,6 @@ export const BroadcastScreen: React.FC<Props> = () => {
     (user as any)?.user_metadata?.telegram_user_id ||
     null;
 
-  const card = { backgroundColor: colors.card, borderColor: colors.border };
-  const txt = { color: colors.text };
-
   const handleOpenBot = async () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const url = 'https://t.me/Gapgrowbot?start=true';
@@ -48,201 +44,85 @@ export const BroadcastScreen: React.FC<Props> = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.card, card]}>
+    <View className="py-2.5 items-center w-full">
+      <View
+        className="w-full rounded-[20px] border p-6 items-center shadow-sm shadow-black/5"
+        style={{ backgroundColor: colors.card, borderColor: colors.border }}
+      >
         {/* App Icon */}
-        <View style={[styles.iconWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View
+          className="w-24 h-24 rounded-[20px] border p-1 mb-5 justify-center items-center"
+          style={{ backgroundColor: colors.card, borderColor: colors.border }}
+        >
           <Image
             source={require('../../../../assets/images/growimage.jpg')}
-            style={styles.botIcon}
+            className="w-full h-full rounded-2xl"
             resizeMode="cover"
           />
         </View>
 
         {/* Category Eyebrow */}
-        <Text style={styles.eyebrow}>TELEGRAM BROADCAST</Text>
+        <Text className="text-[11.5px] font-extrabold text-[#0284C7] tracking-wider mb-2 uppercase">
+          TELEGRAM BROADCAST
+        </Text>
 
         {/* Title */}
-        <Text style={[styles.title, txt]}>GAP Broadcast</Text>
+        <Text
+          className="text-[26px] font-extrabold mb-2.5 text-center"
+          style={{ color: colors.text }}
+        >
+          GAP Broadcast
+        </Text>
 
         {/* Subtitle */}
-        <Text style={styles.subtitle}>
+        <Text
+          className="text-[14.5px] font-semibold text-center mb-3 max-w-[320px]"
+          style={{ color: isDark ? '#94A3B8' : '#334155' }}
+        >
           Send bulk messages to your audience instantly.
         </Text>
 
         {/* Description */}
-        <Text style={styles.description}>
+        <Text className="text-[13px] text-[#64748B] leading-[19px] text-center mb-6 max-w-[340px]">
           Reach all users who joined your channels through GAP bots. Perfect for announcements, signals, or daily updates.
         </Text>
 
         {/* Connected Telegram ID Pill */}
         {telegramUserId ? (
-          <View style={[styles.idPill, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View
+            className="flex-row items-center gap-2 px-4 py-2.5 rounded-xl border mb-6"
+            style={{ backgroundColor: colors.card, borderColor: colors.border }}
+          >
             <Ionicons name="hardware-chip-outline" size={16} color="#024AD8" />
-            <Text style={[styles.idPillText, txt]}>
+            <Text className="text-[13px] font-bold" style={{ color: colors.text }}>
               Connected Telegram ID: {telegramUserId}
             </Text>
           </View>
         ) : null}
 
         {/* Connect Action Button */}
-        <Pressable style={styles.primaryBtn} onPress={handleOpenBot}>
+        <Pressable
+          className="flex-row items-center justify-center gap-2.5 bg-[#024AD8] w-full py-3.5 rounded-xl shadow-md shadow-[#024AD8]/30 mb-5 active:opacity-90"
+          onPress={handleOpenBot}
+        >
           <Ionicons name="hardware-chip-outline" size={18} color="#FFFFFF" />
-          <Text style={styles.primaryBtnText}>
+          <Text className="text-white text-[13.5px] font-extrabold tracking-wide">
             {telegramUserId ? 'OPEN GAP GROW BOT' : 'CONNECT TO TELEGRAM BOT'}
           </Text>
           <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
         </Pressable>
 
         {/* Secure Redirect Note */}
-        <View style={styles.footerNote}>
+        <View
+          className="flex-row items-center gap-1.5 border-t pt-4 w-full justify-center"
+          style={{ borderTopColor: isDark ? '#27272A' : '#E2E8F0' }}
+        >
           <Ionicons name="open-outline" size={14} color="#64748B" />
-          <Text style={styles.footerNoteText}>Redirects securely to Telegram app</Text>
+          <Text className="text-xs text-[#64748B] font-semibold">
+            Redirects securely to Telegram app
+          </Text>
         </View>
       </View>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    paddingVertical: 10,
-    alignItems: 'center',
-    width: '100%',
-  },
-  card: {
-    width: '100%',
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 24,
-    alignItems: 'center',
-    textAlign: 'center',
-  },
-  cardLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  cardDark: {
-    backgroundColor: '#121212',
-    borderColor: '#27272A',
-  },
-  textLight: { color: '#0F172A' },
-  textDark: { color: '#F8FAFC' },
-  iconWrapper: {
-    width: 96,
-    height: 96,
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 4,
-    marginBottom: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconWrapperLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-  },
-  iconWrapperDark: {
-    backgroundColor: '#1E2430',
-    borderColor: '#27272A',
-  },
-  botIcon: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 16,
-  },
-  eyebrow: {
-    fontSize: 11.5,
-    fontWeight: '800',
-    color: '#024AD8',
-    letterSpacing: 1,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 14.5,
-    fontWeight: '600',
-    color: '#334155',
-    textAlign: 'center',
-    marginBottom: 12,
-    maxWidth: 320,
-  },
-  description: {
-    fontSize: 13,
-    color: '#64748B',
-    lineHeight: 19,
-    textAlign: 'center',
-    marginBottom: 24,
-    maxWidth: 340,
-  },
-  idPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 24,
-  },
-  idPillLight: {
-    backgroundColor: '#F8FAFC',
-    borderColor: '#E2E8F0',
-  },
-  idPillDark: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  idPillText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  primaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    backgroundColor: '#024AD8',
-    width: '100%',
-    paddingVertical: 14,
-    borderRadius: 12,
-    shadowColor: '#024AD8',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-    marginBottom: 20,
-  },
-  primaryBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13.5,
-    fontWeight: '800',
-    letterSpacing: 0.4,
-  },
-  footerNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-    paddingTop: 16,
-    width: '100%',
-    justifyContent: 'center',
-  },
-  footerNoteText: {
-    fontSize: 12,
-    color: '#64748B',
-    fontWeight: '600',
-  },
-});

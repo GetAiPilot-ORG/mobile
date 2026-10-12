@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, Pressable, Linking } from 'react-native';
+import { Text, View, Pressable, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CRMContact, ContactStatus } from '../types';
 import { useTheme, getColors } from '@/theme';
@@ -68,7 +68,6 @@ export const LeadCard: React.FC<LeadCardProps> = ({
     }
   };
 
-  // Format deal value display if provided or present on lead
   const formattedValue = dealValue != null
     ? typeof dealValue === 'number'
       ? dealValue >= 100000
@@ -81,61 +80,80 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 
   return (
     <Pressable
+      className="rounded-2xl p-4 mb-3 border shadow-sm shadow-black/5 active:opacity-90"
       style={({ pressed }) => [
-        styles.card,
         { backgroundColor: colors.card, borderColor: colors.cardBorder },
         pressed && { backgroundColor: colors.cardHover, borderColor: colors.primary },
       ]}
       onPress={onPress}
     >
-      <View style={styles.header}>
-        <View style={[styles.avatar, { backgroundColor: colors.surfaceSecondary }]}>
-          <Text style={[styles.avatarText, { color: colors.textPrimary }]}>
+      <View className="flex-row items-center mb-2.5">
+        <View
+          className="w-10 h-10 rounded-xl items-center justify-center mr-3"
+          style={{ backgroundColor: colors.surfaceSecondary }}
+        >
+          <Text className="text-sm font-bold" style={{ color: colors.textPrimary }}>
             {(lead.first_name?.[0] || lead.name?.[0] || 'L').toUpperCase()}
             {(lead.last_name?.[0] || '').toUpperCase()}
           </Text>
         </View>
 
-        <View style={styles.nameBlock}>
-          <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
+        <View className="flex-1 mr-2 min-w-0">
+          <Text
+            className="text-base font-semibold tracking-tight"
+            style={{ color: colors.text }}
+            numberOfLines={1}
+          >
             {lead.name || `${lead.first_name || ''} ${lead.last_name || ''}`.trim() || 'Unnamed Lead'}
           </Text>
           {lead.company || lead.job_title ? (
-            <Text style={[styles.company, { color: colors.mutedText }]} numberOfLines={1}>
+            <Text
+              className="text-xs mt-0.5"
+              style={{ color: colors.mutedText }}
+              numberOfLines={1}
+            >
               {[lead.job_title, lead.company].filter(Boolean).join(' • ')}
             </Text>
           ) : null}
         </View>
 
-        <View style={{ alignItems: 'flex-end', gap: 4 }}>
+        <View className="items-end gap-1">
           {formattedValue && (
-            <View style={[styles.dealBadge, { backgroundColor: colors.warningSoft }]}>
-              <Text style={styles.dealBadgeText}>{formattedValue}</Text>
+            <View className="px-2 py-0.5 rounded-md" style={{ backgroundColor: colors.warningSoft }}>
+              <Text className="text-[#B8863B] text-[11px] font-bold">{formattedValue}</Text>
             </View>
           )}
-          <View style={[styles.statusBadge, { backgroundColor: statusCfg.bg }]}>
-            <View style={[styles.statusDot, { backgroundColor: statusCfg.dot }]} />
-            <Text style={[styles.statusText, { color: statusCfg.text }]}>{statusCfg.label}</Text>
+          <View
+            className="flex-row items-center gap-1.5 px-2 py-1 rounded-lg"
+            style={{ backgroundColor: statusCfg.bg }}
+          >
+            <View className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: statusCfg.dot }} />
+            <Text className="text-[11px] font-semibold" style={{ color: statusCfg.text }}>
+              {statusCfg.label}
+            </Text>
           </View>
         </View>
       </View>
 
       {/* Meta Contact Information */}
       {(lead.phone || lead.email) ? (
-        <View style={[styles.metaRow, { borderTopColor: colors.divider }]}>
+        <View
+          className="flex-row flex-wrap gap-3 py-1.5 border-t"
+          style={{ borderTopColor: colors.divider }}
+        >
           {lead.phone ? (
-            <View style={styles.metaItem}>
+            <View className="flex-row items-center gap-1.5">
               <Ionicons name="call-outline" size={13} color={colors.iconMuted} />
-              <Text style={[styles.metaText, { color: colors.mutedText }]} numberOfLines={1}>
+              <Text className="text-xs" style={{ color: colors.mutedText }} numberOfLines={1}>
                 {lead.phone}
               </Text>
             </View>
           ) : null}
 
           {lead.email ? (
-            <View style={styles.metaItem}>
+            <View className="flex-row items-center gap-1.5">
               <Ionicons name="mail-outline" size={13} color={colors.iconMuted} />
-              <Text style={[styles.metaText, { color: colors.mutedText }]} numberOfLines={1}>
+              <Text className="text-xs" style={{ color: colors.mutedText }} numberOfLines={1}>
                 {lead.email}
               </Text>
             </View>
@@ -144,18 +162,22 @@ export const LeadCard: React.FC<LeadCardProps> = ({
       ) : null}
 
       {/* Footer: Assignee & 1-Tap Quick Touchpoints */}
-      <View style={[styles.footer, { borderTopColor: colors.divider }]}>
-        <View style={styles.assigneeBlock}>
+      <View
+        className="flex-row items-center justify-between pt-2 border-t"
+        style={{ borderTopColor: colors.divider }}
+      >
+        <View className="flex-row items-center gap-1.5 flex-1 min-w-0">
           <Ionicons name="person-circle-outline" size={16} color={colors.iconMuted} />
-          <Text style={[styles.assigneeText, { color: colors.mutedText }]} numberOfLines={1}>
+          <Text className="text-xs" style={{ color: colors.mutedText }} numberOfLines={1}>
             {lead.assignee?.name || 'Unassigned'}
           </Text>
         </View>
 
-        <View style={styles.actionButtons}>
+        <View className="flex-row items-center gap-2">
           {lead.phone ? (
             <Pressable
-              style={[styles.touchpointBtn, { backgroundColor: isDark ? 'rgba(37, 211, 102, 0.15)' : '#DCFCE7' }]}
+              className="w-8 h-8 rounded-lg items-center justify-center active:opacity-75"
+              style={{ backgroundColor: isDark ? 'rgba(37, 211, 102, 0.15)' : '#DCFCE7' }}
               onPress={handleWhatsApp}
               hitSlop={6}
             >
@@ -165,7 +187,8 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 
           {lead.phone ? (
             <Pressable
-              style={[styles.touchpointBtn, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#D1FAE5' }]}
+              className="w-8 h-8 rounded-lg items-center justify-center active:opacity-75"
+              style={{ backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#D1FAE5' }}
               onPress={handleCall}
               hitSlop={6}
             >
@@ -175,7 +198,8 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 
           {lead.email ? (
             <Pressable
-              style={[styles.touchpointBtn, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#DBEAFE' }]}
+              className="w-8 h-8 rounded-lg items-center justify-center active:opacity-75"
+              style={{ backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#DBEAFE' }}
               onPress={handleEmail}
               hitSlop={6}
             >
@@ -183,7 +207,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
             </Pressable>
           ) : null}
 
-          <View style={styles.chevron}>
+          <View className="ml-1">
             <Ionicons name="chevron-forward" size={16} color={colors.iconMuted} />
           </View>
         </View>
@@ -191,127 +215,3 @@ export const LeadCard: React.FC<LeadCardProps> = ({
     </Pressable>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  avatarText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  nameBlock: {
-    flex: 1,
-    marginRight: 8,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: -0.2,
-  },
-  company: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  metaRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    paddingVertical: 6,
-    borderTopWidth: 1,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  metaText: {
-    fontSize: 12,
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 8,
-    borderTopWidth: 1,
-  },
-  assigneeBlock: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    flex: 1,
-  },
-  assigneeText: {
-    fontSize: 12,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  dealBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  dealBadgeText: {
-    color: '#B8863B',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  touchpointBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chevron: {
-    marginLeft: 4,
-  },
-});

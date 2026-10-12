@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TextInput, StyleSheet, Pressable, Text } from 'react-native';
+import { View, TextInput, Pressable, Text } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface SearchInputProps {
@@ -18,10 +18,14 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   const { isDark } = useTheme();
 
   return (
-    <View style={[styles.container, isDark && styles.containerDark]}>
-      <Text style={styles.searchIcon}>🔍</Text>
+    <View
+      className={`flex-row items-center rounded-xl px-3 h-11 mb-3.5 border ${
+        isDark ? 'bg-[#0A1420] border-[#1B334A]' : 'bg-white border-[#E5E7EB]'
+      }`}
+    >
+      <Text className="text-sm mr-2">🔍</Text>
       <TextInput
-        style={[styles.input, isDark && styles.inputDark]}
+        className={`flex-1 text-sm py-0 ${isDark ? 'text-[#F7FAFC]' : 'text-black'}`}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
@@ -31,66 +35,24 @@ export const SearchInput: React.FC<SearchInputProps> = ({
       />
       {value.length > 0 && (
         <Pressable
-          style={[styles.clearBtn, isDark && styles.clearBtnDark]}
+          className={`w-5 h-5 rounded-full justify-center items-center active:opacity-75 ${
+            isDark ? 'bg-[#101C2A]' : 'bg-[#F2F4F7]'
+          }`}
           onPress={() => {
             onChangeText('');
             if (onClear) onClear();
           }}
           hitSlop={8}
         >
-          <Text style={[styles.clearText, isDark && styles.clearTextDark]}>✕</Text>
+          <Text
+            className={`text-[11px] font-bold ${
+              isDark ? 'text-[#8FA3B8]' : 'text-[#6B7280]'
+            }`}
+          >
+            ✕
+          </Text>
         </Pressable>
       )}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 44,
-    marginBottom: 14,
-  },
-  containerDark: {
-    backgroundColor: '#0A1420',
-    borderColor: '#1B334A',
-  },
-  searchIcon: {
-    fontSize: 14,
-    marginRight: 8,
-  },
-  input: {
-    flex: 1,
-    fontSize: 14,
-    color: '#000000',
-    paddingVertical: 0,
-  },
-  inputDark: {
-    color: '#F7FAFC',
-  },
-  clearBtn: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#F2F4F7',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  clearBtnDark: {
-    backgroundColor: '#101C2A',
-  },
-  clearText: {
-    fontSize: 11,
-    color: '#6B7280',
-    fontWeight: 'bold',
-  },
-  clearTextDark: {
-    color: '#8FA3B8',
-  },
-});

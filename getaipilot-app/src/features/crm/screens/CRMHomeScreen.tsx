@@ -190,6 +190,35 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
                   () => { },
                 );
+                setShowAddDeal(true);
+              }}
+              hitSlop={6}
+            >
+              <Ionicons
+                name="briefcase-outline"
+                size={14}
+                color={colors.text}
+              />
+              <Text
+                style={[
+                  styles.secondaryActionText,
+                  { color: colors.text },
+                ]}
+              >
+                Deal
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[
+                styles.secondaryActionBtn,
+                isDark
+                  ? styles.secondaryActionBtnDark
+                  : styles.secondaryActionBtnLight,
+              ]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+                  () => { },
+                );
                 setShowAddTask(true);
               }}
               hitSlop={6}
@@ -732,7 +761,47 @@ export const CRMHomeScreen: React.FC<CRMHomeScreenProps> = ({
 
 
 
-      {/* Primary Floating Action Button */}
+      {/* Primary Floating Action Button Speed Dial */}
+      {fabExpanded && (
+        <Pressable
+          style={styles.fabBackdrop}
+          onPress={() => setFabExpanded(false)}
+        >
+          <View style={styles.fabMenuContainer}>
+            <Pressable
+              style={[styles.fabMenuItem, { backgroundColor: "#8B5CF6" }]}
+              onPress={() => {
+                setFabExpanded(false);
+                setShowAddDeal(true);
+              }}
+            >
+              <Ionicons name="briefcase-outline" size={16} color="#FFFFFF" />
+              <Text style={styles.fabMenuText}>New Deal</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.fabMenuItem, { backgroundColor: "#3B82F6" }]}
+              onPress={() => {
+                setFabExpanded(false);
+                setShowAddLead(true);
+              }}
+            >
+              <Ionicons name="person-add-outline" size={16} color="#FFFFFF" />
+              <Text style={styles.fabMenuText}>New Lead</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.fabMenuItem, { backgroundColor: "#10B981" }]}
+              onPress={() => {
+                setFabExpanded(false);
+                setShowAddTask(true);
+              }}
+            >
+              <Ionicons name="checkbox-outline" size={16} color="#FFFFFF" />
+              <Text style={styles.fabMenuText}>New Task</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      )}
+
       <Pressable
         style={[
           styles.fabBtn,

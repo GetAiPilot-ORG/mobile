@@ -21,6 +21,12 @@ interface CreateLeadModalProps {
   onClose: () => void;
   onSubmit: (lead: Partial<CRMContact>) => Promise<void>;
   isLoading?: boolean;
+  mode?: 'lead' | 'contact';
+  title?: string;
+  subtitle?: string;
+  submitText?: string;
+  defaultStatus?: ContactStatus;
+  orgId?: string;
 }
 
 const STATUS_OPTIONS: Array<{ key: ContactStatus; label: string }> = [
@@ -34,9 +40,21 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
   onClose,
   onSubmit,
   isLoading,
+  mode = 'lead',
+  title,
+  subtitle,
+  submitText,
+  defaultStatus,
+  orgId,
 }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+
+  const isContactMode = mode === 'contact';
+  const modalTitle = title || (isContactMode ? 'Add New Contact' : 'Add New Lead');
+  const modalSubtitle = subtitle || (isContactMode ? 'Create customer or partner in phonebook' : 'Capture contact and qualification details');
+  const submitLabel = submitText || (isContactMode ? 'Create Contact' : 'Create Lead');
+  const initialStatus: ContactStatus = defaultStatus || (isContactMode ? 'prospect' : 'lead');
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -44,7 +62,7 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
   const [phone, setPhone] = useState('');
   const [company, setCompany] = useState('');
   const [jobTitle, setJobTitle] = useState('');
-  const [status, setStatus] = useState<ContactStatus>('lead');
+  const [status, setStatus] = useState<ContactStatus>(initialStatus);
   const [assignedTo, setAssignedTo] = useState<string>('');
   const [notes, setNotes] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -58,7 +76,7 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
     setPhone('');
     setCompany('');
     setJobTitle('');
-    setStatus('lead');
+    setStatus(initialStatus);
     setAssignedTo('');
     setNotes('');
     setErrorMessage('');
@@ -87,10 +105,12 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
         status,
         assigned_to: assignedTo || null,
         notes: notes.trim() || null,
+        tags: [],
+        ...(orgId ? { org_id: orgId } : {}),
       });
       handleClose();
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to create lead');
+      setErrorMessage(err.message || `Failed to create ${isContactMode ? 'contact' : 'lead'}`);
     }
   };
 
@@ -104,8 +124,8 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
           {/* Header */}
           <View style={styles.header}>
             <View>
-              <Text style={[styles.headerTitle, { color: colors.modalTitle }]}>Add New Lead</Text>
-              <Text style={[styles.headerSubtitle, { color: colors.modalDescription }]}>Capture contact and qualification details</Text>
+              <Text style={[styles.headerTitle, { color: colors.modalTitle }]}>{modalTitle}</Text>
+              <Text style={[styles.headerSubtitle, { color: colors.modalDescription }]}>{modalSubtitle}</Text>
             </View>
             <Pressable
               style={[styles.closeBtn, { backgroundColor: colors.surfaceSecondary }]}
@@ -302,7 +322,7 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
               {isLoading ? (
                 <ActivityIndicator size="small" color={colors.buttonPrimaryForeground} />
               ) : (
-                <Text style={[styles.submitBtnText, { color: colors.buttonPrimaryForeground }]}>Create Lead</Text>
+                <Text style={[styles.submitBtnText, { color: colors.buttonPrimaryForeground }]}>{submitLabel}</Text>
               )}
             </Pressable>
           </View>

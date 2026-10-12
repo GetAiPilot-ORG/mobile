@@ -120,7 +120,9 @@ export default function SpeechToTextScreen() {
 
   return (
     <AppScreen safeArea={false} backgroundColor={theme.bg}>
-      <AppTopBar title="AI Speech-to-Text" subtitle="Voice Notes & Audio Transcriber" showBack={true} />
+      <AppTopBar title="AI Speech-to-Text" 
+      // subtitle="Voice Notes & Audio Transcriber" 
+      showBack={true} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Main Recording Studio Card */}

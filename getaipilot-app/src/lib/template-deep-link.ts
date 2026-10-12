@@ -36,17 +36,15 @@ export function getWebAppBaseUrl(): string {
     return process.env.EXPO_PUBLIC_WEB_APP_URL.replace(/\/+$/, "");
   }
 
-  if (typeof __DEV__ !== "undefined" && __DEV__) {
-    // If running in browser or Expo dev
-    if (
-      Platform.OS === "web" &&
-      typeof window !== "undefined" &&
-      (window.location?.hostname === "localhost" ||
-        window.location?.hostname === "127.0.0.1")
-    ) {
-      return "http://localhost:8080";
-    }
-
+  // Only use localhost if specifically running on web platform in local browser
+  if (
+    typeof __DEV__ !== "undefined" &&
+    __DEV__ &&
+    Platform.OS === "web" &&
+    typeof window !== "undefined" &&
+    (window.location?.hostname === "localhost" ||
+      window.location?.hostname === "127.0.0.1")
+  ) {
     return "http://localhost:8080";
   }
 
@@ -145,23 +143,30 @@ export async function openExternalSSO({
     }
   }
 
-  // 2. Fallback: Check if local Supabase client has a valid session
+  // 2. Fallback: Use tokens from authStorage or local Supabase client
   try {
-    const { data } = await supabase.auth.getSession();
-    const session = data?.session;
-    if (session?.access_token && session?.refresh_token) {
+    let accessToken = await authStorage.getAccessToken();
+    let refreshToken = await authStorage.getRefreshToken();
+
+    if (!accessToken) {
+      const { data } = await supabase.auth.getSession();
+      accessToken = data?.session?.access_token || null;
+      refreshToken = data?.session?.refresh_token || null;
+    }
+
+    if (accessToken) {
       const ssoUrl = `${webAppUrl}/auth/callback?next=${encodeURIComponent(
         redirectPath,
       )}#access_token=${encodeURIComponent(
-        session.access_token,
-      )}&refresh_token=${encodeURIComponent(session.refresh_token)}&token_type=bearer`;
+        accessToken,
+      )}&refresh_token=${encodeURIComponent(refreshToken || "")}&token_type=bearer`;
 
-      console.log("[openExternalSSO] Opening Supabase local session SSO URL");
+      console.log("[openExternalSSO] Opening Supabase authenticated SSO URL");
       await Linking.openURL(ssoUrl);
       return;
     }
-  } catch (supabaseErr) {
-    console.warn("[openExternalSSO] Local Supabase session check failed:", supabaseErr);
+  } catch (tokenErr) {
+    console.warn("[openExternalSSO] Local session check failed:", tokenErr);
   }
 
   // 3. Fallback for guest/unauthenticated users

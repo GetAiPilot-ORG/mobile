@@ -485,9 +485,9 @@ const styles = StyleSheet.create({
   closeBtnDark: { backgroundColor: "#2C2C2E" },
   content: { flex: 1 },
   contentContainer: { padding: 16, gap: 14, paddingBottom: 40 },
-  card: { borderRadius: 16, padding: 16, borderWidth: 1 },
-  cardLight: { backgroundColor: "#FFFFFF", borderColor: "#E5E5EA" },
-  cardDark: { backgroundColor: "#1C1C1E", borderColor: "#2C2C2E" },
+  card: { borderRadius: 16, padding: 16 },
+  cardLight: { backgroundColor: "#FFFFFF" },
+  cardDark: { backgroundColor: "#1C1C1E" },
   statusRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -523,13 +523,9 @@ const styles = StyleSheet.create({
   lifecycleBtnText: { fontSize: 12, fontWeight: "700" },
   iconBtnLight: {
     backgroundColor: "#F1F5F9",
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
   },
   iconBtnDark: {
     backgroundColor: "#2C2C2E",
-    borderWidth: 1,
-    borderColor: "#3A3A3C",
   },
   divider: { height: 1, marginVertical: 12 },
   dividerLight: { backgroundColor: "#E5E5EA" },
@@ -549,8 +545,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#6D3CF5",
     borderRadius: 4,
   },
-  metricsRow: { flexDirection: "row", gap: 8 },
-  metricCard: { flex: 1, borderRadius: 14, padding: 12, borderWidth: 1 },
+  metricsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  metricCard: {
+    width: "48.5%",
+    borderRadius: 14,
+    padding: 12,
+  },
   metricLabel: {
     fontSize: 10.5,
     color: "#65656B",

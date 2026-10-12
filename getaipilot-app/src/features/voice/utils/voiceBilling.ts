@@ -2,7 +2,13 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Haptics from 'expo-haptics';
 import { QueryClient } from '@tanstack/react-query';
 
-export const VOICE_WEB_BILLING_URL = 'https://voice.getaipilot.online/dashboard/billing';
+export const VOICE_WEB_BILLING_URL = 'https://app.getaipilot.com/dashboard/billing';
+export {
+  VOICE_WEB_BASE_URL,
+  VOICE_PHONE_NUMBERS_URL,
+  openVoiceHandoff,
+  openVoicePhoneNumbersSSO,
+} from './voiceHandoff';
 
 /**
  * Opens VoicePilot web billing dashboard inside an in-app browser modal.

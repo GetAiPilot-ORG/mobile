@@ -1,10 +1,26 @@
 import { getColors, useTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
-import { ActivityIndicator, FlatList, Linking, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import React, { useMemo, useState } from 'react';
+import {
+  Alert,
+  FlatList,
+  Linking,
+  Platform,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { CrmListSkeleton } from '../../../components/skeletonScreen';
 import { crmApi } from '../api/crm.api';
+import { CreateBillingProfileModal } from '../components/CreateBillingProfileModal';
+import { useCreateBillingProfile } from '../hooks/useBillingProfiles';
 import { CRMBillingProfile } from '../types';
 
 const WEB_APP_URL = 'https://getaipilot.in';
@@ -17,6 +33,10 @@ export function ClientProfilesScreen({ onBack }: ClientProfilesScreenProps = {})
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const router = useRouter();
+
+  const [search, setSearch] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const createProfile = useCreateBillingProfile();
 
   const handleBack = () => {
     if (onBack) {
@@ -34,97 +54,439 @@ export function ClientProfilesScreen({ onBack }: ClientProfilesScreenProps = {})
   });
 
   const profiles = data?.profiles || [];
-  const bg = colors.background;
-  const card = colors.surface;
-  const text = colors.text;
-  const sub = colors.textMuted;
-  const border = colors.border;
+
+  const filteredProfiles = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return profiles;
+    return profiles.filter((p) => {
+      const name = (p.legal_name || '').toLowerCase();
+      const gstin = (p.gstin || '').toLowerCase();
+      const pan = (p.pan || '').toLowerCase();
+      const city = (p.billing_address_city || '').toLowerCase();
+      const state = (p.billing_address_state || '').toLowerCase();
+      const contact = p.contact
+        ? `${p.contact.first_name || ''} ${p.contact.last_name || ''}`.toLowerCase()
+        : '';
+      return (
+        name.includes(q) ||
+        gstin.includes(q) ||
+        pan.includes(q) ||
+        city.includes(q) ||
+        state.includes(q) ||
+        contact.includes(q)
+      );
+    });
+  }, [profiles, search]);
 
   const open = (p: CRMBillingProfile) => {
-    Linking.openURL(`${WEB_APP_URL}/dashboard/crm/billing-profiles/${p.id}`).catch(() => { });
+    Linking.openURL(`${WEB_APP_URL}/dashboard/crm/billing-profiles/${p.id}`).catch(() => {});
   };
 
   return (
-    <SafeAreaView style={[{ flex: 1, backgroundColor: bg }]} edges={['top']}>
-      <View style={s.header}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
           <Pressable
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: card,
-            }}
+            style={[styles.backBtn, { backgroundColor: colors.surface }]}
             onPress={handleBack}
             hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel="Back"
           >
-            <Ionicons name="chevron-back" size={20} color={text} />
+            <Ionicons name="arrow-back" size={20} color={colors.text} />
           </Pressable>
           <View>
-            <Text style={[s.title, { color: text }]}>Client Profiles</Text>
-            <Text style={[s.subtitle, { color: sub }]}>{data?.total_count ?? 0} billing profiles</Text>
+            <View style={styles.titleRow}>
+              <Text style={[styles.title, { color: colors.text }]}>Client Profiles</Text>
+              <View style={[styles.countBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Text style={[styles.countText, { color: colors.textMuted }]}>
+                  {data?.total_count ?? profiles.length}
+                </Text>
+              </View>
+            </View>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+              GST billing profiles & legal entities
+            </Text>
           </View>
         </View>
-        <Pressable style={s.createBtn} onPress={() => Linking.openURL(`${WEB_APP_URL}/dashboard/crm/billing-profiles/create`).catch(() => { })}>
-          <Ionicons name="add" size={18} color="#FFF" />
-          <Text style={s.createBtnText}>Create</Text>
+
+        <Pressable
+          style={styles.addBtn}
+          onPress={() => {
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+            }
+            setShowCreateModal(true);
+          }}
+          hitSlop={8}
+        >
+          <Ionicons name="add" size={16} color="#FFFFFF" />
+          <Text style={styles.addBtnText}>New Profile</Text>
         </Pressable>
       </View>
 
-      {isLoading ? (
-        <View style={s.center}><ActivityIndicator color="#06B6D4" /></View>
-      ) : profiles.length === 0 ? (
-        <View style={s.center}>
-          <Ionicons name="card-outline" size={48} color={sub} />
-          <Text style={[s.emptyTitle, { color: text }]}>No Client Profiles</Text>
-          <Text style={[s.emptySub, { color: sub }]}>Add billing profiles for your clients</Text>
+      {/* Search Bar */}
+      <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Ionicons name="search" size={16} color={colors.textMuted} />
+        <TextInput
+          style={[styles.searchInput, { color: colors.text }]}
+          placeholder="Search profiles by name, GST, city..."
+          placeholderTextColor={colors.textMuted}
+          value={search}
+          onChangeText={setSearch}
+          clearButtonMode="while-editing"
+        />
+        {search ? (
+          <Pressable onPress={() => setSearch('')} hitSlop={6}>
+            <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+          </Pressable>
+        ) : null}
+      </View>
+
+      {/* Content */}
+      {isLoading && !data ? (
+        <CrmListSkeleton />
+      ) : filteredProfiles.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="business-outline" size={48} color={colors.textMuted} />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>
+            {search ? 'No matching profiles' : 'No Client Profiles'}
+          </Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
+            {search
+              ? `No billing profiles matching "${search}"`
+              : 'Add legal entity and GST billing details for your clients.'}
+          </Text>
+          {!search && (
+            <Pressable
+              style={styles.emptyBtn}
+              onPress={() => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                }
+                setShowCreateModal(true);
+              }}
+            >
+              <Ionicons name="add" size={16} color="#FFFFFF" />
+              <Text style={styles.emptyBtnText}>Create Profile</Text>
+            </Pressable>
+          )}
         </View>
       ) : (
         <FlatList
-          data={profiles}
+          data={filteredProfiles}
           keyExtractor={(p) => p.id}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#06B6D4" />}
-          contentContainerStyle={{ paddingHorizontal: 16, gap: 8, paddingBottom: 100 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={refetch}
+              tintColor="#3B82F6"
+              colors={['#3B82F6']}
+            />
+          }
+          contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <Pressable style={[s.row, { backgroundColor: card, borderColor: border }]} onPress={() => open(item)}>
-              <View style={[s.avatar, { backgroundColor: '#ECFEFF' }]}>
-                <Text style={s.avatarText}>{item.legal_name.charAt(0).toUpperCase()}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[s.name, { color: text }]}>{item.legal_name}</Text>
-                {item.gstin && <Text style={[s.sub, { color: sub }]}>GST: {item.gstin}</Text>}
-                {item.billing_address_city && (
-                  <Text style={[s.sub, { color: sub }]}>
-                    {[item.billing_address_city, item.billing_address_state].filter(Boolean).join(', ')}
-                  </Text>
+          renderItem={({ item }) => {
+            const displayName = item.legal_name || 'Client';
+            const initial = (displayName.trim().charAt(0) || 'C').toUpperCase();
+            const location = [item.billing_address_city, item.billing_address_state]
+              .filter(Boolean)
+              .join(', ');
+            const contactName = item.contact
+              ? `${item.contact.first_name || ''} ${item.contact.last_name || ''}`.trim()
+              : null;
+
+            return (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.card,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                  pressed && { opacity: 0.9, borderColor: '#3B82F6' },
+                ]}
+                onPress={() => open(item)}
+              >
+                <View style={styles.cardHeader}>
+                  <View
+                    style={[
+                      styles.avatar,
+                      {
+                        backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
+                      },
+                    ]}
+                  >
+                    <Text style={styles.avatarText}>{initial}</Text>
+                  </View>
+
+                  <View style={styles.cardMain}>
+                    <View style={styles.cardTopRow}>
+                      <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
+                        {displayName}
+                      </Text>
+                      <Ionicons name="open-outline" size={14} color={colors.textMuted} />
+                    </View>
+
+                    {contactName ? (
+                      <Text style={[styles.contactName, { color: colors.textMuted }]} numberOfLines={1}>
+                        Contact: {contactName}
+                      </Text>
+                    ) : null}
+                  </View>
+                </View>
+
+                {(Boolean(item.gstin) || Boolean(item.pan) || Boolean(location)) && (
+                  <View style={[styles.metaRow, { borderTopColor: colors.border }]}>
+                    {Boolean(item.gstin) && (
+                      <View
+                        style={[
+                          styles.badge,
+                          {
+                            backgroundColor: isDark ? 'rgba(59, 130, 246, 0.12)' : '#EFF6FF',
+                          },
+                        ]}
+                      >
+                        <Ionicons name="receipt-outline" size={11} color="#3B82F6" />
+                        <Text style={[styles.badgeText, { color: '#3B82F6' }]}>
+                          GST: {item.gstin}
+                        </Text>
+                      </View>
+                    )}
+                    {Boolean(item.pan) && (
+                      <View
+                        style={[
+                          styles.badge,
+                          {
+                            backgroundColor: isDark ? 'rgba(139, 92, 246, 0.12)' : '#F5F3FF',
+                          },
+                        ]}
+                      >
+                        <Ionicons name="card-outline" size={11} color="#8B5CF6" />
+                        <Text style={[styles.badgeText, { color: '#8B5CF6' }]}>
+                          PAN: {item.pan}
+                        </Text>
+                      </View>
+                    )}
+                    {Boolean(location) && (
+                      <View style={styles.locationContainer}>
+                        <Ionicons name="location-outline" size={12} color={colors.textMuted} />
+                        <Text style={[styles.locationText, { color: colors.textMuted }]} numberOfLines={1}>
+                          {location}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                 )}
-              </View>
-              <Ionicons name="open-outline" size={16} color={sub} />
-            </Pressable>
-          )}
+              </Pressable>
+            );
+          }}
         />
       )}
+
+      {/* Create Billing Profile Modal */}
+      <CreateBillingProfileModal
+        visible={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={async (profile) => {
+          try {
+            await createProfile.mutateAsync(profile);
+            if (Platform.OS !== 'web') {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+            }
+            Alert.alert('Profile Created 🎉', `${profile.legal_name || 'Billing profile'} was added.`);
+          } catch (err: any) {
+            Alert.alert('Error', err?.message || 'Failed to create billing profile');
+            throw err;
+          }
+        }}
+        isLoading={createProfile.isPending}
+      />
     </SafeAreaView>
   );
 }
 
-const s = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  title: { fontSize: 22, fontWeight: '800', letterSpacing: -0.4 },
-  subtitle: { fontSize: 12, marginTop: 2 },
-  createBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#06B6D4', paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12 },
-  createBtnText: { color: '#FFF', fontWeight: '700', fontSize: 13 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 14, borderWidth: 1, padding: 14 },
-  avatar: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontSize: 18, fontWeight: '800', color: '#06B6D4' },
-  name: { fontSize: 15, fontWeight: '700' },
-  sub: { fontSize: 12, marginTop: 2 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
-  emptyTitle: { fontSize: 16, fontWeight: '700' },
-  emptySub: { fontSize: 13, textAlign: 'center', maxWidth: 240 },
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  backBtn: {
+    padding: 6,
+    borderRadius: 8,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  countBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    borderWidth: 0.5,
+  },
+  countText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  subtitle: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  addBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+  },
+  card: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 10,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  avatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#3B82F6',
+  },
+  cardMain: {
+    flex: 1,
+    minWidth: 0,
+  },
+  cardTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  name: {
+    fontSize: 15,
+    fontWeight: '700',
+    flex: 1,
+  },
+  contactName: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flex: 1,
+  },
+  locationText: {
+    fontSize: 12,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    gap: 8,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 12,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  emptyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginTop: 12,
+  },
+  emptyBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });
