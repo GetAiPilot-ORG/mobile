@@ -23,6 +23,7 @@ import {
   CreateContactModal,
   EditContactModal,
   TriggerCallModal,
+  VoicePlanExpiredBanner,
 } from "../components";
 import {
   openVoicePhoneNumbersSSO,
@@ -261,8 +262,8 @@ export const ContactsScreen: React.FC = () => {
       style={{ backgroundColor: colors.background }}
       contentContainerStyle={{
         paddingHorizontal: 16,
-        paddingTop: 6,
-        paddingBottom: 100,
+        paddingTop: 10,
+        paddingBottom: 120,
         gap: 12,
         width: "100%",
       }}
@@ -299,10 +300,15 @@ export const ContactsScreen: React.FC = () => {
         </Text>
       </View>
 
+      {/* EXPIRED PLAN BANNER */}
+      {Boolean(overviewData?.isPlanExpired) && (
+        <VoicePlanExpiredBanner overview={overviewData} />
+      )}
+
       {/* 2. 3-WAY SUB-TAB SWITCHER */}
       <View
-        className="flex-row items-center p-1 rounded-2xl border w-full gap-1 mb-1"
-        style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+        className="flex-row items-center p-1 rounded-2xl w-full gap-1 mb-1 shadow-xs"
+        style={{ backgroundColor: colors.surface }}
       >
         <Pressable
           className="flex-1 flex-row items-center justify-center py-2 px-2 rounded-xl gap-1.5 active:opacity-80"
@@ -423,8 +429,8 @@ export const ContactsScreen: React.FC = () => {
               accessibilityRole="button"
               accessibilityLabel="Import CSV"
               onPress={handleImportCsv}
-              className="flex-1 h-[42px] rounded-xl border flex-row items-center justify-center gap-1.5 active:opacity-80"
-              style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+              className="flex-1 h-[42px] rounded-xl flex-row items-center justify-center gap-1.5 active:opacity-80 shadow-xs"
+              style={{ backgroundColor: colors.surface }}
             >
               <Ionicons
                 name="cloud-upload-outline"
@@ -446,7 +452,7 @@ export const ContactsScreen: React.FC = () => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 setIsCreateModalOpen(true);
               }}
-              className="flex-1 h-[42px] rounded-xl flex-row items-center justify-center gap-1.5 active:opacity-85"
+              className="flex-1 h-[42px] rounded-xl flex-row items-center justify-center gap-1.5 active:opacity-85 shadow-xs"
               style={{ backgroundColor: colors.primary }}
             >
               <Ionicons name="add" size={16} color="#FFFFFF" />
@@ -457,8 +463,8 @@ export const ContactsScreen: React.FC = () => {
           {/* 3-Metric Stats Row */}
           <View className="flex-row gap-2 w-full">
             <View
-              className="flex-1 p-2.5 rounded-xl border min-h-[68px] justify-between shadow-sm min-w-0"
-              style={{ flexBasis: 0, backgroundColor: colors.surface, borderColor: colors.border }}
+              className="flex-1 p-2.5 rounded-xl min-h-[68px] justify-between shadow-xs min-w-0"
+              style={{ flexBasis: 0, backgroundColor: colors.surface }}
             >
               <View className="flex-row items-center gap-1">
                 <Ionicons
@@ -477,14 +483,16 @@ export const ContactsScreen: React.FC = () => {
               <Text
                 className="text-[19px] font-extrabold tracking-tight mt-0.5"
                 style={{ color: colors.text }}
+                adjustsFontSizeToFit
+                numberOfLines={1}
               >
                 {totalContacts}
               </Text>
             </View>
 
             <View
-              className="flex-1 p-2.5 rounded-xl border min-h-[68px] justify-between shadow-sm min-w-0"
-              style={{ flexBasis: 0, backgroundColor: colors.surface, borderColor: colors.border }}
+              className="flex-1 p-2.5 rounded-xl min-h-[68px] justify-between shadow-xs min-w-0"
+              style={{ flexBasis: 0, backgroundColor: colors.surface }}
             >
               <View className="flex-row items-center gap-1">
                 <Ionicons
@@ -503,14 +511,16 @@ export const ContactsScreen: React.FC = () => {
               <Text
                 className="text-[19px] font-extrabold tracking-tight mt-0.5"
                 style={{ color: colors.text }}
+                adjustsFontSizeToFit
+                numberOfLines={1}
               >
                 {totalContacts > 0 ? "100%" : "0%"}
               </Text>
             </View>
 
             <View
-              className="flex-1 p-2.5 rounded-xl border min-h-[68px] justify-between shadow-sm min-w-0"
-              style={{ flexBasis: 0, backgroundColor: colors.surface, borderColor: colors.border }}
+              className="flex-1 p-2.5 rounded-xl min-h-[68px] justify-between shadow-xs min-w-0"
+              style={{ flexBasis: 0, backgroundColor: colors.surface }}
             >
               <View className="flex-row items-center gap-1">
                 <Ionicons name="star" size={13} color={colors.amber} />
@@ -525,6 +535,8 @@ export const ContactsScreen: React.FC = () => {
               <Text
                 className="text-[19px] font-extrabold tracking-tight mt-0.5"
                 style={{ color: colors.text }}
+                adjustsFontSizeToFit
+                numberOfLines={1}
               >
                 {activeLeads}
               </Text>
@@ -533,8 +545,8 @@ export const ContactsScreen: React.FC = () => {
 
           {/* Search Input */}
           <View
-            className="flex-row items-center h-10 rounded-xl border px-2.5 gap-1.5"
-            style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+            className="flex-row items-center h-10 rounded-xl px-2.5 gap-1.5 shadow-xs"
+            style={{ backgroundColor: colors.surface }}
           >
             <Ionicons name="search" size={15} color={colors.textSecondary} />
             <TextInput
@@ -564,8 +576,8 @@ export const ContactsScreen: React.FC = () => {
           {/* Filter Dropdowns Row */}
           <View className="flex-row gap-2">
             <Pressable
-              className="flex-1 h-9 rounded-xl border flex-row items-center justify-between px-2.5 active:opacity-80"
-              style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+              className="flex-1 h-9 rounded-xl flex-row items-center justify-between px-2.5 active:opacity-80 shadow-xs"
+              style={{ backgroundColor: colors.surface }}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
@@ -584,8 +596,8 @@ export const ContactsScreen: React.FC = () => {
             </Pressable>
 
             <Pressable
-              className="flex-1 h-9 rounded-xl border flex-row items-center justify-between px-2.5 active:opacity-80"
-              style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+              className="flex-1 h-9 rounded-xl flex-row items-center justify-between px-2.5 active:opacity-80 shadow-xs"
+              style={{ backgroundColor: colors.surface }}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
@@ -613,8 +625,8 @@ export const ContactsScreen: React.FC = () => {
             />
           ) : filteredContacts.length === 0 ? (
             <View
-              className="rounded-2xl border py-9 px-4 items-center justify-center gap-2"
-              style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+              className="rounded-2xl py-9 px-4 items-center justify-center gap-2 shadow-xs"
+              style={{ backgroundColor: colors.surface }}
             >
               <View
                 className="w-[60px] h-[60px] rounded-full items-center justify-center mb-0.5"
@@ -637,8 +649,8 @@ export const ContactsScreen: React.FC = () => {
             </View>
           ) : (
             <View
-              className="rounded-2xl border overflow-hidden"
-              style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+              className="rounded-2xl overflow-hidden shadow-xs"
+              style={{ backgroundColor: colors.surface }}
             >
               {filteredContacts.map((cnt, idx, arr) => {
                 const initials = getInitials(cnt.name);
@@ -728,8 +740,8 @@ export const ContactsScreen: React.FC = () => {
         <View className="gap-2.5">
           <View className="flex-row gap-2 w-full">
             <View
-              className="flex-1 p-2.5 rounded-xl border min-h-[68px] justify-between shadow-sm min-w-0"
-              style={{ flexBasis: 0, backgroundColor: colors.surface, borderColor: colors.border }}
+              className="flex-1 p-2.5 rounded-xl min-h-[68px] justify-between shadow-xs min-w-0"
+              style={{ flexBasis: 0, backgroundColor: colors.surface }}
             >
               <View className="flex-row items-center gap-1">
                 <Ionicons
@@ -748,17 +760,18 @@ export const ContactsScreen: React.FC = () => {
               <Text
                 className="text-[19px] font-extrabold tracking-tight mt-0.5"
                 style={{ color: colors.text }}
+                adjustsFontSizeToFit
+                numberOfLines={1}
               >
                 {totalNumbers}
               </Text>
             </View>
 
             <View
-              className="flex-1 p-2.5 rounded-xl border min-h-[68px] justify-between shadow-sm min-w-0"
+              className="flex-1 p-2.5 rounded-xl min-h-[68px] justify-between shadow-xs min-w-0"
               style={{
                 flexBasis: 0,
                 backgroundColor: colors.surface,
-                borderColor: isDark ? colors.border : "#DCFCE7",
               }}
             >
               <View className="flex-row items-center gap-1">
@@ -778,19 +791,18 @@ export const ContactsScreen: React.FC = () => {
               <Text
                 className="text-[19px] font-extrabold tracking-tight mt-0.5"
                 style={{ color: colors.green }}
+                adjustsFontSizeToFit
+                numberOfLines={1}
               >
                 {activeNumbersCount}
               </Text>
             </View>
 
             <View
-              className="flex-1 p-2.5 rounded-xl border min-h-[68px] justify-between shadow-sm min-w-0"
+              className="flex-1 p-2.5 rounded-xl min-h-[68px] justify-between shadow-xs min-w-0"
               style={{
                 flexBasis: 0,
                 backgroundColor: colors.surface,
-                borderColor: isDark
-                  ? colors.border
-                  : "rgba(245, 158, 11, 0.25)",
               }}
             >
               <View className="flex-row items-center gap-1">
@@ -810,6 +822,8 @@ export const ContactsScreen: React.FC = () => {
               <Text
                 className="text-[19px] font-extrabold tracking-tight mt-0.5"
                 style={{ color: colors.amber }}
+                adjustsFontSizeToFit
+                numberOfLines={1}
               >
                 {expiredNumbersCount}
               </Text>
@@ -819,10 +833,9 @@ export const ContactsScreen: React.FC = () => {
           {/* Web Billing Banner */}
           <Pressable
             onPress={() => openVoicePhoneNumbersSSO(queryClient, isDark)}
-            className="flex-row items-center p-2.5 rounded-xl border gap-2.5 active:opacity-85"
+            className="flex-row items-center p-2.5 rounded-xl gap-2.5 active:opacity-85 shadow-xs"
             style={{
               backgroundColor: isDark ? "#121320" : "#EEF2FF",
-              borderColor: isDark ? "#282664" : "#C7D2FE",
             }}
           >
             <View
@@ -867,8 +880,8 @@ export const ContactsScreen: React.FC = () => {
             />
           ) : numbers.length === 0 ? (
             <View
-              className="rounded-2xl border py-9 px-4 items-center justify-center gap-2"
-              style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+              className="rounded-2xl py-9 px-4 items-center justify-center gap-2 shadow-xs"
+              style={{ backgroundColor: colors.surface }}
             >
               <View
                 className="w-[60px] h-[60px] rounded-full items-center justify-center mb-0.5"
@@ -894,7 +907,7 @@ export const ContactsScreen: React.FC = () => {
               </Text>
               <Pressable
                 onPress={() => openVoicePhoneNumbersSSO(queryClient, isDark)}
-                className="mt-2.5 flex-row items-center justify-center bg-[#4F46E5] py-2 px-3.5 rounded-lg gap-1.5 active:opacity-85"
+                className="mt-2.5 flex-row items-center justify-center bg-[#4F46E5] py-2 px-3.5 rounded-lg gap-1.5 active:opacity-85 shadow-xs"
               >
                 <Ionicons name="globe-outline" size={14} color="#FFFFFF" />
                 <Text className="text-white text-xs font-bold">
@@ -904,8 +917,8 @@ export const ContactsScreen: React.FC = () => {
             </View>
           ) : (
             <View
-              className="rounded-2xl border overflow-hidden"
-              style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+              className="rounded-2xl overflow-hidden shadow-xs"
+              style={{ backgroundColor: colors.surface }}
             >
               {numbers.map((num, idx, arr) => {
                 const isExpired = num.isExpired || num.status === "expired";
@@ -1023,7 +1036,7 @@ export const ContactsScreen: React.FC = () => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 setIsCreateAgentOpen(true);
               }}
-              className="flex-1 h-[42px] rounded-xl flex-row items-center justify-center gap-1.5 active:opacity-85"
+              className="flex-1 h-[42px] rounded-xl flex-row items-center justify-center gap-1.5 active:opacity-85 shadow-xs"
               style={{ backgroundColor: colors.primary }}
             >
               <Ionicons name="add" size={16} color="#FFFFFF" />
@@ -1034,8 +1047,8 @@ export const ContactsScreen: React.FC = () => {
           {/* Stats Row */}
           <View className="flex-row gap-2 w-full">
             <View
-              className="flex-1 p-2.5 rounded-xl border min-h-[68px] justify-between shadow-sm min-w-0"
-              style={{ flexBasis: 0, backgroundColor: colors.surface, borderColor: colors.border }}
+              className="flex-1 p-2.5 rounded-xl min-h-[68px] justify-between shadow-xs min-w-0"
+              style={{ flexBasis: 0, backgroundColor: colors.surface }}
             >
               <View className="flex-row items-center gap-1">
                 <Ionicons name="mic-outline" size={13} color={colors.primary} />
@@ -1050,17 +1063,18 @@ export const ContactsScreen: React.FC = () => {
               <Text
                 className="text-[19px] font-extrabold tracking-tight mt-0.5"
                 style={{ color: colors.text }}
+                adjustsFontSizeToFit
+                numberOfLines={1}
               >
                 {assistants.length}
               </Text>
             </View>
 
             <View
-              className="flex-1 p-2.5 rounded-xl border min-h-[68px] justify-between shadow-sm min-w-0"
+              className="flex-1 p-2.5 rounded-xl min-h-[68px] justify-between shadow-xs min-w-0"
               style={{
                 flexBasis: 0,
                 backgroundColor: colors.surface,
-                borderColor: isDark ? colors.border : "#DCFCE7",
               }}
             >
               <View className="flex-row items-center gap-1">
@@ -1080,19 +1094,18 @@ export const ContactsScreen: React.FC = () => {
               <Text
                 className="text-[19px] font-extrabold tracking-tight mt-0.5"
                 style={{ color: colors.green }}
+                adjustsFontSizeToFit
+                numberOfLines={1}
               >
                 {boundAssistantsCount}
               </Text>
             </View>
 
             <View
-              className="flex-1 p-2.5 rounded-xl border min-h-[68px] justify-between shadow-sm min-w-0"
+              className="flex-1 p-2.5 rounded-xl min-h-[68px] justify-between shadow-xs min-w-0"
               style={{
                 flexBasis: 0,
                 backgroundColor: colors.surface,
-                borderColor: isDark
-                  ? colors.border
-                  : "rgba(245, 158, 11, 0.25)",
               }}
             >
               <View className="flex-row items-center gap-1">
@@ -1112,6 +1125,8 @@ export const ContactsScreen: React.FC = () => {
               <Text
                 className="text-[19px] font-extrabold tracking-tight mt-0.5"
                 style={{ color: colors.amber }}
+                adjustsFontSizeToFit
+                numberOfLines={1}
               >
                 {Math.max(0, assistants.length - boundAssistantsCount)}
               </Text>
@@ -1127,8 +1142,8 @@ export const ContactsScreen: React.FC = () => {
             />
           ) : assistants.length === 0 ? (
             <View
-              className="rounded-2xl border py-9 px-4 items-center justify-center gap-2"
-              style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+              className="rounded-2xl py-9 px-4 items-center justify-center gap-2 shadow-xs"
+              style={{ backgroundColor: colors.surface }}
             >
               <View
                 className="w-[60px] h-[60px] rounded-full items-center justify-center mb-0.5"
@@ -1163,10 +1178,9 @@ export const ContactsScreen: React.FC = () => {
                 return (
                   <View
                     key={ast.id}
-                    className="rounded-2xl border p-3 gap-2.5 shadow-sm"
+                    className="rounded-2xl p-3 gap-2.5 shadow-xs"
                     style={{
                       backgroundColor: colors.surface,
-                      borderColor: colors.border,
                     }}
                   >
                     <View className="flex-row items-center gap-2.5">
@@ -1225,10 +1239,9 @@ export const ContactsScreen: React.FC = () => {
                     </View>
 
                     <View
-                      className="flex-row items-center justify-between px-2.5 py-1.5 rounded-lg border"
+                      className="flex-row items-center justify-between px-2.5 py-1.5 rounded-lg"
                       style={{
                         backgroundColor: colors.surfaceAlt,
-                        borderColor: colors.border,
                       }}
                     >
                       <View className="flex-row items-center gap-1.5 flex-1 min-w-0">
@@ -1281,7 +1294,7 @@ export const ContactsScreen: React.FC = () => {
 
                     <View className="flex-row items-center gap-2">
                       <Pressable
-                        className="flex-1 flex-row items-center justify-center gap-1.5 h-9 rounded-lg active:opacity-85"
+                        className="flex-1 flex-row items-center justify-center gap-1.5 h-9 rounded-lg active:opacity-85 shadow-xs"
                         style={{ backgroundColor: colors.primary }}
                         onPress={() => {
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -1293,10 +1306,9 @@ export const ContactsScreen: React.FC = () => {
                       </Pressable>
 
                       <Pressable
-                        className="flex-1 flex-row items-center justify-center gap-1.5 h-9 rounded-lg border active:opacity-80"
+                        className="flex-1 flex-row items-center justify-center gap-1.5 h-9 rounded-lg active:opacity-80"
                         style={{
                           backgroundColor: colors.surfaceAlt,
-                          borderColor: colors.border,
                         }}
                         onPress={() => {
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

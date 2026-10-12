@@ -18,6 +18,7 @@ import {
   CampaignDetailsModal,
   CreateCampaignModal,
   EditCampaignModal,
+  VoicePlanExpiredBanner,
 } from "../components";
 
 function getStatus(campaign: VoiceCampaign): string {
@@ -68,6 +69,11 @@ export const CampaignsScreen: React.FC = () => {
   const { data: numbers = [] } = useQuery({
     queryKey: ["voice", "numbers"],
     queryFn: () => voiceApi.getNumbers(),
+  });
+
+  const { data: overviewData } = useQuery({
+    queryKey: ["voice", "overview"],
+    queryFn: () => voiceApi.getOverview(),
   });
 
   // Mutations
@@ -183,6 +189,11 @@ export const CampaignsScreen: React.FC = () => {
         </Text>
       </View>
 
+      {/* EXPIRED PLAN BANNER */}
+      {Boolean(overviewData?.isPlanExpired) && (
+        <VoicePlanExpiredBanner overview={overviewData} />
+      )}
+
       {/* 2. TOP ACTION BUTTONS ROW */}
       <View className="flex-row items-center gap-2.5 w-full">
         <Pressable
@@ -194,10 +205,9 @@ export const CampaignsScreen: React.FC = () => {
             }
             refetch();
           }}
-          className="w-10 h-10 rounded-xl border items-center justify-center active:opacity-75 shadow-xs"
+          className="w-10 h-10 rounded-xl items-center justify-center active:opacity-75 shadow-xs"
           style={{
             backgroundColor: colors.surface,
-            borderColor: colors.border,
           }}
         >
           <Ionicons
@@ -212,8 +222,8 @@ export const CampaignsScreen: React.FC = () => {
           accessibilityRole="button"
           accessibilityLabel="CSV Template"
           onPress={handleDownloadCsvTemplate}
-          className="flex-row items-center gap-2 px-3.5 h-10 rounded-xl border active:opacity-75 shadow-xs"
-          style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+          className="flex-row items-center gap-2 px-3.5 h-10 rounded-xl active:opacity-75 shadow-xs"
+          style={{ backgroundColor: colors.surface }}
         >
           <Ionicons
             name="document-text-outline"
@@ -234,7 +244,7 @@ export const CampaignsScreen: React.FC = () => {
             }
             setIsCreateModalOpen(true);
           }}
-          className="flex-row items-center gap-1.5 px-4 h-10 rounded-xl flex-1 justify-center active:opacity-75 shadow-md"
+          className="flex-row items-center gap-1.5 px-4 h-10 rounded-xl flex-1 justify-center active:opacity-75 shadow-sm"
           style={{ backgroundColor: colors.primary }}
         >
           <Ionicons name="add" size={18} color="#FFFFFF" />
@@ -246,11 +256,10 @@ export const CampaignsScreen: React.FC = () => {
       <View className="flex-row gap-2.5 w-full">
         {/* Stat 1: Total Dispatch Jobs */}
         <View
-          className="flex-1 min-w-0 rounded-2xl p-3 border justify-between"
+          className="flex-1 min-w-0 rounded-2xl p-3 justify-between shadow-xs"
           style={{
             flexBasis: 0,
             backgroundColor: colors.surface,
-            borderColor: colors.border,
           }}
         >
           <Text
@@ -267,11 +276,10 @@ export const CampaignsScreen: React.FC = () => {
 
         {/* Stat 2: Completed Campaigns */}
         <View
-          className="flex-1 min-w-0 rounded-2xl p-3 border justify-between"
+          className="flex-1 min-w-0 rounded-2xl p-3 justify-between shadow-xs"
           style={{
             flexBasis: 0,
             backgroundColor: colors.surface,
-            borderColor: colors.border,
           }}
         >
           <Text
@@ -288,11 +296,10 @@ export const CampaignsScreen: React.FC = () => {
 
         {/* Stat 3: In Progress */}
         <View
-          className="flex-1 min-w-0 rounded-2xl p-3 border justify-between"
+          className="flex-1 min-w-0 rounded-2xl p-3 justify-between shadow-xs"
           style={{
             flexBasis: 0,
             backgroundColor: colors.surface,
-            borderColor: colors.border,
           }}
         >
           <Text
@@ -314,8 +321,8 @@ export const CampaignsScreen: React.FC = () => {
           Active & Historic Jobs
         </Text>
         <View
-          className="px-2 py-0.5 rounded-md border"
-          style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+          className="px-2 py-0.5 rounded-md"
+          style={{ backgroundColor: colors.surface }}
         >
           <Text
             className="text-[10px] font-bold"
@@ -336,8 +343,8 @@ export const CampaignsScreen: React.FC = () => {
       ) : campaigns.length === 0 ? (
         /* Empty State */
         <View
-          className="rounded-2xl p-8 border items-center justify-center shadow-sm"
-          style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+          className="rounded-2xl p-8 items-center justify-center shadow-xs"
+          style={{ backgroundColor: colors.surface }}
         >
           <View
             className="w-16 h-16 rounded-full items-center justify-center mb-3"
@@ -355,8 +362,8 @@ export const CampaignsScreen: React.FC = () => {
       ) : (
         /* Real Campaigns List */
         <View
-          className="rounded-2xl border overflow-hidden shadow-sm"
-          style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+          className="rounded-2xl overflow-hidden shadow-xs"
+          style={{ backgroundColor: colors.surface }}
         >
           {campaigns.map((camp, idx, arr) => {
             const status = getStatus(camp);

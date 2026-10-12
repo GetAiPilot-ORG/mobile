@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { useTheme, getColors } from "@/theme";
 import { VoiceOverview, voiceApi } from "../api/voiceApi";
+import { VoicePlanExpiredBanner } from "../components";
 import { openVoiceWebBilling } from "../utils/voiceBilling";
 
 interface Props {
@@ -132,124 +133,30 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
       </View>
 
       {/* EXPIRED PLAN NOTICE BANNER */}
-
       {data?.isPlanExpired && (
-        <View
-          className={`rounded-2xl p-4 border gap-4 ${isDark
-            ? "bg-stone-900 border-amber-500/30"
-            : "bg-amber-50 border-amber-200"
-            }`}
-        >
-          {/* Header */}
-          <View className="flex-row items-start gap-3">
-            <View
-              className={`w-10 h-10 rounded-xl items-center justify-center ${isDark ? "bg-amber-500/15" : "bg-amber-100"
-                }`}
-            >
-              <Ionicons
-                name="alert-circle-outline"
-                size={23}
-                color="#D97706"
-              />
-            </View>
-
-            <View className="flex-1 gap-1">
-              <View className="flex-row flex-wrap items-center gap-2">
-                <Text
-                  className="text-base font-bold"
-                  style={{ color: colors.text }}
-                >
-                  {data?.planName || "Voice Plan"}
-                </Text>
-
-                <View
-                  className={`px-2.5 py-1 rounded-full ${isDark ? "bg-red-500/15" : "bg-red-100"
-                    }`}
-                >
-                  <Text className="text-[10px] font-bold text-red-500">
-                    EXPIRED
-                  </Text>
-                </View>
-              </View>
-
-              <Text
-                className={`text-xs leading-5 ${isDark ? "text-stone-300" : "text-stone-600"
-                  }`}
-              >
-                Your balance of {creditDisplay} is safe. Dedicated lines
-                are paused until you renew your plan.
-              </Text>
-            </View>
-          </View>
-
-          {/* Divider */}
-          <View
-            className={`h-px ${isDark ? "bg-amber-500/20" : "bg-amber-200"
-              }`}
-          />
-
-          {/* Footer actions */}
-          <View className="flex-row items-center justify-between gap-3">
-            <Pressable
-              className={`flex-row items-center gap-1.5 px-3 py-2 rounded-xl flex-1 ${isDark ? "bg-white/5" : "bg-amber-100/70"
-                }`}
-              onPress={() => navigate("contacts")}
-            >
-              <Ionicons
-                name="phone-portrait-outline"
-                size={15}
-                color="#D97706"
-              />
-
-              <Text
-                className="text-xs font-semibold text-amber-600 flex-1"
-                numberOfLines={1}
-              >
-                {data?.expiredNumbersCount ?? 1} Inactive Line(s)
-              </Text>
-
-              <Ionicons
-                name="chevron-forward"
-                size={13}
-                color="#D97706"
-              />
-            </Pressable>
-
-            <Pressable
-              className="flex-row items-center justify-center gap-2 px-4 py-3 rounded-xl"
-              style={{ backgroundColor: colors.primary }}
-              onPress={() => openVoiceWebBilling(queryClient, isDark)}
-            >
-              <Ionicons name="refresh-circle-outline" size={16} color="#FFFFFF" />
-
-              <Text className="text-xs font-bold text-white">
-                Renew Plan
-              </Text>
-
-              <Ionicons name="arrow-forward" size={13} color="#FFFFFF" />
-            </Pressable>
-          </View>
-        </View>
+        <VoicePlanExpiredBanner
+          overview={data}
+          onNavigateToLines={() => navigate("contacts")}
+        />
       )}
 
 
       {/* 2. TOP HERO GRADIENT CARD */}
-
       <LinearGradient
         colors={["#5844E3", "#5136EE", "#3B50DF"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        className="w-full rounded-2xl p-4 shadow-lg shadow-indigo-500/20"
+        className="w-full rounded-2xl p-4 sm:p-5 shadow-md shadow-indigo-500/20"
         style={{ borderRadius: 16 }}
       >
-        <View className="flex-row items-center p-4">
+        <View className="flex-row items-center justify-between">
           {/* Active Campaigns */}
           <Pressable
-            className="flex-1 flex-row items-center gap-3 active:opacity-80"
+            className="flex-1 flex-row items-center gap-3 active:opacity-80 p-4"
             style={{ minWidth: 0 }}
             onPress={() => navigate("campaigns")}
           >
-            <View className="w-10 h-10 rounded-xl bg-white/15 items-center justify-center">
+            <View className="w-10 h-10 rounded-xl bg-white/15 items-center justify-center shrink-0">
               <Ionicons
                 name="megaphone-outline"
                 size={20}
@@ -268,7 +175,7 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
               </Text>
 
               <Text
-                className="text-white/80 text-xs font-medium mt-1"
+                className="text-white/80 text-xs font-medium mt-0.5"
                 numberOfLines={1}
               >
                 Campaigns
@@ -277,15 +184,15 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
           </Pressable>
 
           {/* Divider */}
-          <View className="w-px h-10 bg-white/25 mx-3" />
+          <View className="w-px h-10 bg-white/20 mx-3 shrink-0" />
 
           {/* AI Voice Balance */}
           <Pressable
-            className="flex-1 flex-row items-center gap-3 active:opacity-80"
+            className="flex-1 flex-row items-center gap-3 active:opacity-80 p-4"
             style={{ minWidth: 0 }}
             onPress={() => openVoiceWebBilling(queryClient, isDark)}
           >
-            <View className="w-10 h-10 rounded-xl bg-white/15 items-center justify-center">
+            <View className="w-10 h-10 rounded-xl bg-white/15 items-center justify-center shrink-0">
               <Ionicons
                 name="flash-outline"
                 size={20}
@@ -304,7 +211,7 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
               </Text>
 
               <Text
-                className="text-white/80 text-xs font-medium mt-1"
+                className="text-white/80 text-xs font-medium mt-0.5"
                 numberOfLines={1}
               >
                 AI Voice Balance
@@ -313,7 +220,6 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
           </Pressable>
         </View>
       </LinearGradient>
-
 
       {/* 3. 2x2 METRICS GRID */}
       <View className="w-full gap-3">
@@ -328,10 +234,9 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
                   onOpenCreateAssistant();
                 }
               }}
-              className="rounded-2xl p-3.5 border justify-between active:opacity-75 shadow-sm min-h-[96px]"
+              className="rounded-2xl p-3.5 justify-between active:opacity-75 shadow-xs min-h-[92px]"
               style={{
                 backgroundColor: colors.surface,
-                borderColor: colors.border,
               }}
             >
               <View className="flex-row items-center justify-between mb-2">
@@ -366,10 +271,9 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
           <View className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
             <Pressable
               onPress={() => navigate("contacts")}
-              className="rounded-2xl p-3.5 border justify-between active:opacity-75 shadow-sm min-h-[96px]"
+              className="rounded-2xl p-3.5 justify-between active:opacity-75 shadow-xs min-h-[92px]"
               style={{
                 backgroundColor: colors.surface,
-                borderColor: colors.border,
               }}
             >
               <View className="flex-row items-center justify-between mb-2">
@@ -411,10 +315,9 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
           <View className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
             <Pressable
               onPress={() => navigate("calls")}
-              className="rounded-2xl p-3.5 border justify-between active:opacity-75 shadow-sm min-h-[96px]"
+              className="rounded-2xl p-3.5 justify-between active:opacity-75 shadow-xs min-h-[92px]"
               style={{
                 backgroundColor: colors.surface,
-                borderColor: colors.border,
               }}
             >
               <View className="flex-row items-center justify-between mb-2">
@@ -453,10 +356,9 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
           <View className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
             <Pressable
               onPress={() => openVoiceWebBilling(queryClient, isDark)}
-              className="rounded-2xl p-3.5 border justify-between active:opacity-75 shadow-sm min-h-[96px]"
+              className="rounded-2xl p-3.5 justify-between active:opacity-75 shadow-xs min-h-[92px]"
               style={{
                 backgroundColor: colors.surface,
-                borderColor: colors.border,
               }}
             >
               <View className="flex-row items-center justify-between mb-2">
@@ -493,7 +395,7 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
       </View>
 
       {/* 4. QUICK ACTIONS SECTION */}
-      <View className="gap-2.5 w-full">
+      <View className="gap-2 w-full">
         <Text
           className="text-xs font-bold tracking-wider uppercase px-1"
           style={{ color: colors.textSecondary }}
@@ -504,10 +406,9 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
         <View className="flex-col gap-2.5">
           {/* Action 1: Create Assistant */}
           <Pressable
-            className="flex-row items-center justify-between w-full p-3.5 rounded-2xl border active:opacity-75 shadow-sm shadow-black/5"
+            className="flex-row items-center justify-between w-full p-3.5 rounded-2xl active:opacity-80 shadow-xs"
             style={{
               backgroundColor: colors.surface,
-              borderColor: colors.border,
             }}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -551,10 +452,9 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
 
           {/* Action 2: Start Campaign */}
           <Pressable
-            className="flex-row items-center justify-between w-full p-3.5 rounded-2xl border active:opacity-75 shadow-sm shadow-black/5"
+            className="flex-row items-center justify-between w-full p-3.5 rounded-2xl active:opacity-80 shadow-xs"
             style={{
               backgroundColor: colors.surface,
-              borderColor: colors.border,
             }}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -607,10 +507,9 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
 
           {/* Action 3: View Call Logs */}
           <Pressable
-            className="flex-row items-center justify-between w-full p-3.5 rounded-2xl border active:opacity-75 shadow-sm shadow-black/5"
+            className="flex-row items-center justify-between w-full p-3.5 rounded-2xl active:opacity-80 shadow-xs"
             style={{
               backgroundColor: colors.surface,
-              borderColor: colors.border,
             }}
             onPress={() => navigate("calls")}
           >
