@@ -29,14 +29,20 @@ export const WhatsAppMetricCard: React.FC<WhatsAppMetricCardProps> = ({
 
   return (
     <View
-      className={`flex-1 w-full min-w-0 rounded-2xl p-3 sm:p-3.5 border justify-between shadow-sm ${
-        isDark ? 'bg-[#1C1C1E] border-[#2C2C2E]' : 'bg-white border-[#E5E7EB]'
+      className={`flex-1 w-full min-w-0 rounded-2xl p-3 sm:p-3.5 justify-between shadow-sm ${
+        isDark ? 'bg-[#1C1C1E]' : 'bg-white'
       }`}
       style={{
         flexBasis: Platform.OS === 'web' ? 'auto' : 0,
         minHeight: Platform.OS === 'web' ? 96 : 88,
         backgroundColor: colors.card,
-        borderColor: colors.cardBorder,
+        borderWidth: 0,
+        borderColor: 'transparent',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: isDark ? 0.25 : 0.05,
+        shadowRadius: 4,
       }}
     >
       {/* Top row with Label & Icon badge */}

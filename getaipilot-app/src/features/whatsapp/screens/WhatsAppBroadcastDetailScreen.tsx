@@ -86,11 +86,12 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
             Broadcast campaign not found
           </Text>
           <Pressable
-            className={`flex-row items-center px-4 py-2.5 rounded-full border mt-3.5 active:opacity-75 ${
+            className={`flex-row items-center px-4 py-2.5 rounded-full mt-3.5 active:opacity-75 shadow-sm ${
               isDark
-                ? "bg-[#1C1C1E] border-[#2C2C2E]"
-                : "bg-white border-[#E5E7EB]"
+                ? "bg-[#1C1C1E]"
+                : "bg-white"
             }`}
+            style={{ borderWidth: 0, elevation: 1 }}
             onPress={handleBack}
           >
             <Ionicons
@@ -119,32 +120,32 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
 
   const statusBg = isCompleted
     ? isDark
-      ? "rgba(52, 199, 89, 0.16)"
-      : "rgba(52, 199, 89, 0.12)"
+      ? "rgba(37, 211, 102, 0.16)"
+      : "rgba(37, 211, 102, 0.10)"
     : isQueued
       ? isDark
         ? "rgba(10, 132, 255, 0.16)"
-        : "rgba(0, 122, 255, 0.12)"
+        : "rgba(0, 122, 255, 0.10)"
       : isScheduled
         ? isDark
-          ? "rgba(255, 159, 10, 0.16)"
-          : "rgba(255, 149, 0, 0.12)"
+          ? "rgba(251, 191, 36, 0.16)"
+          : "rgba(217, 119, 6, 0.10)"
         : isDark
           ? "rgba(255, 69, 58, 0.16)"
-          : "rgba(255, 59, 48, 0.12)";
+          : "rgba(220, 38, 38, 0.10)";
 
   const statusText = isCompleted
     ? isDark
-      ? "#30D158"
-      : "#248A3D"
+      ? "#25D366"
+      : "#075E54"
     : isQueued
       ? isDark
         ? "#0A84FF"
         : "#007AFF"
       : isScheduled
         ? isDark
-          ? "#FF9F0A"
-          : "#D97706"
+          ? "#FBBF24"
+          : "#B45309"
         : isDark
           ? "#FF453A"
           : "#DC2626";
@@ -177,15 +178,15 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
       label: `Delivered (${deliveryRate}%)`,
       value: broadcast.delivered_count.toLocaleString(),
       icon: "checkmark-done-outline" as const,
-      iconColor: isDark ? "#30D158" : "#248A3D",
-      bgColor: isDark ? "rgba(52, 199, 89, 0.12)" : "rgba(52, 199, 89, 0.08)",
+      iconColor: isDark ? "#25D366" : "#075E54",
+      bgColor: isDark ? "rgba(37, 211, 102, 0.16)" : "rgba(37, 211, 102, 0.10)",
     },
     {
       label: `Read / Opened (${readRate}%)`,
       value: broadcast.read_count.toLocaleString(),
       icon: "mail-open-outline" as const,
       iconColor: isDark ? "#38BDF8" : "#0284C7",
-      bgColor: isDark ? "rgba(56, 189, 248, 0.12)" : "rgba(2, 132, 199, 0.08)",
+      bgColor: isDark ? "rgba(56, 189, 248, 0.16)" : "rgba(2, 132, 199, 0.08)",
     },
     ...(broadcast.failed_count > 0
       ? [
@@ -210,38 +211,42 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
     >
       {/* Header */}
       <View
-        className={`flex-row items-center px-4 py-3 border-b ${
-          isDark
-            ? "bg-black border-white/[0.08]"
-            : "bg-white border-black/[0.06]"
+        className={`flex-row items-center px-4 py-3.5 shadow-sm ${
+          isDark ? "bg-[#1F2C34]" : "bg-[#075E54]"
         }`}
+        style={{
+          borderBottomWidth: 0,
+          elevation: 4,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.15,
+          shadowRadius: 4,
+        }}
       >
         <View className="flex-row items-center flex-1">
           <Pressable
-            className={`w-10 h-10 rounded-full justify-center items-center mr-3 border active:opacity-70 active:scale-95 shadow-sm ${
-              isDark
-                ? "bg-[#1C1C1E] border-[#2C2C2E]"
-                : "bg-white border-[#E5E7EB]"
-            }`}
+            className="w-9 h-9 rounded-full justify-center items-center mr-3 active:opacity-70 active:scale-95 bg-white/15"
             onPress={handleBack}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Back"
+            style={{ borderWidth: 0 }}
           >
             <Ionicons
               name="chevron-back"
               size={20}
-              color={isDark ? "#F8FAFC" : "#0F172A"}
+              color="#FFFFFF"
             />
           </Pressable>
-          <Text
-            className={`text-xl font-bold tracking-tight flex-1 ${
-              isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
-            }`}
-            numberOfLines={1}
-          >
-            {broadcast.name}
-          </Text>
+          <View className="flex-row items-center gap-2 flex-1">
+            <Ionicons name="logo-whatsapp" size={22} color="#25D366" />
+            <Text
+              className="text-lg font-bold tracking-tight text-white flex-1"
+              numberOfLines={1}
+            >
+              {broadcast.name}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -250,11 +255,19 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
         contentContainerStyle={{ padding: 16, paddingBottom: 130 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Campaign Summary Card */}
+        {/* Campaign Summary Card (Borderless) */}
         <View
-          className={`rounded-2xl p-4 border mb-4 shadow-sm ${
-            isDark ? "bg-[#1C1C1E] border-[#2C2C2E]" : "bg-white border-[#E5E7EB]"
+          className={`rounded-2xl p-4 mb-4 shadow-sm ${
+            isDark ? "bg-[#1C1C1E]" : "bg-white"
           }`}
+          style={{
+            borderWidth: 0,
+            elevation: 2,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: isDark ? 0.25 : 0.05,
+            shadowRadius: 4,
+          }}
         >
           <View className="flex-row justify-between items-center mb-2">
             <Text
@@ -290,69 +303,82 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
         </View>
 
         {/* Funnel Telemetry Breakdown */}
-        <Text
-          className={`text-xs font-semibold tracking-wider uppercase mb-2 ml-1 ${
-            isDark ? "text-[#8E8E93]" : "text-[#64748B]"
-          }`}
-        >
-          Delivery Funnel
-        </Text>
+        <View className="mb-2 ml-1 flex-row items-center gap-1.5">
+          <View className="w-1.5 h-3.5 rounded-full bg-[#25D366]" />
+          <Text
+            className={`text-xs font-bold tracking-wider uppercase ${
+              isDark ? "text-emerald-400" : "text-[#075E54]"
+            }`}
+          >
+            Delivery Funnel
+          </Text>
+        </View>
         <View
-          className={`rounded-2xl border mb-5 shadow-sm overflow-hidden ${
-            isDark ? "bg-[#1C1C1E] border-[#2C2C2E]" : "bg-white border-[#E5E7EB]"
+          className={`rounded-2xl mb-5 shadow-sm overflow-hidden ${
+            isDark ? "bg-[#1C1C1E]" : "bg-white"
           }`}
+          style={{
+            borderWidth: 0,
+            elevation: 2,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: isDark ? 0.25 : 0.05,
+            shadowRadius: 4,
+          }}
         >
-          {funnelSteps.map((step, index) => (
-            <React.Fragment key={step.label}>
-              <View className="flex-row items-center p-3.5">
-                <View
-                  className="w-9 h-9 rounded-xl items-center justify-center mr-3"
-                  style={{ backgroundColor: step.bgColor }}
-                >
-                  <Ionicons name={step.icon} size={18} color={step.iconColor} />
-                </View>
-                <View className="flex-1">
-                  <Text
-                    className={`text-sm font-semibold ${
-                      isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
-                    }`}
-                  >
-                    {step.label}
-                  </Text>
-                </View>
+          {funnelSteps.map((step) => (
+            <View key={step.label} className="flex-row items-center p-3.5">
+              <View
+                className="w-9 h-9 rounded-xl items-center justify-center mr-3"
+                style={{ backgroundColor: step.bgColor }}
+              >
+                <Ionicons name={step.icon} size={18} color={step.iconColor} />
+              </View>
+              <View className="flex-1">
                 <Text
-                  className={`text-base font-bold ${
+                  className={`text-sm font-semibold ${
                     isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
                   }`}
                 >
-                  {step.value}
+                  {step.label}
                 </Text>
               </View>
-              {index < funnelSteps.length - 1 && (
-                <View
-                  className={`h-[1px] ml-15 ${
-                    isDark ? "bg-white/[0.08]" : "bg-black/[0.06]"
-                  }`}
-                />
-              )}
-            </React.Fragment>
+              <Text
+                className={`text-base font-bold ${
+                  isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
+                }`}
+              >
+                {step.value}
+              </Text>
+            </View>
           ))}
         </View>
 
-        {/* Campaign Metadata Details */}
-        <Text
-          className={`text-xs font-semibold tracking-wider uppercase mb-2 ml-1 ${
-            isDark ? "text-[#8E8E93]" : "text-[#64748B]"
-          }`}
-        >
-          Campaign Details
-        </Text>
+        {/* Campaign Metadata Details (Borderless) */}
+        <View className="mb-2 ml-1 flex-row items-center gap-1.5">
+          <View className="w-1.5 h-3.5 rounded-full bg-[#25D366]" />
+          <Text
+            className={`text-xs font-bold tracking-wider uppercase ${
+              isDark ? "text-emerald-400" : "text-[#075E54]"
+            }`}
+          >
+            Campaign Details
+          </Text>
+        </View>
         <View
-          className={`rounded-2xl border mb-8 shadow-sm overflow-hidden ${
-            isDark ? "bg-[#1C1C1E] border-[#2C2C2E]" : "bg-white border-[#E5E7EB]"
+          className={`rounded-2xl mb-8 p-1.5 shadow-sm overflow-hidden ${
+            isDark ? "bg-[#1C1C1E]" : "bg-white"
           }`}
+          style={{
+            borderWidth: 0,
+            elevation: 2,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: isDark ? 0.25 : 0.05,
+            shadowRadius: 4,
+          }}
         >
-          <View className="flex-row justify-between items-center p-3.5">
+          <View className="flex-row justify-between items-center p-3">
             <Text className={`text-xs font-medium ${isDark ? "text-[#94A3B8]" : "text-[#64748B]"}`}>
               Audience Segment
             </Text>
@@ -360,9 +386,8 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
               {broadcast.audience_tag || "All Contacts"}
             </Text>
           </View>
-          <View className={`h-[1px] ${isDark ? "bg-white/[0.08]" : "bg-black/[0.06]"}`} />
 
-          <View className="flex-row justify-between items-center p-3.5">
+          <View className="flex-row justify-between items-center p-3">
             <Text className={`text-xs font-medium ${isDark ? "text-[#94A3B8]" : "text-[#64748B]"}`}>
               Audience Type
             </Text>
@@ -373,9 +398,8 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
                 : "Custom"}
             </Text>
           </View>
-          <View className={`h-[1px] ${isDark ? "bg-white/[0.08]" : "bg-black/[0.06]"}`} />
 
-          <View className="flex-row justify-between items-center p-3.5">
+          <View className="flex-row justify-between items-center p-3">
             <Text className={`text-xs font-medium ${isDark ? "text-[#94A3B8]" : "text-[#64748B]"}`}>
               Cost Incurred
             </Text>
@@ -388,9 +412,8 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
               ).toFixed(2)}
             </Text>
           </View>
-          <View className={`h-[1px] ${isDark ? "bg-white/[0.08]" : "bg-black/[0.06]"}`} />
 
-          <View className="flex-row justify-between items-center p-3.5">
+          <View className="flex-row justify-between items-center p-3">
             <Text className={`text-xs font-medium ${isDark ? "text-[#94A3B8]" : "text-[#64748B]"}`}>
               Created At
             </Text>

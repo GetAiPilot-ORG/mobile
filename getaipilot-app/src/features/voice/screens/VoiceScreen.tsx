@@ -167,36 +167,65 @@ export const VoiceScreen: React.FC = () => {
 
   return (
     <AppScreen safeArea={false}>
-      {/* 1. TOP HEADER */}
+      {/* 1. TOP HEADER BANNER (Like WhatsApp Suite) */}
       <View
-        className="flex-row items-center justify-between px-4 pb-2 w-full max-w-[1100px] self-center"
+        className="px-4 pb-3.5 shadow-sm w-full"
         style={{
           paddingTop: topPadding,
-          backgroundColor: colors.headerBg,
+          backgroundColor: isDark
+            ? (themeColors.products?.voiceHeader || "#1C162E")
+            : (themeColors.products?.voiceHeader || "#4C1D95"),
+          borderBottomWidth: 0,
+          elevation: 4,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.15,
+          shadowRadius: 4,
         }}
       >
-        <View className="flex-row items-center gap-1.5">
-          <Pressable
-            onPress={handleBack}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            className="w-10 h-10 rounded-full justify-center items-center mr-2 active:opacity-70 active:scale-95 shadow-xs"
-            style={{
-              backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-            }}
-          >
-            <Ionicons
-              name="chevron-back"
-              size={20}
-              color={colors.text}
-            />
-          </Pressable>
-
-          <View className="justify-center">
-            <Text
-              className="text-xl font-extrabold tracking-tight"
-              style={{ color: colors.text }}
+        <View className="flex-row items-center justify-between w-full max-w-[1100px] self-center">
+          <View className="flex-row items-center flex-1 mr-2">
+            <Pressable
+              onPress={handleBack}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              className="w-9 h-9 rounded-full justify-center items-center mr-3 active:opacity-70 active:scale-95 bg-white/15"
+              style={{ borderWidth: 0 }}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
             >
-              Voice Pilot
+              <Ionicons
+                name="chevron-back"
+                size={20}
+                color="#FFFFFF"
+              />
+            </Pressable>
+
+            <View className="flex-row items-center gap-2.5 flex-1 min-w-0">
+              <View className="w-8 h-8 rounded-full bg-white/20 items-center justify-center shrink-0">
+                <Ionicons name="call" size={17} color="#E9D5FF" />
+              </View>
+              <View className="flex-1 min-w-0">
+                <Text
+                  className="text-lg font-bold tracking-tight text-white"
+                  numberOfLines={1}
+                >
+                  Voice Pilot
+                </Text>
+                <Text
+                  className="text-[11px] text-purple-200/90 font-medium"
+                  numberOfLines={1}
+                >
+                  AI Telephony & Voice Agents
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Right Live Gateway Status Pill */}
+          <View className="flex-row items-center gap-1.5 bg-white/15 px-2.5 py-1 rounded-full shrink-0">
+            <View className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <Text className="text-[11px] font-bold text-white">
+              Gateway Live
             </Text>
           </View>
         </View>
@@ -233,7 +262,7 @@ export const VoiceScreen: React.FC = () => {
           items={VOICE_TABS}
           activeKey={activeTab}
           onChangeTab={(key) => setActiveTab(key as VoiceTabKey)}
-          accentColor="#5844E3"
+          accentColor={themeColors.products?.voice || "#A855F7"}
           moreMenuTitle="Voice Navigation"
         />
       </View>

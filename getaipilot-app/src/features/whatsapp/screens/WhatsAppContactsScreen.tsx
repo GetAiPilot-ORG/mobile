@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   FlatList,
   Modal,
@@ -39,13 +39,15 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
   const user = useAuthStore((s) => s.user);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTag, setSelectedTag] = useState<string | undefined>(undefined);
+  const [activeFilter, setActiveFilter] = useState<string>("ALL");
   const [activeConversation, setActiveConversation] =
     useState<NormalizedConversation | null>(null);
 
   const { data, isLoading, refetch, isRefetching } = useWhatsAppContacts({
     search: searchQuery || undefined,
-    tag: selectedTag,
+    tag: !["ALL", "UNREAD", "UNASSIGNED", "MINE"].includes(activeFilter)
+      ? activeFilter
+      : undefined,
     limit: 250,
   });
 
@@ -112,15 +114,69 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
     }
   };
 
-  const contacts = data?.contacts || [];
-  const tags = [
-    "All",
-    ...Array.from(
-      new Set(
-        contacts.flatMap((c) => c.tags || [])
-      )
-    ),
-  ];
+  const CONTACT_TABS = [
+    { id: "ALL", label: "All Chats" },
+    { id: "UNREAD", label: "Unread" },
+    { id: "UNASSIGNED", label: "Unassigned" },
+    { id: "MINE", label: "Assigned to Me" },
+  ] as const;
+
+  const rawContacts = data?.contacts || [];
+
+  const contactTags = useMemo(() => {
+    return Array.from(
+      new Set(rawContacts.flatMap((c) => c.tags || []))
+    ).filter(
+      (t) =>
+        ![
+          "all",
+          "all chats",
+          "unread",
+          "unassigned",
+          "assigned to me",
+          "mine",
+        ].includes(t.toLowerCase())
+    );
+  }, [rawContacts]);
+
+  const allTabs = useMemo(() => [
+    ...CONTACT_TABS,
+    ...contactTags.map((tag) => ({
+      id: tag,
+      label: tag.charAt(0).toUpperCase() + tag.slice(1),
+    })),
+  ], [contactTags]);
+
+  const filteredContacts = useMemo(() => {
+    if (activeFilter === "ALL") return rawContacts;
+    if (activeFilter === "UNREAD") {
+      const list = rawContacts.filter((c) =>
+        c.tags?.some((t) => t.toLowerCase() === "unread")
+      );
+      return list.length > 0 ? list : rawContacts;
+    }
+    if (activeFilter === "UNASSIGNED") {
+      const list = rawContacts.filter(
+        (c) =>
+          !c.crm_lead_id ||
+          c.tags?.some((t) => t.toLowerCase() === "unassigned")
+      );
+      return list.length > 0 ? list : rawContacts;
+    }
+    if (activeFilter === "MINE") {
+      const list = rawContacts.filter(
+        (c) =>
+          Boolean(c.crm_lead_id) ||
+          c.tags?.some((t) =>
+            ["mine", "assigned", "crm"].includes(t.toLowerCase())
+          )
+      );
+      return list.length > 0 ? list : rawContacts;
+    }
+    return rawContacts.filter((c) =>
+      c.tags?.some((t) => t.toLowerCase() === activeFilter.toLowerCase())
+    );
+  }, [rawContacts, activeFilter]);
 
   return (
     <SafeAreaView
@@ -129,50 +185,60 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
       style={{ backgroundColor: color.background }}
     >
       <View className="flex-1">
-        {/* Header matching Overview Tab */}
+        {/* Header matching WhatsApp Suite */}
         <View
-          className={`flex-row items-center px-4 py-3 border-b ${
-            isDark
-              ? "bg-black border-white/[0.08]"
-              : "bg-white border-black/[0.06]"
+          className={`flex-row items-center px-4 py-3.5 shadow-sm ${
+            isDark ? "bg-[#1F2C34]" : "bg-[#075E54]"
           }`}
+          style={{
+            borderBottomWidth: 0,
+            elevation: 4,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.15,
+            shadowRadius: 4,
+          }}
         >
           <View className="flex-row items-center flex-1">
             <Pressable
-              className={`w-10 h-10 rounded-full justify-center items-center mr-3 border active:opacity-70 active:scale-95 shadow-sm ${
-                isDark
-                  ? "bg-[#1C1C1E] border-[#2C2C2E]"
-                  : "bg-white border-[#E5E7EB]"
-              }`}
+              className="w-9 h-9 rounded-full justify-center items-center mr-3 active:opacity-70 active:scale-95 bg-white/15"
               onPress={handleBack}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityRole="button"
               accessibilityLabel="Back"
+              style={{ borderWidth: 0 }}
             >
               <Ionicons
                 name="chevron-back"
                 size={20}
-                color={isDark ? "#F8FAFC" : "#0F172A"}
+                color="#FFFFFF"
               />
             </Pressable>
-            <Text
-              className={`text-xl font-bold tracking-tight ${
-                isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
-              }`}
-            >
-              WhatsApp Contacts
-            </Text>
+            <View className="flex-row items-center gap-2">
+              <Ionicons name="logo-whatsapp" size={22} color="#25D366" />
+              <Text className="text-lg font-bold tracking-tight text-white">
+                WhatsApp Contacts
+              </Text>
+            </View>
           </View>
         </View>
 
-        {/* Search Bar */}
+        {/* Search Bar (Borderless) */}
         <View className="px-4 pt-3 pb-1.5">
           <View
-            className={`flex-row items-center rounded-xl px-3 h-10 border ${
+            className={`flex-row items-center rounded-xl px-3 h-10 shadow-sm ${
               isDark
-                ? "bg-[#1C1C1E] border-[#2C2C2E]"
-                : "bg-[#F2F2F7] border-[#E5E7EB]"
+                ? "bg-[#1C1C1E]"
+                : "bg-white"
             }`}
+            style={{
+              borderWidth: 0,
+              elevation: 1.5,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: isDark ? 0.25 : 0.04,
+              shadowRadius: 3,
+            }}
           >
             <Ionicons
               name="search"
@@ -202,57 +268,78 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
           </View>
         </View>
 
-        {/* Tag Filters */}
-        <View className="py-1.5 mb-1.5">
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{
-              paddingHorizontal: 16,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            {tags.map((item) => {
-              const isSelected =
-                item === "All" ? !selectedTag : selectedTag === item;
-              return (
-                <Pressable
-                  key={item}
-                  className={`px-4 py-1.5 rounded-full border items-center justify-center active:opacity-80 ${
-                    isSelected
-                      ? isDark
-                        ? "bg-white border-white"
-                        : "bg-black border-black"
-                      : isDark
-                      ? "bg-[#1C1C1E] border-[#2C2C2E]"
-                      : "bg-[#F2F2F7] border-[#E5E7EB]"
-                  }`}
-                  onPress={() => {
-                    if (Platform.OS !== "web") {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }
-                    setSelectedTag(item === "All" ? undefined : item);
-                  }}
-                >
-                  <Text
-                    className={`text-xs font-semibold tracking-tight ${
-                      isSelected
-                        ? isDark
-                          ? "text-black font-bold"
-                          : "text-white font-bold"
-                        : isDark
-                        ? "text-[#8E8E93]"
-                        : "text-[#6B7280]"
-                    }`}
+        {/* Folder-Style Status Filter Tab Bar (WhatsApp Green from color.ts) */}
+        <View className="px-4 pt-1 mb-2">
+          <View style={{ position: "relative" }}>
+            {/* Continuous baseline across full width in WhatsApp Green */}
+            <View
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 1.5,
+                backgroundColor: color.products.whatsapp,
+              }}
+            />
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 2 }}
+            >
+              {allTabs.map((tab) => {
+                const isActive = activeFilter === tab.id;
+                const activeColor = isDark
+                  ? color.products.whatsapp
+                  : (color.products.whatsappDark || "#075E54");
+
+                return (
+                  <Pressable
+                    key={tab.id}
+                    onPress={() => {
+                      if (Platform.OS !== "web") {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }
+                      setActiveFilter(tab.id);
+                    }}
+                    style={{
+                      height: 40,
+                      paddingHorizontal: 13,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderTopLeftRadius: isActive ? 10 : 0,
+                      borderTopRightRadius: isActive ? 10 : 0,
+                      borderTopWidth: 1.5,
+                      borderLeftWidth: 1.5,
+                      borderRightWidth: 1.5,
+                      borderBottomWidth: 1.5,
+                      borderTopColor: isActive ? color.products.whatsapp : "transparent",
+                      borderLeftColor: isActive ? color.products.whatsapp : "transparent",
+                      borderRightColor: isActive ? color.products.whatsapp : "transparent",
+                      borderBottomColor: isActive ? color.background : "transparent",
+                      backgroundColor: isActive ? color.background : "transparent",
+                      zIndex: isActive ? 2 : 1,
+                    }}
                   >
-                    {item}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        fontSize: 13,
+                        fontWeight: isActive ? "600" : "500",
+                        letterSpacing: -0.1,
+                        color: isActive
+                          ? activeColor
+                          : (color.textSecondary || (isDark ? "#94A3B8" : "#64748B")),
+                      }}
+                    >
+                      {tab.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
         </View>
 
         {/* Contacts List */}
@@ -261,7 +348,7 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
         ) : (
           <FlatList
             className="flex-1"
-            data={contacts}
+            data={filteredContacts}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <ContactCard contact={item} onOpenChat={handleOpenChat} />
@@ -275,7 +362,7 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
               <RefreshControl
                 refreshing={isRefetching}
                 onRefresh={refetch}
-                tintColor={isDark ? "#FFFFFF" : "#0A84FF"}
+                tintColor="#25D366"
               />
             }
             ListEmptyComponent={

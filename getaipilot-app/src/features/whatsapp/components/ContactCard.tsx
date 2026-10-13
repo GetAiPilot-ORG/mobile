@@ -19,21 +19,29 @@ export const ContactCard: React.FC<ContactCardProps> = ({
 
   return (
     <Pressable
-      className={`w-full rounded-2xl p-3.5 border mb-2.5 active:opacity-75 active:scale-[0.99] shadow-sm ${
-        isDark ? 'bg-[#1C1C1E] border-[#2C2C2E]' : 'bg-white border-[#E5E7EB]'
+      className={`w-full rounded-2xl p-3.5 mb-2.5 active:opacity-75 active:scale-[0.99] shadow-sm ${
+        isDark ? 'bg-[#1C1C1E]' : 'bg-white'
       }`}
+      style={{
+        borderWidth: 0,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: isDark ? 0.25 : 0.05,
+        shadowRadius: 4,
+      }}
       onPress={() => onOpenChat && onOpenChat(contact)}
     >
       <View className="flex-row items-center">
-        {/* iOS Refined Initials Avatar */}
+        {/* Initials Avatar with WhatsApp theme */}
         <View
           className={`w-10 h-10 rounded-full justify-center items-center mr-3 ${
-            isDark ? 'bg-[#0A84FF]/20' : 'bg-[#007AFF]/10'
+            isDark ? 'bg-[#25D366]/20' : 'bg-[#25D366]/12'
           }`}
         >
           <Text
             className={`text-base font-bold ${
-              isDark ? 'text-[#0A84FF]' : 'text-[#007AFF]'
+              isDark ? 'text-[#25D366]' : 'text-[#075E54]'
             }`}
           >
             {initial}
@@ -61,18 +69,18 @@ export const ContactCard: React.FC<ContactCardProps> = ({
         {onOpenChat ? (
           <View
             className={`flex-row items-center px-3 py-1.5 rounded-full ${
-              isDark ? 'bg-[#0A84FF]/20' : 'bg-[#007AFF]/10'
+              isDark ? 'bg-[#25D366]/20' : 'bg-[#25D366]/12'
             }`}
           >
             <Ionicons
               name="chatbubble-ellipses-outline"
               size={15}
-              color={isDark ? '#0A84FF' : '#007AFF'}
+              color={isDark ? '#25D366' : '#075E54'}
               style={{ marginRight: 4 }}
             />
             <Text
               className={`text-xs font-semibold ${
-                isDark ? 'text-[#0A84FF]' : 'text-[#007AFF]'
+                isDark ? 'text-[#25D366]' : 'text-[#075E54]'
               }`}
             >
               Chat

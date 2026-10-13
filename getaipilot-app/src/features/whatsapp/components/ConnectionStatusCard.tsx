@@ -41,33 +41,41 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
 
   return (
     <View
-      className={`w-full rounded-2xl p-4 border mb-3 shadow-sm ${
-        isDark ? 'bg-[#1C1C1E] border-[#2C2C2E]' : 'bg-white border-[#E5E7EB]'
+      className={`w-full rounded-2xl p-4 mb-3 shadow-sm ${
+        isDark ? 'bg-[#1C1C1E]' : 'bg-white'
       }`}
+      style={{
+        borderWidth: 0,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: isDark ? 0.25 : 0.05,
+        shadowRadius: 4,
+      }}
     >
       {/* Profile & Connection Info Header */}
       <View className="flex-row items-center mb-3.5">
-        {/* iOS Avatar with Live Connection Dot */}
+        {/* Avatar with Live Connection Dot */}
         <View className="relative mr-3">
           <View
-            className={`w-11 h-11 rounded-xl justify-center items-center border ${
+            className={`w-11 h-11 rounded-xl justify-center items-center ${
               isDark
-                ? 'bg-emerald-500/15 border-emerald-500/25'
-                : 'bg-emerald-500/10 border-emerald-500/20'
+                ? 'bg-[#25D366]/15'
+                : 'bg-[#25D366]/10'
             }`}
           >
             <Ionicons
               name="logo-whatsapp"
               size={24}
-              color={isConnected ? '#22C55E' : isDark ? '#8E8E93' : '#64748B'}
+              color={isConnected ? '#25D366' : isDark ? '#8E8E93' : '#64748B'}
             />
           </View>
           {/* Live Online / Connected Indicator Ring */}
           <View
-            className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 ${
-              isDark ? 'border-[#1C1C1E]' : 'border-white'
+            className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ${
+              isDark ? 'border-2 border-[#1C1C1E]' : 'border-2 border-white'
             }`}
-            style={{ backgroundColor: isConnected ? '#22C55E' : '#EF4444' }}
+            style={{ backgroundColor: isConnected ? '#25D366' : '#EF4444' }}
           />
         </View>
 
@@ -82,7 +90,7 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
             >
               {connection?.display_name || (isConnected ? 'WhatsApp Business' : 'No Active Connection')}
             </Text>
-            {isConnected && <Ionicons name="checkmark-circle" size={15} color="#0084FF" />}
+            {isConnected && <Ionicons name="checkmark-circle" size={15} color="#25D366" />}
           </View>
 
           <View className="flex-row items-center gap-1.5">
@@ -115,7 +123,7 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
 
             <Text
               className="text-xs font-semibold tracking-tight"
-              style={{ color: isConnected ? '#22C55E' : '#EF4444' }}
+              style={{ color: isConnected ? '#25D366' : '#EF4444' }}
             >
               {isConnected ? 'Connected' : 'Disconnected'}
             </Text>
@@ -125,15 +133,15 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
         {/* Switch Account Action if multiple numbers */}
         {hasMultipleAccounts && onSwitchAccountPress && (
           <Pressable
-            className={`flex-row items-center gap-1 px-2 py-1.5 rounded-lg active:opacity-70 ${
-              isDark ? 'bg-[#0A84FF]/15' : 'bg-[#007AFF]/10'
+            className={`flex-row items-center gap-1 px-2.5 py-1.5 rounded-lg active:opacity-70 ${
+              isDark ? 'bg-[#25D366]/15' : 'bg-[#25D366]/10'
             }`}
             onPress={onSwitchAccountPress}
           >
-            <Ionicons name="swap-horizontal" size={14} color={isDark ? '#0A84FF' : '#007AFF'} />
+            <Ionicons name="swap-horizontal" size={14} color={isDark ? '#25D366' : '#075E54'} />
             <Text
               className={`text-xs font-semibold ${
-                isDark ? 'text-[#0A84FF]' : 'text-[#007AFF]'
+                isDark ? 'text-[#25D366]' : 'text-[#075E54]'
               }`}
             >
               Switch
@@ -142,13 +150,9 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
         )}
       </View>
 
-      {/* SLA / Connection Notice Row */}
+      {/* SLA / Connection Notice Row (Borderless) */}
       {isConnected ? (
-        <View
-          className={`flex-row justify-between items-center border-t pt-2.5 ${
-            isDark ? 'border-[#2C2C2E]' : 'border-[#E5E7EB]'
-          }`}
-        >
+        <View className="flex-row justify-between items-center pt-2.5">
           <View className="flex-row items-center gap-1.5">
             <Ionicons name="speedometer-outline" size={13} color={isDark ? '#64748B' : '#94A3B8'} />
             <Text className={`text-xs ${isDark ? 'text-[#8E8E93]' : 'text-[#64748B]'}`}>
@@ -159,18 +163,14 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
             </Text>
           </View>
 
-          <View className="bg-indigo-500/10 px-2 py-0.5 rounded-md">
-            <Text className="text-indigo-400 text-[10.5px] font-semibold tracking-tight">
+          <View className={`px-2 py-0.5 rounded-md ${isDark ? 'bg-[#25D366]/15' : 'bg-[#075E54]/10'}`}>
+            <Text className={`text-[10.5px] font-semibold tracking-tight ${isDark ? 'text-[#25D366]' : 'text-[#075E54]'}`}>
               Meta Cloud API
             </Text>
           </View>
         </View>
       ) : (
-        <View
-          className={`flex-row items-center border-t pt-2.5 ${
-            isDark ? 'border-[#2C2C2E]' : 'border-[#E5E7EB]'
-          }`}
-        >
+        <View className="flex-row items-center pt-2.5">
           <Ionicons name="information-circle" size={14} color="#EF4444" style={{ marginRight: 6 }} />
           <Text
             className={`text-xs leading-4 flex-1 ${

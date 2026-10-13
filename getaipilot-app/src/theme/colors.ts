@@ -84,6 +84,9 @@ export const colors = {
 
     voice: '#A855F7',
     voiceDark: '#7E22CE',
+    voiceHeader: '#4C1D95',
+    voiceBanner: '#3B0764',
+    voiceCard: '#FFFFFF',
     voiceSoft: 'rgba(168, 85, 247, 0.10)',
 
     social: '#E1306C',
@@ -204,9 +207,15 @@ export const getColors = (isDark: boolean) => ({
 
     voice: '#A855F7',
     voiceDark: '#7E22CE',
+    voiceHeader: isDark ? '#1C162E' : '#4C1D95',
+    voiceBanner: isDark ? '#151022' : '#3B0764',
+    voiceCard: isDark ? '#1C152C' : '#FFFFFF',
     voiceSoft: isDark
       ? 'rgba(168, 85, 247, 0.16)'
       : 'rgba(168, 85, 247, 0.10)',
+    voiceMuted: isDark ? '#2E2248' : '#F5F3FF',
+    voiceAccent: '#9333EA',
+    voiceBorder: isDark ? 'rgba(168, 85, 247, 0.20)' : 'rgba(168, 85, 247, 0.12)',
 
     social: '#E1306C',
     socialDark: '#C13584',

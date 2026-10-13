@@ -29,9 +29,17 @@ export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading, isConnec
 
   return (
     <View
-      className={`w-full rounded-2xl p-4 border mb-3 shadow-sm ${
-        isDark ? 'bg-[#1C1C1E] border-[#2C2C2E]' : 'bg-white border-[#E5E7EB]'
+      className={`w-full rounded-2xl p-4 mb-3 shadow-sm ${
+        isDark ? 'bg-[#1C1C1E]' : 'bg-white'
       }`}
+      style={{
+        borderWidth: 0,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: isDark ? 0.25 : 0.05,
+        shadowRadius: 4,
+      }}
     >
       {/* Wallet Top Header */}
       <View className="flex-row items-center justify-between mb-1.5">
@@ -51,14 +59,14 @@ export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading, isConnec
         <View className="flex-row items-center gap-1.5">
           <View
             className="w-1.5 h-1.5 rounded-full"
-            style={{ backgroundColor: isConnected ? '#22C55E' : isDark ? '#636366' : '#94A3B8' }}
+            style={{ backgroundColor: isConnected ? '#25D366' : isDark ? '#636366' : '#94A3B8' }}
           />
           <Text
-            className={`text-xs font-medium ${
+            className={`text-xs font-semibold ${
               isConnected
                 ? isDark
-                  ? 'text-emerald-400'
-                  : 'text-emerald-600'
+                  ? 'text-[#25D366]'
+                  : 'text-[#075E54]'
                 : isDark
                 ? 'text-[#8E8E93]'
                 : 'text-[#64748B]'
@@ -80,13 +88,14 @@ export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading, isConnec
         </Text>
       </View>
 
-      {/* Sleek Integrated Stats Bar */}
+      {/* Sleek Borderless Stats Bar */}
       <View
-        className={`flex-row items-center rounded-xl py-2.5 px-1 border ${
+        className={`flex-row items-center rounded-xl py-2.5 px-1 ${
           isDark
-            ? 'bg-[#121214] border-white/[0.05]'
-            : 'bg-[#F8F9FA] border-[#F2F4F7]'
+            ? 'bg-[#141416]'
+            : 'bg-[#F4F6F8]'
         }`}
+        style={{ borderWidth: 0 }}
       >
         {/* Sent */}
         <View className="flex-1 min-w-0 items-center justify-center" style={{ flexBasis: 0 }}>
@@ -111,8 +120,8 @@ export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading, isConnec
         </View>
 
         <View
-          className={`w-[1px] h-5.5 ${
-            isDark ? 'bg-white/[0.08]' : 'bg-black/[0.08]'
+          className={`w-[1px] h-5 ${
+            isDark ? 'bg-white/[0.06]' : 'bg-black/[0.06]'
           }`}
         />
 
@@ -128,7 +137,7 @@ export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading, isConnec
             Delivered
           </Text>
           <Text
-            className="text-[15px] font-bold tracking-tight text-emerald-500"
+            className="text-[15px] font-bold tracking-tight text-[#25D366]"
             numberOfLines={1}
             ellipsizeMode="tail"
           >
@@ -137,8 +146,8 @@ export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading, isConnec
         </View>
 
         <View
-          className={`w-[1px] h-5.5 ${
-            isDark ? 'bg-white/[0.08]' : 'bg-black/[0.08]'
+          className={`w-[1px] h-5 ${
+            isDark ? 'bg-white/[0.06]' : 'bg-black/[0.06]'
           }`}
         />
 
@@ -165,8 +174,8 @@ export const UsageCard: React.FC<UsageCardProps> = ({ usage, isLoading, isConnec
         </View>
 
         <View
-          className={`w-[1px] h-5.5 ${
-            isDark ? 'bg-white/[0.08]' : 'bg-black/[0.08]'
+          className={`w-[1px] h-5 ${
+            isDark ? 'bg-white/[0.06]' : 'bg-black/[0.06]'
           }`}
         />
 

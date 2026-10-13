@@ -7,11 +7,12 @@ import {
   Platform,
   Pressable,
   RefreshControl,
+  ScrollView,
   Text,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useTheme } from "@/theme";
+import { getColors, useTheme } from "@/theme";
 import { WhatsAppBroadcastsSkeleton } from "../../../components/skeletonScreen";
 import { BroadcastCard } from "../components";
 import { useWhatsAppBroadcasts } from "../hooks/useWhatsAppBroadcasts";
@@ -27,6 +28,7 @@ export const WhatsAppBroadcastsScreen: React.FC<
 > = ({ onBack }) => {
   const router = useRouter();
   const { isDark } = useTheme();
+  const color = getColors(isDark);
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedBroadcast, setSelectedBroadcast] =
     useState<WhatsAppBroadcast | null>(null);
@@ -65,83 +67,128 @@ export const WhatsAppBroadcastsScreen: React.FC<
   }
 
   const broadcasts = data?.broadcasts || [];
-  const statusTabs = ["all", "completed", "queued", "scheduled"];
+  const statusTabs = [
+    { id: "all", label: "All" },
+    { id: "completed", label: "Completed" },
+    { id: "queued", label: "Queued" },
+    { id: "scheduled", label: "Scheduled" },
+  ];
 
   return (
     <SafeAreaView
       edges={["top", "left", "right"]}
       className="flex-1"
-      style={{ backgroundColor: isDark ? "#000000" : "#F8F9FA" }}
+      style={{ backgroundColor: color.background }}
     >
       <View className="flex-1">
         {/* Header */}
         <View
-          className={`flex-row items-center px-4 py-3 border-b ${
-            isDark
-              ? "bg-black border-white/[0.08]"
-              : "bg-white border-black/[0.06]"
+          className={`flex-row items-center px-4 py-3.5 shadow-sm ${
+            isDark ? "bg-[#1F2C34]" : "bg-[#075E54]"
           }`}
+          style={{
+            borderBottomWidth: 0,
+            elevation: 4,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.15,
+            shadowRadius: 4,
+          }}
         >
           <Pressable
-            className={`w-10 h-10 rounded-full justify-center items-center mr-3 border active:opacity-70 active:scale-95 shadow-sm ${
-              isDark
-                ? "bg-[#1C1C1E] border-[#2C2C2E]"
-                : "bg-white border-[#E5E7EB]"
-            }`}
+            className="w-9 h-9 rounded-full justify-center items-center mr-3 active:opacity-70 active:scale-95 bg-white/15"
             onPress={handleBack}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Back"
+            style={{ borderWidth: 0 }}
           >
             <Ionicons
               name="chevron-back"
               size={20}
-              color={isDark ? "#F8FAFC" : "#0F172A"}
+              color="#FFFFFF"
             />
           </Pressable>
-          <Text
-            className={`text-xl font-bold tracking-tight ${
-              isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
-            }`}
-          >
-            Broadcast Campaigns
-          </Text>
+          <View className="flex-row items-center gap-2">
+            <Ionicons name="logo-whatsapp" size={22} color="#25D366" />
+            <Text className="text-lg font-bold tracking-tight text-white">
+              Broadcast Campaigns
+            </Text>
+          </View>
         </View>
 
-        {/* Filter Pills */}
-        <View className="flex-row px-4 py-3 gap-2">
-          {statusTabs.map((tab) => {
-            const isSelected = selectedStatus === tab;
-            return (
-              <Pressable
-                key={tab}
-                className={`px-4 py-2 rounded-full border active:opacity-80 ${
-                  isSelected
-                    ? isDark
-                      ? "bg-white border-white"
-                      : "bg-black border-black"
-                    : isDark
-                    ? "bg-[#1C1C1E] border-[#2C2C2E]"
-                    : "bg-[#F2F2F7] border-[#E5E7EB]"
-                }`}
-                onPress={() => handleStatusSelect(tab)}
-              >
-                <Text
-                  className={`text-xs font-semibold tracking-tight ${
-                    isSelected
-                      ? isDark
-                        ? "text-black font-bold"
-                        : "text-white font-bold"
-                      : isDark
-                      ? "text-[#8E8E93]"
-                      : "text-[#6B7280]"
-                  }`}
-                >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </Text>
-              </Pressable>
-            );
-          })}
+        {/* Folder-Style Status Filter Tab Bar (WhatsApp Green from color.ts) */}
+        <View className="px-4 pt-2 mb-2">
+          <View style={{ position: "relative" }}>
+            {/* Continuous baseline across full width in WhatsApp Green */}
+            <View
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 1.5,
+                backgroundColor: color.products.whatsapp,
+              }}
+            />
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 2 }}
+            >
+              {statusTabs.map((tab) => {
+                const isActive = selectedStatus === tab.id;
+                const activeColor = isDark
+                  ? color.products.whatsapp
+                  : (color.products.whatsappDark || "#075E54");
+
+                return (
+                  <Pressable
+                    key={tab.id}
+                    onPress={() => {
+                      if (Platform.OS !== "web") {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }
+                      handleStatusSelect(tab.id);
+                    }}
+                    style={{
+                      height: 40,
+                      paddingHorizontal: 14,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderTopLeftRadius: isActive ? 10 : 0,
+                      borderTopRightRadius: isActive ? 10 : 0,
+                      borderTopWidth: 1.5,
+                      borderLeftWidth: 1.5,
+                      borderRightWidth: 1.5,
+                      borderBottomWidth: 1.5,
+                      borderTopColor: isActive ? color.products.whatsapp : "transparent",
+                      borderLeftColor: isActive ? color.products.whatsapp : "transparent",
+                      borderRightColor: isActive ? color.products.whatsapp : "transparent",
+                      borderBottomColor: isActive ? color.background : "transparent",
+                      backgroundColor: isActive ? color.background : "transparent",
+                      zIndex: isActive ? 2 : 1,
+                    }}
+                  >
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        fontSize: 13,
+                        fontWeight: isActive ? "600" : "500",
+                        letterSpacing: -0.1,
+                        color: isActive
+                          ? activeColor
+                          : (color.textSecondary || (isDark ? "#94A3B8" : "#64748B")),
+                      }}
+                    >
+                      {tab.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
         </View>
 
         {/* Broadcasts List */}
@@ -166,7 +213,7 @@ export const WhatsAppBroadcastsScreen: React.FC<
               <RefreshControl
                 refreshing={isRefetching}
                 onRefresh={refetch}
-                tintColor={isDark ? "#FFFFFF" : "#0A84FF"}
+                tintColor="#25D366"
               />
             }
             ListEmptyComponent={
