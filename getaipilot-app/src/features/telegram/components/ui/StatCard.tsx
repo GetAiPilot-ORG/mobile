@@ -33,7 +33,7 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   return (
     <Pressable
-      className="flex-1 min-w-0 w-full p-2.5 rounded-xl border justify-between min-h-[88px] active:opacity-75"
+      className="flex-1 min-w-0 w-full p-2.5 rounded-xl justify-between min-h-[88px] active:opacity-75"
       style={[
         {
           backgroundColor: colors.card,

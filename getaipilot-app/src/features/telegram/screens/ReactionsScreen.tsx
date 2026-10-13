@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Linking,
   Modal,
   Platform,
@@ -15,12 +16,14 @@ import {
   Switch,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
 import { getColors, useTheme } from '@/theme';
 import { telegramApi } from '../api/telegramApi';
 import { telegramSupabase } from '../api/telegramSupabase';
+import { AnimatedHero } from '../components/ui/AnimatedHero';
 import { ReactionAutopilotRule, ReactionOrder, TelegramToolKey } from '../types';
 
 interface Props {
@@ -236,112 +239,229 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
   const txt = { color: colors.text };
   const border = { borderColor: colors.border };
 
+  const { width } = useWindowDimensions();
+  const isWide = width >= 768;
+  const numColumns = isWide ? 4 : 2;
+  const cardWidthPercent = numColumns === 4 ? '23.5%' : '48.5%';
+
+  const reactionKpis = [
+    {
+      title: 'WALLET BALANCE',
+      value: `₹${walletBalance.toFixed(2)}`,
+      icon: 'wallet-outline' as const,
+      color: '#0284C7',
+      subtext: 'Available credit',
+      hasTopUp: true,
+    },
+    {
+      title: 'ACTIVE AUTOPILOT',
+      value: `${autopilotCount} Channels`,
+      icon: 'flash-outline' as const,
+      color: '#EC4899',
+      subtext: 'Auto-reacting posts',
+      hasTopUp: false,
+    },
+    {
+      title: 'TOTAL ORDERS',
+      value: `${ordersCount} Orders`,
+      icon: 'cube-outline' as const,
+      color: '#8B5CF6',
+      subtext: 'Campaign history',
+      hasTopUp: false,
+    },
+    {
+      title: 'ACTIVE SERVICE',
+      value: `${currentCampaign.label.split(' ')[0]}`,
+      icon: 'sparkles-outline' as const,
+      color: '#10B981',
+      subtext: `₹${currentCampaign.rate}/1k rate`,
+      hasTopUp: false,
+    },
+  ];
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.card }]}>
-      {/* Top Header Card */}
-      <View style={[styles.heroHeader, card]}>
-        <View style={styles.titleRow}>
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text style={[styles.heroTitle, txt]}>GAP Reactions</Text>
-              <View style={styles.liveBadge}>
-                <View style={styles.liveDot} />
-                <Text style={styles.liveText}>Live SMM</Text>
+    <View className="py-2.5 w-full flex-col gap-3.5">
+      {/* 1. Cyber Animated Hero Banner */}
+      <AnimatedHero
+        variant="reactions"
+        tagText="TELEGRAM REACTIONS & SMM"
+        tagIcon="sparkles"
+        title="GAP Reactions"
+        subtitle="Auto-pilot post booster & instant SMM delivery"
+      />
+
+      {/* 2. Responsive KPI Command Cards */}
+      <View className="flex-row flex-wrap gap-2.5 w-full">
+        {reactionKpis.map((kpi, idx) => (
+          <View
+            key={idx}
+            className="p-3.5 rounded-2xl flex-col justify-between"
+            style={{
+              backgroundColor: colors.card,
+              width: cardWidthPercent,
+              minHeight: 88,
+            }}
+          >
+            <View className="flex-row items-center justify-between mb-1">
+              <Text
+                className="text-[10px] font-bold uppercase tracking-wider"
+                style={{ color: isDark ? '#94A3B8' : '#64748B' }}
+                numberOfLines={1}
+              >
+                {kpi.title}
+              </Text>
+              <View
+                className="w-6 h-6 rounded-lg items-center justify-center"
+                style={{ backgroundColor: `${kpi.color}15` }}
+              >
+                <Ionicons name={kpi.icon} size={13} color={kpi.color} />
               </View>
             </View>
-            <Text style={styles.heroSub}>Auto-pilot post booster & instant SMM delivery</Text>
-          </View>
-        </View>
 
-        {/* Balance & Top Up Bar */}
-        <View style={[styles.balanceCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={styles.balanceLeft}>
-            <View style={styles.walletIconCircle}>
-              <Ionicons name="wallet-outline" size={16} color="#0284C7" />
+            <View className="flex-row items-baseline justify-between">
+              <Text
+                className="text-sm font-extrabold"
+                style={{ color: colors.text }}
+                numberOfLines={1}
+              >
+                {kpi.value}
+              </Text>
+              {kpi.hasTopUp && (
+                <Pressable
+                  className="px-2 py-0.5 rounded-md bg-[#0284C7] active:opacity-80"
+                  onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setIsTopUpOpen(true);
+                  }}
+                >
+                  <Text className="text-[10px] font-extrabold text-white">+ Top Up</Text>
+                </Pressable>
+              )}
             </View>
-            <View>
-              <Text style={styles.balanceLabel}>Balance</Text>
-              <Text style={[styles.balanceAmount, txt]}>₹{walletBalance.toFixed(2)}</Text>
-            </View>
-          </View>
 
-          <View style={styles.balanceRight}>
-            <Pressable
-              style={styles.refreshIconBtn}
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                refetch();
-              }}
+            <Text
+              className="text-[10px] font-medium mt-0.5"
+              style={{ color: isDark ? '#64748B' : '#94A3B8' }}
+              numberOfLines={1}
             >
-              <Ionicons name="refresh-outline" size={14} color="#CBD5E1" />
-            </Pressable>
-
-            <Pressable
-              style={styles.topUpBtn}
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setIsTopUpOpen(true);
-              }}
-            >
-              <Ionicons name="add" size={14} color="#FFFFFF" />
-              <Text style={styles.topUpBtnText}>Top Up</Text>
-            </Pressable>
-          </View>
-        </View>
-
-        {/* Segmented Sub-Nav Bar */}
-        <View style={styles.navBar}>
-          <Pressable
-            style={[styles.navTab, activeTab === 'autopilot' && styles.navTabActive]}
-            onPress={() => {
-              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setActiveTab('autopilot');
-            }}
-          >
-            <Ionicons name="flash-outline" size={13} color={activeTab === 'autopilot' ? '#0284C7' : '#94A3B8'} />
-            <Text style={[styles.navTabText, activeTab === 'autopilot' && styles.navTabTextActive]}>Auto Pilot</Text>
-          </Pressable>
-
-          <Pressable
-            style={[styles.navTab, activeTab === 'boost' && styles.navTabActive]}
-            onPress={() => {
-              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setActiveTab('boost');
-            }}
-          >
-            <Ionicons name="color-wand-outline" size={13} color={activeTab === 'boost' ? '#0284C7' : '#94A3B8'} />
-            <Text style={[styles.navTabText, activeTab === 'boost' && styles.navTabTextActive]}>Boost Post</Text>
-          </Pressable>
-
-          <Pressable
-            style={[styles.navTab, activeTab === 'orders' && styles.navTabActive]}
-            onPress={() => {
-              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setActiveTab('orders');
-            }}
-          >
-            <Ionicons name="cube-outline" size={13} color={activeTab === 'orders' ? '#0284C7' : '#94A3B8'} />
-            <Text style={[styles.navTabText, activeTab === 'orders' && styles.navTabTextActive]}>Orders</Text>
-            <View style={styles.badgePill}>
-              <Text style={styles.badgeText}>{ordersCount}</Text>
-            </View>
-          </Pressable>
-        </View>
-      </View>
-
-      {/* Bot Admin Setup Banner */}
-      <View style={styles.bannerCard}>
-        <Pressable style={styles.bannerRow} onPress={handleOpenBot}>
-          <View style={styles.botIconBox}>
-            <Ionicons name="paper-plane" size={18} color="#0284C7" />
-          </View>
-          <View style={{ flex: 1, paddingRight: 6 }}>
-            <Text style={styles.bannerTitle}>Bot Administrator Setup</Text>
-            <Text style={styles.bannerDesc}>
-              Add <Text style={styles.linkText}>{botUsername}</Text> as an Administrator to your channel, then tap "+ Add Channel" below.
+              {kpi.subtext}
             </Text>
           </View>
-          <Ionicons name="open-outline" size={16} color="#0284C7" />
+        ))}
+      </View>
+
+      {/* 3. Category Filter Pill Bar */}
+      <View
+        className="w-full flex-row items-center p-1.5 rounded-2xl gap-2"
+        style={{ backgroundColor: colors.card }}
+      >
+        <Pressable
+          className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl ${activeTab === 'autopilot' ? 'bg-[#0284C7]' : ''
+            }`}
+          onPress={() => {
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setActiveTab('autopilot');
+          }}
+        >
+          <Ionicons
+            name="flash-outline"
+            size={13}
+            color={activeTab === 'autopilot' ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
+          />
+          <Text
+            className={`text-xs font-bold ${activeTab === 'autopilot' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
+              }`}
+          >
+            Auto Pilot
+          </Text>
+          <View
+            className={`px-1.5 py-0.2 rounded-full ${activeTab === 'autopilot' ? 'bg-white/20' : 'bg-black/10'
+              }`}
+          >
+            <Text
+              className={`text-[9px] font-extrabold ${activeTab === 'autopilot' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
+                }`}
+            >
+              {autopilotCount}
+            </Text>
+          </View>
+        </Pressable>
+
+        <Pressable
+          className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl ${activeTab === 'boost' ? 'bg-[#0284C7]' : ''
+            }`}
+          onPress={() => {
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setActiveTab('boost');
+          }}
+        >
+          <Ionicons
+            name="color-wand-outline"
+            size={13}
+            color={activeTab === 'boost' ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
+          />
+          <Text
+            className={`text-xs font-bold ${activeTab === 'boost' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
+              }`}
+          >
+            Boost Post
+          </Text>
+        </Pressable>
+
+        <Pressable
+          className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl ${activeTab === 'orders' ? 'bg-[#0284C7]' : ''
+            }`}
+          onPress={() => {
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setActiveTab('orders');
+          }}
+        >
+          <Ionicons
+            name="cube-outline"
+            size={13}
+            color={activeTab === 'orders' ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
+          />
+          <Text
+            className={`text-xs font-bold ${activeTab === 'orders' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
+              }`}
+          >
+            Orders
+          </Text>
+          <View
+            className={`px-1.5 py-0.2 rounded-full ${activeTab === 'orders' ? 'bg-white/20' : 'bg-black/10'
+              }`}
+          >
+            <Text
+              className={`text-[9px] font-extrabold ${activeTab === 'orders' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
+                }`}
+            >
+              {ordersCount}
+            </Text>
+          </View>
+        </Pressable>
+      </View>
+
+      {/* 4. Bot Admin Setup Banner */}
+      <View
+        className="w-full rounded-2xl p-4 flex-row items-center gap-3"
+        style={{ backgroundColor: colors.card }}
+      >
+        <Pressable className="flex-row items-center gap-3 flex-1" onPress={handleOpenBot}>
+          <View
+            className="w-9 h-9 rounded-xl items-center justify-center"
+            style={{ backgroundColor: '#0284C715' }}
+          >
+            <Ionicons name="paper-plane" size={17} color="#0284C7" />
+          </View>
+          <View className="flex-1 pr-2">
+            <Text className="text-xs font-bold" style={{ color: colors.text }}>
+              Bot Administrator Setup
+            </Text>
+            <Text className="text-[11px] leading-4 mt-0.5" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
+              Add <Text style={{ color: '#0284C7', fontWeight: '700' }}>{botUsername}</Text> as an Admin to your channel, then tap "+ Add Channel" below.
+            </Text>
+          </View>
+          <Ionicons name="open-outline" size={15} color="#0284C7" />
         </Pressable>
       </View>
 
@@ -365,26 +485,12 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
             </Pressable>
           </View>
 
-          {autopilotCount === 0 ? (
-            <View style={styles.emptyBox}>
-              <Ionicons name="radio-outline" size={36} color="#0284C7" style={{ marginBottom: 8 }} />
-              <Text style={[styles.emptyTitle, txt]}>No Autopilot Channels</Text>
-              <Text style={styles.emptyDesc}>
-                Add {botUsername} to your Telegram channel and register it to start automatic reactions.
-              </Text>
-              <Pressable
-                style={styles.registerBtn}
-                onPress={() => {
-                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setIsAddRuleOpen(true);
-                }}
-              >
-                <Ionicons name="add" size={16} color="#FFFFFF" />
-                <Text style={styles.registerBtnText}>Register Channel</Text>
-              </Pressable>
-            </View>
-          ) : (
-            autopilotRules.map((rule) => {
+          <FlatList
+            data={autopilotRules}
+            keyExtractor={(rule) => String(rule.id)}
+            scrollEnabled={false}
+            ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+            renderItem={({ item: rule }) => {
               const chName = rule.channel_username || (rule as any).channelUsername || 'Channel';
               const isActive = rule.is_active ?? (rule as any).isActive ?? true;
               const minQ = rule.min_quantity ?? (rule as any).minQuantity ?? 10;
@@ -392,7 +498,7 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
               const limit = rule.posts_limit ?? (rule as any).postsLimit;
 
               return (
-                <View key={rule.id} style={[styles.ruleCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={[styles.ruleCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <View style={styles.ruleTop}>
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -428,8 +534,27 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
                   </View>
                 </View>
               );
-            })
-          )}
+            }}
+            ListEmptyComponent={
+              <View style={styles.emptyBox}>
+                <Ionicons name="radio-outline" size={36} color="#0284C7" style={{ marginBottom: 8 }} />
+                <Text style={[styles.emptyTitle, txt]}>No Autopilot Channels</Text>
+                <Text style={styles.emptyDesc}>
+                  Add {botUsername} to your Telegram channel and register it to start automatic reactions.
+                </Text>
+                <Pressable
+                  style={styles.registerBtn}
+                  onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setIsAddRuleOpen(true);
+                  }}
+                >
+                  <Ionicons name="add" size={16} color="#FFFFFF" />
+                  <Text style={styles.registerBtnText}>Register Channel</Text>
+                </Pressable>
+              </View>
+            }
+          />
 
           {/* Footer Notice */}
           <View style={styles.noticeFooter}>
@@ -560,15 +685,13 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
             ))}
           </View>
 
-          {filteredOrders.length === 0 ? (
-            <View style={styles.emptyBox}>
-              <Ionicons name="cube-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
-              <Text style={[styles.emptyTitle, txt]}>No Orders Found</Text>
-              <Text style={styles.emptyDesc}>Submit a boost order or register an autopilot channel to start.</Text>
-            </View>
-          ) : (
-            filteredOrders.map((ord: any, idx: number) => (
-              <View key={ord.id || idx} style={[styles.orderItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <FlatList
+            data={filteredOrders}
+            keyExtractor={(ord, idx) => ord.id || String(idx)}
+            scrollEnabled={false}
+            ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+            renderItem={({ item: ord }: { item: any }) => (
+              <View style={[styles.orderItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={styles.orderLeft}>
                   <Text style={[styles.orderLink, txt]} numberOfLines={1}>{ord.link || ord.target_post_url || 'Telegram Order'}</Text>
                   <Text style={styles.orderMeta}>
@@ -581,8 +704,15 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
                   </Text>
                 </View>
               </View>
-            ))
-          )}
+            )}
+            ListEmptyComponent={
+              <View style={styles.emptyBox}>
+                <Ionicons name="cube-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
+                <Text style={[styles.emptyTitle, txt]}>No Orders Found</Text>
+                <Text style={styles.emptyDesc}>Submit a boost order or register an autopilot channel to start.</Text>
+              </View>
+            }
+          />
         </View>
       )}
 
@@ -738,18 +868,18 @@ const styles = StyleSheet.create({
   bannerTitle: { fontSize: 12, fontWeight: '700', color: '#F8FAFC' },
   bannerDesc: { fontSize: 11, color: '#94A3B8', marginTop: 2, lineHeight: 15 },
   linkText: { color: '#38BDF8', fontWeight: '700' },
-  sectionCard: { padding: 14, borderRadius: 16, borderWidth: 1, marginBottom: 12 },
-  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  sectionTitle: { fontSize: 14, fontWeight: '800' },
+  sectionCard: { padding: 16, borderRadius: 20, marginBottom: 12 },
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  sectionTitle: { fontSize: 15, fontWeight: '800' },
   sectionSub: { fontSize: 11, color: '#64748B', marginTop: 1 },
-  addChannelBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#0284C7', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
+  addChannelBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#0284C7', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10 },
   addChannelBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
-  emptyBox: { alignItems: 'center', justifyContent: 'center', padding: 24, borderWidth: 1, borderStyle: 'dashed', borderColor: '#27272A', borderRadius: 14, marginVertical: 8 },
+  emptyBox: { alignItems: 'center', justifyContent: 'center', padding: 24, borderRadius: 16, marginVertical: 8, backgroundColor: 'rgba(255,255,255,0.02)' },
   emptyTitle: { fontSize: 14, fontWeight: '800', marginBottom: 4 },
   emptyDesc: { fontSize: 11, color: '#64748B', textAlign: 'center', lineHeight: 16, marginBottom: 12, maxWidth: 280 },
   registerBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#0284C7', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
   registerBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
-  ruleCard: { padding: 12, borderRadius: 12, borderWidth: 1, marginBottom: 8 },
+  ruleCard: { padding: 14, borderRadius: 16, marginBottom: 8 },
   itemDark: { backgroundColor: 'rgba(255,255,255,0.04)', borderColor: '#27272A' },
   itemLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
   ruleTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
