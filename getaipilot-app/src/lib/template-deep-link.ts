@@ -1,5 +1,5 @@
 import * as Linking from "expo-linking";
-import { Platform } from "react-native";
+import { Alert } from "react-native";
 import { apiClient } from "../core/api/client";
 import { authStorage } from "../core/storage/authStorage";
 import { useAuthStore } from "../core/store/authStore";
@@ -26,29 +26,21 @@ export interface OpenExternalSsoOptions {
   quickFormId?: string;
 }
 
-/**
- * Returns the appropriate Web App Base URL:
- * - In local development (__DEV__ / localhost) -> http://localhost:8080
- * - In production -> https://getaipilot.in
- */
+const PRODUCTION_WEB_APP_URL = "https://getaipilot.in";
+
+const isLoopbackUrl = (value: string): boolean =>
+  /^https?:\/\/(?:localhost|127(?:\.\d{1,3}){3}|0\.0\.0\.0|\[::1\])(?::\d+)?(?:\/|$)/i.test(
+    value.trim(),
+  );
+
+/** Returns a public web-app origin suitable for external mobile handoffs. */
 export function getWebAppBaseUrl(): string {
-  if (process.env.EXPO_PUBLIC_WEB_APP_URL) {
-    return process.env.EXPO_PUBLIC_WEB_APP_URL.replace(/\/+$/, "");
+  const configuredUrl = process.env.EXPO_PUBLIC_WEB_APP_URL?.trim();
+  if (configuredUrl && /^https?:\/\//i.test(configuredUrl) && !isLoopbackUrl(configuredUrl)) {
+    return configuredUrl.replace(/\/+$/, "");
   }
 
-  // Only use localhost if specifically running on web platform in local browser
-  if (
-    typeof __DEV__ !== "undefined" &&
-    __DEV__ &&
-    Platform.OS === "web" &&
-    typeof window !== "undefined" &&
-    (window.location?.hostname === "localhost" ||
-      window.location?.hostname === "127.0.0.1")
-  ) {
-    return "http://localhost:8080";
-  }
-
-  return "https://getaipilot.in";
+  return PRODUCTION_WEB_APP_URL;
 }
 
 /**
@@ -114,13 +106,44 @@ export async function openExternalSSO({
   const redirectPath = buildRedirectPath(clientId, templateId, quickFormId);
   const directFallbackUrl = `${webAppUrl}${redirectPath}`;
 
-  let token: string | null = null;
-  try {
-    token = await authStorage.getAccessToken();
-  } catch {}
+  const [storedToken, supabaseSessionResult] = await Promise.all([
+    authStorage.getAccessToken().catch(() => null),
+    supabase.auth.getSession().catch(() => ({ data: { session: null } })),
+  ]);
+  const supabaseSession = supabaseSessionResult.data.session;
+  const supabaseToken = supabaseSession?.access_token || null;
+  const userEmail =
+    supabaseSession?.user?.email || useAuthStore.getState().user?.email || undefined;
 
-  // 1. If user is authenticated in the mobile app, request authentic SSO link from BFF
-  if (token) {
+  // 1. Preferred flow: exchange the current app session for a short-lived,
+  // one-time handoff code. The web app consumes the code and creates its own
+  // browser session without exposing access tokens in the URL.
+  if (supabaseToken) {
+    try {
+      const { data, error } = await supabase.functions.invoke<{
+        targetUrl?: string;
+      }>("web-handoff", {
+        headers: { Authorization: `Bearer ${supabaseToken}` },
+        body: {
+          action: "create",
+          targetTool: clientId,
+          clientId,
+          templateId,
+          quickFormId,
+          webAppUrl,
+          userEmail,
+        },
+      });
+
+      if (!error && data?.targetUrl && !isLoopbackUrl(data.targetUrl)) {
+        await Linking.openURL(data.targetUrl);
+        return;
+      }
+    } catch {}
+  }
+
+  // 2. Request an authenticated callback or magic link from the BFF.
+  if (storedToken) {
     try {
       const response = await apiClient.post<{ success: boolean; ssoUrl: string }>(
         "/mobile/v1/auth/sso-url",
@@ -130,8 +153,7 @@ export async function openExternalSSO({
         },
       );
 
-      if (response?.ssoUrl) {
-        console.log("[openExternalSSO] Opening authentic BFF SSO URL:", response.ssoUrl);
+      if (response?.ssoUrl && !isLoopbackUrl(response.ssoUrl)) {
         await Linking.openURL(response.ssoUrl);
         return;
       }
@@ -143,25 +165,18 @@ export async function openExternalSSO({
     }
   }
 
-  // 2. Fallback: Use tokens from authStorage or local Supabase client
+  // 3. Compatibility fallback for deployments that have not enabled the
+  // one-time handoff endpoint yet. Only Supabase tokens are valid here.
   try {
-    let accessToken = await authStorage.getAccessToken();
-    let refreshToken = await authStorage.getRefreshToken();
-
-    if (!accessToken) {
-      const { data } = await supabase.auth.getSession();
-      accessToken = data?.session?.access_token || null;
-      refreshToken = data?.session?.refresh_token || null;
-    }
-
-    if (accessToken) {
+    if (supabaseToken) {
       const ssoUrl = `${webAppUrl}/auth/callback?next=${encodeURIComponent(
         redirectPath,
       )}#access_token=${encodeURIComponent(
-        accessToken,
-      )}&refresh_token=${encodeURIComponent(refreshToken || "")}&token_type=bearer`;
+        supabaseToken,
+      )}&refresh_token=${encodeURIComponent(
+        supabaseSession?.refresh_token || "",
+      )}&token_type=bearer`;
 
-      console.log("[openExternalSSO] Opening Supabase authenticated SSO URL");
       await Linking.openURL(ssoUrl);
       return;
     }
@@ -169,8 +184,17 @@ export async function openExternalSSO({
     console.warn("[openExternalSSO] Local session check failed:", tokenErr);
   }
 
-  // 3. Fallback for guest/unauthenticated users
-  console.log("[openExternalSSO] Opening direct web URL (guest):", directFallbackUrl);
+  // An authenticated app session should never degrade into a logged-out web
+  // page. Keep the user in the app and provide a clear recovery action.
+  if (useAuthStore.getState().isAuthenticated) {
+    Alert.alert(
+      "Could not sign in to the web tool",
+      "Please check your connection and try again. If this continues, sign out and sign back in to refresh your session.",
+    );
+    return;
+  }
+
+  // 4. Guest fallback. This opens the requested tool without a session.
   await Linking.openURL(directFallbackUrl);
 }
 
