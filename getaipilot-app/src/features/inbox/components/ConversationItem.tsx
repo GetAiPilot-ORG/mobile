@@ -43,7 +43,7 @@ export const ConversationItem: React.FC<ConversationItemProps> = ({ conversation
   const time = formatMessageTime(conversation.last_message.created_at);
 
   return (
-    <Pressable
+    <Pressable cssInterop={false}
       style={({ pressed }) => [
         styles.container,
         isDark ? styles.containerDark : styles.containerLight,

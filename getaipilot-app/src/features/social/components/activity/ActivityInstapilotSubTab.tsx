@@ -440,7 +440,7 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
               const isBotActive = conv.status === 'bot_active' && !conv.bot_paused;
 
               return (
-                <Pressable
+                <Pressable cssInterop={false}
                   key={conv.id}
                   onPress={() => {
                     Haptics.selectionAsync();

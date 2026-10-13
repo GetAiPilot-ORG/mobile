@@ -419,7 +419,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
         >
           {/* Top Row: Back Button + Contact Info + CRM Button */}
           <View style={styles.headerTopRow}>
-            <Pressable
+            <Pressable cssInterop={false}
               style={({ pressed }) => [
                 styles.backBtn,
                 pressed && (isDark ? styles.btnPressedDark : styles.btnPressedLight),
@@ -466,7 +466,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
 
             {/* Quick Actions (+ CRM) */}
             <View style={styles.headerRightActions}>
-              <Pressable
+              <Pressable cssInterop={false}
                 style={({ pressed }) => [
                   styles.crmBtn,
                   pressed && { opacity: 0.75 },
@@ -690,7 +690,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
               </Text>
 
               <View style={styles.closedCardActions}>
-                <Pressable
+                <Pressable cssInterop={false}
                   style={({ pressed }) => [
                     styles.closedSwitchBtn,
                     pressed && { opacity: 0.8 },
@@ -739,7 +739,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
                   multiline
                 />
 
-                <Pressable
+                <Pressable cssInterop={false}
                   style={({ pressed }) => [
                     styles.sendBtn,
                     !inputText.trim() &&

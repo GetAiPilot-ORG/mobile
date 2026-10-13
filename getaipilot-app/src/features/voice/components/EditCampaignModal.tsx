@@ -329,7 +329,7 @@ export const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
 
           {/* Footer */}
           <View style={[styles.footer, { borderTopColor: colors.border }]}>
-            <Pressable
+            <Pressable cssInterop={false}
               style={({ pressed }) => [
                 styles.cancelBtn,
                 {
@@ -346,7 +346,7 @@ export const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
               </Text>
             </Pressable>
 
-            <Pressable
+            <Pressable cssInterop={false}
               style={({ pressed }) => [
                 styles.submitBtn,
                 {

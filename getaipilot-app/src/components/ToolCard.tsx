@@ -1,13 +1,14 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useTheme, getColors } from '@/theme';
 
 interface ToolCardProps {
   title: string;
   category: string;
   description: string;
-  icon: string;
+  icon: React.ComponentProps<typeof HugeiconsIcon>['icon'];
   iconBg?: string;
   badge?: string;
   onPress: () => void;
@@ -23,7 +24,6 @@ export const ToolCard: React.FC<ToolCardProps> = ({
 }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
-  const isIonicon = icon && /^[a-z0-9-]+$/i.test(icon);
 
   return (
     <Pressable
@@ -51,11 +51,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({
             backgroundColor: iconBg || colors.accentSoft,
           }}
         >
-          {isIonicon ? (
-            <Ionicons name={icon as any} size={21} color={iconBg ? "#FFFFFF" : colors.accent} />
-          ) : (
-            <Text className="text-xl">{icon}</Text>
-          )}
+          <HugeiconsIcon icon={icon} size={21} color={colors.text} strokeWidth={1.8} />
         </View>
         {badge ? (
           <View
@@ -133,7 +129,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({
             backgroundColor: colors.primaryMuted,
           }}
         >
-          <Ionicons name="arrow-forward" size={11} color={colors.primary} />
+          <HugeiconsIcon icon={ArrowRight01Icon} size={12} color={colors.primary} strokeWidth={2} />
         </View>
       </View>
     </Pressable>

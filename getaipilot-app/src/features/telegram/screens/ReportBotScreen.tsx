@@ -629,7 +629,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
 
                   <View style={styles.row}>
                     {/* Interactive Pressable Logo Box */}
-                    <Pressable
+                    <Pressable cssInterop={false}
                       style={({ pressed }) => [
                         styles.logoUploadBox,
                         { borderColor: colors.border, backgroundColor: colors.card },

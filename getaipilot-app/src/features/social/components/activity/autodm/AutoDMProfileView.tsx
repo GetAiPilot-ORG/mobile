@@ -228,7 +228,7 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
 
         {/* Profile Actions: Open on Instagram & Refresh Media */}
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <Pressable
+          <Pressable cssInterop={false}
             onPress={() => {
               if (profileAccount?.username) {
                 Haptics.selectionAsync();
@@ -248,7 +248,7 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
             <Text style={styles.profileHeroActionBtnText}>Open Instagram Profile</Text>
           </Pressable>
 
-          <Pressable
+          <Pressable cssInterop={false}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               onRefreshProfile();
@@ -524,7 +524,7 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
                       {item.caption || 'Instagram Post'}
                     </Text>
 
-                    <Pressable
+                    <Pressable cssInterop={false}
                       onPress={() => onTriggerAutoDM(item)}
                       style={({ pressed }) => [
                         styles.mediaGridTriggerBtn,

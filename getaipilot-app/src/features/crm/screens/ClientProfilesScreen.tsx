@@ -196,7 +196,7 @@ export function ClientProfilesScreen({ onBack }: ClientProfilesScreenProps = {})
               : null;
 
             return (
-              <Pressable
+              <Pressable cssInterop={false}
                 style={({ pressed }) => [
                   styles.card,
                   {

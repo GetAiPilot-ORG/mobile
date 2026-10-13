@@ -511,7 +511,7 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
           </View>
 
           {/* CTA Submit Button */}
-          <Pressable
+          <Pressable cssInterop={false}
             style={({ pressed }) => [
               styles.submitButton,
               { backgroundColor: colors.primary },

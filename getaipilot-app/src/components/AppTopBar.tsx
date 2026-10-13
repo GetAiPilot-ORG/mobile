@@ -1,4 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { ArrowLeft01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useRouter, usePathname } from 'expo-router';
@@ -187,7 +189,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
     >
       <View className="flex-row items-center flex-1 mr-2.5 min-w-0">
         {shouldShowBack ? (
-          <Pressable
+          <Pressable cssInterop={false}
             onPress={handleBack}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
@@ -198,10 +200,11 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
               className="w-11 h-11 rounded-full justify-center items-center mr-3"
               style={{ backgroundColor: colors.card }}
             >
-              <Ionicons
-                name="chevron-back"
+              <HugeiconsIcon
+                icon={ArrowLeft01Icon}
                 size={20}
                 color={colors.foreground}
+                strokeWidth={2}
               />
             </View>
           </Pressable>
@@ -209,7 +212,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
           leftElement
         ) : !title ? (
           /* Profile Avatar Button on the Left for Home */
-          <Pressable
+          <Pressable cssInterop={false}
             onPress={handleProfilePress}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
@@ -273,7 +276,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
         <View className="flex-row items-center shrink-0">{rightElement}</View>
       ) : displayPlanBadge ? (
         <View className="flex-row items-center shrink-0">
-          <Pressable
+          <Pressable cssInterop={false}
             onPress={handlePlanBadgePress}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
@@ -298,12 +301,6 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
                 className="w-[7px] h-[7px] rounded-full shrink-0"
                 style={{ backgroundColor: isActive ? '#30D158' : '#F59E0B' }}
               />
-              <Ionicons
-                name="sparkles"
-                size={13}
-                color={colors.accent}
-                className="shrink-0"
-              />
               <Text
                 className="text-[13px] font-medium shrink-0"
                 style={{ color: colors.accent }}
@@ -312,10 +309,11 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
               >
                 {planLabel || 'Free Plan'}
               </Text>
-              <Ionicons
-                name="chevron-forward"
+              <HugeiconsIcon
+                icon={ArrowRight01Icon}
                 size={13}
                 color={colors.accent}
+                strokeWidth={2}
                 className="ml-0.5 shrink-0"
               />
             </View>

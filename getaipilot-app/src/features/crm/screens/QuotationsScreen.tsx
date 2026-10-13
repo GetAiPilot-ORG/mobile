@@ -157,7 +157,7 @@ export function QuotationsScreen({ onBack }: QuotationsScreenProps = {}) {
     const selected = filter === item;
 
     return (
-      <Pressable
+      <Pressable cssInterop={false}
         onPress={() => setFilter(item)}
         style={({ pressed }) => [
           styles.filterChip,
@@ -221,7 +221,7 @@ export function QuotationsScreen({ onBack }: QuotationsScreenProps = {}) {
     });
 
     return (
-      <Pressable
+      <Pressable cssInterop={false}
         onPress={() => openQuotation(item)}
         style={({ pressed }) => [
           styles.quotationCard,
@@ -417,7 +417,7 @@ export function QuotationsScreen({ onBack }: QuotationsScreenProps = {}) {
           </View>
         </View>
 
-        <Pressable
+        <Pressable cssInterop={false}
           onPress={openCreateQuotation}
           style={({ pressed }) => [
             styles.createButton,
@@ -514,7 +514,7 @@ export function QuotationsScreen({ onBack }: QuotationsScreenProps = {}) {
           </Text>
 
           {!filter && (
-            <Pressable
+            <Pressable cssInterop={false}
               onPress={openCreateQuotation}
               style={({ pressed }) => [
                 styles.emptyCreateButton,

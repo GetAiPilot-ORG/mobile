@@ -517,7 +517,7 @@ export const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
 
           {/* Footer Actions matching GAP_VoicePilot */}
           <View style={[styles.footer, { borderTopColor: colors.border }]}>
-            <Pressable
+            <Pressable cssInterop={false}
               style={({ pressed }) => [
                 styles.cancelBtn,
                 {
@@ -534,7 +534,7 @@ export const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
               </Text>
             </Pressable>
 
-            <Pressable
+            <Pressable cssInterop={false}
               style={({ pressed }) => [
                 styles.submitBtn,
                 {

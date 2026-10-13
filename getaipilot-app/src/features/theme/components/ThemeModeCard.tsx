@@ -38,7 +38,7 @@ export const ThemeModeCard: React.FC<ThemeModeCardProps> = ({
   };
 
   return (
-    <Pressable
+    <Pressable cssInterop={false}
       onPress={handlePress}
       style={({ pressed }) => [
         styles.card,

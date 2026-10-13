@@ -1,5 +1,15 @@
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { Ionicons } from '@expo/vector-icons';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import {
+  Home01Icon,
+  Message01Icon,
+  UserGroupIcon,
+  Calendar01Icon,
+  TelescopeIcon,
+  Activity01Icon,
+  ShieldCheckIcon,
+  Mail01Icon,
+} from '@hugeicons/core-free-icons';
 import * as Haptics from 'expo-haptics';
 import React from 'react';
 import {
@@ -13,55 +23,45 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, getColors } from '@/theme';
 import { useAuth } from '../contexts/AuthContext';
-
-type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
+import { TabMotion } from './TabMotion';
 
 interface TabItemConfig {
   label: string;
-  activeIcon: IoniconsName;
-  inactiveIcon: IoniconsName;
+  icon: any;
 }
 
 const TAB_CONFIG: Record<string, TabItemConfig> = {
   index: {
     label: 'Home',
-    activeIcon: 'home',
-    inactiveIcon: 'home-outline',
+    icon: Home01Icon,
   },
   inbox: {
     label: 'Inbox',
-    activeIcon: 'chatbubbles',
-    inactiveIcon: 'chatbubbles-outline',
+    icon: Message01Icon,
   },
   team: {
     label: 'Team',
-    activeIcon: 'people',
-    inactiveIcon: 'people-outline',
+    icon: UserGroupIcon,
   },
   planner: {
     label: 'Planner',
-    activeIcon: 'calendar',
-    inactiveIcon: 'calendar-outline',
+    icon: Calendar01Icon,
   },
   tools: {
     label: 'Tools',
-    activeIcon: 'telescope',
-    inactiveIcon: 'telescope-outline',
+    icon: TelescopeIcon,
   },
   activity: {
     label: 'Activity',
-    activeIcon: 'pulse',
-    inactiveIcon: 'pulse-outline',
+    icon: Activity01Icon,
   },
   admin: {
     label: 'Admin',
-    activeIcon: 'shield-checkmark',
-    inactiveIcon: 'shield-checkmark-outline',
+    icon: ShieldCheckIcon,
   },
   communication: {
     label: 'Connect',
-    activeIcon: 'mail',
-    inactiveIcon: 'mail-outline',
+    icon: Mail01Icon,
   },
 };
 
@@ -181,12 +181,12 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
               });
             };
 
-            const iconName = isFocused ? config.activeIcon : config.inactiveIcon;
+            const IconComponent = config?.icon || Home01Icon;
 
-            if (isFocused) {
-              return (
+            return (
+              <TabMotion key={route.key} active={isFocused}>
+              {isFocused ? (
                 <Pressable
-                  key={route.key}
                   accessibilityRole="button"
                   accessibilityState={{ selected: true }}
                   accessibilityLabel={options?.tabBarAccessibilityLabel || config.label}
@@ -198,10 +198,11 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
                     { backgroundColor: colors.accentSoft },
                   ]}
                 >
-                  <Ionicons
-                    name={iconName}
+                  <HugeiconsIcon
+                    icon={IconComponent}
                     size={19}
                     color={colors.accent}
+                    strokeWidth={2}
                   />
                   <Text
                     style={[
@@ -213,12 +214,8 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
                     {config.label}
                   </Text>
                 </Pressable>
-              );
-            }
-
-            return (
+              ) : (
               <Pressable
-                key={route.key}
                 accessibilityRole="button"
                 accessibilityState={{ selected: false }}
                 accessibilityLabel={options?.tabBarAccessibilityLabel || config.label}
@@ -232,12 +229,15 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
                   },
                 ]}
               >
-                <Ionicons
-                  name={iconName}
+                <HugeiconsIcon
+                  icon={IconComponent}
                   size={20}
                   color={colors.textMuted}
+                  strokeWidth={1.75}
                 />
               </Pressable>
+              )}
+              </TabMotion>
             );
           })}
         </View>
@@ -269,17 +269,19 @@ const styles = StyleSheet.create({
     zIndex: 10000,
   },
   tabBarContainer: {
+    width: '100%',
+    maxWidth: 420,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-around',
     alignSelf: 'center',
     height: 52,
     borderRadius: 26,
-    paddingHorizontal: 4,
+    paddingHorizontal: 6,
     paddingVertical: 4,
     borderWidth: 0,
     overflow: 'hidden',
-    gap: 6,
+    gap: 4,
   },
   activePill: {
     flexDirection: 'row',

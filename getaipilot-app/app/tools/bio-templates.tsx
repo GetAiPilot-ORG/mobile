@@ -250,7 +250,7 @@ export default function BioTemplatesScreen() {
 
             {/* Actions */}
             <View style={styles.actions}>
-              <Pressable
+              <Pressable cssInterop={false}
                 style={({ pressed }) => [
                   styles.previewButton,
                   pressed && styles.pressed,
@@ -260,7 +260,7 @@ export default function BioTemplatesScreen() {
                 <Text style={styles.previewButtonText}>Preview</Text>
               </Pressable>
 
-              <Pressable
+              <Pressable cssInterop={false}
                 style={({ pressed }) => [
                   styles.editButton,
                   pressed && styles.pressed,
@@ -275,7 +275,7 @@ export default function BioTemplatesScreen() {
                 )}
               </Pressable>
 
-              <Pressable
+              <Pressable cssInterop={false}
                 style={({ pressed }) => [
                   styles.deleteButton,
                   pressed && styles.pressed,

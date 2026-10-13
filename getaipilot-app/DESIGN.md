@@ -46,3 +46,11 @@ Plans uses the incoming Pro/modular selector, package details, and persistent ch
 Motion stays functional: a 180ms startup logo fade, 100/140ms button press feedback, and 180ms tab transitions. Reduce Motion disables spatial feedback and modal/tab transitions. There are no looping gradients, glowing headers, or forced two-second startup delays.
 
 Native payment support is retained with the existing modal fallback when the SDK is unavailable. The SDK loads lazily, and a payment cannot be reported successful when server verification fails. Native failures remain visible when callers omit a failure callback.
+
+### Native card styling
+
+Pressables with function-based inline styles use `cssInterop={false}`. NativeWind's native style processing does not preserve these callbacks, causing missing backgrounds and layout on Android. Keep className-based controls on the normal interop path. This fix retains the pastel palette and native pressed feedback.
+
+### Tab motion
+
+Top-level tabs shift in 220ms. Shared app and product docks use a 140–220ms selected-state transition with a clear 3px lift, 7.5% scale, and opacity change while the active pill resizes. Motion is interruptible and uses native-driven transforms. Reduce Motion removes the screen transition and spatial movement while retaining the selected color and label state.

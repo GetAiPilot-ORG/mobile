@@ -16,7 +16,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({ template, onSelect, 
   const body = components.find((component) => component.type === 'BODY')?.text;
   const footer = components.find((component) => component.type === 'FOOTER')?.text;
   const buttons = components.find((component) => component.type === 'BUTTONS')?.buttons || [];
-  return <Pressable disabled={!select} onPress={() => select?.(template)} accessibilityRole={select ? 'button' : undefined} accessibilityLabel={template.name}
+  return <Pressable cssInterop={false} disabled={!select} onPress={() => select?.(template)} accessibilityRole={select ? 'button' : undefined} accessibilityLabel={template.name}
     style={({ pressed }) => ({ backgroundColor: colors.card, borderRadius: 24, padding: 20, marginBottom: 16, gap: 14, opacity: pressed ? 0.75 : 1 })}>
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
       <View style={{ flex: 1, gap: 6 }}><Text style={{ fontSize: 16, fontWeight: '500', color: colors.text }}>{template.name.replace(/_/g, ' ')}</Text><Text style={{ fontSize: 12, color: colors.textSecondary }}>{template.category.toLowerCase()} · {template.language}</Text></View>

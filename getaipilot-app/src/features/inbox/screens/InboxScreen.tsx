@@ -1,5 +1,15 @@
 import { getColors, useTheme } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import {
+  UserIcon,
+  ArrowRight01Icon,
+  Search01Icon,
+  Cancel01Icon,
+  Add01Icon,
+  BubbleChatAddIcon,
+} from "@hugeicons/core-free-icons";
+import { useProductPalette } from "@/components/ProductUI";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useMemo, useState } from "react";
 import {
@@ -43,6 +53,7 @@ export const InboxScreen: React.FC = () => {
   const queryClient = useQueryClient();
   const { isDark } = useTheme();
   const color = getColors(isDark);
+  const palette = useProductPalette();
 
   const [activeTab, setActiveTab] = useState<
     "ALL" | "UNREAD" | "UNASSIGNED" | "MINE" | "BOT_ACTIVE"
@@ -206,11 +217,12 @@ export const InboxScreen: React.FC = () => {
               style={{ backgroundColor: color.primary }}
               onPress={() => setShowNewChatModal(true)}
             >
-              <Ionicons
-                name="chatbubble-ellipses"
+              <HugeiconsIcon
+                icon={BubbleChatAddIcon}
                 size={14}
                 color="#ffffff"
-                className="mr-1.5"
+                strokeWidth={2}
+                style={{ marginRight: 5 }}
               />
               <Text className="text-white text-xs font-bold">+ New Chat</Text>
             </Pressable>
@@ -229,11 +241,12 @@ export const InboxScreen: React.FC = () => {
             shadowRadius: 8,
           }}
         >
-          <Ionicons
-            name="search"
+          <HugeiconsIcon
+            icon={Search01Icon}
             size={17}
             color={color.textSecondary}
-            className="mr-2.5"
+            strokeWidth={2}
+            style={{ marginRight: 8 }}
           />
           <TextInput
             className="flex-1 text-[13.5px]"
@@ -245,10 +258,11 @@ export const InboxScreen: React.FC = () => {
           />
           {searchQuery ? (
             <Pressable onPress={() => setSearchQuery("")} hitSlop={10}>
-              <Ionicons
-                name="close-circle"
+              <HugeiconsIcon
+                icon={Cancel01Icon}
                 size={16}
                 color={color.textSecondary}
+                strokeWidth={2}
               />
             </Pressable>
           ) : null}
@@ -356,11 +370,12 @@ export const InboxScreen: React.FC = () => {
                   style={{ backgroundColor: color.primary }}
                   onPress={() => setShowNewChatModal(true)}
                 >
-                  <Ionicons
-                    name="add"
+                  <HugeiconsIcon
+                    icon={Add01Icon}
                     size={16}
                     color="#ffffff"
-                    className="mr-1"
+                    strokeWidth={2}
+                    style={{ marginRight: 5 }}
                   />
                   <Text className="text-white text-[12.5px] font-bold">
                     Start New Conversation
@@ -408,10 +423,11 @@ export const InboxScreen: React.FC = () => {
                   onPress={() => setShowNewChatModal(false)}
                   hitSlop={10}
                 >
-                  <Ionicons
-                    name="close"
-                    size={24}
+                  <HugeiconsIcon
+                    icon={Cancel01Icon}
+                    size={20}
                     color={color.textSecondary}
+                    strokeWidth={2}
                   />
                 </Pressable>
               </View>
@@ -425,11 +441,12 @@ export const InboxScreen: React.FC = () => {
                   borderColor: isDark ? "rgba(255, 255, 255, 0.07)" : color.cardBorder,
                 }}
               >
-                <Ionicons
-                  name="search"
+                <HugeiconsIcon
+                  icon={Search01Icon}
                   size={16}
                   color={color.textSecondary}
-                  className="mr-2"
+                  strokeWidth={2}
+                  style={{ marginRight: 8 }}
                 />
                 <TextInput
                   className="flex-1 text-[13px]"
@@ -478,21 +495,31 @@ export const InboxScreen: React.FC = () => {
                   filteredContacts.map((cnt) => (
                     <Pressable
                       key={cnt.id}
-                      className="flex-row items-center p-3.5 rounded-2xl mb-2.5 active:opacity-75"
+                      className="flex-row items-center p-3.5 rounded-[20px] mb-2.5 active:opacity-75"
                       style={{
-                        backgroundColor: isDark ? color.surfaceDark : color.surfaceGrouped,
+                        backgroundColor: color.card,
                         borderWidth: 1,
                         borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : color.cardBorder,
                       }}
                       onPress={() => handleStartChatWithContact(cnt)}
                     >
                       <View
-                        className="w-10 h-10 rounded-full justify-center items-center mr-3"
-                        style={{ backgroundColor: color.primary }}
+                        style={{
+                          width: 42,
+                          height: 42,
+                          borderRadius: 15,
+                          backgroundColor: palette.mint,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          marginRight: 12,
+                        }}
                       >
-                        <Text className="text-white text-[15px] font-bold">
-                          {cnt.name ? cnt.name.charAt(0).toUpperCase() : "C"}
-                        </Text>
+                        <HugeiconsIcon
+                          icon={UserIcon}
+                          size={20}
+                          color={palette.text}
+                          strokeWidth={2}
+                        />
                       </View>
                       <View className="flex-1 min-w-0">
                         <Text
@@ -508,10 +535,11 @@ export const InboxScreen: React.FC = () => {
                           +{cnt.phone || cnt.wa_id}
                         </Text>
                       </View>
-                      <Ionicons
-                        name="chevron-forward"
+                      <HugeiconsIcon
+                        icon={ArrowRight01Icon}
                         size={16}
                         color={color.textSecondary}
+                        strokeWidth={2}
                       />
                     </Pressable>
                   ))

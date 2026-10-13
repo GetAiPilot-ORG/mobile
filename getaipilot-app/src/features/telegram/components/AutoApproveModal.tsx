@@ -156,7 +156,7 @@ export const AutoApproveModal: React.FC<AutoApproveModalProps> = ({
                 </View>
 
                 {/* Action CTA Button */}
-                <Pressable
+                <Pressable cssInterop={false}
                   style={({ pressed }) => [
                     styles.openBotBtn,
                     pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },

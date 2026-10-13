@@ -30,7 +30,7 @@ export const ProductActionCard: React.FC<ProductActionCardProps> = ({
   const colors = getColors(isDark);
 
   return (
-    <Pressable
+    <Pressable cssInterop={false}
       style={({ pressed }) => [
         styles.card,
         isDark ? styles.cardDark : styles.cardLight,

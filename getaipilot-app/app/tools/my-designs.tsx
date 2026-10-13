@@ -397,7 +397,7 @@ export default function MyDesignScreen() {
 
         {/* Action Buttons */}
         <View style={styles.cardActionRow}>
-          <Pressable
+          <Pressable cssInterop={false}
             style={({ pressed }) => [
               styles.actionButtonSecondary,
               pressed && { opacity: 0.8 },
@@ -407,7 +407,7 @@ export default function MyDesignScreen() {
             <Text style={styles.actionButtonSecondaryText}>View Live ↗</Text>
           </Pressable>
 
-          <Pressable
+          <Pressable cssInterop={false}
             style={({ pressed }) => [
               styles.actionButtonPrimary,
               pressed && { opacity: 0.85 },

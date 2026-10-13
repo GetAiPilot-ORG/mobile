@@ -453,7 +453,7 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
 
                     <View style={styles.row}>
                       {/* Interactive Pressable Logo Box */}
-                      <Pressable
+                      <Pressable cssInterop={false}
                         style={({ pressed }) => [
                           styles.logoUploadBox,
                           isDark ? styles.logoUploadBoxDark : styles.logoUploadBoxLight,

@@ -159,7 +159,7 @@ export function NetworkStatusScreen({ onRetry, isChecking = false }: NetworkStat
           <View style={styles.dot} />
         </View>
 
-        <Pressable
+        <Pressable cssInterop={false}
           style={({ pressed }) => [
             styles.retryButton,
             pressed && styles.retryButtonPressed,

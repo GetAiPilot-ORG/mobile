@@ -527,7 +527,7 @@ export const SocialInboxTab = () => {
             const timeFormatted = formatMessageTime(conv.createdAt);
 
             return (
-              <Pressable
+              <Pressable cssInterop={false}
                 key={conv.id || conv.databaseId}
                 onPress={() => handleOpenConversation(conv)}
                 style={({ pressed }) => [

@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useTheme, getColors } from '@/theme';
+import { TabMotion } from './TabMotion';
 
 export type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -165,10 +166,10 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
               }
             };
 
-            if (isFocused) {
-              return (
+            return (
+              <TabMotion key={item.key} active={isFocused}>
+              {isFocused ? (
                 <Pressable
-                  key={item.key}
                   accessibilityRole="button"
                   accessibilityState={{ selected: true }}
                   accessibilityLabel={item.label}
@@ -199,12 +200,8 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
                     </View>
                   ) : null}
                 </Pressable>
-              );
-            }
-
-            return (
+              ) : (
               <Pressable
-                key={item.key}
                 accessibilityRole="button"
                 accessibilityState={{ selected: false }}
                 accessibilityLabel={item.label}
@@ -231,6 +228,8 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
                   ) : null}
                 </View>
               </Pressable>
+              )}
+              </TabMotion>
             );
           })}
         </View>
@@ -422,17 +421,19 @@ const styles = StyleSheet.create({
     zIndex: 10000,
   },
   tabBarContainer: {
+    width: '100%',
+    maxWidth: 420,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-around',
     alignSelf: 'center',
     height: 52,
     borderRadius: 26,
-    paddingHorizontal: 4,
+    paddingHorizontal: 6,
     paddingVertical: 4,
     borderWidth: 0,
     overflow: 'hidden',
-    gap: 6,
+    gap: 4,
   },
   activePill: {
     flexDirection: 'row',
@@ -503,7 +504,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(20, 19, 27, 0.42)',
     justifyContent: 'flex-end',
     alignItems: 'center',
   },
@@ -519,9 +520,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 20,
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    elevation: 12,
   },
   modalHeader: {
     flexDirection: 'row',

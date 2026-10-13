@@ -178,7 +178,7 @@ export function OfflineNotice() {
               </Text>
             </View>
 
-            <Pressable
+            <Pressable cssInterop={false}
               onPress={handleRetry}
               disabled={isChecking}
               style={({ pressed }) => [

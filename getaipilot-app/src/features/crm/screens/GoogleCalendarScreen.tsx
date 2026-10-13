@@ -383,7 +383,7 @@ export function GoogleCalendarScreen() {
               </Text>
             </View>
 
-            <Pressable
+            <Pressable cssInterop={false}
               onPress={() => refetch()}
               style={({ pressed }) => [
                 styles.retryButton,
@@ -482,7 +482,7 @@ export function GoogleCalendarScreen() {
             {/* ------------------------------------------------------------ */}
 
             <View style={styles.primaryActions}>
-              <Pressable
+              <Pressable cssInterop={false}
                 onPress={openCalendar}
                 style={({ pressed }) => [
                   styles.primaryButton,
@@ -503,7 +503,7 @@ export function GoogleCalendarScreen() {
                 </Text>
               </Pressable>
 
-              <Pressable
+              <Pressable cssInterop={false}
                 onPress={openCreateEvent}
                 style={({ pressed }) => [
                   styles.secondaryButton,
@@ -559,7 +559,7 @@ export function GoogleCalendarScreen() {
 
             <View style={styles.quickList}>
               {quickActions.map((item) => (
-                <Pressable
+                <Pressable cssInterop={false}
                   key={item.title}
                   onPress={item.onPress}
                   style={({ pressed }) => [
@@ -682,7 +682,7 @@ export function GoogleCalendarScreen() {
                 </Text>
               </View>
 
-              <Pressable
+              <Pressable cssInterop={false}
                 onPress={openTeamCalendar}
                 style={({ pressed }) => [
                   styles.smallActionButton,
@@ -704,7 +704,7 @@ export function GoogleCalendarScreen() {
             {/* Public Embed */}
             {/* ------------------------------------------------------------ */}
 
-            <Pressable
+            <Pressable cssInterop={false}
               onPress={openCalendarEmbed}
               style={({ pressed }) => [
                 styles.embedCard,
@@ -796,7 +796,7 @@ export function GoogleCalendarScreen() {
               calendar features.
             </Text>
 
-            <Pressable
+            <Pressable cssInterop={false}
               onPress={openGoogleCalendar}
               style={({ pressed }) => [
                 styles.primaryButton,
@@ -909,7 +909,7 @@ function EmptyLink({
   last?: boolean;
 }) {
   return (
-    <Pressable
+    <Pressable cssInterop={false}
       onPress={onPress}
       style={({ pressed }) => [
         styles.emptyLink,

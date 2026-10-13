@@ -92,7 +92,7 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
         </View>
 
         {/* Prominent Export Button at top of list */}
-        <Pressable
+        <Pressable cssInterop={false}
           onPress={() => onExportContacts(filteredContacts.length > 0 ? filteredContacts : dynamicContacts)}
           disabled={dynamicContacts.length === 0}
           style={({ pressed }) => [

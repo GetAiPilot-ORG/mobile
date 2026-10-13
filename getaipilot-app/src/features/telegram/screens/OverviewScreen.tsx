@@ -6,6 +6,16 @@ Text,
 View
 } from 'react-native';
 
+import {
+  SmileIcon,
+  UserAdd01Icon,
+  File01Icon,
+  Forward01Icon,
+  CrownIcon,
+  CheckmarkCircle01Icon,
+  BotIcon,
+  Megaphone01Icon,
+} from '@hugeicons/core-free-icons';
 import { ProductHeading,ProductMetrics,ProductRow,ProductSection,useProductPalette } from '@/components/ProductUI';
 import { TelegramHubTool,TelegramToolKey } from '../types';
 
@@ -163,6 +173,16 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
     reactions: 'Manage reactions on channel posts.', auto_approve: 'Accept channel join requests automatically.',
     chatbot: 'Set up automated replies.', broadcast: 'Send a message to your subscribers.',
   };
+  const TOOL_ICONS: Record<string, any> = {
+    reactions: SmileIcon,
+    tracker: UserAdd01Icon,
+    report_bot: File01Icon,
+    autoforward: Forward01Icon,
+    sub_manager: CrownIcon,
+    auto_approve: CheckmarkCircle01Icon,
+    chatbot: BotIcon,
+    broadcast: Megaphone01Icon,
+  };
   const tones = ['mint', 'lavender', 'peach', 'pink'] as const;
   return (
     <View>
@@ -184,7 +204,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 16 }}>
           {CATEGORIES.map((cat) => <Pressable key={cat.key} onPress={() => setSelectedCategory(cat.key)} accessibilityRole="button" accessibilityState={{ selected: selectedCategory === cat.key }} style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, borderRadius: 24, backgroundColor: selectedCategory === cat.key ? colors.lavender : colors.card }}><Text style={{ fontSize: 13, color: selectedCategory === cat.key ? colors.accent : colors.textSecondary }}>{cat.label}</Text></Pressable>)}
         </ScrollView>
-        {filteredTools.map((tool, index) => <ProductRow key={tool.key} title={names[tool.key] || tool.title} detail={descriptions[tool.key] || tool.description} icon={tool.icon as any} tone={tones[index % 4]} onPress={() => routeByTool[tool.key] ? onNavigate(routeByTool[tool.key]) : onOpenModal(tool.key)} />)}
+        {filteredTools.map((tool, index) => <ProductRow key={tool.key} title={names[tool.key] || tool.title} detail={descriptions[tool.key] || tool.description} icon={TOOL_ICONS[tool.key] || tool.icon} tone={tones[index % 4]} onPress={() => routeByTool[tool.key] ? onNavigate(routeByTool[tool.key]) : onOpenModal(tool.key)} />)}
       </ProductSection>
     </View>
   );

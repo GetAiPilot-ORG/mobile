@@ -308,7 +308,7 @@ export default function ReferralScreen() {
               </Text>
 
               <View style={styles.actionButtonsRow}>
-                <Pressable
+                <Pressable cssInterop={false}
                   onPress={shareReferral}
                   style={({ pressed }) => [
                     styles.shareButton,
@@ -321,7 +321,7 @@ export default function ReferralScreen() {
                   </Text>
                 </Pressable>
 
-                <Pressable
+                <Pressable cssInterop={false}
                   onPress={copyReferralLink}
                   style={({ pressed }) => [
                     styles.copyLinkBtn,

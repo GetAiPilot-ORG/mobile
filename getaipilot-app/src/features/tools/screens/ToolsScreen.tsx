@@ -135,7 +135,7 @@ export const ToolsScreen: React.FC = () => {
         <Text style={[styles.sectionTitle, { color: isDark ? "#cbd5e1" : "#475569" }]}>Native Free Tools</Text>
         <View style={styles.grid}>
           {nativeTools.map((tool) => (
-            <Pressable
+            <Pressable cssInterop={false}
               key={tool.route}
               style={({ pressed }) => [
                 styles.card,
@@ -159,7 +159,7 @@ export const ToolsScreen: React.FC = () => {
         </Text>
         <View style={styles.buildersList}>
           {webviewBuilders.map((builder) => (
-            <Pressable
+            <Pressable cssInterop={false}
               key={builder.id}
               style={({ pressed }) => [
                 styles.builderCard,

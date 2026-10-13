@@ -8,7 +8,7 @@ interface BroadcastCardProps { broadcast: WhatsAppBroadcast; onPress?: (broadcas
 
 export const BroadcastCard: React.FC<BroadcastCardProps> = ({ broadcast, onPress }) => {
   const colors = useProductPalette();
-  return <Pressable onPress={() => onPress?.(broadcast)} disabled={!onPress} accessibilityRole={onPress ? 'button' : undefined} accessibilityLabel={broadcast.name}
+  return <Pressable cssInterop={false} onPress={() => onPress?.(broadcast)} disabled={!onPress} accessibilityRole={onPress ? 'button' : undefined} accessibilityLabel={broadcast.name}
     style={({ pressed }) => ({ backgroundColor: colors.card, borderRadius: 24, padding: 20, marginBottom: 14, gap: 18, opacity: pressed ? 0.75 : 1 })}>
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
       <View style={{ width: 44, height: 44, borderRadius: 16, backgroundColor: colors.peach, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="megaphone-outline" size={22} color={colors.text} /></View>

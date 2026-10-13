@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { ComponentProps, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -7,7 +7,19 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import {
+  Calendar03Icon,
+  File01Icon,
+  Folder01Icon,
+  Link01Icon,
+  PaintBrush01Icon,
+  QrCode01Icon,
+  Rocket01Icon,
+  SmartPhone01Icon,
+  VoiceToTextIcon,
+  WhatsappIcon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react-native";
 import { useTheme, getColors } from "../../src/theme";
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
@@ -22,7 +34,7 @@ interface ToolItem {
   title: string;
   category: string;
   description: string;
-  icon: string;
+  icon: ComponentProps<typeof HugeiconsIcon>["icon"];
   iconBg: string;
   badge: string;
   route: string;
@@ -39,8 +51,8 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     category: "TEMPLATES",
     description:
       "Manage and customize your saved bio websites and campaign landing pages.",
-    icon: "color-palette",
-    iconBg: "#EC4899",
+    icon: PaintBrush01Icon,
+    iconBg: "#F7DFE9",
     badge: "CANVAS",
     route: "/tools/my-designs",
   },
@@ -50,8 +62,8 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     category: "TEMPLATES",
     description:
       "Pick mobile bio site themes optimized for creators, agencies, and businesses.",
-    icon: "phone-portrait",
-    iconBg: "#8B5CF6",
+    icon: SmartPhone01Icon,
+    iconBg: "#E7DEFA",
     badge: "POPULAR",
     route: "/tools/bio-templates",
   },
@@ -61,8 +73,8 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     category: "TEMPLATES",
     description:
       "Pre-built high-converting lead capture funnels and product waitlist pages.",
-    icon: "rocket",
-    iconBg: "#6366F1",
+    icon: Rocket01Icon,
+    iconBg: "#E7DEFA",
     badge: "READY",
     route: "/tools/landing-templates",
     builder: {
@@ -75,8 +87,8 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     category: "UTILITIES",
     description:
       "Embeddable survey forms and customer consultation intake funnels.",
-    icon: "document-text",
-    iconBg: "#10B981",
+    icon: File01Icon,
+    iconBg: "#D8F0F0",
     badge: "FREE",
     route: "/tools/quick-forms",
   },
@@ -86,8 +98,8 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     category: "MESSAGING",
     description:
       "Direct click-to-chat links with custom prefilled messages & QR codes.",
-    icon: "logo-whatsapp",
-    iconBg: "#25D366",
+    icon: WhatsappIcon,
+    iconBg: "#E0F1E6",
     badge: "POPULAR",
     route: "/tools/whatsapp-link",
   },
@@ -97,8 +109,8 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     category: "UTILITIES",
     description:
       "Shorten long URLs into branded links with real-time click tracking.",
-    icon: "link",
-    iconBg: "#0284C7",
+    icon: Link01Icon,
+    iconBg: "#D8F0F0",
     badge: "FAST",
     route: "/tools/link-shortener",
   },
@@ -108,8 +120,8 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     category: "UTILITIES",
     description:
       "Generate trackable public direct download links for PDFs and media assets.",
-    icon: "folder",
-    iconBg: "#F59E0B",
+    icon: Folder01Icon,
+    iconBg: "#F9E5D4",
     badge: "CLOUD",
     route: "/tools/file-linker",
   },
@@ -119,8 +131,8 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     category: "UTILITIES",
     description:
       "1-click calendar invites for Google Calendar, Apple iCal, and webinars.",
-    icon: "calendar",
-    iconBg: "#3B82F6",
+    icon: Calendar03Icon,
+    iconBg: "#D8F0F0",
     badge: "CALENDAR",
     route: "/tools/event-links",
   },
@@ -130,8 +142,8 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     category: "AI AUDIO",
     description:
       "Transcribe customer voice notes, audio meetings, and voice memos to text.",
-    icon: "mic",
-    iconBg: "#A855F7",
+    icon: VoiceToTextIcon,
+    iconBg: "#E7DEFA",
     badge: "AI POWERED",
     route: "/tools/speech-to-text",
   },
@@ -141,8 +153,8 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     category: "UTILITIES",
     description:
       "High-resolution custom QR codes for websites, text, and Wi-Fi credentials.",
-    icon: "qr-code",
-    iconBg: "#4F46E5",
+    icon: QrCode01Icon,
+    iconBg: "#F7DFE9",
     badge: "FREE",
     route: "/tools/qr-code",
   },

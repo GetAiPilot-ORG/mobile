@@ -151,7 +151,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
                 </View>
 
                 {/* Big Vibrant CTA Action Button */}
-                <Pressable
+                <Pressable cssInterop={false}
                   style={({ pressed }) => [
                     styles.openBotBtn,
                     pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
