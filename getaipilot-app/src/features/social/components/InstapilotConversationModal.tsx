@@ -44,7 +44,7 @@ export const InstapilotConversationModal: React.FC<InstapilotConversationModalPr
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View style={[styles.modalCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
+        <View style={[styles.modalCard, { backgroundColor: isDark ? '#1C1A25' : '#ffffff' }]}>
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.profileRow}>
@@ -63,7 +63,7 @@ export const InstapilotConversationModal: React.FC<InstapilotConversationModalPr
               <View style={styles.profileInfo}>
                 <View style={styles.nameRow}>
                   <Text
-                    style={[styles.displayName, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+                    style={[styles.displayName, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}
                     numberOfLines={1}
                   >
                     {conversation.instagram_name || conversation.instagram_username}
@@ -95,7 +95,7 @@ export const InstapilotConversationModal: React.FC<InstapilotConversationModalPr
                 {/* Sub-badges: Followers & Follows */}
                 <View style={styles.metaBadgesRow}>
                   <View style={styles.metaBadge}>
-                    <Ionicons name="people-outline" size={11} color="#94a3b8" />
+                    <Ionicons name="people-outline" size={11} color="#777383" />
                     <Text style={styles.metaBadgeText}>
                       {conversation.follower_count ?? 0} followers
                     </Text>
@@ -115,7 +115,7 @@ export const InstapilotConversationModal: React.FC<InstapilotConversationModalPr
                 <Ionicons name="logo-instagram" size={16} color="#e1306c" />
               </Pressable>
               <Pressable onPress={onClose} style={styles.closeBtn}>
-                <Ionicons name="close" size={20} color={isDark ? '#94a3b8' : '#64748b'} />
+                <Ionicons name="close" size={20} color={isDark ? '#777383' : '#64748b'} />
               </Pressable>
             </View>
           </View>
@@ -127,7 +127,7 @@ export const InstapilotConversationModal: React.FC<InstapilotConversationModalPr
                 style={[
                   styles.leadCard,
                   {
-                    backgroundColor: isDark ? '#1e293b' : '#f0fdf4',
+                    backgroundColor: isDark ? '#252230' : '#f0fdf4',
                     borderColor: isDark ? '#334155' : '#86efac',
                   },
                 ]}
@@ -136,7 +136,7 @@ export const InstapilotConversationModal: React.FC<InstapilotConversationModalPr
                   <View style={styles.leadIconCircle}>
                     <Ionicons name="sparkles" size={14} color="#16a34a" />
                   </View>
-                  <Text style={[styles.leadTitle, { color: isDark ? '#f8fafc' : '#166534' }]}>
+                  <Text style={[styles.leadTitle, { color: isDark ? '#F5F3FB' : '#166534' }]}>
                     Captured Lead Contact
                   </Text>
                 </View>
@@ -183,7 +183,7 @@ export const InstapilotConversationModal: React.FC<InstapilotConversationModalPr
 
               {messages.length === 0 ? (
                 <View style={styles.emptyMessages}>
-                  <Ionicons name="chatbubbles-outline" size={32} color="#94a3b8" />
+                  <Ionicons name="chatbubbles-outline" size={32} color="#777383" />
                   <Text style={styles.emptyMessagesText}>No message history available.</Text>
                 </View>
               ) : (
@@ -204,7 +204,7 @@ export const InstapilotConversationModal: React.FC<InstapilotConversationModalPr
                             isInbound
                               ? [
                                   styles.bubbleInbound,
-                                  { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' },
+                                  { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
                                 ]
                               : styles.bubbleOutbound,
                           ]}
@@ -213,7 +213,7 @@ export const InstapilotConversationModal: React.FC<InstapilotConversationModalPr
                             style={[
                               styles.messageText,
                               isInbound
-                                ? { color: isDark ? '#f8fafc' : '#0f172a' }
+                                ? { color: isDark ? '#F5F3FB' : '#1C1A25' }
                                 : { color: '#ffffff' },
                             ]}
                           >
@@ -223,7 +223,7 @@ export const InstapilotConversationModal: React.FC<InstapilotConversationModalPr
                             style={[
                               styles.messageTimestamp,
                               isInbound
-                                ? { color: isDark ? '#94a3b8' : '#64748b' }
+                                ? { color: isDark ? '#777383' : '#64748b' }
                                 : { color: 'rgba(255, 255, 255, 0.75)' },
                             ]}
                           >
@@ -245,7 +245,7 @@ export const InstapilotConversationModal: React.FC<InstapilotConversationModalPr
             </View>
 
             {/* Conversation Telemetry Info */}
-            <View style={[styles.metaCard, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
+            <View style={[styles.metaCard, { backgroundColor: isDark ? '#252230' : '#F5F3FB' }]}>
               <View style={styles.metaRow}>
                 <Text style={styles.metaLabel}>Conversation ID</Text>
                 <Text style={styles.metaVal}>{conversation.id}</Text>
@@ -279,7 +279,7 @@ export const InstapilotConversationModal: React.FC<InstapilotConversationModalPr
               <Text style={styles.primaryActionBtnText}>Open on Instagram</Text>
             </Pressable>
             <Pressable onPress={onClose} style={styles.dismissBtn}>
-              <Text style={[styles.dismissBtnText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+              <Text style={[styles.dismissBtnText, { color: isDark ? '#777383' : '#64748b' }]}>
                 Close
               </Text>
             </Pressable>
@@ -303,10 +303,9 @@ const styles = StyleSheet.create({
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0,
     shadowRadius: 16,
-    elevation: 20,
-  },
+    elevation: 20, borderRadius: 24 , borderWidth: 0 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -362,7 +361,7 @@ const styles = StyleSheet.create({
   },
   usernameText: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: '#777383',
     fontWeight: '600',
   },
   metaBadgesRow: {
@@ -382,7 +381,7 @@ const styles = StyleSheet.create({
   },
   metaBadgeText: {
     fontSize: 10,
-    color: '#94a3b8',
+    color: '#777383',
     fontWeight: '600',
   },
   headerActions: {
@@ -403,12 +402,11 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   leadCard: {
-    borderRadius: 14,
+    borderRadius: 24,
     padding: 14,
-    borderWidth: 1,
+    borderWidth: 0,
     marginBottom: 16,
-    gap: 10,
-  },
+    gap: 10, shadowOpacity: 0 },
   leadHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -448,12 +446,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-  },
+    fontSize: 18,
+    fontWeight: '500', lineHeight: 24 },
   lastActiveText: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: '#777383',
   },
   emptyMessages: {
     paddingVertical: 32,
@@ -462,7 +459,7 @@ const styles = StyleSheet.create({
   },
   emptyMessagesText: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: '#777383',
   },
   messagesList: {
     gap: 10,
@@ -499,11 +496,10 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   metaCard: {
-    borderRadius: 12,
+    borderRadius: 24,
     padding: 12,
     gap: 8,
-    marginBottom: 16,
-  },
+    marginBottom: 16, borderWidth: 0 , shadowOpacity: 0 },
   metaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -511,7 +507,7 @@ const styles = StyleSheet.create({
   },
   metaLabel: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: '#777383',
     fontWeight: '600',
   },
   metaVal: {
@@ -534,8 +530,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 12,
-    borderRadius: 12,
-  },
+    borderRadius: 28, backgroundColor: '#17171C' , minHeight: 44 , shadowOpacity: 0 },
   primaryActionBtnText: {
     color: '#ffffff',
     fontSize: 13,

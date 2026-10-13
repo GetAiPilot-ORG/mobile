@@ -82,7 +82,7 @@ const DEFAULT_VISUAL: ToolVisualConfig = {
   gradient: ['#64748B', '#475569'],
   icon: 'cube-outline',
   badge: 'MODULE',
-  badgeColor: '#94A3B8',
+  badgeColor: '#777383',
   badgeBg: 'rgba(100, 116, 139, 0.15)',
 };
 
@@ -102,7 +102,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
 
   return (
     <Pressable
-      className="rounded-2xl p-3.5 mb-3 active:opacity-85 shadow-sm shadow-black/5"
+      className="rounded-[24px] border-0 p-3.5 mb-3 active:opacity-85  shadow-black/5"
       style={{ backgroundColor: colors.card, borderColor: colors.border }}
       onPress={handlePress}
     >
@@ -138,7 +138,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
             style={{ backgroundColor: visual.badgeBg }}
           >
             <Text
-              className="text-[10px] font-extrabold tracking-wider"
+              className="text-[10px] font-semibold "
               style={{ color: visual.badgeColor }}
             >
               {badgeText}
@@ -149,7 +149,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
 
       {/* Description */}
       <Text
-        className="text-[12.5px] leading-[18px] text-[#94A3B8] mb-3"
+        className="text-[12.5px] leading-[18px] text-[#777383] mb-3"
         numberOfLines={2}
       >
         {tool.description}
@@ -157,8 +157,8 @@ export const ToolCard: React.FC<ToolCardProps> = ({ tool, onPress }) => {
 
       {/* Bottom Footer: Launch action button */}
       <View
-        className="flex-row justify-between items-center border-t pt-2.5"
-        style={{ borderTopColor: isDark ? '#27272A' : '#F1F5F9' }}
+        className="flex-row justify-between items-center  pt-2.5"
+        style={{ borderTopColor: isDark ? '#27272A' : '#F0EEF8' }}
       >
         <Text
           className="text-xs font-bold tracking-tight"

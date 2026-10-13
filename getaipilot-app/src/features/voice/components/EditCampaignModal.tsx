@@ -329,7 +329,7 @@ export const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
 
           {/* Footer */}
           <View style={[styles.footer, { borderTopColor: colors.border }]}>
-            <Pressable
+            <Pressable cssInterop={false}
               style={({ pressed }) => [
                 styles.cancelBtn,
                 {
@@ -346,7 +346,7 @@ export const EditCampaignModal: React.FC<EditCampaignModalProps> = ({
               </Text>
             </Pressable>
 
-            <Pressable
+            <Pressable cssInterop={false}
               style={({ pressed }) => [
                 styles.submitBtn,
                 {
@@ -409,12 +409,11 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   headerTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    letterSpacing: -0.3,
-  },
+    fontSize: 28,
+    fontWeight: '500',
+    letterSpacing: -0.5, lineHeight: 36 },
   headerSubtitle: {
-    fontSize: 12.5,
+    fontSize: 13.5,
     fontWeight: "500",
   },
   closeBtn: {
@@ -438,7 +437,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   bannerText: {
     fontSize: 12.5,

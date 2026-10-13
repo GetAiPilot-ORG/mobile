@@ -397,7 +397,7 @@ export default function MyDesignScreen() {
 
         {/* Action Buttons */}
         <View style={styles.cardActionRow}>
-          <Pressable
+          <Pressable cssInterop={false}
             style={({ pressed }) => [
               styles.actionButtonSecondary,
               pressed && { opacity: 0.8 },
@@ -407,7 +407,7 @@ export default function MyDesignScreen() {
             <Text style={styles.actionButtonSecondaryText}>View Live ↗</Text>
           </Pressable>
 
-          <Pressable
+          <Pressable cssInterop={false}
             style={({ pressed }) => [
               styles.actionButtonPrimary,
               pressed && { opacity: 0.85 },
@@ -614,9 +614,9 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   summaryCard: {
     backgroundColor: colors.card,
-    borderRadius: 20,
+    borderRadius: 24,
     padding: 18,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
     marginBottom: 16,
   },
@@ -744,9 +744,9 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   designCard: {
     backgroundColor: colors.card,
-    borderRadius: 18,
+    borderRadius: 24,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
     marginBottom: 14,
   },
@@ -872,10 +872,10 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-around",
     backgroundColor: colors.background,
-    borderRadius: 12,
+    borderRadius: 24,
     paddingVertical: 10,
     marginTop: 12,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
   },
   cardStatCol: {

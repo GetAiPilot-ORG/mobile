@@ -19,7 +19,7 @@ export const Card: React.FC<CardProps> = ({
   style,
   ...props
 }) => {
-  const { isDark } = useTheme();
+  const { colors } = useTheme();
 
   const paddingMap = {
     none: 'p-0',
@@ -30,22 +30,24 @@ export const Card: React.FC<CardProps> = ({
     xl: 'p-6',
   };
 
-  const variantStyles: Record<CardVariant, string> = {
-    default: isDark
-      ? 'bg-[#0B1420] border border-[#234563]'
-      : 'bg-white border border-[#E5E7EB]',
-    elevated: isDark
-      ? 'bg-[#0B1420] border border-[#234563] shadow-md'
-      : 'bg-white border border-[#E5E7EB] shadow-md',
-    outlined: isDark
-      ? 'bg-transparent border border-[#1B334A]'
-      : 'bg-transparent border border-[#E5E7EB]',
+  const surfaceStyle = {
+    backgroundColor: variant === 'outlined' ? 'transparent' : colors.card,
+    borderRadius: 24,
+    borderWidth: variant === 'outlined' ? 1 : 0,
+    borderColor: colors.border,
+    ...(variant === 'elevated' ? {
+      shadowColor: '#29213E',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.06,
+      shadowRadius: 14,
+      elevation: 2,
+    } : {}),
   };
 
   return (
     <View
-      className={`rounded-2xl ${variantStyles[variant]} ${paddingMap[padding]} ${className}`}
-      style={style}
+      className={`rounded-3xl ${paddingMap[padding]} ${className}`}
+      style={[surfaceStyle, style]}
       {...props}
     >
       {children}

@@ -62,21 +62,21 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
         style={[
           styles.contactTopExportBar,
           {
-            backgroundColor: isDark ? '#0f172a' : '#ffffff',
-            borderColor: isDark ? '#1e293b' : '#e2e8f0',
+            backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+            borderColor: isDark ? '#252230' : '#E9E6F2',
           },
         ]}
       >
         <View style={{ flex: 1, marginRight: 10 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Text style={[styles.contactListTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+            <Text style={[styles.contactListTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
               Captured Contacts
             </Text>
             <View
               style={[
                 styles.contactCountBadge,
                 {
-                  backgroundColor: isDark ? '#1e293b' : '#eff6ff',
+                  backgroundColor: isDark ? '#252230' : '#eff6ff',
                   borderColor: isDark ? '#334155' : '#bfdbfe',
                 },
               ]}
@@ -86,13 +86,13 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
               </Text>
             </View>
           </View>
-          <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 2 }}>
+          <Text style={{ fontSize: 12, color: isDark ? '#777383' : '#64748b', marginTop: 2 }}>
             Instagram AutoDM audience & CRM synced contacts
           </Text>
         </View>
 
         {/* Prominent Export Button at top of list */}
-        <Pressable
+        <Pressable cssInterop={false}
           onPress={() => onExportContacts(filteredContacts.length > 0 ? filteredContacts : dynamicContacts)}
           disabled={dynamicContacts.length === 0}
           style={({ pressed }) => [
@@ -115,8 +115,8 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
         style={[
           styles.card,
           {
-            backgroundColor: isDark ? '#0f172a' : '#ffffff',
-            borderColor: isDark ? '#1e293b' : '#e2e8f0',
+            backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+            borderColor: isDark ? '#252230' : '#E9E6F2',
             padding: 12,
             gap: 10,
           },
@@ -126,16 +126,16 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
           style={[
             styles.inboxSearchInputBox,
             {
-              backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+              backgroundColor: isDark ? '#252230' : '#F5F3FB',
               borderColor: isDark ? '#334155' : '#cbd5e1',
             },
           ]}
         >
-          <Ionicons name="search" size={15} color={isDark ? '#94a3b8' : '#64748b'} />
+          <Ionicons name="search" size={15} color={isDark ? '#777383' : '#64748b'} />
           <TextInput
-            style={[styles.inboxSearchInput, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+            style={[styles.inboxSearchInput, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}
             placeholder="Search by username, full name, CRM ID..."
-            placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
+            placeholderTextColor={isDark ? '#64748b' : '#777383'}
             value={contactSearch}
             onChangeText={setContactSearch}
           />
@@ -146,7 +146,7 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
                 setContactSearch('');
               }}
             >
-              <Ionicons name="close-circle" size={16} color={isDark ? '#94a3b8' : '#64748b'} />
+              <Ionicons name="close-circle" size={16} color={isDark ? '#777383' : '#64748b'} />
             </Pressable>
           )}
         </View>
@@ -162,14 +162,14 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
               styles.statusChip,
               contactFilter === 'all'
                 ? { backgroundColor: 'rgba(59, 130, 246, 0.14)', borderColor: '#3b82f6' }
-                : { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' },
+                : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
             ]}
           >
             <Text
               style={[
                 styles.statusChipText,
                 {
-                  color: contactFilter === 'all' ? '#3b82f6' : isDark ? '#94a3b8' : '#64748b',
+                  color: contactFilter === 'all' ? '#3b82f6' : isDark ? '#777383' : '#64748b',
                   fontWeight: contactFilter === 'all' ? '700' : '500',
                 },
               ]}
@@ -187,14 +187,14 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
               styles.statusChip,
               contactFilter === 'synced'
                 ? { backgroundColor: 'rgba(16, 185, 129, 0.14)', borderColor: '#10b981' }
-                : { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' },
+                : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
             ]}
           >
             <Text
               style={[
                 styles.statusChipText,
                 {
-                  color: contactFilter === 'synced' ? '#10b981' : isDark ? '#94a3b8' : '#64748b',
+                  color: contactFilter === 'synced' ? '#10b981' : isDark ? '#777383' : '#64748b',
                   fontWeight: contactFilter === 'synced' ? '700' : '500',
                 },
               ]}
@@ -212,14 +212,14 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
               styles.statusChip,
               contactFilter === 'with_dms'
                 ? { backgroundColor: 'rgba(139, 92, 246, 0.14)', borderColor: '#8b5cf6' }
-                : { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' },
+                : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
             ]}
           >
             <Text
               style={[
                 styles.statusChipText,
                 {
-                  color: contactFilter === 'with_dms' ? '#8b5cf6' : isDark ? '#94a3b8' : '#64748b',
+                  color: contactFilter === 'with_dms' ? '#8b5cf6' : isDark ? '#777383' : '#64748b',
                   fontWeight: contactFilter === 'with_dms' ? '700' : '500',
                 },
               ]}
@@ -234,7 +234,7 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
       {isLoading && (
         <View style={{ paddingVertical: 40, alignItems: 'center', gap: 12 }}>
           <ActivityIndicator size="large" color="#3b82f6" />
-          <Text style={{ fontSize: 13, color: isDark ? '#94a3b8' : '#64748b' }}>
+          <Text style={{ fontSize: 13, color: isDark ? '#777383' : '#64748b' }}>
             Loading captured contacts...
           </Text>
         </View>
@@ -246,18 +246,18 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
           style={[
             styles.autodmEmptyCard,
             {
-              backgroundColor: isDark ? '#0f172a' : '#ffffff',
-              borderColor: isDark ? '#1e293b' : '#e2e8f0',
+              backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+              borderColor: isDark ? '#252230' : '#E9E6F2',
             },
           ]}
         >
           <View style={[styles.autodmEmptyIconCircle, { backgroundColor: 'rgba(59, 130, 246, 0.12)' }]}>
             <Ionicons name="people" size={32} color="#3b82f6" />
           </View>
-          <Text style={[styles.autodmEmptyTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+          <Text style={[styles.autodmEmptyTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
             No Contacts Captured Yet
           </Text>
-          <Text style={[styles.autodmEmptyDesc, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+          <Text style={[styles.autodmEmptyDesc, { color: isDark ? '#777383' : '#64748b' }]}>
             When users comment on your Instagram posts with trigger keywords or respond to your automated DMs, their profile data and lead tags will be organized here.
           </Text>
 
@@ -280,19 +280,19 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
           style={[
             styles.card,
             {
-              backgroundColor: isDark ? '#0f172a' : '#ffffff',
-              borderColor: isDark ? '#1e293b' : '#e2e8f0',
+              backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+              borderColor: isDark ? '#252230' : '#E9E6F2',
               alignItems: 'center',
               paddingVertical: 32,
               gap: 8,
             },
           ]}
         >
-          <Ionicons name="search" size={28} color={isDark ? '#64748b' : '#94a3b8'} />
-          <Text style={{ fontSize: 14, fontWeight: '700', color: isDark ? '#f8fafc' : '#0f172a' }}>
+          <Ionicons name="search" size={28} color={isDark ? '#64748b' : '#777383'} />
+          <Text style={{ fontSize: 14, fontWeight: '700', color: isDark ? '#F5F3FB' : '#1C1A25' }}>
             No Matching Contacts
           </Text>
-          <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b' }}>
+          <Text style={{ fontSize: 12, color: isDark ? '#777383' : '#64748b' }}>
             Try clearing your search query or changing the filter.
           </Text>
           <Pressable
@@ -348,8 +348,8 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
               style={[
                 styles.contactCard,
                 {
-                  backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                  borderColor: isDark ? '#1e293b' : '#e2e8f0',
+                  backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+                  borderColor: isDark ? '#252230' : '#E9E6F2',
                 },
               ]}
             >
@@ -362,7 +362,7 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
                       style={styles.contactAvatar}
                     />
                   ) : (
-                    <View style={[styles.contactAvatarFallback, { backgroundColor: isDark ? '#1e293b' : '#fdf2f8' }]}>
+                    <View style={[styles.contactAvatarFallback, { backgroundColor: isDark ? '#252230' : '#fdf2f8' }]}>
                       <Text style={{ fontSize: 18, fontWeight: '800', color: '#e1306c' }}>
                         {(contact.username || 'U').charAt(0).toUpperCase()}
                       </Text>
@@ -381,13 +381,13 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
                     }}
                     style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
                   >
-                    <Text style={[styles.contactUsername, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                    <Text style={[styles.contactUsername, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                       @{contact.username}
                     </Text>
                     <Ionicons name="open-outline" size={13} color="#3b82f6" />
                   </Pressable>
                   {contact.full_name ? (
-                    <Text style={[styles.contactFullName, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                    <Text style={[styles.contactFullName, { color: isDark ? '#777383' : '#64748b' }]}>
                       {contact.full_name}
                     </Text>
                   ) : null}
@@ -424,12 +424,12 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
                   style={[
                     styles.contactRelationshipPill,
                     {
-                      backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
-                      borderColor: isDark ? '#334155' : '#e2e8f0',
+                      backgroundColor: isDark ? '#252230' : '#F0EEF8',
+                      borderColor: isDark ? '#334155' : '#E9E6F2',
                     },
                   ]}
                 >
-                  <Ionicons name="people" size={12} color={isDark ? '#94a3b8' : '#64748b'} />
+                  <Ionicons name="people" size={12} color={isDark ? '#777383' : '#64748b'} />
                   <Text style={[styles.contactRelationshipPillText, { color: isDark ? '#cbd5e1' : '#334155' }]}>
                     {contact.follower_count ?? 0} followers
                   </Text>
@@ -440,18 +440,18 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
                     styles.contactRelationshipPill,
                     contact.is_following_you
                       ? { backgroundColor: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.25)' }
-                      : { backgroundColor: isDark ? '#1e293b' : '#f8fafc', borderColor: isDark ? '#334155' : '#e2e8f0' },
+                      : { backgroundColor: isDark ? '#252230' : '#F5F3FB', borderColor: isDark ? '#334155' : '#E9E6F2' },
                   ]}
                 >
                   <Ionicons
                     name={contact.is_following_you ? 'checkmark-circle' : 'close-circle-outline'}
                     size={12}
-                    color={contact.is_following_you ? '#10b981' : isDark ? '#64748b' : '#94a3b8'}
+                    color={contact.is_following_you ? '#10b981' : isDark ? '#64748b' : '#777383'}
                   />
                   <Text
                     style={[
                       styles.contactRelationshipPillText,
-                      { color: contact.is_following_you ? '#10b981' : isDark ? '#94a3b8' : '#64748b' },
+                      { color: contact.is_following_you ? '#10b981' : isDark ? '#777383' : '#64748b' },
                     ]}
                   >
                     {contact.is_following_you ? 'Follows You' : 'Not Following You'}
@@ -463,18 +463,18 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
                     styles.contactRelationshipPill,
                     contact.you_are_following
                       ? { backgroundColor: 'rgba(59, 130, 246, 0.1)', borderColor: 'rgba(59, 130, 246, 0.25)' }
-                      : { backgroundColor: isDark ? '#1e293b' : '#f8fafc', borderColor: isDark ? '#334155' : '#e2e8f0' },
+                      : { backgroundColor: isDark ? '#252230' : '#F5F3FB', borderColor: isDark ? '#334155' : '#E9E6F2' },
                   ]}
                 >
                   <Ionicons
                     name={contact.you_are_following ? 'person-add' : 'person-remove-outline'}
                     size={12}
-                    color={contact.you_are_following ? '#3b82f6' : isDark ? '#64748b' : '#94a3b8'}
+                    color={contact.you_are_following ? '#3b82f6' : isDark ? '#64748b' : '#777383'}
                   />
                   <Text
                     style={[
                       styles.contactRelationshipPillText,
-                      { color: contact.you_are_following ? '#3b82f6' : isDark ? '#94a3b8' : '#64748b' },
+                      { color: contact.you_are_following ? '#3b82f6' : isDark ? '#777383' : '#64748b' },
                     ]}
                   >
                     {contact.you_are_following ? 'You Follow' : 'Not Following'}
@@ -484,25 +484,25 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
 
               {/* Engagement & Telemetry Grid */}
               <View style={styles.contactStatsGrid}>
-                <View style={[styles.contactStatBox, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
+                <View style={[styles.contactStatBox, { backgroundColor: isDark ? '#252230' : '#F5F3FB' }]}>
                   <Ionicons name="paper-plane" size={15} color="#3b82f6" />
-                  <Text style={[styles.contactStatVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                  <Text style={[styles.contactStatVal, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                     {contact.total_messages_sent ?? 0}
                   </Text>
                   <Text style={styles.contactStatLabel}>DMs Sent</Text>
                 </View>
 
-                <View style={[styles.contactStatBox, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
+                <View style={[styles.contactStatBox, { backgroundColor: isDark ? '#252230' : '#F5F3FB' }]}>
                   <Ionicons name="chatbubble-ellipses" size={15} color="#10b981" />
-                  <Text style={[styles.contactStatVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                  <Text style={[styles.contactStatVal, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                     {contact.total_messages_received ?? 0}
                   </Text>
                   <Text style={styles.contactStatLabel}>Received</Text>
                 </View>
 
-                <View style={[styles.contactStatBox, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
+                <View style={[styles.contactStatBox, { backgroundColor: isDark ? '#252230' : '#F5F3FB' }]}>
                   <Ionicons name="swap-horizontal" size={15} color="#8b5cf6" />
-                  <Text style={[styles.contactStatVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                  <Text style={[styles.contactStatVal, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                     {totalInteractions}
                   </Text>
                   <Text style={styles.contactStatLabel}>Touchpoints</Text>
@@ -515,16 +515,16 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
                   style={[
                     styles.contactTimelineContainer,
                     {
-                      borderTopColor: isDark ? '#1e293b' : '#f1f5f9',
-                      borderBottomColor: isDark ? '#1e293b' : '#f1f5f9',
+                      borderTopColor: isDark ? '#252230' : '#F0EEF8',
+                      borderBottomColor: isDark ? '#252230' : '#F0EEF8',
                     },
                   ]}
                 >
                   {firstSeenFormatted && (
                     <View style={styles.contactTimelineItem}>
-                      <Ionicons name="calendar-outline" size={13} color={isDark ? '#64748b' : '#94a3b8'} />
-                      <Text style={[styles.contactTimelineText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-                        First:{' '}
+                      <Ionicons name="calendar-outline" size={13} color={isDark ? '#64748b' : '#777383'} />
+                      <Text style={[styles.contactTimelineText, { color: isDark ? '#777383' : '#64748b' }]}>
+                        First: {' '}
                         <Text style={{ color: isDark ? '#cbd5e1' : '#334155' }}>
                           {firstSeenFormatted}
                         </Text>
@@ -534,9 +534,9 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
 
                   {lastActiveFormatted && (
                     <View style={styles.contactTimelineItem}>
-                      <Ionicons name="time-outline" size={13} color={isDark ? '#64748b' : '#94a3b8'} />
-                      <Text style={[styles.contactTimelineText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-                        Last:{' '}
+                      <Ionicons name="time-outline" size={13} color={isDark ? '#64748b' : '#777383'} />
+                      <Text style={[styles.contactTimelineText, { color: isDark ? '#777383' : '#64748b' }]}>
+                        Last: {' '}
                         <Text style={{ color: isDark ? '#cbd5e1' : '#334155' }}>
                           {lastActiveFormatted}
                         </Text>
@@ -551,8 +551,8 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
                 style={[
                   styles.contactCrmStrip,
                   {
-                    backgroundColor: isDark ? '#131e32' : '#f1f5f9',
-                    borderColor: isDark ? '#1e293b' : '#e2e8f0',
+                    backgroundColor: isDark ? '#131e32' : '#F0EEF8',
+                    borderColor: isDark ? '#252230' : '#E9E6F2',
                   },
                 ]}
               >
@@ -564,7 +564,7 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
                     </Text>
                   </View>
                   {contact.ecosystem_sync_source && (
-                    <Text style={{ fontSize: 10, color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', fontWeight: '600' }}>
+                    <Text style={{ fontSize: 10, color: isDark ? '#777383' : '#64748b', textTransform: 'uppercase', fontWeight: '600' }}>
                       Source: {contact.ecosystem_sync_source}
                     </Text>
                   )}
@@ -574,7 +574,7 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
                   <Text
                     style={[
                       styles.contactCrmIdText,
-                      { color: isDark ? '#94a3b8' : '#64748b' },
+                      { color: isDark ? '#777383' : '#64748b' },
                     ]}
                     numberOfLines={1}
                   >
@@ -583,7 +583,7 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
                 ) : null}
 
                 {syncedAtFormatted && (
-                  <Text style={{ fontSize: 10, color: isDark ? '#64748b' : '#94a3b8' }}>
+                  <Text style={{ fontSize: 10, color: isDark ? '#64748b' : '#777383' }}>
                     Last synced: {syncedAtFormatted}
                   </Text>
                 )}
@@ -599,14 +599,14 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
                   style={[
                     styles.contactActionBtn,
                     {
-                      backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                      borderColor: isDark ? '#334155' : '#e2e8f0',
+                      backgroundColor: isDark ? '#252230' : '#F5F3FB',
+                      borderColor: isDark ? '#334155' : '#E9E6F2',
                       borderWidth: 1,
                     },
                   ]}
                 >
                   <Ionicons name="logo-instagram" size={13} color="#e1306c" />
-                  <Text style={[styles.contactActionBtnText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                  <Text style={[styles.contactActionBtnText, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                     View on Instagram
                   </Text>
                 </Pressable>
@@ -620,12 +620,12 @@ export const AutoDMContactsView: React.FC<AutoDMContactsViewProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0,
     shadowRadius: 2,
     elevation: 1,
   },
@@ -690,13 +690,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   autodmEmptyCard: {
-    borderWidth: 1,
-    borderRadius: 14,
+    borderWidth: 0,
+    borderRadius: 24,
     paddingVertical: 36,
     paddingHorizontal: 20,
     alignItems: 'center',
-    gap: 8,
-  },
+    gap: 8, shadowOpacity: 0 },
   autodmEmptyIconCircle: {
     width: 60,
     height: 60,
@@ -722,19 +721,17 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 10,
-  },
+    borderRadius: 28, backgroundColor: '#17171C' , minHeight: 44 , shadowOpacity: 0 },
   primaryActionBtnText: {
     color: '#ffffff',
     fontSize: 12,
     fontWeight: '800',
   },
   contactCard: {
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 14,
-    borderWidth: 1,
-    gap: 10,
-  },
+    borderWidth: 0,
+    gap: 10, shadowOpacity: 0 },
   contactAvatar: {
     width: 44,
     height: 44,
@@ -821,7 +818,7 @@ const styles = StyleSheet.create({
   },
   contactStatLabel: {
     fontSize: 10,
-    color: '#94a3b8',
+    color: '#777383',
     fontWeight: '500',
   },
   contactTimelineContainer: {

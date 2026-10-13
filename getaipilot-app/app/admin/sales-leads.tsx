@@ -181,9 +181,9 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   summaryCard: {
     flex: 1,
     backgroundColor: colors.card,
-    borderRadius: 14,
+    borderRadius: 24,
     padding: 14,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
   },
   summaryLabel: {
@@ -223,9 +223,9 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   leadCard: {
     backgroundColor: colors.card,
-    borderRadius: 14,
+    borderRadius: 24,
     padding: 14,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
   },
   leadTop: {
@@ -299,7 +299,7 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: 24,
   },
   emptyText: {
     color: colors.mutedForeground,

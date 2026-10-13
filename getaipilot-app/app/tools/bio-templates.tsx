@@ -250,7 +250,7 @@ export default function BioTemplatesScreen() {
 
             {/* Actions */}
             <View style={styles.actions}>
-              <Pressable
+              <Pressable cssInterop={false}
                 style={({ pressed }) => [
                   styles.previewButton,
                   pressed && styles.pressed,
@@ -260,7 +260,7 @@ export default function BioTemplatesScreen() {
                 <Text style={styles.previewButtonText}>Preview</Text>
               </Pressable>
 
-              <Pressable
+              <Pressable cssInterop={false}
                 style={({ pressed }) => [
                   styles.editButton,
                   pressed && styles.pressed,
@@ -275,7 +275,7 @@ export default function BioTemplatesScreen() {
                 )}
               </Pressable>
 
-              <Pressable
+              <Pressable cssInterop={false}
                 style={({ pressed }) => [
                   styles.deleteButton,
                   pressed && styles.pressed,
@@ -426,8 +426,8 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: colors.card,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     borderColor: colors.border,
     padding: 16,
     marginBottom: 16,
@@ -462,8 +462,8 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
 
   templateCard: {
     backgroundColor: colors.card,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     borderColor: colors.border,
     overflow: "hidden",
     marginBottom: 14,

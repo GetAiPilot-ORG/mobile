@@ -1,11 +1,23 @@
 export const typography = {
   fontFamily: {
+    display: 'SF Pro Display, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    text: 'SF Pro Text, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     regular: 'System',
     medium: 'System',
     semibold: 'System',
     bold: 'System',
   },
   fontSize: {
+    globalNav: 12,
+    compactControl: 12,
+    bodySmall: 14,
+    body: 17,
+    featureCopy: 17,
+    productNavTitle: 19,
+    productKicker: 21,
+    featureHeading: 28,
+    heroDisplay: 34,
+    // Standard scale compatibility
     xs: 11,
     sm: 13,
     md: 15,
@@ -16,6 +28,16 @@ export const typography = {
     '4xl': 36,
   },
   lineHeight: {
+    globalNav: 12,
+    compactControl: 16,
+    bodySmall: 18,
+    body: 25,
+    featureCopy: 21,
+    productNavTitle: 23,
+    productKicker: 21,
+    featureHeading: 28,
+    heroDisplay: 42,
+    // Standard scale compatibility
     xs: 15,
     sm: 18,
     md: 21,
@@ -24,6 +46,17 @@ export const typography = {
     '2xl': 32,
     '3xl': 38,
     '4xl': 44,
+  },
+  letterSpacing: {
+    heroDisplay: -1.2,
+    featureHeading: 0,
+    productKicker: 0.231,
+    productNavTitle: 0.228,
+    body: -0.374,
+    featureCopy: -0.374,
+    bodySmall: -0.224,
+    compactControl: -0.12,
+    globalNav: -0.12,
   },
   fontWeight: {
     regular: '400' as const,

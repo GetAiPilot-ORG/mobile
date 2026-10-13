@@ -281,7 +281,7 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
             </View>
           </View>
           <Pressable style={[styles.closeBtn, isDark ? styles.closeBtnDark : styles.closeBtnLight]} onPress={onClose}>
-            <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+            <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
           </Pressable>
         </View>
 
@@ -300,7 +300,7 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
             <Ionicons
               name="link-outline"
               size={16}
-              color={activeTab === 'connect' ? '#0284C7' : isDark ? '#94A3B8' : '#64748B'}
+              color={activeTab === 'connect' ? '#0284C7' : isDark ? '#777383' : '#64748B'}
             />
             <Text
               style={[
@@ -331,7 +331,7 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
             <Ionicons
               name="globe-outline"
               size={16}
-              color={activeTab === 'links' ? '#0284C7' : isDark ? '#94A3B8' : '#64748B'}
+              color={activeTab === 'links' ? '#0284C7' : isDark ? '#777383' : '#64748B'}
             />
             <Text
               style={[
@@ -362,7 +362,7 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
             <Ionicons
               name="analytics-outline"
               size={16}
-              color={activeTab === 'joins' ? '#0284C7' : isDark ? '#94A3B8' : '#64748B'}
+              color={activeTab === 'joins' ? '#0284C7' : isDark ? '#777383' : '#64748B'}
             />
             <Text
               style={[
@@ -786,11 +786,11 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
 
                   {/* Search Bar */}
                   <View style={[styles.searchBar, isDark ? styles.inputDark : styles.inputLight]}>
-                    <Ionicons name="search" size={16} color="#94A3B8" />
+                    <Ionicons name="search" size={16} color="#777383" />
                     <TextInput
                       style={[styles.searchInput, isDark ? styles.textDark : styles.textLight]}
                       placeholder="Search by name, ID or channel..."
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor="#777383"
                       value={userSearch}
                       onChangeText={setUserSearch}
                     />
@@ -933,7 +933,7 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
                   Connect Telegram Bot
                 </Text>
                 <Pressable onPress={() => setShowConnectModal(false)}>
-                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
                 </Pressable>
               </View>
 
@@ -941,7 +941,7 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
               <TextInput
                 style={[styles.fieldInput, isDark ? styles.inputDark : styles.inputLight]}
                 placeholder="e.g. 7123456789:AAH..."
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor="#777383"
                 value={botTokenInput}
                 onChangeText={setBotTokenInput}
                 autoCapitalize="none"
@@ -951,7 +951,7 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
               <TextInput
                 style={[styles.fieldInput, isDark ? styles.inputDark : styles.inputLight]}
                 placeholder="e.g. Trading Guru Tracker"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor="#777383"
                 value={botNameInput}
                 onChangeText={setBotNameInput}
               />
@@ -960,7 +960,7 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
               <TextInput
                 style={[styles.fieldInput, isDark ? styles.inputDark : styles.inputLight]}
                 placeholder="e.g. tradingguru_bot"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor="#777383"
                 value={botUsernameInput}
                 onChangeText={setBotUsernameInput}
                 autoCapitalize="none"
@@ -1000,7 +1000,7 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
                   Create Attribution Join Link
                 </Text>
                 <Pressable onPress={() => setShowCreateLinkModal(false)}>
-                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
                 </Pressable>
               </View>
 
@@ -1008,7 +1008,7 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
               <TextInput
                 style={[styles.fieldInput, isDark ? styles.inputDark : styles.inputLight]}
                 placeholder="e.g. Instagram Promo 2026"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor="#777383"
                 value={linkTitleInput}
                 onChangeText={setLinkTitleInput}
               />
@@ -1017,7 +1017,7 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
               <TextInput
                 style={[styles.fieldInput, isDark ? styles.inputDark : styles.inputLight]}
                 placeholder="e.g. Direct Link, Meta Ads, YouTube"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor="#777383"
                 value={campaignSourceInput}
                 onChangeText={setCampaignSourceInput}
               />
@@ -1026,7 +1026,7 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
               <TextInput
                 style={[styles.fieldInput, isDark ? styles.inputDark : styles.inputLight]}
                 placeholder="e.g. Trading Guru SEBI Registered"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor="#777383"
                 value={channelNameInput}
                 onChangeText={setChannelNameInput}
               />
@@ -1058,10 +1058,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   containerLight: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F5F3FB',
   },
   containerDark: {
-    backgroundColor: '#0F172A',
+    backgroundColor: '#1C1A25',
   },
   header: {
     flexDirection: 'row',
@@ -1092,12 +1092,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
+    fontSize: 28,
+    fontWeight: '500', lineHeight: 36 , letterSpacing: -0.5 },
   subtitle: {
-    fontSize: 12,
-    color: '#64748B',
+    fontSize: 13,
+    color: '#716B7C',
     marginTop: 2,
   },
   activePill: {
@@ -1128,22 +1127,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   closeBtnLight: {
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#E9E6F2',
   },
   closeBtnDark: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#252230',
   },
   borderLight: {
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: '#E9E6F2',
   },
   borderDark: {
     borderBottomColor: '#334155',
   },
   textLight: {
-    color: '#0F172A',
+    color: '#1C1A25',
   },
   textDark: {
-    color: '#F8FAFC',
+    color: '#F5F3FB',
   },
   tabBar: {
     flexDirection: 'row',
@@ -1154,10 +1153,10 @@ const styles = StyleSheet.create({
   tabBarLight: {
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: '#E9E6F2',
   },
   tabBarDark: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#252230',
     borderBottomWidth: 1,
     borderBottomColor: '#334155',
   },
@@ -1185,7 +1184,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   tabBadge: {
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#E9E6F2',
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 10,
@@ -1230,42 +1229,40 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   sectionSub: {
-    fontSize: 12,
-    color: '#64748B',
+    fontSize: 13,
+    color: '#716B7C',
     marginTop: 2,
   },
   primaryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0284C7',
+    backgroundColor: '#17171C',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
-    gap: 4,
-  },
+    borderRadius: 28,
+    gap: 4, minHeight: 44 , shadowOpacity: 0 },
   primaryBtnText: {
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
   },
   card: {
-    borderRadius: 14,
+    borderRadius: 24,
     padding: 16,
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0,
     shadowRadius: 3,
-    elevation: 2,
-  },
+    elevation: 2, borderWidth: 0 },
   cardLight: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderWidth: 0,
+    borderColor: '#E9E6F2',
   },
   cardDark: {
-    backgroundColor: '#1E293B',
-    borderWidth: 1,
+    backgroundColor: '#252230',
+    borderWidth: 0,
     borderColor: '#334155',
   },
   botRow: {
@@ -1332,12 +1329,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   mappedChannelBoxLight: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F5F3FB',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E9E6F2',
   },
   mappedChannelBoxDark: {
-    backgroundColor: '#0F172A',
+    backgroundColor: '#1C1A25',
     borderWidth: 1,
     borderColor: '#334155',
   },
@@ -1353,7 +1350,7 @@ const styles = StyleSheet.create({
   },
   channelIdText: {
     fontSize: 11,
-    color: '#94A3B8',
+    color: '#777383',
   },
   createLinkBtn: {
     flexDirection: 'row',
@@ -1383,8 +1380,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   linkSubText: {
-    fontSize: 12,
-    color: '#64748B',
+    fontSize: 13,
+    color: '#716B7C',
   },
   linkBotTag: {
     color: '#0284C7',
@@ -1418,10 +1415,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   statPillLight: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F0EEF8',
   },
   statPillDark: {
-    backgroundColor: '#0F172A',
+    backgroundColor: '#1C1A25',
   },
   statVal: {
     fontSize: 15,
@@ -1459,13 +1456,12 @@ const styles = StyleSheet.create({
   kpiCard: {
     width: '48.5%',
     padding: 14,
-    borderRadius: 12,
+    borderRadius: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0,
     shadowRadius: 2,
-    elevation: 1,
-  },
+    elevation: 1, borderWidth: 0 },
   kpiIconWrap: {
     width: 32,
     height: 32,
@@ -1486,14 +1482,13 @@ const styles = StyleSheet.create({
   },
   kpiHint: {
     fontSize: 10,
-    color: '#94A3B8',
+    color: '#777383',
     marginTop: 1,
   },
   matrixCard: {
-    borderRadius: 14,
+    borderRadius: 24,
     padding: 16,
-    marginBottom: 16,
-  },
+    marginBottom: 16, borderWidth: 0 , shadowOpacity: 0 },
   matrixHeader: {
     flexDirection: 'column',
     alignItems: 'flex-start',
@@ -1506,10 +1501,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   matrixTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    flexShrink: 1,
-  },
+    fontSize: 18,
+    fontWeight: '500',
+    flexShrink: 1, lineHeight: 24 },
   periodBadge: {
     backgroundColor: '#EFF6FF',
     paddingHorizontal: 8,
@@ -1524,18 +1518,17 @@ const styles = StyleSheet.create({
     color: '#2563EB',
   },
   chanCard: {
-    borderRadius: 10,
+    borderRadius: 24,
     padding: 12,
-    marginBottom: 10,
-  },
+    marginBottom: 10, borderWidth: 0 , shadowOpacity: 0 },
   chanCardLight: {
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    backgroundColor: '#F5F3FB',
+    borderWidth: 0,
+    borderColor: '#E9E6F2',
   },
   chanCardDark: {
-    backgroundColor: '#0F172A',
-    borderWidth: 1,
+    backgroundColor: '#1C1A25',
+    borderWidth: 0,
     borderColor: '#334155',
   },
   chanCardHeader: {
@@ -1544,8 +1537,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     flexWrap: 'wrap',
     gap: 6,
-    marginBottom: 8,
-  },
+    marginBottom: 8, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   chanName: {
     fontSize: 13,
     fontWeight: '700',
@@ -1648,9 +1640,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
+    borderRadius: 22,
+    marginBottom: 10, borderWidth: 0 , minHeight: 48 },
   searchInput: {
     flex: 1,
     height: 38,
@@ -1668,10 +1659,10 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   filterPillLight: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F0EEF8',
   },
   filterPillDark: {
-    backgroundColor: '#0F172A',
+    backgroundColor: '#1C1A25',
   },
   filterPillActive: {
     backgroundColor: '#0284C7',
@@ -1692,7 +1683,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   userRowLight: {
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: '#F0EEF8',
   },
   userRowDark: {
     borderBottomColor: '#334155',
@@ -1724,13 +1715,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   userSub: {
-    fontSize: 11,
-    color: '#64748B',
+    fontSize: 13,
+    color: '#716B7C',
     marginTop: 1,
   },
   userTime: {
     fontSize: 10,
-    color: '#94A3B8',
+    color: '#777383',
   },
   userStatusPill: {
     paddingHorizontal: 8,
@@ -1783,12 +1774,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   inputLight: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F5F3FB',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E9E6F2',
   },
   inputDark: {
-    backgroundColor: '#0F172A',
+    backgroundColor: '#1C1A25',
     borderWidth: 1,
     borderColor: '#334155',
   },

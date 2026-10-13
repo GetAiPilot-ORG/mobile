@@ -1,19 +1,17 @@
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import React, { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ProductHeading,useProductPalette } from "@/components/ProductUI";
+import React,{ useState } from 'react';
+import { Pressable,ScrollView,Text,View } from 'react-native';
 import {
-  ActivitySubTab,
-  InstapilotConversation,
-  SystemProductStatus,
-  SystemSettings,
-  YoutubeChannelAccount,
+ActivitySubTab,
+InstapilotConversation,
+SystemProductStatus,
+SystemSettings,
+YoutubeChannelAccount,
 } from '../types';
 import { ActivityAutoDMSubTab } from './activity/ActivityAutoDMSubTab';
 import { ActivityInstapilotSubTab } from './activity/ActivityInstapilotSubTab';
 import { ActivityQueueSubTab } from './activity/ActivityQueueSubTab';
 import { ActivityYouTubeSubTab } from './activity/ActivityYouTubeSubTab';
-import { useTheme, getColors } from '@/theme';
 
 export interface SocialActivityTabProps {
   queueLoading: boolean;
@@ -56,137 +54,16 @@ export const SocialActivityTab: React.FC<SocialActivityTabProps> = ({
   youtubeAccountsLoading = false,
   onRefreshYoutubeAccounts,
 }) => {
-  const { isDark } = useTheme();
-  const colors = getColors(isDark);
+  const colors = useProductPalette();
   const [activeSubTab, setActiveSubTab] = useState<ActivitySubTab>('queue');
 
   return (
     <View className="gap-4">
-      {/* Sub-Tabs Top Segmented Navigation (Horizontally scrollable for small screens) */}
-      <View
-        className="rounded-xl p-[3px]"
-        style={{ backgroundColor: isDark ? '#1e293b' : '#e2e8f0' }}
-      >
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ flexDirection: 'row', alignItems: 'center', gap: 4, minWidth: '100%' }}
-        >
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setActiveSubTab('queue');
-            }}
-            className={`flex-1 min-w-[85px] flex-row items-center justify-center py-2 px-2.5 rounded-[9px] gap-1.5 ${
-              activeSubTab === 'queue' ? 'shadow-sm shadow-black/10' : ''
-            }`}
-            style={{
-              backgroundColor: activeSubTab === 'queue'
-                ? (isDark ? '#0f172a' : '#ffffff')
-                : 'transparent',
-            }}
-          >
-            <Ionicons
-              name="time"
-              size={14}
-              color={activeSubTab === 'queue' ? '#ec4899' : isDark ? '#94a3b8' : '#64748b'}
-            />
-            <Text
-              className="text-xs font-bold"
-              style={{ color: activeSubTab === 'queue' ? '#ec4899' : isDark ? '#94a3b8' : '#64748b' }}
-              numberOfLines={1}
-            >
-              Queue ({queueList.length})
-            </Text>
-          </Pressable>
+      <ProductHeading title="Your publishing" action="Create a post" onAction={onOpenCreateModal} />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 10 }}>
+        {([{ key: 'queue', title: 'Queue' }, { key: 'instapilot', title: 'Instagram' }, { key: 'youtube', title: 'YouTube' }, { key: 'autodm', title: 'Auto replies' }] as const).map((tab) => <Pressable key={tab.key} onPress={() => setActiveSubTab(tab.key)} accessibilityRole="button" accessibilityState={{ selected: activeSubTab === tab.key }} style={{ borderRadius: 24, paddingHorizontal: 18, minHeight: 44, justifyContent: 'center', backgroundColor: activeSubTab === tab.key ? colors.lavender : colors.card }}><Text style={{ color: activeSubTab === tab.key ? colors.accent : colors.textSecondary, fontSize: 13 }}>{tab.title}</Text></Pressable>)}
+      </ScrollView>
 
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setActiveSubTab('instapilot');
-            }}
-            className={`flex-1 min-w-[85px] flex-row items-center justify-center py-2 px-2.5 rounded-[9px] gap-1.5 ${
-              activeSubTab === 'instapilot' ? 'shadow-sm shadow-black/10' : ''
-            }`}
-            style={{
-              backgroundColor: activeSubTab === 'instapilot'
-                ? (isDark ? '#0f172a' : '#ffffff')
-                : 'transparent',
-            }}
-          >
-            <Ionicons
-              name="logo-instagram"
-              size={14}
-              color={activeSubTab === 'instapilot' ? '#e1306c' : isDark ? '#94a3b8' : '#64748b'}
-            />
-            <Text
-              className="text-xs font-bold"
-              style={{ color: activeSubTab === 'instapilot' ? '#e1306c' : isDark ? '#94a3b8' : '#64748b' }}
-              numberOfLines={1}
-            >
-              Instapilot
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setActiveSubTab('youtube');
-            }}
-            className={`flex-1 min-w-[85px] flex-row items-center justify-center py-2 px-2.5 rounded-[9px] gap-1.5 ${
-              activeSubTab === 'youtube' ? 'shadow-sm shadow-black/10' : ''
-            }`}
-            style={{
-              backgroundColor: activeSubTab === 'youtube'
-                ? (isDark ? '#0f172a' : '#ffffff')
-                : 'transparent',
-            }}
-          >
-            <Ionicons
-              name="logo-youtube"
-              size={14}
-              color={activeSubTab === 'youtube' ? '#ff0000' : isDark ? '#94a3b8' : '#64748b'}
-            />
-            <Text
-              className="text-xs font-bold"
-              style={{ color: activeSubTab === 'youtube' ? '#ff0000' : isDark ? '#94a3b8' : '#64748b' }}
-              numberOfLines={1}
-            >
-              YouTube
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setActiveSubTab('autodm');
-            }}
-            className={`flex-1 min-w-[85px] flex-row items-center justify-center py-2 px-2.5 rounded-[9px] gap-1.5 ${
-              activeSubTab === 'autodm' ? 'shadow-sm shadow-black/10' : ''
-            }`}
-            style={{
-              backgroundColor: activeSubTab === 'autodm'
-                ? (isDark ? '#0f172a' : '#ffffff')
-                : 'transparent',
-            }}
-          >
-            <Ionicons
-              name="flash"
-              size={14}
-              color={activeSubTab === 'autodm' ? '#3b82f6' : isDark ? '#94a3b8' : '#64748b'}
-            />
-            <Text
-              className="text-xs font-bold"
-              style={{ color: activeSubTab === 'autodm' ? '#3b82f6' : isDark ? '#94a3b8' : '#64748b' }}
-              numberOfLines={1}
-            >
-              AutoDM
-            </Text>
-          </Pressable>
-        </ScrollView>
-      </View>
-
-      {/* Subtab Contents */}
       {activeSubTab === 'queue' && (
         <ActivityQueueSubTab
           queueLoading={queueLoading}

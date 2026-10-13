@@ -1,5 +1,5 @@
-import { NativeModules, Platform } from 'react-native';
-import RazorpayCheckout, {
+import { Alert, NativeModules, Platform } from 'react-native';
+import type {
   RazorpayErrorData,
   RazorpayOptions,
   RazorpaySuccessData,
@@ -29,6 +29,8 @@ export class NativeRazorpayService {
     }
 
     try {
+      // Load the SDK only when its native module exists; web and Expo Go retain the modal fallback.
+      const { default: RazorpayCheckout } = await import("react-native-razorpay");
       // 1. Fetch Gateway Config
       const config = await RazorpayApiService.getConfig();
 
@@ -92,18 +94,11 @@ export class NativeRazorpayService {
           product: options.product,
         });
       } catch (verifyErr) {
-        console.warn('[NativeRazorpay] Verification callback warning:', verifyErr);
-        verifiedResult = {
-          orderId: data.razorpay_order_id || order.orderId,
-          paymentId: data.razorpay_payment_id,
-          signature: data.razorpay_signature,
-          planId: options.planId,
-          planName: options.planName,
-          billingInterval: options.billingInterval,
-          amount: options.amount,
-          currency: options.currency || 'INR',
-          status: 'SUCCESS',
-        };
+        // Never report a payment as successful before the server verifies it.
+        console.warn('[NativeRazorpay] Payment verification failed:', verifyErr);
+        if (options.onFailure) options.onFailure(verifyErr);
+        else Alert.alert("Payment confirmation failed", "We couldn’t confirm this payment. Check your payment history before trying again.");
+        return true;
       }
 
       if (options.onSuccess) {
@@ -125,6 +120,8 @@ export class NativeRazorpayService {
 
       if (options.onFailure) {
         options.onFailure(err);
+      } else {
+        Alert.alert("Payment could not be completed", errorData?.description || "Please check your connection and try again.");
       }
       return true;
     }

@@ -1,9 +1,11 @@
+import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { ProductHeading } from "@/components/ProductUI";
 import { getColors, useTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -23,7 +25,6 @@ import { useAuth } from '../../src/contexts/AuthContext';
 import { useRazorpay } from '../../src/contexts/RazorpayContext';
 import {
   calculateGapProPricing,
-  CATEGORY_META,
   GAP_PRO_INTERVALS,
   GapProInterval,
   isAddonPlan,
@@ -31,7 +32,6 @@ import {
   PricingPlan,
   PricingService,
 } from '../../src/core/pricing/pricingService';
-import { openVoiceWebBilling } from '../../src/features/voice/utils/voiceBilling';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 import {
   ReferralDiscountInfo,
@@ -65,8 +65,8 @@ const MODULAR_ENGINES: EngineMeta[] = [
 function getPlanTheme(plan: PricingPlan) {
   if (isGapProPlan(plan)) {
     return {
-      color: '#8B5CF6',
-      lightBg: '#FAF7FF',
+      color: '#6C55C5',
+      lightBg: '#E7DEFA',
       darkBg: '#231548',
       badge: 'ALL-IN-ONE VIP',
       icon: 'diamond' as keyof typeof Ionicons.glyphMap,
@@ -132,6 +132,7 @@ function getPlanTheme(plan: PricingPlan) {
 export default function OverallPricingScreen() {
   const router = useRouter();
   const { isDark } = useTheme();
+  const reducedMotion = useReducedMotion();
   const colors = getColors(isDark);
   const { width } = useWindowDimensions();
   const queryClient = useQueryClient();
@@ -153,10 +154,18 @@ export default function OverallPricingScreen() {
   );
 
   // GAP Pro Billing Interval: Monthly | Quarterly | Half-Yearly | Yearly
-  const [gapProInterval, setGapProInterval] = useState<GapProInterval>('year');
+  const [gapProInterval, setGapProInterval] = useState<GapProInterval>('month');
 
   // Currently Selected Plan ID (for the card highlight state)
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [routeCategory, setRouteCategory] = useState(params.category);
+  if (routeCategory !== params.category) {
+    setRouteCategory(params.category);
+    const modular = Boolean(params.category && params.category !== 'all' && params.category !== 'all-in-one');
+    setActiveTab(modular ? 'modular' : 'pro');
+    setSelectedEngine(modular ? params.category as PlanCategory : 'calling');
+  }
+
 
   // Detail Modal State (opens when tapping arrow icon)
   const [detailModalPlan, setDetailModalPlan] = useState<PricingPlan | null>(null);
@@ -170,9 +179,6 @@ export default function OverallPricingScreen() {
   };
 
   const {
-    planLabel,
-    subscriptionStatus,
-    expiresAt,
     refresh: refreshSub,
   } = usePlatformSubscription();
 
@@ -231,37 +237,12 @@ export default function OverallPricingScreen() {
     return activeTab === 'pro' ? gapProPlans : currentModularPlans;
   }, [activeTab, gapProPlans, currentModularPlans]);
 
-  // Automatically select the popular or first plan if none selected
-  useEffect(() => {
-    if (displayedPlans.length > 0) {
-      const popular = displayedPlans.find((p) => p.is_popular);
-      const chosen = popular || displayedPlans[0];
-      setSelectedPlanId((prev) => {
-        if (!prev || !displayedPlans.some((p) => p.id === prev)) {
-          return chosen.id;
-        }
-        return prev;
-      });
-    }
-  }, [displayedPlans]);
-
-  useEffect(() => {
-    if (params.category) {
-      if (params.category === 'all' || params.category === 'all-in-one') {
-        setActiveTab('pro');
-      } else {
-        setActiveTab('modular');
-        setSelectedEngine(params.category as PlanCategory);
-      }
-    }
-  }, [params.category]);
-
   const selectedPlan = useMemo(() => {
-    return displayedPlans.find((p) => p.id === selectedPlanId) || displayedPlans[0];
+    return displayedPlans.find((p) => p.id === selectedPlanId) || displayedPlans.find((p) => p.is_popular) || displayedPlans[0];
   }, [displayedPlans, selectedPlanId]);
 
   const selectedTheme = useMemo(() => {
-    return selectedPlan ? getPlanTheme(selectedPlan) : { color: '#8B5CF6' };
+    return selectedPlan ? getPlanTheme(selectedPlan) : { color: '#6C55C5' };
   }, [selectedPlan]);
 
   const currentTabThemeColor = useMemo(() => {
@@ -398,7 +379,7 @@ export default function OverallPricingScreen() {
   return (
     <AppScreen safeArea={false} backgroundColor={isDark ? '#0F172A' : '#F8FAFC'}>
       <AppTopBar
-        title="Choose Your Plan"
+        title="Plans"
         showBack={true}
         onBackPress={handleBack}
       />
@@ -415,20 +396,7 @@ export default function OverallPricingScreen() {
         }
       >
         {/* Title Header matching Screenshot 1 & 2 */}
-        <View className="items-center px-4 pt-2 pb-1">
-          <Text
-            className="text-2xl font-black tracking-tight text-center"
-            style={{ color: colors.text }}
-          >
-            Our Packages
-          </Text>
-          <Text
-            className="text-xs text-center mt-1.5 leading-4 px-4"
-            style={{ color: colors.textMuted }}
-          >
-            Select the optimal tier for your team. Click the arrow icon on any package to inspect full quotas & specifications.
-          </Text>
-        </View>
+        <ProductHeading title="Choose your plan" />
 
         {/* Top Segmented Switcher (Exact style of Screenshot 1: [ PERSONAL ] [ BUSINESS ]) */}
         <View className="items-center my-3">
@@ -447,17 +415,17 @@ export default function OverallPricingScreen() {
               }}
               className="flex-1 py-2.5 rounded-full items-center justify-center"
               style={{
-                backgroundColor: activeTab === 'pro' ? '#8B5CF6' : 'transparent',
+                backgroundColor: activeTab === 'pro' ? colors.accentSoft : 'transparent',
                 shadowColor: activeTab === 'pro' ? '#8B5CF6' : 'transparent',
-                shadowOpacity: activeTab === 'pro' ? 0.35 : 0,
+                shadowOpacity: 0,
                 shadowRadius: 6,
                 elevation: activeTab === 'pro' ? 3 : 0,
               }}
             >
               <Text
-                className="text-xs font-black tracking-wider"
+                className="text-xs font-medium "
                 style={{
-                  color: activeTab === 'pro' ? '#FFFFFF' : colors.textMuted,
+                  color: activeTab === 'pro' ? colors.accent : colors.textMuted,
                 }}
               >
                 ALL-IN-ONE PRO
@@ -471,17 +439,17 @@ export default function OverallPricingScreen() {
               }}
               className="flex-1 py-2.5 rounded-full items-center justify-center"
               style={{
-                backgroundColor: activeTab === 'modular' ? currentTabThemeColor : 'transparent',
+                backgroundColor: activeTab === 'modular' ? colors.accentSoft : 'transparent',
                 shadowColor: activeTab === 'modular' ? currentTabThemeColor : 'transparent',
-                shadowOpacity: activeTab === 'modular' ? 0.35 : 0,
+                shadowOpacity: 0,
                 shadowRadius: 6,
                 elevation: activeTab === 'modular' ? 3 : 0,
               }}
             >
               <Text
-                className="text-xs font-black tracking-wider"
+                className="text-xs font-medium "
                 style={{
-                  color: activeTab === 'modular' ? '#FFFFFF' : colors.textMuted,
+                  color: activeTab === 'modular' ? colors.accent : colors.textMuted,
                 }}
               >
                 SINGLE ENGINES
@@ -528,7 +496,7 @@ export default function OverallPricingScreen() {
                       {inv.label}
                     </Text>
                     {Boolean(inv.badge) && (
-                      <Text className="text-[8.5px] font-black text-purple-500 mt-0.5">
+                      <Text className="text-[8.5px] font-medium text-purple-500 mt-0.5">
                         {inv.badge}
                       </Text>
                     )}
@@ -635,7 +603,7 @@ export default function OverallPricingScreen() {
           /* PLAN CARDS LIST: Matching Screenshots 1 & 2 directly with DYNAMIC COLORS */
           <View className="gap-3.5 my-1">
             {displayedPlans.map((plan) => {
-              const isSelected = plan.id === selectedPlanId;
+              const isSelected = plan.id === selectedPlan?.id;
               const isPro = isGapProPlan(plan);
               const isAddon = isAddonPlan(plan);
               const isPopular = Boolean(plan.is_popular);
@@ -705,7 +673,7 @@ export default function OverallPricingScreen() {
                     <View className="flex-row items-center justify-between mb-3.5">
                       <View className="flex-row items-center gap-2.5 flex-1 mr-2">
                         <Text
-                          className="text-[17px] font-black tracking-tight"
+                          className="text-[17px] font-medium tracking-tight"
                           style={{ color: colors.text }}
                         >
                           {plan.plan_label || plan.plan_name}
@@ -714,9 +682,9 @@ export default function OverallPricingScreen() {
                         {isPopular ? (
                           <View
                             className="px-2.5 py-0.5 rounded-full"
-                            style={{ backgroundColor: theme.color }}
+                            style={{ backgroundColor: colors.buttonPrimary }}
                           >
-                            <Text className="text-[9px] font-black text-white tracking-wider">
+                            <Text className="text-[9px] font-medium text-white ">
                               MOST POPULAR
                             </Text>
                           </View>
@@ -726,7 +694,7 @@ export default function OverallPricingScreen() {
                             style={{ backgroundColor: `${theme.color}25` }}
                           >
                             <Text
-                              className="text-[9px] font-black tracking-wider"
+                              className="text-[9px] font-medium "
                               style={{ color: theme.color }}
                             >
                               BEST VALUE
@@ -742,7 +710,7 @@ export default function OverallPricingScreen() {
                           openDetailModal(plan);
                         }}
                         className="w-8 h-8 rounded-full items-center justify-center active:scale-95"
-                        style={{ backgroundColor: theme.color }}
+                        style={{ backgroundColor: colors.buttonPrimary }}
                       >
                         <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
                       </Pressable>
@@ -776,7 +744,7 @@ export default function OverallPricingScreen() {
                         {(isPro ? proPricing?.hasDiscount : isEligibleForDiscount) ? (
                           <View className="items-end">
                             <Text
-                              className="text-2xl font-black tracking-tight"
+                              className="text-2xl font-medium tracking-tight"
                               style={{ color: colors.text }}
                             >
                               {formattedDiscountedPrice}
@@ -790,7 +758,7 @@ export default function OverallPricingScreen() {
                           </View>
                         ) : (
                           <Text
-                            className="text-2xl font-black tracking-tight"
+                            className="text-2xl font-medium tracking-tight"
                             style={{ color: colors.text }}
                           >
                             {formattedPrice}
@@ -814,7 +782,7 @@ export default function OverallPricingScreen() {
                         <Text className="text-[11px] font-bold" style={{ color: theme.color }}>
                           Total ₹{proPricing.totalChargedRupees.toLocaleString('en-IN')} for {proPricing.option.months} mos
                         </Text>
-                        <Text className="text-[10px] font-black text-emerald-500">
+                        <Text className="text-[10px] font-medium text-emerald-500">
                           Save ₹{proPricing.totalSavedRupees.toLocaleString('en-IN')}
                         </Text>
                       </View>
@@ -848,7 +816,7 @@ export default function OverallPricingScreen() {
 
                     <View className="flex-1 min-w-0">
                       <Text
-                        className="text-[15px] font-extrabold tracking-tight"
+                        className="text-[15px] font-semibold tracking-tight"
                         style={{ color: colors.text }}
                         numberOfLines={1}
                       >
@@ -868,7 +836,7 @@ export default function OverallPricingScreen() {
                   <View className="flex-row items-center gap-3">
                     <View className="items-end">
                       <Text
-                        className="text-lg font-black tracking-tight"
+                        className="text-lg font-medium tracking-tight"
                         style={{ color: colors.text }}
                       >
                         {(isPro ? proPricing?.hasDiscount : isEligibleForDiscount)
@@ -901,28 +869,7 @@ export default function OverallPricingScreen() {
           </View>
         )}
 
-        {/* Security & Assurance Mini Footer */}
-        <View className="flex-row items-center justify-center gap-4 py-3 opacity-75">
-          <View className="flex-row items-center gap-1">
-            <Ionicons name="shield-checkmark" size={12} color="#10B981" />
-            <Text className="text-[10.5px] font-bold" style={{ color: colors.textMuted }}>
-              SSL Secure
-            </Text>
-          </View>
-          <View className="flex-row items-center gap-1">
-            <Ionicons name="flash" size={12} color="#F59E0B" />
-            <Text className="text-[10.5px] font-bold" style={{ color: colors.textMuted }}>
-              Instant Activation
-            </Text>
-          </View>
-          <View className="flex-row items-center gap-1">
-            <Ionicons name="receipt-outline" size={12} color="#0284C7" />
-            <Text className="text-[10.5px] font-bold" style={{ color: colors.textMuted }}>
-              GST Invoices
-            </Text>
-          </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
 
       {/* Floating Bottom Sticky CTA Button (Dynamic Theme Color) */}
       <View
@@ -935,17 +882,17 @@ export default function OverallPricingScreen() {
         <Pressable
           onPress={() => handleCheckout()}
           disabled={!selectedPlan}
-          className="w-full py-3.5 rounded-2xl items-center justify-center flex-col gap-0.5 active:opacity-90 shadow-md"
+          className="w-full py-3.5 rounded-2xl items-center justify-center flex-col gap-0.5 active:opacity-90 shadow-none"
           style={{
-            backgroundColor: selectedTheme.color,
+            backgroundColor: colors.buttonPrimary,
             shadowColor: selectedTheme.color,
-            shadowOpacity: 0.35,
+            shadowOpacity: 0,
             shadowRadius: 8,
             elevation: 4,
           }}
         >
           <View className="flex-row items-center gap-2">
-            <Text className="text-white text-[15px] font-black tracking-wide">
+            <Text className="text-[15px] font-medium" style={{ color: colors.buttonPrimaryForeground }}>
               {selectedPlan
                 ? `Continue to Purchase · ${
                     isGapProPlan(selectedPlan)
@@ -963,12 +910,7 @@ export default function OverallPricingScreen() {
             </Text>
             <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
           </View>
-          <View className="flex-row items-center gap-1 opacity-90">
-            <Ionicons name="shield-checkmark" size={10} color="#FFFFFF" />
-            <Text className="text-[10px] font-bold text-white tracking-wider">
-              RAZORPAY SECURE SDK · UPI & CARDS
-            </Text>
-          </View>
+
         </Pressable>
       </View>
 
@@ -978,7 +920,7 @@ export default function OverallPricingScreen() {
       {detailModalPlan && (
         <Modal
           visible={Boolean(detailModalPlan)}
-          animationType="slide"
+          animationType={reducedMotion ? "none" : "fade"}
           transparent={true}
           onRequestClose={() => setDetailModalPlan(null)}
         >
@@ -1052,7 +994,7 @@ export default function OverallPricingScreen() {
                         </View>
                         <View className="flex-1">
                           <Text
-                            className="text-lg font-black tracking-tight"
+                            className="text-lg font-medium tracking-tight"
                             style={{ color: colors.text }}
                           >
                             {plan.plan_label || plan.plan_name}
@@ -1063,7 +1005,7 @@ export default function OverallPricingScreen() {
                               style={{ backgroundColor: `${theme.color}15` }}
                             >
                               <Text
-                                className="text-[10px] font-black tracking-wider"
+                                className="text-[10px] font-medium "
                                 style={{ color: theme.color }}
                               >
                                 {theme.badge}
@@ -1071,7 +1013,7 @@ export default function OverallPricingScreen() {
                             </View>
                             {plan.is_popular && (
                               <View className="px-2 py-0.5 rounded-md bg-[#F59E0B]">
-                                <Text className="text-[9.5px] font-black text-white">
+                                <Text className="text-[9.5px] font-medium text-white">
                                   POPULAR
                                 </Text>
                               </View>
@@ -1100,7 +1042,7 @@ export default function OverallPricingScreen() {
                       <View className="flex-row items-baseline justify-between mb-1">
                         <View className="flex-row items-baseline gap-2">
                           <Text
-                            className="text-3xl font-black"
+                            className="text-3xl font-medium"
                             style={{ color: colors.text }}
                           >
                             {(isPro ? proPricing?.hasDiscount : isEligibleForDiscount)
@@ -1125,7 +1067,7 @@ export default function OverallPricingScreen() {
 
                         {isPro && proPricing && proPricing.option.discountPercent > 0 && (
                           <View className="px-2.5 py-1 rounded-full bg-emerald-500">
-                            <Text className="text-[10px] font-black text-white">
+                            <Text className="text-[10px] font-medium text-white">
                               SAVE {proPricing.option.discountPercent}%
                             </Text>
                           </View>
@@ -1150,7 +1092,7 @@ export default function OverallPricingScreen() {
                       Boolean(plan.included_channels)) && (
                       <View className="gap-2">
                         <Text
-                          className="text-[11px] font-black tracking-wider"
+                          className="text-[11px] font-medium "
                           style={{ color: colors.textMuted }}
                         >
                           RESOURCE QUOTAS
@@ -1207,7 +1149,7 @@ export default function OverallPricingScreen() {
                     {/* Complete Features Checklist */}
                     <View className="gap-2.5">
                       <Text
-                        className="text-[11px] font-black tracking-wider"
+                        className="text-[11px] font-medium "
                         style={{ color: colors.textMuted }}
                       >
                         ALL INCLUDED CAPABILITIES
@@ -1271,7 +1213,7 @@ export default function OverallPricingScreen() {
                       onPress={() => handleCheckout(plan)}
                       className="w-full py-3.5 rounded-2xl items-center justify-center flex-col gap-0.5 active:opacity-90 shadow-lg mt-2 mb-4"
                       style={{
-                        backgroundColor: theme.color,
+                        backgroundColor: colors.buttonPrimary,
                         shadowColor: theme.color,
                         shadowOpacity: 0.4,
                         shadowRadius: 10,
@@ -1279,14 +1221,14 @@ export default function OverallPricingScreen() {
                       }}
                     >
                       <View className="flex-row items-center gap-2">
-                        <Text className="text-white text-[15px] font-black tracking-wide">
+                        <Text className="text-[15px] font-medium" style={{ color: colors.buttonPrimaryForeground }}>
                           Purchase Plan · ₹{finalChargedRupees.toLocaleString('en-IN')}
                         </Text>
                         <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
                       </View>
                       <View className="flex-row items-center gap-1 opacity-90">
                         <Ionicons name="shield-checkmark" size={10} color="#FFFFFF" />
-                        <Text className="text-[10px] font-bold text-white tracking-wider">
+                        <Text className="text-[10px] font-medium" style={{ color: colors.buttonPrimaryForeground }}>
                           PAY VIA RAZORPAY SDK
                         </Text>
                       </View>

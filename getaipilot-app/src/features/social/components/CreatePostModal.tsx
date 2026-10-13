@@ -269,19 +269,19 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View style={[styles.modalCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
+        <View style={[styles.modalCard, { backgroundColor: isDark ? '#1C1A25' : '#ffffff' }]}>
           {/* Modal Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <View style={[styles.iconWrap, { backgroundColor: 'rgba(236, 72, 153, 0.15)' }]}>
                 <Ionicons name="megaphone" size={20} color="#ec4899" />
               </View>
-              <Text style={[styles.title, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              <Text style={[styles.title, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                 Create Social Broadcast
               </Text>
             </View>
             <Pressable onPress={onClose} style={styles.closeBtn}>
-              <Ionicons name="close" size={20} color={isDark ? '#94a3b8' : '#64748b'} />
+              <Ionicons name="close" size={20} color={isDark ? '#777383' : '#64748b'} />
             </Pressable>
           </View>
 
@@ -303,8 +303,8 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                         backgroundColor: isSelected
                           ? `${ch.color}20`
                           : isDark
-                          ? '#1e293b'
-                          : '#f1f5f9',
+                          ? '#252230'
+                          : '#F0EEF8',
                         borderColor: isSelected ? ch.color : 'transparent',
                       },
                     ]}
@@ -312,7 +312,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                     <Ionicons
                       name={ch.icon as any}
                       size={16}
-                      color={isSelected ? ch.color : isDark ? '#94a3b8' : '#64748b'}
+                      color={isSelected ? ch.color : isDark ? '#777383' : '#64748b'}
                     />
                     <Text
                       style={[
@@ -342,15 +342,15 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
               style={[
                 styles.textArea,
                 {
-                  backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                  color: isDark ? '#f8fafc' : '#0f172a',
-                  borderColor: isDark ? '#334155' : '#e2e8f0',
+                  backgroundColor: isDark ? '#252230' : '#F5F3FB',
+                  color: isDark ? '#F5F3FB' : '#1C1A25',
+                  borderColor: isDark ? '#334155' : '#E9E6F2',
                 },
               ]}
               multiline
               numberOfLines={4}
               placeholder="What would you like to broadcast across your social networks?..."
-              placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
+              placeholderTextColor={isDark ? '#64748b' : '#777383'}
               value={caption}
               onChangeText={setCaption}
             />
@@ -374,8 +374,8 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 style={[
                   styles.attachedMediaCard,
                   {
-                    backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                    borderColor: isDark ? '#334155' : '#e2e8f0',
+                    backgroundColor: isDark ? '#252230' : '#F5F3FB',
+                    borderColor: isDark ? '#334155' : '#E9E6F2',
                   },
                 ]}
               >
@@ -437,13 +437,13 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 style={[
                   styles.uploadingBox,
                   {
-                    backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
-                    borderColor: isDark ? '#334155' : '#e2e8f0',
+                    backgroundColor: isDark ? '#252230' : '#F0EEF8',
+                    borderColor: isDark ? '#334155' : '#E9E6F2',
                   },
                 ]}
               >
                 <ActivityIndicator size="small" color="#ec4899" />
-                <Text style={[styles.uploadingText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                <Text style={[styles.uploadingText, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                   {uploadStatusText || 'Uploading media from device...'}
                 </Text>
               </View>
@@ -457,13 +457,13 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   style={[
                     styles.uploadPickerBtn,
                     {
-                      backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                      backgroundColor: isDark ? '#252230' : '#F5F3FB',
                       borderColor: isDark ? '#334155' : '#cbd5e1',
                     },
                   ]}
                 >
                   <Ionicons name="images" size={18} color="#ec4899" />
-                  <Text style={[styles.uploadPickerBtnText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                  <Text style={[styles.uploadPickerBtnText, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                     Upload from Gallery
                   </Text>
                 </Pressable>
@@ -473,13 +473,13 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   style={[
                     styles.uploadPickerBtn,
                     {
-                      backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                      backgroundColor: isDark ? '#252230' : '#F5F3FB',
                       borderColor: isDark ? '#334155' : '#cbd5e1',
                     },
                   ]}
                 >
                   <Ionicons name="camera" size={18} color="#3b82f6" />
-                  <Text style={[styles.uploadPickerBtnText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                  <Text style={[styles.uploadPickerBtnText, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                     Take Photo
                   </Text>
                 </Pressable>
@@ -496,13 +496,13 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 style={[
                   styles.modeBtn,
                   postMode === 'now' && styles.modeBtnActive,
-                  { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' },
+                  { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
                 ]}
               >
                 <Ionicons
                   name="flash"
                   size={16}
-                  color={postMode === 'now' ? '#ec4899' : isDark ? '#94a3b8' : '#64748b'}
+                  color={postMode === 'now' ? '#ec4899' : isDark ? '#777383' : '#64748b'}
                 />
                 <Text
                   style={[
@@ -519,13 +519,13 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 style={[
                   styles.modeBtn,
                   postMode === 'schedule' && styles.modeBtnActive,
-                  { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' },
+                  { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
                 ]}
               >
                 <Ionicons
                   name="calendar"
                   size={16}
-                  color={postMode === 'schedule' ? '#ec4899' : isDark ? '#94a3b8' : '#64748b'}
+                  color={postMode === 'schedule' ? '#ec4899' : isDark ? '#777383' : '#64748b'}
                 />
                 <Text
                   style={[
@@ -547,13 +547,13 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   style={[
                     styles.input,
                     {
-                      backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                      color: isDark ? '#f8fafc' : '#0f172a',
-                      borderColor: isDark ? '#334155' : '#e2e8f0',
+                      backgroundColor: isDark ? '#252230' : '#F5F3FB',
+                      color: isDark ? '#F5F3FB' : '#1C1A25',
+                      borderColor: isDark ? '#334155' : '#E9E6F2',
                     },
                   ]}
                   placeholder="2026-09-16T18:00:00Z"
-                  placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
+                  placeholderTextColor={isDark ? '#64748b' : '#777383'}
                   value={scheduledDate}
                   onChangeText={setScheduledDate}
                   autoCapitalize="none"
@@ -572,7 +572,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
           {/* Action Buttons */}
           <View style={styles.footer}>
             <Pressable onPress={onClose} style={styles.cancelBtn}>
-              <Text style={[styles.cancelBtnText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+              <Text style={[styles.cancelBtnText, { color: isDark ? '#777383' : '#64748b' }]}>
                 Cancel
               </Text>
             </Pressable>
@@ -617,10 +617,9 @@ const styles = StyleSheet.create({
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0,
     shadowRadius: 16,
-    elevation: 20,
-  },
+    elevation: 20, borderRadius: 24 , borderWidth: 0 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -640,9 +639,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
+    fontSize: 28,
+    fontWeight: '500', lineHeight: 36 , letterSpacing: -0.5 },
   closeBtn: {
     padding: 4,
   },
@@ -680,12 +678,11 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   input: {
-    borderWidth: 1,
-    borderRadius: 12,
+    borderWidth: 0,
+    borderRadius: 22,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 14,
-  },
+    fontSize: 14, minHeight: 48 },
   mediaSectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -702,11 +699,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 10,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     marginBottom: 8,
-    gap: 10,
-  },
+    gap: 10, shadowOpacity: 0 },
   mediaThumb: {
     width: 48,
     height: 48,

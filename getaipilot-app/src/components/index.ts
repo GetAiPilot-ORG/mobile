@@ -16,3 +16,4 @@ export * from './OfflineNotice';
 export * from './GlobalErrorBoundary';
 export * from './skeletonScreen';
 export * from './splash/AnimatedSplashScreen';
+export * from './TabMotion';

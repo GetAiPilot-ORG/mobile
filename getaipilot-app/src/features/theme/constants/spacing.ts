@@ -5,4 +5,18 @@ export const spacing = {
   lg: 16,
   xl: 20,
   xxl: 24,
+  28: 28,
+  32: 32,
+  40: 40,
+  48: 48,
+  52: 52,
+  64: 64,
+  76: 76,
+  80: 80,
+  128: 128,
+  144: 144,
+  // Apple Layout Tokens
+  sectionGap: 90,
+  cardPadding: 28,
+  elementGap: 20,
 };

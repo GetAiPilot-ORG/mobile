@@ -503,10 +503,10 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.card,
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
     marginBottom: 16,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
   },
   globalCardAlert: {
@@ -563,10 +563,10 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   serviceCard: {
     backgroundColor: colors.card,
-    borderRadius: 14,
+    borderRadius: 24,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
   },
   serviceHeader: {
@@ -628,10 +628,10 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   logCard: {
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: 24,
     padding: 14,
     marginBottom: 10,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
   },
   logHeader: {
@@ -663,7 +663,7 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: 24,
   },
   emptyText: {
     color: colors.mutedForeground,

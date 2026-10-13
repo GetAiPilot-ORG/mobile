@@ -27,7 +27,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ showLabel = false, siz
   const iconSize = size === 'sm' ? 16 : size === 'lg' ? 24 : 20;
 
   return (
-    <Pressable
+    <Pressable cssInterop={false}
       onPress={handlePress}
       style={({ pressed }) => [
         styles.button,
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   },
   buttonLight: {
     backgroundColor: '#F4F0E8',
-    borderColor: '#D2CABA',
+    borderColor: '#E9E6F2',
   },
   buttonDark: {
     backgroundColor: '#52575D',

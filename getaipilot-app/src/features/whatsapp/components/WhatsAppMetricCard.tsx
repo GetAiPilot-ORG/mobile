@@ -29,8 +29,8 @@ export const WhatsAppMetricCard: React.FC<WhatsAppMetricCardProps> = ({
 
   return (
     <View
-      className={`flex-1 w-full min-w-0 rounded-2xl p-3 sm:p-3.5 border justify-between shadow-sm ${
-        isDark ? 'bg-[#1C1C1E] border-[#2C2C2E]' : 'bg-white border-[#E5E7EB]'
+      className={`flex-1 w-full min-w-0 rounded-[24px] p-3 sm:p-3.5 border-0 justify-between  ${
+        isDark ? 'bg-[#252230] border-[#3A3549]' : 'bg-white border-transparent'
       }`}
       style={{
         flexBasis: Platform.OS === 'web' ? 'auto' : 0,

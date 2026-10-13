@@ -216,7 +216,7 @@ export default function NotFoundScreen() {
 
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
-          <Pressable
+          <Pressable cssInterop={false}
             onPress={handleHome}
             style={({ pressed }) => [
               styles.primaryBtn,
@@ -239,7 +239,7 @@ export default function NotFoundScreen() {
             </LinearGradient>
           </Pressable>
 
-          <Pressable
+          <Pressable cssInterop={false}
             onPress={handleBack}
             style={({ pressed }) => [
               styles.secondaryBtn,

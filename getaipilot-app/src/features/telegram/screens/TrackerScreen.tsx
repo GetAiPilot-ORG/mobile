@@ -15,7 +15,7 @@ import {
   View,
 } from 'react-native';
 import { StatCard } from '../components/ui/StatCard';
-import { AnimatedHero } from '../components/ui/AnimatedHero';
+import { ProductHeading } from "@/components/ProductUI";
 import { TelegramToolKey } from '../types';
 
 type TrackerSection = 'joins' | 'connect' | 'links';
@@ -107,63 +107,12 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
   return (
     <>
       {/* HERO: Command Center (Responsive Header with Telegram Graphic) */}
-      <View className="overflow-hidden">
-        <View className="flex-col gap-3">
-          {/* Telegram Animated Graphic Banner */}
-          <AnimatedHero
-            variant="tracker"
-            tagText="TELEGRAM TRACKER HUB"
-            tagIcon="analytics"
-            title="Member & Link Conversion Tracking"
-            subtitle="Deep join links, bot metrics & member event logs"
-          />
-
-          {/* Status Badges & Action */}
-          <View className="flex-row p-3 items-center justify-between flex-wrap gap-2">
-            <View className="flex-row items-center gap-1.5 flex-wrap flex-1 min-w-[180px]">
-              <View
-                className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-full"
-                style={{ backgroundColor: 'rgba(16,185,129,0.1)' }}
-              >
-                <View className="w-[7px] h-[7px] rounded-full bg-[#10B981]" />
-                <Text className="text-[11px] font-bold text-[#10B981]">Engine Active</Text>
-              </View>
-              <View
-                className="px-2.5 py-1 rounded-full"
-                style={{ backgroundColor: 'rgba(2,132,199,0.1)' }}
-              >
-                <Text className="text-[11px] font-bold text-[#0284C7]">
-                  {botsList.length} Bots Connected
-                </Text>
-              </View>
-              <View
-                className="px-2.5 py-1 rounded-full"
-                style={{ backgroundColor: 'rgba(139,92,246,0.1)' }}
-              >
-                <Text className="text-[11px] font-bold text-[#8B5CF6]">
-                  {(trackerLinks || []).length} Tracked Links
-                </Text>
-              </View>
-            </View>
-
-            <Pressable
-              className="flex-row items-center gap-1 bg-[#0284C7]/10 px-2.5 py-1.5 rounded-lg border border-[#0284C7]/20 self-start"
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                onOpenModal('tracker');
-              }}
-            >
-              <Ionicons name="add-circle-outline" size={13} color="#0284C7" />
-              <Text className="text-[11px] font-bold text-[#0284C7]">Manage Tracker</Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
+      <ProductHeading title="Join tracker" action="Manage tracker" onAction={() => onOpenModal('tracker')} />
 
       {/* 6 KPI Cards in Responsive Rows */}
       <View
-        className="w-full border-t pt-3 mt-1 gap-2 self-stretch mb-3.5"
-        style={{ borderTopColor: isDark ? '#27272A' : '#E2E8F0' }}
+        className="w-full pt-3 mt-1 gap-2 self-stretch mb-3.5"
+        style={{ borderTopColor: isDark ? '#27272A' : '#E9E6F2' }}
       >
         {kpiRows.map((row, rowIndex) => (
           <View key={rowIndex} className="flex-row w-full gap-2.5 self-stretch mb-2.5">
@@ -189,7 +138,7 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
 
       {/* Category Filter Tabs (Overview Screen Style) */}
       <View className="mb-3.5 p-2.5 rounded-xl" style={{ backgroundColor: colors.backgroundSecondary }}>
-        <Text className="text-[15px] font-extrabold mb-2.5" style={{ color: colors.text }}>
+        <Text className="text-[15px] font-medium mb-2.5" style={{ color: colors.text }}>
           Tracker Controls & Modules ({TRACKER_CATEGORIES.length})
         </Text>
         <ScrollView
@@ -203,10 +152,10 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
               <Pressable
                 key={cat.key}
                 className={`flex-row items-center gap-1.5 px-3 py-[7px] rounded-full border ${isSelected
-                  ? 'bg-[#0284C7] border-[#0284C7]'
+                  ? 'bg-[#E7DEFA] border-transparent'
                   : isDark
                     ? 'bg-[#121212] border-[#27272A]'
-                    : 'bg-[#F8FAFC] border-[#E2E8F0]'
+                    : 'bg-[#F5F3FB] border-[#E9E6F2]'
                   }`}
                 onPress={() => {
                   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -216,10 +165,10 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
                 <Ionicons
                   name={cat.icon}
                   size={13}
-                  color={isSelected ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
+                  color={isSelected ? '#6C55C5' : isDark ? '#94A3B8' : '#64748B'}
                 />
                 <Text
-                  className={`text-xs ${isSelected ? 'text-white font-bold' : 'font-semibold'}`}
+                  className={`text-xs ${isSelected ? 'text-[#6C55C5] font-medium' : 'font-semibold'}`}
                   style={isSelected ? undefined : { color: colors.text }}
                 >
                   {cat.label}
@@ -630,7 +579,7 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
                           marginTop: 10,
                           paddingTop: 8,
                           borderTopWidth: 1,
-                          borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0',
+                          borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : '#E9E6F2',
                         }}
                       >
                         <View style={styles.statPillSmall}>
@@ -678,10 +627,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-  },
+  sectionTitle: { fontSize: 18, fontWeight: '500', lineHeight: 24 },
   sectionSub: {
     fontSize: 11,
     color: '#64748B',
@@ -702,245 +648,49 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-  periodBadge: {
-    backgroundColor: 'rgba(2,132,199,0.1)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  periodBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#0284C7',
-  },
-  chanCard: {
-    borderRadius: 12,
-    padding: 12,
-  },
-  chanCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  chanName: {
-    fontSize: 13,
-    fontWeight: '700',
-    flex: 1,
-  },
-  periodPill: {
-    backgroundColor: 'rgba(2,132,199,0.1)',
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  periodPillText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#0284C7',
-  },
-  chanStats: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 8,
-  },
-  chanStatItem: {
-    alignItems: 'center',
-  },
-  chanStatLbl: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#94A3B8',
-    letterSpacing: 0.3,
-  },
-  chanStatVal: {
-    fontSize: 15,
-    fontWeight: '800',
-    marginTop: 2,
-  },
-  linksWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 4,
-  },
-  linkPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  linkPillTitle: {
-    fontSize: 11,
-    fontWeight: '600',
-    maxWidth: 120,
-  },
-  linkPillBadge: {
-    backgroundColor: '#0284C7',
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 5,
-  },
-  linkPillBadgeText: {
-    color: '#FFF',
-    fontSize: 9,
-    fontWeight: '700',
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  filterPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  filterPillActive: {
-    backgroundColor: '#0284C7',
-  },
-  filterPillText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  filterPillTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  userRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 10,
-    borderRadius: 10,
-  },
-  userAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#0284C7',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  userAvatarText: {
-    color: '#FFF',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  userName: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  userSub: {
-    fontSize: 11,
-    color: '#64748B',
-    marginTop: 1,
-  },
-  userTime: {
-    fontSize: 10,
-    color: '#94A3B8',
-    marginTop: 1,
-  },
-  statusPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  statusPillText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  botCard: {
-    padding: 12,
-    borderRadius: 12,
-  },
-  botAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#0284C7',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  botAvatarText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  botTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  botUsername: {
-    fontSize: 11,
-    color: '#64748B',
-    marginTop: 2,
-  },
-  activePill: {
-    backgroundColor: 'rgba(16,185,129,0.15)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  activePillText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#10B981',
-  },
-  createLinkBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(2,132,199,0.1)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  createLinkBtnText: {
-    color: '#0284C7',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  mappedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 10,
-    paddingTop: 8,
-    borderTopWidth: 1,
-  },
-  mappedLabel: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#94A3B8',
-    letterSpacing: 0.5,
-  },
-  channelTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(5,150,105,0.1)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  channelTagText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#059669',
-  },
+  periodBadge: { backgroundColor: 'rgba(2,132,199,0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  periodBadgeText: { fontSize: 10, fontWeight: '700', color: '#0284C7' },
+  chanCard: { borderRadius: 24, padding: 12, marginBottom: 8 , borderWidth: 0 , shadowOpacity: 0 },
+  chanCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 , borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
+  chanName: { fontSize: 13, fontWeight: '700', flex: 1 },
+  periodPill: { backgroundColor: 'rgba(2,132,199,0.1)', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 8 },
+  periodPillText: { fontSize: 10, fontWeight: '700', color: '#0284C7' },
+  chanStats: { flexDirection: 'row', gap: 12, marginBottom: 8 },
+  chanStatItem: { alignItems: 'center' },
+  chanStatLbl: { fontSize: 9, fontWeight: '800', color: '#777383', letterSpacing: 0.3 },
+  chanStatVal: { fontSize: 16, fontWeight: '800', marginTop: 2 },
+  linksWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  linkPill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(2,132,199,0.08)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  linkPillTitle: { fontSize: 11, fontWeight: '600', maxWidth: 120 },
+  linkPillBadge: { backgroundColor: '#0284C7', paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5 },
+  linkPillBadgeText: { color: '#FFF', fontSize: 9, fontWeight: '700' },
+  searchBar: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 22, paddingHorizontal: 12, paddingVertical: 9, borderWidth: 0, marginBottom: 10 , minHeight: 48 },
+  searchInput: { flex: 1, fontSize: 13, fontWeight: '500' },
+  filterPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
+  filterPillActive: { backgroundColor: '#0284C7', borderColor: '#0284C7' },
+  filterPillText: { fontSize: 12, fontWeight: '600' },
+  filterPillTextActive: { color: '#FFFFFF', fontWeight: '700' },
+  userRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 10, borderRadius: 10, marginBottom: 6 },
+  userAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#0284C7', alignItems: 'center', justifyContent: 'center' },
+  userAvatarText: { color: '#FFF', fontSize: 14, fontWeight: '800' },
+  userName: { fontSize: 13, fontWeight: '700' },
+  userSub: { fontSize: 13, color: '#716B7C', marginTop: 1 },
+  userTime: { fontSize: 10, color: '#777383', marginTop: 1 },
+  statusPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20, borderWidth: 1 },
+  statusPillText: { fontSize: 11, fontWeight: '700' },
+  botCard: { padding: 14, borderRadius: 24, borderWidth: 0, shadowOpacity: 0 },
+  botAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#0284C7', alignItems: 'center', justifyContent: 'center' },
+  botAvatarText: { color: '#FFF', fontSize: 14, fontWeight: '800' },
+  botTitle: { fontSize: 13, fontWeight: '700' },
+  botUsername: { fontSize: 11, color: '#64748B', marginTop: 2 },
+  activePill: { backgroundColor: 'rgba(16,185,129,0.15)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 },
+  activePillText: { fontSize: 9, fontWeight: '800', color: '#10B981' },
+  createLinkBtn: { backgroundColor: 'rgba(2,132,199,0.1)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
+  createLinkBtnText: { color: '#0284C7', fontSize: 11, fontWeight: '700' },
+  mappedRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, paddingTop: 8, borderTopWidth: 1 },
+  mappedLabel: { fontSize: 9, fontWeight: '800', color: '#777383', letterSpacing: 0.5 },
+  channelTag: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(5,150,105,0.1)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  channelTagText: { fontSize: 11, fontWeight: '600', color: '#059669' },
   statPillSmall: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -975,21 +725,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-  primaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: '#0284C7',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  primaryBtnText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
-  },
+  primaryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#17171C', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 28, minHeight: 44 , shadowOpacity: 0 },
+  primaryBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
   emptyCardInner: {
     padding: 24,
     alignItems: 'center',
@@ -1008,4 +745,3 @@ const styles = StyleSheet.create({
     maxWidth: 280,
   },
 });
-

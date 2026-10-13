@@ -129,8 +129,8 @@ const styles = StyleSheet.create({
     borderColor: '#686D72',
   },
   contentLight: {
-    backgroundColor: '#F8F5EF',
-    borderColor: '#D2CABA',
+    backgroundColor: '#F5F3FB',
+    borderColor: '#E9E6F2',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   description: {
-    fontSize: 12,
+    fontSize: 13,
     lineHeight: 18,
     marginTop: 2,
   },

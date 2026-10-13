@@ -1,9 +1,17 @@
 import React, { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import {
+  UserIcon,
+  BotIcon,
+  Time01Icon,
+  AlertCircleIcon,
+  ArrowRight01Icon,
+} from '@hugeicons/core-free-icons';
 import { NormalizedConversation } from '../types';
 import { ChannelBadge } from './ChannelBadge';
 import { useTheme, getColors } from '@/theme';
+import { useProductPalette } from '@/components/ProductUI';
 
 const CUSTOMER_SERVICE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
@@ -42,6 +50,7 @@ const formatMessageTime = (dateStr?: string) => {
 export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation, onPress }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+  const palette = useProductPalette();
 
   const time = formatMessageTime(conversation.last_message.created_at);
 
@@ -77,39 +86,61 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation
   const assignedName = conversation.assigned_agent_name || conversation.assigned_to;
   const isBotActive = conversation.bot_enabled !== false && !conversation.bot_paused;
 
+  // Signature pastel avatar matching WhatsApp contacts theme (tone="mint" / pastel)
+  const avatarTone = conversation.channel === 'whatsapp' ? 'mint' : 'lavender';
+  const avatarBg = palette[avatarTone];
+
   return (
     <Pressable
-      className="flex-row items-center p-3.5 rounded-[20px] mb-3 active:opacity-85"
       style={({ pressed }) => [
         {
           backgroundColor: colors.card,
-          borderWidth: 1,
-          borderColor: isDark
-            ? "rgba(255, 255, 255, 0.07)"
-            : colors.cardBorder,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: isDark ? 0.25 : 0.04,
-          shadowRadius: 8,
-          elevation: 2,
-          opacity: pressed ? 0.85 : 1,
+          borderRadius: 22,
+          padding: 16,
+          marginBottom: 10,
+          flexDirection: 'row',
+          alignItems: 'center',
+          opacity: pressed ? 0.75 : 1,
+          transform: [{ scale: pressed ? 0.992 : 1 }],
         },
       ]}
       onPress={onPress}
     >
       <View
-        className="w-[48px] h-[48px] rounded-2xl justify-center items-center mr-3 relative"
-        style={{ backgroundColor: colors.primary }}
+        style={{
+          width: 46,
+          height: 46,
+          borderRadius: 16,
+          backgroundColor: avatarBg,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: 14,
+          position: 'relative',
+        }}
       >
-        <Text className="text-white text-lg font-bold">
-          {conversation.contact.name ? conversation.contact.name.charAt(0).toUpperCase() : 'W'}
-        </Text>
+        <HugeiconsIcon icon={UserIcon} size={22} color={palette.text} strokeWidth={2} />
         {isBotActive && (
           <View
-            className="absolute -bottom-1 -right-1 rounded-full p-0.5 border"
-            style={{ backgroundColor: colors.card, borderColor: colors.primary }}
+            style={{
+              position: 'absolute',
+              bottom: -2,
+              right: -2,
+              width: 17,
+              height: 17,
+              borderRadius: 9,
+              backgroundColor: colors.card,
+              borderWidth: 1.5,
+              borderColor: colors.card,
+              alignItems: 'center',
+              justifyContent: 'center',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.1,
+              shadowRadius: 2,
+              elevation: 2,
+            }}
           >
-            <Text className="text-[9px]">🤖</Text>
+            <HugeiconsIcon icon={BotIcon} size={10} color={colors.accent} strokeWidth={2} />
           </View>
         )}
       </View>
@@ -117,7 +148,7 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation
       <View className="flex-1 min-w-0">
         <View className="flex-row justify-between items-center mb-0.5">
           <Text
-            className="text-[15px] font-bold flex-1 min-w-0 mr-2"
+            className="text-[15px] font-semibold flex-1 min-w-0 mr-2"
             style={{ color: colors.textPrimary }}
             numberOfLines={1}
           >
@@ -146,10 +177,11 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation
                   : 'bg-emerald-500/10 border-emerald-500/30'
               }`}
             >
-              <Ionicons
-                name={windowStatus.expired ? 'alert-circle' : 'time'}
+              <HugeiconsIcon
+                icon={windowStatus.expired ? AlertCircleIcon : Time01Icon}
                 size={10}
                 color={windowStatus.expired ? '#f87171' : '#16a34a'}
+                strokeWidth={2}
               />
               <Text
                 className={`text-[9.5px] font-extrabold ${
@@ -183,7 +215,7 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation
                   borderColor: colors.border,
                 }}
               >
-                <Ionicons name="person" size={10} color={colors.textSecondary} />
+                <HugeiconsIcon icon={UserIcon} size={10} color={colors.textSecondary} strokeWidth={2} />
                 <Text
                   className="text-[9.5px] font-semibold"
                   style={{ color: colors.textSecondary }}
@@ -197,13 +229,20 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation
             {conversation.unread_count > 0 && (
               <View
                 className="px-2 py-0.5 rounded-full"
-                style={{ backgroundColor: colors.primary }}
+                style={{ backgroundColor: colors.accent }}
               >
                 <Text className="text-white text-[10px] font-extrabold">
                   {conversation.unread_count}
                 </Text>
               </View>
             )}
+
+            <HugeiconsIcon
+              icon={ArrowRight01Icon}
+              size={15}
+              color={colors.iconSecondary || colors.textSecondary}
+              strokeWidth={2}
+            />
           </View>
         </View>
       </View>

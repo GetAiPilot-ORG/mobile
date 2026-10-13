@@ -135,11 +135,12 @@ export const telegramSupabase = {
         .select(`
           *,
           channel_mapping:tg_bot_channel_mappings(id, channel_name, status, channel_icon_url),
-          bot:tg_tracker(id, status, bot_username, bot_name)
+          bot:tg_tracker(id, status, bot_username, bot_name),
+          users:tg_bot_join_users(id, joined_channel, left_channel, status)
         `)
         .eq("user_id", currentUserId)
         .order("created_at", { ascending: false })
-        .limit(100),
+        .limit(1000),
       supabase.from("tg_landing_pages").select("*").eq("user_id", currentUserId).order("created_at", { ascending: false }),
       supabase.from("tg_chatbot_configs").select("*").eq("user_id", currentUserId),
       numericTgUserId
@@ -152,7 +153,7 @@ export const telegramSupabase = {
         .eq("user_id", currentUserId)
         .order("created_at", { ascending: false })
         .limit(50),
-      supabase.from("tg_reaction_orders").select("*").eq("user_id", currentUserId).limit(100),
+      supabase.from("tg_reaction_orders").select("*").eq("user_id", currentUserId).limit(1000),
       numericTgUserId
         ? supabase.from("tg_user_text_filters").select("*").eq("user_id", numericTgUserId)
         : Promise.resolve({ data: [], error: null }),
@@ -167,7 +168,7 @@ export const telegramSupabase = {
         .select("*")
         .eq("user_id", currentUserId)
         .order("created_at", { ascending: false })
-        .limit(100),
+        .limit(1000),
       // Fast exact counts without fetching row bodies (Zero network overhead)
       supabase
         .from("tg_bot_join_users")
@@ -177,7 +178,7 @@ export const telegramSupabase = {
         .from("tg_bot_join_users")
         .select("*", { count: "exact", head: true })
         .eq("user_id", currentUserId)
-        .or("status.eq.Active,status.eq.joined,joined_channel.eq.true"),
+        .or("and(status.eq.Active,or(left_channel.eq.false,left_channel.is.null)),and(status.eq.joined,or(left_channel.eq.false,left_channel.is.null)),and(joined_channel.eq.true,or(left_channel.eq.false,left_channel.is.null))"),
     ]);
 
     const loadedBots = botsData.data || [];
@@ -249,7 +250,7 @@ export const telegramSupabase = {
 
     const activeJoinsCount = activeJoinsCountRes.count !== null && activeJoinsCountRes.count !== undefined
       ? activeJoinsCountRes.count
-      : loadedJoins.filter((j: any) => j.status === 'Active' || j.status === 'joined' || j.joined_channel).length;
+      : loadedJoins.filter((j: any) => !j.left_channel && (j.status === 'Active' || j.status === 'joined' || j.joined_channel)).length;
 
     // 6. Fetch Purchases & Subscriptions for user's landing pages (capped to prevent OOM)
     let loadedPurchases: any[] = [];
@@ -265,14 +266,14 @@ export const telegramSupabase = {
           .in("landing_page_id", pageIds)
           .eq("status", "success")
           .order("created_at", { ascending: false })
-          .limit(200),
+          .limit(1000),
         supabase
           .from("tg_channel_subscriptions")
           .select("id, plan_id, landing_page_id, status, telegram_user_id, created_at, plan:tg_plans(price, currency)")
           .in("landing_page_id", pageIds)
           .eq("status", "active")
           .not("telegram_user_id", "is", null)
-          .limit(200),
+          .limit(1000),
       ]);
 
       subsList = subsRes.data || [];

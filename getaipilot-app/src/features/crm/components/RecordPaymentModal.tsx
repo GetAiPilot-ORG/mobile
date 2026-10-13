@@ -359,12 +359,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
+    fontSize: 28,
+    fontWeight: '500',
+    letterSpacing: -0.5, lineHeight: 36 },
   headerSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   closeBtn: {
@@ -409,12 +408,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   input: {
-    borderWidth: 1,
-    borderRadius: 10,
+    borderWidth: 0,
+    borderRadius: 22,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 14,
-  },
+    fontSize: 14, minHeight: 48 },
   amountInput: {
     fontSize: 20,
     fontWeight: '700',

@@ -308,7 +308,7 @@ export default function ReferralScreen() {
               </Text>
 
               <View style={styles.actionButtonsRow}>
-                <Pressable
+                <Pressable cssInterop={false}
                   onPress={shareReferral}
                   style={({ pressed }) => [
                     styles.shareButton,
@@ -321,7 +321,7 @@ export default function ReferralScreen() {
                   </Text>
                 </Pressable>
 
-                <Pressable
+                <Pressable cssInterop={false}
                   onPress={copyReferralLink}
                   style={({ pressed }) => [
                     styles.copyLinkBtn,
@@ -703,7 +703,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   codeCard: {
-    borderWidth: 1,
+    borderWidth: 0,
     borderRadius: 22,
     padding: 18,
     marginBottom: 14,
@@ -774,8 +774,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   milestoneCard: {
-    borderWidth: 1,
-    borderRadius: 20,
+    borderWidth: 0,
+    borderRadius: 24,
     padding: 16,
     marginBottom: 14,
   },
@@ -844,8 +844,8 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     minHeight: 105,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     padding: 12,
   },
   statIcon: {

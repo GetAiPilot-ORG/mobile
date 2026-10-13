@@ -151,10 +151,10 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
     <View style={styles.subContent}>
       <View style={styles.headerActionRow}>
         <View style={styles.headerTextCol}>
-          <Text style={[styles.subTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+          <Text style={[styles.subTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
             Gap Instapilot Hub
           </Text>
-          <Text style={[styles.subDesc, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+          <Text style={[styles.subDesc, { color: isDark ? '#777383' : '#64748b' }]}>
             Instagram growth engine, automated Reels, & AI hooks
           </Text>
         </View>
@@ -176,15 +176,15 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
         style={[
           styles.card,
           {
-            backgroundColor: isDark ? '#0f172a' : '#ffffff',
-            borderColor: isDark ? '#1e293b' : '#e2e8f0',
+            backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+            borderColor: isDark ? '#252230' : '#E9E6F2',
           },
         ]}
       >
         {/* Profile Switcher Chips (when multiple Instagram accounts linked) */}
         {igAccounts.length > 1 && (
           <View style={{ marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Text style={{ fontSize: 11, fontWeight: '700', color: isDark ? '#94a3b8' : '#64748b' }}>
+            <Text style={{ fontSize: 11, fontWeight: '700', color: isDark ? '#777383' : '#64748b' }}>
               Profile:
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
@@ -206,7 +206,7 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
                       paddingHorizontal: 10,
                       borderRadius: 16,
                       borderWidth: 1,
-                      backgroundColor: isSelected ? '#e1306c' : (isDark ? '#1e293b' : '#f1f5f9'),
+                      backgroundColor: isSelected ? '#e1306c' : (isDark ? '#252230' : '#F0EEF8'),
                       borderColor: isSelected ? '#e1306c' : (isDark ? '#334155' : '#cbd5e1'),
                     }}
                   >
@@ -219,7 +219,7 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
                       style={{
                         fontSize: 11,
                         fontWeight: '700',
-                        color: isSelected ? '#ffffff' : (isDark ? '#f8fafc' : '#0f172a'),
+                        color: isSelected ? '#ffffff' : (isDark ? '#F5F3FB' : '#1C1A25'),
                       }}
                     >
                       @{acc.username || 'Profile'}
@@ -246,7 +246,7 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
             </View>
           )}
           <View style={styles.profileInfoCol}>
-            <Text style={[styles.profileName, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+            <Text style={[styles.profileName, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
               {igAccount?.account_name || igAccount?.username || 'Instagram Business Sync'}
             </Text>
             <Text style={styles.profileStatus}>
@@ -262,8 +262,8 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
         style={[
           styles.card,
           {
-            backgroundColor: isDark ? '#0f172a' : '#ffffff',
-            borderColor: isDark ? '#1e293b' : '#e2e8f0',
+            backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+            borderColor: isDark ? '#252230' : '#E9E6F2',
           },
         ]}
       >
@@ -271,7 +271,7 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
         <View style={styles.inboxHeaderRow}>
           <View style={styles.inboxTitleCol}>
             <View style={styles.inboxTitleLine}>
-              <Text style={[styles.cardSectionTitle, { color: isDark ? '#f8fafc' : '#0f172a', marginBottom: 0 }]}>
+              <Text style={[styles.cardSectionTitle, { color: isDark ? '#F5F3FB' : '#1C1A25', marginBottom: 0 }]}>
                 Direct Inbox & Leads
               </Text>
               <View style={[styles.liveSyncBadge, { backgroundColor: isSyncingInstapilot ? 'rgba(59, 130, 246, 0.12)' : 'rgba(34, 197, 94, 0.12)' }]}>
@@ -281,7 +281,7 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
                 </Text>
               </View>
             </View>
-            <Text style={[styles.inboxSubtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+            <Text style={[styles.inboxSubtitle, { color: isDark ? '#777383' : '#64748b' }]}>
               Real-time Instagram DMs • Auto-syncing every 15 seconds
             </Text>
           </View>
@@ -311,22 +311,22 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
             style={[
               styles.inboxSearchInputBox,
               {
-                backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                backgroundColor: isDark ? '#252230' : '#F5F3FB',
                 borderColor: isDark ? '#334155' : '#cbd5e1',
               },
             ]}
           >
-            <Ionicons name="search" size={15} color={isDark ? '#94a3b8' : '#64748b'} />
+            <Ionicons name="search" size={15} color={isDark ? '#777383' : '#64748b'} />
             <TextInput
-              style={[styles.inboxSearchInput, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+              style={[styles.inboxSearchInput, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}
               placeholder="Search name, @handle, or message..."
-              placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
+              placeholderTextColor={isDark ? '#64748b' : '#777383'}
               value={instapilotSearch}
               onChangeText={setInstapilotSearch}
             />
             {Boolean(instapilotSearch) && (
               <Pressable onPress={() => setInstapilotSearch('')}>
-                <Ionicons name="close-circle" size={16} color={isDark ? '#94a3b8' : '#64748b'} />
+                <Ionicons name="close-circle" size={16} color={isDark ? '#777383' : '#64748b'} />
               </Pressable>
             )}
           </View>
@@ -343,7 +343,7 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
               styles.inboxFilterPill,
               instapilotFilter === 'all'
                 ? [styles.inboxFilterPillActive, { backgroundColor: '#e1306c' }]
-                : { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' },
+                : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
             ]}
           >
             <Text
@@ -365,7 +365,7 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
               styles.inboxFilterPill,
               instapilotFilter === 'leads'
                 ? [styles.inboxFilterPillActive, { backgroundColor: '#16a34a' }]
-                : { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' },
+                : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
             ]}
           >
             <Ionicons
@@ -392,7 +392,7 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
               styles.inboxFilterPill,
               instapilotFilter === 'active'
                 ? [styles.inboxFilterPillActive, { backgroundColor: '#3b82f6' }]
-                : { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' },
+                : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
             ]}
           >
             <Ionicons
@@ -415,17 +415,17 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
         {instapilotLoading && instapilotConversations.length === 0 ? (
           <View style={styles.inboxLoadingBox}>
             <ActivityIndicator size="small" color="#e1306c" />
-            <Text style={[styles.inboxLoadingText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+            <Text style={[styles.inboxLoadingText, { color: isDark ? '#777383' : '#64748b' }]}>
               Loading Instagram conversations...
             </Text>
           </View>
         ) : filteredConversations.length === 0 ? (
           <View style={styles.inboxEmptyBox}>
             <Ionicons name="chatbubbles-outline" size={32} color={isDark ? '#475569' : '#cbd5e1'} />
-            <Text style={[styles.inboxEmptyTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+            <Text style={[styles.inboxEmptyTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
               No conversations found
             </Text>
-            <Text style={[styles.inboxEmptyDesc, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+            <Text style={[styles.inboxEmptyDesc, { color: isDark ? '#777383' : '#64748b' }]}>
               {instapilotSearch
                 ? 'No direct messages match your search filter.'
                 : 'Auto-syncing every 15 seconds for new Instagram DMs.'}
@@ -440,7 +440,7 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
               const isBotActive = conv.status === 'bot_active' && !conv.bot_paused;
 
               return (
-                <Pressable
+                <Pressable cssInterop={false}
                   key={conv.id}
                   onPress={() => {
                     Haptics.selectionAsync();
@@ -449,8 +449,8 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
                   style={({ pressed }) => [
                     styles.convCard,
                     {
-                      backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                      borderColor: isDark ? '#334155' : '#e2e8f0',
+                      backgroundColor: isDark ? '#252230' : '#F5F3FB',
+                      borderColor: isDark ? '#334155' : '#E9E6F2',
                     },
                     pressed && { opacity: 0.8 },
                   ]}
@@ -478,7 +478,7 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
                     <View style={styles.convInfoCol}>
                       <View style={styles.convNameRow}>
                         <Text
-                          style={[styles.convDisplayName, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+                          style={[styles.convDisplayName, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}
                           numberOfLines={1}
                         >
                           {conv.instagram_name || conv.instagram_username}
@@ -519,7 +519,7 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
                     <Ionicons
                       name="chevron-forward"
                       size={18}
-                      color={isDark ? '#64748b' : '#94a3b8'}
+                      color={isDark ? '#64748b' : '#777383'}
                       style={{ marginLeft: 6 }}
                     />
                   </View>
@@ -611,15 +611,15 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
         style={[
           styles.card,
           {
-            backgroundColor: isDark ? '#0f172a' : '#ffffff',
-            borderColor: isDark ? '#1e293b' : '#e2e8f0',
+            backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+            borderColor: isDark ? '#252230' : '#E9E6F2',
           },
         ]}
       >
         <View style={styles.cardHeader}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Ionicons name="sparkles" size={16} color="#e1306c" />
-            <Text style={[styles.cardSectionTitle, { color: isDark ? '#f8fafc' : '#0f172a', marginBottom: 0 }]}>
+            <Text style={[styles.cardSectionTitle, { color: isDark ? '#F5F3FB' : '#1C1A25', marginBottom: 0 }]}>
               AI Viral Caption & Hashtags
             </Text>
           </View>
@@ -629,13 +629,13 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
           style={[
             styles.topicInput,
             {
-              backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-              color: isDark ? '#f8fafc' : '#0f172a',
+              backgroundColor: isDark ? '#252230' : '#F5F3FB',
+              color: isDark ? '#F5F3FB' : '#1C1A25',
               borderColor: isDark ? '#334155' : '#cbd5e1',
             },
           ]}
           placeholder="Enter Reel/Post topic (e.g., Summer Fashion, AI Productivity)..."
-          placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
+          placeholderTextColor={isDark ? '#64748b' : '#777383'}
           value={aiTopicInput}
           onChangeText={setAiTopicInput}
         />
@@ -659,8 +659,8 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
         </Pressable>
 
         {generatedCaption ? (
-          <View style={[styles.resultBox, { backgroundColor: isDark ? '#1e293b' : '#fdf2f8' }]}>
-            <Text style={[styles.resultText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+          <View style={[styles.resultBox, { backgroundColor: isDark ? '#252230' : '#fdf2f8' }]}>
+            <Text style={[styles.resultText, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
               {generatedCaption}
             </Text>
             <Pressable
@@ -703,31 +703,30 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   subDesc: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   primaryActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#e1306c',
+    backgroundColor: '#17171C',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 10,
-    alignSelf: 'center',
-  },
+    borderRadius: 28,
+    alignSelf: 'center', minHeight: 44 , shadowOpacity: 0 },
   primaryActionBtnText: {
     color: '#ffffff',
     fontSize: 12,
     fontWeight: '800',
   },
   card: {
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0,
     shadowRadius: 2,
     elevation: 1,
     gap: 12,
@@ -755,7 +754,7 @@ const styles = StyleSheet.create({
   },
   profileStatus: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: '#777383',
     marginTop: 2,
   },
   linkAccBtn: {
@@ -763,7 +762,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: '#E9E6F2',
     alignSelf: 'center',
   },
   linkAccBtnText: {
@@ -791,14 +790,13 @@ const styles = StyleSheet.create({
   },
   igMetricLabel: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: '#777383',
     marginTop: 2,
     textAlign: 'center',
   },
   cardSectionTitle: {
     fontSize: 14,
-    fontWeight: '700',
-  },
+    fontWeight: '700', borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   inboxHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -816,7 +814,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   inboxSubtitle: {
-    fontSize: 11,
+    fontSize: 13,
     marginTop: 2,
   },
   liveSyncBadge: {
@@ -916,15 +914,13 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   convCard: {
-    borderWidth: 1,
-    borderRadius: 12,
+    borderWidth: 0,
+    borderRadius: 24,
     padding: 12,
-    gap: 8,
-  },
+    gap: 8, shadowOpacity: 0 },
   convCardHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-  },
+    alignItems: 'center', borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   convAvatarContainer: {
     position: 'relative',
     marginRight: 10,
@@ -987,7 +983,7 @@ const styles = StyleSheet.create({
   convTimeText: {
     marginLeft: 'auto',
     fontSize: 10,
-    color: '#94a3b8',
+    color: '#777383',
     fontWeight: '500',
   },
   convHandleRow: {
@@ -1002,11 +998,11 @@ const styles = StyleSheet.create({
   },
   convDotSeparator: {
     fontSize: 10,
-    color: '#94a3b8',
+    color: '#777383',
   },
   convFollowerText: {
     fontSize: 10,
-    color: '#94a3b8',
+    color: '#777383',
   },
   convFollowsBadge: {
     backgroundColor: 'rgba(225, 48, 108, 0.1)',
@@ -1075,13 +1071,12 @@ const styles = StyleSheet.create({
   },
   convMsgCountText: {
     fontSize: 10,
-    color: '#94a3b8',
+    color: '#777383',
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+    alignItems: 'center', borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   topicInput: {
     borderWidth: 1,
     borderRadius: 10,

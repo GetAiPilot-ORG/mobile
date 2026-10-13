@@ -39,12 +39,10 @@ export const Button: React.FC<ButtonProps> = ({
   const getVariantStyle = () => {
     switch (variant) {
       case 'primary':
-        return { backgroundColor: colors.primary };
+        return { backgroundColor: colors.buttonPrimary };
       case 'secondary':
         return {
-          backgroundColor: colors.surface,
-          borderColor: colors.border,
-          borderWidth: 1,
+          backgroundColor: colors.accentSoft,
         };
       case 'destructive':
         return { backgroundColor: colors.error };
@@ -73,7 +71,8 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const getTextColor = () => {
-    if (variant === 'primary' || variant === 'destructive') return '#FFFFFF';
+    if (variant === 'primary') return colors.buttonPrimaryForeground;
+    if (variant === 'destructive') return '#FFFFFF';
     if (variant === 'ghost') return colors.primary;
     return colors.text;
   };
@@ -89,13 +88,15 @@ export const Button: React.FC<ButtonProps> = ({
         ${className}
       `}
       disabled={disabled || isLoading}
-      style={[getVariantStyle(), style]}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: disabled || isLoading, busy: isLoading }}
+      style={[getVariantStyle(), { borderRadius: 999, minHeight: size === 'xs' ? 36 : 48 }, style]}
       {...props}
     >
       {isLoading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'primary' || variant === 'destructive' ? '#FFFFFF' : colors.primary}
+          color={getTextColor()}
         />
       ) : (
         <>

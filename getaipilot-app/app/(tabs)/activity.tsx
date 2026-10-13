@@ -221,7 +221,7 @@ export default function ConnectedPlatformsPage() {
   return (
     <AppScreen safeArea={false}>
       <AppTopBar
-        title="Ecosystem Activity"
+        title="Activity"
         showBack={false}
         showPlanBadge={true}
       />
@@ -242,63 +242,13 @@ export default function ConnectedPlatformsPage() {
           }
           showsVerticalScrollIndicator={false}
         >
-          {/* Hero Card */}
-          <View
-            className="rounded-[22px] p-5 mb-4"
-            style={{
-              backgroundColor: color.card,
-              borderWidth: 1,
-              borderColor: isDark
-                ? "rgba(255, 255, 255, 0.07)"
-                : color.cardBorder,
-              shadowColor: color.primary,
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: isDark ? 0.25 : 0.04,
-              shadowRadius: 8,
-              elevation: 2,
-            }}
-          >
-            <View className="flex-row items-center gap-2 mb-2">
-              <View
-                className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-lg"
-                style={{ backgroundColor: color.accentSoft }}
-              >
-                <Ionicons name="pulse" size={12} color={color.primary} />
-                <Text
-                  className="text-[10px] font-extrabold tracking-wider"
-                  style={{ color: color.primary }}
-                >
-                  LIVE TELEMETRY
-                </Text>
-              </View>
-            </View>
-            <Text
-              className="text-lg font-extrabold tracking-tight"
-              style={{ color: color.text }}
-            >
-              Ecosystem Activity
-            </Text>
-            <Text
-              className="text-[12.5px] mt-1 leading-[18px]"
-              style={{ color: color.textSecondary }}
-            >
-              Real-time health telemetry, webhook triggers, and automated pipeline events.
-            </Text>
+          <View style={{ marginBottom: 20, gap: 8 }}>
+            <Text style={{ fontSize: 30, lineHeight: 38, fontWeight: "500", letterSpacing: -0.6, color: color.text }}>Your activity</Text>
+            <Text style={{ fontSize: 14, color: color.textSecondary }}>Keep up with your connected apps.</Text>
           </View>
-
           {/* Platform Tabs (Folder Style matching Tools & Inbox tabs) */}
           <View style={{ position: "relative", marginVertical: 16 }}>
-            {/* Continuous baseline */}
-            <View
-              style={{
-                position: "absolute",
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: 1.5,
-                backgroundColor: color.primary,
-              }}
-            />
+
 
             <ScrollView
               horizontal
@@ -312,21 +262,21 @@ export default function ConnectedPlatformsPage() {
                     key={p.key}
                     onPress={() => handleSelectTab(p.key)}
                     style={{
-                      height: 38,
+                      height: 44,
                       paddingHorizontal: 14,
                       justifyContent: "center",
                       alignItems: "center",
-                      borderTopLeftRadius: isActive ? 10 : 0,
-                      borderTopRightRadius: isActive ? 10 : 0,
-                      borderTopWidth: 1.5,
-                      borderLeftWidth: 1.5,
-                      borderRightWidth: 1.5,
-                      borderBottomWidth: 1.5,
+                      borderRadius: 22,
+                      marginRight: 8,
+                      borderTopWidth: 0,
+                      borderLeftWidth: 0,
+                      borderRightWidth: 0,
+                      borderBottomWidth: 0,
                       borderTopColor: isActive ? color.primary : "transparent",
                       borderLeftColor: isActive ? color.primary : "transparent",
                       borderRightColor: isActive ? color.primary : "transparent",
                       borderBottomColor: isActive ? color.background : "transparent",
-                      backgroundColor: isActive ? color.background : "transparent",
+                      backgroundColor: isActive ? color.accentSoft : color.card,
                       zIndex: isActive ? 2 : 1,
                     }}
                   >
@@ -335,7 +285,7 @@ export default function ConnectedPlatformsPage() {
                         fontSize: 12.5,
                         fontWeight: isActive ? "700" : "500",
                         letterSpacing: -0.1,
-                        color: isActive ? color.primary : color.textSecondary,
+                        color: isActive ? color.accent : color.textSecondary,
                       }}
                     >
                       {p.label}

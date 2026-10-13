@@ -272,9 +272,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerLight: { backgroundColor: "#FFFFFF", borderBottomColor: "#E5E5EA" },
-  headerDark: { backgroundColor: "#1C1C1E", borderBottomColor: "#2C2C2E" },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: "#000000" },
-  headerSubtitle: { fontSize: 12, color: "#65656B", marginTop: 2 },
+  headerDark: { backgroundColor: "#252230", borderBottomColor: "#3A3549" },
+  headerTitle: { fontSize: 28, fontWeight: '500', color: "#000000" , lineHeight: 36 , letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 13, color: "#65656B", marginTop: 2 },
   textDark: { color: "#F7F7F8" },
   closeBtn: {
     width: 32,
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   closeBtnLight: { backgroundColor: "#E5E5EA" },
-  closeBtnDark: { backgroundColor: "#2C2C2E" },
+  closeBtnDark: { backgroundColor: "#3A3549" },
   content: { flex: 1 },
   contentContainer: { padding: 16, gap: 14, paddingBottom: 40 },
   errorBanner: {
@@ -297,12 +297,11 @@ const styles = StyleSheet.create({
   },
   errorText: { color: "#EF4444", fontSize: 12.5, fontWeight: "600", flex: 1 },
   pricingCard: {
-    borderRadius: 18,
+    borderRadius: 24,
     padding: 18,
-    borderWidth: 1,
-  },
+    borderWidth: 0, shadowOpacity: 0 },
   pricingCardLight: { backgroundColor: "#FFFFFF", borderColor: "#E5E5EA" },
-  pricingCardDark: { backgroundColor: "#1C1C1E", borderColor: "#2C2C2E" },
+  pricingCardDark: { backgroundColor: "#252230", borderColor: "#3A3549" },
   badgeRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -338,11 +337,10 @@ const styles = StyleSheet.create({
   featureText: { fontSize: 12.5, fontWeight: "500" },
   sectionHeader: { marginTop: 6 },
   sectionTitle: {
-    fontSize: 11.5,
-    fontWeight: "700",
+    fontSize: 18,
+    fontWeight: '500',
     color: "#65656B",
-    letterSpacing: 0.5,
-  },
+    letterSpacing: 0.5, lineHeight: 24 },
   numbersGrid: { gap: 8 },
   numberOption: {
     flexDirection: "row",
@@ -353,7 +351,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   numberOptionLight: { backgroundColor: "#FFFFFF", borderColor: "#E5E5EA" },
-  numberOptionDark: { backgroundColor: "#1C1C1E", borderColor: "#2C2C2E" },
+  numberOptionDark: { backgroundColor: "#252230", borderColor: "#3A3549" },
   numberOptionSelected: {
     borderColor: "#6D3CF5",
     backgroundColor: "rgba(109, 60, 245, 0.08)",

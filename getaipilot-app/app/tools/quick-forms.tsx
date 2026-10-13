@@ -477,8 +477,8 @@ function createStyles(colors: ReturnType<typeof getColors>, isDark: boolean) {
 
     card: {
       backgroundColor: colors.card,
-      borderRadius: 18,
-      borderWidth: 1,
+      borderRadius: 24,
+      borderWidth: 0,
       borderColor: colors.border,
       padding: 16,
       marginBottom: 12,

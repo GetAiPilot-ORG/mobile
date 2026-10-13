@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { ComponentProps, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -7,7 +7,19 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import {
+  Calendar03Icon,
+  File01Icon,
+  Folder01Icon,
+  Link01Icon,
+  PaintBrush01Icon,
+  QrCode01Icon,
+  Rocket01Icon,
+  SmartPhone01Icon,
+  VoiceToTextIcon,
+  WhatsappIcon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react-native";
 import { useTheme, getColors } from "../../src/theme";
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
@@ -22,7 +34,7 @@ interface ToolItem {
   title: string;
   category: string;
   description: string;
-  icon: string;
+  icon: ComponentProps<typeof HugeiconsIcon>["icon"];
   iconBg: string;
   badge: string;
   route: string;
@@ -39,8 +51,8 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     category: "TEMPLATES",
     description:
       "Manage and customize your saved bio websites and campaign landing pages.",
-    icon: "color-palette",
-    iconBg: "#EC4899",
+    icon: PaintBrush01Icon,
+    iconBg: "#F7DFE9",
     badge: "CANVAS",
     route: "/tools/my-designs",
   },
@@ -50,8 +62,8 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     category: "TEMPLATES",
     description:
       "Pick mobile bio site themes optimized for creators, agencies, and businesses.",
-    icon: "phone-portrait",
-    iconBg: "#8B5CF6",
+    icon: SmartPhone01Icon,
+    iconBg: "#E7DEFA",
     badge: "POPULAR",
     route: "/tools/bio-templates",
   },
@@ -61,8 +73,8 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     category: "TEMPLATES",
     description:
       "Pre-built high-converting lead capture funnels and product waitlist pages.",
-    icon: "rocket",
-    iconBg: "#6366F1",
+    icon: Rocket01Icon,
+    iconBg: "#E7DEFA",
     badge: "READY",
     route: "/tools/landing-templates",
     builder: {
@@ -75,8 +87,8 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     category: "UTILITIES",
     description:
       "Embeddable survey forms and customer consultation intake funnels.",
-    icon: "document-text",
-    iconBg: "#10B981",
+    icon: File01Icon,
+    iconBg: "#D8F0F0",
     badge: "FREE",
     route: "/tools/quick-forms",
   },
@@ -86,8 +98,8 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     category: "MESSAGING",
     description:
       "Direct click-to-chat links with custom prefilled messages & QR codes.",
-    icon: "logo-whatsapp",
-    iconBg: "#25D366",
+    icon: WhatsappIcon,
+    iconBg: "#E0F1E6",
     badge: "POPULAR",
     route: "/tools/whatsapp-link",
   },
@@ -97,8 +109,8 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     category: "UTILITIES",
     description:
       "Shorten long URLs into branded links with real-time click tracking.",
-    icon: "link",
-    iconBg: "#0284C7",
+    icon: Link01Icon,
+    iconBg: "#D8F0F0",
     badge: "FAST",
     route: "/tools/link-shortener",
   },
@@ -108,8 +120,8 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     category: "UTILITIES",
     description:
       "Generate trackable public direct download links for PDFs and media assets.",
-    icon: "folder",
-    iconBg: "#F59E0B",
+    icon: Folder01Icon,
+    iconBg: "#F9E5D4",
     badge: "CLOUD",
     route: "/tools/file-linker",
   },
@@ -119,8 +131,8 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     category: "UTILITIES",
     description:
       "1-click calendar invites for Google Calendar, Apple iCal, and webinars.",
-    icon: "calendar",
-    iconBg: "#3B82F6",
+    icon: Calendar03Icon,
+    iconBg: "#D8F0F0",
     badge: "CALENDAR",
     route: "/tools/event-links",
   },
@@ -130,8 +142,8 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     category: "AI AUDIO",
     description:
       "Transcribe customer voice notes, audio meetings, and voice memos to text.",
-    icon: "mic",
-    iconBg: "#A855F7",
+    icon: VoiceToTextIcon,
+    iconBg: "#E7DEFA",
     badge: "AI POWERED",
     route: "/tools/speech-to-text",
   },
@@ -141,8 +153,8 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     category: "UTILITIES",
     description:
       "High-resolution custom QR codes for websites, text, and Wi-Fi credentials.",
-    icon: "qr-code",
-    iconBg: "#4F46E5",
+    icon: QrCode01Icon,
+    iconBg: "#F7DFE9",
     badge: "FREE",
     route: "/tools/qr-code",
   },
@@ -198,7 +210,7 @@ export default function FreeToolsScreen() {
   return (
     <AppScreen safeArea={false}>
       <AppTopBar
-        title="Free Tools Hub"
+        title="Tools"
         showBack={false}
         showPlanBadge={true}
       />
@@ -207,61 +219,13 @@ export default function FreeToolsScreen() {
         contentContainerStyle={{ padding: 16, paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero Card */}
-        <View
-          className="rounded-[22px] p-5 mb-4"
-          style={{
-            backgroundColor: colors.card,
-            borderWidth: 1,
-            borderColor: isDark ? "rgba(255, 255, 255, 0.07)" : colors.cardBorder,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: isDark ? 0.25 : 0.04,
-            shadowRadius: 8,
-            elevation: 2,
-          }}
-        >
-          <View className="flex-row items-center gap-2 mb-2">
-            <View
-              className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-lg"
-              style={{ backgroundColor: colors.accentSoft }}
-            >
-              <Ionicons name="sparkles" size={12} color={colors.primary} />
-              <Text
-                className="text-[10px] font-extrabold tracking-wider"
-                style={{ color: colors.primary }}
-              >
-                10 UTILITIES
-              </Text>
-            </View>
-          </View>
-          <Text
-            className="text-lg font-extrabold tracking-tight"
-            style={{ color: colors.text }}
-          >
-            Production Utilities
-          </Text>
-          <Text
-            className="text-[12.5px] mt-1 leading-[18px]"
-            style={{ color: colors.textSecondary }}
-          >
-            Zero-cost growth tools powered by GetAIPilot infrastructure. No
-            credit card required.
-          </Text>
+        <View style={{ marginBottom: 20, gap: 8 }}>
+          <Text style={{ fontSize: 30, lineHeight: 38, fontWeight: "500", letterSpacing: -0.6, color: colors.text }}>Create something</Text>
+          <Text style={{ fontSize: 14, color: colors.textSecondary }}>Simple tools for your next idea.</Text>
         </View>
         {/* Category Tabs (Folder Style matching inbox status tabs) */}
         <View style={{ position: "relative", marginVertical: 16 }}>
-          {/* Continuous baseline */}
-          <View
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 1.5,
-              backgroundColor: colors.primary,
-            }}
-          />
+
 
           <ScrollView
             horizontal
@@ -275,21 +239,21 @@ export default function FreeToolsScreen() {
                   key={cat}
                   onPress={() => setSelectedCategory(cat)}
                   style={{
-                    height: 38,
+                    height: 44,
                     paddingHorizontal: 14,
                     justifyContent: "center",
                     alignItems: "center",
-                    borderTopLeftRadius: isActive ? 10 : 0,
-                    borderTopRightRadius: isActive ? 10 : 0,
-                    borderTopWidth: 1.5,
-                    borderLeftWidth: 1.5,
-                    borderRightWidth: 1.5,
-                    borderBottomWidth: 1.5,
+                    borderRadius: 22,
+                    marginRight: 8,
+                    borderTopWidth: 0,
+                    borderLeftWidth: 0,
+                    borderRightWidth: 0,
+                    borderBottomWidth: 0,
                     borderTopColor: isActive ? colors.primary : "transparent",
                     borderLeftColor: isActive ? colors.primary : "transparent",
                     borderRightColor: isActive ? colors.primary : "transparent",
                     borderBottomColor: isActive ? colors.background : "transparent",
-                    backgroundColor: isActive ? colors.background : "transparent",
+                    backgroundColor: isActive ? colors.accentSoft : colors.card,
                     zIndex: isActive ? 2 : 1,
                   }}
                 >
@@ -298,7 +262,7 @@ export default function FreeToolsScreen() {
                       fontSize: 12.5,
                       fontWeight: isActive ? "700" : "500",
                       letterSpacing: -0.1,
-                      color: isActive ? colors.primary : colors.textSecondary,
+                      color: isActive ? colors.accent : colors.textSecondary,
                     }}
                   >
                     {cat}

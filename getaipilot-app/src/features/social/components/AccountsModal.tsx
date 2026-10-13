@@ -81,7 +81,7 @@ export const AccountsModal: React.FC<AccountsModalProps> = ({
               style={styles.closeBtn}
               hitSlop={8}
             >
-              <Ionicons name="close" size={20} color={isDark ? '#94A3B8' : '#64748B'} />
+              <Ionicons name="close" size={20} color={isDark ? '#777383' : '#64748B'} />
             </Pressable>
           </View>
 
@@ -183,21 +183,20 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     maxHeight: '80%',
     padding: 20,
-    borderWidth: 1,
+    borderWidth: 0,
     borderBottomWidth: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0,
     shadowRadius: 16,
-    elevation: 20,
-  },
+    elevation: 20, borderRadius: 24 },
   modalCardDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
+    backgroundColor: '#252230',
+    borderColor: '#3A3549',
   },
   modalCardLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E5E7EB',
+    borderColor: '#E9E6F2',
   },
   header: {
     flexDirection: 'row',
@@ -218,10 +217,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
+    fontSize: 28,
+    fontWeight: '500',
+    letterSpacing: -0.5, lineHeight: 36 },
   closeBtn: {
     width: 32,
     height: 32,
@@ -243,7 +241,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   emptySub: {
-    fontSize: 12.5,
+    fontSize: 13.5,
     textAlign: 'center',
     paddingHorizontal: 20,
     lineHeight: 18,
@@ -253,24 +251,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    marginBottom: 10,
-  },
+    borderRadius: 24,
+    borderWidth: 0,
+    marginBottom: 10, shadowOpacity: 0 },
   accountCardDark: {
     backgroundColor: '#121214',
-    borderColor: '#2C2C2E',
+    borderColor: '#3A3549',
   },
   accountCardLight: {
-    backgroundColor: '#F8F9FA',
-    borderColor: '#E5E7EB',
+    backgroundColor: '#F5F3FB',
+    borderColor: '#E9E6F2',
   },
   cardLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    flex: 1,
-  },
+    flex: 1, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   avatar: {
     width: 42,
     height: 42,
@@ -311,7 +307,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   providerSubText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
   },
   disconnectBtn: {
@@ -335,9 +331,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   textLight: {
-    color: '#F8FAFC',
+    color: '#F5F3FB',
   },
   textDark: {
-    color: '#0F172A',
+    color: '#1C1A25',
   },
 });
