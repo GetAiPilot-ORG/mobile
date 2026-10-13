@@ -1,3 +1,4 @@
+import { ProductHeading } from "@/components/ProductUI";
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
@@ -298,14 +299,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
       {/* Top Header Card */}
       <View style={[styles.topCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         {/* Top Header */}
-        <View style={[styles.header, { borderColor: colors.border }]}>
-          <View style={{ flex: 1, paddingRight: 8 }}>
-            <Text style={[styles.title, { color: colors.text }]}>GAP Report Bot</Text>
-            <Text style={styles.subtitle} numberOfLines={2}>
-              Convert Telegram trading calls into branded SEBI research PDFs.
-            </Text>
-          </View>
-        </View>
+        <ProductHeading title="Research reports" />
 
         {/* Action Header Buttons: Start Bot & Refresh Status */}
         <View style={[styles.actionHeaderRow, { borderColor: colors.border }]}>
@@ -434,7 +428,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                         value={advisoryFirm}
                         onChangeText={setAdvisoryFirm}
                         placeholder="No Brand"
-                        placeholderTextColor="#94A3B8"
+                        placeholderTextColor="#777383"
                       />
                     </View>
                     <View style={[styles.field, { flex: 1, marginLeft: 6 }]}>
@@ -444,7 +438,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                         value={researchAnalyst}
                         onChangeText={setResearchAnalyst}
                         placeholder="SEBI"
-                        placeholderTextColor="#94A3B8"
+                        placeholderTextColor="#777383"
                       />
                     </View>
                   </View>
@@ -457,7 +451,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                         value={sebiRegistration}
                         onChangeText={setSebiRegistration}
                         placeholder="INH010600090"
-                        placeholderTextColor="#94A3B8"
+                        placeholderTextColor="#777383"
                       />
                     </View>
                     <View style={[styles.field, { flex: 1, marginLeft: 6 }]}>
@@ -467,7 +461,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                         value={website}
                         onChangeText={setWebsite}
                         placeholder="getaipilot.com"
-                        placeholderTextColor="#94A3B8"
+                        placeholderTextColor="#777383"
                       />
                     </View>
                   </View>
@@ -483,7 +477,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                       value={email}
                       onChangeText={setEmail}
                       placeholder="research@example.com"
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor="#777383"
                       keyboardType="email-address"
                     />
                   </View>
@@ -495,7 +489,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                       value={officeAddress}
                       onChangeText={setOfficeAddress}
                       placeholder="e.g. Kallam, Latur, Maharashtra"
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor="#777383"
                     />
                   </View>
 
@@ -545,7 +539,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                         value={page1Disclaimer}
                         onChangeText={setPage1Disclaimer}
                         placeholder="Add short SEBI/risk disclaimer for the first page..."
-                        placeholderTextColor="#94A3B8"
+                        placeholderTextColor="#777383"
                       />
                     </View>
                   </View>
@@ -562,7 +556,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                       value={page2Disclosure}
                       onChangeText={setPage2Disclosure}
                       placeholder="Optional disclosure content."
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor="#777383"
                     />
                   </View>
 
@@ -574,7 +568,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                       value={page3Conflicts}
                       onChangeText={setPage3Conflicts}
                       placeholder="Optional conflict of interest content."
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor="#777383"
                     />
                   </View>
 
@@ -586,7 +580,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                       value={page4Policy}
                       onChangeText={setPage4Policy}
                       placeholder="Optional risk and policy content."
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor="#777383"
                     />
                   </View>
                 </View>
@@ -840,7 +834,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                 <TextInput
                   style={[styles.input, { borderColor: colors.border, backgroundColor: colors.card }, { flex: 1 }]}
                   placeholder="https://example.com/logobag.png"
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor="#777383"
                   value={customLogoInput}
                   onChangeText={setCustomLogoInput}
                   autoCapitalize="none"
@@ -1048,9 +1042,9 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
 
 const styles = StyleSheet.create({
   container: { width: '100%', marginBottom: 12 },
-  topCard: { borderRadius: 16, borderWidth: 1, overflow: 'hidden', marginBottom: 14 },
-  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  cardDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
+  topCard: { borderRadius: 24, borderWidth: 0, overflow: 'hidden', marginBottom: 14 , shadowOpacity: 0 },
+  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
+  cardDark: { backgroundColor: '#1C1A25', borderColor: '#3A3549' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1059,12 +1053,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 1,
   },
-  borderLight: { borderBottomColor: '#E2E8F0' },
+  borderLight: { borderBottomColor: '#E9E6F2' },
   borderDark: { borderBottomColor: '#162B3F' },
-  title: { fontSize: 18, fontWeight: '800' },
-  textLight: { color: '#0F172A' },
+  title: { fontSize: 28, fontWeight: '500', lineHeight: 36 , letterSpacing: -0.5 },
+  textLight: { color: '#1C1A25' },
   textDark: { color: '#F7FAFC' },
-  subtitle: { color: '#64748B', fontSize: 11.5, marginTop: 3, lineHeight: 16 },
+  subtitle: { color: '#716B7C', fontSize: 13.5, marginTop: 3, lineHeight: 16 },
   closeBtn: {
     width: 32,
     height: 32,
@@ -1072,8 +1066,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeBtnLight: { backgroundColor: '#F1F5F9' },
-  closeBtnDark: { backgroundColor: '#101C2A' },
+  closeBtnLight: { backgroundColor: '#F0EEF8' },
+  closeBtnDark: { backgroundColor: '#2C2839' },
 
   // Action Header Row
   actionHeaderRow: {
@@ -1103,8 +1097,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
   },
-  btnLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  btnDark: { backgroundColor: '#101C2A', borderColor: '#234563' },
+  btnLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
+  btnDark: { backgroundColor: '#2C2839', borderColor: '#3A3549' },
   refreshBtnText: { fontSize: 12, fontWeight: '600' },
 
   // Tabs Section & Status Bar
@@ -1173,27 +1167,25 @@ const styles = StyleSheet.create({
   // Form Card
   formCard: {
     padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 16,
-  },
+    borderRadius: 24,
+    borderWidth: 0,
+    marginBottom: 16, shadowOpacity: 0 },
   formHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 16,
   },
-  sectionTitle: { fontSize: 16, fontWeight: '800' },
-  sectionSubtitle: { color: '#64748B', fontSize: 11, marginTop: 2 },
+  sectionTitle: { fontSize: 18, fontWeight: '500', lineHeight: 24 },
+  sectionSubtitle: { color: '#716B7C', fontSize: 13, marginTop: 2 },
   saveBtn: {
-    backgroundColor: '#0284C7',
+    backgroundColor: '#17171C',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 7,
-    borderRadius: 8,
-  },
+    borderRadius: 28, minHeight: 44 , shadowOpacity: 0 },
   saveBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
   groupHeading: {
     fontSize: 13,
@@ -1207,14 +1199,13 @@ const styles = StyleSheet.create({
   field: { marginBottom: 12 },
   label: { color: '#64748B', fontSize: 10, fontWeight: '800', marginBottom: 5, letterSpacing: 0.5 },
   input: {
-    borderWidth: 1,
-    borderRadius: 10,
+    borderWidth: 0,
+    borderRadius: 22,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 13,
-  },
-  inputLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0', color: '#0F172A' },
-  inputDark: { backgroundColor: '#0A1420', borderColor: '#1B334A', color: '#F7FAFC' },
+    fontSize: 13, minHeight: 48 },
+  inputLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2', color: '#1C1A25' },
+  inputDark: { backgroundColor: '#252230', borderColor: '#3A3549', color: '#F7FAFC' },
 
   // Logo Upload Box (Pressable)
   logoUploadBox: {
@@ -1227,8 +1218,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 6,
   },
-  logoUploadBoxLight: { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1' },
-  logoUploadBoxDark: { backgroundColor: '#0A1420', borderColor: '#1B334A' },
+  logoUploadBoxLight: { backgroundColor: '#F5F3FB', borderColor: '#CBD5E1' },
+  logoUploadBoxDark: { backgroundColor: '#252230', borderColor: '#3A3549' },
   logoUploadBoxActive: { borderStyle: 'solid', borderColor: '#0284C7' },
   logoUploadLabel: { fontSize: 10, fontWeight: '700', color: '#64748B', marginTop: 4 },
   uploadBtnMini: {
@@ -1283,14 +1274,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#0284C7',
   },
   nativeUploadBtnLight: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F0EEF8',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E9E6F2',
   },
   nativeUploadBtnDark: {
-    backgroundColor: '#101C2A',
+    backgroundColor: '#2C2839',
     borderWidth: 1,
-    borderColor: '#234563',
+    borderColor: '#3A3549',
   },
   nativeUploadBtnTitle: {
     color: '#FFFFFF',
@@ -1299,27 +1290,26 @@ const styles = StyleSheet.create({
   },
   nativeUploadBtnSub: {
     color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 10,
+    fontSize: 13,
     marginTop: 1,
   },
 
   // PDF Preview Card
   previewCard: {
     padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 16,
-  },
+    borderRadius: 24,
+    borderWidth: 0,
+    marginBottom: 16, shadowOpacity: 0 },
   previewCardLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    borderColor: '#E9E6F2',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 3,
   },
-  previewCardDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
+  previewCardDark: { backgroundColor: '#1C1A25', borderColor: '#3A3549' },
   previewHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1327,7 +1317,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   previewTitle: { fontSize: 16, fontWeight: '800' },
-  previewSubtitle: { color: '#64748B', fontSize: 11, marginTop: 2 },
+  previewSubtitle: { color: '#716B7C', fontSize: 13, marginTop: 2 },
   completedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1348,8 +1338,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 14,
   },
-  pdfPaperLight: { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1' },
-  pdfPaperDark: { backgroundColor: '#0A1420', borderColor: '#1B334A' },
+  pdfPaperLight: { backgroundColor: '#F5F3FB', borderColor: '#CBD5E1' },
+  pdfPaperDark: { backgroundColor: '#252230', borderColor: '#3A3549' },
   pdfHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1398,8 +1388,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
   },
-  metricBoxLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  metricBoxDark: { backgroundColor: '#0A1420', borderColor: '#1B334A' },
+  metricBoxLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
+  metricBoxDark: { backgroundColor: '#252230', borderColor: '#3A3549' },
   metricKey: { fontSize: 9, fontWeight: '800', color: '#64748B' },
   metricVal: { fontSize: 13, fontWeight: '800', marginTop: 2 },
   pdfDisclaimerSnippet: {
@@ -1416,7 +1406,7 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(148, 163, 184, 0.2)',
     paddingTop: 6,
   },
-  pdfPagesCount: { fontSize: 10, color: '#94A3B8', fontWeight: '600' },
+  pdfPagesCount: { fontSize: 10, color: '#777383', fontWeight: '600' },
   pdfPoweredBy: { fontSize: 10, color: '#0284C7', fontWeight: '700' },
 
   previewBtn: {
@@ -1459,8 +1449,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 8,
   },
-  itemLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
-  itemDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
+  itemLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2' },
+  itemDark: { backgroundColor: '#1C1A25', borderColor: '#3A3549' },
   channelIcon: {
     width: 32,
     height: 32,
@@ -1501,12 +1491,11 @@ const styles = StyleSheet.create({
   dialogCard: {
     width: '100%',
     maxWidth: 400,
-    borderRadius: 18,
+    borderRadius: 24,
     padding: 20,
-    borderWidth: 1,
-  },
-  dialogCardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  dialogCardDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
+    borderWidth: 0, shadowOpacity: 0 },
+  dialogCardLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
+  dialogCardDark: { backgroundColor: '#1C1A25', borderColor: '#3A3549' },
   dialogHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1514,7 +1503,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   dialogTitle: { fontSize: 16, fontWeight: '800' },
-  dialogSub: { color: '#64748B', fontSize: 11, marginTop: 2 },
+  dialogSub: { color: '#716B7C', fontSize: 13, marginTop: 2 },
   dialogCloseBtn: {
     width: 28,
     height: 28,
@@ -1553,8 +1542,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
   },
-  presetItemLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
-  presetItemDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
+  presetItemLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2' },
+  presetItemDark: { backgroundColor: '#1C1A25', borderColor: '#3A3549' },
   presetItemActive: { borderColor: '#0284C7', backgroundColor: 'rgba(2, 132, 199, 0.12)' },
   presetImage: {
     width: 32,
@@ -1592,7 +1581,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(148, 163, 184, 0.15)',
   },
   viewerTitle: { fontSize: 15, fontWeight: '800' },
-  viewerSub: { fontSize: 11, color: '#64748B' },
+  viewerSub: { fontSize: 13, color: '#716B7C' },
   viewerActionBtn: {
     width: 36,
     height: 36,
@@ -1628,7 +1617,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   fullPdfPageLight: { backgroundColor: '#FFFFFF', borderColor: '#CBD5E1' },
-  fullPdfPageDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
+  fullPdfPageDark: { backgroundColor: '#1C1A25', borderColor: '#3A3549' },
   pageNumberBadge: {
     position: 'absolute',
     top: 14,
@@ -1660,7 +1649,7 @@ const styles = StyleSheet.create({
   },
   fullPdfAvatarText: { color: '#FFFFFF', fontSize: 20, fontWeight: '900' },
   fullPdfFirmTitle: { fontSize: 17, fontWeight: '800', color: '#0284C7', marginBottom: 2 },
-  fullPdfMetaText: { fontSize: 10, color: '#64748B', lineHeight: 14 },
+  fullPdfMetaText: { fontSize: 13, color: '#716B7C', lineHeight: 14 },
   pdfDivider: {
     height: 1,
     backgroundColor: 'rgba(148, 163, 184, 0.25)',
@@ -1702,7 +1691,7 @@ const styles = StyleSheet.create({
     borderColor: '#CBD5E1',
   },
   matrixLabel: { fontSize: 9, fontWeight: '800', color: '#64748B' },
-  matrixValue: { fontSize: 14, fontWeight: '900', marginTop: 2, color: '#0F172A' },
+  matrixValue: { fontSize: 14, fontWeight: '900', marginTop: 2, color: '#1C1A25' },
   pdfSectionBlock: {
     marginBottom: 14,
   },
@@ -1745,6 +1734,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  footerAddressText: { fontSize: 9, color: '#94A3B8' },
+  footerAddressText: { fontSize: 9, color: '#777383' },
   footerEngineText: { fontSize: 9, fontWeight: '700', color: '#0284C7' },
 });

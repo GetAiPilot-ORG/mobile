@@ -318,7 +318,7 @@ export const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
                                 ? colors.primary
                                 : isDark
                                 ? "#242430"
-                                : "#E2E8F0",
+                                : "#E9E6F2",
                             },
                           ]}
                         >
@@ -615,12 +615,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    letterSpacing: -0.3,
-  },
+    fontSize: 28,
+    fontWeight: '500',
+    letterSpacing: -0.5, lineHeight: 36 },
   headerSubtitle: {
-    fontSize: 12.5,
+    fontSize: 13.5,
     fontWeight: "500",
   },
   closeBtn: {
@@ -644,7 +643,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   bannerText: {
     fontSize: 12.5,
@@ -729,10 +728,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    gap: 10,
-  },
+    borderRadius: 24,
+    borderWidth: 0,
+    gap: 10, shadowOpacity: 0 },
   assistantIconBox: {
     width: 32,
     height: 32,
@@ -778,7 +776,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 9,
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   callerIdBannerTitle: {
     fontSize: 12,
@@ -786,7 +784,7 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
   },
   callerIdBannerSub: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: "500",
     marginTop: 1,
   },

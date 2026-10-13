@@ -1,3 +1,4 @@
+import { ProductHeading } from "@/components/ProductUI";
 import { getColors, useTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
@@ -88,27 +89,7 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
   return (
     <>
       {/* Clean Header */}
-      <View style={[styles.header, card]}>
-        <View style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Text style={[styles.headerTitle, txt]} numberOfLines={1}>Sub Manager</Text>
-            <View style={styles.activeBadge}>
-              <View style={styles.dotGreen} />
-              <Text style={styles.activeBadgeText}>Bot Active</Text>
-            </View>
-          </View>
-          <Text style={[styles.headerSub, { color: colors.textSecondary }]} numberOfLines={1}>VIP Community & Subscription Hub</Text>
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Pressable style={styles.newBtn} onPress={() => onOpenModal('sub_manager')}>
-            <Ionicons name="add" size={14} color="#FFFFFF" />
-            <Text style={styles.newBtnText}>New Page</Text>
-          </Pressable>
-          <Pressable style={[styles.iconBtn, border]} onPress={onRefresh}>
-            <Ionicons name="refresh-outline" size={15} color="#0284C7" />
-          </Pressable>
-        </View>
-      </View>
+      <ProductHeading title="Your subscriptions" action="New page" onAction={() => onOpenModal('sub_manager')} />
 
       {/* 4 KPI Cards in Solid 2-Column Grid */}
       <View style={styles.metricsContainer}>
@@ -217,8 +198,8 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
         <View style={{ gap: 10 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={[styles.searchBar, card]}>
-              <Ionicons name="search" size={15} color="#94A3B8" />
-              <TextInput style={[styles.searchInput, txt]} placeholder="Search pages..." placeholderTextColor="#94A3B8" value={pageSearch} onChangeText={setPageSearch} />
+              <Ionicons name="search" size={15} color="#777383" />
+              <TextInput style={[styles.searchInput, txt]} placeholder="Search pages..." placeholderTextColor="#777383" value={pageSearch} onChangeText={setPageSearch} />
             </View>
             <Pressable style={[styles.viewToggle, card]} onPress={() => setPageView(pageView === 'grid' ? 'list' : 'grid')}>
               <Ionicons name={pageView === 'grid' ? 'list-outline' : 'grid-outline'} size={16} color="#0284C7" />
@@ -229,11 +210,11 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
               <View key={page.id} style={[pageView === 'grid' ? styles.pageCardGrid : styles.pageCardList, card]}>
                 <View style={styles.pageCardHeader}>
                   <View style={[styles.pageIconCircle, { backgroundColor: page.isActive ? 'rgba(16,185,129,0.12)' : 'rgba(148,163,184,0.12)' }]}>
-                    <Ionicons name="globe-outline" size={15} color={page.isActive ? '#10B981' : '#94A3B8'} />
+                    <Ionicons name="globe-outline" size={15} color={page.isActive ? '#10B981' : '#777383'} />
                   </View>
                   <View style={[styles.pageStatusBadge, page.isActive ? styles.pageStatusActive : styles.pageStatusInactive]}>
-                    <View style={[styles.dotStatus, { backgroundColor: page.isActive ? '#10B981' : '#94A3B8' }]} />
-                    <Text style={[styles.pageStatusText, { color: page.isActive ? '#10B981' : '#94A3B8' }]} numberOfLines={1}>
+                    <View style={[styles.dotStatus, { backgroundColor: page.isActive ? '#10B981' : '#777383' }]} />
+                    <Text style={[styles.pageStatusText, { color: page.isActive ? '#10B981' : '#777383' }]} numberOfLines={1}>
                       {pageView === 'grid' ? (page.isActive ? 'Active' : 'Paused') : page.statusText}
                     </Text>
                   </View>
@@ -320,8 +301,8 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
               <Text style={[styles.sectionTitle, txt]}>Transaction History</Text>
             </View>
             <View style={[styles.searchBar, card]}>
-              <Ionicons name="search" size={15} color="#94A3B8" />
-              <TextInput style={[styles.searchInput, txt]} placeholder="Search payments..." placeholderTextColor="#94A3B8" value={txnSearch} onChangeText={setTxnSearch} />
+              <Ionicons name="search" size={15} color="#777383" />
+              <TextInput style={[styles.searchInput, txt]} placeholder="Search payments..." placeholderTextColor="#777383" value={txnSearch} onChangeText={setTxnSearch} />
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
               <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -380,8 +361,8 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
               ))}
             </View>
             <View style={[styles.searchBar, card]}>
-              <Ionicons name="search" size={15} color="#94A3B8" />
-              <TextInput style={[styles.searchInput, txt]} placeholder="Search channels..." placeholderTextColor="#94A3B8" value={channelSearch} onChangeText={setChannelSearch} />
+              <Ionicons name="search" size={15} color="#777383" />
+              <TextInput style={[styles.searchInput, txt]} placeholder="Search channels..." placeholderTextColor="#777383" value={channelSearch} onChangeText={setChannelSearch} />
             </View>
             <View style={{ gap: 10, marginTop: 8 }}>
               {channelTab === 'monetized' && filteredMonetized.map((ch) => {
@@ -420,7 +401,7 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
                 return (
                   <View key={disc.id || String(Math.random())} style={[styles.chanCard, border]}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                      <View style={[styles.chanAvatar, { backgroundColor: '#F1F5F9' }]}><Text style={[styles.chanAvatarText, { color: '#0284C7' }]}>{discTitle.charAt(0).toUpperCase()}</Text></View>
+                      <View style={[styles.chanAvatar, { backgroundColor: '#F0EEF8' }]}><Text style={[styles.chanAvatarText, { color: '#0284C7' }]}>{discTitle.charAt(0).toUpperCase()}</Text></View>
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.chanTitle, txt]}>{discTitle}</Text>
                         <Text style={styles.chanId}>ID: {disc.chat_id || disc.channel_id || 'N/A'} • {disc.members || 0} Members</Text>
@@ -442,31 +423,31 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
 };
 
 const styles = StyleSheet.create({
-  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
+  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
   cardDark: { backgroundColor: '#121212', borderColor: '#27272A' },
-  textLight: { color: '#0F172A' },
-  textDark: { color: '#F8FAFC' },
-  borderLight: { borderColor: '#E2E8F0' },
+  textLight: { color: '#1C1A25' },
+  textDark: { color: '#F5F3FB' },
+  borderLight: { borderColor: '#E9E6F2' },
   borderDark: { borderColor: '#27272A' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 16, borderWidth: 1, marginBottom: 14 },
-  headerTitle: { fontSize: 16, fontWeight: '800' },
-  headerSub: { fontSize: 11, fontWeight: '500', marginTop: 2 },
+  headerTitle: { fontSize: 28, fontWeight: '500', lineHeight: 36 , letterSpacing: -0.5 },
+  headerSub: { fontSize: 13, fontWeight: '500', marginTop: 2 },
   activeBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(16,185,129,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 20 },
   dotGreen: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981' },
   activeBadgeText: { fontSize: 10, fontWeight: '700', color: '#10B981' },
-  newBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#0284C7', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 8 },
+  newBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#17171C', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 28, minHeight: 44 , shadowOpacity: 0 },
   newBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
   iconBtn: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   metricsContainer: { width: '100%', alignSelf: 'stretch', gap: 10, marginBottom: 12 },
   metricsRow: { flexDirection: 'row', gap: 10, width: '100%', alignSelf: 'stretch', marginBottom: 10 },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 12, width: '100%' },
-  statCard: { width: '48%', padding: 12, borderRadius: 14, borderWidth: 1 },
+  statCard: { width: '48%', padding: 12, borderRadius: 24, borderWidth: 0, shadowOpacity: 0 },
   statHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  statLabel: { fontSize: 8.5, fontWeight: '800', color: '#94A3B8', letterSpacing: 0.4, flex: 1 },
+  statLabel: { fontSize: 8.5, fontWeight: '800', color: '#777383', letterSpacing: 0.4, flex: 1 },
   statIconBadge: { width: 24, height: 24, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   statVal: { fontSize: 22, fontWeight: '800' },
-  statSub: { fontSize: 10, color: '#64748B', marginTop: 2 },
-  launchBanner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderRadius: 12, borderWidth: 1, marginBottom: 4 },
+  statSub: { fontSize: 13, color: '#716B7C', marginTop: 2 },
+  launchBanner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderRadius: 24, borderWidth: 0, marginBottom: 4 },
   launchBannerLight: { backgroundColor: '#F0FDF4', borderColor: '#A7F3D0' },
   launchBannerDark: { backgroundColor: 'rgba(16,185,129,0.08)', borderColor: 'rgba(16,185,129,0.2)' },
   launchTitle: { fontSize: 13, fontWeight: '700' },
@@ -480,13 +461,13 @@ const styles = StyleSheet.create({
   segTabActive: { backgroundColor: '#0284C7' },
   segTabText: { fontSize: 11, fontWeight: '600' },
   segTabTextActive: { color: '#FFFFFF', fontWeight: '700' },
-  searchBar: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, borderWidth: 1, flex: 1 },
+  searchBar: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 22, paddingHorizontal: 12, paddingVertical: 9, borderWidth: 0, flex: 1 , minHeight: 48 },
   searchInput: { flex: 1, fontSize: 13 },
   viewToggle: { width: 38, height: 38, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   pagesGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 10, width: '100%' },
-  pageCardGrid: { width: '48.5%', padding: 12, borderRadius: 14, borderWidth: 1, marginBottom: 10 },
-  pageCardList: { padding: 14, borderRadius: 14, borderWidth: 1, marginBottom: 10 },
-  pageCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  pageCardGrid: { width: '48.5%', padding: 12, borderRadius: 24, borderWidth: 0, marginBottom: 10 , shadowOpacity: 0 },
+  pageCardList: { padding: 14, borderRadius: 24, borderWidth: 0, marginBottom: 10 , shadowOpacity: 0 },
+  pageCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 , borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   pageIconCircle: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   pageStatusBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 6, paddingVertical: 2.5, borderRadius: 6, maxWidth: '65%' },
   dotStatus: { width: 5, height: 5, borderRadius: 2.5 },
@@ -498,27 +479,27 @@ const styles = StyleSheet.create({
   pageActionRow: { flexDirection: 'row', gap: 6, marginTop: 10 },
   pageActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(2,132,199,0.1)', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
   pageActionBtnText: { color: '#0284C7', fontSize: 11, fontWeight: '700' },
-  primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#0284C7', borderRadius: 12, paddingVertical: 13 },
+  primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#17171C', borderRadius: 28, paddingVertical: 13 , minHeight: 44 , shadowOpacity: 0 },
   primaryBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
-  sectionCard: { padding: 14, borderRadius: 16, borderWidth: 1 },
+  sectionCard: { padding: 14, borderRadius: 24, borderWidth: 0, shadowOpacity: 0 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
   sectionIconCircle: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  sectionTitle: { fontSize: 14, fontWeight: '800', flex: 1 },
+  sectionTitle: { fontSize: 18, fontWeight: '500', flex: 1 , lineHeight: 24 },
   finRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1 },
   finLabel: { fontSize: 12, fontWeight: '600' },
   finVal: { fontSize: 15, fontWeight: '800' },
   kycRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   kycIconCircle: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   kycLabel: { fontSize: 13, fontWeight: '600' },
-  kycSub: { fontSize: 10, color: '#64748B', marginTop: 1 },
+  kycSub: { fontSize: 13, color: '#716B7C', marginTop: 1 },
   filterPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
-  filterPillLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
+  filterPillLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2' },
   filterPillDark: { backgroundColor: '#121212', borderColor: '#27272A' },
   filterPillActive: { backgroundColor: '#0284C7', borderColor: '#0284C7' },
   filterPillText: { fontSize: 12, fontWeight: '600' },
   filterPillTextActive: { color: '#FFFFFF', fontWeight: '700' },
   txnRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 10, borderRadius: 10, marginBottom: 6 },
-  txnRowLight: { backgroundColor: '#F8FAFC' },
+  txnRowLight: { backgroundColor: '#F5F3FB' },
   txnRowDark: { backgroundColor: 'rgba(255,255,255,0.04)' },
   txnId: { fontSize: 12, fontWeight: '700' },
   txnDate: { fontSize: 10, color: '#64748B', marginTop: 1 },
@@ -531,7 +512,7 @@ const styles = StyleSheet.create({
   chanTabActive: { backgroundColor: '#0284C7' },
   chanTabText: { fontSize: 12, fontWeight: '600' },
   chanTabTextActive: { color: '#FFFFFF', fontWeight: '700' },
-  chanCard: { padding: 12, borderRadius: 12, borderWidth: 1 },
+  chanCard: { padding: 12, borderRadius: 24, borderWidth: 0, shadowOpacity: 0 },
   chanAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#0284C7', alignItems: 'center', justifyContent: 'center' },
   chanAvatarText: { color: '#FFF', fontSize: 14, fontWeight: '800' },
   chanTitle: { fontSize: 13, fontWeight: '700' },

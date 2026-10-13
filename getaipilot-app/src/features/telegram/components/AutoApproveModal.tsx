@@ -95,7 +95,7 @@ export const AutoApproveModal: React.FC<AutoApproveModalProps> = ({
             style={[styles.closeBtn, isDark ? styles.closeBtnDark : styles.closeBtnLight]}
             onPress={onClose}
           >
-            <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+            <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
           </Pressable>
         </View>
 
@@ -147,7 +147,7 @@ export const AutoApproveModal: React.FC<AutoApproveModalProps> = ({
                 <View style={[styles.idCard, isDark ? styles.idCardDark : styles.idCardLight]}>
                   <Ionicons name="shield-checkmark-outline" size={16} color="#0284C7" />
                   <Text style={[styles.idLabel, isDark ? styles.textDark : styles.textLight]}>
-                    Connected Telegram ID:{' '}
+                    Connected Telegram ID: {' '}
                     <Text style={styles.idValue}>
                       {status?.telegramUserId ? status.telegramUserId : '1032153257'}
                     </Text>
@@ -221,7 +221,7 @@ export const AutoApproveModal: React.FC<AutoApproveModalProps> = ({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  containerLight: { backgroundColor: '#F8FAFC' },
+  containerLight: { backgroundColor: '#F5F3FB' },
   containerDark: { backgroundColor: '#0B0F19' },
   header: {
     flexDirection: 'row',
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 1,
   },
-  borderLight: { borderBottomColor: '#E2E8F0' },
+  borderLight: { borderBottomColor: '#E9E6F2' },
   borderDark: { borderBottomColor: '#1E2430' },
   headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   headerIconCircle: {
@@ -242,10 +242,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  title: { fontSize: 17, fontWeight: '700' },
-  textLight: { color: '#0F172A' },
-  textDark: { color: '#F8FAFC' },
-  subtitle: { color: '#64748B', fontSize: 11, marginTop: 1 },
+  title: { fontSize: 28, fontWeight: '500', lineHeight: 36 , letterSpacing: -0.5 },
+  textLight: { color: '#1C1A25' },
+  textDark: { color: '#F5F3FB' },
+  subtitle: { color: '#716B7C', fontSize: 13, marginTop: 1 },
   closeBtn: {
     width: 32,
     height: 32,
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeBtnLight: { backgroundColor: '#F1F5F9' },
+  closeBtnLight: { backgroundColor: '#F0EEF8' },
   closeBtnDark: { backgroundColor: '#1E2430' },
   body: { flex: 1 },
   bodyContent: { padding: 16, paddingBottom: 40 },
@@ -267,15 +267,14 @@ const styles = StyleSheet.create({
 
   // Hero Card
   heroCard: {
-    borderRadius: 20,
-    padding: 24,
+    borderRadius: 24,
+    padding: 0,
     alignItems: 'center',
-    borderWidth: 1,
-    marginBottom: 24,
-  },
+    borderWidth: 0,
+    marginBottom: 24, shadowOpacity: 0, backgroundColor: 'transparent' },
   heroCardLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    borderColor: '#E9E6F2',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
@@ -293,7 +292,7 @@ const styles = StyleSheet.create({
     width: 90,
     height: 90,
     borderRadius: 18,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#1C1A25',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
@@ -335,11 +334,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   heroTitle: {
-    fontSize: 24,
-    fontWeight: '800',
+    fontSize: 28,
+    fontWeight: '500',
     marginBottom: 6,
-    textAlign: 'center',
-  },
+    textAlign: 'center', lineHeight: 36 , letterSpacing: -0.5 },
   heroSubtitle: {
     fontSize: 14,
     fontWeight: '600',
@@ -362,15 +360,14 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 14,
     paddingVertical: 11,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     width: '100%',
     justifyContent: 'center',
-    marginBottom: 18,
-  },
+    marginBottom: 18, shadowOpacity: 0 },
   idCardLight: {
-    backgroundColor: '#F8FAFC',
-    borderColor: '#E2E8F0',
+    backgroundColor: '#F5F3FB',
+    borderColor: '#E9E6F2',
   },
   idCardDark: {
     backgroundColor: '#161C28',
@@ -394,20 +391,19 @@ const styles = StyleSheet.create({
 
   // CTA Button
   openBotBtn: {
-    backgroundColor: '#0284C7',
+    backgroundColor: '#17171C',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
     width: '100%',
     paddingVertical: 15,
-    borderRadius: 14,
+    borderRadius: 28,
     shadowColor: '#0284C7',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0,
     shadowRadius: 8,
-    elevation: 4,
-  },
+    elevation: 4, minHeight: 44 },
   openBotBtnText: {
     color: '#FFFFFF',
     fontSize: 13,
@@ -441,12 +437,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 12,
     padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
+    borderRadius: 24,
+    borderWidth: 0, shadowOpacity: 0 },
   featureCardLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    borderColor: '#E9E6F2',
   },
   featureCardDark: {
     backgroundColor: '#121722',

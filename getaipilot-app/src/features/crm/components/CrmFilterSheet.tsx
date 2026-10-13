@@ -226,9 +226,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
+    fontSize: 28,
+    fontWeight: '500', lineHeight: 36 , letterSpacing: -0.5 },
   closeBtn: {
     padding: 6,
     borderRadius: 8,
@@ -237,12 +236,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '500',
     letterSpacing: -0.1,
     marginTop: 12,
-    marginBottom: 8,
-  },
+    marginBottom: 8, lineHeight: 24 },
   chipGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

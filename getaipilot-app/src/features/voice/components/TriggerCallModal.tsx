@@ -375,7 +375,7 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
                               ? colors.primary
                               : isDark
                               ? "#242430"
-                              : "#E2E8F0",
+                              : "#E9E6F2",
                           },
                         ]}
                       >
@@ -428,7 +428,7 @@ export const TriggerCallModal: React.FC<TriggerCallModalProps> = ({
                                 color: isAssigned
                                   ? isDark
                                     ? "#FFFFFF"
-                                    : "#0F172A"
+                                    : "#1C1A25"
                                   : colors.textSecondary,
                                 fontWeight: isAssigned ? "600" : "400",
                               },
@@ -562,12 +562,11 @@ const styles = StyleSheet.create({
     gap: 1,
   },
   headerTitle: {
-    fontSize: 16.5,
-    fontWeight: "800",
-    letterSpacing: -0.3,
-  },
+    fontSize: 28,
+    fontWeight: '500',
+    letterSpacing: -0.5, lineHeight: 36 },
   headerSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "500",
   },
   closeBtn: {
@@ -582,7 +581,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 14,
     gap: 12,
     paddingBottom: 36,

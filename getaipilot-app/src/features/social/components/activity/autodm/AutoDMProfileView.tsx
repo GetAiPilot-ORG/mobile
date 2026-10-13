@@ -73,7 +73,7 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
       {/* Profile Switcher Chips (when multiple profiles connected) */}
       {allAccounts.length > 1 && (
         <View style={styles.profileSwitcherRow}>
-          <Text style={[styles.profileSwitcherLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+          <Text style={[styles.profileSwitcherLabel, { color: isDark ? '#777383' : '#64748b' }]}>
             Profiles:
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
@@ -95,8 +95,8 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
                       backgroundColor: isSelected
                         ? '#e1306c'
                         : isDark
-                          ? '#1e293b'
-                          : '#f1f5f9',
+                          ? '#252230'
+                          : '#F0EEF8',
                       borderColor: isSelected ? '#e1306c' : isDark ? '#334155' : '#cbd5e1',
                     },
                   ]}
@@ -109,7 +109,7 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
                   <Text
                     style={[
                       styles.profileSwitcherText,
-                      { color: isSelected ? '#ffffff' : isDark ? '#f8fafc' : '#0f172a' },
+                      { color: isSelected ? '#ffffff' : isDark ? '#F5F3FB' : '#1C1A25' },
                     ]}
                   >
                     {handle}
@@ -129,8 +129,8 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
         style={[
           styles.card,
           {
-            backgroundColor: isDark ? '#0f172a' : '#ffffff',
-            borderColor: isDark ? '#1e293b' : '#e2e8f0',
+            backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+            borderColor: isDark ? '#252230' : '#E9E6F2',
             padding: 16,
             gap: 16,
           },
@@ -145,7 +145,7 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
                 style={styles.profileAvatarImage}
               />
             ) : (
-              <View style={[styles.profileAvatarFallback, { backgroundColor: isDark ? '#1e293b' : '#fdf2f8' }]}>
+              <View style={[styles.profileAvatarFallback, { backgroundColor: isDark ? '#252230' : '#fdf2f8' }]}>
                 <Ionicons name="logo-instagram" size={30} color="#e1306c" />
               </View>
             )}
@@ -154,7 +154,7 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
 
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-              <Text style={[styles.profileDisplayName, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              <Text style={[styles.profileDisplayName, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                 {profileAccount?.full_name || profileAccount?.page_name || profileAccount?.username || (profileAccount ? 'Instagram Account' : 'No Account Linked')}
               </Text>
               <Ionicons name="shield-checkmark" size={16} color="#10b981" />
@@ -176,8 +176,8 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
             ) : null}
 
             <View style={styles.profileBadgeRow}>
-              <View style={[styles.profileAccountTypeChip, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
-                <Text style={[styles.profileAccountTypeText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+              <View style={[styles.profileAccountTypeChip, { backgroundColor: isDark ? '#252230' : '#F0EEF8' }]}>
+                <Text style={[styles.profileAccountTypeText, { color: isDark ? '#777383' : '#64748b' }]}>
                   {profileAccount?.account_type || 'BUSINESS'}
                 </Text>
               </View>
@@ -190,24 +190,24 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
         </View>
 
         {/* 4-Stat Performance Telemetry Strip */}
-        <View style={[styles.profileStatsRow, { borderTopColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+        <View style={[styles.profileStatsRow, { borderTopColor: isDark ? '#252230' : '#F0EEF8' }]}>
           <View style={styles.profileStatItem}>
-            <Text style={[styles.profileStatVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+            <Text style={[styles.profileStatVal, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
               {profileAccount?.media_count ?? instagramMediaList.length}
             </Text>
             <Text style={styles.profileStatLbl}>Posts</Text>
           </View>
 
-          <View style={[styles.profileStatDivider, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]} />
+          <View style={[styles.profileStatDivider, { backgroundColor: isDark ? '#252230' : '#F0EEF8' }]} />
 
           <View style={styles.profileStatItem}>
-            <Text style={[styles.profileStatVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+            <Text style={[styles.profileStatVal, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
               {profileAccount?.followers_count ?? 0}
             </Text>
             <Text style={styles.profileStatLbl}>Followers</Text>
           </View>
 
-          <View style={[styles.profileStatDivider, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]} />
+          <View style={[styles.profileStatDivider, { backgroundColor: isDark ? '#252230' : '#F0EEF8' }]} />
 
           <View style={styles.profileStatItem}>
             <Text style={[styles.profileStatVal, { color: '#3b82f6' }]}>
@@ -216,7 +216,7 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
             <Text style={styles.profileStatLbl}>Automations</Text>
           </View>
 
-          <View style={[styles.profileStatDivider, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]} />
+          <View style={[styles.profileStatDivider, { backgroundColor: isDark ? '#252230' : '#F0EEF8' }]} />
 
           <View style={styles.profileStatItem}>
             <Text style={[styles.profileStatVal, { color: '#10b981' }]}>
@@ -256,13 +256,13 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
             style={({ pressed }) => [
               styles.profileHeroSecondaryBtn,
               {
-                backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                backgroundColor: isDark ? '#252230' : '#F5F3FB',
                 borderColor: isDark ? '#334155' : '#cbd5e1',
                 opacity: pressed ? 0.8 : 1,
               },
             ]}
           >
-            <Ionicons name="refresh" size={15} color={isDark ? '#f8fafc' : '#0f172a'} />
+            <Ionicons name="refresh" size={15} color={isDark ? '#F5F3FB' : '#1C1A25'} />
           </Pressable>
         </View>
       </View>
@@ -272,8 +272,8 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
         style={[
           styles.card,
           {
-            backgroundColor: isDark ? '#0f172a' : '#ffffff',
-            borderColor: isDark ? '#1e293b' : '#e2e8f0',
+            backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+            borderColor: isDark ? '#252230' : '#E9E6F2',
             padding: 14,
             gap: 12,
           },
@@ -282,7 +282,7 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Ionicons name="shield-checkmark" size={16} color="#10b981" />
-            <Text style={[styles.cardSectionTitle, { color: isDark ? '#f8fafc' : '#0f172a', marginBottom: 0 }]}>
+            <Text style={[styles.cardSectionTitle, { color: isDark ? '#F5F3FB' : '#1C1A25', marginBottom: 0 }]}>
               Gateway & Webhook Health
             </Text>
           </View>
@@ -294,7 +294,7 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
         <View style={styles.autodmPermissionRow}>
           <Ionicons name="checkmark-circle" size={18} color="#22c55e" />
           <View style={{ flex: 1 }}>
-            <Text style={[styles.autodmPermissionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+            <Text style={[styles.autodmPermissionTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
               Realtime Comments Ingestion
             </Text>
             <Text style={styles.autodmPermissionDesc}>
@@ -306,12 +306,12 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
           </View>
         </View>
 
-        <View style={[styles.divider, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]} />
+        <View style={[styles.divider, { backgroundColor: isDark ? '#252230' : '#F0EEF8' }]} />
 
         <View style={styles.autodmPermissionRow}>
           <Ionicons name="checkmark-circle" size={18} color="#22c55e" />
           <View style={{ flex: 1 }}>
-            <Text style={[styles.autodmPermissionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+            <Text style={[styles.autodmPermissionTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
               Direct Message Dispatch Service
             </Text>
             <Text style={styles.autodmPermissionDesc}>
@@ -323,15 +323,15 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
           </View>
         </View>
 
-        <View style={[styles.divider, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]} />
+        <View style={[styles.divider, { backgroundColor: isDark ? '#252230' : '#F0EEF8' }]} />
 
         {/* Meta Graph IDs Box */}
         <View
           style={[
             styles.profileMetaBox,
             {
-              backgroundColor: isDark ? '#131e32' : '#f8fafc',
-              borderColor: isDark ? '#1e293b' : '#e2e8f0',
+              backgroundColor: isDark ? '#131e32' : '#F5F3FB',
+              borderColor: isDark ? '#252230' : '#E9E6F2',
             },
           ]}
         >
@@ -354,14 +354,14 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
       <View style={{ gap: 10 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View>
-            <Text style={[styles.cardSectionTitle, { color: isDark ? '#f8fafc' : '#0f172a', marginBottom: 2 }]}>
+            <Text style={[styles.cardSectionTitle, { color: isDark ? '#F5F3FB' : '#1C1A25', marginBottom: 2 }]}>
               Published Media & Triggers
             </Text>
-            <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b' }}>
+            <Text style={{ fontSize: 12, color: isDark ? '#777383' : '#64748b' }}>
               Attach automated reply flows to your live posts & reels
             </Text>
           </View>
-          <View style={[styles.contactCountBadge, { backgroundColor: isDark ? '#1e293b' : '#eff6ff', borderColor: isDark ? '#334155' : '#bfdbfe' }]}>
+          <View style={[styles.contactCountBadge, { backgroundColor: isDark ? '#252230' : '#eff6ff', borderColor: isDark ? '#334155' : '#bfdbfe' }]}>
             <Text style={{ fontSize: 11, fontWeight: '800', color: '#3b82f6' }}>
               {filteredMediaList.length} items
             </Text>
@@ -379,14 +379,14 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
               styles.statusChip,
               mediaFilter === 'all'
                 ? { backgroundColor: 'rgba(59, 130, 246, 0.14)', borderColor: '#3b82f6' }
-                : { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' },
+                : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
             ]}
           >
             <Text
               style={[
                 styles.statusChipText,
                 {
-                  color: mediaFilter === 'all' ? '#3b82f6' : isDark ? '#94a3b8' : '#64748b',
+                  color: mediaFilter === 'all' ? '#3b82f6' : isDark ? '#777383' : '#64748b',
                   fontWeight: mediaFilter === 'all' ? '700' : '500',
                 },
               ]}
@@ -404,14 +404,14 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
               styles.statusChip,
               mediaFilter === 'video'
                 ? { backgroundColor: 'rgba(239, 68, 68, 0.14)', borderColor: '#ef4444' }
-                : { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' },
+                : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
             ]}
           >
             <Text
               style={[
                 styles.statusChipText,
                 {
-                  color: mediaFilter === 'video' ? '#ef4444' : isDark ? '#94a3b8' : '#64748b',
+                  color: mediaFilter === 'video' ? '#ef4444' : isDark ? '#777383' : '#64748b',
                   fontWeight: mediaFilter === 'video' ? '700' : '500',
                 },
               ]}
@@ -429,14 +429,14 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
               styles.statusChip,
               mediaFilter === 'image'
                 ? { backgroundColor: 'rgba(16, 185, 129, 0.14)', borderColor: '#10b981' }
-                : { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' },
+                : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
             ]}
           >
             <Text
               style={[
                 styles.statusChipText,
                 {
-                  color: mediaFilter === 'image' ? '#10b981' : isDark ? '#94a3b8' : '#64748b',
+                  color: mediaFilter === 'image' ? '#10b981' : isDark ? '#777383' : '#64748b',
                   fontWeight: mediaFilter === 'image' ? '700' : '500',
                 },
               ]}
@@ -450,7 +450,7 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
         {isLoadingMedia && (
           <View style={{ paddingVertical: 40, alignItems: 'center', gap: 10 }}>
             <ActivityIndicator size="large" color="#e1306c" />
-            <Text style={{ fontSize: 13, color: isDark ? '#94a3b8' : '#64748b' }}>
+            <Text style={{ fontSize: 13, color: isDark ? '#777383' : '#64748b' }}>
               Fetching Instagram posts & reels...
             </Text>
           </View>
@@ -476,8 +476,8 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
                   style={[
                     styles.mediaGridItemCard,
                     {
-                      backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                      borderColor: isDark ? '#1e293b' : '#e2e8f0',
+                      backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+                      borderColor: isDark ? '#252230' : '#E9E6F2',
                     },
                   ]}
                 >
@@ -485,7 +485,7 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
                     {imgUri ? (
                       <Image source={{ uri: imgUri }} style={styles.mediaGridImage} resizeMode="cover" />
                     ) : (
-                      <View style={[styles.mediaGridPlaceholder, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+                      <View style={[styles.mediaGridPlaceholder, { backgroundColor: isDark ? '#252230' : '#F0EEF8' }]}>
                         <Ionicons name={isVideo ? 'videocam' : 'image'} size={24} color="#e1306c" />
                       </View>
                     )}
@@ -519,7 +519,7 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
                   <View style={styles.mediaGridBody}>
                     <Text
                       numberOfLines={2}
-                      style={[styles.mediaGridCaption, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+                      style={[styles.mediaGridCaption, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}
                     >
                       {item.caption || 'Instagram Post'}
                     </Text>
@@ -551,19 +551,19 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
             style={[
               styles.card,
               {
-                backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                borderColor: isDark ? '#1e293b' : '#e2e8f0',
+                backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+                borderColor: isDark ? '#252230' : '#E9E6F2',
                 alignItems: 'center',
                 paddingVertical: 32,
                 gap: 8,
               },
             ]}
           >
-            <Ionicons name="images-outline" size={32} color={isDark ? '#64748b' : '#94a3b8'} />
-            <Text style={{ fontSize: 14, fontWeight: '700', color: isDark ? '#f8fafc' : '#0f172a' }}>
+            <Ionicons name="images-outline" size={32} color={isDark ? '#64748b' : '#777383'} />
+            <Text style={{ fontSize: 14, fontWeight: '700', color: isDark ? '#F5F3FB' : '#1C1A25' }}>
               No Media Found
             </Text>
-            <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b' }}>
+            <Text style={{ fontSize: 12, color: isDark ? '#777383' : '#64748b' }}>
               Ensure your Instagram account has published posts or reels.
             </Text>
           </View>
@@ -575,19 +575,18 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0,
     shadowRadius: 2,
     elevation: 1,
   },
   cardSectionTitle: {
     fontSize: 14,
-    fontWeight: '700',
-  },
+    fontWeight: '700', borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   profileAvatarWrapper: {
     position: 'relative',
   },
@@ -675,7 +674,7 @@ const styles = StyleSheet.create({
   },
   profileStatLbl: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: '#777383',
     fontWeight: '500',
   },
   profileStatDivider: {
@@ -715,7 +714,7 @@ const styles = StyleSheet.create({
   },
   autodmPermissionDesc: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: '#777383',
     marginTop: 2,
   },
   autodmActivePill: {
@@ -739,7 +738,7 @@ const styles = StyleSheet.create({
   },
   profileMetaLabel: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: '#777383',
     fontWeight: '600',
   },
   profileMetaVal: {
@@ -769,10 +768,9 @@ const styles = StyleSheet.create({
   },
   mediaGridItemCard: {
     width: '48%',
-    borderRadius: 12,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
+    borderRadius: 24,
+    borderWidth: 0,
+    overflow: 'hidden', shadowOpacity: 0 },
   mediaGridThumbWrapper: {
     width: '100%',
     height: 140,

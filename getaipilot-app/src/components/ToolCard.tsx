@@ -15,7 +15,6 @@ interface ToolCardProps {
 
 export const ToolCard: React.FC<ToolCardProps> = ({
   title,
-  category,
   description,
   icon,
   iconBg,
@@ -53,7 +52,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({
           }}
         >
           {isIonicon ? (
-            <Ionicons name={icon as any} size={21} color="#FFFFFF" />
+            <Ionicons name={icon as any} size={21} color={iconBg ? "#FFFFFF" : colors.accent} />
           ) : (
             <Text className="text-xl">{icon}</Text>
           )}
@@ -70,7 +69,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({
             <Text
               style={{
                 fontSize: 9.5,
-                fontWeight: "800",
+                fontWeight: "600",
                 letterSpacing: 0.8,
                 color: colors.accent,
               }}
@@ -85,19 +84,8 @@ export const ToolCard: React.FC<ToolCardProps> = ({
       <View style={{ gap: 3, marginBottom: 10 }}>
         <Text
           style={{
-            fontSize: 9.5,
-            fontWeight: "800",
-            letterSpacing: 1.2,
-            textTransform: "uppercase",
-            color: colors.textSecondary,
-          }}
-        >
-          {category}
-        </Text>
-        <Text
-          style={{
             fontSize: 15,
-            fontWeight: "800",
+            fontWeight: "600",
             letterSpacing: -0.3,
             color: colors.text,
           }}
@@ -107,8 +95,8 @@ export const ToolCard: React.FC<ToolCardProps> = ({
         </Text>
         <Text
           style={{
-            fontSize: 11.5,
-            lineHeight: 16,
+            fontSize: 13,
+            lineHeight: 19,
             color: colors.textSecondary,
           }}
           numberOfLines={2}
@@ -124,14 +112,14 @@ export const ToolCard: React.FC<ToolCardProps> = ({
           alignItems: "center",
           justifyContent: "space-between",
           paddingTop: 11,
-          borderTopWidth: 1,
+          borderTopWidth: 0,
           borderTopColor: isDark
             ? "rgba(255,255,255,0.06)"
             : "rgba(0,0,0,0.05)",
         }}
       >
         <Text
-          style={{ fontSize: 11.5, fontWeight: "700", color: colors.primary }}
+          style={{ fontSize: 13, fontWeight: "700", color: colors.primary }}
         >
           Launch Tool
         </Text>

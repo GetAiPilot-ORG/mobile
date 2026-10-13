@@ -1,3 +1,4 @@
+import { ProductHeading } from "@/components/ProductUI";
 import { getColors, useTheme } from '@/theme';
 import {
   Ionicons
@@ -75,32 +76,7 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
   return (
     <>
       {/* Hero Card */}
-      <View style={[styles.heroCard, card]}>
-        <View style={styles.heroRow}>
-          <View style={styles.heroLeft}>
-            <View style={styles.heroIconCircle}>
-              <Ionicons name="flash" size={18} color="#0284C7" />
-            </View>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={[styles.heroTitle, txt]} numberOfLines={1}>AutoForward</Text>
-              <View style={styles.activeRow}>
-                <View style={styles.dotGreen} />
-                <Text style={styles.activeText}>System Active</Text>
-              </View>
-            </View>
-          </View>
-          <Pressable
-            style={styles.openBotBtn}
-            onPress={() => {
-              if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              Linking.openURL('https://t.me/Gapautoforwardingbot');
-            }}
-          >
-            <Ionicons name="logo-android" size={14} color="#FFFFFF" />
-            <Text style={styles.openBotBtnText}>Open Bot</Text>
-          </Pressable>
-        </View>
-      </View>
+      <ProductHeading title="Forward messages" action="Open bot" onAction={() => Linking.openURL('https://t.me/Gapautoforwardingbot')} />
 
       {/* 6 KPI Cards in Solid 2-Column Grid */}
       <View style={styles.metricsContainer}>
@@ -219,7 +195,7 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
                       </View>
                       <Text style={[styles.mappingSource, txt]} numberOfLines={1}>{sourceLabel}</Text>
                     </View>
-                    <Ionicons name="arrow-forward" size={14} color="#94A3B8" style={{ marginHorizontal: 8 }} />
+                    <Ionicons name="arrow-forward" size={14} color="#777383" style={{ marginHorizontal: 8 }} />
                     <View style={[styles.targetBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
                       <Text style={[styles.targetBadgeText, txt]} numberOfLines={1}>{targetLabel}</Text>
                     </View>
@@ -250,7 +226,7 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
               filtersList.map((item: any, idx: number) => (
                 <View key={idx} style={[styles.filterItem]}>
                   <Text style={styles.filterFrom}>{item.from}</Text>
-                  {item.to ? <Ionicons name="arrow-forward" size={14} color="#94A3B8" /> : null}
+                  {item.to ? <Ionicons name="arrow-forward" size={14} color="#777383" /> : null}
                   {item.to ? <Text style={styles.filterTo}>{item.to}</Text> : null}
                 </View>
               ))
@@ -364,39 +340,39 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
 };
 
 const styles = StyleSheet.create({
-  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
+  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
   cardDark: { backgroundColor: '#121212', borderColor: '#27272A' },
-  textLight: { color: '#0F172A' },
-  textDark: { color: '#F8FAFC' },
-  borderLight: { borderColor: '#E2E8F0' },
+  textLight: { color: '#1C1A25' },
+  textDark: { color: '#F5F3FB' },
+  borderLight: { borderColor: '#E9E6F2' },
   borderDark: { borderColor: '#27272A' },
-  heroCard: { padding: 12, borderRadius: 16, borderWidth: 1, marginBottom: 14 },
+  heroCard: { padding: 0, borderRadius: 24, borderWidth: 0, marginBottom: 24, shadowOpacity: 0, backgroundColor: 'transparent' },
   heroRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   heroLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, paddingRight: 8 },
   heroIconCircle: { width: 34, height: 34, borderRadius: 8, backgroundColor: 'rgba(2,132,199,0.12)', alignItems: 'center', justifyContent: 'center' },
-  heroTitle: { fontSize: 15, fontWeight: '800' },
+  heroTitle: { fontSize: 28, fontWeight: '500', lineHeight: 36 , letterSpacing: -0.5 },
   activeRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
   dotGreen: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981' },
   activeText: { color: '#64748B', fontSize: 11, fontWeight: '600' },
-  openBotBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#0284C7', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 8 },
+  openBotBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#17171C', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 28, minHeight: 44 , shadowOpacity: 0 },
   openBotBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
   metricsContainer: { width: '100%', alignSelf: 'stretch', gap: 10, marginBottom: 14 },
   metricsRow: { flexDirection: 'row', gap: 10, width: '100%', alignSelf: 'stretch', marginBottom: 10 },
   kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 12, width: '100%' },
-  kpiCard: { width: '47%', padding: 12, borderRadius: 14, borderWidth: 1 },
+  kpiCard: { width: '47%', padding: 12, borderRadius: 24, borderWidth: 0, shadowOpacity: 0 },
   kpiCardActive: { borderColor: '#0284C7', borderWidth: 2 },
   kpiIconCircle: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   kpiValue: { fontSize: 20, fontWeight: '800' },
-  kpiSub: { fontSize: 10, color: '#64748B', marginTop: 2, fontWeight: '600' },
-  primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#0284C7', borderRadius: 12, paddingVertical: 13, marginBottom: 12 },
+  kpiSub: { fontSize: 13, color: '#716B7C', marginTop: 2, fontWeight: '600' },
+  primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#17171C', borderRadius: 28, paddingVertical: 13, marginBottom: 12 , minHeight: 44 , shadowOpacity: 0 },
   primaryBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
-  sectionCard: { padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 12 },
+  sectionCard: { padding: 16, borderRadius: 24, borderWidth: 0, marginBottom: 12 , shadowOpacity: 0 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
   sectionIconCircle: { width: 32, height: 32, borderRadius: 8, backgroundColor: 'rgba(2,132,199,0.12)', alignItems: 'center', justifyContent: 'center' },
-  sectionTitle: { fontSize: 14, fontWeight: '800' },
-  sectionSub: { fontSize: 11, color: '#64748B', marginTop: 1 },
+  sectionTitle: { fontSize: 18, fontWeight: '500', lineHeight: 24 },
+  sectionSub: { fontSize: 13, color: '#716B7C', marginTop: 1 },
   mappingRow: { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 10, borderWidth: 1 },
-  mappingRowLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
+  mappingRowLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2' },
   mappingRowDark: { backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' },
   mappingLeft: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 },
   mappingArrow: { width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(2,132,199,0.12)', alignItems: 'center', justifyContent: 'center' },
@@ -412,7 +388,7 @@ const styles = StyleSheet.create({
   blockedChip: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(239,68,68,0.08)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)' },
   blockedChipText: { fontSize: 11, color: '#EF4444', fontWeight: '600' },
   delayBigBox: { alignItems: 'center', padding: 20, borderRadius: 12, marginVertical: 12 },
-  delayBoxLight: { backgroundColor: '#F8FAFC' },
+  delayBoxLight: { backgroundColor: '#F5F3FB' },
   delayBoxDark: { backgroundColor: 'rgba(255,255,255,0.04)' },
   delayBigNumber: { fontSize: 48, fontWeight: '900', letterSpacing: -2 },
   delayBigLabel: { fontSize: 12, color: '#64748B', fontWeight: '600', marginTop: 4 },

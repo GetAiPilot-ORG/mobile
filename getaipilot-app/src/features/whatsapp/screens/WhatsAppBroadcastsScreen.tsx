@@ -1,3 +1,4 @@
+import { ProductPageHeader } from "@/components/ProductUI";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
@@ -71,42 +72,10 @@ export const WhatsAppBroadcastsScreen: React.FC<
     <SafeAreaView
       edges={["top", "left", "right"]}
       className="flex-1"
-      style={{ backgroundColor: isDark ? "#000000" : "#F8F9FA" }}
+      style={{ backgroundColor: isDark ? "#000000" : "#F5F3FB" }}
     >
       <View className="flex-1">
-        {/* Header */}
-        <View
-          className={`flex-row items-center px-4 py-3 border-b ${
-            isDark
-              ? "bg-black border-white/[0.08]"
-              : "bg-white border-black/[0.06]"
-          }`}
-        >
-          <Pressable
-            className={`w-10 h-10 rounded-full justify-center items-center mr-3 border active:opacity-70 active:scale-95 shadow-sm ${
-              isDark
-                ? "bg-[#1C1C1E] border-[#2C2C2E]"
-                : "bg-white border-[#E5E7EB]"
-            }`}
-            onPress={handleBack}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityRole="button"
-            accessibilityLabel="Back"
-          >
-            <Ionicons
-              name="chevron-back"
-              size={20}
-              color={isDark ? "#F8FAFC" : "#0F172A"}
-            />
-          </Pressable>
-          <Text
-            className={`text-xl font-bold tracking-tight ${
-              isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
-            }`}
-          >
-            Broadcast Campaigns
-          </Text>
-        </View>
+        <ProductPageHeader title="Your broadcasts" onBack={handleBack} />
 
         {/* Filter Pills */}
         <View className="flex-row px-4 py-3 gap-2">
@@ -121,8 +90,8 @@ export const WhatsAppBroadcastsScreen: React.FC<
                       ? "bg-white border-white"
                       : "bg-black border-black"
                     : isDark
-                    ? "bg-[#1C1C1E] border-[#2C2C2E]"
-                    : "bg-[#F2F2F7] border-[#E5E7EB]"
+                    ? "bg-[#252230] border-[#3A3549]"
+                    : "bg-[#F0EEF8] border-[#E9E6F2]"
                 }`}
                 onPress={() => handleStatusSelect(tab)}
               >
@@ -159,7 +128,7 @@ export const WhatsAppBroadcastsScreen: React.FC<
               />
             )}
             contentContainerStyle={{
-              padding: 16,
+              padding: 20,
               paddingBottom: 130,
             }}
             refreshControl={
@@ -173,7 +142,7 @@ export const WhatsAppBroadcastsScreen: React.FC<
               <View className="p-10 items-center justify-center">
                 <Text
                   className={`text-sm ${
-                    isDark ? "text-[#94A3B8]" : "text-[#64748B]"
+                    isDark ? "text-[#777383]" : "text-[#64748B]"
                   }`}
                 >
                   No broadcast campaigns found

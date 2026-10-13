@@ -333,8 +333,8 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   itemCard: {
     backgroundColor: colors.card,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     borderColor: colors.border,
     overflow: "hidden",
   },

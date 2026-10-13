@@ -348,7 +348,7 @@ export default function OverallPricingScreen() {
                   ? meta.color
                   : isDark
                     ? "#1e293b"
-                    : "#e2e8f0",
+                    : "#E9E6F2",
             borderWidth: isProCard ? 1.8 : isAddon ? 1.5 : isPopular ? 2 : 1,
           },
         ]}
@@ -484,7 +484,7 @@ export default function OverallPricingScreen() {
                   ? "#F5F3FF"
                   : isAddon
                     ? "#EEF2FF"
-                    : "#f8fafc",
+                    : "#F5F3FB",
             },
           ]}
         >
@@ -597,7 +597,7 @@ export default function OverallPricingScreen() {
                           : "#EEF2FF"
                         : isDark
                           ? "#1e293b"
-                          : "#f1f5f9",
+                          : "#F0EEF8",
                     },
                   ]}
                 >
@@ -1176,8 +1176,8 @@ const styles = StyleSheet.create({
   },
   statusBanner: {
     padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     gap: 8,
   },
   statusHeader: {
@@ -1634,14 +1634,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 13,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     gap: 12,
   },
   referralBannerIcon: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: 24,
     backgroundColor: "rgba(16, 185, 129, 0.2)",
     alignItems: "center",
     justifyContent: "center",

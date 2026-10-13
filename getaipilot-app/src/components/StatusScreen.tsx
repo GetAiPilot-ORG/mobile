@@ -67,7 +67,7 @@ export function NetworkStatusScreen({ onRetry, isChecking = false }: NetworkStat
       style={[
         styles.container,
         {
-          backgroundColor: isDark ? "#000000" : "#F2F2F7",
+          backgroundColor: isDark ? "#000000" : "#F0EEF8",
         },
       ]}
     >
@@ -123,8 +123,8 @@ export function NetworkStatusScreen({ onRetry, isChecking = false }: NetworkStat
           style={[
             styles.statusCard,
             {
-              backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-              borderColor: isDark ? "#2C2C2E" : "#E5E7EB",
+              backgroundColor: isDark ? "#252230" : "#FFFFFF",
+              borderColor: isDark ? "#3A3549" : "#E9E6F2",
             },
           ]}
         >
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   statusCard: {
     width: "100%",
     minHeight: 70,
-    borderRadius: 18,
+    borderRadius: 24,
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 14,
     flexDirection: "row",

@@ -48,8 +48,8 @@ export const ProductActionCard: React.FC<ProductActionCardProps> = ({
           </View>
         ) : null}
       </View>
-      <Text style={[styles.title, { color: isDark ? '#f8fafc' : '#0f172a' }]}>{title}</Text>
-      <Text style={[styles.description, { color: isDark ? '#94a3b8' : '#64748b' }]} numberOfLines={2}>
+      <Text style={[styles.title, { color: isDark ? '#F5F3FB' : '#0f172a' }]}>{title}</Text>
+      <Text style={[styles.description, { color: isDark ? '#777383' : '#64748b' }]} numberOfLines={2}>
         {description}
       </Text>
     </Pressable>
@@ -58,9 +58,9 @@ export const ProductActionCard: React.FC<ProductActionCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0,
     marginBottom: 12,
   },
   cardDark: {
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
   },
   cardLight: {
     backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
+    borderColor: '#E9E6F2',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,

@@ -30,7 +30,7 @@ type StatusStyle = {
 
 const STATUS_COLOR: Record<QuotationStatus, StatusStyle> = {
   DRAFT: {
-    bg: '#F1F5F9',
+    bg: '#F0EEF8',
     text: '#64748B',
   },
   SENT: {
@@ -584,14 +584,14 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: 23,
-    lineHeight: 28,
-    fontWeight: '800',
+    fontSize: 28,
+    lineHeight: 36,
+    fontWeight: '500',
     letterSpacing: -0.5,
   },
 
   subtitle: {
-    fontSize: 12,
+    fontSize: 13,
     lineHeight: 17,
     fontWeight: '500',
     marginTop: 3,
@@ -672,9 +672,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 14,
     paddingVertical: 14,
-    borderRadius: 15,
-    borderWidth: 1,
-  },
+    borderRadius: 24,
+    borderWidth: 0, shadowOpacity: 0 },
 
   quotationLeft: {
     flex: 1,

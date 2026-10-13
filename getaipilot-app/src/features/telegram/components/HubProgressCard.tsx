@@ -28,7 +28,7 @@ export const HubProgressCard: React.FC<HubProgressCardProps> = ({
 
   return (
     <View
-      className="rounded-2xl p-3.5 mb-3.5 border shadow-sm shadow-black/5"
+      className="rounded-[24px] p-3.5 mb-3.5 border-0  shadow-black/5"
       style={{ backgroundColor: colors.card, borderColor: colors.cardBorder }}
     >
       <View className="flex-row justify-between items-center gap-2 mb-3">
@@ -69,7 +69,7 @@ export const HubProgressCard: React.FC<HubProgressCardProps> = ({
         style={{ backgroundColor: colors.backgroundSecondary }}
       >
         <View className="flex-row justify-between items-center mb-1.5">
-          <Text className="text-[10px] font-bold tracking-wider text-[#64748B]">
+          <Text className="text-[10px] font-bold  text-[#64748B]">
             SETUP PROGRESS
           </Text>
           <Text

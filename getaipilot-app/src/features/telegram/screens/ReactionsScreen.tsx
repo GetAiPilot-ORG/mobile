@@ -1,3 +1,4 @@
+import { ProductHeading, ProductButton, useProductPalette } from "@/components/ProductUI";
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
@@ -48,7 +49,7 @@ const CAMPAIGN_TYPES = [
 
 export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
+  const colors = useProductPalette();
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -139,7 +140,7 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
   });
 
   const botUsername = dashboard?.botUsername || '@gaptgboostbot';
-  const walletBalance = dashboard?.wallet?.balance ?? 49.86;
+  const walletBalance = dashboard?.wallet?.balance ?? 0;
   const autopilotRules: ReactionAutopilotRule[] = dashboard?.autopilotRules || [];
   const autopilotCount = autopilotRules.length;
   const orders: ReactionOrder[] = dashboard?.orders || (summaryData?.loadedReactionOrders as any[]) || [];
@@ -239,94 +240,17 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
   return (
     <View style={[styles.container, { backgroundColor: colors.card }]}>
       {/* Top Header Card */}
-      <View style={[styles.heroHeader, card]}>
-        <View style={styles.titleRow}>
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text style={[styles.heroTitle, txt]}>GAP Reactions</Text>
-              <View style={styles.liveBadge}>
-                <View style={styles.liveDot} />
-                <Text style={styles.liveText}>Live SMM</Text>
-              </View>
-            </View>
-            <Text style={styles.heroSub}>Auto-pilot post booster & instant SMM delivery</Text>
-          </View>
+      <ProductHeading title="Your reactions" action="Open bot" onAction={handleOpenBot} />
+      <View style={{ backgroundColor: colors.lavender, borderRadius: 26, padding: 22, gap: 14, marginBottom: 24 }}>
+        <Text style={{ fontSize: 13, color: colors.textSecondary }}>Your balance</Text>
+        <Text style={{ fontSize: 30, color: colors.text }}>₹{walletBalance.toFixed(2)}</Text>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <ProductButton label="Top up" onPress={() => setIsTopUpOpen(true)} />
+          <ProductButton label="Refresh" secondary onPress={() => refetch()} />
         </View>
-
-        {/* Balance & Top Up Bar */}
-        <View style={[styles.balanceCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={styles.balanceLeft}>
-            <View style={styles.walletIconCircle}>
-              <Ionicons name="wallet-outline" size={16} color="#0284C7" />
-            </View>
-            <View>
-              <Text style={styles.balanceLabel}>Balance</Text>
-              <Text style={[styles.balanceAmount, txt]}>₹{walletBalance.toFixed(2)}</Text>
-            </View>
-          </View>
-
-          <View style={styles.balanceRight}>
-            <Pressable
-              style={styles.refreshIconBtn}
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                refetch();
-              }}
-            >
-              <Ionicons name="refresh-outline" size={14} color="#CBD5E1" />
-            </Pressable>
-
-            <Pressable
-              style={styles.topUpBtn}
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setIsTopUpOpen(true);
-              }}
-            >
-              <Ionicons name="add" size={14} color="#FFFFFF" />
-              <Text style={styles.topUpBtnText}>Top Up</Text>
-            </Pressable>
-          </View>
-        </View>
-
-        {/* Segmented Sub-Nav Bar */}
-        <View style={styles.navBar}>
-          <Pressable
-            style={[styles.navTab, activeTab === 'autopilot' && styles.navTabActive]}
-            onPress={() => {
-              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setActiveTab('autopilot');
-            }}
-          >
-            <Ionicons name="flash-outline" size={13} color={activeTab === 'autopilot' ? '#0284C7' : '#94A3B8'} />
-            <Text style={[styles.navTabText, activeTab === 'autopilot' && styles.navTabTextActive]}>Auto Pilot</Text>
-          </Pressable>
-
-          <Pressable
-            style={[styles.navTab, activeTab === 'boost' && styles.navTabActive]}
-            onPress={() => {
-              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setActiveTab('boost');
-            }}
-          >
-            <Ionicons name="color-wand-outline" size={13} color={activeTab === 'boost' ? '#0284C7' : '#94A3B8'} />
-            <Text style={[styles.navTabText, activeTab === 'boost' && styles.navTabTextActive]}>Boost Post</Text>
-          </Pressable>
-
-          <Pressable
-            style={[styles.navTab, activeTab === 'orders' && styles.navTabActive]}
-            onPress={() => {
-              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setActiveTab('orders');
-            }}
-          >
-            <Ionicons name="cube-outline" size={13} color={activeTab === 'orders' ? '#0284C7' : '#94A3B8'} />
-            <Text style={[styles.navTabText, activeTab === 'orders' && styles.navTabTextActive]}>Orders</Text>
-            <View style={styles.badgePill}>
-              <Text style={styles.badgeText}>{ordersCount}</Text>
-            </View>
-          </Pressable>
-        </View>
+      </View>
+      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 24 }}>
+        {([{ key: 'autopilot', title: 'Auto pilot' }, { key: 'boost', title: 'Boost post' }, { key: 'orders', title: 'Orders' }] as const).map((tab) => <Pressable key={tab.key} onPress={() => setActiveTab(tab.key)} accessibilityRole="button" accessibilityState={{ selected: activeTab === tab.key }} style={{ flex: 1, minHeight: 44, justifyContent: 'center', alignItems: 'center', borderRadius: 24, backgroundColor: activeTab === tab.key ? colors.lavender : colors.card }}><Text style={{ fontSize: 13, color: activeTab === tab.key ? colors.accent : colors.textSecondary }}>{tab.title}</Text></Pressable>)}
       </View>
 
       {/* Bot Admin Setup Banner */}
@@ -513,7 +437,7 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
           {/* Price Summary */}
           <View style={styles.priceSummaryBox}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-              <Text style={{ fontSize: 12, color: '#94A3B8' }}>Total Cost:</Text>
+              <Text style={{ fontSize: 12, color: '#777383' }}>Total Cost:</Text>
               <Text style={{ fontSize: 16, fontWeight: '800', color: '#0284C7' }}>₹{orderCost.toFixed(2)}</Text>
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -593,7 +517,7 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, txt]}>Register Autopilot Channel</Text>
               <Pressable onPress={() => setIsAddRuleOpen(false)}>
-                <Ionicons name="close" size={20} color="#94A3B8" />
+                <Ionicons name="close" size={20} color="#777383" />
               </Pressable>
             </View>
 
@@ -667,10 +591,10 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, txt]}>Top Up Wallet</Text>
               <Pressable onPress={() => setIsTopUpOpen(false)}>
-                <Ionicons name="close" size={20} color="#94A3B8" />
+                <Ionicons name="close" size={20} color="#777383" />
               </Pressable>
             </View>
-            <Text style={{ fontSize: 13, color: '#94A3B8', marginBottom: 16, lineHeight: 18 }}>
+            <Text style={{ fontSize: 13, color: '#777383', marginBottom: 16, lineHeight: 18 }}>
               Add funds to your SMM wallet to enable automatic reactions and high-volume post boosting.
             </Text>
             <Pressable
@@ -702,21 +626,21 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   cardDark: { backgroundColor: '#121212', borderColor: '#27272A' },
-  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  textDark: { color: '#F8FAFC' },
-  textLight: { color: '#0F172A' },
+  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
+  textDark: { color: '#F5F3FB' },
+  textLight: { color: '#1C1A25' },
   borderDark: { borderColor: '#27272A' },
-  borderLight: { borderColor: '#E2E8F0' },
-  heroHeader: { padding: 14, borderRadius: 16, borderWidth: 1, marginBottom: 12 },
+  borderLight: { borderColor: '#E9E6F2' },
+  heroHeader: { padding: 0, borderRadius: 16, borderWidth: 0, marginBottom: 24, backgroundColor: 'transparent' , shadowOpacity: 0 },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  heroTitle: { fontSize: 17, fontWeight: '800' },
-  heroSub: { fontSize: 11, color: '#64748B', marginTop: 2 },
+  heroTitle: { fontSize: 28, fontWeight: '500', lineHeight: 36 , letterSpacing: -0.5 },
+  heroSub: { fontSize: 13, color: '#716B7C', marginTop: 2 },
   liveBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(16,185,129,0.12)', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 12 },
   liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981' },
   liveText: { fontSize: 10, color: '#10B981', fontWeight: '700' },
-  balanceCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 10, borderRadius: 12, marginBottom: 12 },
-  balanceCardDark: { backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: '#27272A' },
-  balanceCardLight: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0' },
+  balanceCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 10, borderRadius: 24, marginBottom: 12 , borderWidth: 0 , shadowOpacity: 0 },
+  balanceCardDark: { backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 0, borderColor: '#27272A' },
+  balanceCardLight: { backgroundColor: '#F5F3FB', borderWidth: 0, borderColor: '#E9E6F2' },
   balanceLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   walletIconCircle: { width: 32, height: 32, borderRadius: 8, backgroundColor: 'rgba(2,132,199,0.12)', alignItems: 'center', justifyContent: 'center' },
   balanceLabel: { fontSize: 10, color: '#64748B', fontWeight: '600' },
@@ -728,20 +652,20 @@ const styles = StyleSheet.create({
   navBar: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 3, gap: 4 },
   navTab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 8, borderRadius: 8 },
   navTabActive: { backgroundColor: '#27272A' },
-  navTabText: { fontSize: 11, fontWeight: '600', color: '#94A3B8' },
+  navTabText: { fontSize: 11, fontWeight: '600', color: '#777383' },
   navTabTextActive: { color: '#FFFFFF', fontWeight: '700' },
   badgePill: { backgroundColor: '#0284C7', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 8 },
   badgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '800' },
-  bannerCard: { backgroundColor: 'rgba(2,132,199,0.08)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(2,132,199,0.25)', padding: 12, marginBottom: 12 },
+  bannerCard: { backgroundColor: 'rgba(2,132,199,0.08)', borderRadius: 24, borderWidth: 0, borderColor: 'rgba(2,132,199,0.25)', padding: 12, marginBottom: 12 , shadowOpacity: 0 },
   bannerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   botIconBox: { width: 34, height: 34, borderRadius: 8, backgroundColor: 'rgba(2,132,199,0.15)', alignItems: 'center', justifyContent: 'center' },
-  bannerTitle: { fontSize: 12, fontWeight: '700', color: '#F8FAFC' },
-  bannerDesc: { fontSize: 11, color: '#94A3B8', marginTop: 2, lineHeight: 15 },
+  bannerTitle: { fontSize: 12, fontWeight: '700', color: '#F5F3FB' },
+  bannerDesc: { fontSize: 11, color: '#777383', marginTop: 2, lineHeight: 15 },
   linkText: { color: '#38BDF8', fontWeight: '700' },
-  sectionCard: { padding: 14, borderRadius: 16, borderWidth: 1, marginBottom: 12 },
+  sectionCard: { padding: 14, borderRadius: 24, borderWidth: 0, marginBottom: 12 , shadowOpacity: 0 },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  sectionTitle: { fontSize: 14, fontWeight: '800' },
-  sectionSub: { fontSize: 11, color: '#64748B', marginTop: 1 },
+  sectionTitle: { fontSize: 18, fontWeight: '500', lineHeight: 24 },
+  sectionSub: { fontSize: 13, color: '#716B7C', marginTop: 1 },
   addChannelBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#0284C7', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
   addChannelBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
   emptyBox: { alignItems: 'center', justifyContent: 'center', padding: 24, borderWidth: 1, borderStyle: 'dashed', borderColor: '#27272A', borderRadius: 14, marginVertical: 8 },
@@ -749,9 +673,9 @@ const styles = StyleSheet.create({
   emptyDesc: { fontSize: 11, color: '#64748B', textAlign: 'center', lineHeight: 16, marginBottom: 12, maxWidth: 280 },
   registerBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#0284C7', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
   registerBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
-  ruleCard: { padding: 12, borderRadius: 12, borderWidth: 1, marginBottom: 8 },
+  ruleCard: { padding: 12, borderRadius: 24, borderWidth: 0, marginBottom: 8 , shadowOpacity: 0 },
   itemDark: { backgroundColor: 'rgba(255,255,255,0.04)', borderColor: '#27272A' },
-  itemLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
+  itemLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2' },
   ruleTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   ruleChannel: { fontSize: 13, fontWeight: '700' },
   statusTag: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
@@ -766,39 +690,39 @@ const styles = StyleSheet.create({
   ruleEmojis: { fontSize: 16 },
   noticeFooter: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#27272A' },
   noticeText: { fontSize: 10, color: '#64748B', flex: 1 },
-  inputLabel: { fontSize: 10, fontWeight: '800', color: '#94A3B8', letterSpacing: 0.5, marginBottom: 6 },
-  input: { height: 42, borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, fontSize: 13 },
-  inputDark: { backgroundColor: 'rgba(255,255,255,0.04)', borderColor: '#27272A', color: '#F8FAFC' },
-  inputLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0', color: '#0F172A' },
+  inputLabel: { fontSize: 10, fontWeight: '800', color: '#777383', letterSpacing: 0.5, marginBottom: 6 },
+  input: { height: 42, borderRadius: 22, borderWidth: 0, paddingHorizontal: 12, fontSize: 13 , minHeight: 48 },
+  inputDark: { backgroundColor: 'rgba(255,255,255,0.04)', borderColor: '#27272A', color: '#F5F3FB' },
+  inputLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2', color: '#1C1A25' },
   campaignChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#27272A', backgroundColor: 'rgba(255,255,255,0.04)' },
   campaignChipActive: { backgroundColor: '#0284C7', borderColor: '#0284C7' },
-  campaignChipText: { fontSize: 11, color: '#94A3B8', fontWeight: '600' },
+  campaignChipText: { fontSize: 11, color: '#777383', fontWeight: '600' },
   campaignChipTextActive: { color: '#FFFFFF', fontWeight: '700' },
   presetRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   presetChip: { flex: 1, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: '#27272A', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)' },
   presetChipActive: { backgroundColor: '#0284C7', borderColor: '#0284C7' },
-  presetChipText: { fontSize: 12, fontWeight: '700', color: '#94A3B8' },
+  presetChipText: { fontSize: 12, fontWeight: '700', color: '#777383' },
   presetChipTextActive: { color: '#FFFFFF' },
   emojiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
   emojiItem: { width: 38, height: 38, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.04)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#27272A' },
   emojiItemActive: { backgroundColor: 'rgba(2,132,199,0.2)', borderColor: '#0284C7' },
   priceSummaryBox: { backgroundColor: 'rgba(2,132,199,0.08)', borderRadius: 10, padding: 12, marginVertical: 12, borderWidth: 1, borderColor: 'rgba(2,132,199,0.2)' },
-  primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#0284C7', borderRadius: 12, paddingVertical: 12 },
+  primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#17171C', borderRadius: 28, paddingVertical: 12 , minHeight: 44 , shadowOpacity: 0 },
   primaryBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
   filterPill: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 16, borderWidth: 1, borderColor: '#27272A', backgroundColor: 'rgba(255,255,255,0.04)' },
   filterPillActive: { backgroundColor: '#0284C7', borderColor: '#0284C7' },
-  filterPillText: { fontSize: 11, color: '#94A3B8', fontWeight: '600' },
+  filterPillText: { fontSize: 11, color: '#777383', fontWeight: '600' },
   filterPillTextActive: { color: '#FFFFFF', fontWeight: '700' },
   orderItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 10, borderWidth: 1, marginBottom: 8 },
   orderLeft: { flex: 1, paddingRight: 8 },
   orderLink: { fontSize: 12, fontWeight: '700' },
   orderMeta: { fontSize: 11, color: '#64748B', marginTop: 2 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 20 },
-  modalCard: { borderRadius: 18, borderWidth: 1, padding: 18 },
+  modalCard: { borderRadius: 24, borderWidth: 0, padding: 18 , shadowOpacity: 0 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
   modalTitle: { fontSize: 16, fontWeight: '800' },
   modalCancelBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1, alignItems: 'center' },
   modalCancelBtnText: { fontSize: 12, fontWeight: '700' },
   modalSubmitBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#0284C7', paddingVertical: 10, borderRadius: 10 },
-  modalSubmitBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
+  modalSubmitBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
 });

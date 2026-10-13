@@ -218,13 +218,13 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
             styles.sheetContainer,
             {
               backgroundColor: isDark ? '#181A20' : '#FFFFFF',
-              borderColor: isDark ? '#262A34' : '#E2E8F0',
+              borderColor: isDark ? '#262A34' : '#E9E6F2',
             },
           ]}
           onPress={(e) => e.stopPropagation()}
         >
           {/* Top Grabber */}
-          <View style={[styles.grabber, { backgroundColor: isDark ? '#2D323F' : '#E2E8F0' }]} />
+          <View style={[styles.grabber, { backgroundColor: isDark ? '#2D323F' : '#E9E6F2' }]} />
 
           {/* Header */}
           <View style={styles.header}>
@@ -238,11 +238,11 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
             </View>
 
             <Pressable
-              style={[styles.closeBtn, { backgroundColor: isDark ? '#262A34' : '#F1F5F9' }]}
+              style={[styles.closeBtn, { backgroundColor: isDark ? '#262A34' : '#F0EEF8' }]}
               onPress={onClose}
               hitSlop={8}
             >
-              <Ionicons name="close" size={20} color={isDark ? '#9CA3AF' : '#64748B'} />
+              <Ionicons name="close" size={20} color={isDark ? '#777383' : '#64748B'} />
             </Pressable>
           </View>
 
@@ -265,8 +265,8 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
                         ? '#3B82F6'
                         : isDark
                         ? '#222630'
-                        : '#F1F5F9',
-                      borderColor: isSelected ? '#3B82F6' : isDark ? '#2D323F' : '#E2E8F0',
+                        : '#F0EEF8',
+                      borderColor: isSelected ? '#3B82F6' : isDark ? '#2D323F' : '#E9E6F2',
                     },
                   ]}
                   onPress={() => handleApplyPreset(p.date)}
@@ -287,7 +287,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
           {/* Month & Year Navigation Row */}
           <View style={styles.monthNavRow}>
             <Pressable
-              style={[styles.navArrowBtn, { backgroundColor: isDark ? '#222630' : '#F1F5F9' }]}
+              style={[styles.navArrowBtn, { backgroundColor: isDark ? '#222630' : '#F0EEF8' }]}
               onPress={handlePrevMonth}
               hitSlop={8}
             >
@@ -299,7 +299,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
             </Text>
 
             <Pressable
-              style={[styles.navArrowBtn, { backgroundColor: isDark ? '#222630' : '#F1F5F9' }]}
+              style={[styles.navArrowBtn, { backgroundColor: isDark ? '#222630' : '#F0EEF8' }]}
               onPress={handleNextMonth}
               hitSlop={8}
             >
@@ -314,7 +314,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
                 <Text
                   style={[
                     styles.weekDayText,
-                    { color: idx === 0 || idx === 6 ? '#9CA3AF' : isDark ? '#6B7280' : '#94A3B8' },
+                    { color: idx === 0 || idx === 6 ? '#777383' : isDark ? '#6B7280' : '#777383' },
                   ]}
                 >
                   {dayName}
@@ -368,12 +368,12 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
           </View>
 
           {/* Footer Actions */}
-          <View style={[styles.footerRow, { borderTopColor: isDark ? '#262A34' : '#E2E8F0' }]}>
+          <View style={[styles.footerRow, { borderTopColor: isDark ? '#262A34' : '#E9E6F2' }]}>
             <Pressable
-              style={[styles.clearBtn, { backgroundColor: isDark ? '#222630' : '#F1F5F9' }]}
+              style={[styles.clearBtn, { backgroundColor: isDark ? '#222630' : '#F0EEF8' }]}
               onPress={handleClear}
             >
-              <Text style={[styles.clearBtnText, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+              <Text style={[styles.clearBtnText, { color: isDark ? '#777383' : '#64748B' }]}>
                 Clear
               </Text>
             </Pressable>
@@ -426,7 +426,7 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
         style={[
           styles.fieldInput,
           {
-            backgroundColor: isDark ? '#121316' : '#F8FAFC',
+            backgroundColor: isDark ? '#121316' : '#F5F3FB',
             borderColor: error
               ? '#EF4444'
               : modalVisible
@@ -446,7 +446,7 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
         <Ionicons
           name="calendar-outline"
           size={18}
-          color={value ? '#3B82F6' : isDark ? '#6B7280' : '#94A3B8'}
+          color={value ? '#3B82F6' : isDark ? '#6B7280' : '#777383'}
           style={styles.fieldIcon}
         />
 
@@ -455,7 +455,7 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
             styles.fieldText,
             displayString
               ? { color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: '500' }
-              : { color: isDark ? '#6B7280' : '#94A3B8' },
+              : { color: isDark ? '#6B7280' : '#777383' },
           ]}
           numberOfLines={1}
         >
@@ -471,10 +471,10 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
               onChangeDate('');
             }}
           >
-            <Ionicons name="close-circle" size={16} color={isDark ? '#6B7280' : '#94A3B8'} />
+            <Ionicons name="close-circle" size={16} color={isDark ? '#6B7280' : '#777383'} />
           </Pressable>
         ) : (
-          <Ionicons name="chevron-down" size={16} color={isDark ? '#6B7280' : '#94A3B8'} />
+          <Ionicons name="chevron-down" size={16} color={isDark ? '#6B7280' : '#777383'} />
         )}
       </Pressable>
 

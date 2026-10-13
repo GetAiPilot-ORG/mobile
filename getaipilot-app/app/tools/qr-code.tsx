@@ -381,7 +381,7 @@ export default function QRCodeGeneratorScreen() {
               </Pressable>
 
               <Pressable
-                style={[styles.actionBtn, { backgroundColor: isDark ? '#2C2C2E' : '#E5E7EB' }]}
+                style={[styles.actionBtn, { backgroundColor: isDark ? '#3A3549' : '#E9E6F2' }]}
                 onPress={handleCopyPayload}
               >
                 <Text style={[styles.actionBtnText, { color: theme.text }]}>Copy Link 📋</Text>
@@ -407,10 +407,10 @@ const styles = StyleSheet.create({
     paddingBottom: 50,
   },
   card: {
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 18,
     marginBottom: 16,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   cardTitle: {
     fontSize: 16,
@@ -469,10 +469,10 @@ const styles = StyleSheet.create({
     transform: [{ scale: 1.1 }],
   },
   qrCanvasCard: {
-    borderRadius: 18,
+    borderRadius: 24,
     padding: 20,
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 0,
   },
   qrChassis: {
     backgroundColor: '#FFFFFF',

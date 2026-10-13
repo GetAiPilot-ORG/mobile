@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { BlurView } from 'expo-blur';
 import React from 'react';
 import {
   LayoutAnimation,
@@ -12,7 +11,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, getColors } from '@/theme';
-import { usePlatformSubscription } from '../hooks/usePlatformSubscription';
 import { useAuth } from '../contexts/AuthContext';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
@@ -94,7 +92,6 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const { user, profile } = useAuth();
-  const { isAdmin: isPlatformAdmin } = usePlatformSubscription();
 
   if (!state?.routes || !descriptors || !navigation) {
     return null;
@@ -136,83 +133,22 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
 
   return (
     <View style={styles.dockRoot} pointerEvents="box-none">
-      {/* 1. Full-bleed Bottom Frosted Backdrop that blurs all scrolled content behind it and fills the bottom screen area */}
-      <View
-        style={[
-          styles.backdropWrapper,
-          {
-            height: 56 + bottomOffset + 12,
-          },
-        ]}
-        pointerEvents="none"
-      >
-        <BlurView
-          intensity={Platform.OS === 'ios' ? 75 : 95}
-          tint={isDark ? 'dark' : 'light'}
-          experimentalBlurMethod="dimezisBlurView"
-          style={[
-            StyleSheet.absoluteFill,
-            Platform.OS === 'web'
-              ? ({ backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' } as any)
-              : undefined,
-          ]}
-        />
-        <View
-          style={[
-            StyleSheet.absoluteFill,
-            {
-              backgroundColor: isDark
-                ? 'rgba(17, 16, 15, 0.65)'
-                : 'rgba(247, 245, 242, 0.70)',
-              // borderTopWidth: StyleSheet.hairlineWidth,ß
-              borderTopColor: isDark
-                ? 'rgba(255, 255, 255, 0.08)'
-                : 'rgba(0, 0, 0, 0.06)',
-            },
-          ]}
-        />
-      </View>
-
-      {/* 2. Floating Pill Tab Bar with rounded frosted glassmorphism */}
+      {/* 2. Rounded navigation dock */}
       <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
         <View
           style={[
             styles.tabBarContainer,
             {
-              borderColor: isDark
-                ? 'rgba(255, 255, 255, 0.12)'
-                : 'rgba(0, 0, 0, 0.08)',
+              backgroundColor: colors.card,
+              borderWidth: 0,
               shadowColor: '#000000',
               shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: isDark ? 0.45 : 0.12,
+              shadowOpacity: isDark ? 0.2 : 0.06,
               shadowRadius: 18,
-              elevation: 12,
+              elevation: 3,
             },
           ]}
         >
-          {/* Inner Blur on the Pill */}
-          <BlurView
-            intensity={Platform.OS === 'ios' ? 85 : 90}
-            tint={isDark ? 'dark' : 'light'}
-            experimentalBlurMethod="dimezisBlurView"
-            style={[
-              StyleSheet.absoluteFill,
-              Platform.OS === 'web'
-                ? ({ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' } as any)
-                : undefined,
-            ]}
-          />
-          <View
-            style={[
-              StyleSheet.absoluteFill,
-              {
-                backgroundColor: isDark
-                  ? 'rgba(25, 23, 21, 0.70)'
-                  : 'rgba(253, 252, 251, 0.75)',
-              },
-            ]}
-          />
-
           {visibleRoutes.map((route: { key: string; name: string }, index: number) => {
             const descriptor = descriptors[route.key];
             const options = descriptor ? descriptor.options : ({} as any);
@@ -252,24 +188,24 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
                   key={route.key}
                   accessibilityRole="button"
                   accessibilityState={{ selected: true }}
-                  accessibilityLabel={options?.tabBarAccessibilityLabel}
+                  accessibilityLabel={options?.tabBarAccessibilityLabel || config.label}
                   testID={options?.tabBarButtonTestID}
                   onPress={onPress}
                   onLongPress={onLongPress}
                   style={[
                     styles.activePill,
-                    { backgroundColor: colors.primary },
+                    { backgroundColor: colors.accentSoft },
                   ]}
                 >
                   <Ionicons
                     name={iconName}
                     size={19}
-                    color="#FFFFFF"
+                    color={colors.accent}
                   />
                   <Text
                     style={[
                       styles.activeLabel,
-                      { color: colors.primaryForeground },
+                      { color: colors.accent },
                     ]}
                     numberOfLines={1}
                   >
@@ -284,16 +220,14 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
                 key={route.key}
                 accessibilityRole="button"
                 accessibilityState={{ selected: false }}
-                accessibilityLabel={options?.tabBarAccessibilityLabel}
+                accessibilityLabel={options?.tabBarAccessibilityLabel || config.label}
                 testID={options?.tabBarButtonTestID}
                 onPress={onPress}
                 onLongPress={onLongPress}
                 style={[
                   styles.inactiveButton,
                   {
-                    backgroundColor: isDark
-                      ? 'rgba(255, 255, 255, 0.07)'
-                      : 'rgba(0, 0, 0, 0.04)',
+                    backgroundColor: 'transparent',
                   },
                 ]}
               >
@@ -342,7 +276,7 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     paddingHorizontal: 4,
     paddingVertical: 4,
-    borderWidth: 1,
+    borderWidth: 0,
     overflow: 'hidden',
     gap: 6,
   },
@@ -356,9 +290,9 @@ const styles = StyleSheet.create({
     gap: 6,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18,
+    shadowOpacity: 0,
     shadowRadius: 6,
-    elevation: 5,
+    elevation: 0,
   },
   activeLabel: {
     fontSize: 13,

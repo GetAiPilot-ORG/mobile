@@ -83,7 +83,7 @@ const LEAVE_STATUS_COLOR: Record<
     text: '#EF4444',
   },
   cancelled: {
-    bg: '#F1F5F9',
+    bg: '#F0EEF8',
     text: '#64748B',
   },
 };
@@ -897,14 +897,14 @@ export function TeamScreen() {
           style={[
             styles.memberAvatar,
             {
-              backgroundColor: hasStarted ? '#ECFDF5' : (isDark ? '#1E293B' : '#F1F5F9'),
+              backgroundColor: hasStarted ? '#ECFDF5' : (isDark ? '#1E293B' : '#F0EEF8'),
             },
           ]}
         >
           <Ionicons
             name={hasStarted ? 'radio-button-on' : 'radio-button-off'}
             size={20}
-            color={hasStarted ? '#10B981' : '#94A3B8'}
+            color={hasStarted ? '#10B981' : '#777383'}
           />
         </View>
 
@@ -953,7 +953,7 @@ export function TeamScreen() {
           style={[
             styles.roleBadge,
             {
-              backgroundColor: hasStarted ? '#ECFDF5' : '#F1F5F9',
+              backgroundColor: hasStarted ? '#ECFDF5' : '#F0EEF8',
             },
           ]}
         >
@@ -1340,8 +1340,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    borderRadius: 14,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     paddingHorizontal: 14,
     paddingVertical: 13,
   },
@@ -1501,8 +1501,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: 14,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     marginBottom: 12,
   },
   presenceStatItem: {

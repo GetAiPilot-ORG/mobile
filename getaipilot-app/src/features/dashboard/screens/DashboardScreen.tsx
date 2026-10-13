@@ -38,7 +38,7 @@ export const DashboardScreen: React.FC = () => {
 
   if (isLoading && !data) {
     return (
-      <SafeAreaView style={[styles.stateContainer, { backgroundColor: isDark ? '#020617' : '#f8fafc', padding: 0 }]}>
+      <SafeAreaView style={[styles.stateContainer, { backgroundColor: isDark ? '#020617' : '#F5F3FB', padding: 0 }]}>
         <DashboardSkeleton />
       </SafeAreaView>
     );
@@ -46,10 +46,10 @@ export const DashboardScreen: React.FC = () => {
 
   if (isError && !data) {
     return (
-      <SafeAreaView style={[styles.stateContainer, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
+      <SafeAreaView style={[styles.stateContainer, { backgroundColor: isDark ? '#020617' : '#F5F3FB' }]}>
         <Text style={styles.errorIcon}>⚠️</Text>
-        <Text style={[styles.stateTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Connection Error</Text>
-        <Text style={[styles.stateSubtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+        <Text style={[styles.stateTitle, { color: isDark ? '#F5F3FB' : '#0f172a' }]}>Connection Error</Text>
+        <Text style={[styles.stateSubtitle, { color: isDark ? '#777383' : '#64748b' }]}>
           {(error as Error)?.message || 'Failed to communicate with GetAiPilot-BFF gateway.'}
         </Text>
         <Pressable style={styles.retryButton} onPress={() => refetch()}>
@@ -64,7 +64,7 @@ export const DashboardScreen: React.FC = () => {
   const sub = data?.subscription;
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#020617' : '#f8fafc' }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? '#020617' : '#F5F3FB' }]}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
@@ -75,8 +75,8 @@ export const DashboardScreen: React.FC = () => {
         {/* Organization & User Header */}
         <View style={styles.header}>
           <View style={styles.headerInfo}>
-            <Text style={[styles.orgName, { color: isDark ? '#64748b' : '#94a3b8' }]}>{org?.name || 'GetAiPilot Workspace'}</Text>
-            <Text style={[styles.userName, { color: isDark ? '#f8fafc' : '#0f172a' }]}>{user?.name || org?.user_name || 'Commander'}</Text>
+            <Text style={[styles.orgName, { color: isDark ? '#64748b' : '#777383' }]}>{org?.name || 'GetAiPilot Workspace'}</Text>
+            <Text style={[styles.userName, { color: isDark ? '#F5F3FB' : '#0f172a' }]}>{user?.name || org?.user_name || 'Commander'}</Text>
           </View>
           <View style={styles.subBadge}>
             <View style={styles.subDot} />
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   },
   activityBoxLight: {
     backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
+    borderColor: '#E9E6F2',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,

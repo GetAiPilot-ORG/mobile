@@ -161,7 +161,7 @@ export const PipelineScreen: React.FC<PipelineScreenProps> = ({ onBack, onSelect
             </Pressable>
           ) : null}
           <View>
-            <Text style={[styles.title, { color: colors.text }]}>Sales Pipeline</Text>
+            <Text style={[styles.title, { color: colors.text }]}>Your pipeline</Text>
             <Text style={[styles.subtitle, { color: colors.textMuted }]}>
               {allDeals.length} active deals • {formatCurrency(totalPipelineValue)}
             </Text>
@@ -489,12 +489,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
+    fontSize: 28,
+    fontWeight: '500',
+    letterSpacing: -0.5, lineHeight: 36 },
   subtitle: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   toggleContainer: {
@@ -515,11 +514,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#17171C',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 10,
-  },
+    borderRadius: 28, minHeight: 44 , shadowOpacity: 0 },
   addBtnText: {
     color: '#FFFFFF',
     fontSize: 13,
@@ -530,10 +528,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 16,
     marginBottom: 10,
-    borderRadius: 14,
+    borderRadius: 24,
     paddingVertical: 10,
     paddingHorizontal: 14,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   kpiCol: {
     flex: 1,
@@ -558,11 +556,10 @@ const styles = StyleSheet.create({
     gap: 8,
     marginHorizontal: 16,
     marginBottom: 12,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 22,
+    borderWidth: 0,
     paddingHorizontal: 12,
-    height: 42,
-  },
+    height: 42, minHeight: 48 },
   searchInput: {
     flex: 1,
     fontSize: 13,
@@ -625,16 +622,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   columnCardsScroll: {
-    flex: 1,
-  },
+    flex: 1, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   columnCardsContainer: {
     padding: 12,
     paddingBottom: 40,
-    gap: 10,
-  },
+    gap: 10, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   kanbanCardWrapper: {
-    position: 'relative',
-  },
+    position: 'relative', borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   advanceStageBtn: {
     flexDirection: 'row',
     alignItems: 'center',

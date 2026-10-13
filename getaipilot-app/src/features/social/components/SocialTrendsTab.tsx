@@ -1,3 +1,4 @@
+import { ProductHeading } from "@/components/ProductUI";
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   ActivityIndicator,
@@ -264,35 +265,36 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
 
   return (
     <View style={styles.container}>
+      <ProductHeading title="Find your next idea" />
       {/* Search and Region Controls Header */}
       <View style={styles.topFilterBar}>
         <View
           style={[
             styles.searchBox,
             {
-              backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
-              borderColor: isDark ? '#334155' : '#e2e8f0',
+              backgroundColor: isDark ? '#252230' : '#F0EEF8',
+              borderColor: isDark ? '#334155' : '#E9E6F2',
             },
           ]}
         >
           <Ionicons
             name="search-outline"
             size={16}
-            color={isDark ? '#94a3b8' : '#64748b'}
+            color={isDark ? '#777383' : '#64748b'}
           />
           <TextInput
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholder="Search viral keywords, hooks, niches..."
-            placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
-            style={[styles.searchInput, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+            placeholderTextColor={isDark ? '#64748b' : '#777383'}
+            style={[styles.searchInput, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}
           />
           {Boolean(searchQuery) && (
             <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
               <Ionicons
                 name="close-circle"
                 size={16}
-                color={isDark ? '#94a3b8' : '#64748b'}
+                color={isDark ? '#777383' : '#64748b'}
               />
             </Pressable>
           )}
@@ -314,8 +316,8 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
                         ? '#3b82f6'
                         : '#2563eb'
                       : isDark
-                      ? '#1e293b'
-                      : '#f1f5f9',
+                      ? '#252230'
+                      : '#F0EEF8',
                   },
                 ]}
               >
@@ -326,7 +328,7 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
                       color: isRegActive
                         ? '#ffffff'
                         : isDark
-                        ? '#94a3b8'
+                        ? '#777383'
                         : '#64748b',
                     },
                   ]}
@@ -357,15 +359,15 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
                   backgroundColor: isActive
                     ? '#ec4899'
                     : isDark
-                    ? '#1e293b'
-                    : '#f1f5f9',
+                    ? '#252230'
+                    : '#F0EEF8',
                 },
               ]}
             >
               <Ionicons
                 name={cat.icon}
                 size={14}
-                color={isActive ? '#ffffff' : isDark ? '#94a3b8' : '#64748b'}
+                color={isActive ? '#ffffff' : isDark ? '#777383' : '#64748b'}
               />
               <Text
                 style={[
@@ -374,7 +376,7 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
                     color: isActive
                       ? '#ffffff'
                       : isDark
-                      ? '#94a3b8'
+                      ? '#777383'
                       : '#64748b',
                   },
                 ]}
@@ -386,22 +388,7 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
         })}
       </ScrollView>
 
-      {/* Header Info Banner */}
-      <View style={styles.tabHeaderRow}>
-        <View>
-          <Text style={[styles.tabHeading, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-            Viral Inspiration Feed
-          </Text>
-          <Text style={[styles.tabSubheading, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-            Real-time trending across YouTube, Reels, Reddit & Pexels
-            {totalCandidates != null ? ` • ${totalCandidates} pool candidates` : ''}
-          </Text>
-        </View>
-
-        {isFetchingCategory && (
-          <ActivityIndicator size="small" color="#ec4899" />
-        )}
-      </View>
+      {isFetchingCategory && <ActivityIndicator size="small" color={colors.accent} />}
 
       {/* Main Content Area */}
       {isInitialLoading ? (
@@ -411,15 +398,15 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
           <Ionicons
             name="flame-outline"
             size={48}
-            color={isDark ? '#475569' : '#94a3b8'}
+            color={isDark ? '#475569' : '#777383'}
           />
           <Text
-            style={[styles.emptyTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+            style={[styles.emptyTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}
           >
             No Trends Found
           </Text>
           <Text
-            style={[styles.emptyDesc, { color: isDark ? '#64748b' : '#94a3b8' }]}
+            style={[styles.emptyDesc, { color: isDark ? '#64748b' : '#777383' }]}
           >
             {searchQuery
               ? `No matching items found for "${searchQuery}". Try clearing search.`
@@ -459,8 +446,8 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
                 style={[
                   styles.trendCard,
                   {
-                    backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                    borderColor: isDark ? '#1e293b' : '#e2e8f0',
+                    backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+                    borderColor: isDark ? '#252230' : '#E9E6F2',
                   },
                 ]}
               >
@@ -508,14 +495,14 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
                     <Text
                       style={[
                         styles.creatorText,
-                        { color: isDark ? '#94a3b8' : '#64748b' },
+                        { color: isDark ? '#777383' : '#64748b' },
                       ]}
                     >
                       by{' '}
                       <Text
                         style={[
                           styles.creatorHighlight,
-                          { color: isDark ? '#f1f5f9' : '#1e293b' },
+                          { color: isDark ? '#F0EEF8' : '#252230' },
                         ]}
                       >
                         {sourceName}
@@ -530,7 +517,7 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
                 <Text
                   style={[
                     styles.trendTitle,
-                    { color: isDark ? '#f8fafc' : '#0f172a' },
+                    { color: isDark ? '#F5F3FB' : '#1C1A25' },
                   ]}
                   numberOfLines={3}
                 >
@@ -625,14 +612,14 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
                         style={[
                           styles.tagPill,
                           {
-                            backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
+                            backgroundColor: isDark ? '#252230' : '#F0EEF8',
                           },
                         ]}
                       >
                         <Text
                           style={[
                             styles.tagPillText,
-                            { color: isDark ? '#94a3b8' : '#64748b' },
+                            { color: isDark ? '#777383' : '#64748b' },
                           ]}
                         >
                           #{tag}
@@ -655,15 +642,15 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
                       style={[
                         styles.sourceLinkBtn,
                         {
-                          backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                          borderColor: isDark ? '#334155' : '#e2e8f0',
+                          backgroundColor: isDark ? '#252230' : '#F5F3FB',
+                          borderColor: isDark ? '#334155' : '#E9E6F2',
                         },
                       ]}
                     >
                       <Ionicons
                         name="open-outline"
                         size={14}
-                        color={isDark ? '#94a3b8' : '#64748b'}
+                        color={isDark ? '#777383' : '#64748b'}
                       />
                       <Text
                         style={[
@@ -698,8 +685,8 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
             style={[
               styles.loadMoreBtn,
               {
-                backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
-                borderColor: isDark ? '#334155' : '#e2e8f0',
+                backgroundColor: isDark ? '#252230' : '#F0EEF8',
+                borderColor: isDark ? '#334155' : '#E9E6F2',
               },
             ]}
           >
@@ -711,7 +698,7 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
                 <Text
                   style={[
                     styles.loadMoreText,
-                    { color: isDark ? '#f1f5f9' : '#1e293b' },
+                    { color: isDark ? '#F0EEF8' : '#252230' },
                   ]}
                 >
                   Load More Fresh Trends
@@ -737,10 +724,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 9,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 8,
-  },
+    borderRadius: 22,
+    borderWidth: 0,
+    gap: 8, minHeight: 48 },
   searchInput: {
     flex: 1,
     fontSize: 13,
@@ -785,19 +771,19 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   tabSubheading: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   trendsGrid: {
     gap: 14,
   },
   trendCard: {
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0,
     shadowRadius: 2,
     elevation: 1,
   },
@@ -916,7 +902,7 @@ const styles = StyleSheet.create({
   metricBadgeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#94a3b8',
+    color: '#777383',
   },
   tagsRow: {
     flexDirection: 'row',
@@ -935,8 +921,7 @@ const styles = StyleSheet.create({
   },
   cardActionsRow: {
     flexDirection: 'row',
-    gap: 8,
-  },
+    gap: 8, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   sourceLinkBtn: {
     flexDirection: 'row',
     alignItems: 'center',

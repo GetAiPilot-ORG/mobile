@@ -73,8 +73,8 @@ export default function Skeleton({
       : 9999
     : borderRadius;
 
-  // Dark: deep navy surface (#0B1420), Light: standard light gray (#E5E7EB)
-  const skeletonBg = isDark ? "#0B1420" : "#E5E7EB";
+  // Dark: deep navy surface (#1C1A25), Light: standard light gray (#E9E6F2)
+  const skeletonBg = isDark ? "#1C1A25" : "#E9E6F2";
   const shimmerColor = isDark ? "rgba(75, 163, 255, 0.07)" : "rgba(255,255,255,0.65)";
 
   return (
@@ -163,10 +163,10 @@ export function SkeletonCard({
       style={[
         styles.card,
         {
-          // Dark: premium navy card (#0B1420), border (#234563)
+          // Dark: premium navy card (#1C1A25), border (#3A3549)
           // Light: white card, gray border
-          backgroundColor: isDark ? "#0B1420" : "#FFFFFF",
-          borderColor: isDark ? "#234563" : "#E5E7EB",
+          backgroundColor: isDark ? "#1C1A25" : "#FFFFFF",
+          borderColor: isDark ? "#3A3549" : "#E9E6F2",
         },
         style,
       ]}
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     left: "10%",
   },
   card: {
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
     borderWidth: StyleSheet.hairlineWidth,
     marginBottom: 12,

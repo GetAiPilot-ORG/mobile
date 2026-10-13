@@ -132,9 +132,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
+    fontSize: 28,
+    fontWeight: '500', lineHeight: 36 , letterSpacing: -0.5 },
   closeBtn: {
     padding: 6,
     borderRadius: 8,

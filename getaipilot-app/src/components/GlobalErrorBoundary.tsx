@@ -43,7 +43,7 @@ export class GlobalErrorBoundary extends React.Component<Props, State> {
               {this.state.error?.name}: {this.state.error?.message || "An unexpected error occurred."}
             </Text>
             {this.state.error?.stack && (
-              <Text style={{ color: '#9ca3af', fontSize: 11, fontFamily: 'monospace', maxHeight: 250 }}>
+              <Text style={{ color: '#777383', fontSize: 11, fontFamily: 'monospace', maxHeight: 250 }}>
                 {this.state.error.stack}
               </Text>
             )}

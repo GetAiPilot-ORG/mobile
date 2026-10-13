@@ -381,7 +381,7 @@ export const TelegramScreen: React.FC = () => {
   return (
     <AppScreen safeArea={false} backgroundColor={color.background}>
       <AppTopBar
-        title="Telegram Dashboard"
+        title="Telegram"
         // subtitle="Bots, routing, monetization & automations"
         onBackPress={handleBack}
       />
@@ -542,7 +542,7 @@ export const TelegramScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, width: '100%' },
   content: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 120,
     width: "100%",

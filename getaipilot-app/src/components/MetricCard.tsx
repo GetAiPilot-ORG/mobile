@@ -19,15 +19,16 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   badgeColor = '#16B882',
   icon,
 }) => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <View
-      className="flex-1 min-w-0 rounded-2xl p-3.5 border shadow-sm"
+      className="flex-1 min-w-0 rounded-2xl p-3.5 "
       style={{
         flexBasis: 0,
         backgroundColor: colors.card,
-        borderColor: colors.cardBorder,
+        borderWidth: 0,
+        borderRadius: 24,
       }}
     >
       <View className="flex-row justify-between items-center mb-1.5">

@@ -157,7 +157,7 @@ export const TelegramLoginModal: React.FC<TelegramLoginModalProps> = ({
               </View>
             </View>
             <Pressable onPress={handleClose} hitSlop={10} style={styles.closeBtn}>
-              <Ionicons name="close" size={20} color={isDark ? '#94A3B8' : '#64748B'} />
+              <Ionicons name="close" size={20} color={isDark ? '#777383' : '#64748B'} />
             </Pressable>
           </View>
 
@@ -179,13 +179,13 @@ export const TelegramLoginModal: React.FC<TelegramLoginModalProps> = ({
                   Telegram Phone Number
                 </Text>
                 <View style={[styles.inputBox, isDark ? styles.inputDark : styles.inputLight]}>
-                  <Ionicons name="call-outline" size={18} color={isDark ? '#94A3B8' : '#64748B'} style={{ marginRight: 8 }} />
+                  <Ionicons name="call-outline" size={18} color={isDark ? '#777383' : '#64748B'} style={{ marginRight: 8 }} />
                   <TextInput
                     style={[styles.input, isDark ? styles.textDark : styles.textLight]}
                     value={phone}
                     onChangeText={setPhone}
                     placeholder="+919876543210"
-                    placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
+                    placeholderTextColor={isDark ? '#64748B' : '#777383'}
                     keyboardType="phone-pad"
                     autoCapitalize="none"
                   />
@@ -218,13 +218,13 @@ export const TelegramLoginModal: React.FC<TelegramLoginModalProps> = ({
                   Telegram Login Code
                 </Text>
                 <View style={[styles.inputBox, isDark ? styles.inputDark : styles.inputLight]}>
-                  <Ionicons name="key-outline" size={18} color={isDark ? '#94A3B8' : '#64748B'} style={{ marginRight: 8 }} />
+                  <Ionicons name="key-outline" size={18} color={isDark ? '#777383' : '#64748B'} style={{ marginRight: 8 }} />
                   <TextInput
                     style={[styles.input, isDark ? styles.textDark : styles.textLight, { letterSpacing: 4, fontSize: 18, fontWeight: '700' }]}
                     value={otp}
                     onChangeText={setOtp}
                     placeholder="12345"
-                    placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
+                    placeholderTextColor={isDark ? '#64748B' : '#777383'}
                     keyboardType="number-pad"
                     maxLength={6}
                     autoFocus
@@ -262,13 +262,13 @@ export const TelegramLoginModal: React.FC<TelegramLoginModalProps> = ({
                   2FA Cloud Password
                 </Text>
                 <View style={[styles.inputBox, isDark ? styles.inputDark : styles.inputLight]}>
-                  <Ionicons name="lock-closed-outline" size={18} color={isDark ? '#94A3B8' : '#64748B'} style={{ marginRight: 8 }} />
+                  <Ionicons name="lock-closed-outline" size={18} color={isDark ? '#777383' : '#64748B'} style={{ marginRight: 8 }} />
                   <TextInput
                     style={[styles.input, isDark ? styles.textDark : styles.textLight]}
                     value={password}
                     onChangeText={setPassword}
                     placeholder="Enter 2FA password"
-                    placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
+                    placeholderTextColor={isDark ? '#64748B' : '#777383'}
                     secureTextEntry
                     autoFocus
                   />
@@ -352,27 +352,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 17,
-    fontWeight: '700',
-  },
+    fontSize: 28,
+    fontWeight: '500', lineHeight: 36 , letterSpacing: -0.5 },
   subtitle: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   closeBtn: {
     padding: 6,
   },
   textLight: {
-    color: '#0F172A',
+    color: '#1C1A25',
   },
   textDark: {
-    color: '#F8FAFC',
+    color: '#F5F3FB',
   },
   subLight: {
-    color: '#64748B',
+    color: '#716B7C',
   },
   subDark: {
-    color: '#94A3B8',
+    color: '#716B7C',
   },
   body: {
     paddingTop: 8,
@@ -397,17 +396,16 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   inputLight: {
-    borderColor: '#E2E8F0',
-    backgroundColor: '#F8FAFC',
+    borderColor: '#E9E6F2',
+    backgroundColor: '#F5F3FB',
   },
   inputDark: {
     borderColor: '#334155',
-    backgroundColor: '#0F172A',
+    backgroundColor: '#1C1A25',
   },
   input: {
     flex: 1,
-    fontSize: 15,
-  },
+    fontSize: 15, borderRadius: 22 , borderWidth: 0 , minHeight: 48 },
   actionBtn: {
     backgroundColor: '#0284C7',
     borderRadius: 12,

@@ -198,7 +198,7 @@ export default function FreeToolsScreen() {
   return (
     <AppScreen safeArea={false}>
       <AppTopBar
-        title="Free Tools Hub"
+        title="Tools"
         showBack={false}
         showPlanBadge={true}
       />
@@ -207,61 +207,13 @@ export default function FreeToolsScreen() {
         contentContainerStyle={{ padding: 16, paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero Card */}
-        <View
-          className="rounded-[22px] p-5 mb-4"
-          style={{
-            backgroundColor: colors.card,
-            borderWidth: 1,
-            borderColor: isDark ? "rgba(255, 255, 255, 0.07)" : colors.cardBorder,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: isDark ? 0.25 : 0.04,
-            shadowRadius: 8,
-            elevation: 2,
-          }}
-        >
-          <View className="flex-row items-center gap-2 mb-2">
-            <View
-              className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-lg"
-              style={{ backgroundColor: colors.accentSoft }}
-            >
-              <Ionicons name="sparkles" size={12} color={colors.primary} />
-              <Text
-                className="text-[10px] font-extrabold tracking-wider"
-                style={{ color: colors.primary }}
-              >
-                10 UTILITIES
-              </Text>
-            </View>
-          </View>
-          <Text
-            className="text-lg font-extrabold tracking-tight"
-            style={{ color: colors.text }}
-          >
-            Production Utilities
-          </Text>
-          <Text
-            className="text-[12.5px] mt-1 leading-[18px]"
-            style={{ color: colors.textSecondary }}
-          >
-            Zero-cost growth tools powered by GetAIPilot infrastructure. No
-            credit card required.
-          </Text>
+        <View style={{ marginBottom: 20, gap: 8 }}>
+          <Text style={{ fontSize: 30, lineHeight: 38, fontWeight: "500", letterSpacing: -0.6, color: colors.text }}>Create something</Text>
+          <Text style={{ fontSize: 14, color: colors.textSecondary }}>Simple tools for your next idea.</Text>
         </View>
         {/* Category Tabs (Folder Style matching inbox status tabs) */}
         <View style={{ position: "relative", marginVertical: 16 }}>
-          {/* Continuous baseline */}
-          <View
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 1.5,
-              backgroundColor: colors.primary,
-            }}
-          />
+
 
           <ScrollView
             horizontal
@@ -275,21 +227,21 @@ export default function FreeToolsScreen() {
                   key={cat}
                   onPress={() => setSelectedCategory(cat)}
                   style={{
-                    height: 38,
+                    height: 44,
                     paddingHorizontal: 14,
                     justifyContent: "center",
                     alignItems: "center",
-                    borderTopLeftRadius: isActive ? 10 : 0,
-                    borderTopRightRadius: isActive ? 10 : 0,
-                    borderTopWidth: 1.5,
-                    borderLeftWidth: 1.5,
-                    borderRightWidth: 1.5,
-                    borderBottomWidth: 1.5,
+                    borderRadius: 22,
+                    marginRight: 8,
+                    borderTopWidth: 0,
+                    borderLeftWidth: 0,
+                    borderRightWidth: 0,
+                    borderBottomWidth: 0,
                     borderTopColor: isActive ? colors.primary : "transparent",
                     borderLeftColor: isActive ? colors.primary : "transparent",
                     borderRightColor: isActive ? colors.primary : "transparent",
                     borderBottomColor: isActive ? colors.background : "transparent",
-                    backgroundColor: isActive ? colors.background : "transparent",
+                    backgroundColor: isActive ? colors.accentSoft : colors.card,
                     zIndex: isActive ? 2 : 1,
                   }}
                 >
@@ -298,7 +250,7 @@ export default function FreeToolsScreen() {
                       fontSize: 12.5,
                       fontWeight: isActive ? "700" : "500",
                       letterSpacing: -0.1,
-                      color: isActive ? colors.primary : colors.textSecondary,
+                      color: isActive ? colors.accent : colors.textSecondary,
                     }}
                   >
                     {cat}

@@ -35,12 +35,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   return (
     <Pressable
-      className={`rounded-2xl p-3.5 mb-3 border shadow-sm active:opacity-80 active:scale-[0.99] ${
-        isDark ? 'border-[#2C2C2E]' : 'border-[#E5E7EB]'
+      className={`rounded-2xl p-3.5 mb-3  active:opacity-80 active:scale-[0.99] ${
+        isDark ? 'border-[#3A3549]' : 'border-[#E9E6F2]'
       }`}
       style={{
         backgroundColor: colors.card,
-        borderColor: colors.cardBorder,
+        borderWidth: 0,
+        borderRadius: 24,
       }}
       onPress={handlePress}
     >

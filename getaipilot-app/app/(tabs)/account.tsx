@@ -1102,7 +1102,7 @@ export default function AccountScreen() {
                   value={biometricSettings.enabled}
                   onValueChange={handleToggleBiometric}
                   disabled={isUpdatingBiometrics}
-                  trackColor={{ false: isDark ? '#3A3A3C' : '#E5E7EB', true: '#10B981' }}
+                  trackColor={{ false: isDark ? '#3A3A3C' : '#E9E6F2', true: '#10B981' }}
                   thumbColor="#FFFFFF"
                 />
               </View>
@@ -1617,7 +1617,7 @@ export default function AccountScreen() {
                 <Switch
                   value={pushEnabled}
                   onValueChange={(val) => handleTogglePref('@pref_push', val, setPushEnabled)}
-                  trackColor={{ false: isDark ? '#3A3A3C' : '#E5E7EB', true: '#0A84FF' }}
+                  trackColor={{ false: isDark ? '#3A3A3C' : '#E9E6F2', true: '#0A84FF' }}
                   thumbColor="#FFFFFF"
                 />
               </View>
@@ -1632,7 +1632,7 @@ export default function AccountScreen() {
                 <Switch
                   value={emailAlerts}
                   onValueChange={(val) => handleTogglePref('@pref_email', val, setEmailAlerts)}
-                  trackColor={{ false: isDark ? '#3A3A3C' : '#E5E7EB', true: '#0A84FF' }}
+                  trackColor={{ false: isDark ? '#3A3A3C' : '#E9E6F2', true: '#0A84FF' }}
                   thumbColor="#FFFFFF"
                 />
               </View>
@@ -1650,7 +1650,7 @@ export default function AccountScreen() {
                   value={biometricSettings.enabled}
                   onValueChange={handleToggleBiometric}
                   disabled={isUpdatingBiometrics}
-                  trackColor={{ false: isDark ? '#3A3A3C' : '#E5E7EB', true: '#10B981' }}
+                  trackColor={{ false: isDark ? '#3A3A3C' : '#E9E6F2', true: '#10B981' }}
                   thumbColor="#FFFFFF"
                 />
               </View>
@@ -1679,7 +1679,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollViewLight: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F5F3FB',
   },
   scrollViewDark: {
     backgroundColor: '#000000',
@@ -1693,11 +1693,11 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     padding: 18,
     marginBottom: 18,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   heroCardLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E5E7EB',
+    borderColor: '#E9E6F2',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
@@ -1705,8 +1705,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   heroCardDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
+    backgroundColor: '#252230',
+    borderColor: '#3A3549',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
@@ -1800,10 +1800,10 @@ const styles = StyleSheet.create({
     paddingTop: 14,
   },
   statsRowLight: {
-    borderTopColor: '#F2F4F7',
+    borderTopColor: '#F0EEF8',
   },
   statsRowDark: {
-    borderTopColor: '#2C2C2E',
+    borderTopColor: '#3A3549',
   },
   statItem: {
     flex: 1,
@@ -1814,10 +1814,10 @@ const styles = StyleSheet.create({
     borderRightWidth: 1,
   },
   statDividerLight: {
-    borderColor: '#F2F4F7',
+    borderColor: '#F0EEF8',
   },
   statDividerDark: {
-    borderColor: '#2C2C2E',
+    borderColor: '#3A3549',
   },
   statLabel: {
     fontSize: 10.5,
@@ -1850,12 +1850,12 @@ const styles = StyleSheet.create({
     height: 44,
   },
   tabsTrackLight: {
-    backgroundColor: '#F2F4F7',
-    borderColor: '#E5E7EB',
+    backgroundColor: '#F0EEF8',
+    borderColor: '#E9E6F2',
   },
   tabsTrackDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
+    backgroundColor: '#252230',
+    borderColor: '#3A3549',
   },
   slidingTabPill: {
     position: 'absolute',
@@ -1923,19 +1923,19 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
   },
   card: {
-    borderRadius: 18,
+    borderRadius: 24,
     paddingHorizontal: 16,
     paddingVertical: 4,
     marginBottom: 20,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   cardLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E5E7EB',
+    borderColor: '#E9E6F2',
   },
   cardDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
+    backgroundColor: '#252230',
+    borderColor: '#3A3549',
   },
   cardTitle: {
     fontSize: 16,
@@ -1951,10 +1951,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   infoRowLight: {
-    borderBottomColor: '#F2F4F7',
+    borderBottomColor: '#F0EEF8',
   },
   infoRowDark: {
-    borderBottomColor: '#2C2C2E',
+    borderBottomColor: '#3A3549',
   },
   infoLabel: {
     fontSize: 14,
@@ -1983,10 +1983,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   navRowLight: {
-    borderBottomColor: '#F2F4F7',
+    borderBottomColor: '#F0EEF8',
   },
   navRowDark: {
-    borderBottomColor: '#2C2C2E',
+    borderBottomColor: '#3A3549',
   },
   navIconBox: {
     width: 32,
@@ -2060,12 +2060,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   inputLight: {
-    backgroundColor: '#F8F9FA',
-    borderColor: '#E5E7EB',
+    backgroundColor: '#F5F3FB',
+    borderColor: '#E9E6F2',
     color: '#000000',
   },
   inputDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
     borderColor: '#3A3A3C',
     color: '#FFFFFF',
   },
@@ -2098,10 +2098,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   actionRowLight: {
-    borderBottomColor: '#F2F4F7',
+    borderBottomColor: '#F0EEF8',
   },
   actionRowDark: {
-    borderBottomColor: '#2C2C2E',
+    borderBottomColor: '#3A3549',
   },
   rowIconCircle: {
     width: 36,
@@ -2135,11 +2135,11 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   secondaryButtonLight: {
-    backgroundColor: '#F2F4F7',
-    borderColor: '#E5E7EB',
+    backgroundColor: '#F0EEF8',
+    borderColor: '#E9E6F2',
   },
   secondaryButtonDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
     borderColor: '#3A3A3C',
   },
   secondaryButtonText: {
@@ -2172,10 +2172,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   switchRowLight: {
-    borderBottomColor: '#F2F4F7',
+    borderBottomColor: '#F0EEF8',
   },
   switchRowDark: {
-    borderBottomColor: '#2C2C2E',
+    borderBottomColor: '#3A3549',
   },
   switchTitle: {
     fontSize: 14.5,
@@ -2275,10 +2275,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressBarTrackLight: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#E9E6F2',
   },
   progressBarTrackDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
   },
   progressBarFill: {
     height: '100%',
@@ -2293,10 +2293,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   invoiceRowLight: {
-    borderBottomColor: '#F2F4F7',
+    borderBottomColor: '#F0EEF8',
   },
   invoiceRowDark: {
-    borderBottomColor: '#2C2C2E',
+    borderBottomColor: '#3A3549',
   },
   invoiceNumber: {
     fontSize: 13.5,
@@ -2364,11 +2364,11 @@ const styles = StyleSheet.create({
   },
   invoiceModalLight: {
     backgroundColor: '#FFFFFF',
-    borderTopColor: '#E5E7EB',
+    borderTopColor: '#E9E6F2',
   },
   invoiceModalDark: {
-    backgroundColor: '#1C1C1E',
-    borderTopColor: '#2C2C2E',
+    backgroundColor: '#252230',
+    borderTopColor: '#3A3549',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -2378,10 +2378,10 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
   modalHeaderLight: {
-    borderBottomColor: '#F2F4F7',
+    borderBottomColor: '#F0EEF8',
   },
   modalHeaderDark: {
-    borderBottomColor: '#2C2C2E',
+    borderBottomColor: '#3A3549',
   },
   modalTitle: {
     fontSize: 18,
@@ -2416,10 +2416,10 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   invoiceModalDividerLight: {
-    backgroundColor: '#F2F4F7',
+    backgroundColor: '#F0EEF8',
   },
   invoiceModalDividerDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
   },
   sectionHeaderRow: {
     flexDirection: 'row',
@@ -2513,10 +2513,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   timeoutSegmentTrackLight: {
-    backgroundColor: '#F2F4F7',
+    backgroundColor: '#F0EEF8',
   },
   timeoutSegmentTrackDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
   },
   timeoutPill: {
     flex: 1,
@@ -2573,20 +2573,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   themeOptionPillLight: {
-    backgroundColor: '#F2F4F7',
-    borderColor: '#E5E7EB',
+    backgroundColor: '#F0EEF8',
+    borderColor: '#E9E6F2',
   },
   themeOptionPillDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
     borderColor: '#3A3A3C',
   },
   themeOptionPillSelectedLight: {
-    backgroundColor: '#CABFAB',
-    borderColor: '#CABFAB',
+    backgroundColor: '#E7DEFA',
+    borderColor: '#E7DEFA',
   },
   themeOptionPillSelectedDark: {
-    backgroundColor: '#CABFAB',
-    borderColor: '#CABFAB',
+    backgroundColor: '#E7DEFA',
+    borderColor: '#E7DEFA',
   },
   themeOptionText: {
     fontSize: 13,

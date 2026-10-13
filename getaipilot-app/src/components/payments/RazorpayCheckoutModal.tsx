@@ -433,21 +433,21 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
           ]}
         >
           {/* Top Header Bar */}
-          <View style={[styles.sheetHeader, { borderBottomColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+          <View style={[styles.sheetHeader, { borderBottomColor: isDark ? '#1e293b' : '#F0EEF8' }]}>
             <View style={styles.headerTitleRow}>
               <View style={styles.rzpBadgeWrap}>
                 <Ionicons name="card" size={16} color="#ffffff" />
               </View>
               <View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={[styles.headerTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                  <Text style={[styles.headerTitle, { color: isDark ? '#F5F3FB' : '#0f172a' }]}>
                     Razorpay Secure Pay
                   </Text>
                   <View style={styles.liveTestBadge}>
                     <Text style={styles.liveTestBadgeText}>VERIFIED GATEWAY</Text>
                   </View>
                 </View>
-                <Text style={[styles.headerSub, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                <Text style={[styles.headerSub, { color: isDark ? '#777383' : '#64748b' }]}>
                   256-bit Encrypted Multi-Channel Subscription
                 </Text>
               </View>
@@ -456,9 +456,9 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
             <Pressable
               onPress={handleDismiss}
               hitSlop={12}
-              style={[styles.closeBtn, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}
+              style={[styles.closeBtn, { backgroundColor: isDark ? '#1e293b' : '#F0EEF8' }]}
             >
-              <Ionicons name="close" size={18} color={isDark ? '#94a3b8' : '#64748b'} />
+              <Ionicons name="close" size={18} color={isDark ? '#777383' : '#64748b'} />
             </Pressable>
           </View>
 
@@ -468,10 +468,10 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
               <View style={styles.successIconCircle}>
                 <Ionicons name="checkmark-sharp" size={42} color="#ffffff" />
               </View>
-              <Text style={[styles.successTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              <Text style={[styles.successTitle, { color: isDark ? '#F5F3FB' : '#0f172a' }]}>
                 Payment Verified & Activated!
               </Text>
-              <Text style={[styles.successSub, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+              <Text style={[styles.successSub, { color: isDark ? '#777383' : '#64748b' }]}>
                 Your workspace has been upgraded to{' '}
                 <Text style={{ fontWeight: '800', color: '#ec4899' }}>
                   {options.planName}
@@ -482,27 +482,27 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
               <View
                 style={[
                   styles.receiptCard,
-                  { backgroundColor: isDark ? '#0f172a' : '#f8fafc', borderColor: isDark ? '#1e293b' : '#e2e8f0' },
+                  { backgroundColor: isDark ? '#0f172a' : '#F5F3FB', borderColor: isDark ? '#1e293b' : '#E9E6F2' },
                 ]}
               >
                 <View style={styles.receiptRow}>
-                  <Text style={[styles.receiptLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>Transaction ID</Text>
-                  <Text style={[styles.receiptVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>{completedPayment.paymentId}</Text>
+                  <Text style={[styles.receiptLabel, { color: isDark ? '#777383' : '#64748b' }]}>Transaction ID</Text>
+                  <Text style={[styles.receiptVal, { color: isDark ? '#F5F3FB' : '#0f172a' }]}>{completedPayment.paymentId}</Text>
                 </View>
                 <View style={styles.receiptRow}>
-                  <Text style={[styles.receiptLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>Order Reference</Text>
-                  <Text style={[styles.receiptVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>{completedPayment.orderId.slice(0, 16)}...</Text>
+                  <Text style={[styles.receiptLabel, { color: isDark ? '#777383' : '#64748b' }]}>Order Reference</Text>
+                  <Text style={[styles.receiptVal, { color: isDark ? '#F5F3FB' : '#0f172a' }]}>{completedPayment.orderId.slice(0, 16)}...</Text>
                 </View>
                 <View style={styles.receiptRow}>
-                  <Text style={[styles.receiptLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>Billed Contact</Text>
-                  <Text style={[styles.receiptVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>{customerEmail}</Text>
+                  <Text style={[styles.receiptLabel, { color: isDark ? '#777383' : '#64748b' }]}>Billed Contact</Text>
+                  <Text style={[styles.receiptVal, { color: isDark ? '#F5F3FB' : '#0f172a' }]}>{customerEmail}</Text>
                 </View>
                 <View style={styles.receiptRow}>
-                  <Text style={[styles.receiptLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>Amount Paid</Text>
+                  <Text style={[styles.receiptLabel, { color: isDark ? '#777383' : '#64748b' }]}>Amount Paid</Text>
                   <Text style={[styles.receiptVal, { color: '#10b981', fontWeight: '900' }]}>₹{completedPayment.amount}</Text>
                 </View>
                 <View style={styles.receiptRow}>
-                  <Text style={[styles.receiptLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>Status</Text>
+                  <Text style={[styles.receiptLabel, { color: isDark ? '#777383' : '#64748b' }]}>Status</Text>
                   <Text style={[styles.receiptVal, { color: '#10b981', fontWeight: '800' }]}>Active Subscription</Text>
                 </View>
               </View>
@@ -519,10 +519,10 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
             /* Processing State View */
             <View style={styles.processingContainer}>
               <ActivityIndicator size="large" color="#ec4899" />
-              <Text style={[styles.processingTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              <Text style={[styles.processingTitle, { color: isDark ? '#F5F3FB' : '#0f172a' }]}>
                 Processing Razorpay Checkout
               </Text>
-              <Text style={[styles.processingSub, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+              <Text style={[styles.processingSub, { color: isDark ? '#777383' : '#64748b' }]}>
                 {processingStatus}
               </Text>
               <View style={styles.securityPill}>
@@ -541,23 +541,23 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                 style={[
                   styles.orderSummaryCard,
                   {
-                    backgroundColor: isDark ? '#0f172a' : '#f8fafc',
-                    borderColor: isDark ? '#334155' : '#e2e8f0',
+                    backgroundColor: isDark ? '#0f172a' : '#F5F3FB',
+                    borderColor: isDark ? '#334155' : '#E9E6F2',
                   },
                 ]}
               >
                 <View style={styles.orderSummaryTop}>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.planSummaryName, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                    <Text style={[styles.planSummaryName, { color: isDark ? '#F5F3FB' : '#0f172a' }]}>
                       {options.planName} Plan
                     </Text>
-                    <Text style={[styles.planSummaryInterval, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                    <Text style={[styles.planSummaryInterval, { color: isDark ? '#777383' : '#64748b' }]}>
                       {intervalLabel} Billing Cycle · Instant Activation
                     </Text>
                   </View>
                   <View style={styles.priceTagWrap}>
-                    <Text style={[styles.priceTagCurrency, { color: isDark ? '#f8fafc' : '#0f172a' }]}>₹</Text>
-                    <Text style={[styles.priceTagNumber, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                    <Text style={[styles.priceTagCurrency, { color: isDark ? '#F5F3FB' : '#0f172a' }]}>₹</Text>
+                    <Text style={[styles.priceTagNumber, { color: isDark ? '#F5F3FB' : '#0f172a' }]}>
                       {options.amount}
                     </Text>
                   </View>
@@ -565,10 +565,10 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
 
                 {order && (
                   <View style={styles.orderIdRow}>
-                    <Text style={[styles.orderIdLabel, { color: isDark ? '#64748b' : '#94a3b8' }]}>
+                    <Text style={[styles.orderIdLabel, { color: isDark ? '#64748b' : '#777383' }]}>
                       ORDER ID:
                     </Text>
-                    <Text style={[styles.orderIdVal, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                    <Text style={[styles.orderIdVal, { color: isDark ? '#777383' : '#64748b' }]}>
                       {order.orderId}
                     </Text>
                   </View>
@@ -587,13 +587,13 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
               <View
                 style={[
                   styles.contactCard,
-                  { backgroundColor: isDark ? '#0f172a' : '#f8fafc', borderColor: isDark ? '#1e293b' : '#e2e8f0' },
+                  { backgroundColor: isDark ? '#0f172a' : '#F5F3FB', borderColor: isDark ? '#1e293b' : '#E9E6F2' },
                 ]}
               >
                 <View style={styles.contactHeaderRow}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Ionicons name="person-circle-outline" size={16} color="#ec4899" />
-                    <Text style={[styles.contactCardTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                    <Text style={[styles.contactCardTitle, { color: isDark ? '#F5F3FB' : '#0f172a' }]}>
                       Billing Contact Details
                     </Text>
                   </View>
@@ -620,7 +620,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                   <View style={styles.contactInputsWrap}>
                     {/* Name Input */}
                     <View>
-                      <Text style={[styles.inputFieldLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                      <Text style={[styles.inputFieldLabel, { color: isDark ? '#777383' : '#64748b' }]}>
                         Full Name *
                       </Text>
                       <View
@@ -628,7 +628,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                           styles.inputRow,
                           {
                             backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                            borderColor: fieldErrors.customerName ? '#ef4444' : isDark ? '#1e293b' : '#e2e8f0',
+                            borderColor: fieldErrors.customerName ? '#ef4444' : isDark ? '#1e293b' : '#E9E6F2',
                           },
                         ]}
                       >
@@ -637,8 +637,8 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                           value={customerName}
                           onChangeText={handleNameChange}
                           placeholder="Full Name"
-                          placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
-                          style={[styles.textInput, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+                          placeholderTextColor={isDark ? '#64748b' : '#777383'}
+                          style={[styles.textInput, { color: isDark ? '#F5F3FB' : '#0f172a' }]}
                         />
                       </View>
                       {fieldErrors.customerName && (
@@ -648,7 +648,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
 
                     {/* Email Input */}
                     <View>
-                      <Text style={[styles.inputFieldLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                      <Text style={[styles.inputFieldLabel, { color: isDark ? '#777383' : '#64748b' }]}>
                         Email Address *
                       </Text>
                       <View
@@ -656,7 +656,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                           styles.inputRow,
                           {
                             backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                            borderColor: fieldErrors.customerEmail ? '#ef4444' : isDark ? '#1e293b' : '#e2e8f0',
+                            borderColor: fieldErrors.customerEmail ? '#ef4444' : isDark ? '#1e293b' : '#E9E6F2',
                           },
                         ]}
                       >
@@ -665,8 +665,8 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                           value={customerEmail}
                           onChangeText={handleEmailChange}
                           placeholder="email@domain.com"
-                          placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
-                          style={[styles.textInput, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+                          placeholderTextColor={isDark ? '#64748b' : '#777383'}
+                          style={[styles.textInput, { color: isDark ? '#F5F3FB' : '#0f172a' }]}
                           keyboardType="email-address"
                           autoCapitalize="none"
                         />
@@ -678,7 +678,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
 
                     {/* Phone Input */}
                     <View>
-                      <Text style={[styles.inputFieldLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                      <Text style={[styles.inputFieldLabel, { color: isDark ? '#777383' : '#64748b' }]}>
                         10-Digit Mobile Number *
                       </Text>
                       <View
@@ -686,19 +686,19 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                           styles.inputRow,
                           {
                             backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                            borderColor: fieldErrors.customerPhone ? '#ef4444' : isDark ? '#1e293b' : '#e2e8f0',
+                            borderColor: fieldErrors.customerPhone ? '#ef4444' : isDark ? '#1e293b' : '#E9E6F2',
                           },
                         ]}
                       >
-                        <Text style={{ fontWeight: '700', color: isDark ? '#94a3b8' : '#64748b', fontSize: 13 }}>
+                        <Text style={{ fontWeight: '700', color: isDark ? '#777383' : '#64748b', fontSize: 13 }}>
                           +91
                         </Text>
                         <TextInput
                           value={customerPhone}
                           onChangeText={handlePhoneChange}
                           placeholder="10-digit Mobile Number"
-                          placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
-                          style={[styles.textInput, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+                          placeholderTextColor={isDark ? '#64748b' : '#777383'}
+                          style={[styles.textInput, { color: isDark ? '#F5F3FB' : '#0f172a' }]}
                           keyboardType="phone-pad"
                           maxLength={10}
                         />
@@ -731,7 +731,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                           ? '#ec4899'
                           : isDark
                             ? '#1e293b'
-                            : '#f1f5f9',
+                            : '#F0EEF8',
                       borderColor: selectedMethod === 'qr' ? '#ec4899' : 'transparent',
                     },
                   ]}
@@ -739,7 +739,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                   <Ionicons
                     name="qr-code"
                     size={15}
-                    color={selectedMethod === 'qr' ? '#ffffff' : isDark ? '#94a3b8' : '#64748b'}
+                    color={selectedMethod === 'qr' ? '#ffffff' : isDark ? '#777383' : '#64748b'}
                   />
                   <Text
                     style={[
@@ -765,7 +765,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                           ? '#ec4899'
                           : isDark
                             ? '#1e293b'
-                            : '#f1f5f9',
+                            : '#F0EEF8',
                       borderColor: selectedMethod === 'upi' ? '#ec4899' : 'transparent',
                     },
                   ]}
@@ -773,7 +773,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                   <Ionicons
                     name="flash-outline"
                     size={15}
-                    color={selectedMethod === 'upi' ? '#ffffff' : isDark ? '#94a3b8' : '#64748b'}
+                    color={selectedMethod === 'upi' ? '#ffffff' : isDark ? '#777383' : '#64748b'}
                   />
                   <Text
                     style={[
@@ -799,7 +799,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                           ? '#ec4899'
                           : isDark
                             ? '#1e293b'
-                            : '#f1f5f9',
+                            : '#F0EEF8',
                       borderColor: selectedMethod === 'card' ? '#ec4899' : 'transparent',
                     },
                   ]}
@@ -807,7 +807,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                   <Ionicons
                     name="card-outline"
                     size={15}
-                    color={selectedMethod === 'card' ? '#ffffff' : isDark ? '#94a3b8' : '#64748b'}
+                    color={selectedMethod === 'card' ? '#ffffff' : isDark ? '#777383' : '#64748b'}
                   />
                   <Text
                     style={[
@@ -833,7 +833,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                           ? '#ec4899'
                           : isDark
                             ? '#1e293b'
-                            : '#f1f5f9',
+                            : '#F0EEF8',
                       borderColor: selectedMethod === 'netbanking' ? '#ec4899' : 'transparent',
                     },
                   ]}
@@ -841,7 +841,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                   <Ionicons
                     name="business-outline"
                     size={15}
-                    color={selectedMethod === 'netbanking' ? '#ffffff' : isDark ? '#94a3b8' : '#64748b'}
+                    color={selectedMethod === 'netbanking' ? '#ffffff' : isDark ? '#777383' : '#64748b'}
                   />
                   <Text
                     style={[
@@ -886,7 +886,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
 
                   {/* Supported Apps Telemetry */}
                   <View style={styles.supportedAppsRow}>
-                    <Text style={[styles.supportedAppsText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                    <Text style={[styles.supportedAppsText, { color: isDark ? '#777383' : '#64748b' }]}>
                       Scan with Google Pay · PhonePe · Paytm · BHIM · Any App
                     </Text>
                   </View>
@@ -914,18 +914,18 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                     style={[
                       styles.numberVerifyBox,
                       {
-                        backgroundColor: isDark ? '#090d16' : '#f8fafc',
-                        borderColor: isDark ? '#1e293b' : '#e2e8f0',
+                        backgroundColor: isDark ? '#090d16' : '#F5F3FB',
+                        borderColor: isDark ? '#1e293b' : '#E9E6F2',
                       },
                     ]}
                   >
                     <View style={styles.numberVerifyHeader}>
                       <Ionicons name="shield-checkmark" size={16} color="#10b981" />
-                      <Text style={[styles.numberVerifyTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                      <Text style={[styles.numberVerifyTitle, { color: isDark ? '#F5F3FB' : '#0f172a' }]}>
                         Verify Real Payment
                       </Text>
                     </View>
-                    <Text style={[styles.numberVerifySubtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                    <Text style={[styles.numberVerifySubtitle, { color: isDark ? '#777383' : '#64748b' }]}>
                       Enter the 10-digit mobile number used to pay, or the 12-digit UPI Reference / UTR Number from your receipt:
                     </Text>
 
@@ -934,7 +934,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                         styles.inputRow,
                         {
                           backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                          borderColor: isDark ? '#1e293b' : '#e2e8f0',
+                          borderColor: isDark ? '#1e293b' : '#E9E6F2',
                           marginTop: 8,
                         },
                       ]}
@@ -944,8 +944,8 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                         value={verificationNumber}
                         onChangeText={(t) => setVerificationNumber(t)}
                         placeholder={customerPhone ? `e.g. ${customerPhone} or 12-digit UTR` : 'Enter Mobile or 12-digit UPI UTR'}
-                        placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
-                        style={[styles.textInput, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+                        placeholderTextColor={isDark ? '#64748b' : '#777383'}
+                        style={[styles.textInput, { color: isDark ? '#F5F3FB' : '#0f172a' }]}
                         keyboardType="default"
                       />
                       {customerPhone ? (
@@ -966,7 +966,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                       disabled={isProcessing}
                       style={[
                         styles.verifyNumberBtn,
-                        { backgroundColor: isProcessing ? '#94a3b8' : '#10b981' },
+                        { backgroundColor: isProcessing ? '#777383' : '#10b981' },
                       ]}
                     >
                       <Ionicons name="checkmark-done" size={16} color="#ffffff" />
@@ -979,7 +979,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
               {/* UPI Sub-Options */}
               {selectedMethod === 'upi' && (
                 <View style={styles.methodContentBox}>
-                  <Text style={[styles.subOptionLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                  <Text style={[styles.subOptionLabel, { color: isDark ? '#777383' : '#64748b' }]}>
                     Choose Supported UPI App
                   </Text>
                   <View style={styles.upiAppsGrid}>
@@ -998,7 +998,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                             styles.upiAppCard,
                             {
                               backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                              borderColor: isSelected ? '#ec4899' : isDark ? '#1e293b' : '#e2e8f0',
+                              borderColor: isSelected ? '#ec4899' : isDark ? '#1e293b' : '#E9E6F2',
                             },
                           ]}
                         >
@@ -1006,7 +1006,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                           <Text
                             style={[
                               styles.upiAppName,
-                              { color: isDark ? '#f8fafc' : '#0f172a', fontWeight: isSelected ? '800' : '600' },
+                              { color: isDark ? '#F5F3FB' : '#0f172a', fontWeight: isSelected ? '800' : '600' },
                             ]}
                           >
                             {app.name}
@@ -1021,7 +1021,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                     })}
                   </View>
 
-                  <Text style={[styles.subOptionLabel, { color: isDark ? '#94a3b8' : '#64748b', marginTop: 14 }]}>
+                  <Text style={[styles.subOptionLabel, { color: isDark ? '#777383' : '#64748b', marginTop: 14 }]}>
                     Or Enter Any Custom UPI ID
                   </Text>
                   <View
@@ -1029,7 +1029,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                       styles.inputRow,
                       {
                         backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                        borderColor: fieldErrors.upiId ? '#ef4444' : isDark ? '#1e293b' : '#e2e8f0',
+                        borderColor: fieldErrors.upiId ? '#ef4444' : isDark ? '#1e293b' : '#E9E6F2',
                       },
                     ]}
                   >
@@ -1038,8 +1038,8 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                       value={upiIdInput}
                       onChangeText={handleUpiIdChange}
                       placeholder="username@okhdfcbank or mobile@upi"
-                      placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
-                      style={[styles.textInput, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+                      placeholderTextColor={isDark ? '#64748b' : '#777383'}
+                      style={[styles.textInput, { color: isDark ? '#F5F3FB' : '#0f172a' }]}
                       autoCapitalize="none"
                     />
                   </View>
@@ -1057,21 +1057,21 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                         styles.inputRow,
                         {
                           backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                          borderColor: fieldErrors.cardNumber ? '#ef4444' : isDark ? '#1e293b' : '#e2e8f0',
+                          borderColor: fieldErrors.cardNumber ? '#ef4444' : isDark ? '#1e293b' : '#E9E6F2',
                         },
                       ]}
                     >
                       <Ionicons
                         name={cardBrand === 'amex' ? 'card' : 'card-outline'}
                         size={16}
-                        color={cardBrand !== 'unknown' ? '#ec4899' : '#94a3b8'}
+                        color={cardBrand !== 'unknown' ? '#ec4899' : '#777383'}
                       />
                       <TextInput
                         value={cardNumber}
                         onChangeText={handleCardNumberChange}
                         placeholder="Card Number (4111 2222 3333 4444)"
-                        placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
-                        style={[styles.textInput, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+                        placeholderTextColor={isDark ? '#64748b' : '#777383'}
+                        style={[styles.textInput, { color: isDark ? '#F5F3FB' : '#0f172a' }]}
                         keyboardType="number-pad"
                         maxLength={23}
                       />
@@ -1094,17 +1094,17 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                           styles.inputRow,
                           {
                             backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                            borderColor: fieldErrors.cardExpiry ? '#ef4444' : isDark ? '#1e293b' : '#e2e8f0',
+                            borderColor: fieldErrors.cardExpiry ? '#ef4444' : isDark ? '#1e293b' : '#E9E6F2',
                           },
                         ]}
                       >
-                        <Ionicons name="calendar-outline" size={15} color="#94a3b8" />
+                        <Ionicons name="calendar-outline" size={15} color="#777383" />
                         <TextInput
                           value={cardExpiry}
                           onChangeText={handleCardExpiryChange}
                           placeholder="MM / YY"
-                          placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
-                          style={[styles.textInput, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+                          placeholderTextColor={isDark ? '#64748b' : '#777383'}
+                          style={[styles.textInput, { color: isDark ? '#F5F3FB' : '#0f172a' }]}
                           keyboardType="number-pad"
                           maxLength={5}
                         />
@@ -1120,17 +1120,17 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                           styles.inputRow,
                           {
                             backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                            borderColor: fieldErrors.cardCvv ? '#ef4444' : isDark ? '#1e293b' : '#e2e8f0',
+                            borderColor: fieldErrors.cardCvv ? '#ef4444' : isDark ? '#1e293b' : '#E9E6F2',
                           },
                         ]}
                       >
-                        <Ionicons name="lock-closed-outline" size={15} color="#94a3b8" />
+                        <Ionicons name="lock-closed-outline" size={15} color="#777383" />
                         <TextInput
                           value={cardCvv}
                           onChangeText={handleCardCvvChange}
                           placeholder="CVV"
-                          placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
-                          style={[styles.textInput, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+                          placeholderTextColor={isDark ? '#64748b' : '#777383'}
+                          style={[styles.textInput, { color: isDark ? '#F5F3FB' : '#0f172a' }]}
                           secureTextEntry
                           keyboardType="number-pad"
                           maxLength={4}
@@ -1147,7 +1147,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
               {/* NetBanking Sub-Options */}
               {selectedMethod === 'netbanking' && (
                 <View style={styles.methodContentBox}>
-                  <Text style={[styles.subOptionLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                  <Text style={[styles.subOptionLabel, { color: isDark ? '#777383' : '#64748b' }]}>
                     Select Verified Bank
                   </Text>
                   <View style={styles.banksList}>
@@ -1165,15 +1165,15 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                             styles.bankRow,
                             {
                               backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                              borderColor: isSelected ? '#ec4899' : isDark ? '#1e293b' : '#e2e8f0',
+                              borderColor: isSelected ? '#ec4899' : isDark ? '#1e293b' : '#E9E6F2',
                             },
                           ]}
                         >
-                          <Ionicons name="business" size={16} color={isSelected ? '#ec4899' : '#94a3b8'} />
+                          <Ionicons name="business" size={16} color={isSelected ? '#ec4899' : '#777383'} />
                           <Text
                             style={[
                               styles.bankName,
-                              { color: isDark ? '#f8fafc' : '#0f172a', fontWeight: isSelected ? '800' : '600' },
+                              { color: isDark ? '#F5F3FB' : '#0f172a', fontWeight: isSelected ? '800' : '600' },
                             ]}
                           >
                             {b.name}
@@ -1195,7 +1195,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                   style={[
                     styles.primaryActionBtn,
                     {
-                      backgroundColor: isInitializing || !order ? '#94a3b8' : '#ec4899',
+                      backgroundColor: isInitializing || !order ? '#777383' : '#ec4899',
                       marginTop: 20,
                     },
                   ]}
@@ -1249,7 +1249,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
               {/* Bottom Security Footer */}
               <View style={styles.footerSecurityRow}>
                 <Ionicons name="shield-checkmark" size={14} color="#10b981" />
-                <Text style={[styles.footerSecurityText, { color: isDark ? '#64748b' : '#94a3b8' }]}>
+                <Text style={[styles.footerSecurityText, { color: isDark ? '#64748b' : '#777383' }]}>
                   Razorpay Verified Partner · 100% Moneyback Guarantee on SLA
                 </Text>
               </View>
@@ -1332,8 +1332,8 @@ const styles = StyleSheet.create({
   },
   orderSummaryCard: {
     padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     gap: 10,
   },
   orderSummaryTop: {
@@ -1397,8 +1397,8 @@ const styles = StyleSheet.create({
   },
   contactCard: {
     padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     marginTop: 14,
     gap: 8,
   },
@@ -1482,8 +1482,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     padding: 12,
-    borderRadius: 12,
-    borderWidth: 1.5,
+    borderRadius: 24,
+    borderWidth: 0.5,
   },
   upiAppName: {
     fontSize: 13,
@@ -1632,8 +1632,8 @@ const styles = StyleSheet.create({
   receiptCard: {
     width: '100%',
     padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     marginTop: 20,
     gap: 10,
   },

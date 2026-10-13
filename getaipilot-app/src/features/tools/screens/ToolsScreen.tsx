@@ -119,14 +119,14 @@ export const ToolsScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? "#020617" : "#f8fafc" }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? "#020617" : "#F5F3FB" }]}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
       >
         <View style={styles.header}>
-          <Text style={[styles.title, { color: isDark ? "#f8fafc" : "#0f172a" }]}>Free Tools & Builders</Text>
-          <Text style={[styles.subtitle, { color: isDark ? "#94a3b8" : "#64748b" }]}>
+          <Text style={[styles.title, { color: isDark ? "#F5F3FB" : "#0f172a" }]}>Free Tools & Builders</Text>
+          <Text style={[styles.subtitle, { color: isDark ? "#777383" : "#64748b" }]}>
             Utility Suite & Visual Drag-and-Drop Builders
           </Text>
         </View>
@@ -145,8 +145,8 @@ export const ToolsScreen: React.FC = () => {
               onPress={() => router.push(tool.route as any)}
             >
               <Text style={styles.toolIcon}>{tool.icon}</Text>
-              <Text style={[styles.toolTitle, { color: isDark ? "#f8fafc" : "#0f172a" }]}>{tool.title}</Text>
-              <Text style={[styles.toolDesc, { color: isDark ? "#94a3b8" : "#64748b" }]} numberOfLines={2}>
+              <Text style={[styles.toolTitle, { color: isDark ? "#F5F3FB" : "#0f172a" }]}>{tool.title}</Text>
+              <Text style={[styles.toolDesc, { color: isDark ? "#777383" : "#64748b" }]} numberOfLines={2}>
                 {tool.desc}
               </Text>
             </Pressable>
@@ -171,8 +171,8 @@ export const ToolsScreen: React.FC = () => {
             >
               <Text style={styles.builderIcon}>{builder.icon}</Text>
               <View style={styles.builderInfo}>
-                <Text style={[styles.builderTitle, { color: isDark ? "#f8fafc" : "#0f172a" }]}>{builder.title}</Text>
-                <Text style={[styles.builderDesc, { color: isDark ? "#94a3b8" : "#64748b" }]}>{builder.desc}</Text>
+                <Text style={[styles.builderTitle, { color: isDark ? "#F5F3FB" : "#0f172a" }]}>{builder.title}</Text>
+                <Text style={[styles.builderDesc, { color: isDark ? "#777383" : "#64748b" }]}>{builder.desc}</Text>
               </View>
               {openingTool === builder.id ? (
                 <ActivityIndicator size="small" color="#6366f1" />
@@ -207,10 +207,10 @@ const styles = StyleSheet.create({
   },
   card: {
     width: "48%",
-    borderRadius: 14,
+    borderRadius: 24,
     padding: 14,
     marginBottom: 12,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   cardDark: {
     backgroundColor: "#0f172a",
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   },
   cardLight: {
     backgroundColor: "#ffffff",
-    borderColor: "#e2e8f0",
+    borderColor: "#E9E6F2",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -237,10 +237,10 @@ const styles = StyleSheet.create({
   builderCard: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 14,
+    borderRadius: 24,
     padding: 16,
     marginBottom: 10,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   builderCardDark: {
     backgroundColor: "#0f172a",
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   },
   builderCardLight: {
     backgroundColor: "#ffffff",
-    borderColor: "#e2e8f0",
+    borderColor: "#E9E6F2",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,

@@ -123,7 +123,7 @@ export const ThemeModeCard: React.FC<ThemeModeCardProps> = ({
         <View
           style={[
             styles.previewLine,
-            { backgroundColor: mode === 'dark' ? '#333336' : '#E2E8F0' },
+            { backgroundColor: mode === 'dark' ? '#333336' : '#E9E6F2' },
           ]}
         />
         <View
@@ -140,20 +140,20 @@ export const ThemeModeCard: React.FC<ThemeModeCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    borderRadius: 18,
+    borderRadius: 24,
     padding: 14,
-    borderWidth: 1.5,
+    borderWidth: 0.5,
     minHeight: 140,
     justifyContent: 'space-between',
     position: 'relative',
   },
   cardLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E5E7EB',
+    borderColor: '#E9E6F2',
   },
   cardDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
+    backgroundColor: '#252230',
+    borderColor: '#3A3549',
   },
   cardSelected: {
     borderWidth: 2,
@@ -205,12 +205,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   lightPreview: {
-    backgroundColor: '#F8F9FA',
-    borderColor: '#E2E8F0',
+    backgroundColor: '#F5F3FB',
+    borderColor: '#E9E6F2',
   },
   darkPreview: {
     backgroundColor: '#000000',
-    borderColor: '#2C2C2E',
+    borderColor: '#3A3549',
   },
   previewBar: {
     height: 4,

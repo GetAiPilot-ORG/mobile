@@ -1,3 +1,4 @@
+import { ProductHeading } from "@/components/ProductUI";
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
@@ -164,24 +165,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
   return (
     <View style={styles.container}>
       {/* Top Header */}
-      <View style={styles.headerRow}>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.mainTitle, txt]}>Chat Bot Automation</Text>
-          <Text style={styles.mainSub}>
-            Attach an AI Assistant to your Telegram Bot. Map business details, upload documents, and link API keys to create automated support agents.
-          </Text>
-        </View>
-        <Pressable
-          style={styles.connectBotBtn}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setIsConfigModalOpen(true);
-          }}
-        >
-          <Ionicons name="add" size={16} color="#FFFFFF" />
-          <Text style={styles.connectBotBtnText}>Connect Telegram Bot</Text>
-        </Pressable>
-      </View>
+      <ProductHeading title="Your chatbot" action="Connect a bot" onAction={() => setIsConfigModalOpen(true)} />
 
       {/* Bot Cards list from Supabase */}
       {isLoading ? (
@@ -445,7 +429,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
                     <Text style={[styles.msgText, isUser ? { color: '#FFFFFF' } : txt]}>
                       {msg.text}
                     </Text>
-                    <Text style={[styles.msgTime, isUser ? { color: 'rgba(255,255,255,0.7)' } : { color: '#94A3B8' }]}>
+                    <Text style={[styles.msgTime, isUser ? { color: 'rgba(255,255,255,0.7)' } : { color: '#777383' }]}>
                       {msg.time}
                     </Text>
                   </View>
@@ -517,7 +501,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 value={supportBotName}
                 onChangeText={setSupportBotName}
                 placeholder="Enter support bot name"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor="#777383"
               />
             </View>
 
@@ -536,7 +520,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 value={systemPrompt}
                 onChangeText={setSystemPrompt}
                 placeholder="Enter system prompt instructions"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor="#777383"
               />
               <Text style={styles.fieldHelper}>
                 This is the bot's persona and behavioral rules. The AI will strictly follow these instructions.
@@ -570,7 +554,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
                     value={knowledgeBaseText}
                     onChangeText={setKnowledgeBaseText}
                     placeholder="Enter knowledge base text"
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor="#777383"
                   />
                   <View style={styles.knowledgeNote}>
                     <Ionicons name="hardware-chip-outline" size={13} color="#0284C7" />
@@ -622,7 +606,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
                         setPdfDocuments((prev) => prev.filter((d) => d.id !== doc.id));
                       }}
                     >
-                      <Ionicons name="trash-outline" size={16} color="#94A3B8" />
+                      <Ionicons name="trash-outline" size={16} color="#777383" />
                     </Pressable>
                   </View>
                 </View>
@@ -633,17 +617,17 @@ export const ChatBotScreen: React.FC<Props> = () => {
             <View>
               <Text style={[styles.fieldLabel, txt]}>OPENAI OR GEMINI API KEY</Text>
               <View style={[styles.apiKeyRow, inputStyle]}>
-                <Ionicons name="key-outline" size={16} color="#94A3B8" />
+                <Ionicons name="key-outline" size={16} color="#777383" />
                 <TextInput
                   style={[styles.apiKeyInput, txt]}
                   secureTextEntry={!isApiKeyVisible}
                   value={apiKey}
                   onChangeText={setApiKey}
                   placeholder="sk-proj-..."
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor="#777383"
                 />
                 <Pressable onPress={() => setIsApiKeyVisible((v) => !v)}>
-                  <Ionicons name={isApiKeyVisible ? 'eye-off-outline' : 'eye-outline'} size={18} color="#94A3B8" />
+                  <Ionicons name={isApiKeyVisible ? 'eye-off-outline' : 'eye-outline'} size={18} color="#777383" />
                 </Pressable>
               </View>
               <View style={styles.validKeyBadge}>
@@ -680,8 +664,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   mainSub: {
-    fontSize: 12.5,
-    color: '#64748B',
+    fontSize: 13.5,
+    color: '#716B7C',
     lineHeight: 18,
   },
   connectBotBtn: {
@@ -699,14 +683,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   botCard: {
-    borderRadius: 18,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     padding: 16,
-    marginBottom: 16,
-  },
+    marginBottom: 16, shadowOpacity: 0 },
   cardLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    borderColor: '#E9E6F2',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
@@ -717,17 +700,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#121212',
     borderColor: '#27272A',
   },
-  textLight: { color: '#0F172A' },
-  textDark: { color: '#F8FAFC' },
-  borderLight: { borderColor: '#E2E8F0' },
+  textLight: { color: '#1C1A25' },
+  textDark: { color: '#F5F3FB' },
+  borderLight: { borderColor: '#E9E6F2' },
   borderDark: { borderColor: '#27272A' },
 
   botCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginBottom: 14,
-  },
+    marginBottom: 14, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   botIconWrapper: {
     width: 46,
     height: 46,
@@ -752,7 +734,7 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 14,
   },
-  specsTableLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
+  specsTableLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2' },
   specsTableDark: { backgroundColor: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' },
   specRow: {
     flexDirection: 'row',
@@ -770,8 +752,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
-  },
+    marginBottom: 12, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   listeningBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -847,8 +828,7 @@ const styles = StyleSheet.create({
 
   cardFooterRow: {
     flexDirection: 'row',
-    gap: 8,
-  },
+    gap: 8, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   footerBtn: {
     flex: 1,
     alignItems: 'center',
@@ -856,7 +836,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
   },
-  footerBtnLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
+  footerBtnLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
   footerBtnDark: { backgroundColor: '#1E2430', borderColor: '#27272A' },
   footerBtnText: { fontSize: 12, fontWeight: '700' },
 
@@ -881,7 +861,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalHeaderTitle: { fontSize: 16, fontWeight: '800' },
-  modalHeaderSub: { fontSize: 11, color: '#64748B', marginTop: 1 },
+  modalHeaderSub: { fontSize: 13, color: '#716B7C', marginTop: 1 },
   closeBtn: {
     width: 32,
     height: 32,
@@ -912,7 +892,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
   },
-  userPillLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
+  userPillLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2' },
   userPillDark: { backgroundColor: '#161C28', borderColor: '#27272A' },
   userPillActive: { borderColor: '#0284C7', backgroundColor: 'rgba(2, 132, 199, 0.08)' },
   userAvatarMini: {
@@ -925,7 +905,7 @@ const styles = StyleSheet.create({
   },
   userAvatarText: { fontSize: 11, fontWeight: '800', color: '#334155' },
   userPillName: { fontSize: 12, fontWeight: '700' },
-  userPillId: { fontSize: 9.5, color: '#94A3B8' },
+  userPillId: { fontSize: 9.5, color: '#777383' },
 
   // Chat conversation
   chatHeader: {
@@ -947,7 +927,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E9E6F2',
   },
   chatActionText: { fontSize: 11, fontWeight: '600' },
   chatActionBtnDanger: {
@@ -978,7 +958,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 2,
   },
   msgBubbleBotLight: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F0EEF8',
     borderBottomLeftRadius: 2,
   },
   msgBubbleBotDark: {
@@ -1016,7 +996,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderTopWidth: 1,
   },
-  refineBannerLight: { backgroundColor: '#F8FAFC', borderTopColor: '#E2E8F0' },
+  refineBannerLight: { backgroundColor: '#F5F3FB', borderTopColor: '#E9E6F2' },
   refineBannerDark: { backgroundColor: '#121722', borderTopColor: '#27272A' },
   refineText: { fontSize: 11, color: '#64748B', flex: 1 },
   goToPromptBtn: {
@@ -1036,7 +1016,7 @@ const styles = StyleSheet.create({
   },
   connectedBadgeText: { fontSize: 9.5, fontWeight: '800', color: '#0284C7' },
   fieldLabel: { fontSize: 11, fontWeight: '800', marginBottom: 6, letterSpacing: 0.3 },
-  fieldHelper: { fontSize: 10.5, color: '#64748B', marginTop: 4 },
+  fieldHelper: { fontSize: 13.5, color: '#716B7C', marginTop: 4 },
   behaviorBadge: {
     backgroundColor: 'rgba(139, 92, 246, 0.1)',
     paddingHorizontal: 6,
@@ -1046,12 +1026,11 @@ const styles = StyleSheet.create({
   behaviorBadgeText: { fontSize: 9, fontWeight: '800', color: '#8B5CF6' },
 
   input: {
-    borderWidth: 1,
-    borderRadius: 10,
+    borderWidth: 0,
+    borderRadius: 22,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 13,
-  },
+    fontSize: 13, minHeight: 48 },
   inputMulti: {
     borderWidth: 1,
     borderRadius: 10,
@@ -1070,8 +1049,8 @@ const styles = StyleSheet.create({
     minHeight: 120,
     textAlignVertical: 'top',
   },
-  inputLight: { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1', color: '#0F172A' },
-  inputDark: { backgroundColor: '#161C28', borderColor: '#27272A', color: '#F8FAFC' },
+  inputLight: { backgroundColor: '#F5F3FB', borderColor: '#CBD5E1', color: '#1C1A25' },
+  inputDark: { backgroundColor: '#161C28', borderColor: '#27272A', color: '#F5F3FB' },
 
   tabLink: { fontSize: 10, fontWeight: '700', color: '#64748B' },
   tabLinkActive: { color: '#8B5CF6' },
@@ -1095,7 +1074,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  imageRagBoxLight: { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1' },
+  imageRagBoxLight: { backgroundColor: '#F5F3FB', borderColor: '#CBD5E1' },
   imageRagBoxDark: { backgroundColor: '#161C28', borderColor: '#334155' },
   imageRagText: { fontSize: 11, fontWeight: '700', color: '#64748B' },
 
@@ -1109,7 +1088,7 @@ const styles = StyleSheet.create({
     gap: 4,
     marginBottom: 8,
   },
-  pdfUploadBoxLight: { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1' },
+  pdfUploadBoxLight: { backgroundColor: '#F5F3FB', borderColor: '#CBD5E1' },
   pdfUploadBoxDark: { backgroundColor: '#161C28', borderColor: '#334155' },
   pdfUploadText: { fontSize: 11, fontWeight: '700', color: '#64748B' },
 
@@ -1121,7 +1100,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
   },
-  pdfDocItemLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
+  pdfDocItemLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2' },
   pdfDocItemDark: { backgroundColor: '#161C28', borderColor: '#27272A' },
   pdfDocName: { fontSize: 12, fontWeight: '700' },
   trainedBadge: {

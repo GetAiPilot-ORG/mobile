@@ -132,7 +132,7 @@ export function OfflineNotice() {
               <Text
                 style={[
                   styles.titleText,
-                  { color: isDark ? "#E5E7EB" : "#111827" },
+                  { color: isDark ? "#E9E6F2" : "#111827" },
                 ]}
               >
                 Back Online
@@ -140,7 +140,7 @@ export function OfflineNotice() {
               <Text
                 style={[
                   styles.subText,
-                  { color: isDark ? "#9CA3AF" : "#6B7280" },
+                  { color: isDark ? "#777383" : "#6B7280" },
                 ]}
               >
                 Internet connection restored
@@ -171,7 +171,7 @@ export function OfflineNotice() {
               <Text
                 style={[
                   styles.subText,
-                  { color: isDark ? "#9CA3AF" : "#6B7280" },
+                  { color: isDark ? "#777383" : "#6B7280" },
                 ]}
               >
                 Check Wi-Fi or mobile data

@@ -1,3 +1,4 @@
+import { ProductHeading } from "@/components/ProductUI";
 import { getColors, useTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
@@ -69,18 +70,7 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
   return (
     <>
       {/* Header */}
-      <View style={styles.header}>
-        <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Text style={[styles.headerTitle, txt]}>GAP Tracker</Text>
-            <View style={styles.greenBadge}>
-              <View style={styles.dotGreen} />
-              <Text style={styles.greenBadgeText}>{botsList.length} Bots Connected</Text>
-            </View>
-          </View>
-          <Text style={styles.headerSub}>Connect bots, map channels & generate deep link trackers</Text>
-        </View>
-      </View>
+      <ProductHeading title="Join tracker" />
 
       {/* 3-Tab Segmented Bar */}
       <View style={[styles.segBar, card]}>
@@ -228,11 +218,11 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
               <Text style={styles.usersCount}>{filteredUsers.length} total events</Text>
             </View>
             <View style={[styles.searchBar, card]}>
-              <Ionicons name="search" size={16} color="#94A3B8" />
+              <Ionicons name="search" size={16} color="#777383" />
               <TextInput
                 style={[styles.searchInput, txt]}
                 placeholder="Search by name, ID or channel..."
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor="#777383"
                 value={userSearch}
                 onChangeText={setUserSearch}
               />
@@ -322,7 +312,7 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
                       <Text style={styles.channelTagText} numberOfLines={1}>{bot.channel_name}</Text>
                     </View>
                   ) : (
-                    <Text style={{ fontSize: 11, color: '#94A3B8' }}>No channels mapped</Text>
+                    <Text style={{ fontSize: 11, color: '#777383' }}>No channels mapped</Text>
                   )}
                 </View>
               </View>
@@ -383,7 +373,7 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
                       <Text style={styles.createLinkBtnText}>{copiedLinkId === linkId ? 'Copied' : 'Copy Link'}</Text>
                     </Pressable>
                   </View>
-                  <View style={{ flexDirection: 'row', gap: 14, marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9' }}>
+                  <View style={{ flexDirection: 'row', gap: 14, marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EEF8' }}>
                     <Text style={styles.botUsername}>Starts: <Text style={{ fontWeight: '700', color: '#0284C7' }}>{starts}</Text></Text>
                     <Text style={styles.botUsername}>Joins: <Text style={{ fontWeight: '700', color: '#10B981' }}>{joined}</Text></Text>
                     <Text style={styles.botUsername}>Rate: <Text style={{ fontWeight: '700', color: '#DB2777' }}>{convRate}%</Text></Text>
@@ -399,15 +389,15 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
 };
 
 const styles = StyleSheet.create({
-  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
+  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
   cardDark: { backgroundColor: '#121212', borderColor: '#27272A' },
-  textLight: { color: '#0F172A' },
-  textDark: { color: '#F8FAFC' },
-  borderLight: { borderTopColor: '#E2E8F0', borderColor: '#E2E8F0' },
+  textLight: { color: '#1C1A25' },
+  textDark: { color: '#F5F3FB' },
+  borderLight: { borderTopColor: '#E9E6F2', borderColor: '#E9E6F2' },
   borderDark: { borderTopColor: '#27272A', borderColor: '#27272A' },
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14, gap: 12 },
-  headerTitle: { fontSize: 18, fontWeight: '800', marginBottom: 2 },
-  headerSub: { fontSize: 12, color: '#64748B', fontWeight: '500' },
+  headerTitle: { fontSize: 28, fontWeight: '500', marginBottom: 2 , lineHeight: 36 , letterSpacing: -0.5 },
+  headerSub: { fontSize: 13, color: '#716B7C', fontWeight: '500' },
   greenBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(16,185,129,0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20 },
   dotGreen: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981' },
   greenBadgeText: { fontSize: 11, fontWeight: '700', color: '#10B981' },
@@ -417,7 +407,7 @@ const styles = StyleSheet.create({
   segTabActiveDark: { backgroundColor: 'rgba(2,132,199,0.12)' },
   segTabText: { fontSize: 12, fontWeight: '600' },
   segTabTextActive: { color: '#0284C7', fontWeight: '700' },
-  segBadge: { backgroundColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 5, paddingVertical: 1 },
+  segBadge: { backgroundColor: '#E9E6F2', borderRadius: 10, paddingHorizontal: 5, paddingVertical: 1 },
   segBadgeActive: { backgroundColor: 'rgba(2,132,199,0.15)' },
   segBadgeText: { fontSize: 9, fontWeight: '800', color: '#64748B' },
   segBadgeTextActive: { color: '#0284C7' },
@@ -427,54 +417,54 @@ const styles = StyleSheet.create({
   kpiIconWrap: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   kpiNumber: { fontSize: 22, fontWeight: '800' },
   kpiLabel: { fontSize: 11, fontWeight: '700', color: '#475569', marginTop: 2 },
-  kpiHint: { fontSize: 10, color: '#94A3B8', marginTop: 2 },
-  matrixCard: { padding: 14, borderRadius: 16, borderWidth: 1 },
+  kpiHint: { fontSize: 10, color: '#777383', marginTop: 2 },
+  matrixCard: { padding: 14, borderRadius: 24, borderWidth: 0, shadowOpacity: 0 },
   matrixHeader: { flexDirection: 'column', alignItems: 'flex-start', gap: 6, marginBottom: 12 },
-  matrixTitle: { fontSize: 14, fontWeight: '800' },
+  matrixTitle: { fontSize: 18, fontWeight: '500', lineHeight: 24 },
   periodBadge: { backgroundColor: 'rgba(2,132,199,0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   periodBadgeText: { fontSize: 10, fontWeight: '700', color: '#0284C7' },
-  chanCard: { borderRadius: 12, padding: 12, marginBottom: 8 },
-  chanCardLight: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0' },
-  chanCardDark: { backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
-  chanCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  chanCard: { borderRadius: 24, padding: 12, marginBottom: 8 , borderWidth: 0 , shadowOpacity: 0 },
+  chanCardLight: { backgroundColor: '#F5F3FB', borderWidth: 0, borderColor: '#E9E6F2' },
+  chanCardDark: { backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 0, borderColor: 'rgba(255,255,255,0.08)' },
+  chanCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 , borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   chanName: { fontSize: 13, fontWeight: '700', flex: 1 },
   periodPill: { backgroundColor: 'rgba(2,132,199,0.1)', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 8 },
   periodPillText: { fontSize: 10, fontWeight: '700', color: '#0284C7' },
   chanStats: { flexDirection: 'row', gap: 12, marginBottom: 8 },
   chanStatItem: { alignItems: 'center' },
-  chanStatLbl: { fontSize: 9, fontWeight: '800', color: '#94A3B8', letterSpacing: 0.3 },
+  chanStatLbl: { fontSize: 9, fontWeight: '800', color: '#777383', letterSpacing: 0.3 },
   chanStatVal: { fontSize: 16, fontWeight: '800', marginTop: 2 },
   linksWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   linkPill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(2,132,199,0.08)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   linkPillTitle: { fontSize: 11, fontWeight: '600', maxWidth: 120 },
   linkPillBadge: { backgroundColor: '#0284C7', paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5 },
   linkPillBadgeText: { color: '#FFF', fontSize: 9, fontWeight: '700' },
-  usersCard: { padding: 14, borderRadius: 16, borderWidth: 1 },
+  usersCard: { padding: 14, borderRadius: 24, borderWidth: 0, shadowOpacity: 0 },
   usersHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   usersTitle: { fontSize: 14, fontWeight: '800' },
   usersCount: { fontSize: 11, color: '#64748B', fontWeight: '600' },
-  searchBar: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, borderWidth: 1, marginBottom: 10 },
+  searchBar: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 22, paddingHorizontal: 12, paddingVertical: 9, borderWidth: 0, marginBottom: 10 , minHeight: 48 },
   searchInput: { flex: 1, fontSize: 13, fontWeight: '500' },
   filterPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
-  filterPillLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
+  filterPillLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2' },
   filterPillDark: { backgroundColor: '#121212', borderColor: '#27272A' },
   filterPillActive: { backgroundColor: '#0284C7', borderColor: '#0284C7' },
   filterPillText: { fontSize: 12, fontWeight: '600' },
   filterPillTextActive: { color: '#FFFFFF', fontWeight: '700' },
   userRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 10, borderRadius: 10, marginBottom: 6 },
-  userRowLight: { backgroundColor: '#F8FAFC' },
+  userRowLight: { backgroundColor: '#F5F3FB' },
   userRowDark: { backgroundColor: 'rgba(255,255,255,0.04)' },
   userAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#0284C7', alignItems: 'center', justifyContent: 'center' },
   userAvatarText: { color: '#FFF', fontSize: 14, fontWeight: '800' },
   userName: { fontSize: 13, fontWeight: '700' },
-  userSub: { fontSize: 11, color: '#64748B', marginTop: 1 },
-  userTime: { fontSize: 10, color: '#94A3B8', marginTop: 1 },
+  userSub: { fontSize: 13, color: '#716B7C', marginTop: 1 },
+  userTime: { fontSize: 10, color: '#777383', marginTop: 1 },
   statusPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20, borderWidth: 1 },
   statusPillText: { fontSize: 11, fontWeight: '700' },
-  sectionTitle: { fontSize: 15, fontWeight: '800' },
-  primaryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#0284C7', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 },
+  sectionTitle: { fontSize: 18, fontWeight: '500', lineHeight: 24 },
+  primaryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#17171C', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 28, minHeight: 44 , shadowOpacity: 0 },
   primaryBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
-  botCard: { padding: 14, borderRadius: 14, borderWidth: 1 },
+  botCard: { padding: 14, borderRadius: 24, borderWidth: 0, shadowOpacity: 0 },
   botAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#0284C7', alignItems: 'center', justifyContent: 'center' },
   botAvatarText: { color: '#FFF', fontSize: 14, fontWeight: '800' },
   botTitle: { fontSize: 13, fontWeight: '700' },
@@ -484,7 +474,7 @@ const styles = StyleSheet.create({
   createLinkBtn: { backgroundColor: 'rgba(2,132,199,0.1)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
   createLinkBtnText: { color: '#0284C7', fontSize: 11, fontWeight: '700' },
   mappedRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, paddingTop: 8, borderTopWidth: 1 },
-  mappedLabel: { fontSize: 9, fontWeight: '800', color: '#94A3B8', letterSpacing: 0.5 },
+  mappedLabel: { fontSize: 9, fontWeight: '800', color: '#777383', letterSpacing: 0.5 },
   channelTag: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(5,150,105,0.1)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
   channelTagText: { fontSize: 11, fontWeight: '600', color: '#059669' },
 });

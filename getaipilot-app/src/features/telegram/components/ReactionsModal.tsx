@@ -253,7 +253,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
             </Text>
           </View>
           <Pressable style={[styles.closeBtn, isDark ? styles.closeBtnDark : styles.closeBtnLight]} onPress={onClose}>
-            <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+            <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
           </Pressable>
         </View>
 
@@ -278,7 +278,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
               {isRefetching ? (
                 <ActivityIndicator size="small" color="#0284C7" />
               ) : (
-                <Ionicons name="refresh" size={16} color={isDark ? '#94A3B8' : '#64748B'} />
+                <Ionicons name="refresh" size={16} color={isDark ? '#777383' : '#64748B'} />
               )}
             </Pressable>
 
@@ -308,7 +308,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
               <Ionicons
                 name="flash"
                 size={14}
-                color={activeTab === 'autopilot' ? '#0284C7' : isDark ? '#94A3B8' : '#64748B'}
+                color={activeTab === 'autopilot' ? '#0284C7' : isDark ? '#777383' : '#64748B'}
               />
               <Text
                 style={[
@@ -338,7 +338,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
               <Ionicons
                 name="color-wand"
                 size={14}
-                color={activeTab === 'boost' ? '#0284C7' : isDark ? '#94A3B8' : '#64748B'}
+                color={activeTab === 'boost' ? '#0284C7' : isDark ? '#777383' : '#64748B'}
               />
               <Text
                 style={[
@@ -361,7 +361,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
               <Ionicons
                 name="receipt"
                 size={14}
-                color={activeTab === 'orders' ? '#0284C7' : isDark ? '#94A3B8' : '#64748B'}
+                color={activeTab === 'orders' ? '#0284C7' : isDark ? '#777383' : '#64748B'}
               />
               <Text
                 style={[
@@ -433,7 +433,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
                 <ActivityIndicator size="large" color="#0284C7" style={{ marginVertical: 30 }} />
               ) : (dashboard?.autopilotRules || []).length === 0 ? (
                 <View style={[styles.emptyCard, isDark ? styles.cardDark : styles.cardLight]}>
-                  <Ionicons name="radio-outline" size={36} color="#94A3B8" />
+                  <Ionicons name="radio-outline" size={36} color="#777383" />
                   <Text style={[styles.emptyTitle, isDark ? styles.textDark : styles.textLight]}>
                     No Autopilot Channels
                   </Text>
@@ -537,7 +537,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
                       <Ionicons
                         name={type.icon as any}
                         size={14}
-                        color={isSelected ? '#0284C7' : isDark ? '#94A3B8' : '#64748B'}
+                        color={isSelected ? '#0284C7' : isDark ? '#777383' : '#64748B'}
                       />
                       <Text
                         style={[
@@ -562,7 +562,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
                 <TextInput
                   style={[styles.input, isDark ? styles.inputTextDark : styles.inputTextLight]}
                   placeholder="https://t.me/channel_name/123"
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor="#777383"
                   value={postLink}
                   onChangeText={setPostLink}
                   autoCapitalize="none"
@@ -669,7 +669,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
                 <Ionicons
                   name={isSpeedOpen ? 'chevron-up' : 'chevron-down'}
                   size={16}
-                  color={isDark ? '#94A3B8' : '#64748B'}
+                  color={isDark ? '#777383' : '#64748B'}
                 />
               </Pressable>
 
@@ -801,7 +801,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
               {/* Orders List */}
               {filteredOrders.length === 0 ? (
                 <View style={[styles.emptyCard, isDark ? styles.cardDark : styles.cardLight]}>
-                  <Ionicons name="document-text-outline" size={36} color="#94A3B8" />
+                  <Ionicons name="document-text-outline" size={36} color="#777383" />
                   <Text style={[styles.emptyTitle, isDark ? styles.textDark : styles.textLight]}>
                     No Orders in this Status
                   </Text>
@@ -885,7 +885,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
                   Add Autopilot Channel
                 </Text>
                 <Pressable onPress={() => setIsAddRuleOpen(false)}>
-                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
                 </Pressable>
               </View>
 
@@ -896,7 +896,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
                 <TextInput
                   style={[styles.input, isDark ? styles.inputTextDark : styles.inputTextLight]}
                   placeholder="@my_channel_name"
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor="#777383"
                   value={newChannel}
                   onChangeText={setNewChannel}
                   autoCapitalize="none"
@@ -958,7 +958,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
                 <TextInput
                   style={[styles.input, isDark ? styles.inputTextDark : styles.inputTextLight]}
                   placeholder="e.g. 5 or Unlimited"
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor="#777383"
                   value={newPostsLimit}
                   onChangeText={setNewPostsLimit}
                   keyboardType="numeric"
@@ -989,7 +989,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
                   Wallet Top Up
                 </Text>
                 <Pressable onPress={() => setIsTopUpOpen(false)}>
-                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
                 </Pressable>
               </View>
 
@@ -1022,7 +1022,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  containerLight: { backgroundColor: '#F8FAFC' },
+  containerLight: { backgroundColor: '#F5F3FB' },
   containerDark: { backgroundColor: '#0B0F19' },
 
   // Header
@@ -1034,13 +1034,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
   },
-  borderLight: { borderBottomColor: '#E2E8F0' },
+  borderLight: { borderBottomColor: '#E9E6F2' },
   borderDark: { borderBottomColor: '#27272A' },
   headerLeft: { flex: 1 },
   headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  title: { fontSize: 17, fontWeight: '700' },
-  textLight: { color: '#0F172A' },
-  textDark: { color: '#F8FAFC' },
+  title: { fontSize: 28, fontWeight: '500', lineHeight: 36 , letterSpacing: -0.5 },
+  textLight: { color: '#1C1A25' },
+  textDark: { color: '#F5F3FB' },
   liveBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1052,7 +1052,7 @@ const styles = StyleSheet.create({
   },
   liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981' },
   liveText: { fontSize: 10.5, fontWeight: '700', color: '#10B981' },
-  subtitle: { color: '#64748B', fontSize: 11.5, marginTop: 2 },
+  subtitle: { color: '#716B7C', fontSize: 13.5, marginTop: 2 },
   closeBtn: {
     width: 30,
     height: 30,
@@ -1060,7 +1060,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeBtnLight: { backgroundColor: '#F1F5F9' },
+  closeBtnLight: { backgroundColor: '#F0EEF8' },
   closeBtnDark: { backgroundColor: '#27272A' },
 
   // Wallet Bar
@@ -1108,7 +1108,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
   },
-  tabContainerLight: { backgroundColor: '#F1F5F9', borderColor: '#E2E8F0' },
+  tabContainerLight: { backgroundColor: '#F0EEF8', borderColor: '#E9E6F2' },
   tabContainerDark: { backgroundColor: '#121212', borderColor: '#27272A' },
   tabBtn: {
     flex: 1,
@@ -1141,11 +1141,11 @@ const styles = StyleSheet.create({
 
   // Scroll Content
   scrollArea: { flex: 1 },
-  scrollContent: { paddingHorizontal: 16, paddingBottom: 30 },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 30 },
   tabSection: { gap: 12 },
 
   // Common Cards & Styles
-  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
+  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
   cardDark: { backgroundColor: '#121212', borderColor: '#27272A' },
 
   // Bot Setup Banner
@@ -1154,9 +1154,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     backgroundColor: 'rgba(2, 132, 199, 0.08)',
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: 'rgba(2, 132, 199, 0.25)',
-    borderRadius: 12,
+    borderRadius: 24,
     padding: 12,
   },
   botSetupIconWrap: {
@@ -1179,8 +1179,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 4,
   },
-  sectionTitle: { fontSize: 14, fontWeight: '700' },
-  sectionSubtitleSmall: { fontSize: 11, color: '#64748B', marginTop: 1 },
+  sectionTitle: { fontSize: 18, fontWeight: '500', lineHeight: 24 },
+  sectionSubtitleSmall: { fontSize: 13, color: '#716B7C', marginTop: 1 },
   addChannelBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1196,15 +1196,13 @@ const styles = StyleSheet.create({
   rulesList: { gap: 10 },
   channelCard: {
     padding: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    gap: 10,
-  },
+    borderRadius: 24,
+    borderWidth: 0,
+    gap: 10, shadowOpacity: 0 },
   channelCardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+    alignItems: 'center', borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   channelNameCol: { flex: 1 },
   channelNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   channelNameText: { fontSize: 13.5, fontWeight: '700' },
@@ -1215,15 +1213,14 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   emojisBadgeText: { fontSize: 9.5, fontWeight: '700', color: '#6366F1' },
-  channelSubtext: { fontSize: 11, color: '#64748B', marginTop: 2 },
+  channelSubtext: { fontSize: 13, color: '#716B7C', marginTop: 2 },
   channelCardBottom: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: 'rgba(100, 116, 139, 0.15)',
-    paddingTop: 8,
-  },
+    paddingTop: 8, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   emojisPillList: { flexDirection: 'row', gap: 4 },
   miniEmojiBubble: {
     paddingHorizontal: 6,
@@ -1255,20 +1252,18 @@ const styles = StyleSheet.create({
   // Empty Card
   emptyCard: {
     padding: 24,
-    borderRadius: 14,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     alignItems: 'center',
-    gap: 6,
-  },
+    gap: 6, shadowOpacity: 0 },
   emptyTitle: { fontSize: 14, fontWeight: '700' },
-  emptySubtitle: { fontSize: 11.5, color: '#94A3B8', textAlign: 'center', lineHeight: 16 },
+  emptySubtitle: { fontSize: 13.5, color: '#716B7C', textAlign: 'center', lineHeight: 16 },
   emptyAddBtn: {
     marginTop: 8,
-    backgroundColor: '#0284C7',
+    backgroundColor: '#17171C',
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 10,
-  },
+    borderRadius: 28, minHeight: 44 , shadowOpacity: 0 },
   emptyAddBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 12 },
 
   // Boost Form Elements
@@ -1301,8 +1296,8 @@ const styles = StyleSheet.create({
   },
   inputLight: { backgroundColor: '#FFFFFF', borderColor: '#CBD5E1' },
   inputDark: { backgroundColor: '#1F2430', borderColor: '#334155' },
-  input: { flex: 1, fontSize: 12.5, padding: 0 },
-  inputTextLight: { color: '#0F172A' },
+  input: { flex: 1, fontSize: 12.5, padding: 0 , borderRadius: 22 , borderWidth: 0 , minHeight: 48 },
+  inputTextLight: { color: '#1C1A25' },
   inputTextDark: { color: '#FFFFFF' },
 
   emojiHeaderRow: {
@@ -1313,7 +1308,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   toggleRowCompact: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  toggleSubtitleCompact: { fontSize: 11, color: '#64748B' },
+  toggleSubtitleCompact: { fontSize: 13, color: '#716B7C' },
   emojiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   emojiChip: {
     width: 38,
@@ -1388,7 +1383,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     gap: 5,
   },
-  priceBoxLight: { backgroundColor: '#F1F5F9', borderColor: '#E2E8F0' },
+  priceBoxLight: { backgroundColor: '#F0EEF8', borderColor: '#E9E6F2' },
   priceBoxDark: { backgroundColor: '#1F2430', borderColor: '#27272A' },
   priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   priceRowFinal: {
@@ -1416,7 +1411,7 @@ const styles = StyleSheet.create({
 
   // Orders Tab
   kpiRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
-  kpiCard: { flex: 1, padding: 10, borderRadius: 12, borderWidth: 1, alignItems: 'center' },
+  kpiCard: { flex: 1, padding: 10, borderRadius: 24, borderWidth: 0, alignItems: 'center' , shadowOpacity: 0 },
   kpiLabel: { fontSize: 10.5, color: '#64748B', marginBottom: 2 },
   kpiValue: { fontSize: 15, fontWeight: '700' },
 
@@ -1437,15 +1432,13 @@ const styles = StyleSheet.create({
   ordersList: { gap: 8 },
   orderCard: {
     padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 6,
-  },
+    borderRadius: 24,
+    borderWidth: 0,
+    gap: 6, shadowOpacity: 0 },
   orderCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+    alignItems: 'center', borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   orderLinkWrap: { flex: 1 },
   orderLinkText: { fontSize: 12, color: '#0284C7', fontWeight: '700' },
   orderCampaignText: { fontSize: 11.5 },
@@ -1455,8 +1448,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: 'rgba(100, 116, 139, 0.12)',
-    paddingTop: 6,
-  },
+    paddingTop: 6, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   orderProgressText: { fontSize: 10.5, color: '#64748B' },
   orderCostText: { fontSize: 12, fontWeight: '700', color: '#0284C7' },
 
@@ -1483,10 +1475,9 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 420,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 18,
-  },
+    borderRadius: 24,
+    borderWidth: 0,
+    padding: 18, shadowOpacity: 0 },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

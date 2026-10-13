@@ -125,7 +125,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
   const shouldShowBack = showBack !== undefined ? showBack : !!title;
 
   const { planLabel, isActive } = usePlatformSubscription();
-  const displayPlanBadge = showPlanBadge !== undefined ? showPlanBadge : (!title && !shouldShowBack);
+  const displayPlanBadge = !!showPlanBadge;
 
   const handlePlanBadgePress = () => {
     if (Platform.OS !== "web") {
@@ -195,10 +195,8 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
             style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] }]}
           >
             <View
-              className={`w-10 h-10 rounded-full justify-center items-center mr-3 border ${isDark
-                ? 'bg-[#0A111B] border-[#1B334A]'
-                : 'bg-[#F8F5EF] border-[#D2CABA]'
-                }`}
+              className="w-11 h-11 rounded-full justify-center items-center mr-3"
+              style={{ backgroundColor: colors.card }}
             >
               <Ionicons
                 name="chevron-back"
@@ -219,25 +217,22 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
             style={({ pressed }) => [{ opacity: pressed ? 0.75 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] }]}
           >
             <View
-              className={`w-[42px] h-[42px] rounded-full justify-center items-center mr-2.5 border-[1.5px] shrink-0 ${isDark ? 'border-[#1B334A]' : 'border-[#D2CABA]'
+              className={`w-[42px] h-[42px] rounded-full justify-center items-center mr-2.5 border-[1.5px] shrink-0 ${isDark ? 'border-[#3A3549]' : 'border-[#E9E6F2]'
                 }`}
             >
-
               {avatarUrl ? (
                 <Image
                   source={{ uri: avatarUrl }}
-                  style={{ width: 45, height: 45, borderRadius: 50, borderWidth: 2, borderColor: "#CABFAB" }}
-                  // className="w-[42px] h-[42px] rounded-full shrink-0"
+                  style={{ width: 42, height: 42, borderRadius: 21, borderWidth: 0, borderColor: isDark ? '#3A3549' : '#E7DEFA' }}
                   contentFit='cover'
                 />
               ) : (
-                <View className="w-[42px] h-[42px] rounded-full bg-[#CABFAB] items-center justify-center shrink-0">
+                <View className="w-[42px] h-[42px] rounded-full bg-[#E7DEFA] items-center justify-center shrink-0">
                   <Text className="text-[#41444B] text-lg font-bold">
                     {avatarInitial}
                   </Text>
                 </View>
               )}
-
             </View>
           </Pressable>
         ) : null}
@@ -253,28 +248,17 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
               {title}
             </Text>
           ) : (
-            <>
-              <Text
-                className={`text-[17px] font-bold tracking-tight ${isDark ? 'text-[#F7FAFC]' : 'text-[#41444B]'
-                  }`}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {displayName}
-              </Text>
-              <Text
-                className={`text-xs mt-0.5 tracking-tight font-normal ${isDark ? 'text-[#8FA3B8]' : 'text-[#6B7076]'
-                  }`}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {subtitle || "Workspace Hub"}
-              </Text>
-            </>
+            <Text
+              className={`text-[18px] font-extrabold tracking-tight ${isDark ? 'text-[#F7FAFC]' : 'text-[#1E293B]'
+                }`}
+              numberOfLines={1}
+            >
+              GetAiPilot
+            </Text>
           )}
           {title && subtitle ? (
             <Text
-              className={`text-xs mt-0.5 tracking-tight font-normal ${isDark ? 'text-[#8FA3B8]' : 'text-[#6B7076]'
+              className={`text-xs mt-0.5 tracking-tight font-normal ${isDark ? 'text-[#ACA6BB]' : 'text-[#6B7076]'
                 }`}
               numberOfLines={1}
               ellipsizeMode="tail"
@@ -304,9 +288,9 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
                 height: 36,
                 paddingHorizontal: 12,
                 borderRadius: 18,
-                borderWidth: 1.5,
+                borderWidth: 0,
                 borderColor: isDark ? 'rgba(47, 140, 255, 0.4)' : 'rgba(10, 132, 255, 0.25)',
-                backgroundColor: isDark ? 'rgba(47, 140, 255, 0.15)' : 'rgba(10, 132, 255, 0.1)',
+                backgroundColor: colors.accentSoft,
                 alignSelf: 'center',
               }}
             >
@@ -317,12 +301,12 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
               <Ionicons
                 name="sparkles"
                 size={13}
-                color={isActive ? '#0A84FF' : '#F59E0B'}
+                color={colors.accent}
                 className="shrink-0"
               />
               <Text
-                className={`text-[13px] font-bold tracking-tight shrink-0 ${isDark ? 'text-[#38BDF8]' : 'text-[#0A84FF]'
-                  }`}
+                className="text-[13px] font-medium shrink-0"
+                style={{ color: colors.accent }}
                 numberOfLines={1}
                 ellipsizeMode="tail"
               >
@@ -331,7 +315,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
               <Ionicons
                 name="chevron-forward"
                 size={13}
-                color={isDark ? '#60A5FA' : '#0A84FF'}
+                color={colors.accent}
                 className="ml-0.5 shrink-0"
               />
             </View>

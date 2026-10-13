@@ -58,7 +58,7 @@ export function CampaignSkeleton({ isDark: propIsDark }: { isDark?: boolean }) {
 
 const styles = {
   skeletonCard: {
-    borderWidth: 1,
+    borderWidth: 0,
     borderRadius: 8,
     padding: 16,
     marginBottom: 16,

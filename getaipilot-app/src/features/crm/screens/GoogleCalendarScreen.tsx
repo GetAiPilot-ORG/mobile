@@ -958,7 +958,7 @@ const styles = StyleSheet.create({
   },
 
   scrollContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 4,
   },
 
@@ -984,10 +984,10 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    fontSize: 24,
-    lineHeight: 30,
-    fontWeight: '800',
-    letterSpacing: -0.6,
+    fontSize: 28,
+    lineHeight: 36,
+    fontWeight: '500',
+    letterSpacing: -0.5,
   },
 
   headerSubtitle: {
@@ -1078,12 +1078,11 @@ const styles = StyleSheet.create({
   connectedCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 16,
+    borderWidth: 0,
+    borderRadius: 24,
     padding: 15,
     marginBottom: 12,
-    gap: 12,
-  },
+    gap: 12, shadowOpacity: 0 },
 
   connectedIcon: {
     width: 46,
@@ -1135,14 +1134,13 @@ const styles = StyleSheet.create({
   },
 
   primaryButton: {
-    minHeight: 50,
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 14,
+    borderRadius: 28,
     paddingHorizontal: 16,
-    gap: 8,
-  },
+    gap: 8, backgroundColor: '#17171C' , shadowOpacity: 0 },
 
   primaryButtonText: {
     color: '#FFFFFF',
@@ -1175,14 +1173,14 @@ const styles = StyleSheet.create({
   },
 
   sectionTitle: {
-    fontSize: 17,
-    lineHeight: 22,
-    fontWeight: '800',
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '500',
     letterSpacing: -0.2,
   },
 
   sectionSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     lineHeight: 17,
     marginTop: 2,
   },
@@ -1200,11 +1198,10 @@ const styles = StyleSheet.create({
     minHeight: 68,
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 15,
+    borderWidth: 0,
+    borderRadius: 24,
     padding: 13,
-    gap: 12,
-  },
+    gap: 12, shadowOpacity: 0 },
 
   quickIcon: {
     width: 42,
@@ -1221,7 +1218,7 @@ const styles = StyleSheet.create({
   },
 
   quickDescription: {
-    fontSize: 11.5,
+    fontSize: 13.5,
     lineHeight: 16,
     marginTop: 2,
   },
@@ -1233,12 +1230,11 @@ const styles = StyleSheet.create({
   teamCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 15,
+    borderWidth: 0,
+    borderRadius: 24,
     padding: 14,
     gap: 12,
-    marginBottom: 12,
-  },
+    marginBottom: 12, shadowOpacity: 0 },
 
   teamIcon: {
     width: 44,
@@ -1264,11 +1260,10 @@ const styles = StyleSheet.create({
     minHeight: 68,
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 15,
+    borderWidth: 0,
+    borderRadius: 24,
     padding: 13,
-    gap: 12,
-  },
+    gap: 12, shadowOpacity: 0 },
 
   embedIcon: {
     width: 42,
@@ -1285,14 +1280,12 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 14,
     lineHeight: 19,
-    fontWeight: '700',
-  },
+    fontWeight: '700', borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
 
   cardDescription: {
-    fontSize: 12,
+    fontSize: 13,
     lineHeight: 18,
-    marginTop: 3,
-  },
+    marginTop: 3, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
 
   /*
    * Empty state
@@ -1339,12 +1332,11 @@ const styles = StyleSheet.create({
 
   linksCard: {
     width: '100%',
-    borderWidth: 1,
-    borderRadius: 16,
+    borderWidth: 0,
+    borderRadius: 24,
     paddingHorizontal: 14,
     marginTop: 24,
-    overflow: 'hidden',
-  },
+    overflow: 'hidden', shadowOpacity: 0 },
 
   linksTitle: {
     fontSize: 15,

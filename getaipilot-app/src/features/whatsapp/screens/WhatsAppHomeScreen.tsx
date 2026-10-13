@@ -1,28 +1,28 @@
-import { getColors, useTheme } from "../../../theme";
+import { AppTopBar } from "@/components/AppTopBar";
+import { ProductActions,ProductEmpty,ProductHeading,ProductMetrics,ProductRow,ProductSection } from "@/components/ProductUI";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React,{ useEffect,useState } from "react";
 import {
-  BackHandler,
-  Modal,
-  Platform,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  Text,
-  View,
+BackHandler,
+Modal,
+Platform,
+Pressable,
+RefreshControl,
+ScrollView,
+Text,
+View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  ProductFloatingBottomBar,
-  ProductTabItem,
+ProductFloatingBottomBar,
+ProductTabItem,
 } from "../../../components/ProductFloatingBottomBar";
 import { WhatsAppHomeSkeleton } from "../../../components/skeletonScreen";
+import { getColors,useTheme } from "../../../theme";
 import {
-  ConnectionStatusCard,
-  UsageCard,
-  WhatsAppMetricCard,
+ConnectionStatusCard,
+UsageCard
 } from "../components";
 import { useWhatsAppAccounts } from "../hooks/useWhatsAppAccounts";
 import { useWhatsAppBroadcasts } from "../hooks/useWhatsAppBroadcasts";
@@ -67,7 +67,6 @@ export const WhatsAppHomeScreen: React.FC = () => {
   const router = useRouter();
   const { isDark } = useTheme();
   const color = getColors(isDark);
-  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<WhatsAppTab>("home");
   const [showAccountSwitcher, setShowAccountSwitcher] =
     useState<boolean>(false);
@@ -111,7 +110,7 @@ export const WhatsAppHomeScreen: React.FC = () => {
       onHardwareBack,
     );
     return () => sub.remove();
-  }, [activeTab]);
+  }, [activeTab, router]);
 
   const handleRefresh = async () => {
     if (Platform.OS !== "web") {
@@ -153,8 +152,6 @@ export const WhatsAppHomeScreen: React.FC = () => {
   const approvedTemplatesCount = templates?.length ?? 0;
   const totalContactsCount =
     contactsData?.total_count ?? contactsData?.contacts?.length ?? 0;
-  const totalBroadcastsCount =
-    broadcastsData?.total_count ?? broadcastsData?.broadcasts?.length ?? 0;
   const deliveryRate =
     usage && usage.messages_sent > 0
       ? `${Math.min(100, Math.round((usage.messages_delivered / usage.messages_sent) * 1000) / 10)}%`
@@ -166,37 +163,6 @@ export const WhatsAppHomeScreen: React.FC = () => {
     }
     setActiveTab(tab);
   };
-
-  const navigationItems = [
-    {
-      key: "contacts",
-      title: "Audience & Contacts",
-      subtitle: "View contacts, segment tags & link CRM leads",
-      icon: "people",
-      color: "#A855F7",
-      badge: totalContactsCount > 0 ? `${totalContactsCount}` : undefined,
-      onPress: () => handleSelectTab("contacts"),
-    },
-    {
-      key: "templates",
-      title: "Meta Templates",
-      subtitle: "Approved marketing, utility & OTP message templates",
-      icon: "document-text",
-      color: "#3B82F6",
-      badge:
-        approvedTemplatesCount > 0 ? `${approvedTemplatesCount}` : undefined,
-      onPress: () => handleSelectTab("templates"),
-    },
-    {
-      key: "broadcasts",
-      title: "Broadcast Campaigns",
-      subtitle: "Launch new bulk sends & view delivery funnels",
-      icon: "megaphone",
-      color: "#F43F5E",
-      badge: totalBroadcastsCount > 0 ? `${totalBroadcastsCount}` : undefined,
-      onPress: () => handleSelectTab("broadcasts"),
-    },
-  ];
 
   return (
     <View className="flex-1" style={{ backgroundColor: color.background }}>
@@ -212,64 +178,13 @@ export const WhatsAppHomeScreen: React.FC = () => {
 
       {activeTab === "home" && (
         <View className="flex-1">
-          {/* Standard Safe Header with Circular Back Button */}
-          <View
-            className={`flex-row items-center px-4 py-3 border-b ${
-              isDark
-                ? "bg-black border-white/[0.08]"
-                : "bg-white border-black/[0.06]"
-            }`}
-            style={{
-              paddingTop: Math.max(
-                insets.top,
-                Platform.OS === "ios" ? 44 : 12,
-              ),
-            }}
-          >
-            <View className="flex-row items-center flex-1">
-              <Pressable
-                className={`w-10 h-10 rounded-full justify-center items-center mr-3 border active:opacity-70 active:scale-95 shadow-sm ${
-                  isDark
-                    ? "bg-[#1C1C1E] border-[#2C2C2E]"
-                    : "bg-white border-[#E5E7EB]"
-                }`}
-                onPress={() => {
-                  if (Platform.OS !== "web") {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }
-                  if (router.canGoBack()) {
-                    router.back();
-                  } else {
-                    router.replace("/(tabs)/products");
-                  }
-                }}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityRole="button"
-                accessibilityLabel="Back"
-              >
-                <Ionicons
-                  name="chevron-back"
-                  size={20}
-                  color={isDark ? "#F8FAFC" : "#0F172A"}
-                />
-              </Pressable>
-
-              <Text
-                className={`text-xl font-bold tracking-tight ${
-                  isDark ? "text-white" : "text-slate-900"
-                }`}
-              >
-                WhatsApp Business
-              </Text>
-            </View>
-          </View>
-
+          <AppTopBar title="WhatsApp" onBackPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)/products")} />
           {statusLoading && !status ? (
             <WhatsAppHomeSkeleton />
           ) : (
             <ScrollView
               className="flex-1"
-              contentContainerStyle={{ padding: 16 }}
+              contentContainerStyle={{ padding: 20 }}
               refreshControl={
                 <RefreshControl
                   refreshing={statusRefetching}
@@ -278,130 +193,25 @@ export const WhatsAppHomeScreen: React.FC = () => {
                 />
               }
             >
-              {/* Connection Status Card */}
-              <ConnectionStatusCard
-                connection={currentConnection}
-                isLoading={statusLoading}
-                hasMultipleAccounts={connectedAccounts.length > 1}
-                onSwitchAccountPress={() => setShowAccountSwitcher(true)}
-              />
-
-              {/* Cloud Wallet & Usage Card */}
+              <ProductHeading title={"Messages that\nbring people closer."} />
+              <ConnectionStatusCard connection={currentConnection} isLoading={statusLoading} hasMultipleAccounts={connectedAccounts.length > 1} onSwitchAccountPress={() => setShowAccountSwitcher(true)} />
+              <ProductSection title="Your audience">
+                <ProductActions items={[
+                  { title: "Contacts", icon: "people-outline", tone: "mint", onPress: () => handleSelectTab("contacts") },
+                  { title: "Templates", icon: "document-text-outline", tone: "lavender", onPress: () => handleSelectTab("templates") },
+                  { title: "Broadcasts", icon: "megaphone-outline", tone: "peach", onPress: () => handleSelectTab("broadcasts") },
+                ]} />
+              </ProductSection>
+              <ProductMetrics items={[
+                { label: "Contacts", value: totalContactsCount, onPress: () => handleSelectTab("contacts") },
+                { label: "Templates", value: approvedTemplatesCount, onPress: () => handleSelectTab("templates") },
+                { label: "Delivery", value: deliveryRate },
+              ]} />
+              <ProductSection title="Recent broadcasts" onAction={() => handleSelectTab("broadcasts")}>
+                {!broadcastsData?.broadcasts.length ? <ProductEmpty title="Your next message starts here" description="Choose a template and reach your audience." action="View broadcasts" onAction={() => handleSelectTab("broadcasts")} /> :
+                  broadcastsData.broadcasts.map((broadcast) => <ProductRow key={broadcast.id} title={broadcast.name} detail={broadcast.recipients_count + " recipients · " + broadcast.status} icon="megaphone-outline" tone="peach" onPress={() => router.push(("/products/whatsapp/broadcasts/" + broadcast.id) as any)} />)}
+              </ProductSection>
               <UsageCard usage={usage} isConnected={isConnected} />
-
-              {/* Section Header: Overview & Capabilities */}
-              <View className="mb-2 mt-4 px-1">
-                <Text
-                  className={`text-xs font-semibold tracking-wider uppercase ${
-                    isDark ? "text-[#8E8E93]" : "text-[#64748B]"
-                  }`}
-                >
-                  Overview & Capabilities
-                </Text>
-              </View>
-
-              {/* Metrics 2x2 Grid */}
-              <View className="w-full gap-3 mb-2">
-                <View className="flex-row gap-3 w-full">
-                  <View className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
-                    <WhatsAppMetricCard
-                      label="Contacts"
-                      value={totalContactsCount.toLocaleString()}
-                      subtext="Synchronized audience"
-                      ioniconsName="people"
-                      iconColor="#A855F7"
-                    />
-                  </View>
-                  <View className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
-                    <WhatsAppMetricCard
-                      label="Templates"
-                      value={approvedTemplatesCount}
-                      subtext="Approved by Meta"
-                      ioniconsName="document-text"
-                      iconColor="#3B82F6"
-                    />
-                  </View>
-                </View>
-                <View className="flex-row gap-3 w-full">
-                  <View className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
-                    <WhatsAppMetricCard
-                      label="Broadcasts"
-                      value={totalBroadcastsCount}
-                      subtext="Campaigns executed"
-                      ioniconsName="megaphone"
-                      iconColor="#F43F5E"
-                    />
-                  </View>
-                  <View className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
-                    <WhatsAppMetricCard
-                      label="Delivery Rate"
-                      value={deliveryRate}
-                      subtext="Cloud SLA"
-                      ioniconsName="flash"
-                      iconColor="#F59E0B"
-                    />
-                  </View>
-                </View>
-              </View>
-
-              {/* Section Header: Product Navigation */}
-              <View className="mb-2 mt-4 px-1">
-                <Text
-                  className={`text-xs font-semibold tracking-wider uppercase ${
-                    isDark ? "text-[#8E8E93]" : "text-[#64748B]"
-                  }`}
-                >
-                  Product Navigation
-                </Text>
-              </View>
-
-              {/* Quick Actions Navigation List */}
-              <View className="flex-col gap-2.5 mb-2">
-                {navigationItems.map((item) => (
-                  <Pressable
-                    key={item.key}
-                    className={`flex-row gap-3 items-center justify-between w-full p-3.5 rounded-2xl border active:opacity-75 ${
-                      isDark
-                        ? "bg-[#1C1C1E] border-[#2C2C2E]"
-                        : "bg-white border-[#E5E7EB]"
-                    }`}
-                    onPress={item.onPress}
-                  >
-                    <View
-                      className={`w-10 h-10 rounded-xl items-center justify-center ${
-                        isDark ? "bg-[#2C2C2E]" : "bg-[#F1F5F9]"
-                      }`}
-                    >
-                      <Ionicons
-                        name={item.icon as any}
-                        size={20}
-                        color={item.color}
-                      />
-                    </View>
-                    <View className="flex-1">
-                      <Text
-                        className={`text-[15px] font-bold tracking-tight mb-0.5 ${
-                          isDark ? "text-white" : "text-slate-900"
-                        }`}
-                      >
-                        {item.title}
-                      </Text>
-                      <Text
-                        className={`text-xs font-normal ${
-                          isDark ? "text-[#8E8E93]" : "text-[#64748B]"
-                        }`}
-                      >
-                        {item.subtitle}
-                      </Text>
-                    </View>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={17}
-                      color={isDark ? "#636366" : "#C7C7CC"}
-                    />
-                  </Pressable>
-                ))}
-              </View>
 
               {/* Bottom Spacing to avoid overlap with Floating Bottom Bar */}
               <View style={{ height: 100 }} />
@@ -430,8 +240,8 @@ export const WhatsAppHomeScreen: React.FC = () => {
           <View
             className={`w-full max-w-[420px] rounded-3xl p-5 border shadow-2xl ${
               isDark
-                ? "bg-[#1C1C1E] border-[#2C2C2E]"
-                : "bg-white border-[#E5E7EB]"
+                ? "bg-[#252230] border-[#3A3549]"
+                : "bg-white border-transparent"
             }`}
           >
             <View className="flex-row justify-between items-center mb-4">
@@ -454,7 +264,7 @@ export const WhatsAppHomeScreen: React.FC = () => {
               <Pressable
                 onPress={() => setShowAccountSwitcher(false)}
                 className={`w-7 h-7 rounded-full items-center justify-center ${
-                  isDark ? "bg-[#2C2C2E]" : "bg-[#F1F5F9]"
+                  isDark ? "bg-[#3A3549]" : "bg-[#F0EEF8]"
                 }`}
               >
                 <Ionicons
@@ -477,8 +287,8 @@ export const WhatsAppHomeScreen: React.FC = () => {
                           ? "bg-[#0A84FF]/15 border-[#0A84FF]"
                           : "bg-[#007AFF]/10 border-[#007AFF]"
                         : isDark
-                        ? "bg-[#2C2C2E] border-transparent"
-                        : "bg-[#F8F9FA] border-transparent"
+                        ? "bg-[#3A3549] border-transparent"
+                        : "bg-[#F5F3FB] border-transparent"
                     }`}
                     onPress={() => {
                       if (Platform.OS !== "web") {

@@ -373,10 +373,10 @@ const styles = StyleSheet.create({
     paddingBottom: 50,
   },
   card: {
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 18,
     marginBottom: 16,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   cardTitle: {
     fontSize: 17,
@@ -447,9 +447,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: 18,
+    borderRadius: 24,
     padding: 18,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   heroScoreLeft: {
     flex: 1,
@@ -500,10 +500,10 @@ const styles = StyleSheet.create({
   },
   pillarCard: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 24,
     padding: 12,
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 0,
   },
   pillarIcon: {
     fontSize: 18,

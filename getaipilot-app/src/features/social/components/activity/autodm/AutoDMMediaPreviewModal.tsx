@@ -40,20 +40,20 @@ export const AutoDMMediaPreviewModal: React.FC<AutoDMMediaPreviewModalProps> = (
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={[styles.modalContainer, { backgroundColor: isDark ? '#0b0f19' : '#f8fafc' }]}>
-        <View style={[styles.modalHeader, { borderBottomColor: isDark ? '#1e293b' : '#e2e8f0' }]}>
+      <View style={[styles.modalContainer, { backgroundColor: isDark ? '#0b0f19' : '#F5F3FB' }]}>
+        <View style={[styles.modalHeader, { borderBottomColor: isDark ? '#252230' : '#E9E6F2' }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Ionicons
               name={media.media_type === 'VIDEO' ? 'videocam' : 'image'}
               size={20}
               color="#e1306c"
             />
-            <Text style={[styles.modalTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+            <Text style={[styles.modalTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
               {media.media_type === 'VIDEO' ? 'Instagram Reel' : 'Instagram Post'}
             </Text>
           </View>
           <Pressable onPress={onClose} style={styles.closeBtn}>
-            <Ionicons name="close" size={20} color={isDark ? '#94a3b8' : '#64748b'} />
+            <Ionicons name="close" size={20} color={isDark ? '#777383' : '#64748b'} />
           </Pressable>
         </View>
 
@@ -65,9 +65,9 @@ export const AutoDMMediaPreviewModal: React.FC<AutoDMMediaPreviewModalProps> = (
                 borderRadius: 16,
                 overflow: 'hidden',
                 height: 280,
-                backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
+                backgroundColor: isDark ? '#252230' : '#F0EEF8',
                 borderWidth: 1,
-                borderColor: isDark ? '#334155' : '#e2e8f0',
+                borderColor: isDark ? '#334155' : '#E9E6F2',
               }}
             >
               <Image
@@ -83,8 +83,8 @@ export const AutoDMMediaPreviewModal: React.FC<AutoDMMediaPreviewModalProps> = (
             style={[
               styles.card,
               {
-                backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                borderColor: isDark ? '#1e293b' : '#e2e8f0',
+                backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+                borderColor: isDark ? '#252230' : '#E9E6F2',
                 flexDirection: 'row',
                 justifyContent: 'space-around',
                 paddingVertical: 12,
@@ -95,16 +95,16 @@ export const AutoDMMediaPreviewModal: React.FC<AutoDMMediaPreviewModalProps> = (
               <Text style={{ fontSize: 16, fontWeight: '800', color: '#e1306c' }}>
                 {media.like_count ?? 0}
               </Text>
-              <Text style={{ fontSize: 11, color: isDark ? '#94a3b8' : '#64748b' }}>Likes</Text>
+              <Text style={{ fontSize: 11, color: isDark ? '#777383' : '#64748b' }}>Likes</Text>
             </View>
-            <View style={{ width: 1, height: 24, backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }} />
+            <View style={{ width: 1, height: 24, backgroundColor: isDark ? '#252230' : '#F0EEF8' }} />
             <View style={{ alignItems: 'center', gap: 2 }}>
               <Text style={{ fontSize: 16, fontWeight: '800', color: '#3b82f6' }}>
                 {media.comments_count ?? 0}
               </Text>
-              <Text style={{ fontSize: 11, color: isDark ? '#94a3b8' : '#64748b' }}>Comments</Text>
+              <Text style={{ fontSize: 11, color: isDark ? '#777383' : '#64748b' }}>Comments</Text>
             </View>
-            <View style={{ width: 1, height: 24, backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }} />
+            <View style={{ width: 1, height: 24, backgroundColor: isDark ? '#252230' : '#F0EEF8' }} />
             <View style={{ alignItems: 'center', gap: 2 }}>
               <Text style={{ fontSize: 13, fontWeight: '700', color: isDark ? '#cbd5e1' : '#334155' }}>
                 {media.timestamp
@@ -115,7 +115,7 @@ export const AutoDMMediaPreviewModal: React.FC<AutoDMMediaPreviewModalProps> = (
                     })
                   : 'Published'}
               </Text>
-              <Text style={{ fontSize: 11, color: isDark ? '#94a3b8' : '#64748b' }}>Date</Text>
+              <Text style={{ fontSize: 11, color: isDark ? '#777383' : '#64748b' }}>Date</Text>
             </View>
           </View>
 
@@ -124,14 +124,14 @@ export const AutoDMMediaPreviewModal: React.FC<AutoDMMediaPreviewModalProps> = (
             style={[
               styles.card,
               {
-                backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                borderColor: isDark ? '#1e293b' : '#e2e8f0',
+                backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+                borderColor: isDark ? '#252230' : '#E9E6F2',
                 padding: 14,
                 gap: 8,
               },
             ]}
           >
-            <Text style={[styles.cardSectionTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+            <Text style={[styles.cardSectionTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
               Caption
             </Text>
             <Text style={{ fontSize: 13, lineHeight: 20, color: isDark ? '#cbd5e1' : '#334155' }}>
@@ -165,7 +165,7 @@ export const AutoDMMediaPreviewModal: React.FC<AutoDMMediaPreviewModalProps> = (
                 style={[
                   styles.primaryActionBtn,
                   {
-                    backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
+                    backgroundColor: isDark ? '#252230' : '#F0EEF8',
                     justifyContent: 'center',
                     paddingVertical: 12,
                     borderWidth: 1,
@@ -174,7 +174,7 @@ export const AutoDMMediaPreviewModal: React.FC<AutoDMMediaPreviewModalProps> = (
                 ]}
               >
                 <Ionicons name="logo-instagram" size={15} color="#e1306c" />
-                <Text style={[styles.primaryActionBtnText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                <Text style={[styles.primaryActionBtnText, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                   Open Post on Instagram
                 </Text>
               </Pressable>
@@ -206,27 +206,25 @@ const styles = StyleSheet.create({
     padding: 6,
   },
   card: {
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0,
     shadowRadius: 2,
     elevation: 1,
   },
   cardSectionTitle: {
     fontSize: 14,
-    fontWeight: '700',
-  },
+    fontWeight: '700', borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   primaryActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 10,
-  },
+    borderRadius: 28, backgroundColor: '#17171C' , minHeight: 44 , shadowOpacity: 0 },
   primaryActionBtnText: {
     color: '#ffffff',
     fontSize: 12,

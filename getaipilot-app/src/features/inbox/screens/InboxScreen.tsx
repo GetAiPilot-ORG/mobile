@@ -256,17 +256,7 @@ export const InboxScreen: React.FC = () => {
 
         {/* Folder-Style Status Tab Bar */}
         <View style={{ position: "relative", marginBottom: 14 }}>
-          {/* Continuous baseline across full width */}
-          <View
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 1.5,
-              backgroundColor: color.primary,
-            }}
-          />
+
 
           <FlatList
             horizontal
@@ -286,17 +276,17 @@ export const InboxScreen: React.FC = () => {
                       paddingHorizontal: 13,
                       justifyContent: "center",
                       alignItems: "center",
-                      borderTopLeftRadius: isActive ? 10 : 0,
-                      borderTopRightRadius: isActive ? 10 : 0,
-                      borderTopWidth: 1.5,
-                      borderLeftWidth: 1.5,
-                      borderRightWidth: 1.5,
-                      borderBottomWidth: 1.5,
+                      borderRadius: 22,
+                      marginRight: 8,
+                      borderTopWidth: 0,
+                      borderLeftWidth: 0,
+                      borderRightWidth: 0,
+                      borderBottomWidth: 0,
                       borderTopColor: isActive ? color.primary : "transparent",
                       borderLeftColor: isActive ? color.primary : "transparent",
                       borderRightColor: isActive ? color.primary : "transparent",
                       borderBottomColor: isActive ? color.background : "transparent",
-                      backgroundColor: isActive ? color.background : "transparent",
+                      backgroundColor: isActive ? color.accentSoft : color.card,
                       zIndex: isActive ? 2 : 1,
                     }
                   }
@@ -307,7 +297,7 @@ export const InboxScreen: React.FC = () => {
                       fontSize: 13,
                       fontWeight: isActive ? "600" : "500",
                       letterSpacing: -0.1,
-                      color: isActive ? color.primary : color.textSecondary,
+                      color: isActive ? color.accent : color.textSecondary,
                     }}
                   >
                     {tab.label}

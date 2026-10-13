@@ -1,3 +1,4 @@
+import { ProductPageHeader } from "@/components/ProductUI";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
@@ -129,49 +130,15 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
       style={{ backgroundColor: color.background }}
     >
       <View className="flex-1">
-        {/* Header matching Overview Tab */}
-        <View
-          className={`flex-row items-center px-4 py-3 border-b ${
-            isDark
-              ? "bg-black border-white/[0.08]"
-              : "bg-white border-black/[0.06]"
-          }`}
-        >
-          <View className="flex-row items-center flex-1">
-            <Pressable
-              className={`w-10 h-10 rounded-full justify-center items-center mr-3 border active:opacity-70 active:scale-95 shadow-sm ${
-                isDark
-                  ? "bg-[#1C1C1E] border-[#2C2C2E]"
-                  : "bg-white border-[#E5E7EB]"
-              }`}
-              onPress={handleBack}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityRole="button"
-              accessibilityLabel="Back"
-            >
-              <Ionicons
-                name="chevron-back"
-                size={20}
-                color={isDark ? "#F8FAFC" : "#0F172A"}
-              />
-            </Pressable>
-            <Text
-              className={`text-xl font-bold tracking-tight ${
-                isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
-              }`}
-            >
-              WhatsApp Contacts
-            </Text>
-          </View>
-        </View>
+        <ProductPageHeader title="Your contacts" onBack={handleBack} />
 
         {/* Search Bar */}
         <View className="px-4 pt-3 pb-1.5">
           <View
             className={`flex-row items-center rounded-xl px-3 h-10 border ${
               isDark
-                ? "bg-[#1C1C1E] border-[#2C2C2E]"
-                : "bg-[#F2F2F7] border-[#E5E7EB]"
+                ? "bg-[#252230] border-[#3A3549]"
+                : "bg-[#F0EEF8] border-[#E9E6F2]"
             }`}
           >
             <Ionicons
@@ -182,10 +149,10 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
             />
             <TextInput
               className={`flex-1 text-sm font-medium py-0 ${
-                isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
+                isDark ? "text-[#F5F3FB]" : "text-[#1C1A25]"
               }`}
               placeholder="Search contacts by name or phone..."
-              placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
+              placeholderTextColor={isDark ? "#64748B" : "#777383"}
               value={searchQuery}
               onChangeText={setSearchQuery}
               clearButtonMode="while-editing"
@@ -226,8 +193,8 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
                         ? "bg-white border-white"
                         : "bg-black border-black"
                       : isDark
-                      ? "bg-[#1C1C1E] border-[#2C2C2E]"
-                      : "bg-[#F2F2F7] border-[#E5E7EB]"
+                      ? "bg-[#252230] border-[#3A3549]"
+                      : "bg-[#F0EEF8] border-[#E9E6F2]"
                   }`}
                   onPress={() => {
                     if (Platform.OS !== "web") {
