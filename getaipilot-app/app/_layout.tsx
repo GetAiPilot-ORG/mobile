@@ -13,6 +13,7 @@ import { GlobalErrorBoundary } from "../src/components/GlobalErrorBoundary";
 import { OfflineNotice } from "../src/components/OfflineNotice";
 import { AnimatedSplashScreen } from "../src/components/splash/AnimatedSplashScreen";
 import { AuthProvider } from "../src/contexts/AuthContext";
+import { NotificationProvider } from "../src/contexts/NotificationContext";
 import { NetworkProvider, useNetwork } from "../src/contexts/NetworkContext";
 import { RazorpayProvider } from "../src/contexts/RazorpayContext";
 import { ThemeProvider, useTheme, getColors } from "@/theme";
@@ -278,13 +279,15 @@ export default function RootLayout() {
               <QueryClientProvider client={queryClient}>
                 <RootThemedContainer>
                   <AuthProvider>
-                    <RazorpayProvider>
-                      <ReferralLinkListener />
-                      <AuthRouteGuard />
-                      <ThemedNavigationStack />
-                      <OfflineNotice />
-                      <SplashOverlay />
-                    </RazorpayProvider>
+                    <NotificationProvider>
+                      <RazorpayProvider>
+                        <ReferralLinkListener />
+                        <AuthRouteGuard />
+                        <ThemedNavigationStack />
+                        <OfflineNotice />
+                        <SplashOverlay />
+                      </RazorpayProvider>
+                    </NotificationProvider>
                   </AuthProvider>
                 </RootThemedContainer>
               </QueryClientProvider>

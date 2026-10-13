@@ -181,3 +181,18 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+// Workaround for React Native New Architecture CMake clean issue:
+// Prevents externalNativeBuildClean from crashing when codegen JNI folders are missing
+tasks.whenTaskAdded { task ->
+    if (task.name.startsWith("externalNativeBuildClean")) {
+        task.enabled = false
+    }
+}
+
+tasks.named("clean") {
+    doFirst {
+        delete "${projectDir}/.cxx"
+    }
+}
+

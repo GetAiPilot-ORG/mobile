@@ -1,9 +1,63 @@
 import { FastifyInstance } from 'fastify';
 import { HubAdapter } from '../adapters/hub.adapter.js';
+import { NotificationService } from '../services/notification.service.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
 import { JWTPayload } from '../types/index.js';
 
 export async function billingRoutes(fastify: FastifyInstance) {
+  // POST /mobile/v1/user/push-token - Register device Expo push token
+  fastify.post('/user/push-token', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const body = request.body as {
+      push_token: string;
+      platform?: string;
+      device_name?: string;
+      app_version?: string;
+    };
+
+    if (!body?.push_token) {
+      return reply.status(400).send({ error: 'push_token is required' });
+    }
+
+    try {
+      const result = await NotificationService.registerUserPushToken(user.user_id, body);
+      return reply.send(result);
+    } catch (err: any) {
+      return reply.status(500).send({ error: err.message || 'Failed to save push token' });
+    }
+  });
+
+  // POST /mobile/v1/user/test-push - Send a test push notification to user's device
+  fastify.post('/user/test-push', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const body = (request.body as any) || {};
+
+    const result = await NotificationService.sendToUser(user.user_id, {
+      title: body.title || 'GetAiPilot Push Notification 🚀',
+      body: body.body || 'Push notifications are fully working from your BFF service!',
+      channelId: body.channelId || 'default',
+      data: body.data || { route: '/account/plans' },
+    });
+
+    return reply.send(result);
+  });
+
+  // POST /mobile/v1/user/test-event - Trigger an event-driven push notification across the organization
+  fastify.post('/user/test-event', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const body = (request.body as any) || {};
+    const event = body.event || 'lead.created';
+    const eventData = body.data || {
+      first_name: 'John Doe',
+      company: 'Acme Growth Corp',
+      email: 'john@example.com',
+      phone: '+1 555-0199',
+    };
+
+    const orgId = user.organization_id || user.user_id;
+    await NotificationService.dispatchOrgEventNotification(orgId, event, eventData);
+    return reply.send({ success: true, event, organization_id: orgId });
+  });
   // GET /mobile/v1/user/profile
   fastify.get('/user/profile', { preHandler: [authenticateToken] }, async (request, reply) => {
     const user = request.user as JWTPayload;
