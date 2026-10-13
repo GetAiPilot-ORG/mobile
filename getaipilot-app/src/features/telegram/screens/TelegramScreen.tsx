@@ -5,7 +5,7 @@
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "expo-router";
 import {
   ActivityIndicator,
@@ -183,6 +183,8 @@ export const TelegramScreen: React.FC = () => {
   } = useQuery({
     queryKey: ["telegram_all_data"],
     queryFn: telegramSupabase.getSummary,
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 
   const summary = allData || {};
@@ -193,107 +195,130 @@ export const TelegramScreen: React.FC = () => {
   const chats = summary.loadedMappings || [];
   const loadedPurchases = summary.loadedPurchases || [];
   const joins = summary.loadedJoins || [];
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const todaysJoins = joins.filter(
-    (j: any) => new Date(j.joined_at || j.created_at) >= today,
-  ).length;
-  const thisMonthJoins = joins.filter(
-    (j: any) => new Date(j.joined_at || j.created_at) >= firstDayOfMonth,
-  ).length;
-  const pendingJoins = joins.filter(
-    (j: any) =>
-      j.status === "Pending" ||
-      j.status === "Bot Start" ||
-      (!j.joined_channel && !j.left_channel),
-  ).length;
-  const activeJoins = joins.filter(
-    (j: any) =>
-      (j.joined_channel && !j.left_channel) ||
-      j.status === "Active" ||
-      j.status === "joined",
-  ).length;
-  const conversionRate =
-    joins.length > 0 ? Math.round((activeJoins / joins.length) * 100) : 0;
+  // Memoized KPI metrics & dashboard object so 10,000+ items don't re-loop on every re-render
+  const {
+    todaysJoins,
+    thisMonthJoins,
+    pendingJoins,
+    activeJoins,
+    conversionRate,
+    channelsList,
+    trackerDash,
+  } = useMemo(() => {
+    const totalJoins = summary.totalJoinsCount ?? joins.length;
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const channelMap: Record<string, any> = {};
-  joins.forEach((j: any) => {
-    const cname = j.channel_name || "Tracked Channel";
-    if (!channelMap[cname]) {
-      channelMap[cname] = {
-        channel_id: cname,
-        channel_name: cname,
-        joined: 0,
-        period_joins: 0,
-        left: 0,
-        all_active: 0,
-        links: [],
-      };
-    }
-    if (j.left_channel || j.status === "Leave" || j.status === "leaved") {
-      channelMap[cname].left++;
-    } else if (
-      j.joined_channel ||
-      j.status === "Active" ||
-      j.status === "joined"
-    ) {
-      channelMap[cname].all_active++;
-      channelMap[cname].joined++;
-    }
-    if (
-      new Date(j.joined_at || j.created_at) >=
-      new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    ) {
-      channelMap[cname].period_joins++;
-    }
-  });
+    const tJoins = joins.filter(
+      (j: any) => new Date(j.joined_at || j.created_at) >= today,
+    ).length;
+    const mJoins = joins.filter(
+      (j: any) => new Date(j.joined_at || j.created_at) >= firstDayOfMonth,
+    ).length;
+    const pJoins = joins.filter(
+      (j: any) =>
+        j.status === "Pending" ||
+        j.status === "Bot Start" ||
+        (!j.joined_channel && !j.left_channel),
+    ).length;
+    const aJoins = summary.activeJoinsCount ?? joins.filter(
+      (j: any) =>
+        (j.joined_channel && !j.left_channel) ||
+        j.status === "Active" ||
+        j.status === "joined",
+    ).length;
+    const cRate =
+      totalJoins > 0 ? Math.round((aJoins / totalJoins) * 100) : 0;
 
-  const channelsList = Object.values(channelMap);
+    const channelMap: Record<string, any> = {};
+    joins.forEach((j: any) => {
+      const cname = j.channel_name || "Tracked Channel";
+      if (!channelMap[cname]) {
+        channelMap[cname] = {
+          channel_id: cname,
+          channel_name: cname,
+          joined: 0,
+          period_joins: 0,
+          left: 0,
+          all_active: 0,
+          links: [],
+        };
+      }
+      if (j.left_channel || j.status === "Leave" || j.status === "leaved") {
+        channelMap[cname].left++;
+      } else if (
+        j.joined_channel ||
+        j.status === "Active" ||
+        j.status === "joined"
+      ) {
+        channelMap[cname].all_active++;
+        channelMap[cname].joined++;
+      }
+      if (
+        new Date(j.joined_at || j.created_at) >=
+        new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      ) {
+        channelMap[cname].period_joins++;
+      }
+    });
 
-  const trackerDash = {
-    kpis: {
-      totalJoins: joins.length,
-      todaysJoins,
-      thisMonthJoins,
-      botStarts: joins.length,
-      pendingJoins,
-      conversionRate,
-    },
-    period: {
-      startDate: new Date(
-        Date.now() - 7 * 24 * 60 * 60 * 1000,
-      ).toLocaleDateString(),
-      endDate: new Date().toLocaleDateString(),
-      periodJoins: joins.filter(
-        (j: any) =>
-          new Date(j.joined_at || j.created_at) >=
-          new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      ).length,
-      totalTracked: joins.length,
-      allTimeActive: activeJoins,
-    },
-    channels: channelsList,
-    newUsers: joins.map((j: any) => ({
-      ...j,
-      name:
-        j.name ||
-        j.first_name ||
-        j.telegram_first_name ||
-        (j.telegram_username ? `@${j.telegram_username}` : "Telegram User"),
-      time_ago:
-        j.time_ago ||
-        (j.joined_at ? new Date(j.joined_at).toLocaleDateString() : "Just now"),
-      channel_name: j.channel_name || "Tracked Link",
-      status:
-        j.left_channel || j.status === "leaved"
-          ? "Leave"
-          : j.joined_channel || j.status === "joined"
-            ? "Active"
-            : j.status || "Active",
-    })),
-  };
+    const cList = Object.values(channelMap);
+
+    const dash = {
+      kpis: {
+        totalJoins,
+        todaysJoins: tJoins,
+        thisMonthJoins: mJoins,
+        botStarts: totalJoins,
+        pendingJoins: pJoins,
+        conversionRate: cRate,
+      },
+      period: {
+        startDate: new Date(
+          Date.now() - 7 * 24 * 60 * 60 * 1000,
+        ).toLocaleDateString(),
+        endDate: new Date().toLocaleDateString(),
+        periodJoins: joins.filter(
+          (j: any) =>
+            new Date(j.joined_at || j.created_at) >=
+            new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        ).length,
+        totalTracked: totalJoins,
+        allTimeActive: aJoins,
+      },
+      channels: cList,
+      newUsers: joins.map((j: any) => ({
+        ...j,
+        name:
+          j.name ||
+          j.first_name ||
+          j.telegram_first_name ||
+          (j.telegram_username ? `@${j.telegram_username}` : "Telegram User"),
+        time_ago:
+          j.time_ago ||
+          (j.joined_at ? new Date(j.joined_at).toLocaleDateString() : "Just now"),
+        channel_name: j.channel_name || "Tracked Link",
+        status:
+          j.left_channel || j.status === "leaved"
+            ? "Leave"
+            : j.joined_channel || j.status === "joined"
+              ? "Active"
+              : j.status || "Active",
+      })),
+    };
+
+    return {
+      todaysJoins: tJoins,
+      thisMonthJoins: mJoins,
+      pendingJoins: pJoins,
+      activeJoins: aJoins,
+      conversionRate: cRate,
+      channelsList: cList,
+      trackerDash: dash,
+    };
+  }, [summary, joins]);
   const subPlans: any[] = [];
 
   // ── Mutations ───────────────────────────────────────────────────────────────

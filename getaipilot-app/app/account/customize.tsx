@@ -10,8 +10,6 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { AppScreen } from '../../src/components/AppScreen';
 import { useTheme, getColors, ThemeMode, ThemeSelector, spacing, radius } from '@/features/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';

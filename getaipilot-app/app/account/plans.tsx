@@ -1,23 +1,26 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import * as Haptics from "expo-haptics";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { getColors, useTheme } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  View,
   useWindowDimensions,
-} from "react-native";
-import { AppScreen } from "../../src/components/AppScreen";
-import { AppTopBar } from "../../src/components/AppTopBar";
-import { useAuth } from "../../src/contexts/AuthContext";
-import { useRazorpay } from "../../src/contexts/RazorpayContext";
+  View,
+} from 'react-native';
+import { AppScreen } from '../../src/components/AppScreen';
+import { AppTopBar } from '../../src/components/AppTopBar';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { useRazorpay } from '../../src/contexts/RazorpayContext';
 import {
   calculateGapProPricing,
   CATEGORY_META,
@@ -27,45 +30,142 @@ import {
   PlanCategory,
   PricingPlan,
   PricingService,
-} from "../../src/core/pricing/pricingService";
-import { openVoiceWebBilling } from "../../src/features/voice/utils/voiceBilling";
-import { usePlatformSubscription } from "../../src/hooks/usePlatformSubscription";
+} from '../../src/core/pricing/pricingService';
+import { openVoiceWebBilling } from '../../src/features/voice/utils/voiceBilling';
+import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 import {
   ReferralDiscountInfo,
   checkAndCompleteReferralReward,
   getActiveReferralDiscount,
   isGapProPlan,
-} from "../../src/services/referralService";
-import { getColors, useTheme } from "../../src/theme";
+} from '../../src/services/referralService';
 
-const CATEGORIES: { key: PlanCategory; label: string; icon: string }[] = [
-  { key: "all", label: "All Plans", icon: "apps" },
-  { key: "all-in-one", label: "GAP Pro", icon: "diamond" },
-  { key: "calling", label: "Voice AI", icon: "call" },
-  { key: "whatsapp", label: "WhatsApp", icon: "logo-whatsapp" },
-  { key: "telegram", label: "Telegram", icon: "paper-plane" },
-  { key: "crm", label: "Smart CRM", icon: "people" },
-  { key: "social", label: "Social Pilot", icon: "share-social" },
+type MainTab = 'pro' | 'modular';
+
+interface EngineMeta {
+  key: PlanCategory;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+  lightBg: string;
+  darkBg: string;
+}
+
+const MODULAR_ENGINES: EngineMeta[] = [
+  { key: 'calling', label: 'Voice AI', icon: 'call-outline', color: '#A855F7', lightBg: '#FAF5FF', darkBg: '#2E1065' },
+  { key: 'whatsapp', label: 'WhatsApp', icon: 'logo-whatsapp', color: '#10B981', lightBg: '#F0FDF4', darkBg: '#064E3B' },
+  { key: 'telegram', label: 'Telegram', icon: 'paper-plane-outline', color: '#0284C7', lightBg: '#F0F9FF', darkBg: '#0C4A6E' },
+  { key: 'crm', label: 'Smart CRM', icon: 'people-outline', color: '#F59E0B', lightBg: '#FFFBEB', darkBg: '#451A03' },
+  { key: 'social', label: 'Social Pilot', icon: 'share-social-outline', color: '#EC4899', lightBg: '#FDF2F8', darkBg: '#500724' },
 ];
+
+/**
+ * Returns dynamic theme color for any given plan
+ */
+function getPlanTheme(plan: PricingPlan) {
+  if (isGapProPlan(plan)) {
+    return {
+      color: '#8B5CF6',
+      lightBg: '#FAF7FF',
+      darkBg: '#231548',
+      badge: 'ALL-IN-ONE VIP',
+      icon: 'diamond' as keyof typeof Ionicons.glyphMap,
+    };
+  }
+
+  const cat = (plan.category || '').toLowerCase();
+  if (cat === 'calling' || cat === 'voice' || isAddonPlan(plan)) {
+    return {
+      color: '#A855F7',
+      lightBg: '#FAF5FF',
+      darkBg: '#2E1065',
+      badge: 'VOICE AGENTS',
+      icon: 'call' as keyof typeof Ionicons.glyphMap,
+    };
+  }
+  if (cat === 'whatsapp') {
+    return {
+      color: '#10B981',
+      lightBg: '#F0FDF4',
+      darkBg: '#064E3B',
+      badge: 'META CLOUD API',
+      icon: 'logo-whatsapp' as keyof typeof Ionicons.glyphMap,
+    };
+  }
+  if (cat === 'telegram') {
+    return {
+      color: '#0284C7',
+      lightBg: '#F0F9FF',
+      darkBg: '#0C4A6E',
+      badge: 'TELEGRAM HUB',
+      icon: 'paper-plane' as keyof typeof Ionicons.glyphMap,
+    };
+  }
+  if (cat === 'crm') {
+    return {
+      color: '#F59E0B',
+      lightBg: '#FFFBEB',
+      darkBg: '#451A03',
+      badge: 'SMART CRM',
+      icon: 'people' as keyof typeof Ionicons.glyphMap,
+    };
+  }
+  if (cat === 'social') {
+    return {
+      color: '#EC4899',
+      lightBg: '#FDF2F8',
+      darkBg: '#500724',
+      badge: 'OMNICHANNEL',
+      icon: 'share-social' as keyof typeof Ionicons.glyphMap,
+    };
+  }
+
+  return {
+    color: '#0284C7',
+    lightBg: '#F0F9FF',
+    darkBg: '#0C4A6E',
+    badge: 'ECOSYSTEM',
+    icon: 'shield-checkmark' as keyof typeof Ionicons.glyphMap,
+  };
+}
 
 export default function OverallPricingScreen() {
   const router = useRouter();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
-  const { width: windowWidth } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const queryClient = useQueryClient();
   const { openRazorpayCheckout } = useRazorpay();
   const params = useLocalSearchParams<{ category?: string }>();
 
-  // Responsive card dimensions for horizontal carousel swiping
-  const cardWidth = Math.min(Math.max(Math.round(windowWidth * 0.78), 275), 340);
-  const snapInterval = cardWidth + 14;
+  // Main Segmented Tab: GAP Pro vs Modular Engines
+  const [activeTab, setActiveTab] = useState<MainTab>(
+    params.category && params.category !== 'all' && params.category !== 'all-in-one'
+      ? 'modular'
+      : 'pro'
+  );
+
+  // Selected Modular Engine Filter
+  const [selectedEngine, setSelectedEngine] = useState<PlanCategory>(
+    params.category && params.category !== 'all' && params.category !== 'all-in-one'
+      ? (params.category as PlanCategory)
+      : 'calling'
+  );
+
+  // GAP Pro Billing Interval: Monthly | Quarterly | Half-Yearly | Yearly
+  const [gapProInterval, setGapProInterval] = useState<GapProInterval>('year');
+
+  // Currently Selected Plan ID (for the card highlight state)
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+
+  // Detail Modal State (opens when tapping arrow icon)
+  const [detailModalPlan, setDetailModalPlan] = useState<PricingPlan | null>(null);
 
   const handleBack = () => {
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace("/(tabs)/products");
+      router.replace('/(tabs)/products');
     }
   };
 
@@ -79,7 +179,7 @@ export default function OverallPricingScreen() {
   const { user } = useAuth();
 
   const { data: referralDiscount, refetch: refetchDiscount } = useQuery<ReferralDiscountInfo>({
-    queryKey: ["active-referral-discount", user?.id],
+    queryKey: ['active-referral-discount', user?.id],
     queryFn: () => getActiveReferralDiscount(user?.id),
     staleTime: 60 * 1000,
   });
@@ -89,17 +189,6 @@ export default function OverallPricingScreen() {
   );
   const discountPercent = referralDiscount?.discountPercent || 0;
 
-  const [selectedCategory, setSelectedCategory] = useState<PlanCategory>(
-    (params.category as PlanCategory) || "all"
-  );
-  const [gapProInterval, setGapProInterval] = useState<GapProInterval>("month");
-
-  useEffect(() => {
-    if (params.category && params.category !== selectedCategory) {
-      setSelectedCategory(params.category as PlanCategory);
-    }
-  }, [params.category]);
-
   // Query all active plans from DB / BFF
   const {
     data: allPlans = [],
@@ -107,86 +196,98 @@ export default function OverallPricingScreen() {
     isRefetching,
     refetch,
   } = useQuery<PricingPlan[]>({
-    queryKey: ["ecosystem-pricing-plans-all"],
-    queryFn: () => PricingService.getPlans("all"),
+    queryKey: ['ecosystem-pricing-plans-all'],
+    queryFn: () => PricingService.getPlans('all'),
     staleTime: 60 * 1000,
   });
 
   const onRefresh = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await Promise.all([refetch(), refreshSub(), refetchDiscount()]);
   };
 
-  // Section 1: GAP Pro plans at the top (All-In-One ecosystem tiers)
+  // GAP Pro Plans
   const gapProPlans = useMemo(() => {
     return allPlans
       .filter((p) => isGapProPlan(p))
       .sort((a, b) => a.amount - b.amount);
   }, [allPlans]);
 
-  // Section 2: Voice AI plans
-  const voicePlans = useMemo(() => {
+  // Modular Plans for selected engine
+  const currentModularPlans = useMemo(() => {
     return allPlans
-      .filter((p) => !isGapProPlan(p) && (p.category === "calling" || p.category === "voice"))
+      .filter((p) => {
+        if (isGapProPlan(p)) return false;
+        if (selectedEngine === 'calling') {
+          return p.category === 'calling' || p.category === 'voice' || isAddonPlan(p);
+        }
+        return p.category === selectedEngine;
+      })
       .sort((a, b) => a.amount - b.amount);
-  }, [allPlans]);
+  }, [allPlans, selectedEngine]);
 
-  // Section 3: WhatsApp Automation plans
-  const whatsappPlans = useMemo(() => {
-    return allPlans
-      .filter((p) => !isGapProPlan(p) && p.category === "whatsapp")
-      .sort((a, b) => a.amount - b.amount);
-  }, [allPlans]);
+  // Active displayed plans
+  const displayedPlans = useMemo(() => {
+    return activeTab === 'pro' ? gapProPlans : currentModularPlans;
+  }, [activeTab, gapProPlans, currentModularPlans]);
 
-  // Section 4: Telegram Ecosystem plans
-  const telegramPlans = useMemo(() => {
-    return allPlans
-      .filter((p) => !isGapProPlan(p) && p.category === "telegram")
-      .sort((a, b) => a.amount - b.amount);
-  }, [allPlans]);
+  // Automatically select the popular or first plan if none selected
+  useEffect(() => {
+    if (displayedPlans.length > 0) {
+      const popular = displayedPlans.find((p) => p.is_popular);
+      const chosen = popular || displayedPlans[0];
+      setSelectedPlanId((prev) => {
+        if (!prev || !displayedPlans.some((p) => p.id === prev)) {
+          return chosen.id;
+        }
+        return prev;
+      });
+    }
+  }, [displayedPlans]);
 
-  // Section 5: Smart CRM & Pipeline plans
-  const crmPlans = useMemo(() => {
-    return allPlans
-      .filter((p) => !isGapProPlan(p) && p.category === "crm")
-      .sort((a, b) => a.amount - b.amount);
-  }, [allPlans]);
+  useEffect(() => {
+    if (params.category) {
+      if (params.category === 'all' || params.category === 'all-in-one') {
+        setActiveTab('pro');
+      } else {
+        setActiveTab('modular');
+        setSelectedEngine(params.category as PlanCategory);
+      }
+    }
+  }, [params.category]);
 
-  // Section 6: Social Pilot plans
-  const socialPlans = useMemo(() => {
-    return allPlans
-      .filter((p) => !isGapProPlan(p) && p.category === "social")
-      .sort((a, b) => a.amount - b.amount);
-  }, [allPlans]);
+  const selectedPlan = useMemo(() => {
+    return displayedPlans.find((p) => p.id === selectedPlanId) || displayedPlans[0];
+  }, [displayedPlans, selectedPlanId]);
 
-  const availableCategories = useMemo(() => {
-    return CATEGORIES.filter((cat) => {
-      if (cat.key === "all") return true;
-      if (cat.key === "all-in-one") return gapProPlans.length > 0;
-      if (cat.key === "calling") return voicePlans.length > 0;
-      if (cat.key === "whatsapp") return whatsappPlans.length > 0;
-      if (cat.key === "telegram") return telegramPlans.length > 0;
-      if (cat.key === "crm") return crmPlans.length > 0;
-      if (cat.key === "social") return socialPlans.length > 0;
-      return true;
-    });
-  }, [gapProPlans.length, voicePlans.length, whatsappPlans.length, telegramPlans.length, crmPlans.length, socialPlans.length]);
+  const selectedTheme = useMemo(() => {
+    return selectedPlan ? getPlanTheme(selectedPlan) : { color: '#8B5CF6' };
+  }, [selectedPlan]);
 
-  const handleSelectPlan = (plan: PricingPlan) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  const currentTabThemeColor = useMemo(() => {
+    if (activeTab === 'pro') return '#8B5CF6';
+    const found = MODULAR_ENGINES.find((e) => e.key === selectedEngine);
+    return found ? found.color : '#0284C7';
+  }, [activeTab, selectedEngine]);
+
+  const handleCheckout = (planToBuy?: PricingPlan) => {
+    const plan = planToBuy || selectedPlan;
+    if (!plan) return;
+
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    // Close detail modal if open
+    setDetailModalPlan(null);
+
     const isAddon = isAddonPlan(plan);
     const isVoicePlan =
-      plan.category === "calling" ||
-      plan.category === "voice" ||
-      plan.id.startsWith("calling") ||
-      plan.id.startsWith("call_") ||
+      plan.category === 'calling' ||
+      plan.category === 'voice' ||
+      plan.id.startsWith('calling') ||
+      plan.id.startsWith('call_') ||
       isAddon;
 
-    if (isVoicePlan) {
-      openVoiceWebBilling(queryClient, isDark);
-      return;
-    }
-
+    const theme = getPlanTheme(plan);
     const isPro = isGapProPlan(plan);
 
     // GAP Pro interval calculation with duration discounts
@@ -201,38 +302,40 @@ export default function OverallPricingScreen() {
 
       openRazorpayCheckout({
         amount: amountInRupees,
-        currency: plan.currency || "INR",
-        product: "ecosystem",
+        currency: plan.currency || 'INR',
+        product: 'ecosystem',
         planId: plan.id,
         planName: `GetAiPilot - ${planDisplayName}`,
         billingInterval: gapProInterval,
         description: `${planDisplayName} Subscription · ${proPricing.option.days} Days Quotas`,
+        themeColor: theme.color,
         onSuccess: async () => {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          if (Platform.OS !== 'web') {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          }
 
-          // Complete referral reward & link if buyer was referred and purchased GAP Pro
           if (user?.id) {
             try {
               await checkAndCompleteReferralReward(user.id, plan.id, amountInRupees);
             } catch (refErr) {
-              console.warn("[Pricing] Referral reward completion notice:", refErr);
+              console.warn('[Pricing] Referral reward completion notice:', refErr);
             }
           }
 
           Alert.alert(
-            "Subscription Activated! 🎉",
+            'Subscription Activated! 🎉',
             `Your ${proPricing.option.label} subscription to ${planDisplayName} has been confirmed. Quotas are active in your workspace for ${proPricing.option.days} days.`,
-            [{ text: "Great!" }]
+            [{ text: 'Great!' }]
           );
           await Promise.all([
-            queryClient.invalidateQueries({ queryKey: ["platform-subscription"] }),
-            queryClient.invalidateQueries({ queryKey: ["ecosystem-pricing-plans-all"] }),
-            queryClient.invalidateQueries({ queryKey: ["active-referral-discount"] }),
-            queryClient.invalidateQueries({ queryKey: ["social", "entitlements"] }),
-            queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
-            queryClient.invalidateQueries({ queryKey: ["voice"] }),
-            queryClient.invalidateQueries({ queryKey: ["voice", "overview"] }),
-            queryClient.invalidateQueries({ queryKey: ["voice", "numbers"] }),
+            queryClient.invalidateQueries({ queryKey: ['platform-subscription'] }),
+            queryClient.invalidateQueries({ queryKey: ['ecosystem-pricing-plans-all'] }),
+            queryClient.invalidateQueries({ queryKey: ['active-referral-discount'] }),
+            queryClient.invalidateQueries({ queryKey: ['social', 'entitlements'] }),
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+            queryClient.invalidateQueries({ queryKey: ['voice'] }),
+            queryClient.invalidateQueries({ queryKey: ['voice', 'overview'] }),
+            queryClient.invalidateQueries({ queryKey: ['voice', 'numbers'] }),
           ]);
         },
       });
@@ -246,560 +349,56 @@ export default function OverallPricingScreen() {
 
     const dur = (plan.duration || '').toLowerCase();
     const billingInterval: 'month' | 'quarterly' | 'six_months' | 'year' =
-      dur.includes('year') ? 'year' :
-        dur.includes('quarter') ? 'quarterly' :
-          dur.includes('6') ? 'six_months' : 'month';
+      dur.includes('year')
+        ? 'year'
+        : dur.includes('quarter')
+        ? 'quarterly'
+        : dur.includes('6')
+        ? 'six_months'
+        : 'month';
 
     openRazorpayCheckout({
       amount: amountInRupees,
-      currency: plan.currency || "INR",
-      product: isVoicePlan ? "calling" : plan.category || "ecosystem",
+      currency: plan.currency || 'INR',
+      product: isVoicePlan ? 'calling' : plan.category || 'ecosystem',
       planId: plan.id,
       planName: `GetAiPilot - ${planDisplayName}`,
       billingInterval,
       description: plan.description || `${planDisplayName} Subscription`,
+      themeColor: theme.color,
       onSuccess: async () => {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
 
         Alert.alert(
-          "Subscription Activated! 🎉",
+          'Subscription Activated! 🎉',
           `Your subscription to ${planDisplayName} has been confirmed. Quotas are active in your workspace.`,
-          [{ text: "Great!" }]
+          [{ text: 'Great!' }]
         );
         await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ["platform-subscription"] }),
-          queryClient.invalidateQueries({ queryKey: ["ecosystem-pricing-plans-all"] }),
-          queryClient.invalidateQueries({ queryKey: ["active-referral-discount"] }),
-          queryClient.invalidateQueries({ queryKey: ["social", "entitlements"] }),
-          queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
-          queryClient.invalidateQueries({ queryKey: ["voice"] }),
-          queryClient.invalidateQueries({ queryKey: ["voice", "overview"] }),
-          queryClient.invalidateQueries({ queryKey: ["voice", "numbers"] }),
+          queryClient.invalidateQueries({ queryKey: ['platform-subscription'] }),
+          queryClient.invalidateQueries({ queryKey: ['ecosystem-pricing-plans-all'] }),
+          queryClient.invalidateQueries({ queryKey: ['active-referral-discount'] }),
+          queryClient.invalidateQueries({ queryKey: ['social', 'entitlements'] }),
+          queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+          queryClient.invalidateQueries({ queryKey: ['voice'] }),
+          queryClient.invalidateQueries({ queryKey: ['voice', 'overview'] }),
+          queryClient.invalidateQueries({ queryKey: ['voice', 'numbers'] }),
         ]);
       },
     });
   };
 
-  /**
-   * Render individual plan card with horizontal carousel dimensions
-   */
-  const renderPlanCard = (plan: PricingPlan, isProCard: boolean) => {
-    const catKey = (plan.category || "all").toLowerCase();
-    const meta = CATEGORY_META[catKey] || CATEGORY_META.all;
-    const isPopular = Boolean(plan.is_popular);
-    const isAddon = isAddonPlan(plan);
-    const isPro = isGapProPlan(plan);
-
-    // GAP Pro interval pricing calculation with dynamic discounts
-    const proPricing = isProCard
-      ? calculateGapProPricing(
-          plan.amount,
-          gapProInterval,
-          hasReferralDiscount ? discountPercent : 0
-        )
-      : null;
-
-    const baseAmountInRupees = Math.round(plan.amount / 100);
-    const isEligibleForDiscount = hasReferralDiscount && isPro;
-    const discountedPriceRupees = isEligibleForDiscount
-      ? Math.max(1, Math.round(baseAmountInRupees * (1 - discountPercent / 100)))
-      : baseAmountInRupees;
-
-    const formattedPrice = isProCard && proPricing
-      ? PricingService.formatPrice(proPricing.baseMonthlyRupees * 100, plan.currency)
-      : PricingService.formatPrice(plan.amount, plan.currency);
-
-    const formattedDiscountedPrice = isProCard && proPricing
-      ? PricingService.formatPrice(proPricing.finalMonthlyRupees * 100, plan.currency)
-      : PricingService.formatPrice(discountedPriceRupees * 100, plan.currency);
-
-    const formattedDuration = isProCard
-      ? "/month"
-      : PricingService.formatDuration(plan.duration || "monthly");
-
-    return (
-      <View
-        key={plan.id}
-        style={[
-          styles.planCard,
-          { width: cardWidth },
-          isProCard ? styles.proPlanCard : (isAddon ? styles.addonCard : null),
-          {
-            backgroundColor: isDark
-              ? isProCard
-                ? "#0d0b26"
-                : isAddon
-                  ? "#111026"
-                  : "#0f172a"
-              : isProCard
-                ? "#FAF7FF"
-                : isAddon
-                  ? "#FAFAFF"
-                  : "#ffffff",
-            borderColor: isProCard
-              ? isDark
-                ? "#8B5CF6"
-                : "#A78BFA"
-              : isAddon
-                ? isDark
-                  ? "#6366F1"
-                  : "#4F46E5"
-                : isPopular
-                  ? meta.color
-                  : isDark
-                    ? "#1e293b"
-                    : "#e2e8f0",
-            borderWidth: isProCard ? 1.8 : isAddon ? 1.5 : isPopular ? 2 : 1,
-          },
-        ]}
-      >
-        {/* Top Badges */}
-        <View style={styles.cardTopRow}>
-          {isProCard ? (
-            <View
-              style={[
-                styles.proCardBadge,
-                { backgroundColor: isDark ? "rgba(139, 92, 246, 0.25)" : "#EDE9FE" },
-              ]}
-            >
-              <Ionicons name="diamond" size={11} color="#8B5CF6" />
-              <Text style={styles.proCardBadgeText}>GAP PRO VIP</Text>
-            </View>
-          ) : isAddon ? (
-            <View
-              style={[
-                styles.addonBadge,
-                {
-                  backgroundColor: isDark ? "rgba(99, 102, 241, 0.2)" : "#EEF2FF",
-                  borderColor: isDark ? "#6366F1" : "#C7D2FE",
-                },
-              ]}
-            >
-              <Ionicons name="cube" size={11} color="#6366F1" />
-              <Text style={[styles.addonBadgeText, { color: "#6366F1" }]}>ADD-ON</Text>
-            </View>
-          ) : (
-            <View style={[styles.categoryBadge, { backgroundColor: `${meta.color}20` }]}>
-              <Ionicons name={meta.icon as any} size={11} color={meta.color} />
-              <Text style={[styles.categoryBadgeText, { color: meta.color }]}>
-                {meta.label.toUpperCase()}
-              </Text>
-            </View>
-          )}
-
-          {isPopular && (
-            <View
-              style={[
-                styles.popularBadge,
-                { backgroundColor: isProCard ? "#F59E0B" : meta.color },
-              ]}
-            >
-              <Ionicons name="sparkles" size={10} color="#ffffff" />
-              <Text style={styles.popularBadgeText}>POPULAR</Text>
-            </View>
-          )}
-
-          {isProCard && proPricing && proPricing.option.discountPercent > 0 && (
-            <View
-              style={[
-                styles.durationSavingsBadge,
-                {
-                  backgroundColor: isDark ? "rgba(139, 92, 246, 0.25)" : "#EDE9FE",
-                  borderColor: isDark ? "#8B5CF6" : "#C4B5FD",
-                },
-              ]}
-            >
-              <Ionicons name="flash" size={10} color="#8B5CF6" />
-              <Text style={[styles.durationSavingsBadgeText, { color: isDark ? "#DDD6FE" : "#6D28D9" }]}>
-                {proPricing.option.badge}
-              </Text>
-            </View>
-          )}
-
-          {isEligibleForDiscount && (
-            <View
-              style={[
-                styles.referralCardBadge,
-                { backgroundColor: isDark ? "rgba(16, 185, 129, 0.2)" : "#DCFCE7" },
-              ]}
-            >
-              <Ionicons name="gift" size={10} color="#10B981" />
-              <Text style={styles.referralCardBadgeText}>{discountPercent}% OFF</Text>
-            </View>
-          )}
-
-          {isAddon && (
-            <View
-              style={[
-                styles.addonValidityBadge,
-                { backgroundColor: isDark ? "rgba(16, 185, 129, 0.15)" : "#DCFCE7" },
-              ]}
-            >
-              <Ionicons name="time" size={10} color="#10B981" />
-              <Text style={styles.addonValidityBadgeText}>30-DAY</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Plan Name & Tagline */}
-        <View style={styles.planHeader}>
-          <Text style={[styles.planTitle, { color: colors.text }]}>
-            {plan.plan_label || plan.plan_name}
-          </Text>
-          {isProCard ? (
-            <View
-              style={[
-                styles.proEnginesPill,
-                { backgroundColor: isDark ? "rgba(139, 92, 246, 0.15)" : "#F3E8FF" },
-              ]}
-            >
-              <Ionicons name="flash" size={11} color="#A855F7" />
-              <Text style={[styles.proEnginesPillText, { color: isDark ? "#D8B4FE" : "#7E22CE" }]}>
-                WhatsApp + Telegram + Voice + Social + CRM
-              </Text>
-            </View>
-          ) : plan.description ? (
-            <Text
-              style={[styles.planDescription, { color: colors.textMuted }]}
-              numberOfLines={2}
-            >
-              {plan.description}
-            </Text>
-          ) : null}
-        </View>
-
-        {/* Pricing Box */}
-        <View
-          style={[
-            styles.priceBox,
-            isProCard ? styles.proPriceBox : isAddon ? styles.addonPriceBox : null,
-            {
-              backgroundColor: isDark
-                ? isProCard
-                  ? "rgba(139, 92, 246, 0.14)"
-                  : isAddon
-                    ? "rgba(99, 102, 241, 0.1)"
-                    : "#1e293b"
-                : isProCard
-                  ? "#F5F3FF"
-                  : isAddon
-                    ? "#EEF2FF"
-                    : "#f8fafc",
-            },
-          ]}
-        >
-          <View style={styles.priceRow}>
-            {(isProCard ? proPricing?.hasDiscount : isEligibleForDiscount) ? (
-              <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-                <Text style={[styles.priceAmount, { color: "#10B981" }]}>
-                  {formattedDiscountedPrice}
-                </Text>
-                <Text
-                  style={[
-                    styles.originalPrice,
-                    { color: colors.textMuted },
-                  ]}
-                >
-                  {formattedPrice}
-                </Text>
-              </View>
-            ) : (
-              <Text style={[styles.priceAmount, { color: colors.text }]}>
-                {formattedPrice}
-              </Text>
-            )}
-            <Text
-              style={[styles.priceDuration, { color: colors.textMuted }]}
-            >
-              {isAddon ? "/ 30-day" : formattedDuration}
-            </Text>
-            {(isProCard ? proPricing?.hasDiscount : isEligibleForDiscount) && (
-              <View style={styles.discountPill}>
-                <Text style={styles.discountPillText}>
-                  -{isProCard && proPricing
-                    ? proPricing.intervalDiscountPercent + (hasReferralDiscount ? discountPercent : 0)
-                    : discountPercent}%
-                </Text>
-              </View>
-            )}
-          </View>
-          {isProCard && proPricing ? (
-            <Text
-              style={[styles.billingNote, { color: "#8B5CF6" }]}
-              numberOfLines={1}
-            >
-              {gapProInterval === "month"
-                ? "Billed monthly · 30-day renewal cycle"
-                : `Billed ₹${proPricing.totalChargedRupees.toLocaleString('en-IN')} for ${proPricing.option.months} mos · Save ₹${proPricing.totalSavedRupees.toLocaleString('en-IN')}`}
-            </Text>
-          ) : plan.billing_note ? (
-            <Text
-              style={[
-                styles.billingNote,
-                { color: isProCard ? "#8B5CF6" : isAddon ? "#6366F1" : meta.color },
-              ]}
-              numberOfLines={1}
-            >
-              {plan.billing_note}
-            </Text>
-          ) : null}
-        </View>
-
-        {/* Quotas Spotlight Row (if quotas exist) */}
-        {(Boolean(plan.included_call_minutes) ||
-          Boolean(plan.included_numbers) ||
-          Boolean(plan.included_channels)) && (
-            <View style={styles.quotasRow}>
-              {Boolean(plan.included_call_minutes) && (
-                <View
-                  style={[
-                    styles.quotaTag,
-                    { backgroundColor: colors.surfaceSecondary },
-                  ]}
-                >
-                  <Ionicons name="mic" size={11} color="#8b5cf6" />
-                  <Text
-                    style={[
-                      styles.quotaTagText,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    {plan.included_call_minutes} AI Mins
-                  </Text>
-                </View>
-              )}
-              {Boolean(plan.extra_call_rate_paise) && (
-                <View
-                  style={[
-                    styles.quotaTag,
-                    { backgroundColor: colors.surfaceSecondary },
-                  ]}
-                >
-                  <Ionicons name="pricetag" size={11} color="#8b5cf6" />
-                  <Text
-                    style={[
-                      styles.quotaTagText,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    ₹{plan.extra_call_rate_paise! / 100}/min
-                  </Text>
-                </View>
-              )}
-              {Boolean(plan.included_numbers) && (
-                <View
-                  style={[
-                    styles.quotaTag,
-                    {
-                      backgroundColor: isAddon
-                        ? isDark
-                          ? "rgba(99, 102, 241, 0.15)"
-                          : "#EEF2FF"
-                        : isDark
-                          ? "#1e293b"
-                          : "#f1f5f9",
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name="call"
-                    size={11}
-                    color={isAddon ? "#6366F1" : "#25d366"}
-                  />
-                  <Text
-                    style={[
-                      styles.quotaTagText,
-                      {
-                        color: isAddon
-                          ? isDark
-                            ? "#A5B4FC"
-                            : "#4F46E5"
-                          : isDark
-                            ? "#cbd5e1"
-                            : "#475569",
-                      },
-                    ]}
-                  >
-                    {isAddon ? "+1 Virtual Line" : `${plan.included_numbers} Line`}
-                  </Text>
-                </View>
-              )}
-              {Boolean(plan.included_channels) && !isAddon && (
-                <View
-                  style={[
-                    styles.quotaTag,
-                    { backgroundColor: colors.surfaceSecondary },
-                  ]}
-                >
-                  <Ionicons name="share-social" size={11} color="#ec4899" />
-                  <Text
-                    style={[
-                      styles.quotaTagText,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    {plan.included_channels} Channels
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
-
-        {/* Feature Checklist */}
-        {Array.isArray(plan.features) && plan.features.length > 0 && (
-          <View style={styles.featuresList}>
-            {plan.features.slice(0, 5).map((feat, idx) => (
-              <View key={idx} style={styles.featureItem}>
-                <Ionicons
-                  name="checkmark-circle"
-                  size={14}
-                  color={isProCard ? "#8B5CF6" : isAddon ? "#6366F1" : "#10B981"}
-                />
-                <Text
-                  style={[
-                    styles.featureText,
-                    { color: colors.text },
-                  ]}
-                  numberOfLines={2}
-                >
-                  {feat}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Action Button: Subscribe with Razorpay */}
-        <Pressable
-          onPress={() => handleSelectPlan(plan)}
-          style={[
-            styles.subscribeBtn,
-            isProCard ? styles.proSubscribeBtn : isAddon ? styles.addonBtn : null,
-            {
-              backgroundColor: isProCard ? "#7C3AED" : isAddon ? "#4F46E5" : meta.color,
-              shadowColor: isProCard ? "#7C3AED" : isAddon ? "#4F46E5" : meta.color,
-            },
-          ]}
-        >
-          <Ionicons
-            name={isProCard ? "diamond" : isAddon ? "call" : "shield-checkmark"}
-            size={15}
-            color="#ffffff"
-          />
-          <Text style={styles.subscribeBtnText}>
-            {isProCard && proPricing
-              ? `Get ${plan.plan_label || "GAP Pro"} · ₹${proPricing.totalChargedRupees.toLocaleString("en-IN")}`
-              : isProCard
-                ? `Get GAP Pro · ${isEligibleForDiscount ? formattedDiscountedPrice : formattedPrice}`
-                : isAddon
-                  ? `Add Line · ${formattedPrice}`
-                  : `Subscribe · ${formattedPrice}`}
-          </Text>
-          <Ionicons name="arrow-forward" size={14} color="#ffffff" />
-        </Pressable>
-      </View>
-    );
-  };
-
-  /**
-   * Render a dedicated product category section with verified plans, header badge & carousel
-   */
-  const renderProductCategorySection = (
-    categoryKey: PlanCategory,
-    plansList: PricingPlan[]
-  ) => {
-    const meta = CATEGORY_META[categoryKey] || CATEGORY_META.all;
-    if (plansList.length === 0) return null;
-
-    return (
-      <View
-        key={categoryKey}
-        style={[
-          styles.sectionContainer,
-          {
-            backgroundColor: colors.surface,
-            borderColor: isDark ? `${meta.color}40` : `${meta.color}30`,
-          },
-        ]}
-      >
-        {/* Section Header */}
-        <View style={styles.sectionHeaderRow}>
-          <View style={styles.sectionHeaderLeft}>
-            <View
-              style={[
-                styles.sectionIconBadge,
-                { backgroundColor: `${meta.color}18` },
-              ]}
-            >
-              <Ionicons name={meta.icon as any} size={17} color={meta.color} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                  {meta.label} Plans
-                </Text>
-                <View
-                  style={{
-                    backgroundColor: `${meta.color}20`,
-                    paddingHorizontal: 7,
-                    paddingVertical: 2,
-                    borderRadius: 6,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: meta.color,
-                      fontSize: 10,
-                      fontWeight: "800",
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    {meta.badge}
-                  </Text>
-                </View>
-              </View>
-              <Text
-                style={[styles.sectionSubtitle, { color: colors.textMuted }]}
-                numberOfLines={1}
-              >
-                {meta.desc}
-              </Text>
-            </View>
-          </View>
-
-          <View
-            style={[
-              styles.scrollHintBadge,
-              { backgroundColor: `${meta.color}15` },
-            ]}
-          >
-            <Ionicons name="swap-horizontal" size={13} color={meta.color} />
-            <Text style={[styles.scrollHintText, { color: meta.color }]}>
-              {plansList.length} Tiers ⇄
-            </Text>
-          </View>
-        </View>
-
-        {/* Horizontal Scroll Area */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          decelerationRate="fast"
-          snapToInterval={snapInterval}
-          snapToAlignment="start"
-          contentContainerStyle={styles.horizontalScrollContent}
-        >
-          {plansList.map((plan) => renderPlanCard(plan, false))}
-        </ScrollView>
-      </View>
-    );
+  const openDetailModal = (plan: PricingPlan) => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setDetailModalPlan(plan);
   };
 
   return (
-    <AppScreen safeArea={false} backgroundColor={colors.background}>
+    <AppScreen safeArea={false} backgroundColor={isDark ? '#0F172A' : '#F8FAFC'}>
       <AppTopBar
-        title="Overall Pricing & Plans"
-        // subtitle="GetAiPilot Ecosystem Subscriptions"
+        title="Choose Your Plan"
         showBack={true}
         onBackPress={handleBack}
       />
@@ -811,355 +410,894 @@ export default function OverallPricingScreen() {
           <RefreshControl
             refreshing={isRefetching}
             onRefresh={onRefresh}
-            tintColor="#0A84FF"
+            tintColor={currentTabThemeColor}
           />
         }
       >
-        {/* 1. Active Workspace Subscription Status Card */}
-        <View
-          style={[
-            styles.statusBanner,
-            {
-              backgroundColor: isDark ? "#06131d" : "#eff6ff",
-              borderColor: isDark ? "#1e3a8a44" : "#bfdbfe",
-            },
-          ]}
-        >
-          <View style={styles.statusHeader}>
-            <View
-              style={[
-                styles.activePill,
-                { backgroundColor: isDark ? "rgba(16, 185, 129, 0.2)" : "#dcfce7" },
-              ]}
-            >
-              <View style={styles.activeDot} />
-              <Text style={styles.activePillText}>
-                {subscriptionStatus ? subscriptionStatus.toUpperCase() : "ACTIVE WORKSPACE"}
-              </Text>
-            </View>
-            <Text style={[styles.planStatusDate, { color: colors.textMuted }]}>
-              {expiresAt
-                ? `Renews ${new Date(expiresAt).toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}`
-                : "Active Tier"}
-            </Text>
-          </View>
-
-          <Text style={[styles.statusPlanName, { color: colors.text }]}>
-            {planLabel || "GAP Pro Max"}
+        {/* Title Header matching Screenshot 1 & 2 */}
+        <View className="items-center px-4 pt-2 pb-1">
+          <Text
+            className="text-2xl font-black tracking-tight text-center"
+            style={{ color: colors.text }}
+          >
+            Our Packages
           </Text>
-          <Text style={[styles.statusPlanDesc, { color: colors.textSecondary }]}>
-            Full multi-engine access enabled: Voice AI, Social Pilot, WhatsApp, Telegram & Smart CRM.
+          <Text
+            className="text-xs text-center mt-1.5 leading-4 px-4"
+            style={{ color: colors.textMuted }}
+          >
+            Select the optimal tier for your team. Click the arrow icon on any package to inspect full quotas & specifications.
           </Text>
         </View>
 
-        {/* Referral Discount Active Banner */}
-        {hasReferralDiscount && (
+        {/* Top Segmented Switcher (Exact style of Screenshot 1: [ PERSONAL ] [ BUSINESS ]) */}
+        <View className="items-center my-3">
           <View
-            style={[
-              styles.referralBanner,
-              {
-                backgroundColor: isDark ? "rgba(16, 185, 129, 0.12)" : "#ECFDF5",
-                borderColor: isDark ? "rgba(16, 185, 129, 0.3)" : "#A7F3D0",
-              },
-            ]}
+            className="flex-row p-1 rounded-full border shadow-sm"
+            style={{
+              backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
+              borderColor: isDark ? '#334155' : '#E2E8F0',
+              width: Math.min(width - 32, 340),
+            }}
           >
-            <View style={styles.referralBannerIcon}>
-              <Ionicons name="gift" size={20} color="#10B981" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <View
+            <Pressable
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setActiveTab('pro');
+              }}
+              className="flex-1 py-2.5 rounded-full items-center justify-center"
+              style={{
+                backgroundColor: activeTab === 'pro' ? '#8B5CF6' : 'transparent',
+                shadowColor: activeTab === 'pro' ? '#8B5CF6' : 'transparent',
+                shadowOpacity: activeTab === 'pro' ? 0.35 : 0,
+                shadowRadius: 6,
+                elevation: activeTab === 'pro' ? 3 : 0,
+              }}
+            >
+              <Text
+                className="text-xs font-black tracking-wider"
                 style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 6,
-                  flexWrap: "wrap",
+                  color: activeTab === 'pro' ? '#FFFFFF' : colors.textMuted,
                 }}
               >
-                <Text
-                  style={[
-                    styles.referralBannerTitle,
-                    { color: isDark ? "#34D399" : "#065F46" },
-                  ]}
-                >
-                  {referralDiscount?.isWelcomeDiscount
-                    ? "Welcome Referral Perk Active!"
-                    : `${referralDiscount?.milestoneTitle || "Referral Perk"} Active!`}
-                </Text>
-                <View style={styles.referralBadge}>
-                  <Text style={styles.referralBadgeText}>{discountPercent}% OFF GAP PRO</Text>
-                </View>
-              </View>
-              <Text
-                style={[
-                  styles.referralBannerSubtitle,
-                  { color: isDark ? "#A7F3D0" : "#047857" },
-                ]}
-              >
-                {referralDiscount?.isWelcomeDiscount
-                  ? `${discountPercent}% Welcome referral discount is automatically applied to all GAP Pro plans!`
-                  : `${referralDiscount?.bonusPerk || `${discountPercent}% discount`} applied to your GAP Pro plan purchase!`}
+                ALL-IN-ONE PRO
               </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setActiveTab('modular');
+              }}
+              className="flex-1 py-2.5 rounded-full items-center justify-center"
+              style={{
+                backgroundColor: activeTab === 'modular' ? currentTabThemeColor : 'transparent',
+                shadowColor: activeTab === 'modular' ? currentTabThemeColor : 'transparent',
+                shadowOpacity: activeTab === 'modular' ? 0.35 : 0,
+                shadowRadius: 6,
+                elevation: activeTab === 'modular' ? 3 : 0,
+              }}
+            >
+              <Text
+                className="text-xs font-black tracking-wider"
+                style={{
+                  color: activeTab === 'modular' ? '#FFFFFF' : colors.textMuted,
+                }}
+              >
+                SINGLE ENGINES
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Sub-Filters: Interval Cadence for Pro, or Engine Chips for Modular */}
+        {activeTab === 'pro' ? (
+          <View className="mb-2 px-1">
+            <View
+              className="flex-row p-1 rounded-2xl border"
+              style={{
+                backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
+                borderColor: isDark ? '#334155' : '#E2E8F0',
+              }}
+            >
+              {GAP_PRO_INTERVALS.map((inv) => {
+                const isSelected = gapProInterval === inv.key;
+                return (
+                  <Pressable
+                    key={inv.key}
+                    onPress={() => {
+                      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setGapProInterval(inv.key);
+                    }}
+                    className="flex-1 py-2 px-1 rounded-xl items-center justify-center"
+                    style={{
+                      backgroundColor: isSelected
+                        ? isDark
+                          ? '#334155'
+                          : '#F1F5F9'
+                        : 'transparent',
+                    }}
+                  >
+                    <Text
+                      className="text-[11px]"
+                      style={{
+                        fontWeight: isSelected ? '900' : '600',
+                        color: isSelected ? (isDark ? '#F8FAFC' : '#0F172A') : colors.textMuted,
+                      }}
+                    >
+                      {inv.label}
+                    </Text>
+                    {Boolean(inv.badge) && (
+                      <Text className="text-[8.5px] font-black text-purple-500 mt-0.5">
+                        {inv.badge}
+                      </Text>
+                    )}
+                  </Pressable>
+                );
+              })}
             </View>
+          </View>
+        ) : (
+          <View className="mb-2">
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 8, paddingHorizontal: 4 }}
+            >
+              {MODULAR_ENGINES.map((eng) => {
+                const isSelected = selectedEngine === eng.key;
+                return (
+                  <Pressable
+                    key={eng.key}
+                    onPress={() => {
+                      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setSelectedEngine(eng.key);
+                    }}
+                    className="flex-row items-center gap-1.5 px-3.5 py-2 rounded-full border shadow-sm"
+                    style={{
+                      backgroundColor: isSelected
+                        ? eng.color
+                        : isDark
+                        ? '#1E293B'
+                        : '#FFFFFF',
+                      borderColor: isSelected
+                        ? eng.color
+                        : isDark
+                        ? '#334155'
+                        : '#E2E8F0',
+                    }}
+                  >
+                    <Ionicons
+                      name={eng.icon}
+                      size={13}
+                      color={isSelected ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
+                    />
+                    <Text
+                      className="text-xs"
+                      style={{
+                        fontWeight: isSelected ? '900' : '600',
+                        color: isSelected ? '#FFFFFF' : colors.text,
+                      }}
+                    >
+                      {eng.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
           </View>
         )}
 
+        {/* Active Referral Perk Notice */}
+        {hasReferralDiscount && (
+          <View
+            className="flex-row items-center gap-2.5 p-3 rounded-2xl mb-2 border"
+            style={{
+              backgroundColor: isDark ? 'rgba(16, 185, 129, 0.12)' : '#ECFDF5',
+              borderColor: isDark ? 'rgba(16, 185, 129, 0.25)' : '#A7F3D0',
+            }}
+          >
+            <Ionicons name="gift" size={16} color="#10B981" />
+            <Text
+              className="text-xs font-bold flex-1"
+              style={{ color: isDark ? '#34D399' : '#065F46' }}
+            >
+              {discountPercent}% Referral Perk applied automatically at checkout!
+            </Text>
+          </View>
+        )}
 
+        {/* LOADING STATE */}
         {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#0A84FF" />
-            <Text style={[styles.loadingText, { color: colors.textMuted }]}>
-              Loading verified pricing plans...
+          <View className="py-16 items-center gap-3">
+            <ActivityIndicator size="large" color={currentTabThemeColor} />
+            <Text className="text-xs font-semibold" style={{ color: colors.textMuted }}>
+              Loading verified packages...
+            </Text>
+          </View>
+        ) : displayedPlans.length === 0 ? (
+          <View
+            className="p-8 rounded-2xl items-center justify-center gap-2 border my-4"
+            style={{
+              backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
+              borderColor: isDark ? '#334155' : '#E2E8F0',
+            }}
+          >
+            <Ionicons name="cube-outline" size={32} color={currentTabThemeColor} />
+            <Text className="text-sm font-bold" style={{ color: colors.text }}>
+              No plans available
+            </Text>
+            <Text className="text-xs text-center" style={{ color: colors.textMuted }}>
+              Switch tabs or refresh to load verified plans.
             </Text>
           </View>
         ) : (
-          <View style={{ gap: 26 }}>
-            {/* ========================================================================= */}
-            {/* SECTION 1: GAP PRO PLANS (At the top, only if GAP Pro tiers exist)        */}
-            {/* ========================================================================= */}
-            {gapProPlans.length > 0 && (
-              <View
-                style={[
-                  styles.sectionContainer,
-                  styles.proSectionBox,
-                  {
-                    backgroundColor: isDark ? "#09081c" : "#FBF9FF",
-                    borderColor: isDark ? "#8B5CF6" : "#DDD6FE",
-                  },
-                ]}
-              >
-                {/* Section Header */}
-                <View style={styles.sectionHeaderRow}>
-                  <View style={styles.sectionHeaderLeft}>
-                    <View
-                      style={[
-                        styles.sectionIconBadge,
-                        { backgroundColor: isDark ? "rgba(139, 92, 246, 0.25)" : "#EDE9FE" },
-                      ]}
-                    >
-                      <Ionicons name="diamond" size={17} color="#8B5CF6" />
+          /* PLAN CARDS LIST: Matching Screenshots 1 & 2 directly with DYNAMIC COLORS */
+          <View className="gap-3.5 my-1">
+            {displayedPlans.map((plan) => {
+              const isSelected = plan.id === selectedPlanId;
+              const isPro = isGapProPlan(plan);
+              const isAddon = isAddonPlan(plan);
+              const isPopular = Boolean(plan.is_popular);
+              const theme = getPlanTheme(plan);
+
+              // Pro Interval Calculations
+              const proPricing = isPro
+                ? calculateGapProPricing(
+                    plan.amount,
+                    gapProInterval,
+                    hasReferralDiscount ? discountPercent : 0
+                  )
+                : null;
+
+              const baseAmountInRupees = Math.round(plan.amount / 100);
+              const isEligibleForDiscount = hasReferralDiscount && isPro;
+              const discountedPriceRupees = isEligibleForDiscount
+                ? Math.max(1, Math.round(baseAmountInRupees * (1 - discountPercent / 100)))
+                : baseAmountInRupees;
+
+              const formattedPrice =
+                isPro && proPricing
+                  ? PricingService.formatPrice(proPricing.baseMonthlyRupees * 100, plan.currency)
+                  : PricingService.formatPrice(plan.amount, plan.currency);
+
+              const formattedDiscountedPrice =
+                isPro && proPricing
+                  ? PricingService.formatPrice(proPricing.finalMonthlyRupees * 100, plan.currency)
+                  : PricingService.formatPrice(discountedPriceRupees * 100, plan.currency);
+
+              const formattedDuration = isPro
+                ? '/mo'
+                : PricingService.formatDuration(plan.duration || 'monthly');
+
+              // Features to display on selected card
+              const featuresToShow =
+                Array.isArray(plan.features) && plan.features.length > 0
+                  ? plan.features.slice(0, 4)
+                  : [
+                      isPro ? 'All 5 AI Engines Included' : `${plan.plan_label} Quotas`,
+                      Boolean(plan.included_call_minutes)
+                        ? `${plan.included_call_minutes} AI Calling Minutes`
+                        : 'Unlimited bot automation',
+                      Boolean(plan.included_numbers)
+                        ? `${plan.included_numbers} Virtual Dedicated Line`
+                        : 'Instant priority cloud server',
+                    ];
+
+              /* ----------------------------------------------------------------- */
+              /* STATE 1: SELECTED CARD (Dynamic Color Theme Matching Screenshot 2)*/
+              /* ----------------------------------------------------------------- */
+              if (isSelected) {
+                return (
+                  <Pressable
+                    key={plan.id}
+                    onPress={() => {
+                      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setSelectedPlanId(plan.id);
+                    }}
+                    className="rounded-3xl p-5 border-2 shadow-sm"
+                    style={{
+                      backgroundColor: isDark ? theme.darkBg : theme.lightBg,
+                      borderColor: theme.color,
+                    }}
+                  >
+                    {/* Top Row: Title + Badge + Clickable Arrow Button */}
+                    <View className="flex-row items-center justify-between mb-3.5">
+                      <View className="flex-row items-center gap-2.5 flex-1 mr-2">
+                        <Text
+                          className="text-[17px] font-black tracking-tight"
+                          style={{ color: colors.text }}
+                        >
+                          {plan.plan_label || plan.plan_name}
+                        </Text>
+
+                        {isPopular ? (
+                          <View
+                            className="px-2.5 py-0.5 rounded-full"
+                            style={{ backgroundColor: theme.color }}
+                          >
+                            <Text className="text-[9px] font-black text-white tracking-wider">
+                              MOST POPULAR
+                            </Text>
+                          </View>
+                        ) : isPro ? (
+                          <View
+                            className="px-2.5 py-0.5 rounded-full"
+                            style={{ backgroundColor: `${theme.color}25` }}
+                          >
+                            <Text
+                              className="text-[9px] font-black tracking-wider"
+                              style={{ color: theme.color }}
+                            >
+                              BEST VALUE
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
+
+                      {/* Right top arrow button circle: OPENS DETAIL PAGE */}
+                      <Pressable
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          openDetailModal(plan);
+                        }}
+                        className="w-8 h-8 rounded-full items-center justify-center active:scale-95"
+                        style={{ backgroundColor: theme.color }}
+                      >
+                        <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
+                      </Pressable>
                     </View>
-                    <View>
-                      <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                        GAP Pro All-in-One Plans
+
+                    {/* Middle Row: Features on Left, Large Price on Right */}
+                    <View className="flex-row items-center justify-between gap-3">
+                      {/* Left Checklist */}
+                      <View className="flex-1 gap-2">
+                        {featuresToShow.map((feat, fIdx) => (
+                          <View key={fIdx} className="flex-row items-center gap-2">
+                            <View
+                              className="w-4 h-4 rounded-full items-center justify-center"
+                              style={{ backgroundColor: `${theme.color}25` }}
+                            >
+                              <Ionicons name="checkmark" size={10} color={theme.color} />
+                            </View>
+                            <Text
+                              className="text-xs font-semibold"
+                              style={{ color: colors.text }}
+                              numberOfLines={1}
+                            >
+                              {feat}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+
+                      {/* Right Pricing Display */}
+                      <View className="items-end pl-2">
+                        {(isPro ? proPricing?.hasDiscount : isEligibleForDiscount) ? (
+                          <View className="items-end">
+                            <Text
+                              className="text-2xl font-black tracking-tight"
+                              style={{ color: colors.text }}
+                            >
+                              {formattedDiscountedPrice}
+                            </Text>
+                            <Text
+                              className="text-xs line-through font-semibold"
+                              style={{ color: colors.textMuted }}
+                            >
+                              {formattedPrice}
+                            </Text>
+                          </View>
+                        ) : (
+                          <Text
+                            className="text-2xl font-black tracking-tight"
+                            style={{ color: colors.text }}
+                          >
+                            {formattedPrice}
+                          </Text>
+                        )}
+                        <Text
+                          className="text-[10px] font-bold mt-0.5"
+                          style={{ color: theme.color }}
+                        >
+                          {isAddon ? '/30 days' : formattedDuration}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Bottom Billing Note if discounted */}
+                    {isPro && proPricing && proPricing.option.discountPercent > 0 && (
+                      <View
+                        className="mt-3.5 pt-2.5 border-t flex-row items-center justify-between"
+                        style={{ borderTopColor: `${theme.color}30` }}
+                      >
+                        <Text className="text-[11px] font-bold" style={{ color: theme.color }}>
+                          Total ₹{proPricing.totalChargedRupees.toLocaleString('en-IN')} for {proPricing.option.months} mos
+                        </Text>
+                        <Text className="text-[10px] font-black text-emerald-500">
+                          Save ₹{proPricing.totalSavedRupees.toLocaleString('en-IN')}
+                        </Text>
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              }
+
+              /* ----------------------------------------------------------------- */
+              /* STATE 2: UNSELECTED CARD (Dynamic Color Theme Matching Screenshot 1)*/
+              /* ----------------------------------------------------------------- */
+              return (
+                <Pressable
+                  key={plan.id}
+                  onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setSelectedPlanId(plan.id);
+                  }}
+                  className="rounded-2xl p-4 border flex-row items-center justify-between shadow-sm active:opacity-85"
+                  style={{
+                    backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
+                    borderColor: isDark ? '#334155' : '#E2E8F0',
+                  }}
+                >
+                  {/* Left: Dynamic Colored Ring Indicator + Title & Subtitle */}
+                  <View className="flex-row items-center gap-3.5 flex-1 min-w-0 mr-2">
+                    <View
+                      className="w-5 h-5 rounded-full border-2 items-center justify-center"
+                      style={{ borderColor: theme.color }}
+                    />
+
+                    <View className="flex-1 min-w-0">
+                      <Text
+                        className="text-[15px] font-extrabold tracking-tight"
+                        style={{ color: colors.text }}
+                        numberOfLines={1}
+                      >
+                        {plan.plan_label || plan.plan_name}
                       </Text>
                       <Text
-                        style={[
-                          styles.sectionSubtitle,
-                          { color: isDark ? "#C4B5FD" : "#6B21A8" },
-                        ]}
+                        className="text-[11.5px] mt-0.5"
+                        style={{ color: colors.textMuted }}
+                        numberOfLines={1}
                       >
-                        5-in-1 Unified Suite • All Automation Engines Included
+                        {plan.description || (isPro ? 'All-in-One VIP Suite' : `${theme.badge} Module`)}
                       </Text>
                     </View>
                   </View>
 
-                  <View style={styles.scrollHintBadge}>
-                    <Ionicons name="swap-horizontal" size={13} color="#8B5CF6" />
-                    <Text style={styles.scrollHintText}>
-                      {gapProPlans.length} Tiers ⇄
-                    </Text>
-                  </View>
-                </View>
+                  {/* Right: Price + Arrow/Chevron Button (Tap to Open Detail Page) */}
+                  <View className="flex-row items-center gap-3">
+                    <View className="items-end">
+                      <Text
+                        className="text-lg font-black tracking-tight"
+                        style={{ color: colors.text }}
+                      >
+                        {(isPro ? proPricing?.hasDiscount : isEligibleForDiscount)
+                          ? formattedDiscountedPrice
+                          : formattedPrice}
+                      </Text>
+                      <Text className="text-[9.5px] font-medium" style={{ color: colors.textMuted }}>
+                        {isAddon ? '/30-day' : formattedDuration}
+                      </Text>
+                    </View>
 
-                {/* Duration Filter: Monthly, Quarterly, Half-Yearly, Yearly */}
-                <View style={styles.proIntervalWrapper}>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.proIntervalScroll}
-                  >
-                    {GAP_PRO_INTERVALS.map((inv) => {
-                      const isSelected = gapProInterval === inv.key;
-                      return (
-                        <Pressable
-                          key={inv.key}
-                          onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            setGapProInterval(inv.key);
-                          }}
-                          style={[
-                            styles.proIntervalChip,
-                            {
-                              backgroundColor: isSelected
-                                ? "#8B5CF6"
-                                : isDark
-                                  ? "#161331"
-                                  : "#EDE9FE",
-                              borderColor: isSelected
-                                ? "#7C3AED"
-                                : isDark
-                                  ? "rgba(139, 92, 246, 0.4)"
-                                  : "#DDD6FE",
-                            },
-                          ]}
+                    <Pressable
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        openDetailModal(plan);
+                      }}
+                      className="w-7 h-7 rounded-full items-center justify-center"
+                      style={{ backgroundColor: `${theme.color}15` }}
+                    >
+                      <Ionicons
+                        name="chevron-forward"
+                        size={15}
+                        color={theme.color}
+                      />
+                    </Pressable>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
+
+        {/* Security & Assurance Mini Footer */}
+        <View className="flex-row items-center justify-center gap-4 py-3 opacity-75">
+          <View className="flex-row items-center gap-1">
+            <Ionicons name="shield-checkmark" size={12} color="#10B981" />
+            <Text className="text-[10.5px] font-bold" style={{ color: colors.textMuted }}>
+              SSL Secure
+            </Text>
+          </View>
+          <View className="flex-row items-center gap-1">
+            <Ionicons name="flash" size={12} color="#F59E0B" />
+            <Text className="text-[10.5px] font-bold" style={{ color: colors.textMuted }}>
+              Instant Activation
+            </Text>
+          </View>
+          <View className="flex-row items-center gap-1">
+            <Ionicons name="receipt-outline" size={12} color="#0284C7" />
+            <Text className="text-[10.5px] font-bold" style={{ color: colors.textMuted }}>
+              GST Invoices
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* Floating Bottom Sticky CTA Button (Dynamic Theme Color) */}
+      <View
+        className="px-5 py-3 border-t"
+        style={{
+          backgroundColor: isDark ? '#0F172A' : '#FFFFFF',
+          borderTopColor: isDark ? '#1E293B' : '#E2E8F0',
+        }}
+      >
+        <Pressable
+          onPress={() => handleCheckout()}
+          disabled={!selectedPlan}
+          className="w-full py-3.5 rounded-2xl items-center justify-center flex-col gap-0.5 active:opacity-90 shadow-md"
+          style={{
+            backgroundColor: selectedTheme.color,
+            shadowColor: selectedTheme.color,
+            shadowOpacity: 0.35,
+            shadowRadius: 8,
+            elevation: 4,
+          }}
+        >
+          <View className="flex-row items-center gap-2">
+            <Text className="text-white text-[15px] font-black tracking-wide">
+              {selectedPlan
+                ? `Continue to Purchase · ${
+                    isGapProPlan(selectedPlan)
+                      ? PricingService.formatPrice(
+                          calculateGapProPricing(
+                            selectedPlan.amount,
+                            gapProInterval,
+                            hasReferralDiscount ? discountPercent : 0
+                          ).totalChargedRupees * 100,
+                          selectedPlan.currency
+                        )
+                      : PricingService.formatPrice(selectedPlan.amount, selectedPlan.currency)
+                  }`
+                : 'Continue to Purchase'}
+            </Text>
+            <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+          </View>
+          <View className="flex-row items-center gap-1 opacity-90">
+            <Ionicons name="shield-checkmark" size={10} color="#FFFFFF" />
+            <Text className="text-[10px] font-bold text-white tracking-wider">
+              RAZORPAY SECURE SDK · UPI & CARDS
+            </Text>
+          </View>
+        </Pressable>
+      </View>
+
+      {/* ========================================================================= */}
+      {/* DETAIL MODAL / SHEET: Opens when tapping arrow icon on any plan card      */}
+      {/* ========================================================================= */}
+      {detailModalPlan && (
+        <Modal
+          visible={Boolean(detailModalPlan)}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setDetailModalPlan(null)}
+        >
+          <View
+            className="flex-1 justify-end"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.65)' }}
+          >
+            <Pressable
+              className="flex-1"
+              onPress={() => setDetailModalPlan(null)}
+            />
+
+            <View
+              className="rounded-t-3xl border-t p-5 max-h-[85%]"
+              style={{
+                backgroundColor: isDark ? '#0F172A' : '#FFFFFF',
+                borderColor: isDark ? '#334155' : '#E2E8F0',
+              }}
+            >
+              {/* Drag Handle Bar */}
+              <View className="items-center mb-3">
+                <View
+                  className="w-10 h-1.5 rounded-full"
+                  style={{ backgroundColor: isDark ? '#334155' : '#CBD5E1' }}
+                />
+              </View>
+
+              {/* Modal Header */}
+              {(() => {
+                const plan = detailModalPlan;
+                const isPro = isGapProPlan(plan);
+                const theme = getPlanTheme(plan);
+
+                const proPricing = isPro
+                  ? calculateGapProPricing(
+                      plan.amount,
+                      gapProInterval,
+                      hasReferralDiscount ? discountPercent : 0
+                    )
+                  : null;
+
+                const baseAmountInRupees = Math.round(plan.amount / 100);
+                const isEligibleForDiscount = hasReferralDiscount && isPro;
+                const discountedPriceRupees = isEligibleForDiscount
+                  ? Math.max(1, Math.round(baseAmountInRupees * (1 - discountPercent / 100)))
+                  : baseAmountInRupees;
+
+                const formattedPrice =
+                  isPro && proPricing
+                    ? PricingService.formatPrice(proPricing.baseMonthlyRupees * 100, plan.currency)
+                    : PricingService.formatPrice(plan.amount, plan.currency);
+
+                const formattedDiscountedPrice =
+                  isPro && proPricing
+                    ? PricingService.formatPrice(proPricing.finalMonthlyRupees * 100, plan.currency)
+                    : PricingService.formatPrice(discountedPriceRupees * 100, plan.currency);
+
+                const finalChargedRupees = isPro && proPricing
+                  ? proPricing.totalChargedRupees
+                  : discountedPriceRupees;
+
+                return (
+                  <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 14 }}>
+                    <View className="flex-row items-center justify-between">
+                      <View className="flex-row items-center gap-3 flex-1 mr-2">
+                        <View
+                          className="w-12 h-12 rounded-2xl items-center justify-center"
+                          style={{ backgroundColor: `${theme.color}20` }}
                         >
-                          <Ionicons
-                            name={
-                              inv.key === "year"
-                                ? "trophy"
-                                : inv.key === "six_months"
-                                  ? "shield-checkmark"
-                                  : inv.key === "quarterly"
-                                    ? "flash"
-                                    : "calendar"
-                            }
-                            size={13}
-                            color={isSelected ? "#ffffff" : isDark ? "#C4B5FD" : "#7C3AED"}
-                          />
+                          <Ionicons name={theme.icon} size={24} color={theme.color} />
+                        </View>
+                        <View className="flex-1">
                           <Text
-                            style={[
-                              styles.proIntervalChipText,
-                              {
-                                color: isSelected
-                                  ? "#ffffff"
-                                  : isDark
-                                    ? "#DDD6FE"
-                                    : "#6D28D9",
-                                fontWeight: isSelected ? "800" : "600",
-                              },
-                            ]}
+                            className="text-lg font-black tracking-tight"
+                            style={{ color: colors.text }}
                           >
-                            {inv.label}
+                            {plan.plan_label || plan.plan_name}
                           </Text>
-                          {Boolean(inv.badge) && (
+                          <View className="flex-row items-center gap-1.5 mt-0.5">
                             <View
-                              style={[
-                                styles.proIntervalChipBadge,
-                                {
-                                  backgroundColor: isSelected
-                                    ? "rgba(255, 255, 255, 0.25)"
-                                    : isDark
-                                      ? "rgba(16, 185, 129, 0.2)"
-                                      : "#DCFCE7",
-                                },
-                              ]}
+                              className="px-2 py-0.5 rounded-md"
+                              style={{ backgroundColor: `${theme.color}15` }}
                             >
                               <Text
-                                style={[
-                                  styles.proIntervalChipBadgeText,
-                                  { color: isSelected ? "#ffffff" : "#059669" },
-                                ]}
+                                className="text-[10px] font-black tracking-wider"
+                                style={{ color: theme.color }}
                               >
-                                {inv.badge}
+                                {theme.badge}
+                              </Text>
+                            </View>
+                            {plan.is_popular && (
+                              <View className="px-2 py-0.5 rounded-md bg-[#F59E0B]">
+                                <Text className="text-[9.5px] font-black text-white">
+                                  POPULAR
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                        </View>
+                      </View>
+
+                      <Pressable
+                        onPress={() => setDetailModalPlan(null)}
+                        className="w-8 h-8 rounded-full items-center justify-center"
+                        style={{ backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }}
+                      >
+                        <Ionicons name="close" size={18} color={colors.text} />
+                      </Pressable>
+                    </View>
+
+                    {/* Price & Billing Summary Box */}
+                    <View
+                      className="p-4 rounded-2xl border"
+                      style={{
+                        backgroundColor: isDark ? theme.darkBg : theme.lightBg,
+                        borderColor: `${theme.color}40`,
+                      }}
+                    >
+                      <View className="flex-row items-baseline justify-between mb-1">
+                        <View className="flex-row items-baseline gap-2">
+                          <Text
+                            className="text-3xl font-black"
+                            style={{ color: colors.text }}
+                          >
+                            {(isPro ? proPricing?.hasDiscount : isEligibleForDiscount)
+                              ? formattedDiscountedPrice
+                              : formattedPrice}
+                          </Text>
+                          {(isPro ? proPricing?.hasDiscount : isEligibleForDiscount) && (
+                            <Text
+                              className="text-base line-through font-semibold"
+                              style={{ color: colors.textMuted }}
+                            >
+                              {formattedPrice}
+                            </Text>
+                          )}
+                          <Text
+                            className="text-xs font-bold"
+                            style={{ color: theme.color }}
+                          >
+                            {isPro ? '/month' : `/${plan.duration || 'monthly'}`}
+                          </Text>
+                        </View>
+
+                        {isPro && proPricing && proPricing.option.discountPercent > 0 && (
+                          <View className="px-2.5 py-1 rounded-full bg-emerald-500">
+                            <Text className="text-[10px] font-black text-white">
+                              SAVE {proPricing.option.discountPercent}%
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+
+                      <Text
+                        className="text-xs font-semibold mt-1"
+                        style={{ color: colors.textSecondary }}
+                      >
+                        {isPro && proPricing
+                          ? gapProInterval === 'month'
+                            ? 'Billed monthly • 30-day renewal cycle'
+                            : `Total ₹${proPricing.totalChargedRupees.toLocaleString('en-IN')} billed for ${proPricing.option.months} months (₹${proPricing.totalSavedRupees.toLocaleString('en-IN')} saved)`
+                          : plan.billing_note || plan.description || 'Production-grade workspace quotas.'}
+                      </Text>
+                    </View>
+
+                    {/* Quotas Overview Pills (if available) */}
+                    {(Boolean(plan.included_call_minutes) ||
+                      Boolean(plan.included_numbers) ||
+                      Boolean(plan.included_channels)) && (
+                      <View className="gap-2">
+                        <Text
+                          className="text-[11px] font-black tracking-wider"
+                          style={{ color: colors.textMuted }}
+                        >
+                          RESOURCE QUOTAS
+                        </Text>
+                        <View className="flex-row flex-wrap gap-2">
+                          {Boolean(plan.included_call_minutes) && (
+                            <View
+                              className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-xl border"
+                              style={{
+                                backgroundColor: isDark ? 'rgba(168, 85, 247, 0.15)' : '#FAF5FF',
+                                borderColor: 'rgba(168, 85, 247, 0.3)',
+                              }}
+                            >
+                              <Ionicons name="mic" size={13} color="#A855F7" />
+                              <Text className="text-xs font-bold text-[#A855F7]">
+                                {plan.included_call_minutes} AI Calling Minutes
                               </Text>
                             </View>
                           )}
-                        </Pressable>
-                      );
-                    })}
-                  </ScrollView>
-                </View>
 
-                {/* Horizontal Scroll Area for GAP Pro */}
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  decelerationRate="fast"
-                  snapToInterval={snapInterval}
-                  snapToAlignment="start"
-                  contentContainerStyle={styles.horizontalScrollContent}
-                >
-                  {gapProPlans.map((plan) => renderPlanCard(plan, true))}
-                </ScrollView>
-              </View>
-            )}
+                          {Boolean(plan.included_numbers) && (
+                            <View
+                              className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-xl border"
+                              style={{
+                                backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#F0FDF4',
+                                borderColor: 'rgba(16, 185, 129, 0.3)',
+                              }}
+                            >
+                              <Ionicons name="call" size={13} color="#10B981" />
+                              <Text className="text-xs font-bold text-[#10B981]">
+                                {plan.included_numbers} Dedicated Virtual Line
+                              </Text>
+                            </View>
+                          )}
 
-            {/* ========================================================================= */}
-            {/* SECTION 2: OTHER PLANS & ADD-ONS (Below it, horizontal swipeable carousel)*/}
-            {/* ========================================================================= */}
+                          {Boolean(plan.included_channels) && (
+                            <View
+                              className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-xl border"
+                              style={{
+                                backgroundColor: isDark ? 'rgba(236, 72, 153, 0.15)' : '#FDF2F8',
+                                borderColor: 'rgba(236, 72, 153, 0.3)',
+                              }}
+                            >
+                              <Ionicons name="share-social" size={13} color="#EC4899" />
+                              <Text className="text-xs font-bold text-[#EC4899]">
+                                {plan.included_channels} Connected Channels
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    )}
 
-            {/* 3. Category Selector Pills (Scrollable) */}
-            <View style={styles.categorySection}>
-              <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
-                FILTER BY PRODUCT CATEGORY
-              </Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.categoryScroll}
-              >
-                {availableCategories.map((cat) => {
-                  const isSelected = selectedCategory === cat.key;
-                  const meta = CATEGORY_META[cat.key];
-                  return (
-                    <Pressable
-                      key={cat.key}
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setSelectedCategory(cat.key);
-                      }}
-                      style={[
-                        styles.categoryPill,
-                        {
-                          backgroundColor: isSelected
-                            ? meta.color
-                            : colors.surface,
-                          borderColor: isSelected
-                            ? meta.color
-                            : colors.border,
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name={cat.icon as any}
-                        size={14}
-                        color={isSelected ? "#ffffff" : meta.color}
-                      />
+                    {/* Complete Features Checklist */}
+                    <View className="gap-2.5">
                       <Text
-                        style={[
-                          styles.categoryPillText,
-                          {
-                            color: isSelected ? "#ffffff" : colors.text,
-                            fontWeight: isSelected ? "800" : "600",
-                          },
-                        ]}
+                        className="text-[11px] font-black tracking-wider"
+                        style={{ color: colors.textMuted }}
                       >
-                        {cat.label}
+                        ALL INCLUDED CAPABILITIES
                       </Text>
+                      {(Array.isArray(plan.features) && plan.features.length > 0
+                        ? plan.features
+                        : [
+                            'Instant workspace activation',
+                            'Automated cloud API access',
+                            '24/7 autonomous monitoring',
+                            'GST invoice delivery via email',
+                          ]
+                      ).map((feat, idx) => (
+                        <View key={idx} className="flex-row items-start gap-2.5">
+                          <View
+                            className="w-5 h-5 rounded-full items-center justify-center mt-0.5"
+                            style={{ backgroundColor: `${theme.color}25` }}
+                          >
+                            <Ionicons name="checkmark" size={12} color={theme.color} />
+                          </View>
+                          <Text
+                            className="text-[13px] font-semibold leading-5 flex-1"
+                            style={{ color: colors.text }}
+                          >
+                            {feat}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+
+                    {/* Guarantee Perks */}
+                    <View
+                      className="p-3 rounded-2xl flex-row items-center justify-around border my-1"
+                      style={{
+                        backgroundColor: isDark ? '#1E293B' : '#F8FAFC',
+                        borderColor: isDark ? '#334155' : '#E2E8F0',
+                      }}
+                    >
+                      <View className="items-center gap-1">
+                        <Ionicons name="shield-checkmark" size={16} color="#10B981" />
+                        <Text className="text-[10px] font-bold" style={{ color: colors.textMuted }}>
+                          256-Bit SSL
+                        </Text>
+                      </View>
+                      <View className="items-center gap-1">
+                        <Ionicons name="flash" size={16} color={theme.color} />
+                        <Text className="text-[10px] font-bold" style={{ color: colors.textMuted }}>
+                          Instant Active
+                        </Text>
+                      </View>
+                      <View className="items-center gap-1">
+                        <Ionicons name="receipt-outline" size={16} color="#0284C7" />
+                        <Text className="text-[10px] font-bold" style={{ color: colors.textMuted }}>
+                          GST Invoice
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Purchase Button Inside Modal */}
+                    <Pressable
+                      onPress={() => handleCheckout(plan)}
+                      className="w-full py-3.5 rounded-2xl items-center justify-center flex-col gap-0.5 active:opacity-90 shadow-lg mt-2 mb-4"
+                      style={{
+                        backgroundColor: theme.color,
+                        shadowColor: theme.color,
+                        shadowOpacity: 0.4,
+                        shadowRadius: 10,
+                        elevation: 5,
+                      }}
+                    >
+                      <View className="flex-row items-center gap-2">
+                        <Text className="text-white text-[15px] font-black tracking-wide">
+                          Purchase Plan · ₹{finalChargedRupees.toLocaleString('en-IN')}
+                        </Text>
+                        <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+                      </View>
+                      <View className="flex-row items-center gap-1 opacity-90">
+                        <Ionicons name="shield-checkmark" size={10} color="#FFFFFF" />
+                        <Text className="text-[10px] font-bold text-white tracking-wider">
+                          PAY VIA RAZORPAY SDK
+                        </Text>
+                      </View>
                     </Pressable>
-                  );
-                })}
-              </ScrollView>
+                  </ScrollView>
+                );
+              })()}
             </View>
-            {/* Product Category Sections */}
-            {(selectedCategory === "all" || selectedCategory === "calling") &&
-              renderProductCategorySection("calling", voicePlans)}
-
-            {(selectedCategory === "all" || selectedCategory === "whatsapp") &&
-              renderProductCategorySection("whatsapp", whatsappPlans)}
-
-            {(selectedCategory === "all" || selectedCategory === "telegram") &&
-              renderProductCategorySection("telegram", telegramPlans)}
-
-            {(selectedCategory === "all" || selectedCategory === "crm") &&
-              renderProductCategorySection("crm", crmPlans)}
-
-            {(selectedCategory === "all" || selectedCategory === "social") &&
-              renderProductCategorySection("social", socialPlans)}
-
-            {selectedCategory === "all-in-one" && (
-              <View
-                style={[
-                  styles.emptyHorizontalBox,
-                  { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
-                ]}
-              >
-                <Ionicons name="diamond-outline" size={28} color="#8B5CF6" />
-                <Text style={[styles.innerEmptyTitle, { color: colors.text }]}>
-                  GAP Pro All-in-One Featured
-                </Text>
-                <Text style={[styles.innerEmptyDesc, { color: colors.textMuted }]}>
-                  All GAP Pro unified ecosystem tiers are featured in the top carousel. Select "All Plans" or specific engine tabs above to browse modular plans.
-                </Text>
-              </View>
-            )}
           </View>
-        )}
-      </ScrollView>
+        </Modal>
+      )}
     </AppScreen>
   );
 }
@@ -1167,520 +1305,11 @@ export default function OverallPricingScreen() {
 const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 120,
-    width: "100%",
-    maxWidth: 1100,
-    alignSelf: "center",
-    gap: 16,
-  },
-  statusBanner: {
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 8,
-  },
-  statusHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  activePill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  activeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#10B981",
-  },
-  activePillText: {
-    color: "#10B981",
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-  },
-  planStatusDate: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  statusPlanName: {
-    fontSize: 20,
-    fontWeight: "800",
-  },
-  statusPlanDesc: {
-    fontSize: 12.5,
-    lineHeight: 17,
-  },
-  categorySection: {
-    gap: 8,
-  },
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 0.8,
-  },
-  categoryScroll: {
-    gap: 8,
-    paddingRight: 16,
-  },
-  categoryPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  categoryPillText: {
-    fontSize: 12,
-  },
-  durationBar: {
-    flexDirection: "row",
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 4,
-    gap: 4,
-  },
-  durationTab: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 8,
-  },
-  durationTabActive: {
-    backgroundColor: "#ffffff",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  durationTabActiveDark: {
-    backgroundColor: "#1e293b",
-  },
-  durationTabText: {
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  loadingContainer: {
-    paddingVertical: 48,
-    alignItems: "center",
-    gap: 12,
-  },
-  loadingText: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-
-  // Dual Section Container Styles
-  sectionContainer: {
-    borderRadius: 22,
-    borderWidth: 1.5,
-    padding: 14,
-    gap: 14,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  proSectionBox: {
-    borderWidth: 2,
-    shadowColor: "#8B5CF6",
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-  },
-  proIntervalWrapper: {
-    marginTop: 2,
-    marginBottom: 4,
-  },
-  proIntervalScroll: {
-    gap: 8,
-    paddingVertical: 2,
-    paddingRight: 8,
-  },
-  proIntervalChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1.5,
-  },
-  proIntervalChipText: {
-    fontSize: 12.5,
-  },
-  proIntervalChipBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  proIntervalChipBadgeText: {
-    fontSize: 9.5,
-    fontWeight: "800",
-    letterSpacing: 0.3,
-  },
-  durationSavingsBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  durationSavingsBadgeText: {
-    fontSize: 10,
-    fontWeight: "800",
-  },
-  sectionHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  sectionHeaderLeft: {
-    flexDirection: "row",
-    alignItems: "center",
+    paddingTop: 8,
+    paddingBottom: 24,
+    width: '100%',
+    maxWidth: 640,
+    alignSelf: 'center',
     gap: 10,
-    flex: 1,
-    paddingRight: 8,
-  },
-  sectionIconBadge: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: "800",
-    letterSpacing: -0.2,
-  },
-  sectionSubtitle: {
-    fontSize: 11,
-    marginTop: 1,
-  },
-  scrollHintBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(139, 92, 246, 0.15)",
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 10,
-  },
-  scrollHintText: {
-    fontSize: 10.5,
-    fontWeight: "800",
-    color: "#8B5CF6",
-  },
-
-  // Horizontal Scroll Container
-  horizontalScrollContent: {
-    paddingHorizontal: 2,
-    paddingVertical: 4,
-    gap: 14,
-  },
-  emptyHorizontalBox: {
-    padding: 22,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-  },
-  innerEmptyTitle: {
-    fontSize: 13.5,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-  innerEmptyDesc: {
-    fontSize: 11.5,
-    textAlign: "center",
-    lineHeight: 16,
-  },
-
-  // Plan Card Styles
-  planCard: {
-    padding: 16,
-    borderRadius: 18,
-    gap: 13,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  proPlanCard: {
-    shadowColor: "#8B5CF6",
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  cardTopRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    flexWrap: "wrap",
-  },
-  proCardBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4.5,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  proCardBadgeText: {
-    color: "#8B5CF6",
-    fontSize: 10,
-    fontWeight: "900",
-    letterSpacing: 0.6,
-  },
-  categoryBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  categoryBadgeText: {
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-  },
-  popularBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  popularBadgeText: {
-    color: "#ffffff",
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-  },
-  referralCardBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  referralCardBadgeText: {
-    color: "#10B981",
-    fontSize: 9.5,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-  },
-  planHeader: {
-    gap: 5,
-  },
-  planTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    letterSpacing: -0.3,
-  },
-  proEnginesPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    alignSelf: "flex-start",
-  },
-  proEnginesPillText: {
-    fontSize: 10.5,
-    fontWeight: "700",
-  },
-  planDescription: {
-    fontSize: 11.5,
-    lineHeight: 15,
-  },
-  priceBox: {
-    padding: 11,
-    borderRadius: 12,
-    gap: 3,
-  },
-  proPriceBox: {
-    borderLeftWidth: 3,
-    borderLeftColor: "#8B5CF6",
-  },
-  priceRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 6,
-    flexWrap: "wrap",
-  },
-  priceAmount: {
-    fontSize: 26,
-    fontWeight: "900",
-    letterSpacing: -1,
-  },
-  priceDuration: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  billingNote: {
-    fontSize: 10,
-    fontWeight: "700",
-  },
-  quotasRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 5,
-  },
-  quotaTag: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 7,
-    paddingVertical: 3.5,
-    borderRadius: 7,
-  },
-  quotaTagText: {
-    fontSize: 10.5,
-    fontWeight: "700",
-  },
-  featuresList: {
-    gap: 6,
-  },
-  featureItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-  },
-  featureText: {
-    fontSize: 11.5,
-    fontWeight: "500",
-    flex: 1,
-    lineHeight: 15,
-  },
-  subscribeBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 7,
-    paddingVertical: 12,
-    borderRadius: 12,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.22,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  proSubscribeBtn: {
-    shadowColor: "#7C3AED",
-  },
-  subscribeBtnText: {
-    color: "#ffffff",
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  addonBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  addonBadgeText: {
-    fontSize: 9.5,
-    fontWeight: "900",
-    letterSpacing: 0.6,
-  },
-  addonValidityBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 7,
-    paddingVertical: 3.5,
-    borderRadius: 8,
-  },
-  addonValidityBadgeText: {
-    color: "#10B981",
-    fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-  },
-  addonCard: {
-    shadowOpacity: 0.08,
-  },
-  addonPriceBox: {
-    borderLeftWidth: 3,
-    borderLeftColor: "#6366F1",
-  },
-  addonBtn: {
-    backgroundColor: "#4F46E5",
-    shadowColor: "#4F46E5",
-  },
-  referralBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 13,
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 12,
-  },
-  referralBannerIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(16, 185, 129, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  referralBannerTitle: {
-    fontSize: 13.5,
-    fontWeight: "800",
-  },
-  referralBadge: {
-    backgroundColor: "#10B981",
-    paddingHorizontal: 7,
-    paddingVertical: 2.5,
-    borderRadius: 6,
-  },
-  referralBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 9.5,
-    fontWeight: "800",
-  },
-  referralBannerSubtitle: {
-    fontSize: 11.5,
-    marginTop: 2,
-    lineHeight: 15,
-  },
-  originalPrice: {
-    fontSize: 14.5,
-    textDecorationLine: "line-through",
-    fontWeight: "600",
-  },
-  discountPill: {
-    backgroundColor: "#10B981",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    marginLeft: 6,
-  },
-  discountPillText: {
-    color: "#ffffff",
-    fontSize: 10,
-    fontWeight: "800",
   },
 });

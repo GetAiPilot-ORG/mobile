@@ -6,21 +6,23 @@ import {
   Pressable,
   ScrollView,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useTheme, getColors } from '../../../theme';
 
 import { DashboardAnalyticsCharts, HubProgressCard, ToolCard } from '../components';
 import { StatCard } from '../components/ui/StatCard';
+import { AnimatedHero } from '../components/ui/AnimatedHero';
 import { TelegramHubTool, TelegramToolKey } from '../types';
 
 type TelegramCategory = 'all' | 'automation' | 'monetization' | 'growth';
 
-const CATEGORIES: { key: TelegramCategory; label: string; icon: string }[] = [
-  { key: 'all', label: 'All 8 Tools', icon: 'grid-outline' },
-  { key: 'automation', label: 'Automation', icon: 'git-compare-outline' },
-  { key: 'monetization', label: 'Monetization', icon: 'card-outline' },
-  { key: 'growth', label: 'Growth', icon: 'trending-up-outline' },
+const CATEGORIES: { key: TelegramCategory; label: string; icon: string; count?: number }[] = [
+  { key: 'all', label: 'All Tools', icon: 'grid-outline', count: 8 },
+  { key: 'automation', label: 'Automation', icon: 'git-compare-outline', count: 4 },
+  { key: 'monetization', label: 'Monetization', icon: 'card-outline', count: 2 },
+  { key: 'growth', label: 'Growth', icon: 'trending-up-outline', count: 4 },
 ];
 
 const DEFAULT_TELEGRAM_TOOLS: TelegramHubTool[] = [
@@ -136,13 +138,13 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
   const toolsSource: TelegramHubTool[] =
     hub.tools && hub.tools.length > 0
       ? hub.tools.map((t: TelegramHubTool) => {
-          const defaultDef = DEFAULT_TELEGRAM_TOOLS.find((d) => d.key === t.key);
-          return {
-            ...t,
-            badge: t.badge || defaultDef?.badge,
-            description: t.description || t.statusText || defaultDef?.description || '',
-          };
-        })
+        const defaultDef = DEFAULT_TELEGRAM_TOOLS.find((d) => d.key === t.key);
+        return {
+          ...t,
+          badge: t.badge || defaultDef?.badge,
+          description: t.description || t.statusText || defaultDef?.description || '',
+        };
+      })
       : DEFAULT_TELEGRAM_TOOLS;
 
   const filteredTools = toolsSource.filter((tool: TelegramHubTool) => {
@@ -153,58 +155,89 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
     return true;
   });
 
-  const card = { backgroundColor: colors.card };
-  const txt = { color: colors.text };
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
+
+  const kpiItems = [
+    { label: 'TRACKED BOTS', value: botsList.length, color: '#0284C7', icon: 'hardware-chip-outline', bg: 'rgba(2,132,199,0.12)', tab: 'bots', sub: 'Connected bots' },
+    { label: 'CHANNELS', value: (chats || []).length, color: '#10B981', icon: 'megaphone-outline', bg: 'rgba(16,185,129,0.12)', tab: 'bots', sub: 'Mapped channels' },
+    { label: 'DEEP LINKS', value: deepLinksCount, color: '#06B6D4', icon: 'link-outline', bg: 'rgba(6,182,212,0.12)', tab: 'bots', sub: 'Tracked join links' },
+    { label: 'FORWARDS', value: (forwardRules || []).length, color: '#8B5CF6', icon: 'git-compare-outline', bg: 'rgba(139,92,246,0.12)', tab: 'automations', sub: 'Active rules' },
+    { label: 'SUB PAGES', value: subManagerPages.length || (subPlans || []).length, color: '#EC4899', icon: 'wallet-outline', bg: 'rgba(236,72,153,0.12)', tab: 'sub_manager', sub: 'Monetized pages' },
+    { label: 'REVENUE', value: `₹${(realRevenue ?? 0).toLocaleString()}`, color: '#F59E0B', icon: 'cash-outline', bg: 'rgba(245,158,11,0.12)', tab: 'sub_manager', sub: 'Total collected', isRevenue: true },
+  ];
+
+  const itemsPerRow = isTablet ? 3 : 2;
+  const kpiRows: (typeof kpiItems)[] = [];
+  for (let i = 0; i < kpiItems.length; i += itemsPerRow) {
+    kpiRows.push(kpiItems.slice(i, i + itemsPerRow));
+  }
 
   return (
     <>
-      {/* HERO: Command Center */}
-      <View
-        className="rounded-2xl border p-3.5 mb-3.5"
-        style={{ backgroundColor: colors.card, borderColor: colors.cardBorder }}
-      >
-        <View className="flex-col gap-2.5">
-          <View className="flex-row items-center gap-2 flex-wrap">
-            <View
-              className="flex-row items-center gap-1.5 px-2 py-1 rounded-full"
-              style={{ backgroundColor: 'rgba(16,185,129,0.1)' }}
-            >
-              <View className="w-[7px] h-[7px] rounded-full bg-[#10B981]" />
-              <Text className="text-[11px] font-bold text-[#10B981]">Database Synced</Text>
+      {/* HERO: Command Center (Responsive Header with Telegram Animated Graphic) */}
+      <View className="overflow-hidden">
+        <View className="flex-col gap-3">
+          <AnimatedHero
+            variant="overview"
+            tagText="TELEGRAM COMMAND CENTER"
+            tagIcon="shield-checkmark"
+            title="Telegram Automation & Growth"
+            subtitle="Multi-bot orchestration, tracking & monetization"
+          />
+
+          {/* Status Badges & Quick Action */}
+          <View className="flex-row p-3 items-center justify-between flex-wrap gap-2">
+            <View className="flex-row items-center gap-1.5 flex-wrap flex-1 min-w-[180px]">
+              <View
+                className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-full"
+                style={{ backgroundColor: 'rgba(16,185,129,0.1)' }}
+              >
+                <View className="w-[7px] h-[7px] rounded-full bg-[#10B981]" />
+                <Text className="text-[11px] font-bold text-[#10B981]">Engine Active</Text>
+              </View>
+              <View
+                className="px-2.5 py-1 rounded-full"
+                style={{ backgroundColor: 'rgba(2,132,199,0.1)' }}
+              >
+                <Text className="text-[11px] font-bold text-[#0284C7]">
+                  {botsList.length} Bots Connected
+                </Text>
+              </View>
+              <View
+                className="px-2.5 py-1 rounded-full"
+                style={{ backgroundColor: 'rgba(139,92,246,0.1)' }}
+              >
+                <Text className="text-[11px] font-bold text-[#8B5CF6]">
+                  {(chats || []).length} Channels Mapped
+                </Text>
+              </View>
             </View>
-            <View
-              className="px-2 py-1 rounded-full"
-              style={{ backgroundColor: 'rgba(2,132,199,0.1)' }}
+
+            <Pressable
+              className="flex-row items-center gap-1 bg-[#0284C7]/10 px-2.5 py-1.5 rounded-lg border border-[#0284C7]/20 self-start"
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onRefresh();
+              }}
             >
+              <Ionicons name="sync-outline" size={12} color="#0284C7" />
               <Text className="text-[11px] font-bold text-[#0284C7]">
-                {botsList.length} Bots Connected
+                {isRefetching ? 'Syncing...' : 'Sync Hub'}
               </Text>
-            </View>
+            </Pressable>
           </View>
         </View>
       </View>
 
-      {/* 6 KPI Cards in 3 Guaranteed 2-Item Rows */}
+      {/* 6 KPI Cards in Responsive Rows */}
       <View
-        className="w-full border-t pt-3 mt-1 gap-2 self-stretch mb-3.5"
+        className="w-full pt-3 mt-1 gap-2 self-stretch mb-3.5"
         style={{ borderTopColor: isDark ? '#27272A' : '#E2E8F0' }}
       >
-        {[
-          [
-            { label: 'TRACKED BOTS', value: botsList.length, color: '#0284C7', icon: 'hardware-chip-outline', bg: 'rgba(2,132,199,0.12)', tab: 'bots', sub: 'Connected bots' },
-            { label: 'CHANNELS', value: (chats || []).length, color: '#10B981', icon: 'megaphone-outline', bg: 'rgba(16,185,129,0.12)', tab: 'bots', sub: 'Mapped channels' },
-          ],
-          [
-            { label: 'DEEP LINKS', value: deepLinksCount, color: '#06B6D4', icon: 'link-outline', bg: 'rgba(6,182,212,0.12)', tab: 'bots', sub: 'Tracked join links' },
-            { label: 'FORWARDS', value: (forwardRules || []).length, color: '#8B5CF6', icon: 'git-compare-outline', bg: 'rgba(139,92,246,0.12)', tab: 'automations', sub: 'Active rules' },
-          ],
-          [
-            { label: 'SUB PAGES', value: subManagerPages.length || (subPlans || []).length, color: '#EC4899', icon: 'wallet-outline', bg: 'rgba(236,72,153,0.12)', tab: 'sub_manager', sub: 'Monetized pages' },
-            { label: 'REVENUE', value: `₹${(realRevenue ?? 0).toLocaleString()}`, color: '#F59E0B', icon: 'cash-outline', bg: 'rgba(245,158,11,0.12)', tab: 'sub_manager', sub: 'Total collected', isRevenue: true },
-          ],
-        ].map((pair, rowIndex) => (
+        {kpiRows.map((row, rowIndex) => (
           <View key={rowIndex} className="flex-row w-full gap-2.5 self-stretch mb-2.5">
-            {pair.map((m, colIndex) => (
+            {row.map((m, colIndex) => (
               <View key={colIndex} className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
                 <StatCard
                   label={m.label}
@@ -222,22 +255,9 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
         ))}
       </View>
 
-      {/* Analytics Charts */}
-      <DashboardAnalyticsCharts
-        joinsCount={deepLinksCount}
-        revenue={realRevenue}
-      />
-
-      {/* Progress Card */}
-      <HubProgressCard
-        total={hub.totalModules || 8}
-        completed={hub.completedModules || 8}
-        onRefresh={onRefresh}
-        isRefreshing={isRefetching}
-      />
 
       {/* Category Filter */}
-      <View className="mb-3.5" style={{ backgroundColor: colors.backgroundSecondary }}>
+      <View className="mb-3.5 p-2.5" style={{ backgroundColor: colors.backgroundSecondary }}>
         <Text className="text-[15px] font-extrabold mb-2.5" style={{ color: colors.text }}>
           Platform Integration Tools ({filteredTools.length}/8)
         </Text>
@@ -251,13 +271,12 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
             return (
               <Pressable
                 key={cat.key}
-                className={`flex-row items-center gap-1.5 px-3 py-[7px] rounded-full border ${
-                  isSelected
-                    ? 'bg-[#0284C7] border-[#0284C7]'
-                    : isDark
-                      ? 'bg-[#121212] border-[#27272A]'
-                      : 'bg-[#F8FAFC] border-[#E2E8F0]'
-                }`}
+                className={`flex-row items-center gap-1.5 px-3 py-[7px] rounded-full border ${isSelected
+                  ? 'bg-[#0284C7] border-[#0284C7]'
+                  : isDark
+                    ? 'bg-[#121212] border-[#27272A]'
+                    : 'bg-[#F8FAFC] border-[#E2E8F0]'
+                  }`}
                 onPress={() => {
                   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setSelectedCategory(cat.key);
@@ -274,6 +293,17 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
                 >
                   {cat.label}
                 </Text>
+                {cat.count !== undefined && (
+                  <View
+                    className={`px-1.5 py-0.5 rounded-full ${isSelected ? 'bg-white/20' : isDark ? 'bg-white/10' : 'bg-slate-200'}`}
+                  >
+                    <Text
+                      className={`text-[10px] font-black ${isSelected ? 'text-white' : isDark ? 'text-slate-300' : 'text-slate-600'}`}
+                    >
+                      {cat.count}
+                    </Text>
+                  </View>
+                )}
               </Pressable>
             );
           })}
