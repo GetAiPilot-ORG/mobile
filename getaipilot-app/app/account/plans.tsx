@@ -7,7 +7,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Modal,
   Platform,
   Pressable,
   RefreshControl,
@@ -158,9 +157,6 @@ export default function OverallPricingScreen() {
   // Currently Selected Plan ID (for the card highlight state)
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
-  // Detail Modal State (opens when tapping arrow icon)
-  const [detailModalPlan, setDetailModalPlan] = useState<PricingPlan | null>(null);
-
   const handleBack = () => {
     if (router.canGoBack()) {
       router.back();
@@ -276,9 +272,6 @@ export default function OverallPricingScreen() {
 
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    // Close detail modal if open
-    setDetailModalPlan(null);
-
     const isAddon = isAddonPlan(plan);
     const isVoicePlan =
       plan.category === 'calling' ||
@@ -390,10 +383,7 @@ export default function OverallPricingScreen() {
     });
   };
 
-  const openDetailModal = (plan: PricingPlan) => {
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setDetailModalPlan(plan);
-  };
+
 
   return (
     <AppScreen safeArea={false} backgroundColor={isDark ? '#0F172A' : '#F8FAFC'}>
@@ -426,7 +416,7 @@ export default function OverallPricingScreen() {
             className="text-xs text-center mt-1.5 leading-4 px-4"
             style={{ color: colors.textMuted }}
           >
-            Select the optimal tier for your team. Click the arrow icon on any package to inspect full quotas & specifications.
+            Select the optimal tier for your team and proceed directly with Razorpay checkout.
           </Text>
         </View>
 
@@ -735,17 +725,13 @@ export default function OverallPricingScreen() {
                         ) : null}
                       </View>
 
-                      {/* Right top arrow button circle: OPENS DETAIL PAGE */}
-                      <Pressable
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          openDetailModal(plan);
-                        }}
-                        className="w-8 h-8 rounded-full items-center justify-center active:scale-95"
+                      {/* Selected checkmark indicator */}
+                      <View
+                        className="w-7 h-7 rounded-full items-center justify-center"
                         style={{ backgroundColor: theme.color }}
                       >
-                        <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
-                      </Pressable>
+                        <Ionicons name="checkmark" size={15} color="#FFFFFF" />
+                      </View>
                     </View>
 
                     {/* Middle Row: Features on Left, Large Price on Right */}
@@ -819,6 +805,20 @@ export default function OverallPricingScreen() {
                         </Text>
                       </View>
                     )}
+                    {/* Direct 1-Tap Razorpay Button on Card */}
+                    <Pressable
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        handleCheckout(plan);
+                      }}
+                      className="mt-3.5 py-3 rounded-2xl items-center justify-center flex-row gap-2 active:opacity-90 shadow-sm"
+                      style={{ backgroundColor: theme.color }}
+                    >
+                      <Ionicons name="card-outline" size={15} color="#FFFFFF" />
+                      <Text className="text-white text-xs font-black tracking-wider">
+                        PAY WITH RAZORPAY
+                      </Text>
+                    </Pressable>
                   </Pressable>
                 );
               }
@@ -880,11 +880,7 @@ export default function OverallPricingScreen() {
                       </Text>
                     </View>
 
-                    <Pressable
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        openDetailModal(plan);
-                      }}
+                    <View
                       className="w-7 h-7 rounded-full items-center justify-center"
                       style={{ backgroundColor: `${theme.color}15` }}
                     >
@@ -893,7 +889,7 @@ export default function OverallPricingScreen() {
                         size={15}
                         color={theme.color}
                       />
-                    </Pressable>
+                    </View>
                   </View>
                 </Pressable>
               );
@@ -972,332 +968,7 @@ export default function OverallPricingScreen() {
         </Pressable>
       </View>
 
-      {/* ========================================================================= */}
-      {/* DETAIL MODAL / SHEET: Opens when tapping arrow icon on any plan card      */}
-      {/* ========================================================================= */}
-      {detailModalPlan && (
-        <Modal
-          visible={Boolean(detailModalPlan)}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => setDetailModalPlan(null)}
-        >
-          <View
-            className="flex-1 justify-end"
-            style={{ backgroundColor: 'rgba(0, 0, 0, 0.65)' }}
-          >
-            <Pressable
-              className="flex-1"
-              onPress={() => setDetailModalPlan(null)}
-            />
 
-            <View
-              className="rounded-t-3xl border-t p-5 max-h-[85%]"
-              style={{
-                backgroundColor: isDark ? '#0F172A' : '#FFFFFF',
-                borderColor: isDark ? '#334155' : '#E2E8F0',
-              }}
-            >
-              {/* Drag Handle Bar */}
-              <View className="items-center mb-3">
-                <View
-                  className="w-10 h-1.5 rounded-full"
-                  style={{ backgroundColor: isDark ? '#334155' : '#CBD5E1' }}
-                />
-              </View>
-
-              {/* Modal Header */}
-              {(() => {
-                const plan = detailModalPlan;
-                const isPro = isGapProPlan(plan);
-                const theme = getPlanTheme(plan);
-
-                const proPricing = isPro
-                  ? calculateGapProPricing(
-                      plan.amount,
-                      gapProInterval,
-                      hasReferralDiscount ? discountPercent : 0
-                    )
-                  : null;
-
-                const baseAmountInRupees = Math.round(plan.amount / 100);
-                const isEligibleForDiscount = hasReferralDiscount && isPro;
-                const discountedPriceRupees = isEligibleForDiscount
-                  ? Math.max(1, Math.round(baseAmountInRupees * (1 - discountPercent / 100)))
-                  : baseAmountInRupees;
-
-                const formattedPrice =
-                  isPro && proPricing
-                    ? PricingService.formatPrice(proPricing.baseMonthlyRupees * 100, plan.currency)
-                    : PricingService.formatPrice(plan.amount, plan.currency);
-
-                const formattedDiscountedPrice =
-                  isPro && proPricing
-                    ? PricingService.formatPrice(proPricing.finalMonthlyRupees * 100, plan.currency)
-                    : PricingService.formatPrice(discountedPriceRupees * 100, plan.currency);
-
-                const finalChargedRupees = isPro && proPricing
-                  ? proPricing.totalChargedRupees
-                  : discountedPriceRupees;
-
-                return (
-                  <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 14 }}>
-                    <View className="flex-row items-center justify-between">
-                      <View className="flex-row items-center gap-3 flex-1 mr-2">
-                        <View
-                          className="w-12 h-12 rounded-2xl items-center justify-center"
-                          style={{ backgroundColor: `${theme.color}20` }}
-                        >
-                          <Ionicons name={theme.icon} size={24} color={theme.color} />
-                        </View>
-                        <View className="flex-1">
-                          <Text
-                            className="text-lg font-black tracking-tight"
-                            style={{ color: colors.text }}
-                          >
-                            {plan.plan_label || plan.plan_name}
-                          </Text>
-                          <View className="flex-row items-center gap-1.5 mt-0.5">
-                            <View
-                              className="px-2 py-0.5 rounded-md"
-                              style={{ backgroundColor: `${theme.color}15` }}
-                            >
-                              <Text
-                                className="text-[10px] font-black tracking-wider"
-                                style={{ color: theme.color }}
-                              >
-                                {theme.badge}
-                              </Text>
-                            </View>
-                            {plan.is_popular && (
-                              <View className="px-2 py-0.5 rounded-md bg-[#F59E0B]">
-                                <Text className="text-[9.5px] font-black text-white">
-                                  POPULAR
-                                </Text>
-                              </View>
-                            )}
-                          </View>
-                        </View>
-                      </View>
-
-                      <Pressable
-                        onPress={() => setDetailModalPlan(null)}
-                        className="w-8 h-8 rounded-full items-center justify-center"
-                        style={{ backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }}
-                      >
-                        <Ionicons name="close" size={18} color={colors.text} />
-                      </Pressable>
-                    </View>
-
-                    {/* Price & Billing Summary Box */}
-                    <View
-                      className="p-4 rounded-2xl border"
-                      style={{
-                        backgroundColor: isDark ? theme.darkBg : theme.lightBg,
-                        borderColor: `${theme.color}40`,
-                      }}
-                    >
-                      <View className="flex-row items-baseline justify-between mb-1">
-                        <View className="flex-row items-baseline gap-2">
-                          <Text
-                            className="text-3xl font-black"
-                            style={{ color: colors.text }}
-                          >
-                            {(isPro ? proPricing?.hasDiscount : isEligibleForDiscount)
-                              ? formattedDiscountedPrice
-                              : formattedPrice}
-                          </Text>
-                          {(isPro ? proPricing?.hasDiscount : isEligibleForDiscount) && (
-                            <Text
-                              className="text-base line-through font-semibold"
-                              style={{ color: colors.textMuted }}
-                            >
-                              {formattedPrice}
-                            </Text>
-                          )}
-                          <Text
-                            className="text-xs font-bold"
-                            style={{ color: theme.color }}
-                          >
-                            {isPro ? '/month' : `/${plan.duration || 'monthly'}`}
-                          </Text>
-                        </View>
-
-                        {isPro && proPricing && proPricing.option.discountPercent > 0 && (
-                          <View className="px-2.5 py-1 rounded-full bg-emerald-500">
-                            <Text className="text-[10px] font-black text-white">
-                              SAVE {proPricing.option.discountPercent}%
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-
-                      <Text
-                        className="text-xs font-semibold mt-1"
-                        style={{ color: colors.textSecondary }}
-                      >
-                        {isPro && proPricing
-                          ? gapProInterval === 'month'
-                            ? 'Billed monthly • 30-day renewal cycle'
-                            : `Total ₹${proPricing.totalChargedRupees.toLocaleString('en-IN')} billed for ${proPricing.option.months} months (₹${proPricing.totalSavedRupees.toLocaleString('en-IN')} saved)`
-                          : plan.billing_note || plan.description || 'Production-grade workspace quotas.'}
-                      </Text>
-                    </View>
-
-                    {/* Quotas Overview Pills (if available) */}
-                    {(Boolean(plan.included_call_minutes) ||
-                      Boolean(plan.included_numbers) ||
-                      Boolean(plan.included_channels)) && (
-                      <View className="gap-2">
-                        <Text
-                          className="text-[11px] font-black tracking-wider"
-                          style={{ color: colors.textMuted }}
-                        >
-                          RESOURCE QUOTAS
-                        </Text>
-                        <View className="flex-row flex-wrap gap-2">
-                          {Boolean(plan.included_call_minutes) && (
-                            <View
-                              className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-xl border"
-                              style={{
-                                backgroundColor: isDark ? 'rgba(168, 85, 247, 0.15)' : '#FAF5FF',
-                                borderColor: 'rgba(168, 85, 247, 0.3)',
-                              }}
-                            >
-                              <Ionicons name="mic" size={13} color="#A855F7" />
-                              <Text className="text-xs font-bold text-[#A855F7]">
-                                {plan.included_call_minutes} AI Calling Minutes
-                              </Text>
-                            </View>
-                          )}
-
-                          {Boolean(plan.included_numbers) && (
-                            <View
-                              className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-xl border"
-                              style={{
-                                backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#F0FDF4',
-                                borderColor: 'rgba(16, 185, 129, 0.3)',
-                              }}
-                            >
-                              <Ionicons name="call" size={13} color="#10B981" />
-                              <Text className="text-xs font-bold text-[#10B981]">
-                                {plan.included_numbers} Dedicated Virtual Line
-                              </Text>
-                            </View>
-                          )}
-
-                          {Boolean(plan.included_channels) && (
-                            <View
-                              className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-xl border"
-                              style={{
-                                backgroundColor: isDark ? 'rgba(236, 72, 153, 0.15)' : '#FDF2F8',
-                                borderColor: 'rgba(236, 72, 153, 0.3)',
-                              }}
-                            >
-                              <Ionicons name="share-social" size={13} color="#EC4899" />
-                              <Text className="text-xs font-bold text-[#EC4899]">
-                                {plan.included_channels} Connected Channels
-                              </Text>
-                            </View>
-                          )}
-                        </View>
-                      </View>
-                    )}
-
-                    {/* Complete Features Checklist */}
-                    <View className="gap-2.5">
-                      <Text
-                        className="text-[11px] font-black tracking-wider"
-                        style={{ color: colors.textMuted }}
-                      >
-                        ALL INCLUDED CAPABILITIES
-                      </Text>
-                      {(Array.isArray(plan.features) && plan.features.length > 0
-                        ? plan.features
-                        : [
-                            'Instant workspace activation',
-                            'Automated cloud API access',
-                            '24/7 autonomous monitoring',
-                            'GST invoice delivery via email',
-                          ]
-                      ).map((feat, idx) => (
-                        <View key={idx} className="flex-row items-start gap-2.5">
-                          <View
-                            className="w-5 h-5 rounded-full items-center justify-center mt-0.5"
-                            style={{ backgroundColor: `${theme.color}25` }}
-                          >
-                            <Ionicons name="checkmark" size={12} color={theme.color} />
-                          </View>
-                          <Text
-                            className="text-[13px] font-semibold leading-5 flex-1"
-                            style={{ color: colors.text }}
-                          >
-                            {feat}
-                          </Text>
-                        </View>
-                      ))}
-                    </View>
-
-                    {/* Guarantee Perks */}
-                    <View
-                      className="p-3 rounded-2xl flex-row items-center justify-around border my-1"
-                      style={{
-                        backgroundColor: isDark ? '#1E293B' : '#F8FAFC',
-                        borderColor: isDark ? '#334155' : '#E2E8F0',
-                      }}
-                    >
-                      <View className="items-center gap-1">
-                        <Ionicons name="shield-checkmark" size={16} color="#10B981" />
-                        <Text className="text-[10px] font-bold" style={{ color: colors.textMuted }}>
-                          256-Bit SSL
-                        </Text>
-                      </View>
-                      <View className="items-center gap-1">
-                        <Ionicons name="flash" size={16} color={theme.color} />
-                        <Text className="text-[10px] font-bold" style={{ color: colors.textMuted }}>
-                          Instant Active
-                        </Text>
-                      </View>
-                      <View className="items-center gap-1">
-                        <Ionicons name="receipt-outline" size={16} color="#0284C7" />
-                        <Text className="text-[10px] font-bold" style={{ color: colors.textMuted }}>
-                          GST Invoice
-                        </Text>
-                      </View>
-                    </View>
-
-                    {/* Purchase Button Inside Modal */}
-                    <Pressable
-                      onPress={() => handleCheckout(plan)}
-                      className="w-full py-3.5 rounded-2xl items-center justify-center flex-col gap-0.5 active:opacity-90 shadow-lg mt-2 mb-4"
-                      style={{
-                        backgroundColor: theme.color,
-                        shadowColor: theme.color,
-                        shadowOpacity: 0.4,
-                        shadowRadius: 10,
-                        elevation: 5,
-                      }}
-                    >
-                      <View className="flex-row items-center gap-2">
-                        <Text className="text-white text-[15px] font-black tracking-wide">
-                          Purchase Plan · ₹{finalChargedRupees.toLocaleString('en-IN')}
-                        </Text>
-                        <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-                      </View>
-                      <View className="flex-row items-center gap-1 opacity-90">
-                        <Ionicons name="shield-checkmark" size={10} color="#FFFFFF" />
-                        <Text className="text-[10px] font-bold text-white tracking-wider">
-                          PAY VIA RAZORPAY SDK
-                        </Text>
-                      </View>
-                    </Pressable>
-                  </ScrollView>
-                );
-              })()}
-            </View>
-          </View>
-        </Modal>
-      )}
     </AppScreen>
   );
 }

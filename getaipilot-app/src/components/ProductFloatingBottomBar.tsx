@@ -144,7 +144,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
         <BlurView
           intensity={Platform.OS === 'ios' ? 75 : 95}
           tint={isDark ? 'dark' : 'light'}
-          experimentalBlurMethod="dimezisBlurView"
+          blurMethod="dimezisBlurView"
           style={[
             StyleSheet.absoluteFill,
             Platform.OS === 'web'
@@ -189,7 +189,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
           <BlurView
             intensity={Platform.OS === 'ios' ? 85 : 70}
             tint={isDark ? 'dark' : 'light'}
-            experimentalBlurMethod="dimezisBlurView"
+            blurMethod="dimezisBlurView"
             style={[
               StyleSheet.absoluteFill,
               Platform.OS === 'web'
@@ -320,7 +320,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
                   <BlurView
                     intensity={Platform.OS === 'ios' ? 85 : 95}
                     tint={isDark ? 'dark' : 'light'}
-                    experimentalBlurMethod="dimezisBlurView"
+                    blurMethod="dimezisBlurView"
                     style={[
                       StyleSheet.absoluteFill,
                       Platform.OS === 'web'

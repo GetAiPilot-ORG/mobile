@@ -3,35 +3,37 @@ import { Platform } from 'react-native';
 import { authStorage } from '../storage/authStorage';
 
 /**
- * Dynamically resolves the BFF backend URL across Web, Android Emulator,
- * Physical LAN device (via Expo Metro host), and Production env.
+ * Returns the local development BFF URL based on the current platform/host.
  */
-export function resolveBffBaseUrl(): string {
-  const customUrl = process.env.EXPO_PUBLIC_BFF_URL;
-  // If an active custom URL is configured and not the undeployed placeholder
-  if (customUrl && !customUrl.includes('bff.getaipilot.in')) {
-    return customUrl;
-  }
-
-  if (Platform.OS === 'web') {
-    return process.env.EXPO_PUBLIC_BFF_URL || 'http://localhost:4000';
-  }
-
-  // Physical Android device or iOS on same Wi-Fi LAN
+export function getLocalDevBffUrl(): string {
+  // Physical Android device or iOS on same Wi-Fi LAN via Metro Host IP
   const hostUri = Constants.expoConfig?.hostUri || (Constants as any).manifest?.debuggerHost;
   if (hostUri) {
     const ip = hostUri.split(':')[0];
     if (ip && ip !== 'localhost' && ip !== '127.0.0.1') {
-      return  process.env.EXPO_PUBLIC_BFF_URL || `http://${ip}:4000`;
+      return `http://${ip}:4000`;
     }
   }
 
   // Android emulator loopback alias
   if (Platform.OS === 'android') {
-    return process.env.EXPO_PUBLIC_BFF_URL || 'http://10.0.2.2:4000';
+    return 'http://10.0.2.2:4000';
   }
 
-  return process.env.EXPO_PUBLIC_BFF_URL || 'http://localhost:4000';
+  return 'http://localhost:4000';
+}
+
+/**
+ * Dynamically resolves the BFF backend URL across Web, Android Emulator,
+ * Physical LAN device (via Expo Metro host), and Production env.
+ */
+export function resolveBffBaseUrl(): string {
+  const customUrl = process.env.EXPO_PUBLIC_BFF_URL;
+  if (customUrl && !customUrl.includes('bff.getaipilot.in')) {
+    return customUrl;
+  }
+
+  return getLocalDevBffUrl();
 }
 
 export const BFF_BASE_URL = resolveBffBaseUrl();
@@ -121,6 +123,30 @@ class ApiClient {
         }
       }
 
+      // If 404 on current base URL, fallback between production and local dev server
+      if (response.status === 404 && !_isRetry) {
+        const fallbackBase = this.baseUrl.includes('app.getaipilot.com')
+          ? getLocalDevBffUrl()
+          : 'https://app.getaipilot.com';
+
+        if (fallbackBase && fallbackBase !== this.baseUrl) {
+          if (__DEV__) {
+            console.log(
+              `[ApiClient] Route 404 on ${this.baseUrl}${endpoint} -> Auto-retrying on ${fallbackBase}${endpoint}`
+            );
+          }
+          try {
+            const fallbackClient = new ApiClient(fallbackBase);
+            return await fallbackClient.request<T>(endpoint, {
+              ...options,
+              _isRetry: true,
+            });
+          } catch {
+            // Keep original response error handling if fallback also fails
+          }
+        }
+      }
+
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({}));
         throw new Error(errorBody.message || `HTTP ${response.status}: ${response.statusText}`);
@@ -128,6 +154,25 @@ class ApiClient {
 
       return await response.json();
     } catch (error: any) {
+      // Auto-fallback on network failure if not already retried
+      if (!_isRetry && (error?.message?.includes('Network request failed') || error?.message?.includes('Failed to fetch'))) {
+        const fallbackBase = this.baseUrl.includes('app.getaipilot.com')
+          ? getLocalDevBffUrl()
+          : 'https://app.getaipilot.com';
+
+        if (fallbackBase && fallbackBase !== this.baseUrl) {
+          try {
+            const fallbackClient = new ApiClient(fallbackBase);
+            return await fallbackClient.request<T>(endpoint, {
+              ...options,
+              _isRetry: true,
+            });
+          } catch {
+            // Fall through to error reporting below
+          }
+        }
+      }
+
       if (__DEV__ && !error?.message?.includes('Not authenticated') && !endpoint.includes('heartbeat')) {
         console.warn(`[ApiClient] Request to ${endpoint} failed:`, error?.message);
       }
@@ -212,6 +257,4 @@ class ApiClient {
   }
 }
 
-
 export const apiClient = new ApiClient(BFF_BASE_URL);
-

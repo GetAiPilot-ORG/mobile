@@ -149,7 +149,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
         <BlurView
           intensity={Platform.OS === 'ios' ? 75 : 95}
           tint={isDark ? 'dark' : 'light'}
-          experimentalBlurMethod="dimezisBlurView"
+          blurMethod="dimezisBlurView"
           style={[
             StyleSheet.absoluteFill,
             Platform.OS === 'web'
@@ -194,7 +194,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
           <BlurView
             intensity={Platform.OS === 'ios' ? 85 : 90}
             tint={isDark ? 'dark' : 'light'}
-            experimentalBlurMethod="dimezisBlurView"
+            blurMethod="dimezisBlurView"
             style={[
               StyleSheet.absoluteFill,
               Platform.OS === 'web'
