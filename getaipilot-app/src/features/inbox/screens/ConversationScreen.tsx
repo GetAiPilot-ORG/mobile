@@ -86,7 +86,8 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   const [showContactDrawer, setShowContactDrawer] = useState<boolean>(false);
   const [isBotPaused, setIsBotPaused] = useState<boolean>(initialConversation?.bot_paused || false);
   const [assignedAgentName, setAssignedAgentName] = useState<string>(
-    initialConversation?.assigned_agent_name || initialConversation?.assigned_to || 'Unassigned'
+    initialConversation?.assigned_agent_name
+      || (initialConversation?.assigned_to ? 'Assigned' : 'Unassigned')
   );
 
   const flatListRef = useRef<FlatList>(null);

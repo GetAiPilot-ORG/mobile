@@ -1,5 +1,4 @@
 import { getColors, useTheme } from "@/theme";
-import { Ionicons } from "@expo/vector-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
   UserIcon,
@@ -8,12 +7,12 @@ import {
   Cancel01Icon,
   Add01Icon,
   BubbleChatAddIcon,
+  BubbleChatIcon,
 } from "@hugeicons/core-free-icons";
 import { useProductPalette } from "@/components/ProductUI";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useMemo, useState } from "react";
 import {
-  Dimensions,
   FlatList,
   Modal,
   Pressable,
@@ -42,11 +41,11 @@ import { ContactItem, NormalizedConversation } from "../types";
 import { ConversationScreen } from "./ConversationScreen";
 
 const INBOX_TABS = [
-  { id: "ALL", label: "All Chats", icon: "chatbubbles-outline" },
-  { id: "UNREAD", label: "Unread", icon: "mail-unread-outline" },
-  { id: "UNASSIGNED", label: "Unassigned", icon: "person-add-outline" },
-  { id: "MINE", label: "Assigned to Me", icon: "person-outline" },
-  { id: "BOT_ACTIVE", label: "AI Active", icon: "hardware-chip-outline" },
+  { id: "ALL", label: "All" },
+  { id: "UNREAD", label: "Unread" },
+  { id: "UNASSIGNED", label: "Unassigned" },
+  { id: "MINE", label: "Mine" },
+  { id: "BOT_ACTIVE", label: "AI active" },
 ] as const;
 
 export const InboxScreen: React.FC = () => {
@@ -203,55 +202,54 @@ export const InboxScreen: React.FC = () => {
         title="Inbox"
         showBack={false}
         rightElement={
-          <View className="flex-row items-center gap-2">
-            {unreadTotal > 0 && (
-              <View
-                className="px-2.5 py-0.5 rounded-full"
-                style={{ backgroundColor: color.primary }}
-              >
-                <Text className="text-white text-[10.5px] font-extrabold">{unreadTotal} Unread</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            {unreadTotal > 0 ? (
+              <View style={{ minWidth: 24, height: 24, paddingHorizontal: 7, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: color.accentSoft }}>
+                <Text style={{ color: color.accent, fontSize: 11, fontWeight: "700" }}>{unreadTotal}</Text>
               </View>
-            )}
+            ) : null}
             <Pressable
-              className="flex-row items-center px-3.5 py-1.5 rounded-full shadow-sm active:opacity-85"
-              style={{ backgroundColor: color.primary }}
+              style={{ minHeight: 40, paddingHorizontal: 14, borderRadius: 20, flexDirection: "row", alignItems: "center", backgroundColor: color.buttonPrimary }}
               onPress={() => setShowNewChatModal(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Start a new chat"
             >
               <HugeiconsIcon
                 icon={BubbleChatAddIcon}
-                size={14}
-                color="#ffffff"
+                size={16}
+                color={color.buttonPrimaryForeground}
                 strokeWidth={2}
-                style={{ marginRight: 5 }}
+                style={{ marginRight: 6 }}
               />
-              <Text className="text-white text-xs font-bold">+ New Chat</Text>
+              <Text style={{ color: color.buttonPrimaryForeground, fontSize: 12, fontWeight: "600" }}>New chat</Text>
             </Pressable>
           </View>
         }
       />
 
-      <View className="px-4">
+      <View style={{ flex: 1, paddingHorizontal: 20 }}>
         {/* Search Bar */}
         <View
-          className="flex-row items-center rounded-[18px] px-3.5 py-2.5 mb-3"
           style={{
-            backgroundColor: color.card, shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: isDark ? 0.25 : 0.04,
-            shadowRadius: 8,
+            minHeight: 50,
+            flexDirection: "row",
+            alignItems: "center",
+            borderRadius: 18,
+            paddingHorizontal: 15,
+            marginBottom: 14,
+            backgroundColor: color.card,
           }}
         >
           <HugeiconsIcon
             icon={Search01Icon}
-            size={17}
+            size={19}
             color={color.textSecondary}
             strokeWidth={2}
             style={{ marginRight: 8 }}
           />
           <TextInput
-            className="flex-1 text-[13.5px]"
-            style={{ color: color.textPrimary }}
-            placeholder="Search contacts, numbers or messages..."
+            style={{ flex: 1, fontSize: 14, color: color.textPrimary }}
+            placeholder="Search conversations"
             placeholderTextColor={color.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -269,7 +267,7 @@ export const InboxScreen: React.FC = () => {
         </View>
 
         {/* Folder-Style Status Tab Bar */}
-        <View style={{ position: "relative", marginBottom: 14 }}>
+        <View style={{ position: "relative", marginBottom: 16 }}>
 
 
           <FlatList
@@ -277,7 +275,7 @@ export const InboxScreen: React.FC = () => {
             showsHorizontalScrollIndicator={false}
             data={INBOX_TABS}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={{ paddingHorizontal: 2 }}
+            contentContainerStyle={{ paddingRight: 8 }}
             renderItem={({ item: tab }) => {
               const isActive = activeTab === tab.id;
 
@@ -286,29 +284,20 @@ export const InboxScreen: React.FC = () => {
                   onPress={() => setActiveTab(tab.id as any)}
                   style={
                     {
-                      height: 40,
-                      paddingHorizontal: 13,
+                      height: 38,
+                      paddingHorizontal: 14,
                       justifyContent: "center",
                       alignItems: "center",
-                      borderRadius: 22,
+                      borderRadius: 19,
                       marginRight: 8,
-                      borderTopWidth: 0,
-                      borderLeftWidth: 0,
-                      borderRightWidth: 0,
-                      borderBottomWidth: 0,
-                      borderTopColor: isActive ? color.primary : "transparent",
-                      borderLeftColor: isActive ? color.primary : "transparent",
-                      borderRightColor: isActive ? color.primary : "transparent",
-                      borderBottomColor: isActive ? color.background : "transparent",
                       backgroundColor: isActive ? color.accentSoft : color.card,
-                      zIndex: isActive ? 2 : 1,
                     }
                   }
                 >
                   <Text
                     numberOfLines={1}
                     style={{
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: isActive ? "600" : "500",
                       letterSpacing: -0.1,
                       color: isActive ? color.accent : color.textSecondary,
@@ -328,6 +317,8 @@ export const InboxScreen: React.FC = () => {
           <InboxListSkeleton />
         ) : (
           <FlatList
+            style={{ flex: 1 }}
+            showsVerticalScrollIndicator={false}
             data={filteredConversations}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
@@ -336,7 +327,7 @@ export const InboxScreen: React.FC = () => {
                 onPress={() => handleOpenConversation(item)}
               />
             )}
-            contentContainerStyle={{ paddingBottom: 130 }}
+            contentContainerStyle={{ paddingBottom: 132 }}
             refreshControl={
               <RefreshControl
                 refreshing={isRefetching}
@@ -345,12 +336,10 @@ export const InboxScreen: React.FC = () => {
               />
             }
             ListEmptyComponent={
-              <View className="p-10 items-center">
-                <Ionicons
-                  name="chatbubble-ellipses-outline"
-                  size={48}
-                  color={color.border}
-                />
+              <View style={{ paddingHorizontal: 32, paddingVertical: 56, alignItems: "center" }}>
+                <View style={{ width: 56, height: 56, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: color.accentSoft }}>
+                  <HugeiconsIcon icon={BubbleChatIcon} size={25} color={color.accent} strokeWidth={1.8} />
+                </View>
                 <Text
                   className="text-[15px] font-bold mt-2.5 mb-1.5"
                   style={{ color: color.textPrimary }}
