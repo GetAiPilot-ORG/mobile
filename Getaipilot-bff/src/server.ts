@@ -67,7 +67,7 @@ async function main() {
   }));
 
   // WebSocket Realtime Gateway Route
-  app.register(async function (fastify) {
+  await app.register(async function (fastify) {
     fastify.get('/mobile/v1/realtime', { websocket: true }, (socket: any, req) => {
       const ws = socket?.socket || socket;
       const token = (req.query as { token?: string }).token;

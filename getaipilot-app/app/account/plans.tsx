@@ -287,11 +287,7 @@ export default function OverallPricingScreen() {
       plan.id.startsWith('call_') ||
       isAddon;
 
-    if (isVoicePlan) {
-      openVoiceWebBilling(queryClient, isDark);
-      return;
-    }
-
+    const theme = getPlanTheme(plan);
     const isPro = isGapProPlan(plan);
 
     // GAP Pro interval calculation with duration discounts
@@ -312,6 +308,7 @@ export default function OverallPricingScreen() {
         planName: `GetAiPilot - ${planDisplayName}`,
         billingInterval: gapProInterval,
         description: `${planDisplayName} Subscription · ${proPricing.option.days} Days Quotas`,
+        themeColor: theme.color,
         onSuccess: async () => {
           if (Platform.OS !== 'web') {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -368,6 +365,7 @@ export default function OverallPricingScreen() {
       planName: `GetAiPilot - ${planDisplayName}`,
       billingInterval,
       description: plan.description || `${planDisplayName} Subscription`,
+      themeColor: theme.color,
       onSuccess: async () => {
         if (Platform.OS !== 'web') {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -937,7 +935,7 @@ export default function OverallPricingScreen() {
         <Pressable
           onPress={() => handleCheckout()}
           disabled={!selectedPlan}
-          className="w-full py-4 rounded-2xl items-center justify-center flex-row gap-2 active:opacity-90 shadow-md"
+          className="w-full py-3.5 rounded-2xl items-center justify-center flex-col gap-0.5 active:opacity-90 shadow-md"
           style={{
             backgroundColor: selectedTheme.color,
             shadowColor: selectedTheme.color,
@@ -946,23 +944,31 @@ export default function OverallPricingScreen() {
             elevation: 4,
           }}
         >
-          <Text className="text-white text-base font-black tracking-wide">
-            {selectedPlan
-              ? `Continue to Purchase · ${
-                  isGapProPlan(selectedPlan)
-                    ? PricingService.formatPrice(
-                        calculateGapProPricing(
-                          selectedPlan.amount,
-                          gapProInterval,
-                          hasReferralDiscount ? discountPercent : 0
-                        ).totalChargedRupees * 100,
-                        selectedPlan.currency
-                      )
-                    : PricingService.formatPrice(selectedPlan.amount, selectedPlan.currency)
-                }`
-              : 'Continue to Purchase'}
-          </Text>
-          <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+          <View className="flex-row items-center gap-2">
+            <Text className="text-white text-[15px] font-black tracking-wide">
+              {selectedPlan
+                ? `Continue to Purchase · ${
+                    isGapProPlan(selectedPlan)
+                      ? PricingService.formatPrice(
+                          calculateGapProPricing(
+                            selectedPlan.amount,
+                            gapProInterval,
+                            hasReferralDiscount ? discountPercent : 0
+                          ).totalChargedRupees * 100,
+                          selectedPlan.currency
+                        )
+                      : PricingService.formatPrice(selectedPlan.amount, selectedPlan.currency)
+                  }`
+                : 'Continue to Purchase'}
+            </Text>
+            <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+          </View>
+          <View className="flex-row items-center gap-1 opacity-90">
+            <Ionicons name="shield-checkmark" size={10} color="#FFFFFF" />
+            <Text className="text-[10px] font-bold text-white tracking-wider">
+              RAZORPAY SECURE SDK · UPI & CARDS
+            </Text>
+          </View>
         </Pressable>
       </View>
 
@@ -1263,7 +1269,7 @@ export default function OverallPricingScreen() {
                     {/* Purchase Button Inside Modal */}
                     <Pressable
                       onPress={() => handleCheckout(plan)}
-                      className="w-full py-4 rounded-2xl items-center justify-center flex-row gap-2 active:opacity-90 shadow-lg mt-2 mb-4"
+                      className="w-full py-3.5 rounded-2xl items-center justify-center flex-col gap-0.5 active:opacity-90 shadow-lg mt-2 mb-4"
                       style={{
                         backgroundColor: theme.color,
                         shadowColor: theme.color,
@@ -1272,10 +1278,18 @@ export default function OverallPricingScreen() {
                         elevation: 5,
                       }}
                     >
-                      <Text className="text-white text-base font-black tracking-wide">
-                        Purchase Plan · ₹{finalChargedRupees.toLocaleString('en-IN')}
-                      </Text>
-                      <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+                      <View className="flex-row items-center gap-2">
+                        <Text className="text-white text-[15px] font-black tracking-wide">
+                          Purchase Plan · ₹{finalChargedRupees.toLocaleString('en-IN')}
+                        </Text>
+                        <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+                      </View>
+                      <View className="flex-row items-center gap-1 opacity-90">
+                        <Ionicons name="shield-checkmark" size={10} color="#FFFFFF" />
+                        <Text className="text-[10px] font-bold text-white tracking-wider">
+                          PAY VIA RAZORPAY SDK
+                        </Text>
+                      </View>
                     </Pressable>
                   </ScrollView>
                 );
