@@ -61,6 +61,12 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     if (type === 'broadcast' || type === 'campaign') return '/fleet';
     if (type === 'call') return '/(tabs)/activity';
 
+    // Admin & system broadcast updates for regular mobile users
+    if (type === 'broadcast' || type === 'announcement') return '/(tabs)';
+    if (type === 'maintenance') return '/(tabs)';
+    if (type === 'feature' || type === 'tools') return '/tools';
+    if (type === 'offer' || type === 'pricing') return '/pricing';
+
     return null;
   };
 

@@ -217,8 +217,265 @@ export class NotificationService {
   }
 
   /**
+   * Broadcast an Admin Update or Announcement to ALL regular mobile app users
+   * Delivers high-priority push notifications across Foreground, Background, and Kill mode.
+   */
+  static async sendToAllUsers(notification: {
+    title: string;
+    body: string;
+    data?: Record<string, any>;
+    channelId?: string;
+  }) {
+    try {
+      // 1. Fetch all profiles that have an active push token registered
+      const { data: profiles, error } = await this.adminSupabase
+        .from('profiles')
+        .select('id, push_token')
+        .not('push_token', 'is', null);
+
+      if (error || !profiles) {
+        console.warn('[NotificationService] Failed to query user push tokens for broadcast:', error?.message);
+        return { success: false, error: error?.message };
+      }
+
+      const validTokens = profiles
+        .map((p) => p.push_token)
+        .filter((t): t is string => Boolean(t && (t.startsWith('ExponentPushToken[') || t.startsWith('ExpoPushToken['))));
+
+      // Deduplicate tokens
+      const uniqueTokens = Array.from(new Set(validTokens));
+
+      if (uniqueTokens.length === 0) {
+        console.warn('[NotificationService] No registered user push tokens found for broadcast.');
+        return { success: false, reason: 'No registered push tokens found for users' };
+      }
+
+      console.log(`[NotificationService] Broadcasting admin update to ${uniqueTokens.length} active mobile user devices...`);
+
+      // 2. Batch in chunks of 100 for Expo HTTP push service
+      const chunkSize = 100;
+      const results = [];
+
+      for (let i = 0; i < uniqueTokens.length; i += chunkSize) {
+        const chunk = uniqueTokens.slice(i, i + chunkSize);
+        const messages: ExpoPushMessage[] = chunk.map((token) => ({
+          to: token,
+          title: notification.title,
+          body: notification.body,
+          data: notification.data || {},
+          sound: 'default',
+          channelId: notification.channelId || 'default',
+          priority: 'high',
+        }));
+
+        const res = await this.sendExpoPushNotification(messages);
+        results.push(res);
+      }
+
+      return { success: true, count: uniqueTokens.length, results };
+    } catch (err: any) {
+      console.error('[NotificationService] Error broadcasting admin update to users:', err);
+      return { success: false, error: err.message };
+    }
+  }
+
+  /**
+   * Dedicated Admin Activity Dispatcher:
+   * Called whenever an Admin performs an action on the dashboard or backend,
+   * informing regular mobile users about the update!
+   */
+  static async broadcastAdminUpdateToUsers(update: {
+    type: 'broadcast' | 'maintenance' | 'feature' | 'offer' | 'custom';
+    title?: string;
+    body: string;
+    route?: string;
+    metadata?: Record<string, any>;
+  }) {
+    let title = update.title;
+    let channelId = 'default';
+    let route = update.route || '/(tabs)';
+
+    switch (update.type) {
+      case 'maintenance': {
+        title = title || '🛠️ System Maintenance Update';
+        channelId = 'system';
+        route = route || '/(tabs)';
+        break;
+      }
+
+      case 'feature': {
+        title = title || '🚀 New Platform Update Available';
+        channelId = 'default';
+        route = route || '/tools';
+        break;
+      }
+
+      case 'offer': {
+        title = title || '🎁 Special Announcement & Offers';
+        channelId = 'billing';
+        route = route || '/pricing';
+        break;
+      }
+
+      case 'broadcast':
+      default: {
+        title = title || '📢 Announcement from GetAiPilot';
+        channelId = 'default';
+        route = route || '/(tabs)';
+        break;
+      }
+    }
+
+    return await this.sendToAllUsers({
+      title,
+      body: update.body,
+      channelId,
+      data: {
+        route,
+        type: update.type,
+        ...(update.metadata || {}),
+      },
+    });
+  }
+
+  /**
+   * Send push notification directly to all Administrators & Platform Owners
+   */
+  static async sendToAdmins(notification: {
+    title: string;
+    body: string;
+    data?: Record<string, any>;
+    channelId?: string;
+  }) {
+    try {
+      // Find all profiles where is_admin is true OR role is 'admin' / 'Admin' / 'Owner'
+      const { data: adminProfiles, error } = await this.adminSupabase
+        .from('profiles')
+        .select('id, push_token, is_admin, role')
+        .or('is_admin.eq.true,role.eq.Admin,role.eq.admin,role.eq.Owner');
+
+      if (error || !adminProfiles) {
+        console.warn('[NotificationService] Admin profiles lookup notice:', error?.message);
+        return { success: false, error: error?.message };
+      }
+
+      const validTokens = adminProfiles
+        .map((p) => p.push_token)
+        .filter((t): t is string => Boolean(t && (t.startsWith('ExponentPushToken[') || t.startsWith('ExpoPushToken['))));
+
+      if (validTokens.length === 0) {
+        return { success: false, reason: 'No registered push tokens found for administrators' };
+      }
+
+      const messages: ExpoPushMessage[] = validTokens.map((token) => ({
+        to: token,
+        title: notification.title,
+        body: notification.body,
+        data: notification.data || {},
+        sound: 'default',
+        channelId: notification.channelId || 'admin',
+        priority: 'high',
+      }));
+
+      return await this.sendExpoPushNotification(messages);
+    } catch (err: any) {
+      console.error('[NotificationService] Error sending notification to admins:', err);
+      return { success: false, error: err.message };
+    }
+  }
+
+  /**
+   * Broadcast an Admin Activity notification to all administrators
+   */
+  static async notifyAdminActivity(activity: {
+    action: string;
+    title?: string;
+    message?: string;
+    actorName?: string;
+    actorId?: string;
+    details?: Record<string, any>;
+  }) {
+    let title = activity.title;
+    let body = activity.message;
+    let channelId = 'admin';
+    let targetRoute = '/(tabs)/admin';
+    const extraData: Record<string, any> = {
+      type: 'admin',
+      action: activity.action,
+      ...(activity.details || {}),
+    };
+
+    switch (activity.action) {
+      case 'maintenance_toggle': {
+        const status = activity.details?.enabled ? 'Activated 🛑' : 'Deactivated ✅';
+        title = title || `🛡️ Maintenance ${status}`;
+        body = body || `${activity.details?.productName || 'Platform'} maintenance was toggled by ${activity.actorName || 'Admin'}.`;
+        channelId = 'admin';
+        targetRoute = '/admin/maintenance';
+        extraData.type = 'admin_maintenance';
+        break;
+      }
+
+      case 'payment_received': {
+        title = title || `💰 Revenue Alert: ₹${activity.details?.amount || 0}`;
+        body = body || `Customer purchased ${activity.details?.planName || 'Plan'} (${activity.details?.userName || 'Customer'}).`;
+        channelId = 'billing';
+        targetRoute = '/admin/monetize';
+        extraData.type = 'admin_payment';
+        break;
+      }
+
+      case 'new_signup':
+      case 'sales_lead': {
+        title = title || `🚀 New User / Lead Registered`;
+        body = body || `${activity.details?.name || activity.details?.email || 'New prospect'} registered on GetAiPilot.`;
+        channelId = 'leads';
+        targetRoute = '/admin/sales-leads';
+        extraData.type = 'admin_sales';
+        break;
+      }
+
+      case 'product_updated': {
+        title = title || `🏷️ Product Catalog Updated`;
+        body = body || `${activity.details?.productName || 'Product'} details were adjusted by ${activity.actorName || 'Admin'}.`;
+        channelId = 'admin';
+        targetRoute = '/admin/monetize';
+        extraData.type = 'admin_monetize';
+        break;
+      }
+
+      case 'team_updated': {
+        title = title || `👥 Team Staff Role Updated`;
+        body = body || `${activity.details?.name || 'Staff member'} updated to ${activity.details?.role || 'Member'}.`;
+        channelId = 'admin';
+        targetRoute = '/crm';
+        extraData.type = 'team';
+        break;
+      }
+
+      default: {
+        title = title || `🛡️ Admin Activity: ${activity.action}`;
+        body = body || activity.message || 'Administrative operation performed.';
+        channelId = 'admin';
+        targetRoute = '/(tabs)/admin';
+        break;
+      }
+    }
+
+    return await this.sendToAdmins({
+      title,
+      body,
+      channelId,
+      data: {
+        route: targetRoute,
+        ...extraData,
+      },
+    });
+  }
+
+  /**
    * Universal Event Dispatcher:
-   * Maps any system/CRM/Inbox/Voice/Payment event to a high-priority push notification.
+   * Maps any system/CRM/Inbox/Voice/Payment/Admin event to a high-priority push notification.
    * Reaches devices in:
    * - Foreground (heads-up banner + audio)
    * - Background (system tray banner)
@@ -373,6 +630,50 @@ export class NotificationService {
         break;
       }
 
+      // 7. Admin & Security Console Activities
+      case 'admin.maintenance': {
+        await this.notifyAdminActivity({
+          action: 'maintenance_toggle',
+          actorName: data?.actor_name,
+          details: data,
+        });
+        return;
+      }
+
+      case 'admin.payment': {
+        await this.notifyAdminActivity({
+          action: 'payment_received',
+          details: data,
+        });
+        return;
+      }
+
+      case 'admin.sales_lead': {
+        await this.notifyAdminActivity({
+          action: 'sales_lead',
+          details: data,
+        });
+        return;
+      }
+
+      case 'admin.product_updated': {
+        await this.notifyAdminActivity({
+          action: 'product_updated',
+          details: data,
+        });
+        return;
+      }
+
+      case 'admin.activity': {
+        await this.notifyAdminActivity({
+          action: data?.action || 'admin_event',
+          title: data?.title,
+          message: data?.message || data?.body,
+          details: data,
+        });
+        return;
+      }
+
       default: {
         // If data provides explicit title & body, forward it
         if (data?.title && (data?.body || data?.message)) {
@@ -400,5 +701,64 @@ export class NotificationService {
       },
       triggeredByUserId
     );
+  }
+
+  /**
+   * Realtime Database Bridge:
+   * Listens to table `notifications` inserts from bot-dashboard (Admin Broadcast,
+   * Waitlist alerts, Attendance/Leave requests) and automatically forwards them
+   * as Expo Push Notifications to mobile devices in Foreground, Background, and Kill mode.
+   */
+  static initRealtimeDbListener() {
+    try {
+      this.adminSupabase
+        .channel('public:notifications-push-bridge')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'notifications' },
+          async (payload) => {
+            const row = payload.new as any;
+            if (!row) return;
+
+            const title = row.title || 'GetAiPilot Alert';
+            const body = row.description || row.content || '';
+            const channelId = row.type === 'system' ? 'system' : row.type === 'leave' ? 'admin' : 'default';
+            const route = row.link || '/(tabs)/activity';
+
+            console.log(`[NotificationService] Realtime DB notification bridged: "${title}" (Target: ${row.user_id || 'org'})`);
+
+            if (row.user_id) {
+              await this.sendToUser(row.user_id, {
+                title,
+                body,
+                channelId,
+                data: {
+                  route,
+                  type: row.type || 'system',
+                  id: row.id,
+                  metadata: row.metadata,
+                },
+              });
+            } else if (row.org_id) {
+              await this.sendToOrg(row.org_id, {
+                title,
+                body,
+                channelId,
+                data: {
+                  route,
+                  type: row.type || 'system',
+                  id: row.id,
+                  metadata: row.metadata,
+                },
+              });
+            }
+          }
+        )
+        .subscribe((status) => {
+          console.log(`[NotificationService] Bot-Dashboard DB Notifications Realtime Bridge: ${status}`);
+        });
+    } catch (err: any) {
+      console.warn('[NotificationService] Failed to initialize DB notifications bridge:', err?.message || err);
+    }
   }
 }

@@ -18,6 +18,7 @@ import { teamRoutes } from './routes/team.routes.js';
 import { webviewRoutes } from './routes/webview.routes.js';
 import { whatsappRoutes } from './routes/whatsapp.routes.js';
 import { WebSocketService } from './services/websocket.service.js';
+import { NotificationService } from './services/notification.service.js';
 import { JWTPayload } from './types/index.js';
 
 const app = Fastify({
@@ -123,6 +124,9 @@ async function main() {
     console.log(app.printRoutes());
     await app.listen({ port: env.PORT, host: env.HOST });
     console.log(`🚀 GetAiPilot-BFF running on http://${env.HOST}:${env.PORT}`);
+
+    // Initialize Realtime DB notifications bridge (captures bot-dashboard Admin Broadcasts, Attendance, etc.)
+    NotificationService.initRealtimeDbListener();
   } catch (err) {
     app.log.error(err);
     process.exit(1);

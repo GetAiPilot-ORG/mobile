@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { env } from '../config/env.js';
 import { HubAdapter } from '../adapters/hub.adapter.js';
 import { VoiceAdapter } from '../adapters/voice.adapter.js';
+import { NotificationService } from './notification.service.js';
 
 export interface CreateOrderInput {
   userId: string;
@@ -377,6 +378,21 @@ export class RazorpayService {
     // 3b. Sync to Voice Supabase if Voice plan or Dedicated Number
     await this.syncVoiceSubscription(userId, planId, planName, amount, startedAt, expiresAt, input.product);
 
+    // 3c. Send real-time Push Notification to all platform administrators
+    NotificationService.notifyAdminActivity({
+      action: 'payment_received',
+      details: {
+        amount,
+        planName,
+        billingInterval,
+        userName: input.userName,
+        userEmail: input.userEmail,
+        userId,
+      },
+    }).catch((notifErr) => {
+      console.warn('[RazorpayService] Admin payment notification notice:', notifErr?.message || notifErr);
+    });
+
     return {
       success: true,
       orderId,
@@ -620,6 +636,19 @@ export class RazorpayService {
 
     // 5b. Sync to Voice Supabase if Voice plan or Dedicated Number
     await this.syncVoiceSubscription(userId, planId, planName, amount, startedAt, expiresAt, input.product);
+
+    // 5c. Send real-time Push Notification to all platform administrators
+    NotificationService.notifyAdminActivity({
+      action: 'payment_received',
+      details: {
+        amount,
+        planName,
+        phone: number,
+        userId,
+      },
+    }).catch((notifErr) => {
+      console.warn('[RazorpayService] Admin QR payment notification notice:', notifErr?.message || notifErr);
+    });
 
     return {
       success: true,

@@ -58,6 +58,43 @@ export async function billingRoutes(fastify: FastifyInstance) {
     await NotificationService.dispatchOrgEventNotification(orgId, event, eventData);
     return reply.send({ success: true, event, organization_id: orgId });
   });
+
+  // POST /mobile/v1/admin/broadcast-to-users - Admin broadcasts an announcement/update to all mobile users
+  fastify.post('/admin/broadcast-to-users', async (request, reply) => {
+    const body = (request.body as any) || {};
+
+    if (!body.body && !body.message) {
+      return reply.status(400).send({ error: 'Notification message body is required' });
+    }
+
+    const result = await NotificationService.broadcastAdminUpdateToUsers({
+      type: body.type || 'broadcast',
+      title: body.title,
+      body: body.body || body.message,
+      route: body.route,
+      metadata: body.metadata || body.data,
+    });
+
+    return reply.send(result);
+  });
+
+  // POST /mobile/v1/admin/maintenance-update - Admin notifies all mobile users about platform maintenance
+  fastify.post('/admin/maintenance-update', async (request, reply) => {
+    const body = (request.body as any) || {};
+    const isEnabled = Boolean(body.enabled);
+
+    const result = await NotificationService.broadcastAdminUpdateToUsers({
+      type: 'maintenance',
+      title: isEnabled ? '🛠️ Scheduled System Maintenance' : '✅ System Maintenance Completed',
+      body: body.message || (isEnabled
+        ? 'GetAiPilot is undergoing scheduled maintenance. Services will resume shortly.'
+        : 'All GetAiPilot services and AI pilots are now fully operational!'),
+      route: '/(tabs)',
+      metadata: { enabled: isEnabled },
+    });
+
+    return reply.send(result);
+  });
   // GET /mobile/v1/user/profile
   fastify.get('/user/profile', { preHandler: [authenticateToken] }, async (request, reply) => {
     const user = request.user as JWTPayload;

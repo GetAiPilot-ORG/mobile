@@ -110,6 +110,17 @@ export class NotificationService {
           enableVibrate: true,
           showBadge: true,
         });
+
+        // 8. Admin console alerts & security activities
+        await Notifications.setNotificationChannelAsync('admin', {
+          name: 'Admin & Security Activities',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 150, 250],
+          lightColor: '#EF4444',
+          sound: 'default',
+          enableVibrate: true,
+          showBadge: true,
+        });
       } catch (err) {
         console.warn('[NotificationService] Error setting up Android channels:', err);
       }
