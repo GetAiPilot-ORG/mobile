@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -90,8 +91,6 @@ export default function SimpleQuickFormsScreen() {
   };
 
   const handleRedirect = async (form: QuickForm) => {
-    console.log("[QuickForms] Opening form:", form.id);
-
     await openAuthenticatedTemplate({
       targetTool: "quick-forms",
       quickFormId: form.id,
@@ -99,55 +98,77 @@ export default function SimpleQuickFormsScreen() {
   };
 
   const handleCreate = async () => {
-    console.log("[QuickForms] Creating new form");
-
     await openAuthenticatedTemplate({
       targetTool: "quick-forms",
     });
   };
 
-  const handleDelete = (form: QuickForm) => {
-    Alert.alert(
-      "Delete form?",
-      `Are you sure you want to delete "${getFormTitle(
-        form,
-      )}"? This action cannot be undone.`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            void deleteForm(form.id);
-          },
-        },
-      ],
+  const confirmDelete = (message: string): Promise<boolean> => {
+    if (Platform.OS === "web") {
+      return Promise.resolve(
+        typeof globalThis.confirm === "function"
+          ? globalThis.confirm(message)
+          : false,
+      );
+    }
+
+    return new Promise((resolve) => {
+      Alert.alert("Delete form?", message, [
+        { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
+        { text: "Delete", style: "destructive", onPress: () => resolve(true) },
+      ], { cancelable: true, onDismiss: () => resolve(false) });
+    });
+  };
+
+  const showDeleteError = (message: string) => {
+    if (Platform.OS === "web" && typeof globalThis.alert === "function") {
+      globalThis.alert(message);
+      return;
+    }
+    Alert.alert("Delete failed", message);
+  };
+
+  const handleDelete = async (form: QuickForm) => {
+    const confirmed = await confirmDelete(
+      `Delete "${getFormTitle(form)}"? This action cannot be undone.`,
     );
+    if (confirmed) {
+      await deleteForm(form.id);
+    }
   };
 
   const deleteForm = async (formId: string) => {
     try {
       setDeletingId(formId);
 
-      const { error } = await supabase
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
+        throw new Error("Your session has expired. Please sign in again.");
+      }
+
+      const { data: deletedRows, error } = await supabase
         .from("quick_forms")
         .delete()
-        .eq("id", formId);
+        .eq("id", formId)
+        .eq("user_id", session.user.id)
+        .select("id");
 
       if (error) {
         throw error;
+      }
+      if (!deletedRows?.length) {
+        throw new Error("The form was not deleted. Check the database delete policy.");
       }
 
       setForms((current) => current.filter((form) => form.id !== formId));
     } catch (error) {
       console.error("[QuickForms] Failed to delete form:", error);
-
-      Alert.alert(
-        "Delete failed",
-        "Unable to delete the form. Please try again.",
+      showDeleteError(
+        error instanceof Error
+          ? error.message
+          : "Unable to delete the form. Please try again.",
       );
     } finally {
       setDeletingId(null);
@@ -187,7 +208,7 @@ export default function SimpleQuickFormsScreen() {
           <View
             style={[styles.iconContainer, isDark && styles.iconContainerDark]}
           >
-            <Ionicons name="document-text-outline" size={22} color={isDark ? "#FFFFFF" : "#0A84FF"} />
+            <Ionicons name="document-text-outline" size={22} color={colors.accent} />
           </View>
 
           <View style={styles.titleContainer}>
@@ -243,7 +264,7 @@ export default function SimpleQuickFormsScreen() {
 
           <Pressable
             disabled={isDeleting}
-            onPress={() => handleDelete(item)}
+            onPress={() => void handleDelete(item)}
             style={[styles.deleteButton, isDeleting && styles.disabledButton]}
           >
             {isDeleting ? (
@@ -287,7 +308,7 @@ export default function SimpleQuickFormsScreen() {
         {forms.length === 0 ? (
           <View style={styles.emptyContainer}>
             <View style={[styles.emptyIcon, isDark && styles.emptyIconDark]}>
-              <Ionicons name="file-tray-outline" size={38} color={isDark ? "#FFFFFF" : "#0A84FF"} />
+              <Ionicons name="file-tray-outline" size={38} color={colors.accent} />
             </View>
 
             <Text style={[styles.emptyTitle, isDark && styles.emptyTitleDark]}>

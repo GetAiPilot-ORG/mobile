@@ -1,7 +1,6 @@
 import * as Clipboard from "expo-clipboard";
 import { useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Image,
@@ -16,12 +15,19 @@ import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
 import { useAuthStore } from "../../src/core/store/authStore";
 import { supabase } from "../../src/lib/supabase";
-import {
-  openAuthenticatedDashboard,
-  openAuthenticatedTemplate,
-} from "../../src/lib/template-deep-link";
+import { openAuthenticatedTemplate } from "../../src/lib/template-deep-link";
 import { useTheme, getColors, AppColors } from "@/theme";
 import { TemplatesListSkeleton } from "../../src/components/skeletonScreen";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import {
+  Add01Icon,
+  ArrowUpRight01Icon,
+  Copy01Icon,
+  Delete02Icon,
+  Edit02Icon,
+  Leaf01Icon,
+  Rocket01Icon,
+} from "@hugeicons/core-free-icons";
 
 export interface SavedBioPage {
   id: string;
@@ -265,14 +271,6 @@ export default function MyDesignScreen() {
     }
   };
 
-  const handleOpenWebDashboard = async () => {
-    try {
-      await openAuthenticatedDashboard("my-designs");
-    } catch (error) {
-      Alert.alert("Error", "Could not open Web Dashboard");
-    }
-  };
-
   const renderDesignCard = ({ item }: { item: UnifiedDesignItem }) => {
     const isBio = item.type === "bio";
     const bioData = isBio ? (item as SavedBioPage).form_data : undefined;
@@ -287,8 +285,8 @@ export default function MyDesignScreen() {
       "Untitled Design";
 
     const subtitle = isBio
-      ? bioData?.shortBio || `Template: ${item.template_id}`
-      : landingData?.channelDesc1 || `Template: ${item.template_id}`;
+      ? bioData?.shortBio || "Bio page"
+      : landingData?.channelDesc1 || "Landing page";
 
     const isCopied = copiedId === item.id;
 
@@ -306,12 +304,15 @@ export default function MyDesignScreen() {
             <View
               style={[
                 styles.thumbnailPlaceholder,
-                { backgroundColor: isBio ? "#10B981" : "#3B82F6" },
+                isBio ? styles.bioThumbnail : styles.landingThumbnail,
               ]}
             >
-              <Text style={styles.thumbnailInitial}>
-                {isBio ? "🌿" : "🚀"}
-              </Text>
+              <HugeiconsIcon
+                icon={isBio ? Leaf01Icon : Rocket01Icon}
+                size={22}
+                color={colors.foreground}
+                strokeWidth={1.8}
+              />
             </View>
           )}
 
@@ -333,9 +334,6 @@ export default function MyDesignScreen() {
                 </Text>
               </View>
 
-              <View style={styles.templatePill}>
-                <Text style={styles.templatePillText}>{item.template_id}</Text>
-              </View>
             </View>
 
             <Text style={styles.cardTitleText} numberOfLines={1}>
@@ -353,7 +351,7 @@ export default function MyDesignScreen() {
             onPress={() => handleDeleteItem(item)}
             hitSlop={8}
           >
-            <Text style={styles.deleteIconText}>🗑️</Text>
+            <HugeiconsIcon icon={Delete02Icon} size={17} color={colors.mutedForeground} strokeWidth={1.8} />
           </Pressable>
         </View>
 
@@ -368,9 +366,10 @@ export default function MyDesignScreen() {
           <Text style={styles.linkSlugText} numberOfLines={1}>
             {item.slug}
           </Text>
-          <Text style={styles.copyPillText}>
-            {isCopied ? "Copied ✓" : "Copy 📋"}
-          </Text>
+          <View style={styles.copyAction}>
+            <HugeiconsIcon icon={Copy01Icon} size={12} color={colors.primary} strokeWidth={2} />
+            <Text style={styles.copyPillText}>{isCopied ? "Copied" : "Copy"}</Text>
+          </View>
         </Pressable>
 
         {/* Analytics Mini-Grid */}
@@ -404,7 +403,8 @@ export default function MyDesignScreen() {
             ]}
             onPress={() => handleViewLive(item)}
           >
-            <Text style={styles.actionButtonSecondaryText}>View Live ↗</Text>
+            <Text style={styles.actionButtonSecondaryText}>View live</Text>
+            <HugeiconsIcon icon={ArrowUpRight01Icon} size={14} color={colors.foreground} strokeWidth={2} />
           </Pressable>
 
           <Pressable cssInterop={false}
@@ -414,9 +414,8 @@ export default function MyDesignScreen() {
             ]}
             onPress={() => handleEditInCanvas(item)}
           >
-            <Text style={styles.actionButtonPrimaryText}>
-              Edit in Canvas 🚀
-            </Text>
+            <HugeiconsIcon icon={Edit02Icon} size={14} color={colors.buttonPrimaryForeground} strokeWidth={2} />
+            <Text style={styles.actionButtonPrimaryText}>Edit design</Text>
           </Pressable>
         </View>
       </View>
@@ -449,25 +448,8 @@ export default function MyDesignScreen() {
           }
           ListHeaderComponent={
             <View style={styles.headerContainer}>
-              {/* Top Summary Banner */}
+              {/* Design overview */}
               <View style={styles.summaryCard}>
-                <View style={styles.summaryHeader}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.summaryTitle}>Unified Studio</Text>
-                    <Text style={styles.summarySubtitle}>
-                      Manage your Bio Pages and Landing Pages from one dashboard.
-                    </Text>
-                  </View>
-                  <Pressable
-                    style={styles.webDashboardButton}
-                    onPress={handleOpenWebDashboard}
-                  >
-                    <Text style={styles.webDashboardButtonText}>
-                      Web Studio ↗
-                    </Text>
-                  </Pressable>
-                </View>
-
                 {/* Metrics Stats Row */}
                 <View style={styles.metricsRow}>
                   <View style={styles.metricItem}>
@@ -497,8 +479,9 @@ export default function MyDesignScreen() {
                     style={styles.createBioBtn}
                     onPress={handleCreateBio}
                   >
+                    <HugeiconsIcon icon={Add01Icon} size={15} color={colors.buttonPrimaryForeground} strokeWidth={2} />
                     <Text style={styles.createBioBtnText}>
-                      + Create Bio Page
+                      Create bio page
                     </Text>
                   </Pressable>
 
@@ -506,8 +489,9 @@ export default function MyDesignScreen() {
                     style={styles.createLandingBtn}
                     onPress={handleCreateLanding}
                   >
+                    <HugeiconsIcon icon={Add01Icon} size={15} color={colors.primary} strokeWidth={2} />
                     <Text style={styles.createLandingBtnText}>
-                      + Create Landing Page
+                      Create landing page
                     </Text>
                   </Pressable>
                 </View>
@@ -598,17 +582,6 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     padding: 16,
     paddingBottom: 48,
   },
-  loaderContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 13,
-    color: colors.mutedForeground,
-    fontWeight: "600",
-  },
   headerContainer: {
     marginBottom: 16,
   },
@@ -619,35 +592,6 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     borderWidth: 0,
     borderColor: colors.border,
     marginBottom: 16,
-  },
-  summaryHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  summaryTitle: {
-    fontSize: 20,
-    fontWeight: "900",
-    color: colors.foreground,
-    letterSpacing: -0.4,
-  },
-  summarySubtitle: {
-    fontSize: 12,
-    color: colors.mutedForeground,
-    marginTop: 4,
-    lineHeight: 18,
-  },
-  webDashboardButton: {
-    backgroundColor: "#0A84FF",
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 10,
-    marginLeft: 10,
-  },
-  webDashboardButtonText: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "800",
   },
   metricsRow: {
     flexDirection: "row",
@@ -665,12 +609,12 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   metricVal: {
     fontSize: 16,
-    fontWeight: "900",
+    fontWeight: "600",
     color: colors.foreground,
   },
   metricLab: {
     fontSize: 10,
-    fontWeight: "700",
+    fontWeight: "500",
     color: colors.mutedForeground,
     marginTop: 2,
     textTransform: "uppercase",
@@ -687,29 +631,33 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   createBioBtn: {
     flex: 1,
-    backgroundColor: "#059669",
+    backgroundColor: colors.buttonPrimary,
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+    flexDirection: "row",
+    gap: 6,
   },
   createBioBtnText: {
-    color: "#FFFFFF",
+    color: colors.buttonPrimaryForeground,
     fontSize: 12,
-    fontWeight: "800",
+    fontWeight: "600",
   },
   createLandingBtn: {
     flex: 1,
-    backgroundColor: "#2563EB",
+    backgroundColor: colors.accentSoft,
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+    flexDirection: "row",
+    gap: 6,
   },
   createLandingBtnText: {
-    color: "#FFFFFF",
+    color: colors.primary,
     fontSize: 12,
-    fontWeight: "800",
+    fontWeight: "600",
   },
   tabsContainer: {
     flexDirection: "row",
@@ -735,12 +683,12 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   tabButtonText: {
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "500",
     color: colors.mutedForeground,
   },
   tabButtonTextActive: {
     color: colors.foreground,
-    fontWeight: "900",
+    fontWeight: "600",
   },
   designCard: {
     backgroundColor: colors.card,
@@ -767,8 +715,11 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  thumbnailInitial: {
-    fontSize: 22,
+  bioThumbnail: {
+    backgroundColor: "#D8F0F0",
+  },
+  landingThumbnail: {
+    backgroundColor: "#E7DEFA",
   },
   cardInfoCol: {
     flex: 1,
@@ -807,20 +758,9 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     fontSize: 10,
     fontWeight: "800",
   },
-  templatePill: {
-    backgroundColor: colors.muted,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  templatePillText: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: colors.mutedForeground,
-  },
   cardTitleText: {
     fontSize: 16,
-    fontWeight: "800",
+    fontWeight: "600",
     color: colors.foreground,
   },
   cardSubtitleText: {
@@ -831,9 +771,6 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   deleteButton: {
     padding: 6,
     marginLeft: 4,
-  },
-  deleteIconText: {
-    fontSize: 16,
   },
   linkChip: {
     flexDirection: "row",
@@ -863,8 +800,13 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   copyPillText: {
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "600",
     color: colors.primary,
+  },
+  copyAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
     marginLeft: 6,
   },
   cardStatsRow: {
@@ -884,12 +826,12 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   cardStatValue: {
     fontSize: 14,
-    fontWeight: "900",
+    fontWeight: "600",
     color: colors.foreground,
   },
   cardStatLabel: {
     fontSize: 10,
-    fontWeight: "700",
+    fontWeight: "500",
     color: colors.mutedForeground,
     marginTop: 1,
     textTransform: "uppercase",
@@ -911,26 +853,30 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
+    flexDirection: "row",
+    gap: 6,
     borderWidth: 1,
     borderColor: colors.border,
   },
   actionButtonSecondaryText: {
     fontSize: 12,
-    fontWeight: "800",
+    fontWeight: "600",
     color: colors.foreground,
   },
   actionButtonPrimary: {
     flex: 1,
-    backgroundColor: "#0A84FF",
+    backgroundColor: colors.buttonPrimary,
     paddingVertical: 11,
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
+    flexDirection: "row",
+    gap: 6,
   },
   actionButtonPrimaryText: {
     fontSize: 12,
-    fontWeight: "800",
-    color: "#FFFFFF",
+    fontWeight: "600",
+    color: colors.buttonPrimaryForeground,
   },
   emptyContainer: {
     alignItems: "center",
