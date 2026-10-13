@@ -1,3 +1,4 @@
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import React, { useState } from 'react';
 import {
   LayoutAnimation,
@@ -39,14 +40,13 @@ export interface ProductFloatingBottomBarProps {
 }
 
 const tabSpringAnimation = {
-  duration: 260,
+  duration: 180,
   create: {
     type: LayoutAnimation.Types.easeInEaseOut,
     property: LayoutAnimation.Properties.opacity,
   },
   update: {
-    type: LayoutAnimation.Types.spring,
-    springDamping: 0.75,
+    type: LayoutAnimation.Types.easeInEaseOut,
   },
   delete: {
     type: LayoutAnimation.Types.easeInEaseOut,
@@ -68,6 +68,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+  const reducedMotion = useReducedMotion();
 
   const [isMoreModalVisible, setIsMoreModalVisible] = useState(false);
 
@@ -124,7 +125,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
     setIsMoreModalVisible(false);
-    LayoutAnimation.configureNext(tabSpringAnimation);
+    if (!reducedMotion) LayoutAnimation.configureNext(tabSpringAnimation);
     onChangeTab(key);
   };
 
@@ -159,7 +160,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
               if (isMoreTab) {
                 setIsMoreModalVisible(true);
               } else {
-                LayoutAnimation.configureNext(tabSpringAnimation);
+                if (!reducedMotion) LayoutAnimation.configureNext(tabSpringAnimation);
                 onChangeTab(item.key);
               }
             };
@@ -240,7 +241,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
         <Modal
           visible={isMoreModalVisible}
           transparent
-          animationType="fade"
+          animationType={reducedMotion ? "none" : "fade"}
           onRequestClose={() => setIsMoreModalVisible(false)}
         >
           <TouchableWithoutFeedback onPress={() => setIsMoreModalVisible(false)}>

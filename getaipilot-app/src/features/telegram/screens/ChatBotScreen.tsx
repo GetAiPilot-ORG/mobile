@@ -1,4 +1,3 @@
-import { ProductHeading } from "@/components/ProductUI";
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
@@ -6,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Linking,
   Modal,
   Pressable,
@@ -13,7 +13,8 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  View
+  useWindowDimensions,
+  View,
 } from 'react-native';
 import { supabase } from '../../../lib/supabase';
 import { TelegramToolKey } from '../types';
@@ -33,6 +34,7 @@ interface ChatMessage {
 import { getColors, useTheme } from '@/theme';
 import { useQuery } from '@tanstack/react-query';
 import { telegramSupabase } from '../api/telegramSupabase';
+import { ProductHeading } from "@/components/ProductUI";
 
 interface ChatUser {
   id: string;
@@ -162,10 +164,119 @@ export const ChatBotScreen: React.FC<Props> = () => {
     Alert.alert('Settings Saved', 'Bot personality & knowledge base updated successfully!');
   };
 
+  const { width } = useWindowDimensions();
+  const isWide = width >= 768;
+  const numColumns = isWide ? 4 : 2;
+  const cardWidthPercent = numColumns === 4 ? '23.5%' : '48.5%';
+
+  const chatKpis = [
+    {
+      title: 'ACTIVE BOTS',
+      value: `${bots.length} Connected`,
+      icon: 'hardware-chip-outline' as const,
+      color: '#0284C7',
+      subtext: 'Configured agents',
+    },
+    {
+      title: 'AI ENGINE',
+      value: 'OpenAI / LLM',
+      icon: 'sparkles-outline' as const,
+      color: '#38BDF8',
+      subtext: 'Live inference',
+    },
+    {
+      title: 'KNOWLEDGE BASE',
+      value: 'Active Docs',
+      icon: 'document-text-outline' as const,
+      color: '#10B981',
+      subtext: 'Custom prompt memory',
+    },
+    {
+      title: 'ENGINE STATUS',
+      value: '24/7 Listening',
+      icon: 'shield-checkmark-outline' as const,
+      color: '#8B5CF6',
+      subtext: 'Instant user replies',
+    },
+  ];
+
   return (
-    <View style={styles.container}>
-      {/* Top Header */}
-      <ProductHeading title="Your chatbot" action="Connect a bot" onAction={() => setIsConfigModalOpen(true)} />
+    <View style={styles.container} className="gap-3.5">
+      {/* 1. Cyber Animated Hero Banner */}
+      <ProductHeading title="Your chatbot" />
+
+      {/* 2. Responsive KPI Command Cards */}
+      <View className="flex-row flex-wrap gap-2.5 w-full">
+        {chatKpis.map((kpi, idx) => (
+          <View
+            key={idx}
+            className="p-3.5 rounded-2xl flex-col justify-between"
+            style={{
+              backgroundColor: colors.card,
+              width: cardWidthPercent,
+              minHeight: 88,
+            }}
+          >
+            <View className="flex-row items-center justify-between mb-1">
+              <Text
+                className="text-[10px] font-bold uppercase "
+                style={{ color: isDark ? '#94A3B8' : '#64748B' }}
+                numberOfLines={1}
+              >
+                {kpi.title}
+              </Text>
+              <View
+                className="w-6 h-6 rounded-lg items-center justify-center"
+                style={{ backgroundColor: `${kpi.color}15` }}
+              >
+                <Ionicons name={kpi.icon} size={13} color={kpi.color} />
+              </View>
+            </View>
+
+            <Text
+              className="text-sm font-medium"
+              style={{ color: colors.text }}
+              numberOfLines={1}
+            >
+              {kpi.value}
+            </Text>
+
+            <Text
+              className="text-[10px] font-medium mt-0.5"
+              style={{ color: isDark ? '#64748B' : '#94A3B8' }}
+              numberOfLines={1}
+            >
+              {kpi.subtext}
+            </Text>
+          </View>
+        ))}
+      </View>
+
+      {/* 3. Action Toolbar */}
+      <View
+        className="w-full flex-row items-center justify-between p-3.5 rounded-2xl"
+        style={{ backgroundColor: colors.card }}
+      >
+        <View className="flex-1 pr-3">
+          <Text className="text-xs font-bold" style={{ color: colors.text }}>
+            Connected Assistants ({bots.length})
+          </Text>
+          <Text className="text-[11px]" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
+            AI agents managing incoming user queries
+          </Text>
+        </View>
+
+        <Pressable
+          className="flex-row items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0284C7] active:opacity-90 shadow-sm"
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setIsConfigModalOpen(true);
+          }}
+        >
+          <Ionicons name="add" size={14} color="#FFFFFF" />
+          <Text className="text-white text-xs font-bold">Connect Bot</Text>
+        </Pressable>
+      </View>
 
       {/* Bot Cards list from Supabase */}
       {isLoading ? (
@@ -354,12 +465,17 @@ export const ChatBotScreen: React.FC<Props> = () => {
           {/* Active Users Horizontal Switcher */}
           <View style={[styles.activeUsersSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={styles.activeUsersLabel}>ACTIVE USERS ({chatUsers.length})</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
-              {chatUsers.map((u) => {
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingVertical: 4 }}
+              ItemSeparatorComponent={() => <View style={{ width: 8 }} />}
+              data={chatUsers}
+              keyExtractor={(u) => u.id}
+              renderItem={({ item: u }) => {
                 const isSelected = activeUser?.telegramUserId === u.telegramUserId;
                 return (
                   <Pressable
-                    key={u.id}
                     style={[
                       styles.userPill,
                       { backgroundColor: colors.card, borderColor: colors.border },
@@ -379,8 +495,8 @@ export const ChatBotScreen: React.FC<Props> = () => {
                     </View>
                   </Pressable>
                 );
-              })}
-            </ScrollView>
+              }}
+            />
           </View>
 
           {/* Chat Messages Area */}
@@ -401,11 +517,16 @@ export const ChatBotScreen: React.FC<Props> = () => {
             </View>
           </View>
 
-          <ScrollView style={styles.chatStream} contentContainerStyle={{ padding: 16, gap: 12 }}>
-            {activeUser ? (chatMessages[activeUser.telegramUserId] || []).map((msg) => {
+          <FlatList
+            style={styles.chatStream}
+            contentContainerStyle={{ padding: 16 }}
+            ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+            data={activeUser ? (chatMessages[activeUser.telegramUserId] || []) : []}
+            keyExtractor={(msg) => msg.id}
+            renderItem={({ item: msg }) => {
               if (msg.isError) {
                 return (
-                  <View key={msg.id} style={styles.errorBubble}>
+                  <View style={styles.errorBubble}>
                     <Text style={styles.errorBubbleText}>{msg.text}</Text>
                     <Text style={styles.errorBubbleTime}>{msg.time}</Text>
                   </View>
@@ -415,7 +536,6 @@ export const ChatBotScreen: React.FC<Props> = () => {
               const isUser = msg.sender === 'user';
               return (
                 <View
-                  key={msg.id}
                   style={[styles.msgRow, isUser ? styles.msgRowUser : styles.msgRowBot]}
                 >
                   <View
@@ -429,18 +549,19 @@ export const ChatBotScreen: React.FC<Props> = () => {
                     <Text style={[styles.msgText, isUser ? { color: '#FFFFFF' } : txt]}>
                       {msg.text}
                     </Text>
-                    <Text style={[styles.msgTime, isUser ? { color: 'rgba(255,255,255,0.7)' } : { color: '#777383' }]}>
+                    <Text style={[styles.msgTime, isUser ? { color: 'rgba(255,255,255,0.7)' } : { color: '#94A3B8' }]}>
                       {msg.time}
                     </Text>
                   </View>
                 </View>
               );
-            }) : (
+            }}
+            ListEmptyComponent={
               <View style={{ alignItems: 'center', padding: 20 }}>
                 <Text style={styles.modalHeaderSub}>No active users found.</Text>
               </View>
-            )}
-          </ScrollView>
+            }
+          />
 
           {/* Prompt Refine Training Banner */}
           <View style={[styles.refineBanner, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -501,7 +622,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 value={supportBotName}
                 onChangeText={setSupportBotName}
                 placeholder="Enter support bot name"
-                placeholderTextColor="#777383"
+                placeholderTextColor="#94A3B8"
               />
             </View>
 
@@ -520,7 +641,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 value={systemPrompt}
                 onChangeText={setSystemPrompt}
                 placeholder="Enter system prompt instructions"
-                placeholderTextColor="#777383"
+                placeholderTextColor="#94A3B8"
               />
               <Text style={styles.fieldHelper}>
                 This is the bot's persona and behavioral rules. The AI will strictly follow these instructions.
@@ -554,7 +675,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
                     value={knowledgeBaseText}
                     onChangeText={setKnowledgeBaseText}
                     placeholder="Enter knowledge base text"
-                    placeholderTextColor="#777383"
+                    placeholderTextColor="#94A3B8"
                   />
                   <View style={styles.knowledgeNote}>
                     <Ionicons name="hardware-chip-outline" size={13} color="#0284C7" />
@@ -590,44 +711,50 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 <Text style={styles.pdfUploadText}>Click to add PDF documents</Text>
               </Pressable>
 
-              {pdfDocuments.map((doc) => (
-                <View key={doc.id} style={[styles.pdfDocItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Ionicons name="document-text" size={18} color="#10B981" />
-                    <Text style={[styles.pdfDocName, txt]}>{doc.name}</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <View style={styles.trainedBadge}>
-                      <Text style={styles.trainedBadgeText}>{doc.status}</Text>
+              <FlatList
+                data={pdfDocuments}
+                keyExtractor={(doc) => doc.id}
+                scrollEnabled={false}
+                ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+                renderItem={({ item: doc }) => (
+                  <View style={[styles.pdfDocItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Ionicons name="document-text" size={18} color="#10B981" />
+                      <Text style={[styles.pdfDocName, txt]}>{doc.name}</Text>
                     </View>
-                    <Pressable
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setPdfDocuments((prev) => prev.filter((d) => d.id !== doc.id));
-                      }}
-                    >
-                      <Ionicons name="trash-outline" size={16} color="#777383" />
-                    </Pressable>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <View style={styles.trainedBadge}>
+                        <Text style={styles.trainedBadgeText}>{doc.status}</Text>
+                      </View>
+                      <Pressable
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          setPdfDocuments((prev) => prev.filter((d) => d.id !== doc.id));
+                        }}
+                      >
+                        <Ionicons name="trash-outline" size={16} color="#94A3B8" />
+                      </Pressable>
+                    </View>
                   </View>
-                </View>
-              ))}
+                )}
+              />
             </View>
 
             {/* OPENAI OR GEMINI API KEY */}
             <View>
               <Text style={[styles.fieldLabel, txt]}>OPENAI OR GEMINI API KEY</Text>
               <View style={[styles.apiKeyRow, inputStyle]}>
-                <Ionicons name="key-outline" size={16} color="#777383" />
+                <Ionicons name="key-outline" size={16} color="#94A3B8" />
                 <TextInput
                   style={[styles.apiKeyInput, txt]}
                   secureTextEntry={!isApiKeyVisible}
                   value={apiKey}
                   onChangeText={setApiKey}
                   placeholder="sk-proj-..."
-                  placeholderTextColor="#777383"
+                  placeholderTextColor="#94A3B8"
                 />
                 <Pressable onPress={() => setIsApiKeyVisible((v) => !v)}>
-                  <Ionicons name={isApiKeyVisible ? 'eye-off-outline' : 'eye-outline'} size={18} color="#777383" />
+                  <Ionicons name={isApiKeyVisible ? 'eye-off-outline' : 'eye-outline'} size={18} color="#94A3B8" />
                 </Pressable>
               </View>
               <View style={styles.validKeyBadge}>

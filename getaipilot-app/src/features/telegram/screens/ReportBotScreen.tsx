@@ -1,4 +1,3 @@
-import { ProductHeading } from "@/components/ProductUI";
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
@@ -7,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Image,
   Linking,
   Modal,
@@ -16,12 +16,14 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
 import { useTheme } from '../../../contexts/ThemeContext';
 import { supabase } from '../../../lib/supabase';
 import { telegramSupabase } from '../api/telegramSupabase';
+import { ProductHeading } from "@/components/ProductUI";
 import { ReportBotBrandProfile, TelegramToolKey } from '../types';
 
 interface Props { summary?: any; onOpenModal: (key: TelegramToolKey) => void; }
@@ -294,92 +296,220 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
     }
   };
 
-  return (
-    <View style={styles.container}>
-      {/* Top Header Card */}
-      <View style={[styles.topCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        {/* Top Header */}
-        <ProductHeading title="Research reports" />
+  const { width } = useWindowDimensions();
+  const isWide = width >= 768;
+  const numColumns = isWide ? 4 : 2;
+  const cardWidthPercent = numColumns === 4 ? '23.5%' : '48.5%';
 
-        {/* Action Header Buttons: Start Bot & Refresh Status */}
-        <View style={[styles.actionHeaderRow, { borderColor: colors.border }]}>
-          <Pressable style={styles.startBotBtn} onPress={handleStartBot}>
-            <Ionicons name="paper-plane-outline" size={14} color="#FFFFFF" />
-            <Text style={styles.startBotBtnText}>Start Bot</Text>
-            <Ionicons name="open-outline" size={12} color="#FFFFFF" />
+  const reportKpis = [
+    {
+      title: 'BRAND ENTITY',
+      value: advisoryFirm ? advisoryFirm.slice(0, 16) : 'Unassigned',
+      icon: 'shield-checkmark-outline' as const,
+      color: '#EAB308',
+      subtext: sebiRegistration ? `SEBI: ${sebiRegistration}` : 'Setup Profile',
+    },
+    {
+      title: 'MAPPED CHANNELS',
+      value: `${dashboard?.channelsCount ?? 0} Channels`,
+      icon: 'paper-plane-outline' as const,
+      color: '#0284C7',
+      subtext: 'Auto-PDF listener',
+    },
+    {
+      title: 'REPORT ARCHIVE',
+      value: `${dashboard?.reportsCount ?? 0} Reports`,
+      icon: 'document-text-outline' as const,
+      color: '#10B981',
+      subtext: 'Branded PDF storage',
+    },
+    {
+      title: 'DAEMON STATUS',
+      value: 'DM CONNECTED',
+      icon: 'radio-outline' as const,
+      color: '#8B5CF6',
+      subtext: 'Instant PDF generator',
+    },
+  ];
+
+  return (
+    <View style={styles.container} className="gap-3.5">
+      {/* 1. Cyber Animated Hero Banner */}
+      <ProductHeading title="Research reports" />
+
+      {/* 2. Responsive KPI Command Cards */}
+      <View className="flex-row flex-wrap gap-2.5 w-full">
+        {reportKpis.map((kpi, idx) => (
+          <View
+            key={idx}
+            className="p-3.5 rounded-2xl flex-col justify-between"
+            style={{
+              backgroundColor: colors.card,
+              width: cardWidthPercent,
+              minHeight: 88,
+            }}
+          >
+            <View className="flex-row items-center justify-between mb-1">
+              <Text
+                className="text-[10px] font-bold uppercase "
+                style={{ color: isDark ? '#94A3B8' : '#64748B' }}
+                numberOfLines={1}
+              >
+                {kpi.title}
+              </Text>
+              <View
+                className="w-6 h-6 rounded-lg items-center justify-center"
+                style={{ backgroundColor: `${kpi.color}15` }}
+              >
+                <Ionicons name={kpi.icon} size={13} color={kpi.color} />
+              </View>
+            </View>
+
+            <Text
+              className="text-sm font-medium"
+              style={{ color: colors.text }}
+              numberOfLines={1}
+            >
+              {kpi.value}
+            </Text>
+
+            <Text
+              className="text-[10px] font-medium mt-0.5"
+              style={{ color: isDark ? '#64748B' : '#94A3B8' }}
+              numberOfLines={1}
+            >
+              {kpi.subtext}
+            </Text>
+          </View>
+        ))}
+      </View>
+
+      {/* 3. Action Toolbar & Controls */}
+      <View
+        className="w-full flex-row items-center justify-between p-3.5 rounded-2xl"
+        style={{ backgroundColor: colors.card }}
+      >
+        <View className="flex-1 pr-3">
+          <Text className="text-xs font-bold" style={{ color: colors.text }}>
+            SEBI Research Daemon
+          </Text>
+          <Text className="text-[11px]" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
+            Auto converts calls to branded PDFs
+          </Text>
+        </View>
+
+        <View className="flex-row items-center gap-2">
+          <Pressable
+            className="flex-row items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0284C7] active:opacity-90 shadow-sm"
+            onPress={handleStartBot}
+          >
+            <Ionicons name="paper-plane" size={13} color="#FFFFFF" />
+            <Text className="text-white text-xs font-bold">Start Bot</Text>
           </Pressable>
 
           <Pressable
-            style={[styles.refreshBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            className="w-8 h-8 rounded-xl items-center justify-center active:opacity-80"
+            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F0EEF8' }}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               refetch();
             }}
             disabled={isRefetching}
           >
-            <Ionicons name="refresh-outline" size={14} color={colors.text} />
-            <Text style={[styles.refreshBtnText, { color: colors.text }]}>
-              {isRefetching ? 'Refreshing...' : 'Refresh Status'}
-            </Text>
+            <Ionicons name="refresh-outline" size={15} color={colors.text} />
           </Pressable>
         </View>
+      </View>
 
-        {/* 3-Segment Tab Bar & Live Status Bar */}
-        <View style={styles.tabBarSection}>
-          <View style={styles.tabsRow}>
-            <Pressable
-              style={[styles.tabPill, activeTab === 'profile' && styles.tabPillActive]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setActiveTab('profile');
-              }}
-            >
-              <Text style={[styles.tabPillText, activeTab === 'profile' && styles.tabPillTextActive]}>
-                Brand Profile
-              </Text>
-            </Pressable>
+      {/* 4. Category Filter Pill Bar */}
+      <View
+        className="w-full flex-row items-center p-1.5 rounded-2xl gap-2"
+        style={{ backgroundColor: colors.card }}
+      >
+        <Pressable
+          className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl ${activeTab === 'profile' ? 'bg-[#0284C7]' : ''
+            }`}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setActiveTab('profile');
+          }}
+        >
+          <Ionicons
+            name="shield-checkmark-outline"
+            size={13}
+            color={activeTab === 'profile' ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
+          />
+          <Text
+            className={`text-xs font-bold ${activeTab === 'profile' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
+              }`}
+          >
+            Brand Profile
+          </Text>
+        </Pressable>
 
-            <Pressable
-              style={[styles.tabPill, activeTab === 'channels' && styles.tabPillActive]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setActiveTab('channels');
-              }}
+        <Pressable
+          className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl ${activeTab === 'channels' ? 'bg-[#0284C7]' : ''
+            }`}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setActiveTab('channels');
+          }}
+        >
+          <Ionicons
+            name="paper-plane-outline"
+            size={13}
+            color={activeTab === 'channels' ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
+          />
+          <Text
+            className={`text-xs font-bold ${activeTab === 'channels' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
+              }`}
+          >
+            Channels
+          </Text>
+          <View
+            className={`px-1.5 py-0.2 rounded-full ${activeTab === 'channels' ? 'bg-white/20' : 'bg-black/10'
+              }`}
+          >
+            <Text
+              className={`text-[9px] font-medium ${activeTab === 'channels' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
+                }`}
             >
-              <Text style={[styles.tabPillText, activeTab === 'channels' && styles.tabPillTextActive]}>
-                Channels ({dashboard?.channelsCount ?? 0})
-              </Text>
-            </Pressable>
-
-            <Pressable
-              style={[styles.tabPill, activeTab === 'archive' && styles.tabPillActive]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setActiveTab('archive');
-              }}
-            >
-              <Text style={[styles.tabPillText, activeTab === 'archive' && styles.tabPillTextActive]}>
-                Archive ({dashboard?.reportsCount ?? 0})
-              </Text>
-            </Pressable>
+              {dashboard?.channelsCount ?? 0}
+            </Text>
           </View>
+        </Pressable>
 
-          {/* Live Status Indicators */}
-          <View style={styles.statusPillsRow}>
-            <View style={styles.statusIndicator}>
-              <View style={styles.dotGreen} />
-              <Text style={styles.statusText}>DM Connected</Text>
-            </View>
-            <View style={styles.statusIndicator}>
-              <View style={styles.dotGreen} />
-              <Text style={styles.statusText}>Channels {dashboard?.channelsCount ?? 0}</Text>
-            </View>
-            <View style={styles.statusIndicator}>
-              <View style={styles.dotGreen} />
-              <Text style={styles.statusText}>Reports {dashboard?.reportsCount ?? 0}</Text>
-            </View>
+        <Pressable
+          className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl ${activeTab === 'archive' ? 'bg-[#0284C7]' : ''
+            }`}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setActiveTab('archive');
+          }}
+        >
+          <Ionicons
+            name="archive-outline"
+            size={13}
+            color={activeTab === 'archive' ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
+          />
+          <Text
+            className={`text-xs font-bold ${activeTab === 'archive' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
+              }`}
+          >
+            Archive
+          </Text>
+          <View
+            className={`px-1.5 py-0.2 rounded-full ${activeTab === 'archive' ? 'bg-white/20' : 'bg-black/10'
+              }`}
+          >
+            <Text
+              className={`text-[9px] font-medium ${activeTab === 'archive' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
+                }`}
+            >
+              {dashboard?.reportsCount ?? 0}
+            </Text>
           </View>
-        </View>
+        </Pressable>
       </View>
 
       <View style={styles.bodyContent}>
@@ -428,7 +558,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                         value={advisoryFirm}
                         onChangeText={setAdvisoryFirm}
                         placeholder="No Brand"
-                        placeholderTextColor="#777383"
+                        placeholderTextColor="#94A3B8"
                       />
                     </View>
                     <View style={[styles.field, { flex: 1, marginLeft: 6 }]}>
@@ -438,7 +568,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                         value={researchAnalyst}
                         onChangeText={setResearchAnalyst}
                         placeholder="SEBI"
-                        placeholderTextColor="#777383"
+                        placeholderTextColor="#94A3B8"
                       />
                     </View>
                   </View>
@@ -451,7 +581,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                         value={sebiRegistration}
                         onChangeText={setSebiRegistration}
                         placeholder="INH010600090"
-                        placeholderTextColor="#777383"
+                        placeholderTextColor="#94A3B8"
                       />
                     </View>
                     <View style={[styles.field, { flex: 1, marginLeft: 6 }]}>
@@ -461,7 +591,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                         value={website}
                         onChangeText={setWebsite}
                         placeholder="getaipilot.com"
-                        placeholderTextColor="#777383"
+                        placeholderTextColor="#94A3B8"
                       />
                     </View>
                   </View>
@@ -477,7 +607,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                       value={email}
                       onChangeText={setEmail}
                       placeholder="research@example.com"
-                      placeholderTextColor="#777383"
+                      placeholderTextColor="#94A3B8"
                       keyboardType="email-address"
                     />
                   </View>
@@ -489,7 +619,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                       value={officeAddress}
                       onChangeText={setOfficeAddress}
                       placeholder="e.g. Kallam, Latur, Maharashtra"
-                      placeholderTextColor="#777383"
+                      placeholderTextColor="#94A3B8"
                     />
                   </View>
 
@@ -539,7 +669,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                         value={page1Disclaimer}
                         onChangeText={setPage1Disclaimer}
                         placeholder="Add short SEBI/risk disclaimer for the first page..."
-                        placeholderTextColor="#777383"
+                        placeholderTextColor="#94A3B8"
                       />
                     </View>
                   </View>
@@ -556,7 +686,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                       value={page2Disclosure}
                       onChangeText={setPage2Disclosure}
                       placeholder="Optional disclosure content."
-                      placeholderTextColor="#777383"
+                      placeholderTextColor="#94A3B8"
                     />
                   </View>
 
@@ -568,7 +698,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                       value={page3Conflicts}
                       onChangeText={setPage3Conflicts}
                       placeholder="Optional conflict of interest content."
-                      placeholderTextColor="#777383"
+                      placeholderTextColor="#94A3B8"
                     />
                   </View>
 
@@ -580,7 +710,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                       value={page4Policy}
                       onChangeText={setPage4Policy}
                       placeholder="Optional risk and policy content."
-                      placeholderTextColor="#777383"
+                      placeholderTextColor="#94A3B8"
                     />
                   </View>
                 </View>
@@ -596,7 +726,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                     </View>
                     <View style={styles.completedBadge}>
                       <View style={styles.dotGreen} />
-                      <Text style={styles.completedBadgeText}>Live Synced</Text>
+
                     </View>
                   </View>
 
@@ -687,23 +817,13 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                   </View>
                 </View>
 
-                {(dashboard?.channels || []).length === 0 ? (
-                  <View style={styles.emptyBox}>
-                    <Ionicons name="radio-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
-                    <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                      No Channels Connected Yet
-                    </Text>
-                    <Text style={styles.emptyDesc}>
-                      Add @ResearchReport233_bot as an Admin to your Telegram trading channel to begin auto-converting calls.
-                    </Text>
-                    <Pressable style={[styles.startBotBtn, { marginTop: 12 }]} onPress={handleStartBot}>
-                      <Ionicons name="add" size={16} color="#FFFFFF" />
-                      <Text style={styles.startBotBtnText}>Connect Channel</Text>
-                    </Pressable>
-                  </View>
-                ) : (
-                  (dashboard?.channels || []).map((ch: any, idx: number) => (
-                    <View key={`ch_${ch.id || idx}`} style={[styles.channelItem, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                <FlatList
+                  data={dashboard?.channels || []}
+                  keyExtractor={(ch, idx) => `ch_${ch.id || idx}`}
+                  scrollEnabled={false}
+                  ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+                  renderItem={({ item: ch }) => (
+                    <View style={[styles.channelItem, { borderColor: colors.border, backgroundColor: colors.card }]}>
                       <View style={styles.channelIcon}>
                         <Ionicons name="megaphone" size={16} color="#0284C7" />
                       </View>
@@ -715,8 +835,23 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                       </View>
                       <Ionicons name="checkmark-circle" size={18} color="#10B981" />
                     </View>
-                  ))
-                )}
+                  )}
+                  ListEmptyComponent={
+                    <View style={styles.emptyBox}>
+                      <Ionicons name="radio-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
+                      <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                        No Channels Connected Yet
+                      </Text>
+                      <Text style={styles.emptyDesc}>
+                        Add @ResearchReport233_bot as an Admin to your Telegram trading channel to begin auto-converting calls.
+                      </Text>
+                      <Pressable style={[styles.startBotBtn, { marginTop: 12 }]} onPress={handleStartBot}>
+                        <Ionicons name="add" size={16} color="#FFFFFF" />
+                        <Text style={styles.startBotBtnText}>Connect Channel</Text>
+                      </Pressable>
+                    </View>
+                  }
+                />
               </View>
             )}
 
@@ -734,19 +869,13 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                   </View>
                 </View>
 
-                {(dashboard?.reports || []).length === 0 ? (
-                  <View style={styles.emptyBox}>
-                    <Ionicons name="document-text-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
-                    <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                      No Reports Generated Yet
-                    </Text>
-                    <Text style={styles.emptyDesc}>
-                      When you post trading calls in your connected channels, formatted SEBI compliance PDFs will appear here.
-                    </Text>
-                  </View>
-                ) : (
-                  (dashboard?.reports || []).map((rep: any) => (
-                    <View key={rep.id} style={[styles.reportItem, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                <FlatList
+                  data={dashboard?.reports || []}
+                  keyExtractor={(rep, idx) => String(rep.id || idx)}
+                  scrollEnabled={false}
+                  ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+                  renderItem={({ item: rep }) => (
+                    <View style={[styles.reportItem, { borderColor: colors.border, backgroundColor: colors.card }]}>
                       <View style={styles.reportIconCircle}>
                         <Ionicons name="document-text" size={18} color="#EF4444" />
                       </View>
@@ -772,8 +901,19 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                         <Ionicons name={rep.pdfUrl ? "download-outline" : "eye-outline"} size={16} color="#0284C7" />
                       </Pressable>
                     </View>
-                  ))
-                )}
+                  )}
+                  ListEmptyComponent={
+                    <View style={styles.emptyBox}>
+                      <Ionicons name="document-text-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
+                      <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                        No Reports Generated Yet
+                      </Text>
+                      <Text style={styles.emptyDesc}>
+                        When you post trading calls in your connected channels, formatted SEBI compliance PDFs will appear here.
+                      </Text>
+                    </View>
+                  }
+                />
               </View>
             )}
           </>
@@ -834,7 +974,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                 <TextInput
                   style={[styles.input, { borderColor: colors.border, backgroundColor: colors.card }, { flex: 1 }]}
                   placeholder="https://example.com/logobag.png"
-                  placeholderTextColor="#777383"
+                  placeholderTextColor="#94A3B8"
                   value={customLogoInput}
                   onChangeText={setCustomLogoInput}
                   autoCapitalize="none"

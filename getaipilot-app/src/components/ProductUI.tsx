@@ -1,7 +1,8 @@
 import { useTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { Animated, Easing, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 export type ProductTone = 'mint' | 'lavender' | 'peach' | 'pink';
@@ -35,12 +36,24 @@ export function ProductButton({ label, onPress, icon, secondary = false, disable
 }) {
   const colors = useProductPalette();
   const ink = secondary ? colors.text : colors.buttonPrimaryForeground;
+  const [scale] = useState(() => new Animated.Value(1));
+  const reducedMotion = useReducedMotion();
+  useEffect(() => {
+    if (reducedMotion) { scale.stopAnimation(); scale.setValue(1); }
+    return () => scale.stopAnimation();
+  }, [reducedMotion, scale]);
+  const feedback = (pressed: boolean) => {
+    if (reducedMotion) return;
+    Animated.timing(scale, { toValue: pressed ? 0.98 : 1, duration: pressed ? 100 : 140, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+  };
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled }} disabled={disabled} onPress={(event) => { event.stopPropagation(); onPress(); }}
+    <Animated.View style={{ alignSelf: 'flex-start', transform: [{ scale }] }}>
+    <Pressable onPressIn={() => feedback(true)} onPressOut={() => feedback(false)} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled }} disabled={disabled} onPress={(event) => { event.stopPropagation(); onPress(); }}
       style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 30, backgroundColor: secondary ? colors.card : colors.buttonPrimary, opacity: disabled ? 0.45 : pressed ? 0.75 : 1 })}>
       {icon && <Ionicons name={icon} size={17} color={ink} />}
       <Text style={{ color: ink, fontSize: 13, fontWeight: '500' }}>{label}</Text>
     </Pressable>
+    </Animated.View>
   );
 }
 

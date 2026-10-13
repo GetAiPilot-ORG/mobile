@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Modal,
   View,
@@ -7,6 +7,7 @@ import {
   Pressable,
   TextInput,
   ScrollView,
+  FlatList,
   ActivityIndicator,
   Alert,
   Image,
@@ -235,17 +236,29 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
     }
   };
 
-  const filteredUsers = (dashboard?.newUsers || []).filter((u: any) => {
-    const nameStr = (u.name || u.first_name || '').toLowerCase();
-    const chanStr = (u.channel_name || '').toLowerCase();
-    const q = userSearch.toLowerCase();
-    const matchesSearch =
-      nameStr.includes(q) ||
-      chanStr.includes(q) ||
-      String(u.telegram_user_id || '').includes(q);
-    const matchesFilter = userStatusFilter === 'All' || u.status === userStatusFilter;
-    return matchesSearch && matchesFilter;
-  });
+  const [visibleLimit, setVisibleLimit] = useState(25);
+
+  const filteredUsers = useMemo(() => {
+    const list = dashboard?.newUsers || [];
+    const q = userSearch.trim().toLowerCase();
+    if (!q && userStatusFilter === 'All') return list;
+
+    return list.filter((u: any) => {
+      const nameStr = (u.name || u.first_name || '').toLowerCase();
+      const chanStr = (u.channel_name || '').toLowerCase();
+      const matchesSearch =
+        !q ||
+        nameStr.includes(q) ||
+        chanStr.includes(q) ||
+        String(u.telegram_user_id || '').includes(q);
+      const matchesFilter = userStatusFilter === 'All' || u.status === userStatusFilter;
+      return matchesSearch && matchesFilter;
+    });
+  }, [dashboard?.newUsers, userSearch, userStatusFilter]);
+
+  const displayedUsers = useMemo(() => {
+    return filteredUsers.slice(0, visibleLimit);
+  }, [filteredUsers, visibleLimit]);
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -398,8 +411,12 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
                   </Pressable>
                 </View>
 
-                {bots.map((bot) => (
-                  <View key={bot.id} style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+                <FlatList
+                  data={bots}
+                  keyExtractor={(bot) => String(bot.id || bot.bot_username)}
+                  scrollEnabled={false}
+                  renderItem={({ item: bot }) => (
+                    <View key={bot.id} style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
                     <View style={styles.botRow}>
                       {/* Left: Bot Info */}
                       <View style={styles.botLeft}>
@@ -511,7 +528,8 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
                       </View>
                     )}
                   </View>
-                ))}
+                )}
+              />
               </View>
             )}
 
@@ -539,10 +557,14 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
                   </Pressable>
                 </View>
 
-                {links.map((link) => {
-                  const isCopied = copiedLinkId === link.id;
-                  return (
-                    <View key={link.id} style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+                <FlatList
+                  data={links}
+                  keyExtractor={(link) => String(link.id)}
+                  scrollEnabled={false}
+                  renderItem={({ item: link }) => {
+                    const isCopied = copiedLinkId === link.id;
+                    return (
+                      <View key={link.id} style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
                       <View style={styles.linkHeaderRow}>
                         <View style={styles.linkTitleWrap}>
                           <Text style={[styles.linkTitle, isDark ? styles.textDark : styles.textLight]}>
@@ -595,7 +617,8 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
                       </Pressable>
                     </View>
                   );
-                })}
+                }}
+                />
               </View>
             )}
 
@@ -682,58 +705,71 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
                   </View>
 
                   {/* Channel Breakdown Cards */}
-                  {dashboard.channels.map((chan) => (
-                    <View
-                      key={chan.channel_id}
-                      style={[styles.chanCard, isDark ? styles.chanCardDark : styles.chanCardLight]}
-                    >
-                      <View style={styles.chanCardHeader}>
-                        <Text style={[styles.chanName, isDark ? styles.textDark : styles.textLight]}>
-                          {chan.channel_name}
-                        </Text>
-                        <View style={styles.periodJoinsPill}>
-                          <Text style={styles.periodJoinsPillText}>+{chan.period_joins} Joins (7 Days)</Text>
-                        </View>
-                      </View>
-
-                      {/* Mini Stats */}
-                      <View style={styles.chanStatsRow}>
-                        <View style={styles.chanStatItem}>
-                          <Text style={styles.chanStatLbl}>JOINED</Text>
-                          <Text style={[styles.chanStatVal, isDark ? styles.textDark : styles.textLight]}>
-                            {chan.joined}
+                  <FlatList
+                    data={dashboard.channels}
+                    keyExtractor={(chan) => String(chan.channel_id)}
+                    scrollEnabled={false}
+                    ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+                    renderItem={({ item: chan }) => (
+                      <View
+                        style={[styles.chanCard, isDark ? styles.chanCardDark : styles.chanCardLight]}
+                      >
+                        <View style={styles.chanCardHeader}>
+                          <Text style={[styles.chanName, isDark ? styles.textDark : styles.textLight]}>
+                            {chan.channel_name}
                           </Text>
-                        </View>
-                        <View style={styles.chanStatItem}>
-                          <Text style={styles.chanStatLbl}>PERIOD</Text>
-                          <Text style={[styles.chanStatVal, { color: '#10B981' }]}>+{chan.period_joins}</Text>
-                        </View>
-                        <View style={styles.chanStatItem}>
-                          <Text style={styles.chanStatLbl}>LEFT</Text>
-                          <Text style={[styles.chanStatVal, { color: '#EF4444' }]}>{chan.left}</Text>
-                        </View>
-                        <View style={styles.chanStatItem}>
-                          <Text style={styles.chanStatLbl}>ALL ACTIVE</Text>
-                          <Text style={[styles.chanStatVal, { color: '#0284C7' }]}>{chan.all_active}</Text>
-                        </View>
-                      </View>
-
-                      {/* Active Links in this channel */}
-                      <View style={styles.chanLinksWrap}>
-                        {chan.links.map((linkItem) => (
-                          <View key={linkItem.id} style={styles.linkJoinPill}>
-                            <Ionicons name="link-outline" size={12} color="#0284C7" />
-                            <Text style={[styles.linkJoinPillTitle, isDark ? styles.textDark : styles.textLight]}>
-                              {linkItem.title}
-                            </Text>
-                            <View style={styles.linkJoinPillBadge}>
-                              <Text style={styles.linkJoinPillBadgeText}>+{linkItem.joins} joins</Text>
-                            </View>
+                          <View style={styles.periodJoinsPill}>
+                            <Text style={styles.periodJoinsPillText}>+{chan.period_joins} Joins (7 Days)</Text>
                           </View>
-                        ))}
+                        </View>
+
+                        {/* Mini Stats */}
+                        <View style={styles.chanStatsRow}>
+                          <View style={styles.chanStatItem}>
+                            <Text style={styles.chanStatLbl}>JOINED</Text>
+                            <Text style={[styles.chanStatVal, isDark ? styles.textDark : styles.textLight]}>
+                              {chan.joined}
+                            </Text>
+                          </View>
+                          <View style={styles.chanStatItem}>
+                            <Text style={styles.chanStatLbl}>PERIOD</Text>
+                            <Text style={[styles.chanStatVal, { color: '#10B981' }]}>+{chan.period_joins}</Text>
+                          </View>
+                          <View style={styles.chanStatItem}>
+                            <Text style={styles.chanStatLbl}>LEFT</Text>
+                            <Text style={[styles.chanStatVal, { color: '#EF4444' }]}>{chan.left}</Text>
+                          </View>
+                          <View style={styles.chanStatItem}>
+                            <Text style={styles.chanStatLbl}>ALL ACTIVE</Text>
+                            <Text style={[styles.chanStatVal, { color: '#0284C7' }]}>{chan.all_active}</Text>
+                          </View>
+                        </View>
+
+                        {/* Active Links in this channel */}
+                        <View style={styles.chanLinksWrap}>
+                          <FlatList
+                            data={chan.links}
+                            keyExtractor={(linkItem) => String(linkItem.id)}
+                            scrollEnabled={false}
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            ItemSeparatorComponent={() => <View style={{ width: 8 }} />}
+                            renderItem={({ item: linkItem }) => (
+                              <View style={styles.linkJoinPill}>
+                                <Ionicons name="link-outline" size={12} color="#0284C7" />
+                                <Text style={[styles.linkJoinPillTitle, isDark ? styles.textDark : styles.textLight]}>
+                                  {linkItem.title}
+                                </Text>
+                                <View style={styles.linkJoinPillBadge}>
+                                  <Text style={styles.linkJoinPillBadgeText}>+{linkItem.joins} joins</Text>
+                                </View>
+                              </View>
+                            )}
+                          />
+                        </View>
                       </View>
-                    </View>
-                  ))}
+                    )}
+                  />
                 </View>
 
                 {/* New Users Live Data Table */}
@@ -788,56 +824,93 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
                     ))}
                   </ScrollView>
 
-                  {/* User Rows */}
-                  {filteredUsers.map((user) => {
-                    const getStatusColor = (status: string) => {
-                      switch (status) {
-                        case 'Active':
-                          return { bg: '#ECFDF5', text: '#059669', border: '#A7F3D0' };
-                        case 'Bot Start':
-                          return { bg: '#EFF6FF', text: '#2563EB', border: '#BFDBFE' };
-                        case 'Leave':
-                          return { bg: '#FEF2F2', text: '#DC2626', border: '#FECACA' };
-                        default:
-                          return { bg: '#FFFBEB', text: '#D97706', border: '#FDE68A' };
-                      }
-                    };
+                  {/* User Rows with FlatList */}
+                  <FlatList
+                    data={displayedUsers}
+                    keyExtractor={(user: any, index: number) => String(user.id || user.telegram_user_id || `modal_u_${index}`)}
+                    scrollEnabled={false}
+                    initialNumToRender={15}
+                    maxToRenderPerBatch={20}
+                    renderItem={({ item: user }: { item: any }) => {
+                      const getStatusColor = (status: string) => {
+                        switch (status) {
+                          case 'Active':
+                            return { bg: '#ECFDF5', text: '#059669', border: '#A7F3D0' };
+                          case 'Bot Start':
+                            return { bg: '#EFF6FF', text: '#2563EB', border: '#BFDBFE' };
+                          case 'Leave':
+                            return { bg: '#FEF2F2', text: '#DC2626', border: '#FECACA' };
+                          default:
+                            return { bg: '#FFFBEB', text: '#D97706', border: '#FDE68A' };
+                        }
+                      };
 
-                    const statusStyle = getStatusColor(user.status);
+                      const statusStyle = getStatusColor(user.status);
 
-                    return (
-                      <View
-                        key={user.id}
-                        style={[styles.userRow, isDark ? styles.userRowDark : styles.userRowLight]}
-                      >
-                        <View style={styles.userRowLeft}>
-                          <View style={styles.userAvatar}>
-                            <Text style={styles.userAvatarText}>{user.name.charAt(0).toUpperCase()}</Text>
-                          </View>
-                          <View style={styles.userInfo}>
-                            <Text style={[styles.userName, isDark ? styles.textDark : styles.textLight]}>
-                              {user.name}
-                            </Text>
-                            <Text style={styles.userSub}>
-                              Id: {user.telegram_user_id} • {user.channel_name}
-                            </Text>
-                            <Text style={styles.userTime}>{user.time_ago}</Text>
-                          </View>
-                        </View>
-
+                      return (
                         <View
-                          style={[
-                            styles.userStatusPill,
-                            { backgroundColor: statusStyle.bg, borderColor: statusStyle.border },
-                          ]}
+                          key={user.id}
+                          style={[styles.userRow, isDark ? styles.userRowDark : styles.userRowLight]}
                         >
-                          <Text style={[styles.userStatusText, { color: statusStyle.text }]}>
-                            {user.status}
-                          </Text>
+                          <View style={styles.userRowLeft}>
+                            <View style={styles.userAvatar}>
+                              <Text style={styles.userAvatarText}>{user.name.charAt(0).toUpperCase()}</Text>
+                            </View>
+                            <View style={styles.userInfo}>
+                              <Text style={[styles.userName, isDark ? styles.textDark : styles.textLight]}>
+                                {user.name}
+                              </Text>
+                              <Text style={styles.userSub}>
+                                Id: {user.telegram_user_id} • {user.channel_name}
+                              </Text>
+                              <Text style={styles.userTime}>{user.time_ago}</Text>
+                            </View>
+                          </View>
+
+                          <View
+                            style={[
+                              styles.userStatusPill,
+                              { backgroundColor: statusStyle.bg, borderColor: statusStyle.border },
+                            ]}
+                          >
+                            <Text style={[styles.userStatusText, { color: statusStyle.text }]}>
+                              {user.status}
+                            </Text>
+                          </View>
                         </View>
+                      );
+                    }}
+                    ListFooterComponent={
+                      filteredUsers.length > visibleLimit ? (
+                        <Pressable
+                          style={[
+                            styles.loadMoreBtn,
+                            isDark ? styles.loadMoreBtnDark : styles.loadMoreBtnLight,
+                          ]}
+                          onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            setVisibleLimit((prev) => prev + 25);
+                          }}
+                        >
+                          <Text style={styles.loadMoreBtnText}>
+                            Show More ({filteredUsers.length - visibleLimit} remaining)
+                          </Text>
+                          <Ionicons name="chevron-down" size={14} color="#0284C7" />
+                        </Pressable>
+                      ) : null
+                    }
+                    ListEmptyComponent={
+                      <View style={{ padding: 24, alignItems: 'center' }}>
+                        <Ionicons name="people-outline" size={32} color="#94A3B8" />
+                        <Text style={[{ fontSize: 13, fontWeight: '700', marginTop: 8 }, isDark ? styles.textDark : styles.textLight]}>
+                          No Users Found
+                        </Text>
+                        <Text style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>
+                          No join events matching your search or filter.
+                        </Text>
                       </View>
-                    );
-                  })}
+                    }
+                  />
                 </View>
               </View>
             )}
@@ -1726,6 +1799,30 @@ const styles = StyleSheet.create({
   submitBtnText: {
     color: '#FFFFFF',
     fontSize: 13,
+    fontWeight: '700',
+  },
+  loadMoreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 8,
+    gap: 6,
+  },
+  loadMoreBtnLight: {
+    backgroundColor: 'rgba(2,132,199,0.06)',
+    borderColor: '#E2E8F0',
+  },
+  loadMoreBtnDark: {
+    backgroundColor: 'rgba(2,132,199,0.12)',
+    borderColor: '#334155',
+  },
+  loadMoreBtnText: {
+    color: '#0284C7',
+    fontSize: 12,
     fontWeight: '700',
   },
 });

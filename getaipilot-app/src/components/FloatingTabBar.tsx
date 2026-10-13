@@ -1,3 +1,4 @@
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React from 'react';
@@ -72,14 +73,13 @@ export interface FloatingTabBarProps {
 }
 
 const tabSpringAnimation = {
-  duration: 260,
+  duration: 180,
   create: {
     type: LayoutAnimation.Types.easeInEaseOut,
     property: LayoutAnimation.Properties.opacity,
   },
   update: {
-    type: LayoutAnimation.Types.spring,
-    springDamping: 0.75,
+    type: LayoutAnimation.Types.easeInEaseOut,
   },
   delete: {
     type: LayoutAnimation.Types.easeInEaseOut,
@@ -91,6 +91,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+  const reducedMotion = useReducedMotion();
   const { user, profile } = useAuth();
 
   if (!state?.routes || !descriptors || !navigation) {
@@ -160,7 +161,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }
 
-              LayoutAnimation.configureNext(tabSpringAnimation);
+              if (!reducedMotion) LayoutAnimation.configureNext(tabSpringAnimation);
 
               const event = navigation.emit({
                 type: 'tabPress',

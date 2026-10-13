@@ -112,7 +112,7 @@ export const telegramSupabase = {
       }
     }
 
-    // 3. Fetch all primary data in parallel
+    // 3. Fetch all primary data in parallel (optimized for 10k+ rows)
     const [
       botsData,
       linksData,
@@ -126,6 +126,8 @@ export const telegramSupabase = {
       blacklistData,
       forwardSettingsData,
       directJoinsData,
+      totalJoinsCountRes,
+      activeJoinsCountRes,
     ] = await Promise.all([
       supabase.from("tg_tracker").select("*").eq("user_id", currentUserId).order("created_at", { ascending: false }),
       supabase
@@ -134,10 +136,11 @@ export const telegramSupabase = {
           *,
           channel_mapping:tg_bot_channel_mappings(id, channel_name, status, channel_icon_url),
           bot:tg_tracker(id, status, bot_username, bot_name),
-          users:tg_bot_join_users(id, telegram_user_id, joined_channel, left_channel, joined_at, left_at, created_at, telegram_username, telegram_first_name, rejoined_at, rejoin_count, status)
+          users:tg_bot_join_users(id, joined_channel, left_channel, status)
         `)
         .eq("user_id", currentUserId)
-        .order("created_at", { ascending: false }),
+        .order("created_at", { ascending: false })
+        .limit(1000),
       supabase.from("tg_landing_pages").select("*").eq("user_id", currentUserId).order("created_at", { ascending: false }),
       supabase.from("tg_chatbot_configs").select("*").eq("user_id", currentUserId),
       numericTgUserId
@@ -150,7 +153,7 @@ export const telegramSupabase = {
         .eq("user_id", currentUserId)
         .order("created_at", { ascending: false })
         .limit(50),
-      supabase.from("tg_reaction_orders").select("*").eq("user_id", currentUserId),
+      supabase.from("tg_reaction_orders").select("*").eq("user_id", currentUserId).limit(1000),
       numericTgUserId
         ? supabase.from("tg_user_text_filters").select("*").eq("user_id", numericTgUserId)
         : Promise.resolve({ data: [], error: null }),
@@ -165,7 +168,17 @@ export const telegramSupabase = {
         .select("*")
         .eq("user_id", currentUserId)
         .order("created_at", { ascending: false })
-        .limit(300),
+        .limit(1000),
+      // Fast exact counts without fetching row bodies (Zero network overhead)
+      supabase
+        .from("tg_bot_join_users")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", currentUserId),
+      supabase
+        .from("tg_bot_join_users")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", currentUserId)
+        .or("and(status.eq.Active,or(left_channel.eq.false,left_channel.is.null)),and(status.eq.joined,or(left_channel.eq.false,left_channel.is.null)),and(joined_channel.eq.true,or(left_channel.eq.false,left_channel.is.null))"),
     ]);
 
     const loadedBots = botsData.data || [];
@@ -214,31 +227,32 @@ export const telegramSupabase = {
       // Ignore edge function error or timeout, retain DB loadedMappings
     }
 
-    // 5. Aggregate All User Joins (from direct joins query & link.users nested query)
-    const joinsMap = new Map<string, any>();
-    (directJoinsData.data || []).forEach((j: any) => {
-      if (j.id) joinsMap.set(j.id, j);
+    // 5. Aggregate User Joins (lightweight and efficient)
+    const channelMapById = new Map<string, string>();
+    loadedMappings.forEach((m: any) => {
+      if (m.id && m.channel_name) channelMapById.set(m.id, m.channel_name);
+      if (m.channel_id && m.channel_name) channelMapById.set(m.channel_id, m.channel_name);
+    });
+    loadedLinks.forEach((l: any) => {
+      const name = l.channel_mapping?.channel_name || l.name || l.channel_name;
+      if (l.id && name) channelMapById.set(l.id, name);
     });
 
-    loadedLinks.forEach((link: any) => {
-      const chanName = link.channel_mapping?.channel_name || link.name || 'Tracked Channel';
-      (link.users || []).forEach((u: any) => {
-        if (u.id) {
-          const existing = joinsMap.get(u.id);
-          joinsMap.set(u.id, {
-            ...u,
-            channel_name: existing?.channel_name || chanName,
-            joined_at: u.joined_at || u.created_at,
-          });
-        }
-      });
-    });
+    const loadedJoins = (directJoinsData.data || []).map((j: any) => ({
+      ...j,
+      channel_name: j.channel_name || channelMapById.get(j.link_id) || channelMapById.get(j.channel_id) || 'Tracked Channel',
+      joined_at: j.joined_at || j.created_at,
+    }));
 
-    const loadedJoins = Array.from(joinsMap.values()).sort(
-      (a: any, b: any) => new Date(b.joined_at || b.created_at || 0).getTime() - new Date(a.joined_at || a.created_at || 0).getTime()
-    );
+    const totalJoinsCount = totalJoinsCountRes.count !== null && totalJoinsCountRes.count !== undefined
+      ? totalJoinsCountRes.count
+      : loadedJoins.length;
 
-    // 6. Fetch Purchases & Subscriptions for user's landing pages
+    const activeJoinsCount = activeJoinsCountRes.count !== null && activeJoinsCountRes.count !== undefined
+      ? activeJoinsCountRes.count
+      : loadedJoins.filter((j: any) => !j.left_channel && (j.status === 'Active' || j.status === 'joined' || j.joined_channel)).length;
+
+    // 6. Fetch Purchases & Subscriptions for user's landing pages (capped to prevent OOM)
     let loadedPurchases: any[] = [];
     let activeSubscribersCount = 0;
     const pageIds = rawPages.map((p: any) => p.id).filter(Boolean);
@@ -251,13 +265,15 @@ export const telegramSupabase = {
           .select("id, amount, currency, status, created_at, landing_page_id, razorpay_payment_id")
           .in("landing_page_id", pageIds)
           .eq("status", "success")
-          .order("created_at", { ascending: false }),
+          .order("created_at", { ascending: false })
+          .limit(1000),
         supabase
           .from("tg_channel_subscriptions")
           .select("id, plan_id, landing_page_id, status, telegram_user_id, created_at, plan:tg_plans(price, currency)")
           .in("landing_page_id", pageIds)
           .eq("status", "active")
-          .not("telegram_user_id", "is", null),
+          .not("telegram_user_id", "is", null)
+          .limit(1000),
       ]);
 
       subsList = subsRes.data || [];
@@ -323,6 +339,8 @@ export const telegramSupabase = {
       teleSubPagesCount,
       revenue: totalRevenue,
       activeSubscribers: activeSubscribersCount,
+      totalJoinsCount,
+      activeJoinsCount,
       hub: defaultHub,
       loadedLinks,
       loadedPages,
