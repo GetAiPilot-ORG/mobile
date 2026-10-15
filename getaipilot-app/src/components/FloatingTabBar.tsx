@@ -135,6 +135,44 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   return (
     <View style={styles.dockRoot} pointerEvents="box-none">
       {/* 2. Rounded navigation dock */}
+      {/* 1. Full-bleed Bottom Frosted Backdrop that blurs all scrolled content behind it and fills the bottom screen area */}
+      <View
+        style={[
+          styles.backdropWrapper,
+          {
+            height: 56 + bottomOffset + 12,
+          },
+        ]}
+        pointerEvents="none"
+      >
+        <BlurView
+          intensity={Platform.OS === 'ios' ? 75 : 95}
+          tint={isDark ? 'dark' : 'light'}
+          blurMethod="dimezisBlurView"
+          style={[
+            StyleSheet.absoluteFill,
+            Platform.OS === 'web'
+              ? ({ backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' } as any)
+              : undefined,
+          ]}
+        />
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: isDark
+                ? 'rgba(17, 16, 15, 0.65)'
+                : 'rgba(247, 245, 242, 0.70)',
+              // borderTopWidth: StyleSheet.hairlineWidth,ß
+              borderTopColor: isDark
+                ? 'rgba(255, 255, 255, 0.08)'
+                : 'rgba(0, 0, 0, 0.06)',
+            },
+          ]}
+        />
+      </View>
+
+      {/* 2. Floating Pill Tab Bar with rounded frosted glassmorphism */}
       <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
         <View
           style={[
@@ -150,6 +188,29 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
             },
           ]}
         >
+          {/* Inner Blur on the Pill */}
+          <BlurView
+            intensity={Platform.OS === 'ios' ? 85 : 90}
+            tint={isDark ? 'dark' : 'light'}
+            blurMethod="dimezisBlurView"
+            style={[
+              StyleSheet.absoluteFill,
+              Platform.OS === 'web'
+                ? ({ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' } as any)
+                : undefined,
+            ]}
+          />
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                backgroundColor: isDark
+                  ? 'rgba(25, 23, 21, 0.70)'
+                  : 'rgba(253, 252, 251, 0.75)',
+              },
+            ]}
+          />
+
           {visibleRoutes.map((route: { key: string; name: string }, index: number) => {
             const descriptor = descriptors[route.key];
             const options = descriptor ? descriptor.options : ({} as any);

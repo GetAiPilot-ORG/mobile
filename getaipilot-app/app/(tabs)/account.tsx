@@ -25,6 +25,7 @@ import { DeviceSessionsSkeleton } from '../../src/components/skeletonScreen';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { apiClient } from '../../src/core/api/client';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
+import { useNotifications } from '../../src/hooks/useNotifications';
 import { BiometricService, BiometricSettings } from '../../src/lib/biometrics';
 import { supabase } from '../../src/lib/supabase';
 import { Profile } from '../../src/types/database';
@@ -108,7 +109,15 @@ export default function AccountScreen() {
   const { isDark, themeMode, setThemeMode } = useTheme();
   const colors = getColors(isDark);
   const { user, signOut } = useAuth();
-  const { planLabel, isActive } = usePlatformSubscription();
+  const { isAdmin, planLabel, isActive, plan } = usePlatformSubscription();
+  const {
+    expoPushToken,
+    permissionGranted,
+    requestPermissions,
+    sendTestNotification,
+    isDevice,
+  } = useNotifications();
+  const [isSendingTestPush, setIsSendingTestPush] = useState(false);
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<AccountTab>('overview');
@@ -448,6 +457,45 @@ export default function AccountScreen() {
       await AsyncStorage.setItem(key, String(value));
     } catch (e) {
       console.error('Error saving preference:', e);
+    }
+  };
+
+  const handleTogglePush = async (val: boolean) => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (val) {
+      const token = await requestPermissions();
+      if (token || permissionGranted || !isDevice) {
+        setPushEnabled(true);
+        await AsyncStorage.setItem('@pref_push', 'true');
+        if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        Alert.alert(
+          'Notifications Required',
+          'Please enable notifications for GetAiPilot in your device settings to receive instant alerts.'
+        );
+        setPushEnabled(false);
+        await AsyncStorage.setItem('@pref_push', 'false');
+      }
+    } else {
+      setPushEnabled(false);
+      await AsyncStorage.setItem('@pref_push', 'false');
+    }
+  };
+
+  const handleSendTestPush = async () => {
+    if (isSendingTestPush) return;
+    setIsSendingTestPush(true);
+    try {
+      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await sendTestNotification(
+        'GetAiPilot Alert 🚀',
+        'Push notifications are configured and active in your ecosystem.'
+      );
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (err: any) {
+      Alert.alert('Notice', err?.message || 'Could not trigger test notification.');
+    } finally {
+      setIsSendingTestPush(false);
     }
   };
 
@@ -1476,9 +1524,14 @@ export default function AccountScreen() {
             <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
               <View style={[styles.switchRow, isDark ? styles.switchRowDark : styles.switchRowLight]}>
                 <View style={{ flex: 1, paddingRight: 10 }}>
-                  <Text style={[styles.switchTitle, isDark && styles.switchTitleDark]}>Push Notifications</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={[styles.switchTitle, isDark && styles.switchTitleDark]}>Push Notifications</Text>
+                    {pushEnabled && (
+                      <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#10B981' }} />
+                    )}
+                  </View>
                   <Text style={[styles.switchSubtitle, isDark && styles.switchSubtitleDark]}>
-                    Receive instant alerts on bot and campaign events
+                    Receive instant alerts on bot, quota, and campaign events
                   </Text>
                 </View>
                 <Switch
@@ -1488,6 +1541,56 @@ export default function AccountScreen() {
                   thumbColor="#FFFFFF"
                 />
               </View>
+
+              {pushEnabled && (
+                <View
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 10,
+                    borderBottomWidth: StyleSheet.hairlineWidth,
+                    borderBottomColor: isDark ? '#2C2C2E' : '#E5E7EB',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <View style={{ flex: 1, paddingRight: 12 }}>
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: isDark ? '#94A3B8' : '#64748B' }}>
+                      {expoPushToken
+                        ? 'Token: ExponentPushToken (Active)'
+                        : isDevice
+                        ? 'Connected to push service'
+                        : 'Simulator Mode (Local alerts active)'}
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={handleSendTestPush}
+                    disabled={isSendingTestPush}
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 12,
+                      backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#ECFDF5',
+                      borderWidth: 1,
+                      borderColor: isDark ? 'rgba(16, 185, 129, 0.35)' : '#A7F3D0',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 5,
+                    }}
+                  >
+                    {isSendingTestPush ? (
+                      <ActivityIndicator size="small" color="#10B981" />
+                    ) : (
+                      <>
+                        <Ionicons name="notifications" size={13} color="#10B981" />
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#10B981' }}>
+                          Test Push
+                        </Text>
+                      </>
+                    )}
+                  </Pressable>
+                </View>
+              )}
 
               <View style={[styles.switchRow, isDark ? styles.switchRowDark : styles.switchRowLight]}>
                 <View style={{ flex: 1, paddingRight: 10 }}>

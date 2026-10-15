@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { env } from '../config/env.js';
 import { HubAdapter } from '../adapters/hub.adapter.js';
 import { VoiceAdapter } from '../adapters/voice.adapter.js';
+import { NotificationService } from './notification.service.js';
 
 export interface CreateOrderInput {
   userId: string;
@@ -94,8 +95,44 @@ export class RazorpayService {
       ...(input.notes || {}),
     };
 
+    // 1. Invoke Supabase Edge Function 'create-payment-session'
+    try {
+      const edgeRes = await axios.post(
+        `${env.SUPABASE_URL || 'https://uklxlappjcuvdqjvecfh.supabase.co'}/functions/v1/create-payment-session`,
+        {
+          plan_name: input.planName,
+          amount: input.amount,
+          currency,
+          userId: input.userId,
+          userEmail: input.userEmail,
+          userName: input.userName,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 9000,
+        }
+      );
+
+      if (edgeRes.data?.razorpay_order_id) {
+        return {
+          orderId: edgeRes.data.razorpay_order_id,
+          amount: input.amount,
+          amountInPaise,
+          currency,
+          keyId: edgeRes.data.razorpay_key_id || env.RAZORPAY_KEY_ID || 'rzp_live_TDiBRMBEMB7Mcc',
+          receipt: cleanReceipt,
+          notes,
+        };
+      }
+    } catch (edgeErr: any) {
+      console.warn('[BFF Razorpay] Edge function create-payment-session notice:', edgeErr?.response?.data || edgeErr?.message);
+    }
+
     if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_KEY_SECRET) {
-      throw new Error('Razorpay production keys not configured. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in Getaipilot-bff/.env');
+      throw new Error('Razorpay keys not configured and Supabase Edge Function was unavailable.');
     }
 
     const authHeader = Buffer.from(`${env.RAZORPAY_KEY_ID}:${env.RAZORPAY_KEY_SECRET}`).toString('base64');
@@ -132,12 +169,115 @@ export class RazorpayService {
   }
 
   /**
+   * Creates an official Razorpay Hosted Payment Link (/v1/payment_links)
+   */
+  public static async createPaymentLink(input: CreateOrderInput) {
+    const amountInPaise = Math.round(input.amount * 100);
+    const currency = input.currency || 'INR';
+    const cleanPlanName = input.planName.replace(/[^a-zA-Z0-9 ]/g, '').trim() || 'Subscription';
+
+    if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_KEY_SECRET) {
+      throw new Error('Razorpay production keys not configured. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in Getaipilot-bff/.env');
+    }
+
+    const authHeader = Buffer.from(`${env.RAZORPAY_KEY_ID}:${env.RAZORPAY_KEY_SECRET}`).toString('base64');
+    const response = await axios.post(
+      `${this.RAZORPAY_BASE_URL}/payment_links`,
+      {
+        amount: amountInPaise,
+        currency,
+        accept_partial: false,
+        description: `${cleanPlanName} Subscription`,
+        customer: {
+          name: input.userName || 'Subscriber',
+          email: input.userEmail || undefined,
+        },
+        notify: {
+          sms: false,
+          email: false,
+        },
+        notes: {
+          userId: input.userId,
+          userEmail: input.userEmail || '',
+          planId: input.planId,
+          planName: input.planName,
+          billingInterval: input.billingInterval,
+          product: input.product || 'social',
+          ...(input.notes || {}),
+        },
+        callback_url: 'getaipilot://payment/callback',
+        callback_method: 'get',
+      },
+      {
+        headers: {
+          Authorization: `Basic ${authHeader}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 9000,
+      }
+    );
+
+    if (!response.data || !response.data.id) {
+      throw new Error('Failed to create Razorpay Payment Link.');
+    }
+
+    return {
+      paymentLinkId: response.data.id,
+      shortUrl: response.data.short_url,
+      amount: input.amount,
+      amountInPaise,
+      currency,
+    };
+  }
+
+  /**
    * Validates Razorpay HMAC-SHA256 signature and updates user entitlements in Supabase
    */
   public static async verifyPayment(input: VerifyPaymentInput) {
     const { orderId, paymentId, signature, userId, planId, planName, billingInterval, amount } = input;
 
-    // 1. Cryptographic HMAC-SHA256 Verification
+    // 1. Invoke Supabase Edge Function 'verify-platform-payment'
+    try {
+      const edgeVerify = await axios.post(
+        `${env.SUPABASE_URL || 'https://uklxlappjcuvdqjvecfh.supabase.co'}/functions/v1/verify-platform-payment`,
+        {
+          gateway: 'razorpay',
+          user_id: userId,
+          razorpay_order_id: orderId,
+          razorpay_payment_id: paymentId,
+          razorpay_signature: signature,
+          plan_id: planId,
+          plans: [planName],
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 9000,
+        }
+      );
+
+      if (edgeVerify.data?.status === 'success') {
+        return {
+          success: true,
+          orderId,
+          paymentId,
+          planId,
+          planName,
+          billingInterval,
+          amount,
+          currency: input.currency || 'INR',
+          status: 'active',
+          startedAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 30 * 86400000).toISOString(),
+        };
+      }
+    } catch (edgeErr: any) {
+      console.warn('[BFF Razorpay] Edge function verify-platform-payment notice:', edgeErr?.response?.data || edgeErr?.message);
+    }
+
+    // 2. Cryptographic HMAC-SHA256 Verification
     let isValid = false;
     let finalSignature = signature;
 
@@ -237,6 +377,21 @@ export class RazorpayService {
 
     // 3b. Sync to Voice Supabase if Voice plan or Dedicated Number
     await this.syncVoiceSubscription(userId, planId, planName, amount, startedAt, expiresAt, input.product);
+
+    // 3c. Send real-time Push Notification to all platform administrators
+    NotificationService.notifyAdminActivity({
+      action: 'payment_received',
+      details: {
+        amount,
+        planName,
+        billingInterval,
+        userName: input.userName,
+        userEmail: input.userEmail,
+        userId,
+      },
+    }).catch((notifErr) => {
+      console.warn('[RazorpayService] Admin payment notification notice:', notifErr?.message || notifErr);
+    });
 
     return {
       success: true,
@@ -481,6 +636,19 @@ export class RazorpayService {
 
     // 5b. Sync to Voice Supabase if Voice plan or Dedicated Number
     await this.syncVoiceSubscription(userId, planId, planName, amount, startedAt, expiresAt, input.product);
+
+    // 5c. Send real-time Push Notification to all platform administrators
+    NotificationService.notifyAdminActivity({
+      action: 'payment_received',
+      details: {
+        amount,
+        planName,
+        phone: number,
+        userId,
+      },
+    }).catch((notifErr) => {
+      console.warn('[RazorpayService] Admin QR payment notification notice:', notifErr?.message || notifErr);
+    });
 
     return {
       success: true,

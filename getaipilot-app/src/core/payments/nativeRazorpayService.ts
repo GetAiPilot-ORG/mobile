@@ -1,5 +1,5 @@
-import { Alert, NativeModules, Platform } from 'react-native';
-import type {
+import { Alert, NativeModules, Platform, TurboModuleRegistry } from 'react-native';
+import RazorpayCheckout, {
   RazorpayErrorData,
   RazorpayOptions,
   RazorpaySuccessData,
@@ -7,20 +7,36 @@ import type {
 import { RazorpayApiService } from './razorpayService';
 import { RazorpayCheckoutOptions, RazorpaySuccessResponse } from './types';
 
+const DEFAULT_KEY_ID = 'rzp_test_TDi7sLSJAYc8FV';
+
 export class NativeRazorpayService {
   /**
-   * Checks whether the native Razorpay SDK module is available in the current runtime
+   * Checks whether the native Razorpay SDK module is available in the current runtime.
+   * Returns false in Expo Go, Waydroid without native build, or Web.
    */
   public static isNativeSdkAvailable(): boolean {
     if (Platform.OS === 'web') return false;
-    return Boolean(NativeModules.RNRazorpayCheckout);
+    try {
+      if (NativeModules?.RNRazorpayCheckout && typeof NativeModules.RNRazorpayCheckout.open === 'function') {
+        return true;
+      }
+      if (typeof TurboModuleRegistry !== 'undefined' && TurboModuleRegistry?.get) {
+        const turbo: any = TurboModuleRegistry.get('RNRazorpayCheckout');
+        if (turbo && typeof turbo.open === 'function') {
+          return true;
+        }
+      }
+    } catch {
+      return false;
+    }
+    return false;
   }
 
   /**
-   * Launches the official native Razorpay SDK checkout flow
-   * Returns true if handled by native SDK, false if fallback modal should be used
+   * Attempts to launch native SDK checkout if compiled into the application binary.
+   * Returns true if native SDK handled checkout, false if fallback in-app modal should take over.
    */
-  public static async launchNativeCheckout(
+  public static async launchCheckout(
     options: RazorpayCheckoutOptions,
     userInfo?: { id?: string; email?: string; name?: string; phone?: string }
   ): Promise<boolean> {
@@ -28,16 +44,25 @@ export class NativeRazorpayService {
       return false;
     }
 
+    let keyId = DEFAULT_KEY_ID;
+    let orderId: string | undefined = undefined;
+
     try {
       // Load the SDK only when its native module exists; web and Expo Go retain the modal fallback.
       const { default: RazorpayCheckout } = await import("react-native-razorpay");
       // 1. Fetch Gateway Config
       const config = await RazorpayApiService.getConfig();
+      if (config?.keyId) {
+        keyId = config.keyId;
+      }
+    } catch (configErr) {
+      console.warn('[Razorpay] Config lookup notice:', configErr);
+    }
 
-      // 2. Initialize Verified Razorpay Order from BFF
+    try {
       const order = await RazorpayApiService.createOrder({
         amount: options.amount,
-        currency: options.currency || config.currency || 'INR',
+        currency: options.currency || 'INR',
         product: options.product || 'ecosystem',
         planId: options.planId,
         planName: options.planName,
@@ -45,47 +70,71 @@ export class NativeRazorpayService {
         notes: options.notes,
       });
 
-      const keyId = order.keyId || config.keyId;
-      if (!keyId) {
-        console.warn('[NativeRazorpay] No Razorpay keyId found, falling back to modal');
-        return false;
+      if (order?.orderId) {
+        orderId = order.orderId;
       }
+      if (order?.keyId) {
+        keyId = order.keyId;
+      }
+    } catch (orderErr: any) {
+      console.warn('[Razorpay] Backend order notice, proceeding with direct checkout:', orderErr?.message || orderErr);
+    }
 
-      // 3. Prepare Native SDK parameters
-      const sdkOptions: RazorpayOptions = {
-        description: options.description || `${options.planName} Subscription`,
-        image: 'https://getaipilot.in/assets/images/logo.png',
-        currency: options.currency || config.currency || 'INR',
-        key: keyId,
-        amount: order.amountInPaise || options.amount * 100,
-        name: config.merchantName || 'GetAiPilot',
-        order_id: order.orderId,
-        prefill: {
-          email: options.prefill?.email || userInfo?.email || '',
-          contact: options.prefill?.contact || userInfo?.phone || '',
-          name: options.prefill?.name || userInfo?.name || '',
-        },
-        theme: {
-          color: options.themeColor || '#8B5CF6',
-        },
-        notes: {
-          planId: options.planId,
-          planName: options.planName,
-          billingInterval: options.billingInterval,
-          ...options.notes,
-        },
-      };
+    try {
+      return await this.launchNativeSdk(options, keyId, orderId, userInfo);
+    } catch (nativeErr: any) {
+      console.warn('[Razorpay] Native SDK run notice, falling back to in-app checkout:', nativeErr?.message || nativeErr);
+      return false;
+    }
+  }
 
-      // 4. Invoke Native Razorpay Checkout
+  /**
+   * Official react-native-razorpay native SDK checkout
+   */
+  public static async launchNativeSdk(
+    options: RazorpayCheckoutOptions,
+    keyId: string,
+    orderId?: string,
+    userInfo?: { id?: string; email?: string; name?: string; phone?: string }
+  ): Promise<boolean> {
+    const prefillEmail = options.prefill?.email || userInfo?.email || '';
+    const prefillContact = options.prefill?.contact || userInfo?.phone || '';
+    const prefillName = options.prefill?.name || userInfo?.name || '';
+    const amountInPaise = Math.round(options.amount * 100);
+
+    const sdkOptions: RazorpayOptions = {
+      description: options.description || `${options.planName} Subscription`,
+      image: 'https://getaipilot.in/assets/images/logo.png',
+      currency: options.currency || 'INR',
+      key: keyId,
+      amount: amountInPaise,
+      name: 'GetAiPilot',
+      order_id: orderId,
+      prefill: {
+        email: prefillEmail,
+        contact: prefillContact,
+        name: prefillName,
+      },
+      theme: {
+        color: options.themeColor || '#8B5CF6',
+      },
+      notes: {
+        planId: options.planId,
+        planName: options.planName,
+        billingInterval: options.billingInterval,
+        ...options.notes,
+      },
+    };
+
+    try {
       const data: RazorpaySuccessData = await RazorpayCheckout.open(sdkOptions);
 
-      // 5. Cryptographic Verification with BFF
       let verifiedResult: RazorpaySuccessResponse;
       try {
         verifiedResult = await RazorpayApiService.verifyPayment({
-          orderId: data.razorpay_order_id || order.orderId,
+          orderId: data.razorpay_order_id || orderId || '',
           paymentId: data.razorpay_payment_id,
-          signature: data.razorpay_signature,
+          signature: data.razorpay_signature || '',
           planId: options.planId,
           planName: options.planName,
           billingInterval: options.billingInterval,
@@ -104,26 +153,39 @@ export class NativeRazorpayService {
       if (options.onSuccess) {
         await options.onSuccess(verifiedResult);
       }
-
       return true;
     } catch (err: any) {
-      // If user cancelled, dismiss
       const errorData = err as RazorpayErrorData;
-      console.warn('[NativeRazorpay] Payment cancelled or error:', errorData);
+      console.warn('[Razorpay] Native payment notice:', errorData);
 
-      if (errorData?.code === 0 || errorData?.description?.includes('cancelled')) {
+      if (errorData?.code === 0 || errorData?.description?.toLowerCase().includes('cancel')) {
         if (options.onDismiss) {
           options.onDismiss();
         }
-        return true; // Successfully handled dismissal by native SDK
+        return true;
+      }
+
+      if (err?.message?.includes('null') || err?.message?.includes('open')) {
+        // Native module not initialized in current binary
+        throw err;
       }
 
       if (options.onFailure) {
         options.onFailure(err);
       } else {
-        Alert.alert("Payment could not be completed", errorData?.description || "Please check your connection and try again.");
+        Alert.alert('Payment Incomplete', errorData?.description || err?.message || 'Payment was not completed.');
       }
-      return true;
+      return false;
     }
+  }
+
+  /**
+   * Backwards compatibility alias
+   */
+  public static async launchNativeCheckout(
+    options: RazorpayCheckoutOptions,
+    userInfo?: { id?: string; email?: string; name?: string; phone?: string }
+  ): Promise<boolean> {
+    return this.launchCheckout(options, userInfo);
   }
 }

@@ -133,6 +133,44 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
   return (
     <View style={styles.dockRoot} pointerEvents="box-none">
       {/* 2. Rounded navigation dock */}
+      {/* 1. Full-bleed Bottom Frosted Backdrop that blurs all scrolled content behind it and fills the bottom screen area */}
+      <View
+        style={[
+          styles.backdropWrapper,
+          {
+            height: 56 + bottomOffset + 12,
+          },
+        ]}
+        pointerEvents="none"
+      >
+        <BlurView
+          intensity={Platform.OS === 'ios' ? 75 : 95}
+          tint={isDark ? 'dark' : 'light'}
+          blurMethod="dimezisBlurView"
+          style={[
+            StyleSheet.absoluteFill,
+            Platform.OS === 'web'
+              ? ({ backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' } as any)
+              : undefined,
+          ]}
+        />
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: isDark
+                ? 'rgba(17, 16, 15, 0.65)'
+                : 'rgba(247, 245, 242, 0.70)',
+              // borderTopWidth: StyleSheet.hairlineWidth,
+              borderTopColor: isDark
+                ? 'rgba(255, 255, 255, 0.08)'
+                : 'rgba(0, 0, 0, 0.06)',
+            },
+          ]}
+        />
+      </View>
+
+      {/* 2. Floating Pill Tab Bar with rounded frosted glassmorphism */}
       <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
         <View
           style={[
@@ -148,6 +186,29 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
             },
           ]}
         >
+          {/* Inner Blur on the Pill */}
+          <BlurView
+            intensity={Platform.OS === 'ios' ? 85 : 70}
+            tint={isDark ? 'dark' : 'light'}
+            blurMethod="dimezisBlurView"
+            style={[
+              StyleSheet.absoluteFill,
+              Platform.OS === 'web'
+                ? ({ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' } as any)
+                : undefined,
+            ]}
+          />
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                backgroundColor: isDark
+                  ? 'rgba(25, 23, 21, 0.09)'
+                  : 'rgba(253, 252, 251, 0)',
+              },
+            ]}
+          />
+
           {visibleItems.map((item) => {
             const isMoreTab = item.key === '__more__';
             const isFocused = isMoreTab ? isOverflowActive : activeKey === item.key;
@@ -256,6 +317,17 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
                   ]}
                 >
 
+                  <BlurView
+                    intensity={Platform.OS === 'ios' ? 85 : 95}
+                    tint={isDark ? 'dark' : 'light'}
+                    blurMethod="dimezisBlurView"
+                    style={[
+                      StyleSheet.absoluteFill,
+                      Platform.OS === 'web'
+                        ? ({ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' } as any)
+                        : undefined,
+                    ]}
+                  />
                   <View
                     style={[
                       StyleSheet.absoluteFill,
