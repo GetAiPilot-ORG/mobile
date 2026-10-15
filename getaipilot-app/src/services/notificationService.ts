@@ -1,4 +1,8 @@
-import * as Notifications from 'expo-notifications';
+// Conditional import of expo-notifications to avoid errors in Expo Go
+let Notifications: typeof import('expo-notifications') | undefined;
+if (require('expo-constants').default.appOwnership !== 'expo') {
+  Notifications = require('expo-notifications');
+}
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
@@ -10,15 +14,18 @@ export const PUSH_TOKEN_STORAGE_KEY = '@getaipilot_expo_push_token';
 export const LAST_SYNCED_USER_KEY = '@getaipilot_push_token_synced_user';
 
 // Configure how notifications appear when app is in foreground
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// Guarded so it does not crash when expo-notifications is unavailable (Expo Go)
+if (Notifications) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+}
 
 export interface NotificationRegistrationResult {
   token: string | null;
@@ -32,6 +39,7 @@ export class NotificationService {
    * Covers all platform update categories: default, leads, messages, billing, campaigns, calls, and system
    */
   static async setupChannels(): Promise<void> {
+    if (!Notifications) return;
     if (Platform.OS === 'android') {
       try {
         // 1. Default general alerts
@@ -131,6 +139,7 @@ export class NotificationService {
    * Request push notification permissions and retrieve the Expo Push Token
    */
   static async registerForPushNotificationsAsync(): Promise<NotificationRegistrationResult> {
+    if (!Notifications) return { token: null, status: 'unsupported' };
     await this.setupChannels();
 
     if (Platform.OS === 'web') {
@@ -262,6 +271,7 @@ export class NotificationService {
     data?: Record<string, any>;
     channelId?: string;
   }): Promise<string> {
+    if (!Notifications) return '';
     await this.setupChannels();
 
     return await Notifications.scheduleNotificationAsync({
@@ -281,6 +291,7 @@ export class NotificationService {
    * Clear badge count on app icon
    */
   static async clearBadgeCount(): Promise<void> {
+    if (!Notifications) return;
     try {
       await Notifications.setBadgeCountAsync(0);
     } catch {

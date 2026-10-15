@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import * as Notifications from 'expo-notifications';
+// Conditional import of expo-notifications to avoid errors in Expo Go (web/managed) environment
+let Notifications: typeof import('expo-notifications') | undefined;
+if (require('expo-constants').default.appOwnership !== 'expo') {
+  // Only import when not running in Expo Go
+  Notifications = require('expo-notifications');
+}
 import * as Device from 'expo-device';
+import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { Platform } from 'react-native';
 import { NotificationService } from '../services/notificationService';
@@ -24,7 +30,25 @@ export interface NotificationContextType {
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
+/**
+ * No-op context used when running in Expo Go (notifications unavailable).
+ * All hooks in NotificationProvider still run; consumers simply receive inert values.
+ */
+const NOOP_CONTEXT: NotificationContextType = {
+  expoPushToken: null,
+  notification: null,
+  clearNotification: () => { },
+  permissionGranted: false,
+  isDevice: false,
+  isRegistering: false,
+  requestPermissions: async () => null,
+  sendTestNotification: async () => { },
+};
+
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
+  // IMPORTANT: All hooks must be called unconditionally, before any early return.
+  const canUseNotifications = Constants.appOwnership !== 'expo';
+
   const router = useRouter();
   const { user } = useAuth();
 
@@ -58,7 +82,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       return data.conversationId ? `/inbox/${data.conversationId}` : '/inbox';
     }
     if (type === 'billing' || type === 'quota') return '/account/plans';
-    if (type === 'broadcast' || type === 'campaign') return '/fleet';
+    if (type === 'campaign') return '/fleet';
     if (type === 'call') return '/(tabs)/activity';
 
     // Admin & system broadcast updates for regular mobile users
@@ -99,6 +123,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   // Request permissions and register token
   const requestPermissions = async (): Promise<string | null> => {
+    if (!Notifications) return null;
     setIsRegistering(true);
     try {
       const result = await NotificationService.registerForPushNotificationsAsync();
@@ -128,6 +153,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     channelId = 'default',
     route = '/account/plans'
   ) => {
+    if (!Notifications) return;
     await NotificationService.scheduleLocalNotification({
       title,
       body,
@@ -138,6 +164,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   // Automatically register & sync when user session is available
   useEffect(() => {
+    if (!canUseNotifications) return;
+    if (!Notifications) return;
     if (Platform.OS === 'web') return;
 
     // Check existing permissions on mount
@@ -145,17 +173,19 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       .then(({ status }) => {
         setPermissionGranted(status === 'granted');
       })
-      .catch(() => {});
+      .catch(() => { });
 
     if (user?.id) {
       requestPermissions().catch((e) => {
         console.warn('[NotificationContext] Auto-register notice:', e);
       });
     }
-  }, [user?.id]);
+  }, [user?.id, canUseNotifications]);
 
   // Set up notification received & response listeners for Foreground, Background, and Kill modes
   useEffect(() => {
+    if (!canUseNotifications) return;
+    if (!Notifications) return;
     if (Platform.OS === 'web') return;
 
     // 1. KILL / QUIT MODE: Check if the app was launched by tapping a push notification from cold state
@@ -188,7 +218,17 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         responseListener.current.remove();
       }
     };
-  }, [router]);
+  }, [router, canUseNotifications]);
+
+  // When notifications are unavailable (Expo Go), render children with an inert context.
+  // All hooks above have already run unconditionally, so this early return is safe.
+  if (!canUseNotifications || !Notifications) {
+    return (
+      <NotificationContext.Provider value={NOOP_CONTEXT}>
+        {children}
+      </NotificationContext.Provider>
+    );
+  }
 
   return (
     <NotificationContext.Provider

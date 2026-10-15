@@ -143,17 +143,6 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
         ]}
         pointerEvents="none"
       >
-        <BlurView
-          intensity={Platform.OS === 'ios' ? 75 : 95}
-          tint={isDark ? 'dark' : 'light'}
-          blurMethod="dimezisBlurView"
-          style={[
-            StyleSheet.absoluteFill,
-            Platform.OS === 'web'
-              ? ({ backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' } as any)
-              : undefined,
-          ]}
-        />
         <View
           style={[
             StyleSheet.absoluteFill,
@@ -186,18 +175,6 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
             },
           ]}
         >
-          {/* Inner Blur on the Pill */}
-          <BlurView
-            intensity={Platform.OS === 'ios' ? 85 : 70}
-            tint={isDark ? 'dark' : 'light'}
-            blurMethod="dimezisBlurView"
-            style={[
-              StyleSheet.absoluteFill,
-              Platform.OS === 'web'
-                ? ({ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' } as any)
-                : undefined,
-            ]}
-          />
           <View
             style={[
               StyleSheet.absoluteFill,
@@ -229,67 +206,67 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
 
             return (
               <TabMotion key={item.key} active={isFocused}>
-              {isFocused ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: true }}
-                  accessibilityLabel={item.label}
-                  onPress={onPress}
-                  style={[
-                    styles.activePill,
-                    { backgroundColor: colors.accentSoft },
-                  ]}
-                >
-                  <Ionicons
-                    name={iconName}
-                    size={19}
-                    color={colors.accent}
-                  />
-                  <Text
-                    style={[styles.activeLabel, { color: colors.accent }]}
-                    numberOfLines={1}
+                {isFocused ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: true }}
+                    accessibilityLabel={item.label}
+                    onPress={onPress}
+                    style={[
+                      styles.activePill,
+                      { backgroundColor: colors.accentSoft },
+                    ]}
                   >
-                    {isMoreTab && isOverflowActive
-                      ? overflowItems.find((o) => o.key === activeKey)?.label || item.label
-                      : item.label}
-                  </Text>
-                  {'badge' in item && item.badge ? (
-                    <View style={styles.badgePillActive}>
-                      <Text style={[styles.badgeTextActive, { color: activeColor }]}>
-                        {item.badge}
-                      </Text>
+                    <Ionicons
+                      name={iconName}
+                      size={19}
+                      color={colors.accent}
+                    />
+                    <Text
+                      style={[styles.activeLabel, { color: colors.accent }]}
+                      numberOfLines={1}
+                    >
+                      {isMoreTab && isOverflowActive
+                        ? overflowItems.find((o) => o.key === activeKey)?.label || item.label
+                        : item.label}
+                    </Text>
+                    {'badge' in item && item.badge ? (
+                      <View style={styles.badgePillActive}>
+                        <Text style={[styles.badgeTextActive, { color: activeColor }]}>
+                          {item.badge}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: false }}
+                    accessibilityLabel={item.label}
+                    onPress={onPress}
+                    style={[
+                      styles.inactiveButton,
+                      {
+                        backgroundColor: 'transparent',
+                      },
+                    ]}
+                  >
+                    <View style={styles.iconWrap}>
+                      <Ionicons
+                        name={iconName}
+                        size={20}
+                        color={colors.textMuted}
+                      />
+                      {'badge' in item && item.badge ? (
+                        <View style={[styles.badgeInactive, { backgroundColor: colors.accentSoft }]}>
+                          <Text style={[styles.badgeTextInactive, { color: colors.accent }]}>{item.badge}</Text>
+                        </View>
+                      ) : isMoreTab && isOverflowActive ? (
+                        <View style={[styles.moreActiveDot, { backgroundColor: colors.accentSoft }]} />
+                      ) : null}
                     </View>
-                  ) : null}
-                </Pressable>
-              ) : (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ selected: false }}
-                accessibilityLabel={item.label}
-                onPress={onPress}
-                style={[
-                  styles.inactiveButton,
-                  {
-                    backgroundColor: 'transparent',
-                  },
-                ]}
-              >
-                <View style={styles.iconWrap}>
-                  <Ionicons
-                    name={iconName}
-                    size={20}
-                    color={colors.textMuted}
-                  />
-                  {'badge' in item && item.badge ? (
-                    <View style={[styles.badgeInactive, { backgroundColor: colors.accentSoft }]}>
-                      <Text style={[styles.badgeTextInactive, { color: colors.accent }]}>{item.badge}</Text>
-                    </View>
-                  ) : isMoreTab && isOverflowActive ? (
-                    <View style={[styles.moreActiveDot, { backgroundColor: colors.accentSoft }]} />
-                  ) : null}
-                </View>
-              </Pressable>
-              )}
+                  </Pressable>
+                )}
               </TabMotion>
             );
           })}
@@ -316,18 +293,6 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
                     },
                   ]}
                 >
-
-                  <BlurView
-                    intensity={Platform.OS === 'ios' ? 85 : 95}
-                    tint={isDark ? 'dark' : 'light'}
-                    blurMethod="dimezisBlurView"
-                    style={[
-                      StyleSheet.absoluteFill,
-                      Platform.OS === 'web'
-                        ? ({ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' } as any)
-                        : undefined,
-                    ]}
-                  />
                   <View
                     style={[
                       StyleSheet.absoluteFill,
