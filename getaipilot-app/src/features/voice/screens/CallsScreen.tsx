@@ -1,31 +1,24 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import * as Haptics from "expo-haptics";
-import React, { useState } from "react";
+import { ProductEmpty,ProductHeading,ProductMetrics,ProductRow,ProductSection } from "@/components/ProductUI";
+import { getColors,useTheme } from "@/theme";
+import { useMutation,useQuery,useQueryClient } from "@tanstack/react-query";
+import React,{ useState } from "react";
 import {
-  ActivityIndicator,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  Text,
-  View,
+ActivityIndicator,
+RefreshControl,
+ScrollView
 } from "react-native";
-import { useTheme, getColors } from "@/theme";
-import { useRouter } from "expo-router";
 import {
-  VoiceAssistant,
-  VoiceCall,
-  voiceApi,
+VoiceAssistant,
+VoiceCall,
+voiceApi,
 } from "../api/voiceApi";
 import {
-  CallDetailsModal,
-  TriggerCallModal,
-  VoicePlanExpiredBanner,
+CallDetailsModal,
+TriggerCallModal,
+VoicePlanExpiredBanner,
 } from "../components";
-import { openVoiceWebBilling } from "../utils/voiceBilling";
 
 export const CallsScreen: React.FC = () => {
-  const router = useRouter();
   const { isDark } = useTheme();
   const themeColors = getColors(isDark);
   const queryClient = useQueryClient();
@@ -35,7 +28,7 @@ export const CallsScreen: React.FC = () => {
 
   // Queries
   const {
-    data: numbersData,
+
     isLoading: isNumbersLoading,
     refetch: refetchNumbers,
   } = useQuery({
@@ -114,10 +107,10 @@ export const CallsScreen: React.FC = () => {
       className="flex-1 w-full"
       style={{ backgroundColor: colors.background }}
       contentContainerStyle={{
-        paddingHorizontal: 16,
+        paddingHorizontal: 20,
         paddingTop: 8,
         paddingBottom: 110,
-        gap: 16,
+        gap: 8,
         width: "100%",
       }}
       refreshControl={
@@ -129,258 +122,15 @@ export const CallsScreen: React.FC = () => {
       }
       showsVerticalScrollIndicator={false}
     >
-      {/* 1. TITLE SECTION */}
-      <View className="pt-0.5 gap-1 w-full">
-        <Text
-          className="text-2xl sm:text-[27px] font-extrabold tracking-tight"
-          style={{ color: colors.text }}
-        >
-          Call Records
-        </Text>
-        <Text className="text-sm sm:text-base font-medium" style={{ color: colors.textSecondary }}>
-          Inspect real-time conversation transcripts, audio playback, and call outcomes.
-        </Text>
-      </View>
-
-      {/* EXPIRED PLAN BANNER */}
-      {isPlanExpired && (
-        <VoicePlanExpiredBanner overview={overviewData} />
-      )}
-
-      {/* 2. QUICK TEST CALL ACTION BUTTON */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Quick Test Call"
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          setIsTriggerModalOpen(true);
-        }}
-        className="flex-row items-center justify-between w-full rounded-2xl p-4 shadow-md active:opacity-75"
-        style={{ backgroundColor: colors.primary }}
-      >
-        <View className="flex-row items-center gap-2.5">
-          <Ionicons name="call" size={17} color="#FFFFFF" />
-          <Text className="text-white text-base font-bold tracking-tight">Quick Test Call</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
-      </Pressable>
-
-      {/* 3. 3-METRIC STATS ROW */}
-      <View className="flex-row gap-2.5 w-full">
-        {/* Stat 1: Total Dispatched */}
-        <View
-          className="flex-1 min-w-0 rounded-2xl p-3 justify-between shadow-xs"
-          style={{
-            flexBasis: 0,
-            backgroundColor: colors.surface,
-          }}
-        >
-          <View className="flex-row items-center gap-1.5 mb-1.5">
-            <Ionicons name="call-outline" size={14} color={colors.primary} />
-            <Text
-              className="text-xs font-semibold tracking-tight"
-              style={{ color: colors.textSecondary }}
-              numberOfLines={2}
-            >
-              Total{"\n"}Dispatched
-            </Text>
-          </View>
-          <Text className="text-xl font-bold tracking-tight" style={{ color: colors.text }}>
-            {totalDispatched}
-          </Text>
-        </View>
-
-        {/* Stat 2: Completed Calls */}
-        <View
-          className="flex-1 min-w-0 rounded-2xl p-3 justify-between shadow-xs"
-          style={{
-            flexBasis: 0,
-            backgroundColor: colors.surface,
-          }}
-        >
-          <View className="flex-row items-center gap-1.5 mb-1.5">
-            <Ionicons name="checkmark-circle" size={14} color={colors.green} />
-            <Text
-              className="text-xs font-semibold tracking-tight"
-              style={{ color: colors.textSecondary }}
-              numberOfLines={2}
-            >
-              Completed{"\n"}Calls
-            </Text>
-          </View>
-          <Text className="text-xl font-bold tracking-tight" style={{ color: colors.text }}>
-            {completedCalls}
-          </Text>
-        </View>
-
-        {/* Stat 3: No Answer / Busy */}
-        <View
-          className="flex-1 min-w-0 rounded-2xl p-3 justify-between shadow-xs"
-          style={{
-            flexBasis: 0,
-            backgroundColor: colors.surface,
-          }}
-        >
-          <View className="flex-row items-center gap-1.5 mb-1.5">
-            <Ionicons name="close-circle" size={14} color={colors.red} />
-            <Text
-              className="text-xs font-semibold tracking-tight"
-              style={{ color: colors.textSecondary }}
-              numberOfLines={2}
-            >
-              No Answer /{"\n"}Busy
-            </Text>
-          </View>
-          <Text className="text-xl font-bold tracking-tight" style={{ color: colors.text }}>
-            {failedOrBusy}
-          </Text>
-        </View>
-      </View>
-
-      {/* 4. LIVE TELEPHONY ACTIVITY SECTION */}
-      <View className="mb-0 mt-2 px-1">
-        <Text className="text-xs font-semibold tracking-wider uppercase text-slate-500">
-          Live Telephony Activity
-        </Text>
-      </View>
-
-      {/* 5. CALL LOGS CONTENT AREA */}
-      {isCallsLoading ? (
-        <ActivityIndicator
-          size="large"
-          color={colors.primary}
-          style={{ marginTop: 40 }}
-        />
-      ) : calls.length === 0 ? (
-        /* Empty State */
-        <View
-          className="rounded-2xl p-8 items-center justify-center shadow-xs"
-          style={{ backgroundColor: colors.surface }}
-        >
-          <View
-            className="w-16 h-16 rounded-full items-center justify-center mb-3"
-            style={{ backgroundColor: colors.primaryLight }}
-          >
-            <Ionicons name="call" size={32} color={colors.primary} />
-          </View>
-          <Text className="text-base font-bold mb-1" style={{ color: colors.text }}>
-            No call records yet
-          </Text>
-          <Text className="text-xs text-center max-w-[260px]" style={{ color: colors.textSecondary }}>
-            Your AI calls will appear here in real-time as they are made.
-          </Text>
-        </View>
-      ) : (
-        /* Calls List */
-        <View
-          className="rounded-2xl overflow-hidden shadow-xs"
-          style={{ backgroundColor: colors.surface }}
-        >
-          {calls.map((call, idx, arr) => {
-            const isCompleted = call.status === "completed";
-            const isFailed = call.status === "failed";
-            const statusColor = isCompleted
-              ? colors.green
-              : isFailed
-                ? colors.red
-                : colors.amber;
-            const statusBg = isCompleted
-              ? colors.greenLight
-              : isFailed
-                ? colors.redLight
-                : colors.primaryLight;
-
-            return (
-              <View key={call.id || idx}>
-                <Pressable
-                  className="flex-row items-center p-3.5 active:opacity-75"
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setSelectedCall(call);
-                  }}
-                >
-                  <View
-                    className="w-10 h-10 rounded-xl items-center justify-center mr-3 shrink-0"
-                    style={{ backgroundColor: statusBg }}
-                  >
-                    <Ionicons
-                      name={
-                        isCompleted
-                          ? "checkmark-circle"
-                          : isFailed
-                            ? "close-circle"
-                            : "call"
-                      }
-                      size={20}
-                      color={statusColor}
-                    />
-                  </View>
-
-                  <View className="flex-1 justify-center mr-2">
-                    <View className="flex-row items-center justify-between mb-0.5">
-                      <Text
-                        className="text-[15px] font-bold tracking-tight flex-1 mr-2"
-                        style={{ color: colors.text }}
-                        numberOfLines={1}
-                      >
-                        {call.callerName || call.customerNumber}
-                      </Text>
-                      <Text
-                        className="text-xs font-semibold"
-                        style={{ color: colors.textSecondary }}
-                      >
-                        {call.duration || "10s"}
-                      </Text>
-                    </View>
-
-                    <Text
-                      className="text-xs mb-1"
-                      style={{ color: colors.textSecondary }}
-                    >
-                      {call.assistant || "AI Assistant"} • {call.time || "Recent"}
-                    </Text>
-
-                    {call.campaign ? (
-                      <View
-                        className="flex-row items-center gap-1 px-2 py-0.5 rounded-md self-start mb-1"
-                        style={{ backgroundColor: colors.primaryLight }}
-                      >
-                        <Ionicons name="megaphone" size={11} color={colors.primary} />
-                        <Text
-                          className="text-[11px] font-semibold"
-                          style={{ color: colors.primary }}
-                          numberOfLines={1}
-                        >
-                          {call.campaign}
-                        </Text>
-                      </View>
-                    ) : null}
-
-                    {call.summary ? (
-                      <Text
-                        className="text-xs italic leading-4"
-                        style={{ color: colors.textSecondary }}
-                        numberOfLines={1}
-                      >
-                        "{call.summary}"
-                      </Text>
-                    ) : null}
-                  </View>
-
-                  <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
-                </Pressable>
-
-                {idx < arr.length - 1 && (
-                  <View
-                    className="h-[1px] ml-16"
-                    style={{ backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }}
-                  />
-                )}
-              </View>
-            );
-          })}
-        </View>
-      )}
+      <ProductHeading title="Your conversations" action="Make a call" onAction={() => setIsTriggerModalOpen(true)} />
+      {isPlanExpired && <VoicePlanExpiredBanner overview={overviewData} />}
+      <ProductMetrics items={[{ label: "Calls", value: totalDispatched }, { label: "Completed", value: completedCalls }, { label: "Unsuccessful", value: failedOrBusy }]} />
+      <ProductSection title="Call history">
+        {isCallsLoading ? <ActivityIndicator color={colors.accent} /> : calls.length === 0 ? <ProductEmpty title="No calls yet" description="Your recordings and transcripts will appear here." action="Make a call" onAction={() => setIsTriggerModalOpen(true)} /> :
+          calls.map((call) => <ProductRow key={call.id} title={call.callerName || call.customerNumber}
+            detail={[call.status.replace(/_/g, " "), call.duration, call.time].filter(Boolean).join(" · ")}
+            icon={call.direction === "inbound" ? "call-outline" : "arrow-redo-outline"} tone={call.status === "failed" ? "pink" : "mint"} onPress={() => setSelectedCall(call)} />)}
+      </ProductSection>
 
       {/* Modals */}
       <CallDetailsModal

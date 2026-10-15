@@ -16,7 +16,7 @@ import {
   View,
 } from 'react-native';
 import { StatCard } from '../components/ui/StatCard';
-import { AnimatedHero } from '../components/ui/AnimatedHero';
+import { ProductHeading } from "@/components/ProductUI";
 import { TelegramToolKey } from '../types';
 
 type AfSection = 'mappings' | 'filters' | 'blocked' | 'delays' | 'headers';
@@ -99,65 +99,12 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
   return (
     <>
       {/* HERO: Command Center (Responsive Header with Telegram Graphic) */}
-      <View
-        className="overflow-hidden"
-      >
-        <View className="flex-col gap-3">
-          {/* Telegram Animated Graphic Banner */}
-          <AnimatedHero
-            variant="forward"
-            tagText="TELEGRAM FORWARD HUB"
-            tagIcon="paper-plane"
-            title="Channel Message Routing"
-            subtitle="Real-time broadcast sync with zero latency"
-          />
-
-          {/* Status Badges & Action */}
-          <View className="flex-row p-3 items-center justify-between flex-wrap gap-2">
-            <View className="flex-row items-center gap-1.5 flex-wrap flex-1 min-w-[180px]">
-              <View
-                className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-full"
-                style={{ backgroundColor: 'rgba(16,185,129,0.1)' }}
-              >
-                <View className="w-[7px] h-[7px] rounded-full bg-[#10B981]" />
-                <Text className="text-[11px] font-bold text-[#10B981]">Engine Active</Text>
-              </View>
-              <View
-                className="px-2.5 py-1 rounded-full"
-                style={{ backgroundColor: 'rgba(2,132,199,0.1)' }}
-              >
-                <Text className="text-[11px] font-bold text-[#0284C7]">
-                  {(forwardRules || []).length} Active Routes
-                </Text>
-              </View>
-              <View
-                className="px-2.5 py-1 rounded-full"
-                style={{ backgroundColor: 'rgba(139,92,246,0.1)' }}
-              >
-                <Text className="text-[11px] font-bold text-[#8B5CF6]">
-                  {targetCount || (forwardRules || []).length} Channels Mapped
-                </Text>
-              </View>
-            </View>
-
-            <Pressable
-              className="flex-row items-center gap-1 bg-[#0284C7]/10 px-2.5 py-1.5 rounded-lg border border-[#0284C7]/20 self-start"
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                Linking.openURL('https://t.me/Gapautoforwardingbot');
-              }}
-            >
-              <Ionicons name="paper-plane" size={11} color="#0284C7" />
-              <Text className="text-[11px] font-bold text-[#0284C7]">Open Bot</Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
+      <ProductHeading title="Forward messages" action="Open bot" onAction={() => Linking.openURL('https://t.me/Gapautoforwardingbot')} />
 
       {/* 6 KPI Cards in Responsive Rows */}
       <View
-        className="w-full border-t pt-3 mt-1 gap-2 self-stretch mb-3.5"
-        style={{ borderTopColor: isDark ? '#27272A' : '#E2E8F0' }}
+        className="w-full pt-3 mt-1 gap-2 self-stretch mb-3.5"
+        style={{ borderTopColor: isDark ? '#27272A' : '#E9E6F2' }}
       >
         {kpiRows.map((row, rowIndex) => (
           <View key={rowIndex} className="flex-row w-full gap-2.5 self-stretch mb-2.5">
@@ -183,7 +130,7 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
 
       {/* Category Filter Tabs (Overview Screen Style) */}
       <View className="mb-3.5 p-2.5 rounded-xl " style={{ backgroundColor: colors.backgroundSecondary }}>
-        <Text className="text-[15px] font-extrabold mb-2.5" style={{ color: colors.text }}>
+        <Text className="text-[15px] font-medium mb-2.5" style={{ color: colors.text }}>
           Forwarding Controls & Modules ({AF_CATEGORIES.length})
         </Text>
         <ScrollView
@@ -197,10 +144,10 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
               <Pressable
                 key={cat.key}
                 className={`flex-row items-center gap-1.5 px-3 py-[7px] rounded-full border ${isSelected
-                  ? 'bg-[#0284C7] border-[#0284C7]'
+                  ? 'bg-[#E7DEFA] border-transparent'
                   : isDark
                     ? 'bg-[#121212] border-[#27272A]'
-                    : 'bg-[#F8FAFC] border-[#E2E8F0]'
+                    : 'bg-[#F5F3FB] border-[#E9E6F2]'
                   }`}
                 onPress={() => {
                   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -210,10 +157,10 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
                 <Ionicons
                   name={cat.icon}
                   size={13}
-                  color={isSelected ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
+                  color={isSelected ? '#6C55C5' : isDark ? '#94A3B8' : '#64748B'}
                 />
                 <Text
-                  className={`text-xs ${isSelected ? 'text-white font-bold' : 'font-semibold'}`}
+                  className={`text-xs ${isSelected ? 'text-[#6C55C5] font-medium' : 'font-semibold'}`}
                   style={isSelected ? undefined : { color: colors.text }}
                 >
                   {cat.label}
@@ -275,12 +222,12 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
 
                     {/* Route Connector */}
                     <View style={styles.connectorRow}>
-                      <View style={[styles.connectorLine, { backgroundColor: isDark ? '#27272A' : '#E2E8F0' }]} />
+                      <View style={[styles.connectorLine, { backgroundColor: isDark ? '#27272A' : '#E9E6F2' }]} />
                       <View style={styles.connectorPill}>
                         <Ionicons name="arrow-forward" size={11} color="#0284C7" />
                         <Text style={styles.connectorPillText}>Auto-Forward</Text>
                       </View>
-                      <View style={[styles.connectorLine, { backgroundColor: isDark ? '#27272A' : '#E2E8F0' }]} />
+                      <View style={[styles.connectorLine, { backgroundColor: isDark ? '#27272A' : '#E9E6F2' }]} />
                     </View>
 
                     {/* Target Row */}
@@ -491,35 +438,11 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
 };
 
 const styles = StyleSheet.create({
-  sectionCard: {
-    padding: 14,
-    borderRadius: 16,
-    // borderWidth: 1,
-    marginBottom: 12,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
-  },
-  sectionIconCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  sectionSub: {
-    fontSize: 11,
-    color: '#64748B',
-    marginTop: 1,
-  },
+  sectionCard: { padding: 16, borderRadius: 24, borderWidth: 0, marginBottom: 12 , shadowOpacity: 0 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
+  sectionIconCircle: { width: 32, height: 32, borderRadius: 8, backgroundColor: 'rgba(2,132,199,0.12)', alignItems: 'center', justifyContent: 'center' },
+  sectionTitle: { fontSize: 18, fontWeight: '500', lineHeight: 24 },
+  sectionSub: { fontSize: 13, color: '#716B7C', marginTop: 1 },
   addMiniBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -535,10 +458,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-  mappingRow: {
-    padding: 12,
-    borderRadius: 12,
-  },
+  mappingRow: { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 10, borderWidth: 1 },
   routeHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -638,14 +558,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#0284C7',
   },
-  filterItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
+  filterItem: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, borderBottomWidth: 1 },
   filterChipFrom: {
     flex: 1,
     minWidth: 0,
@@ -656,11 +569,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(239,68,68,0.2)',
   },
-  filterFrom: {
-    fontSize: 11,
-    color: '#EF4444',
-    fontWeight: '700',
-  },
+  filterFrom: { fontSize: 11, color: '#EF4444', fontWeight: '600', flex: 1 },
   filterChipTo: {
     flex: 1,
     minWidth: 0,
@@ -671,94 +580,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(16,185,129,0.2)',
   },
-  filterTo: {
-    fontSize: 11,
-    color: '#10B981',
-    fontWeight: '700',
-  },
-  chipsWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 8,
-  },
-  blockedChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: 'rgba(239,68,68,0.08)',
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.2)',
-  },
-  blockedChipText: {
-    fontSize: 11,
-    color: '#EF4444',
-    fontWeight: '600',
-    flexShrink: 1,
-  },
-  delayBigBox: {
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginVertical: 10,
-    borderWidth: 1,
-  },
-  delayBigNumber: {
-    fontSize: 44,
-    fontWeight: '900',
-    letterSpacing: -1,
-  },
-  delayBigLabel: {
-    fontSize: 11,
-    color: '#64748B',
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  delayPresetsRow: {
-    flexDirection: 'row',
-    gap: 6,
-    flexWrap: 'wrap',
-  },
-  delayPresetBtn: {
-    flex: 1,
-    minWidth: 48,
-    paddingVertical: 9,
-    borderRadius: 10,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  delayPresetText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  previewBox: {
-    borderRadius: 12,
-    padding: 12,
-    marginVertical: 10,
-    borderWidth: 1,
-  },
-  previewText: {
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  primaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: '#0284C7',
-    borderRadius: 12,
-    paddingVertical: 12,
-    marginTop: 4,
-  },
-  primaryBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-  },
+  filterTo: { fontSize: 11, color: '#10B981', fontWeight: '600', flex: 1 },
+  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  blockedChip: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(239,68,68,0.08)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)' },
+  blockedChipText: { fontSize: 11, color: '#EF4444', fontWeight: '600' },
+  delayBigBox: { alignItems: 'center', padding: 20, borderRadius: 12, marginVertical: 12 },
+  delayBigNumber: { fontSize: 48, fontWeight: '900', letterSpacing: -2 },
+  delayBigLabel: { fontSize: 12, color: '#64748B', fontWeight: '600', marginTop: 4 },
+  delayPresetsRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  delayPresetBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1, alignItems: 'center' },
+  delayPresetText: { fontSize: 12, fontWeight: '700' },
+  previewBox: { backgroundColor: 'rgba(2,132,199,0.06)', borderRadius: 10, padding: 12, marginVertical: 12 },
+  previewText: { fontSize: 12, color: '#64748B', lineHeight: 18 },
+  primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#17171C', borderRadius: 28, paddingVertical: 13, marginBottom: 12 , minHeight: 44 , shadowOpacity: 0 },
+  primaryBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
 });
-

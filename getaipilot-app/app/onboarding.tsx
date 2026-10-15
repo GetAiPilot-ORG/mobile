@@ -524,7 +524,7 @@ export default function OnboardingScreen() {
                     value={biometricSettings.enabled}
                     onValueChange={handleToggleBiometricInOnboarding}
                     disabled={isUpdatingBiometrics}
-                    trackColor={{ false: isDark ? '#3A3A3C' : '#E5E7EB', true: '#10B981' }}
+                    trackColor={{ false: isDark ? '#3A3A3C' : '#E9E6F2', true: '#10B981' }}
                     thumbColor="#FFFFFF"
                   />
                 </View>
@@ -645,7 +645,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   logoWrapperDark: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#252230',
     shadowColor: '#8B5CF6',
     shadowOpacity: 0.4,
   },
@@ -659,13 +659,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   stepBadge: {
-    backgroundColor: '#F2F4F7',
+    backgroundColor: '#F0EEF8',
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 14,
   },
   stepBadgeDark: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#252230',
   },
   stepBadgeText: {
     fontSize: 12,
@@ -697,7 +697,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   subheadingDark: {
-    color: '#9CA3AF',
+    color: '#777383',
   },
   errorBanner: {
     backgroundColor: '#FEE2E2',
@@ -719,15 +719,15 @@ const styles = StyleSheet.create({
   optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F2F4F7',
-    borderRadius: 18,
+    backgroundColor: '#F0EEF8',
+    borderRadius: 24,
     padding: 16,
     borderWidth: 2,
     borderColor: 'transparent',
     gap: 14,
   },
   optionCardDark: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#252230',
   },
   optionCardActive: {
     backgroundColor: '#FFFFFF',
@@ -756,7 +756,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   optionIconBoxDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
   },
   optionIconEmoji: {
     fontSize: 24,
@@ -779,14 +779,14 @@ const styles = StyleSheet.create({
     lineHeight: 17,
   },
   optionDescDark: {
-    color: '#9CA3AF',
+    color: '#777383',
   },
   radioCircle: {
     width: 24,
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#9CA3AF',
+    borderColor: '#777383',
     backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
@@ -807,12 +807,12 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   inputGroup: {
-    backgroundColor: '#F2F4F7',
+    backgroundColor: '#F0EEF8',
     borderRadius: 16,
     overflow: 'hidden',
   },
   inputGroupDark: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#252230',
   },
   inputRow: {
     paddingHorizontal: 16,
@@ -829,11 +829,11 @@ const styles = StyleSheet.create({
   },
   hairlineDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#E9E6F2',
     marginLeft: 16,
   },
   hairlineDividerDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
   },
   sectionLabel: {
     fontSize: 13,
@@ -842,7 +842,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   sectionLabelDark: {
-    color: '#9CA3AF',
+    color: '#777383',
   },
   chipsContainer: {
     flexDirection: 'row',
@@ -850,7 +850,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   chip: {
-    backgroundColor: '#F2F4F7',
+    backgroundColor: '#F0EEF8',
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 20,
@@ -858,7 +858,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   chipDark: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#252230',
   },
   chipActive: {
     backgroundColor: '#EBF5FF',
@@ -874,7 +874,7 @@ const styles = StyleSheet.create({
     color: '#4B5563',
   },
   chipTextDark: {
-    color: '#9CA3AF',
+    color: '#777383',
   },
   chipTextActive: {
     color: '#0084FF',
@@ -882,12 +882,12 @@ const styles = StyleSheet.create({
   },
   segmentedControl: {
     flexDirection: 'row',
-    backgroundColor: '#F2F4F7',
+    backgroundColor: '#F0EEF8',
     borderRadius: 14,
     padding: 4,
   },
   segmentedControlDark: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#252230',
   },
   segmentButton: {
     flex: 1,
@@ -904,7 +904,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   segmentButtonActiveDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
   },
   segmentText: {
     fontSize: 13,
@@ -912,7 +912,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   segmentTextDark: {
-    color: '#9CA3AF',
+    color: '#777383',
   },
   segmentTextActive: {
     color: '#0084FF',
@@ -938,14 +938,14 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   secondaryButton: {
-    backgroundColor: '#F2F4F7',
+    backgroundColor: '#F0EEF8',
     paddingVertical: 15,
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
   secondaryButtonDark: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#252230',
   },
   secondaryButtonText: {
     color: '#000000',
@@ -958,16 +958,16 @@ const styles = StyleSheet.create({
   },
   inputRowBorder: {
     borderTopWidth: 1,
-    borderTopColor: '#F2F4F7',
+    borderTopColor: '#F0EEF8',
   },
   inputRowBorderDark: {
-    borderTopColor: '#2C2C2E',
+    borderTopColor: '#3A3549',
   },
   permissionGroup: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#E9E6F2',
     overflow: 'hidden',
     marginBottom: 20,
     shadowColor: '#000000',
@@ -977,8 +977,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   permissionGroupDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
+    backgroundColor: '#252230',
+    borderColor: '#3A3549',
   },
   permissionRow: {
     flexDirection: 'row',
@@ -987,7 +987,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   permissionRowDark: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#252230',
   },
   permissionIconCircle: {
     width: 40,

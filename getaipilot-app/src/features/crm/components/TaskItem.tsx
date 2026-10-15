@@ -131,7 +131,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onPress, onD
 
       {/* Bottom info row */}
       <View
-        className="flex-row items-center justify-between pt-2 mt-2 border-t"
+        className="flex-row items-center justify-between pt-2 mt-2 "
         style={{ borderTopColor: colors.divider }}
       >
         <View className="flex-row items-center gap-2">

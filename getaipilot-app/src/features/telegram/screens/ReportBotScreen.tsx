@@ -23,7 +23,7 @@ import {
 import { useTheme } from '../../../contexts/ThemeContext';
 import { supabase } from '../../../lib/supabase';
 import { telegramSupabase } from '../api/telegramSupabase';
-import { AnimatedHero } from '../components/ui/AnimatedHero';
+import { ProductHeading } from "@/components/ProductUI";
 import { ReportBotBrandProfile, TelegramToolKey } from '../types';
 
 interface Props { summary?: any; onOpenModal: (key: TelegramToolKey) => void; }
@@ -335,13 +335,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
   return (
     <View style={styles.container} className="gap-3.5">
       {/* 1. Cyber Animated Hero Banner */}
-      <AnimatedHero
-        variant="report"
-        tagText="SEBI COMPLIANT RESEARCH"
-        tagIcon="document-text-outline"
-        title="GAP Report Bot"
-        subtitle="Convert Telegram trading calls into branded SEBI research PDFs"
-      />
+      <ProductHeading title="Research reports" />
 
       {/* 2. Responsive KPI Command Cards */}
       <View className="flex-row flex-wrap gap-2.5 w-full">
@@ -357,7 +351,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
           >
             <View className="flex-row items-center justify-between mb-1">
               <Text
-                className="text-[10px] font-bold uppercase tracking-wider"
+                className="text-[10px] font-bold uppercase "
                 style={{ color: isDark ? '#94A3B8' : '#64748B' }}
                 numberOfLines={1}
               >
@@ -372,7 +366,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
             </View>
 
             <Text
-              className="text-sm font-extrabold"
+              className="text-sm font-medium"
               style={{ color: colors.text }}
               numberOfLines={1}
             >
@@ -415,7 +409,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
 
           <Pressable
             className="w-8 h-8 rounded-xl items-center justify-center active:opacity-80"
-            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9' }}
+            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F0EEF8' }}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               refetch();
@@ -477,7 +471,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
               }`}
           >
             <Text
-              className={`text-[9px] font-extrabold ${activeTab === 'channels' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
+              className={`text-[9px] font-medium ${activeTab === 'channels' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
                 }`}
             >
               {dashboard?.channelsCount ?? 0}
@@ -509,7 +503,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
               }`}
           >
             <Text
-              className={`text-[9px] font-extrabold ${activeTab === 'archive' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
+              className={`text-[9px] font-medium ${activeTab === 'archive' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
                 }`}
             >
               {dashboard?.reportsCount ?? 0}
@@ -635,7 +629,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
 
                   <View style={styles.row}>
                     {/* Interactive Pressable Logo Box */}
-                    <Pressable
+                    <Pressable cssInterop={false}
                       style={({ pressed }) => [
                         styles.logoUploadBox,
                         { borderColor: colors.border, backgroundColor: colors.card },
@@ -732,7 +726,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                     </View>
                     <View style={styles.completedBadge}>
                       <View style={styles.dotGreen} />
-                      <Text style={styles.completedBadgeText}>Live Synced</Text>
+
                     </View>
                   </View>
 
@@ -1188,9 +1182,9 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
 
 const styles = StyleSheet.create({
   container: { width: '100%', marginBottom: 12 },
-  topCard: { borderRadius: 16, borderWidth: 1, overflow: 'hidden', marginBottom: 14 },
-  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  cardDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
+  topCard: { borderRadius: 24, borderWidth: 0, overflow: 'hidden', marginBottom: 14 , shadowOpacity: 0 },
+  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
+  cardDark: { backgroundColor: '#1C1A25', borderColor: '#3A3549' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1199,12 +1193,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 1,
   },
-  borderLight: { borderBottomColor: '#E2E8F0' },
+  borderLight: { borderBottomColor: '#E9E6F2' },
   borderDark: { borderBottomColor: '#162B3F' },
-  title: { fontSize: 18, fontWeight: '800' },
-  textLight: { color: '#0F172A' },
+  title: { fontSize: 28, fontWeight: '500', lineHeight: 36 , letterSpacing: -0.5 },
+  textLight: { color: '#1C1A25' },
   textDark: { color: '#F7FAFC' },
-  subtitle: { color: '#64748B', fontSize: 11.5, marginTop: 3, lineHeight: 16 },
+  subtitle: { color: '#716B7C', fontSize: 13.5, marginTop: 3, lineHeight: 16 },
   closeBtn: {
     width: 32,
     height: 32,
@@ -1212,8 +1206,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeBtnLight: { backgroundColor: '#F1F5F9' },
-  closeBtnDark: { backgroundColor: '#101C2A' },
+  closeBtnLight: { backgroundColor: '#F0EEF8' },
+  closeBtnDark: { backgroundColor: '#2C2839' },
 
   // Action Header Row
   actionHeaderRow: {
@@ -1243,8 +1237,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
   },
-  btnLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  btnDark: { backgroundColor: '#101C2A', borderColor: '#234563' },
+  btnLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
+  btnDark: { backgroundColor: '#2C2839', borderColor: '#3A3549' },
   refreshBtnText: { fontSize: 12, fontWeight: '600' },
 
   // Tabs Section & Status Bar
@@ -1313,27 +1307,25 @@ const styles = StyleSheet.create({
   // Form Card
   formCard: {
     padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 16,
-  },
+    borderRadius: 24,
+    borderWidth: 0,
+    marginBottom: 16, shadowOpacity: 0 },
   formHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 16,
   },
-  sectionTitle: { fontSize: 16, fontWeight: '800' },
-  sectionSubtitle: { color: '#64748B', fontSize: 11, marginTop: 2 },
+  sectionTitle: { fontSize: 18, fontWeight: '500', lineHeight: 24 },
+  sectionSubtitle: { color: '#716B7C', fontSize: 13, marginTop: 2 },
   saveBtn: {
-    backgroundColor: '#0284C7',
+    backgroundColor: '#17171C',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 7,
-    borderRadius: 8,
-  },
+    borderRadius: 28, minHeight: 44 , shadowOpacity: 0 },
   saveBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
   groupHeading: {
     fontSize: 13,
@@ -1347,14 +1339,13 @@ const styles = StyleSheet.create({
   field: { marginBottom: 12 },
   label: { color: '#64748B', fontSize: 10, fontWeight: '800', marginBottom: 5, letterSpacing: 0.5 },
   input: {
-    borderWidth: 1,
-    borderRadius: 10,
+    borderWidth: 0,
+    borderRadius: 22,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 13,
-  },
-  inputLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0', color: '#0F172A' },
-  inputDark: { backgroundColor: '#0A1420', borderColor: '#1B334A', color: '#F7FAFC' },
+    fontSize: 13, minHeight: 48 },
+  inputLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2', color: '#1C1A25' },
+  inputDark: { backgroundColor: '#252230', borderColor: '#3A3549', color: '#F7FAFC' },
 
   // Logo Upload Box (Pressable)
   logoUploadBox: {
@@ -1367,8 +1358,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 6,
   },
-  logoUploadBoxLight: { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1' },
-  logoUploadBoxDark: { backgroundColor: '#0A1420', borderColor: '#1B334A' },
+  logoUploadBoxLight: { backgroundColor: '#F5F3FB', borderColor: '#CBD5E1' },
+  logoUploadBoxDark: { backgroundColor: '#252230', borderColor: '#3A3549' },
   logoUploadBoxActive: { borderStyle: 'solid', borderColor: '#0284C7' },
   logoUploadLabel: { fontSize: 10, fontWeight: '700', color: '#64748B', marginTop: 4 },
   uploadBtnMini: {
@@ -1423,14 +1414,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#0284C7',
   },
   nativeUploadBtnLight: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F0EEF8',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E9E6F2',
   },
   nativeUploadBtnDark: {
-    backgroundColor: '#101C2A',
+    backgroundColor: '#2C2839',
     borderWidth: 1,
-    borderColor: '#234563',
+    borderColor: '#3A3549',
   },
   nativeUploadBtnTitle: {
     color: '#FFFFFF',
@@ -1439,27 +1430,26 @@ const styles = StyleSheet.create({
   },
   nativeUploadBtnSub: {
     color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 10,
+    fontSize: 13,
     marginTop: 1,
   },
 
   // PDF Preview Card
   previewCard: {
     padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 16,
-  },
+    borderRadius: 24,
+    borderWidth: 0,
+    marginBottom: 16, shadowOpacity: 0 },
   previewCardLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    borderColor: '#E9E6F2',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 3,
   },
-  previewCardDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
+  previewCardDark: { backgroundColor: '#1C1A25', borderColor: '#3A3549' },
   previewHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1467,7 +1457,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   previewTitle: { fontSize: 16, fontWeight: '800' },
-  previewSubtitle: { color: '#64748B', fontSize: 11, marginTop: 2 },
+  previewSubtitle: { color: '#716B7C', fontSize: 13, marginTop: 2 },
   completedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1488,8 +1478,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 14,
   },
-  pdfPaperLight: { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1' },
-  pdfPaperDark: { backgroundColor: '#0A1420', borderColor: '#1B334A' },
+  pdfPaperLight: { backgroundColor: '#F5F3FB', borderColor: '#CBD5E1' },
+  pdfPaperDark: { backgroundColor: '#252230', borderColor: '#3A3549' },
   pdfHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1538,8 +1528,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
   },
-  metricBoxLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  metricBoxDark: { backgroundColor: '#0A1420', borderColor: '#1B334A' },
+  metricBoxLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
+  metricBoxDark: { backgroundColor: '#252230', borderColor: '#3A3549' },
   metricKey: { fontSize: 9, fontWeight: '800', color: '#64748B' },
   metricVal: { fontSize: 13, fontWeight: '800', marginTop: 2 },
   pdfDisclaimerSnippet: {
@@ -1556,7 +1546,7 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(148, 163, 184, 0.2)',
     paddingTop: 6,
   },
-  pdfPagesCount: { fontSize: 10, color: '#94A3B8', fontWeight: '600' },
+  pdfPagesCount: { fontSize: 10, color: '#777383', fontWeight: '600' },
   pdfPoweredBy: { fontSize: 10, color: '#0284C7', fontWeight: '700' },
 
   previewBtn: {
@@ -1599,8 +1589,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 8,
   },
-  itemLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
-  itemDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
+  itemLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2' },
+  itemDark: { backgroundColor: '#1C1A25', borderColor: '#3A3549' },
   channelIcon: {
     width: 32,
     height: 32,
@@ -1641,12 +1631,11 @@ const styles = StyleSheet.create({
   dialogCard: {
     width: '100%',
     maxWidth: 400,
-    borderRadius: 18,
+    borderRadius: 24,
     padding: 20,
-    borderWidth: 1,
-  },
-  dialogCardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  dialogCardDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
+    borderWidth: 0, shadowOpacity: 0 },
+  dialogCardLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
+  dialogCardDark: { backgroundColor: '#1C1A25', borderColor: '#3A3549' },
   dialogHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1654,7 +1643,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   dialogTitle: { fontSize: 16, fontWeight: '800' },
-  dialogSub: { color: '#64748B', fontSize: 11, marginTop: 2 },
+  dialogSub: { color: '#716B7C', fontSize: 13, marginTop: 2 },
   dialogCloseBtn: {
     width: 28,
     height: 28,
@@ -1693,8 +1682,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
   },
-  presetItemLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
-  presetItemDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
+  presetItemLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2' },
+  presetItemDark: { backgroundColor: '#1C1A25', borderColor: '#3A3549' },
   presetItemActive: { borderColor: '#0284C7', backgroundColor: 'rgba(2, 132, 199, 0.12)' },
   presetImage: {
     width: 32,
@@ -1732,7 +1721,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(148, 163, 184, 0.15)',
   },
   viewerTitle: { fontSize: 15, fontWeight: '800' },
-  viewerSub: { fontSize: 11, color: '#64748B' },
+  viewerSub: { fontSize: 13, color: '#716B7C' },
   viewerActionBtn: {
     width: 36,
     height: 36,
@@ -1768,7 +1757,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   fullPdfPageLight: { backgroundColor: '#FFFFFF', borderColor: '#CBD5E1' },
-  fullPdfPageDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
+  fullPdfPageDark: { backgroundColor: '#1C1A25', borderColor: '#3A3549' },
   pageNumberBadge: {
     position: 'absolute',
     top: 14,
@@ -1800,7 +1789,7 @@ const styles = StyleSheet.create({
   },
   fullPdfAvatarText: { color: '#FFFFFF', fontSize: 20, fontWeight: '900' },
   fullPdfFirmTitle: { fontSize: 17, fontWeight: '800', color: '#0284C7', marginBottom: 2 },
-  fullPdfMetaText: { fontSize: 10, color: '#64748B', lineHeight: 14 },
+  fullPdfMetaText: { fontSize: 13, color: '#716B7C', lineHeight: 14 },
   pdfDivider: {
     height: 1,
     backgroundColor: 'rgba(148, 163, 184, 0.25)',
@@ -1842,7 +1831,7 @@ const styles = StyleSheet.create({
     borderColor: '#CBD5E1',
   },
   matrixLabel: { fontSize: 9, fontWeight: '800', color: '#64748B' },
-  matrixValue: { fontSize: 14, fontWeight: '900', marginTop: 2, color: '#0F172A' },
+  matrixValue: { fontSize: 14, fontWeight: '900', marginTop: 2, color: '#1C1A25' },
   pdfSectionBlock: {
     marginBottom: 14,
   },
@@ -1885,6 +1874,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  footerAddressText: { fontSize: 9, color: '#94A3B8' },
+  footerAddressText: { fontSize: 9, color: '#777383' },
   footerEngineText: { fontSize: 9, fontWeight: '700', color: '#0284C7' },
 });

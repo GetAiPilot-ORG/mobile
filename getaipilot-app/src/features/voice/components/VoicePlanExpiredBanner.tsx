@@ -39,7 +39,7 @@ export const VoicePlanExpiredBanner: React.FC<VoicePlanExpiredBannerProps> = ({
 
   return (
     <View
-      className={`rounded-2xl p-4 gap-3 shadow-xs ${
+      className={`rounded-[24px] p-4 gap-3  ${
         isDark ? "bg-stone-900/90" : "bg-amber-50"
       }`}
       style={style}
@@ -72,7 +72,7 @@ export const VoicePlanExpiredBanner: React.FC<VoicePlanExpiredBannerProps> = ({
 
       {/* Footer */}
       <View
-        className={`flex-row items-center justify-between pt-2.5 border-t ${
+        className={`flex-row items-center justify-between pt-2.5  ${
           isDark ? "border-amber-500/10" : "border-amber-200/50"
         } gap-2`}
       >

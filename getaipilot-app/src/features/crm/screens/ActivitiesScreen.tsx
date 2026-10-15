@@ -56,8 +56,8 @@ export const ActivitiesScreen: React.FC<ActivitiesScreenProps> = ({ onBack }) =>
             </Pressable>
           ) : null}
           <View>
-            <Text style={[styles.title, { color: colors.text }]}>Activity Stream</Text>
-            <Text style={[styles.subtitle, { color: colors.text }]}>Full chronological history of client touchpoints</Text>
+            <Text style={[styles.title, { color: colors.text }]}>Your activity</Text>
+
           </View>
         </View>
 
@@ -173,23 +173,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#1E2028',
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
+    fontSize: 28,
+    fontWeight: '500',
+    letterSpacing: -0.5, lineHeight: 36 },
   subtitle: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#17171C',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 10,
-  },
+    borderRadius: 28, minHeight: 44 , shadowOpacity: 0 },
   addBtnText: {
     color: '#FFFFFF',
     fontSize: 13,

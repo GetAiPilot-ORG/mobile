@@ -52,8 +52,8 @@ export const DashboardAnalyticsCharts: React.FC<DashboardAnalyticsChartsProps> =
 
             {/* Y Axis Labels */}
             <SvgText x="8" y="18" fill={colors.text} fontSize="9" fontWeight="600">4</SvgText>
-            <SvgText x="8" y="43" fill="#94A3B8" fontSize="9" fontWeight="600">2</SvgText>
-            <SvgText x="8" y="68" fill="#94A3B8" fontSize="9" fontWeight="600">0</SvgText>
+            <SvgText x="8" y="43" fill="#777383" fontSize="9" fontWeight="600">2</SvgText>
+            <SvgText x="8" y="68" fill="#777383" fontSize="9" fontWeight="600">0</SvgText>
 
             {/* Gradient Fill under Path */}
             <Path
@@ -118,8 +118,8 @@ export const DashboardAnalyticsCharts: React.FC<DashboardAnalyticsChartsProps> =
 
             {/* Y Axis Labels */}
             <SvgText x="8" y="18" fill={colors.text} fontSize="9" fontWeight="600">₹4</SvgText>
-            <SvgText x="8" y="43" fill="#94A3B8" fontSize="9" fontWeight="600">₹2</SvgText>
-            <SvgText x="8" y="68" fill="#94A3B8" fontSize="9" fontWeight="600">₹0</SvgText>
+            <SvgText x="8" y="43" fill="#777383" fontSize="9" fontWeight="600">₹2</SvgText>
+            <SvgText x="8" y="68" fill="#777383" fontSize="9" fontWeight="600">₹0</SvgText>
 
             {/* Baseline Path */}
             <Path
@@ -151,13 +151,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   chartCard: {
-    borderRadius: 14,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     padding: 14,
   },
   cardLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    borderColor: '#E9E6F2',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
@@ -188,8 +188,8 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginBottom: 8,
   },
-  textLight: { color: '#0F172A' },
-  textDark: { color: '#F8FAFC' },
+  textLight: { color: '#1C1A25' },
+  textDark: { color: '#F5F3FB' },
   badgeGreen: {
     backgroundColor: 'rgba(16, 185, 129, 0.12)',
     paddingHorizontal: 8,
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
   },
   axisLabel: {
     fontSize: 9,
-    color: '#94A3B8',
+    color: '#777383',
     fontWeight: '600',
   },
 });

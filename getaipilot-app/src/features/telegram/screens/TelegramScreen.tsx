@@ -11,10 +11,14 @@ import {
   ActivityIndicator,
   BackHandler,
   Platform,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
+  Text,
+  View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme, getColors } from "../../../theme";
 
 import { AppScreen } from "../../../components/AppScreen";
@@ -395,10 +399,6 @@ export const TelegramScreen: React.FC = () => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    if (key === 'tracker') {
-      handleTabChange('bots');
-      return;
-    }
     setActiveModal(key);
   };
 
@@ -406,9 +406,47 @@ export const TelegramScreen: React.FC = () => {
   return (
     <AppScreen safeArea={false} backgroundColor={color.background}>
       <AppTopBar
-        title="Telegram Dashboard"
+        title="Telegram"
         // subtitle="Bots, routing, monetization & automations"
         onBackPress={handleBack}
+        rightElement={
+          <Pressable
+            onPress={() => {
+              if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setIsLoginModalOpen(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={summary?.telegramUserId ? "Telegram Connected" : "Connect Telegram"}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+              paddingVertical: 6,
+              paddingHorizontal: 12,
+              borderRadius: 20,
+              backgroundColor: summary?.telegramUserId
+                ? (isDark ? "rgba(16,185,129,0.15)" : "rgba(16,185,129,0.1)")
+                : (isDark ? "rgba(2,132,199,0.15)" : "rgba(2,132,199,0.1)"),
+            }}
+          >
+            <Ionicons
+              name={summary?.telegramUserId ? "checkmark-circle" : "paper-plane-outline"}
+              size={14}
+              color={summary?.telegramUserId ? "#10B981" : "#0284C7"}
+            />
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: "600",
+                color: summary?.telegramUserId ? "#10B981" : "#0284C7",
+              }}
+            >
+              {summary?.telegramUserId
+                ? (summary.telegramUsername ? `@${summary.telegramUsername}` : "Connected")
+                : "Connect"}
+            </Text>
+          </Pressable>
+        }
       />
 
       <ScrollView
@@ -516,11 +554,15 @@ export const TelegramScreen: React.FC = () => {
       {activeModal === "autoforward" && (
         <AutoforwardModal
           visible={true}
+          chats={chats || []}
           onClose={() => setActiveModal(null)}
           onSubmit={async (data: any) => {
-            return {};
+            const res = await telegramApi.createForwardRule(data);
+            await queryClient.invalidateQueries({ queryKey: ["telegram_all_data"] });
+            return res;
           }}
           isLoading={false}
+          onRefreshChats={() => queryClient.invalidateQueries({ queryKey: ["telegram_all_data"] })}
         />
       )}
       {activeModal === "tracker" && (
@@ -533,31 +575,72 @@ export const TelegramScreen: React.FC = () => {
         />
       )}
       {activeModal === "sub_manager" && (
-        <SubManagerModal visible={true} onClose={() => setActiveModal(null)} />
+        <SubManagerModal
+          visible={true}
+          chats={chats || []}
+          onClose={() => {
+            setActiveModal(null);
+            queryClient.invalidateQueries({ queryKey: ["telegram_all_data"] });
+          }}
+        />
       )}
       {activeModal === "report_bot" && (
-        <ReportBotModal visible={true} onClose={() => setActiveModal(null)} />
+        <ReportBotModal
+          visible={true}
+          onClose={() => {
+            setActiveModal(null);
+            queryClient.invalidateQueries({ queryKey: ["telegram_all_data"] });
+          }}
+        />
       )}
       {activeModal === "broadcast" && (
-        <BroadcastModal visible={true} onClose={() => setActiveModal(null)} />
+        <BroadcastModal
+          visible={true}
+          chats={chats || []}
+          onClose={() => {
+            setActiveModal(null);
+            queryClient.invalidateQueries({ queryKey: ["telegram_all_data"] });
+          }}
+        />
       )}
       {activeModal === "auto_approve" && (
-        <AutoApproveModal visible={true} onClose={() => setActiveModal(null)} />
+        <AutoApproveModal
+          visible={true}
+          onClose={() => {
+            setActiveModal(null);
+            queryClient.invalidateQueries({ queryKey: ["telegram_all_data"] });
+          }}
+        />
       )}
       {activeModal === "chatbot" && (
-        <ChatBotModal visible={true} onClose={() => setActiveModal(null)} />
+        <ChatBotModal
+          visible={true}
+          onClose={() => {
+            setActiveModal(null);
+            queryClient.invalidateQueries({ queryKey: ["telegram_all_data"] });
+          }}
+        />
       )}
       {activeModal === "reactions" && (
-        <ReactionsModal visible={true} onClose={() => setActiveModal(null)} />
+        <ReactionsModal
+          visible={true}
+          onClose={() => {
+            setActiveModal(null);
+            queryClient.invalidateQueries({ queryKey: ["telegram_all_data"] });
+          }}
+        />
       )}
       {isLoginModalOpen && (
         <TelegramLoginModal
           visible={true}
           onClose={() => setIsLoginModalOpen(false)}
-          onStartLogin={async () => ({ success: true, message: "" })}
-          onVerifyOtp={async () => ({ success: true, message: "" })}
-          onSubmitPassword={async () => ({ success: true, message: "" })}
-          onSuccess={() => { }}
+          onStartLogin={async (phone: string) => telegramApi.startLogin(phone)}
+          onVerifyOtp={async (payload) => telegramApi.verifyOtp(payload)}
+          onSubmitPassword={async (password: string) => telegramApi.submitPassword(password)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["telegram_all_data"] });
+            setIsLoginModalOpen(false);
+          }}
         />
       )}
     </AppScreen>
@@ -567,7 +650,7 @@ export const TelegramScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, width: '100%' },
   content: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 120,
     width: "100%",
@@ -577,4 +660,3 @@ const styles = StyleSheet.create({
     gap: 0,
   },
 });
-

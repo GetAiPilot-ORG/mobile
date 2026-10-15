@@ -269,7 +269,7 @@ export default function EventLinksScreen() {
           </Text>
 
           {/* Meta Grid */}
-          <View style={[styles.ticketMetaBox, { backgroundColor: isDark ? '#141416' : '#F8F9FA' }]}>
+          <View style={[styles.ticketMetaBox, { backgroundColor: isDark ? '#141416' : '#F5F3FB' }]}>
             <View style={styles.metaItem}>
               <Text style={[styles.metaLabel, { color: theme.mutedText }]}>DATE & TIME</Text>
               <Text style={[styles.metaValue, { color: isDark ? '#FFFFFF' : '#000000' }]}>
@@ -293,7 +293,7 @@ export default function EventLinksScreen() {
 
             <View style={styles.actionRow}>
               <Pressable
-                style={[styles.subBtn, { backgroundColor: isDark ? '#1C1C1E' : '#E5E7EB' }]}
+                style={[styles.subBtn, { backgroundColor: isDark ? '#252230' : '#E9E6F2' }]}
                 onPress={handleCopyInviteText}
               >
                 <Text style={[styles.subBtnText, { color: theme.text }]}>
@@ -321,10 +321,10 @@ const styles = StyleSheet.create({
     paddingBottom: 50,
   },
   card: {
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 18,
     marginBottom: 16,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   cardTitle: {
     fontSize: 16.5,
@@ -340,8 +340,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
   },
   templateTitle: {
     fontSize: 13,

@@ -145,10 +145,10 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   card: {
     backgroundColor: colors.card,
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 18,
     marginBottom: 16,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
   },
   cardTitle: {
@@ -194,10 +194,10 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   resultCard: {
     backgroundColor: colors.card,
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 20,
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: '#16B882',
   },
   resultTitle: {

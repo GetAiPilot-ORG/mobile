@@ -34,8 +34,8 @@ export const CRMMoreScreen: React.FC<CRMMoreScreenProps> = ({ onSelectSection, o
               </Pressable>
             ) : null}
             <View>
-              <Text style={[styles.title, { color: colors.text }]}>More CRM Modules</Text>
-              <Text style={[styles.subtitle, { color: colors.textMuted }]}>Team directory, contacts & touchpoint analytics</Text>
+              <Text style={[styles.title, { color: colors.text }]}>Your workspace</Text>
+
             </View>
           </View>
         </View>
@@ -64,7 +64,7 @@ export const CRMMoreScreen: React.FC<CRMMoreScreenProps> = ({ onSelectSection, o
               <Ionicons name="time" size={22} color="#F59E0B" />
             </View>
             <View style={styles.menuInfo}>
-              <Text style={[styles.menuTitle, { color: colors.text }]}>Activity Stream</Text>
+              <Text style={[styles.menuTitle, { color: colors.text }]}>Your activity</Text>
               <Text style={[styles.menuDesc, { color: colors.textMuted }]}>Unified log of calls, meetings, notes & follow-ups</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingBottom: 40,
   },
   header: {
@@ -145,12 +145,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#1E2028',
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
+    fontSize: 28,
+    fontWeight: '500',
+    letterSpacing: -0.5, lineHeight: 36 },
   subtitle: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   menuList: {
@@ -160,17 +159,16 @@ const styles = StyleSheet.create({
   menuCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
-    borderWidth: 1,
-  },
+    borderWidth: 0, shadowOpacity: 0 },
   cardDark: {
     backgroundColor: '#181A20',
     borderColor: '#262A34',
   },
   cardLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    borderColor: '#E9E6F2',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -200,20 +198,18 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
+    fontSize: 18,
+    fontWeight: '500',
+    marginBottom: 12, lineHeight: 24 },
   membersList: {
     gap: 8,
   },
   memberCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: 24,
     padding: 12,
-    borderWidth: 1,
-  },
+    borderWidth: 0, shadowOpacity: 0 },
   memberAvatar: {
     width: 36,
     height: 36,
@@ -252,10 +248,9 @@ const styles = StyleSheet.create({
   },
   snapshotCard: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 24,
     padding: 12,
-    borderWidth: 1,
-  },
+    borderWidth: 0, shadowOpacity: 0 },
   snapshotLabel: {
     fontSize: 11,
   },

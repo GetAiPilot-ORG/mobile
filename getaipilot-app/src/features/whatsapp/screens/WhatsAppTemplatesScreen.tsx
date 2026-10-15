@@ -1,3 +1,4 @@
+import { ProductPageHeader } from "@/components/ProductUI";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
@@ -108,71 +109,36 @@ export const WhatsAppTemplatesScreen: React.FC<
       edges={["top", "left", "right"]}
     >
       <View className="flex-1">
-        {/* Top Header */}
-        <View
-          className={`flex-row items-center px-4 py-3 border-b ${
-            isDark
-              ? "bg-black border-white/[0.08]"
-              : "bg-white border-black/[0.06]"
-          }`}
-        >
-          <View className="flex-row items-center flex-1">
-            <Pressable
-              className={`w-10 h-10 rounded-full justify-center items-center mr-3 border active:opacity-70 active:scale-95 shadow-sm ${
-                isDark
-                  ? "bg-[#1C1C1E] border-[#2C2C2E]"
-                  : "bg-white border-[#E5E7EB]"
-              }`}
-              onPress={handleBack}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityRole="button"
-              accessibilityLabel="Back"
-            >
-              <Ionicons
-                name="chevron-back"
-                size={20}
-                color={isDark ? "#F8FAFC" : "#0F172A"}
-              />
-            </Pressable>
-
-            <Text
-              className={`text-xl font-bold tracking-tight ${
-                isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
-              }`}
-            >
-              Message Templates
-            </Text>
-          </View>
-        </View>
+        <ProductPageHeader title="Message templates" onBack={handleBack} />
 
         {/* Filter & Search Controls Card */}
         <View
-          className={`m-3.5 p-3 rounded-2xl border shadow-sm ${
+          className={`m-3.5 p-3 rounded-[24px] border-0  ${
             isDark
-              ? "bg-[#1C1C1E] border-[#2C2C2E]"
-              : "bg-white border-[#E5E7EB]"
+              ? "bg-[#252230] border-[#3A3549]"
+              : "bg-white border-transparent"
           }`}
         >
           {/* Search Bar */}
           <View
             className={`flex-row items-center rounded-xl px-3 h-10 border mb-2.5 ${
               isDark
-                ? "bg-[#121214] border-[#2C2C2E]"
-                : "bg-[#F8F9FA] border-[#E5E7EB]"
+                ? "bg-[#121214] border-[#3A3549]"
+                : "bg-[#F5F3FB] border-[#E9E6F2]"
             }`}
           >
             <Ionicons
               name="search-outline"
               size={18}
-              color={isDark ? "#64748B" : "#94A3B8"}
+              color={isDark ? "#64748B" : "#777383"}
               style={{ marginRight: 8 }}
             />
             <TextInput
               className={`flex-1 text-sm font-medium py-0 ${
-                isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
+                isDark ? "text-[#F5F3FB]" : "text-[#1C1A25]"
               }`}
               placeholder="Search template name or message..."
-              placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
+              placeholderTextColor={isDark ? "#64748B" : "#777383"}
               value={searchQuery}
               onChangeText={setSearchQuery}
               clearButtonMode="while-editing"
@@ -182,7 +148,7 @@ export const WhatsAppTemplatesScreen: React.FC<
                 <Ionicons
                   name="close-circle"
                   size={16}
-                  color={isDark ? "#64748B" : "#94A3B8"}
+                  color={isDark ? "#64748B" : "#777383"}
                 />
               </Pressable>
             )}
@@ -210,7 +176,7 @@ export const WhatsAppTemplatesScreen: React.FC<
                         : "bg-black border-black"
                       : isDark
                       ? "bg-white/[0.05] border-white/[0.08]"
-                      : "bg-[#F2F2F7] border-[#E5E7EB]"
+                      : "bg-[#F0EEF8] border-[#E9E6F2]"
                   }`}
                   onPress={() => {
                     if (Platform.OS !== "web") {
@@ -226,7 +192,7 @@ export const WhatsAppTemplatesScreen: React.FC<
                           ? "text-black font-bold"
                           : "text-white font-bold"
                         : isDark
-                        ? "text-[#94A3B8] font-medium"
+                        ? "text-[#777383] font-medium"
                         : "text-[#64748B] font-medium"
                     }`}
                   >
@@ -239,7 +205,7 @@ export const WhatsAppTemplatesScreen: React.FC<
 
           {/* Status Stats Row with Clickable Badges */}
           <View
-            className={`flex-row items-center justify-between mt-2.5 pt-2.5 border-t ${
+            className={`flex-row items-center justify-between mt-2.5 pt-2.5  ${
               isDark ? "border-white/[0.08]" : "border-black/[0.06]"
             }`}
           >
@@ -264,13 +230,13 @@ export const WhatsAppTemplatesScreen: React.FC<
               >
                 <Text
                   className={`text-[11px] font-medium ${
-                    isDark ? "text-[#94A3B8]" : "text-[#64748B]"
+                    isDark ? "text-[#777383]" : "text-[#64748B]"
                   }`}
                 >
-                  All:{" "}
+                  All: {" "}
                   <Text
                     className={`font-bold ${
-                      isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
+                      isDark ? "text-[#F5F3FB]" : "text-[#1C1A25]"
                     }`}
                   >
                     {stats.total}
@@ -363,7 +329,7 @@ export const WhatsAppTemplatesScreen: React.FC<
                 style={isRefetching ? { transform: [{ rotate: "45deg" }] } : {}}
               />
               <Text className="text-xs font-semibold text-emerald-500">
-                {isRefetching ? "Syncing..." : "Sync"}
+                {isRefetching ? "Refreshing…" : "Refresh"}
               </Text>
             </Pressable>
           </View>
@@ -379,7 +345,7 @@ export const WhatsAppTemplatesScreen: React.FC<
             keyExtractor={(item) => item.id || item.name}
             renderItem={({ item }) => <TemplateCard template={item} />}
             contentContainerStyle={{
-              paddingHorizontal: 16,
+              paddingHorizontal: 20,
               paddingBottom: 130,
             }}
             refreshControl={
@@ -398,14 +364,14 @@ export const WhatsAppTemplatesScreen: React.FC<
                 />
                 <Text
                   className={`text-base font-bold mt-3 mb-1 text-center ${
-                    isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
+                    isDark ? "text-[#F5F3FB]" : "text-[#1C1A25]"
                   }`}
                 >
-                  No WhatsApp Templates Found
+                  No templates yet
                 </Text>
                 <Text
                   className={`text-xs text-center leading-4 max-w-[280px] ${
-                    isDark ? "text-[#64748B]" : "#94A3B8"
+                    isDark ? "text-[#64748B]" : "#777383"
                   }`}
                 >
                   {searchQuery ||
@@ -419,30 +385,6 @@ export const WhatsAppTemplatesScreen: React.FC<
           />
         )}
 
-        {/* Meta Status Bar Footer */}
-        <View
-          className={`flex-row items-center justify-between px-4 py-2.5 border-t ${
-            isDark
-              ? "bg-[#0A111B] border-white/[0.08]"
-              : "bg-white border-black/[0.06]"
-          }`}
-        >
-          <Text
-            className={`text-xs ${
-              isDark ? "text-[#64748B]" : "text-[#94A3B8]"
-            }`}
-          >
-            Showing {filteredTemplates.length} of {templates?.length || 0}{" "}
-            templates
-          </Text>
-
-          <View className="flex-row items-center gap-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-            <View className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            <Text className="text-[10.5px] font-semibold text-emerald-500">
-              Meta Cloud Live
-            </Text>
-          </View>
-        </View>
       </View>
     </SafeAreaView>
   );

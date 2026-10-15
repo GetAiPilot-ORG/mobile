@@ -57,8 +57,8 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
         style={[
           styles.card,
           {
-            backgroundColor: isDark ? '#0f172a' : '#ffffff',
-            borderColor: isDark ? '#1e293b' : '#e2e8f0',
+            backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+            borderColor: isDark ? '#252230' : '#E9E6F2',
             padding: 12,
             gap: 10,
           },
@@ -68,22 +68,22 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
           style={[
             styles.inboxSearchInputBox,
             {
-              backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+              backgroundColor: isDark ? '#252230' : '#F5F3FB',
               borderColor: isDark ? '#334155' : '#cbd5e1',
             },
           ]}
         >
-          <Ionicons name="search" size={15} color={isDark ? '#94a3b8' : '#64748b'} />
+          <Ionicons name="search" size={15} color={isDark ? '#777383' : '#64748b'} />
           <TextInput
-            style={[styles.inboxSearchInput, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+            style={[styles.inboxSearchInput, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}
             placeholder="Search automations by keyword, title..."
-            placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
+            placeholderTextColor={isDark ? '#64748b' : '#777383'}
             value={autodmSearch}
             onChangeText={setAutodmSearch}
           />
           {Boolean(autodmSearch) && (
             <Pressable onPress={() => setAutodmSearch('')}>
-              <Ionicons name="close-circle" size={16} color={isDark ? '#94a3b8' : '#64748b'} />
+              <Ionicons name="close-circle" size={16} color={isDark ? '#777383' : '#64748b'} />
             </Pressable>
           )}
         </View>
@@ -105,8 +105,8 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                     backgroundColor: isSelected
                       ? 'rgba(59, 130, 246, 0.14)'
                       : isDark
-                        ? '#1e293b'
-                        : '#f1f5f9',
+                        ? '#252230'
+                        : '#F0EEF8',
                     borderColor: isSelected ? '#3b82f6' : 'transparent',
                   },
                 ]}
@@ -115,7 +115,7 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                   style={[
                     styles.statusChipText,
                     {
-                      color: isSelected ? '#3b82f6' : isDark ? '#94a3b8' : '#64748b',
+                      color: isSelected ? '#3b82f6' : isDark ? '#777383' : '#64748b',
                       fontWeight: isSelected ? '700' : '500',
                     },
                   ]}
@@ -132,7 +132,7 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
       {isLoading && dynamicAutomations.length === 0 ? (
         <View style={{ paddingVertical: 36, alignItems: 'center', gap: 8 }}>
           <ActivityIndicator size="small" color="#3b82f6" />
-          <Text style={{ fontSize: 13, color: isDark ? '#94a3b8' : '#64748b', fontWeight: '500' }}>
+          <Text style={{ fontSize: 13, color: isDark ? '#777383' : '#64748b', fontWeight: '500' }}>
             Loading active Instagram automations...
           </Text>
         </View>
@@ -175,14 +175,14 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                 style={[
                   styles.autodmItemCard,
                   {
-                    backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                    backgroundColor: isDark ? '#1C1A25' : '#ffffff',
                     borderColor: item.is_active
                       ? isDark
                         ? 'rgba(59, 130, 246, 0.4)'
                         : 'rgba(59, 130, 246, 0.3)'
                       : isDark
-                        ? '#1e293b'
-                        : '#e2e8f0',
+                        ? '#252230'
+                        : '#E9E6F2',
                   },
                 ]}
               >
@@ -196,15 +196,15 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                           backgroundColor: item.is_active
                             ? 'rgba(225, 48, 108, 0.12)'
                             : isDark
-                              ? '#1e293b'
-                              : '#f1f5f9',
+                              ? '#252230'
+                              : '#F0EEF8',
                         },
                       ]}
                     >
                       <Ionicons
                         name="logo-instagram"
                         size={20}
-                        color={item.is_active ? '#e1306c' : isDark ? '#64748b' : '#94a3b8'}
+                        color={item.is_active ? '#e1306c' : isDark ? '#64748b' : '#777383'}
                       />
                     </View>
                     <View style={{ flex: 1 }}>
@@ -212,7 +212,7 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                         <Text
                           style={[
                             styles.autodmItemTitle,
-                            { color: isDark ? '#f8fafc' : '#0f172a' },
+                            { color: isDark ? '#F5F3FB' : '#1C1A25' },
                           ]}
                           numberOfLines={1}
                         >
@@ -225,15 +225,15 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                               backgroundColor: item.is_active
                                 ? 'rgba(34, 197, 94, 0.12)'
                                 : isDark
-                                  ? '#1e293b'
-                                  : '#f1f5f9',
+                                  ? '#252230'
+                                  : '#F0EEF8',
                             },
                           ]}
                         >
                           <View
                             style={[
                               styles.autodmStatusDot,
-                              { backgroundColor: item.is_active ? '#22c55e' : '#94a3b8' },
+                              { backgroundColor: item.is_active ? '#22c55e' : '#777383' },
                             ]}
                           />
                           <Text
@@ -276,14 +276,14 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                     </View>
                   ))}
 
-                  <View style={[styles.autodmMetaPill, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
-                    <Text style={[styles.autodmMetaPillText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                  <View style={[styles.autodmMetaPill, { backgroundColor: isDark ? '#252230' : '#F0EEF8' }]}>
+                    <Text style={[styles.autodmMetaPillText, { color: isDark ? '#777383' : '#64748b' }]}>
                       {item.is_case_sensitive ? 'Aa Case Sensitive' : 'Case Insensitive'}
                     </Text>
                   </View>
 
-                  <View style={[styles.autodmMetaPill, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
-                    <Text style={[styles.autodmMetaPillText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                  <View style={[styles.autodmMetaPill, { backgroundColor: isDark ? '#252230' : '#F0EEF8' }]}>
+                    <Text style={[styles.autodmMetaPillText, { color: isDark ? '#777383' : '#64748b' }]}>
                       {item.require_follow ? '👤 Must Follow' : '👤 No Follow Req'}
                     </Text>
                   </View>
@@ -294,8 +294,8 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                   style={[
                     styles.autodmFunnelContainer,
                     {
-                      backgroundColor: isDark ? '#0b0f19' : '#f8fafc',
-                      borderColor: isDark ? '#1e293b' : '#e2e8f0',
+                      backgroundColor: isDark ? '#0b0f19' : '#F5F3FB',
+                      borderColor: isDark ? '#252230' : '#E9E6F2',
                     },
                   ]}
                 >
@@ -315,8 +315,8 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                         style={[
                           styles.autodmCommentBubble,
                           {
-                            backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                            borderColor: isDark ? '#334155' : '#e2e8f0',
+                            backgroundColor: isDark ? '#252230' : '#ffffff',
+                            borderColor: isDark ? '#334155' : '#E9E6F2',
                           },
                         ]}
                       >
@@ -329,12 +329,12 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                             <Text style={styles.autodmBotTag}>BOT</Text>
                           </View>
                         </View>
-                        <Text style={[styles.autodmBubbleText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                        <Text style={[styles.autodmBubbleText, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                           &quot;{item.comment_reply_text}&quot;
                         </Text>
                       </View>
                     ) : (
-                      <Text style={[styles.autodmEmptyStepText, { color: isDark ? '#64748b' : '#94a3b8' }]}>
+                      <Text style={[styles.autodmEmptyStepText, { color: isDark ? '#64748b' : '#777383' }]}>
                         No public reply configured (Instant DM only)
                       </Text>
                     )}
@@ -342,12 +342,12 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
 
                   {/* Connector Arrow */}
                   <View style={styles.autodmFunnelConnector}>
-                    <View style={[styles.autodmFunnelLine, { backgroundColor: isDark ? '#1e293b' : '#cbd5e1' }]} />
+                    <View style={[styles.autodmFunnelLine, { backgroundColor: isDark ? '#252230' : '#cbd5e1' }]} />
                     <View
                       style={[
                         styles.autodmFunnelBadge,
                         {
-                          backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                          backgroundColor: isDark ? '#252230' : '#ffffff',
                           borderColor: isDark ? '#334155' : '#cbd5e1',
                         },
                       ]}
@@ -355,7 +355,7 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                       <Ionicons name="arrow-down" size={11} color="#3b82f6" />
                       <Text style={styles.autodmFunnelBadgeText}>Instant DM Triggered</Text>
                     </View>
-                    <View style={[styles.autodmFunnelLine, { backgroundColor: isDark ? '#1e293b' : '#cbd5e1' }]} />
+                    <View style={[styles.autodmFunnelLine, { backgroundColor: isDark ? '#252230' : '#cbd5e1' }]} />
                   </View>
 
                   {/* Step 2: Private DM Flow */}
@@ -374,8 +374,8 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                         style={[
                           styles.autodmDMBubble,
                           {
-                            backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                            borderColor: isDark ? '#334155' : '#e2e8f0',
+                            backgroundColor: isDark ? '#252230' : '#ffffff',
+                            borderColor: isDark ? '#334155' : '#E9E6F2',
                           },
                         ]}
                       >
@@ -385,7 +385,7 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                             Direct Message Sequence
                           </Text>
                         </View>
-                        <Text style={[styles.autodmBubbleText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                        <Text style={[styles.autodmBubbleText, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                           &quot;{openingMsg}&quot;
                         </Text>
 
@@ -408,7 +408,7 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                         ))}
                       </View>
                     ) : (
-                      <Text style={[styles.autodmEmptyStepText, { color: isDark ? '#64748b' : '#94a3b8' }]}>
+                      <Text style={[styles.autodmEmptyStepText, { color: isDark ? '#64748b' : '#777383' }]}>
                         No DM sequence configured
                       </Text>
                     )}
@@ -420,8 +420,8 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                   style={[
                     styles.autodmCardTelemetryGrid,
                     {
-                      backgroundColor: isDark ? '#0b0f19' : '#f8fafc',
-                      borderColor: isDark ? '#1e293b' : '#e2e8f0',
+                      backgroundColor: isDark ? '#0b0f19' : '#F5F3FB',
+                      borderColor: isDark ? '#252230' : '#E9E6F2',
                     },
                   ]}
                 >
@@ -438,7 +438,7 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                     <Text style={styles.autodmCardTelemetryLabel}>DMs Delivered</Text>
                   </View>
                   <View style={styles.autodmCardTelemetryCol}>
-                    <Text style={[styles.autodmCardTelemetryNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                    <Text style={[styles.autodmCardTelemetryNum, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                       {item.follower_count_at_create ?? 0}
                     </Text>
                     <Text style={styles.autodmCardTelemetryLabel}>Setup Followers</Text>
@@ -455,7 +455,7 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                 <View style={styles.autodmItemFooter}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Ionicons name="shield-checkmark" size={13} color="#16a34a" />
-                    <Text style={{ fontSize: 11, color: isDark ? '#94a3b8' : '#64748b' }}>
+                    <Text style={{ fontSize: 11, color: isDark ? '#777383' : '#64748b' }}>
                       Verified Graph API Automation
                     </Text>
                   </View>
@@ -468,7 +468,7 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                       paddingHorizontal: 8,
                       paddingVertical: 3,
                       borderRadius: 6,
-                      backgroundColor: item.is_active ? 'rgba(34, 197, 94, 0.12)' : isDark ? '#334155' : '#e2e8f0',
+                      backgroundColor: item.is_active ? 'rgba(34, 197, 94, 0.12)' : isDark ? '#334155' : '#E9E6F2',
                     }}
                   >
                     <View
@@ -476,14 +476,14 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                         width: 6,
                         height: 6,
                         borderRadius: 3,
-                        backgroundColor: item.is_active ? '#22c55e' : '#94a3b8',
+                        backgroundColor: item.is_active ? '#22c55e' : '#777383',
                       }}
                     />
                     <Text
                       style={{
                         fontSize: 10,
                         fontWeight: '700',
-                        color: item.is_active ? '#22c55e' : isDark ? '#94a3b8' : '#64748b',
+                        color: item.is_active ? '#22c55e' : isDark ? '#777383' : '#64748b',
                       }}
                     >
                       {item.is_active ? 'Active' : 'Paused'}
@@ -499,8 +499,8 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
           style={[
             styles.card,
             {
-              backgroundColor: isDark ? '#0f172a' : '#ffffff',
-              borderColor: isDark ? '#1e293b' : '#e2e8f0',
+              backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+              borderColor: isDark ? '#252230' : '#E9E6F2',
               paddingVertical: 32,
               alignItems: 'center',
               gap: 8,
@@ -508,10 +508,10 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
           ]}
         >
           <Ionicons name="flash-outline" size={38} color={isDark ? '#475569' : '#cbd5e1'} />
-          <Text style={[styles.emptyTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+          <Text style={[styles.emptyTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
             No Automations Found
           </Text>
-          <Text style={[styles.emptyDesc, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+          <Text style={[styles.emptyDesc, { color: isDark ? '#777383' : '#64748b' }]}>
             Create keyword triggers to automatically comment back and send instant Instagram DMs.
           </Text>
           <Pressable
@@ -532,12 +532,12 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0,
     shadowRadius: 2,
     elevation: 1,
   },
@@ -565,11 +565,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   autodmItemCard: {
-    borderWidth: 1,
-    borderRadius: 16,
+    borderWidth: 0,
+    borderRadius: 24,
     padding: 14,
-    gap: 12,
-  },
+    gap: 12, shadowOpacity: 0 },
   autodmItemHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -612,8 +611,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   autodmItemSubDate: {
-    fontSize: 11,
-    color: '#94a3b8',
+    fontSize: 13,
+    color: '#716B7C',
     marginTop: 2,
   },
   autodmBadgesRow: {
@@ -799,21 +798,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 8,
     paddingHorizontal: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
+    borderRadius: 24,
+    borderWidth: 0, shadowOpacity: 0 },
   autodmCardTelemetryCol: {
-    alignItems: 'center',
-  },
+    alignItems: 'center', borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   autodmCardTelemetryNum: {
     fontSize: 14,
-    fontWeight: '800',
-  },
+    fontWeight: '800', borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   autodmCardTelemetryLabel: {
     fontSize: 9,
-    color: '#94a3b8',
-    marginTop: 2,
-  },
+    color: '#777383',
+    marginTop: 2, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   autodmItemFooter: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -849,8 +844,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 10,
-  },
+    borderRadius: 28, backgroundColor: '#17171C' , minHeight: 44 , shadowOpacity: 0 },
   primaryActionBtnText: {
     color: '#ffffff',
     fontSize: 12,

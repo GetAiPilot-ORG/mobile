@@ -5,6 +5,7 @@ import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
+  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -24,6 +25,7 @@ const PLATFORMS: {
   key: WorkspaceKey;
   label: string;
   icon: string;
+  logoImage: any;
   route: string;
   color: string;
 }[] = [
@@ -31,6 +33,7 @@ const PLATFORMS: {
     key: "whatsapp",
     label: "WhatsApp",
     icon: "logo-whatsapp",
+    logoImage: require("../../assets/images/products/whatsapp.png"),
     route: "/products/whatsapp",
     color: "#25D366",
   },
@@ -38,6 +41,7 @@ const PLATFORMS: {
     key: "telegram",
     label: "Telegram",
     icon: "paper-plane",
+    logoImage: require("../../assets/images/products/telegram.png"),
     route: "/products/telegram",
     color: "#0088CC",
   },
@@ -45,6 +49,7 @@ const PLATFORMS: {
     key: "voice",
     label: "Voice AI",
     icon: "mic",
+    logoImage: require("../../assets/images/products/voice.png"),
     route: "/products/voice",
     color: "#8B5CF6",
   },
@@ -52,6 +57,7 @@ const PLATFORMS: {
     key: "crm",
     label: "CRM",
     icon: "briefcase",
+    logoImage: require("../../assets/images/products/crm.png"),
     route: "/products/crm",
     color: "#F59E0B",
   },
@@ -59,6 +65,7 @@ const PLATFORMS: {
     key: "social",
     label: "Social",
     icon: "share-social",
+    logoImage: require("../../assets/images/products/social.png"),
     route: "/products/social",
     color: "#E1306C",
   },
@@ -221,7 +228,7 @@ export default function ConnectedPlatformsPage() {
   return (
     <AppScreen safeArea={false}>
       <AppTopBar
-        title="Ecosystem Activity"
+        title="Activity"
         showBack={false}
         showPlanBadge={true}
       />
@@ -242,63 +249,13 @@ export default function ConnectedPlatformsPage() {
           }
           showsVerticalScrollIndicator={false}
         >
-          {/* Hero Card */}
-          <View
-            className="rounded-[22px] p-5 mb-4"
-            style={{
-              backgroundColor: color.card,
-              borderWidth: 1,
-              borderColor: isDark
-                ? "rgba(255, 255, 255, 0.07)"
-                : color.cardBorder,
-              shadowColor: color.primary,
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: isDark ? 0.25 : 0.04,
-              shadowRadius: 8,
-              elevation: 2,
-            }}
-          >
-            <View className="flex-row items-center gap-2 mb-2">
-              <View
-                className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-lg"
-                style={{ backgroundColor: color.accentSoft }}
-              >
-                <Ionicons name="pulse" size={12} color={color.primary} />
-                <Text
-                  className="text-[10px] font-extrabold tracking-wider"
-                  style={{ color: color.primary }}
-                >
-                  LIVE TELEMETRY
-                </Text>
-              </View>
-            </View>
-            <Text
-              className="text-lg font-extrabold tracking-tight"
-              style={{ color: color.text }}
-            >
-              Ecosystem Activity
-            </Text>
-            <Text
-              className="text-[12.5px] mt-1 leading-[18px]"
-              style={{ color: color.textSecondary }}
-            >
-              Real-time health telemetry, webhook triggers, and automated pipeline events.
-            </Text>
+          <View style={{ marginBottom: 20, gap: 8 }}>
+            <Text style={{ fontSize: 30, lineHeight: 38, fontWeight: "500", letterSpacing: -0.6, color: color.text }}>Your activity</Text>
+            <Text style={{ fontSize: 14, color: color.textSecondary }}>Keep up with your connected apps.</Text>
           </View>
-
           {/* Platform Tabs (Folder Style matching Tools & Inbox tabs) */}
           <View style={{ position: "relative", marginVertical: 16 }}>
-            {/* Continuous baseline */}
-            <View
-              style={{
-                position: "absolute",
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: 1.5,
-                backgroundColor: color.primary,
-              }}
-            />
+
 
             <ScrollView
               horizontal
@@ -312,30 +269,30 @@ export default function ConnectedPlatformsPage() {
                     key={p.key}
                     onPress={() => handleSelectTab(p.key)}
                     style={{
-                      height: 38,
+                      height: 44,
                       paddingHorizontal: 14,
                       justifyContent: "center",
                       alignItems: "center",
-                      borderTopLeftRadius: isActive ? 10 : 0,
-                      borderTopRightRadius: isActive ? 10 : 0,
-                      borderTopWidth: 1.5,
-                      borderLeftWidth: 1.5,
-                      borderRightWidth: 1.5,
-                      borderBottomWidth: 1.5,
+                      borderRadius: 22,
+                      marginRight: 8,
+                      borderTopWidth: 0,
+                      borderLeftWidth: 0,
+                      borderRightWidth: 0,
+                      borderBottomWidth: 0,
                       borderTopColor: isActive ? color.primary : "transparent",
                       borderLeftColor: isActive ? color.primary : "transparent",
                       borderRightColor: isActive ? color.primary : "transparent",
                       borderBottomColor: isActive ? color.background : "transparent",
-                      backgroundColor: isActive ? color.background : "transparent",
+                      backgroundColor: isActive ? color.accentSoft : color.card,
                       zIndex: isActive ? 2 : 1,
                     }}
                   >
                     <Text
                       style={{
                         fontSize: 12.5,
-                        fontWeight: isActive ? "700" : "500",
+                        fontWeight: isActive ? "600" : "500",
                         letterSpacing: -0.1,
-                        color: isActive ? color.primary : color.textSecondary,
+                        color: isActive ? color.accent : color.textSecondary,
                       }}
                     >
                       {p.label}
@@ -371,20 +328,25 @@ export default function ConnectedPlatformsPage() {
                   borderRadius: 14,
                   justifyContent: "center",
                   alignItems: "center",
-                  backgroundColor: currentPlatformMeta.color,
+                  backgroundColor: `${currentPlatformMeta.color}15`,
                   marginRight: 12,
+                  overflow: "hidden",
                 }}
               >
-                <Ionicons
-                  name={currentPlatformMeta.icon as any}
-                  size={21}
-                  color="#FFFFFF"
+                <Image
+                  source={currentPlatformMeta.logoImage}
+                  style={{ width: 34, height: 34, borderRadius: 9 }}
+                  resizeMode="contain"
                 />
               </View>
               <View className="flex-1 min-w-0">
                 <Text
-                  className="text-[15.5px] font-extrabold tracking-tight"
-                  style={{ color: color.text }}
+                  style={{
+                    fontSize: 15,
+                    fontWeight: "600",
+                    letterSpacing: -0.2,
+                    color: color.text,
+                  }}
                 >
                   {currentPlatformMeta.label} Status
                 </Text>
@@ -416,8 +378,13 @@ export default function ConnectedPlatformsPage() {
                   style={{ backgroundColor: currentPlatformMeta.color }}
                 />
                 <Text
-                  className="text-[10px] font-extrabold uppercase tracking-wider"
-                  style={{ color: currentPlatformMeta.color }}
+                  style={{
+                    fontSize: 10,
+                    fontWeight: "600",
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                    color: currentPlatformMeta.color,
+                  }}
                 >
                   Online
                 </Text>
@@ -437,8 +404,7 @@ export default function ConnectedPlatformsPage() {
                 <>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.text }}
+                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
                     >
                       ₹
                       {(
@@ -449,36 +415,31 @@ export default function ConnectedPlatformsPage() {
                       ).toFixed(2)}
                     </Text>
                     <Text
-                      className="text-[10.5px] mt-0.5"
-                      style={{ color: color.textSecondary }}
+                      style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
                       Wallet Balance
                     </Text>
                   </View>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.text }}
+                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
                     >
                       99.8%
                     </Text>
                     <Text
-                      className="text-[10.5px] mt-0.5"
-                      style={{ color: color.textSecondary }}
+                      style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
                       Delivery Rate
                     </Text>
                   </View>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.text }}
+                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
                     >
                       &lt; 2s
                     </Text>
                     <Text
-                      className="text-[10.5px] mt-0.5"
-                      style={{ color: color.textSecondary }}
+                      style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
                       Latency
                     </Text>
@@ -490,42 +451,36 @@ export default function ConnectedPlatformsPage() {
                 <>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.text }}
+                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
                     >
                       {platformData?.telegram?.forwardRulesCount || 0}
                     </Text>
                     <Text
-                      className="text-[10.5px] mt-0.5"
-                      style={{ color: color.textSecondary }}
+                      style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
                       Forward Rules
                     </Text>
                   </View>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.text }}
+                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
                     >
                       {platformData?.telegram?.trackerCount || 0}
                     </Text>
                     <Text
-                      className="text-[10.5px] mt-0.5"
-                      style={{ color: color.textSecondary }}
+                      style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
                       Trackers
                     </Text>
                   </View>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.text }}
+                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
                     >
                       0ms
                     </Text>
                     <Text
-                      className="text-[10.5px] mt-0.5"
-                      style={{ color: color.textSecondary }}
+                      style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
                       Drop Rate
                     </Text>
@@ -537,42 +492,36 @@ export default function ConnectedPlatformsPage() {
                 <>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.text }}
+                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
                     >
                       650ms
                     </Text>
                     <Text
-                      className="text-[10.5px] mt-0.5"
-                      style={{ color: color.textSecondary }}
+                      style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
                       WebRTC Latency
                     </Text>
                   </View>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.text }}
+                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
                     >
                       2,500
                     </Text>
                     <Text
-                      className="text-[10.5px] mt-0.5"
-                      style={{ color: color.textSecondary }}
+                      style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
                       Quota Minutes
                     </Text>
                   </View>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.text }}
+                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
                     >
                       100%
                     </Text>
                     <Text
-                      className="text-[10.5px] mt-0.5"
-                      style={{ color: color.textSecondary }}
+                      style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
                       ASR Accuracy
                     </Text>
@@ -584,42 +533,36 @@ export default function ConnectedPlatformsPage() {
                 <>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.text }}
+                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
                     >
                       {platformData?.crm?.formsCount || 0}
                     </Text>
                     <Text
-                      className="text-[10.5px] mt-0.5"
-                      style={{ color: color.textSecondary }}
+                      style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
                       Intake Forms
                     </Text>
                   </View>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.text }}
+                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
                     >
                       {platformData?.crm?.totalClicks || 0}
                     </Text>
                     <Text
-                      className="text-[10.5px] mt-0.5"
-                      style={{ color: color.textSecondary }}
+                      style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
                       Link Clicks
                     </Text>
                   </View>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.text }}
+                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
                     >
                       Instant
                     </Text>
                     <Text
-                      className="text-[10.5px] mt-0.5"
-                      style={{ color: color.textSecondary }}
+                      style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
                       Lead Alert
                     </Text>
@@ -631,42 +574,36 @@ export default function ConnectedPlatformsPage() {
                 <>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.text }}
+                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
                     >
                       {platformData?.social?.connectedCount || 0}
                     </Text>
                     <Text
-                      className="text-[10.5px] mt-0.5"
-                      style={{ color: color.textSecondary }}
+                      style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
                       Accounts
                     </Text>
                   </View>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.text }}
+                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
                     >
                       100%
                     </Text>
                     <Text
-                      className="text-[10.5px] mt-0.5"
-                      style={{ color: color.textSecondary }}
+                      style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
                       Queue Sync
                     </Text>
                   </View>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      className="text-base font-extrabold tracking-tight"
-                      style={{ color: color.text }}
+                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
                     >
                       Auto
                     </Text>
                     <Text
-                      className="text-[10.5px] mt-0.5"
-                      style={{ color: color.textSecondary }}
+                      style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
                       Scheduler
                     </Text>
@@ -682,8 +619,8 @@ export default function ConnectedPlatformsPage() {
             >
               <Text
                 style={{
-                  fontSize: 11.5,
-                  fontWeight: "700",
+                  fontSize: 12,
+                  fontWeight: "500",
                   color: color.primary,
                 }}
               >
@@ -707,18 +644,26 @@ export default function ConnectedPlatformsPage() {
           {/* Section: Activity Audit Log */}
           <View className="mb-2.5 px-1 flex-row items-center justify-between">
             <Text
-              className="text-[10px] font-extrabold tracking-widest uppercase"
-              style={{ color: color.textSecondary }}
+              style={{
+                fontSize: 11,
+                fontWeight: "600",
+                letterSpacing: 0.6,
+                textTransform: "uppercase",
+                color: color.textSecondary,
+              }}
             >
-              RECENT ECOSYSTEM TELEMETRY
+              Recent Ecosystem Telemetry
             </Text>
             <View
               className="px-2 py-0.5 rounded-md"
               style={{ backgroundColor: color.accentSoft }}
             >
               <Text
-                className="text-[9.5px] font-extrabold"
-                style={{ color: color.accent }}
+                style={{
+                  fontSize: 10,
+                  fontWeight: "600",
+                  color: color.accent,
+                }}
               >
                 LIVE
               </Text>
@@ -747,15 +692,15 @@ export default function ConnectedPlatformsPage() {
                 title: "WhatsApp Cloud Webhook Delivered",
                 sub: "Meta Cloud API • 200 OK",
                 time: "2m ago",
-                icon: "checkmark-circle",
-                color: "#30D158",
+                logo: require("../../assets/images/products/whatsapp.png"),
+                color: "#25D366",
               },
               {
                 id: "2",
                 title: "Telegram Stream Routing Active",
                 sub: "Channel forwarder verified",
                 time: "14m ago",
-                icon: "paper-plane",
+                logo: require("../../assets/images/products/telegram.png"),
                 color: "#0088CC",
               },
               {
@@ -763,7 +708,7 @@ export default function ConnectedPlatformsPage() {
                 title: "AI Telecaller Model Initialized",
                 sub: "Voice synthesis stream connected",
                 time: "1h ago",
-                icon: "mic",
+                logo: require("../../assets/images/products/voice.png"),
                 color: "#8B5CF6",
               },
               {
@@ -771,7 +716,7 @@ export default function ConnectedPlatformsPage() {
                 title: "Smart CRM Form Triggered",
                 sub: "New prospect intake recorded",
                 time: "3h ago",
-                icon: "briefcase",
+                logo: require("../../assets/images/products/crm.png"),
                 color: "#F59E0B",
               },
             ].map((item, idx, arr) => (
@@ -784,33 +729,45 @@ export default function ConnectedPlatformsPage() {
                       borderRadius: 11,
                       justifyContent: "center",
                       alignItems: "center",
-                      backgroundColor: `${item.color}18`,
+                      backgroundColor: `${item.color}15`,
                       marginRight: 12,
+                      overflow: "hidden",
                     }}
                   >
-                    <Ionicons
-                      name={item.icon as any}
-                      size={18}
-                      color={item.color}
+                    <Image
+                      source={item.logo}
+                      style={{ width: 26, height: 26, borderRadius: 7 }}
+                      resizeMode="contain"
                     />
                   </View>
                   <View className="flex-1 min-w-0">
                     <Text
-                      className="text-[13.5px] font-bold tracking-tight"
-                      style={{ color: color.text }}
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "500",
+                        letterSpacing: -0.15,
+                        color: color.text,
+                      }}
                     >
                       {item.title}
                     </Text>
                     <Text
-                      className="text-[11px] mt-0.5"
-                      style={{ color: color.textSecondary }}
+                      style={{
+                        fontSize: 11.5,
+                        marginTop: 2,
+                        color: color.textSecondary,
+                      }}
                     >
                       {item.sub}
                     </Text>
                   </View>
                   <Text
-                    className="text-[11px] font-semibold ml-2"
-                    style={{ color: color.textSecondary }}
+                    style={{
+                      fontSize: 11.5,
+                      fontWeight: "400",
+                      color: color.textSecondary,
+                      marginLeft: 8,
+                    }}
                   >
                     {item.time}
                   </Text>

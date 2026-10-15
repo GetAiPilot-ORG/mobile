@@ -1,28 +1,31 @@
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import React, { useState } from 'react';
+import React,{ useState } from 'react';
 import {
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  useWindowDimensions,
-  View,
+Pressable,
+ScrollView,
+Text,
+View
 } from 'react-native';
-import { useTheme, getColors } from '../../../theme';
 
-import { DashboardAnalyticsCharts, HubProgressCard, ToolCard } from '../components';
-import { StatCard } from '../components/ui/StatCard';
-import { AnimatedHero } from '../components/ui/AnimatedHero';
-import { TelegramHubTool, TelegramToolKey } from '../types';
+import {
+  SmileIcon,
+  UserAdd01Icon,
+  File01Icon,
+  Forward01Icon,
+  CrownIcon,
+  CheckmarkCircle01Icon,
+  BotIcon,
+  Megaphone01Icon,
+} from '@hugeicons/core-free-icons';
+import { ProductHeading,ProductMetrics,ProductRow,ProductSection,useProductPalette } from '@/components/ProductUI';
+import { TelegramHubTool,TelegramToolKey } from '../types';
 
 type TelegramCategory = 'all' | 'automation' | 'monetization' | 'growth';
 
-const CATEGORIES: { key: TelegramCategory; label: string; icon: string; count?: number }[] = [
-  { key: 'all', label: 'All Tools', icon: 'grid-outline', count: 8 },
-  { key: 'automation', label: 'Automation', icon: 'git-compare-outline', count: 4 },
-  { key: 'monetization', label: 'Monetization', icon: 'card-outline', count: 2 },
-  { key: 'growth', label: 'Growth', icon: 'trending-up-outline', count: 4 },
+const CATEGORIES: { key: TelegramCategory; label: string; icon: string }[] = [
+  { key: 'all', label: 'All', icon: 'grid-outline' },
+  { key: 'automation', label: 'Automation', icon: 'git-compare-outline' },
+  { key: 'monetization', label: 'Monetization', icon: 'card-outline' },
+  { key: 'growth', label: 'Growth', icon: 'trending-up-outline' },
 ];
 
 const DEFAULT_TELEGRAM_TOOLS: TelegramHubTool[] = [
@@ -129,8 +132,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
   onNavigate,
   onOpenModal,
 }) => {
-  const { isDark } = useTheme();
-  const colors = getColors(isDark)
+  const colors = useProductPalette();
   const [selectedCategory, setSelectedCategory] = useState<TelegramCategory>('all');
 
   const hub = summary?.hub || { totalModules: 8, completedModules: 8, tools: [] };
@@ -138,13 +140,13 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
   const toolsSource: TelegramHubTool[] =
     hub.tools && hub.tools.length > 0
       ? hub.tools.map((t: TelegramHubTool) => {
-        const defaultDef = DEFAULT_TELEGRAM_TOOLS.find((d) => d.key === t.key);
-        return {
-          ...t,
-          badge: t.badge || defaultDef?.badge,
-          description: t.description || t.statusText || defaultDef?.description || '',
-        };
-      })
+          const defaultDef = DEFAULT_TELEGRAM_TOOLS.find((d) => d.key === t.key);
+          return {
+            ...t,
+            badge: t.badge || defaultDef?.badge,
+            description: t.description || t.statusText || defaultDef?.description || '',
+          };
+        })
       : DEFAULT_TELEGRAM_TOOLS;
 
   const filteredTools = toolsSource.filter((tool: TelegramHubTool) => {
@@ -155,166 +157,55 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
     return true;
   });
 
-  const { width } = useWindowDimensions();
-  const isTablet = width >= 768;
-
-  const kpiItems = [
-    { label: 'TRACKED BOTS', value: botsList.length, color: '#0284C7', icon: 'hardware-chip-outline', bg: 'rgba(2,132,199,0.12)', tab: 'bots', sub: 'Connected bots' },
-    { label: 'CHANNELS', value: (chats || []).length, color: '#10B981', icon: 'megaphone-outline', bg: 'rgba(16,185,129,0.12)', tab: 'bots', sub: 'Mapped channels' },
-    { label: 'DEEP LINKS', value: deepLinksCount, color: '#06B6D4', icon: 'link-outline', bg: 'rgba(6,182,212,0.12)', tab: 'bots', sub: 'Tracked join links' },
-    { label: 'FORWARDS', value: (forwardRules || []).length, color: '#8B5CF6', icon: 'git-compare-outline', bg: 'rgba(139,92,246,0.12)', tab: 'automations', sub: 'Active rules' },
-    { label: 'SUB PAGES', value: subManagerPages.length || (subPlans || []).length, color: '#EC4899', icon: 'wallet-outline', bg: 'rgba(236,72,153,0.12)', tab: 'sub_manager', sub: 'Monetized pages' },
-    { label: 'REVENUE', value: `₹${(realRevenue ?? 0).toLocaleString()}`, color: '#F59E0B', icon: 'cash-outline', bg: 'rgba(245,158,11,0.12)', tab: 'sub_manager', sub: 'Total collected', isRevenue: true },
-  ];
-
-  const itemsPerRow = isTablet ? 3 : 2;
-  const kpiRows: (typeof kpiItems)[] = [];
-  for (let i = 0; i < kpiItems.length; i += itemsPerRow) {
-    kpiRows.push(kpiItems.slice(i, i + itemsPerRow));
-  }
-
+  const routeByTool: Record<string, string> = {
+    tracker: 'bots', autoforward: 'automations', sub_manager: 'sub_manager',
+    report_bot: 'report_bot', reactions: 'reactions', auto_approve: 'auto_approve',
+    chatbot: 'chatbot', broadcast: 'broadcast',
+  };
+  const names: Record<string, string> = {
+    tracker: 'Join tracker', autoforward: 'Auto forward', sub_manager: 'Subscriptions',
+    report_bot: 'Report bot', reactions: 'Reactions', auto_approve: 'Auto approve',
+    chatbot: 'AI chatbot', broadcast: 'Broadcasts',
+  };
+  const descriptions: Record<string, string> = {
+    tracker: 'Follow channel joins and invite links.', autoforward: 'Route messages between channels.',
+    sub_manager: 'Manage paid access to your community.', report_bot: 'Create research reports from trading calls.',
+    reactions: 'Manage reactions on channel posts.', auto_approve: 'Accept channel join requests automatically.',
+    chatbot: 'Set up automated replies.', broadcast: 'Send a message to your subscribers.',
+  };
+  const TOOL_ICONS: Record<string, any> = {
+    reactions: SmileIcon,
+    tracker: UserAdd01Icon,
+    report_bot: File01Icon,
+    autoforward: Forward01Icon,
+    sub_manager: CrownIcon,
+    auto_approve: CheckmarkCircle01Icon,
+    chatbot: BotIcon,
+    broadcast: Megaphone01Icon,
+  };
+  const tones = ['mint', 'lavender', 'peach', 'pink'] as const;
   return (
-    <>
-      {/* HERO: Command Center (Responsive Header with Telegram Animated Graphic) */}
-      <View className="overflow-hidden">
-        <View className="flex-col gap-3">
-          <AnimatedHero
-            variant="overview"
-            tagText="TELEGRAM COMMAND CENTER"
-            tagIcon="shield-checkmark"
-            title="Telegram Automation & Growth"
-            subtitle="Multi-bot orchestration, tracking & monetization"
-          />
-
-          {/* Status Badges & Quick Action */}
-          <View className="flex-row p-3 items-center justify-between flex-wrap gap-2">
-            <View className="flex-row items-center gap-1.5 flex-wrap flex-1 min-w-[180px]">
-              <View
-                className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-full"
-                style={{ backgroundColor: 'rgba(16,185,129,0.1)' }}
-              >
-                <View className="w-[7px] h-[7px] rounded-full bg-[#10B981]" />
-                <Text className="text-[11px] font-bold text-[#10B981]">Engine Active</Text>
-              </View>
-              <View
-                className="px-2.5 py-1 rounded-full"
-                style={{ backgroundColor: 'rgba(2,132,199,0.1)' }}
-              >
-                <Text className="text-[11px] font-bold text-[#0284C7]">
-                  {botsList.length} Bots Connected
-                </Text>
-              </View>
-              <View
-                className="px-2.5 py-1 rounded-full"
-                style={{ backgroundColor: 'rgba(139,92,246,0.1)' }}
-              >
-                <Text className="text-[11px] font-bold text-[#8B5CF6]">
-                  {(chats || []).length} Channels Mapped
-                </Text>
-              </View>
-            </View>
-
-            <Pressable
-              className="flex-row items-center gap-1 bg-[#0284C7]/10 px-2.5 py-1.5 rounded-lg border border-[#0284C7]/20 self-start"
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                onRefresh();
-              }}
-            >
-              <Ionicons name="sync-outline" size={12} color="#0284C7" />
-              <Text className="text-[11px] font-bold text-[#0284C7]">
-                {isRefetching ? 'Syncing...' : 'Sync Hub'}
-              </Text>
-            </Pressable>
-          </View>
+    <View>
+      <ProductHeading title={"Your community,\nunder control."} />
+      <ProductMetrics items={[
+        { label: 'Bots', value: botsList.length, onPress: () => onNavigate('bots') },
+        { label: 'Channels', value: chats.length, onPress: () => onNavigate('bots') },
+        { label: 'Revenue', value: '₹' + realRevenue.toLocaleString(), onPress: () => onNavigate('sub_manager') },
+      ]} />
+      <View style={{ backgroundColor: colors.mint, borderRadius: 26, padding: 22, marginBottom: 26, gap: 18 }}>
+        <Text style={{ fontSize: 21, fontWeight: '500', color: colors.text }}>Keep things moving</Text>
+        <View style={{ flexDirection: 'row', gap: 24 }}>
+          <View style={{ flex: 1, gap: 5 }}><Text style={{ fontSize: 24, color: colors.text }}>{forwardRules.length}</Text><Text style={{ fontSize: 12, color: colors.textSecondary }}>Forwarding rules</Text></View>
+          <View style={{ flex: 1, gap: 5 }}><Text style={{ fontSize: 24, color: colors.text }}>{deepLinksCount}</Text><Text style={{ fontSize: 12, color: colors.textSecondary }}>Tracking links</Text></View>
         </View>
+        <Pressable onPress={() => onNavigate('automations')} accessibilityRole="button" accessibilityLabel="Manage forwarding rules" style={{ alignSelf: 'flex-start', backgroundColor: colors.buttonPrimary, borderRadius: 24, paddingVertical: 12, paddingHorizontal: 18 }}><Text style={{ color: colors.buttonPrimaryForeground, fontSize: 13 }}>Manage rules</Text></Pressable>
       </View>
-
-      {/* 6 KPI Cards in Responsive Rows */}
-      <View
-        className="w-full pt-3 mt-1 gap-2 self-stretch mb-3.5"
-        style={{ borderTopColor: isDark ? '#27272A' : '#E2E8F0' }}
-      >
-        {kpiRows.map((row, rowIndex) => (
-          <View key={rowIndex} className="flex-row w-full gap-2.5 self-stretch mb-2.5">
-            {row.map((m, colIndex) => (
-              <View key={colIndex} className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
-                <StatCard
-                  label={m.label}
-                  value={m.value}
-                  icon={m.icon}
-                  color={m.color}
-                  bg={m.bg}
-                  sub={m.sub}
-                  onPress={() => onNavigate(m.tab)}
-                  isRevenue={m.isRevenue}
-                />
-              </View>
-            ))}
-          </View>
-        ))}
-      </View>
-
-
-      {/* Category Filter */}
-      <View className="mb-3.5 p-2.5" style={{ backgroundColor: colors.backgroundSecondary }}>
-        <Text className="text-[15px] font-extrabold mb-2.5" style={{ color: colors.text }}>
-          Platform Integration Tools ({filteredTools.length}/8)
-        </Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 8, paddingBottom: 4 }}
-        >
-          {CATEGORIES.map((cat) => {
-            const isSelected = selectedCategory === cat.key;
-            return (
-              <Pressable
-                key={cat.key}
-                className={`flex-row items-center gap-1.5 px-3 py-[7px] rounded-full border ${isSelected
-                  ? 'bg-[#0284C7] border-[#0284C7]'
-                  : isDark
-                    ? 'bg-[#121212] border-[#27272A]'
-                    : 'bg-[#F8FAFC] border-[#E2E8F0]'
-                  }`}
-                onPress={() => {
-                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSelectedCategory(cat.key);
-                }}
-              >
-                <Ionicons
-                  name={cat.icon as any}
-                  size={13}
-                  color={isSelected ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
-                />
-                <Text
-                  className={`text-xs ${isSelected ? 'text-white font-bold' : 'font-semibold'}`}
-                  style={isSelected ? undefined : { color: colors.text }}
-                >
-                  {cat.label}
-                </Text>
-                {cat.count !== undefined && (
-                  <View
-                    className={`px-1.5 py-0.5 rounded-full ${isSelected ? 'bg-white/20' : isDark ? 'bg-white/10' : 'bg-slate-200'}`}
-                  >
-                    <Text
-                      className={`text-[10px] font-black ${isSelected ? 'text-white' : isDark ? 'text-slate-300' : 'text-slate-600'}`}
-                    >
-                      {cat.count}
-                    </Text>
-                  </View>
-                )}
-              </Pressable>
-            );
-          })}
+      <ProductSection title="Your tools">
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 16 }}>
+          {CATEGORIES.map((cat) => <Pressable key={cat.key} onPress={() => setSelectedCategory(cat.key)} accessibilityRole="button" accessibilityState={{ selected: selectedCategory === cat.key }} style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, borderRadius: 24, backgroundColor: selectedCategory === cat.key ? colors.lavender : colors.card }}><Text style={{ fontSize: 13, color: selectedCategory === cat.key ? colors.accent : colors.textSecondary }}>{cat.label}</Text></Pressable>)}
         </ScrollView>
-      </View>
-
-      {/* Tool Cards */}
-      {filteredTools.map((tool: TelegramHubTool) => (
-        <ToolCard key={tool.key} tool={tool} onPress={() => onOpenModal(tool.key)} />
-      ))}
-    </>
+        {filteredTools.map((tool, index) => <ProductRow key={tool.key} title={names[tool.key] || tool.title} detail={descriptions[tool.key] || tool.description} icon={TOOL_ICONS[tool.key] || tool.icon} tone={tones[index % 4]} onPress={() => routeByTool[tool.key] ? onNavigate(routeByTool[tool.key]) : onOpenModal(tool.key)} />)}
+      </ProductSection>
+    </View>
   );
 };
-

@@ -102,7 +102,7 @@ export const AutoforwardModal: React.FC<AutoforwardModalProps> = ({
             </View>
           </View>
           <Pressable style={[styles.closeBtn, isDark ? styles.closeBtnDark : styles.closeBtnLight]} onPress={onClose}>
-            <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+            <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
           </Pressable>
         </View>
 
@@ -139,7 +139,7 @@ export const AutoforwardModal: React.FC<AutoforwardModalProps> = ({
                   {selectedSourceChat ? selectedSourceChat.title : (customSource || 'Select a synced Telegram channel')}
                 </Text>
               </View>
-              <Ionicons name={showSourcePicker ? 'chevron-up' : 'chevron-down'} size={18} color="#94A3B8" />
+              <Ionicons name={showSourcePicker ? 'chevron-up' : 'chevron-down'} size={18} color="#777383" />
             </Pressable>
 
             {showSourcePicker && (
@@ -173,7 +173,7 @@ export const AutoforwardModal: React.FC<AutoforwardModalProps> = ({
                   <TextInput
                     style={[styles.customInput, isDark ? styles.inputDark : styles.inputLight]}
                     placeholder="@channel_or_link"
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor="#777383"
                     value={customSource}
                     onChangeText={(val) => {
                       setCustomSource(val);
@@ -201,7 +201,7 @@ export const AutoforwardModal: React.FC<AutoforwardModalProps> = ({
                   {selectedTargetChat ? selectedTargetChat.title : (customTarget || 'Select target destination channel')}
                 </Text>
               </View>
-              <Ionicons name={showTargetPicker ? 'chevron-up' : 'chevron-down'} size={18} color="#94A3B8" />
+              <Ionicons name={showTargetPicker ? 'chevron-up' : 'chevron-down'} size={18} color="#777383" />
             </Pressable>
 
             {showTargetPicker && (
@@ -235,7 +235,7 @@ export const AutoforwardModal: React.FC<AutoforwardModalProps> = ({
                   <TextInput
                     style={[styles.customInput, isDark ? styles.inputDark : styles.inputLight]}
                     placeholder="@target_channel"
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor="#777383"
                     value={customTarget}
                     onChangeText={(val) => {
                       setCustomTarget(val);
@@ -253,7 +253,7 @@ export const AutoforwardModal: React.FC<AutoforwardModalProps> = ({
             <TextInput
               style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
               placeholder="BUY, SELL, TARGET, STOPLOSS..."
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor="#777383"
               value={whitelistKeywords}
               onChangeText={setWhitelistKeywords}
             />
@@ -266,7 +266,7 @@ export const AutoforwardModal: React.FC<AutoforwardModalProps> = ({
             <TextInput
               style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
               placeholder="SPAM, AD, JOIN, PROMO..."
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor="#777383"
               value={blacklistKeywords}
               onChangeText={setBlacklistKeywords}
             />
@@ -361,7 +361,7 @@ export const AutoforwardModal: React.FC<AutoforwardModalProps> = ({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  containerLight: { backgroundColor: '#F8FAFC' },
+  containerLight: { backgroundColor: '#F5F3FB' },
   containerDark: { backgroundColor: '#0B0F19' },
   header: {
     flexDirection: 'row',
@@ -378,12 +378,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  borderLight: { borderBottomColor: '#E2E8F0' },
+  borderLight: { borderBottomColor: '#E9E6F2' },
   borderDark: { borderBottomColor: '#27272A' },
-  title: { fontSize: 17, fontWeight: '700' },
-  textLight: { color: '#0F172A' },
-  textDark: { color: '#F8FAFC' },
-  subtitle: { color: '#64748B', fontSize: 12, marginTop: 2 },
+  title: { fontSize: 28, fontWeight: '500', lineHeight: 36 , letterSpacing: -0.5 },
+  textLight: { color: '#1C1A25' },
+  textDark: { color: '#F5F3FB' },
+  subtitle: { color: '#716B7C', fontSize: 13, marginTop: 2 },
   closeBtn: {
     width: 32,
     height: 32,
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeBtnLight: { backgroundColor: '#F1F5F9' },
+  closeBtnLight: { backgroundColor: '#F0EEF8' },
   closeBtnDark: { backgroundColor: '#27272A' },
   body: { flex: 1 },
   bodyContent: { padding: 16, paddingBottom: 32 },
@@ -428,14 +428,14 @@ const styles = StyleSheet.create({
   dropdownHeader: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#94A3B8',
+    color: '#777383',
     paddingHorizontal: 12,
     paddingVertical: 4,
     letterSpacing: 0.5,
   },
   emptyText: {
     fontSize: 12,
-    color: '#94A3B8',
+    color: '#777383',
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
@@ -458,22 +458,21 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   input: {
-    borderWidth: 1,
-    borderRadius: 10,
+    borderWidth: 0,
+    borderRadius: 22,
     padding: 12,
-    fontSize: 14,
-  },
+    fontSize: 14, minHeight: 48 },
   inputLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    color: '#0F172A',
+    borderColor: '#E9E6F2',
+    color: '#1C1A25',
   },
   inputDark: {
     backgroundColor: '#121212',
     borderColor: '#27272A',
-    color: '#F8FAFC',
+    color: '#F5F3FB',
   },
-  hint: { color: '#94A3B8', fontSize: 11, marginTop: 4 },
+  hint: { color: '#777383', fontSize: 11, marginTop: 4 },
   delayRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
   delayPill: {
     paddingHorizontal: 14,
@@ -481,7 +480,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
   },
-  pillLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
+  pillLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
   pillDark: { backgroundColor: '#121212', borderColor: '#27272A' },
   pillActive: { backgroundColor: '#0284C7', borderColor: '#0284C7' },
   delayText: { fontSize: 12, fontWeight: '600' },
@@ -494,7 +493,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 16,
   },
-  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
+  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
   cardDark: { backgroundColor: '#121212', borderColor: '#27272A' },
   switchLabel: { fontSize: 14, fontWeight: '600' },
   switchDesc: { color: '#64748B', fontSize: 12, marginTop: 2 },

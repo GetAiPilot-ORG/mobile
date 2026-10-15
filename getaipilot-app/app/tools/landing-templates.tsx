@@ -182,20 +182,20 @@ export default function LandingTemplatesScreen() {
           <Text style={{ fontSize: 13, color: colors.mutedForeground }}>Pick a template to build or edit:</Text>
           <Pressable
             style={{
-              backgroundColor: "#0A84FF",
+              backgroundColor: colors.buttonPrimary,
               paddingHorizontal: 12,
               paddingVertical: 6,
               borderRadius: 8,
             }}
             onPress={handleOpenLandingDashboard}
           >
-            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700" }}>Web Dashboard ↗</Text>
+            <Text style={{ color: colors.buttonPrimaryForeground, fontSize: 12, fontWeight: "600" }}>Web dashboard ↗</Text>
           </Pressable>
         </View>
         {/* Search */}
         <TextInput
           style={styles.searchInput}
-          placeholder="🔍 Search templates (SaaS, Crypto, Gym, Real Estate)..."
+          placeholder="Search templates"
           placeholderTextColor={colors.mutedForeground}
           value={search}
           onChangeText={setSearch}
@@ -333,8 +333,8 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   itemCard: {
     backgroundColor: colors.card,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     borderColor: colors.border,
     overflow: "hidden",
   },

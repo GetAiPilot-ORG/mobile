@@ -51,7 +51,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
       case 'failed':
         return '#ef4444';
       case 'cancelled':
-        return '#94a3b8';
+        return '#777383';
       default:
         return '#64748b';
     }
@@ -99,7 +99,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View style={[styles.modalCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
+        <View style={[styles.modalCard, { backgroundColor: isDark ? '#1C1A25' : '#ffffff' }]}>
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
@@ -109,12 +109,12 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
                   {post.status ? post.status.charAt(0).toUpperCase() + post.status.slice(1).toLowerCase() : 'Draft'}
                 </Text>
               </View>
-              <Text style={[styles.headerDate, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+              <Text style={[styles.headerDate, { color: isDark ? '#777383' : '#64748b' }]}>
                 {displayDate}
               </Text>
             </View>
             <Pressable onPress={onClose} style={styles.closeBtn}>
-              <Ionicons name="close" size={20} color={isDark ? '#94a3b8' : '#64748b'} />
+              <Ionicons name="close" size={20} color={isDark ? '#777383' : '#64748b'} />
             </Pressable>
           </View>
 
@@ -124,7 +124,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
               {channels.map((ch: string, index: number) => (
                 <View
                   key={index}
-                  style={[styles.channelBadge, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}
+                  style={[styles.channelBadge, { backgroundColor: isDark ? '#252230' : '#F0EEF8' }]}
                 >
                   <Ionicons name="share-social" size={12} color="#ec4899" />
                   <Text style={[styles.channelText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
@@ -160,18 +160,18 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
                     setCopiedCaption(true);
                     setTimeout(() => setCopiedCaption(false), 2000);
                   }}
-                  style={[styles.copyBtn, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}
+                  style={[styles.copyBtn, { backgroundColor: isDark ? '#252230' : '#F0EEF8' }]}
                   hitSlop={8}
                 >
                   <Ionicons
                     name={copiedCaption ? 'checkmark' : 'copy-outline'}
                     size={13}
-                    color={copiedCaption ? '#22c55e' : isDark ? '#94a3b8' : '#64748b'}
+                    color={copiedCaption ? '#22c55e' : isDark ? '#777383' : '#64748b'}
                   />
                   <Text
                     style={[
                       styles.copyBtnText,
-                      { color: copiedCaption ? '#22c55e' : isDark ? '#94a3b8' : '#64748b' },
+                      { color: copiedCaption ? '#22c55e' : isDark ? '#777383' : '#64748b' },
                     ]}
                   >
                     {copiedCaption ? 'Copied' : 'Copy'}
@@ -179,8 +179,8 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
                 </Pressable>
               )}
             </View>
-            <View style={[styles.captionCard, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
-              <Text style={[styles.captionText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+            <View style={[styles.captionCard, { backgroundColor: isDark ? '#252230' : '#F5F3FB' }]}>
+              <Text style={[styles.captionText, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                 {post.caption || 'No caption provided.'}
               </Text>
             </View>
@@ -202,11 +202,11 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
 
                 {/* YouTube */}
                 {(post.youtube_url || post.youtube_shorts_url || post.youtube_video_id || post.youtube_error) && (
-                  <View style={[styles.deliveryTile, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
+                  <View style={[styles.deliveryTile, { backgroundColor: isDark ? '#252230' : '#F5F3FB' }]}>
                     <View style={styles.deliveryHeader}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                         <Ionicons name="logo-youtube" size={16} color="#ef4444" />
-                        <Text style={[styles.deliveryTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>YouTube</Text>
+                        <Text style={[styles.deliveryTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>YouTube</Text>
                       </View>
                       {post.youtube_success || post.youtube_url ? (
                         <View style={[styles.deliveryBadge, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
@@ -239,11 +239,11 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
 
                 {/* Instagram */}
                 {(post.instagram_url || post.instagram_post_id || post.instagram_error) && (
-                  <View style={[styles.deliveryTile, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
+                  <View style={[styles.deliveryTile, { backgroundColor: isDark ? '#252230' : '#F5F3FB' }]}>
                     <View style={styles.deliveryHeader}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                         <Ionicons name="logo-instagram" size={16} color="#e1306c" />
-                        <Text style={[styles.deliveryTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Instagram</Text>
+                        <Text style={[styles.deliveryTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>Instagram</Text>
                       </View>
                       {post.instagram_success || post.instagram_url ? (
                         <View style={[styles.deliveryBadge, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
@@ -276,11 +276,11 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
 
                 {/* Facebook */}
                 {(post.facebook_url || post.facebook_post_id || post.facebook_error) && (
-                  <View style={[styles.deliveryTile, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
+                  <View style={[styles.deliveryTile, { backgroundColor: isDark ? '#252230' : '#F5F3FB' }]}>
                     <View style={styles.deliveryHeader}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                         <Ionicons name="logo-facebook" size={16} color="#1877f2" />
-                        <Text style={[styles.deliveryTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Facebook</Text>
+                        <Text style={[styles.deliveryTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>Facebook</Text>
                       </View>
                       {post.facebook_success || post.facebook_url ? (
                         <View style={[styles.deliveryBadge, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
@@ -313,11 +313,11 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
 
                 {/* X / Twitter */}
                 {(post.x_url || post.x_post_id || post.x_error) && (
-                  <View style={[styles.deliveryTile, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
+                  <View style={[styles.deliveryTile, { backgroundColor: isDark ? '#252230' : '#F5F3FB' }]}>
                     <View style={styles.deliveryHeader}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                         <Ionicons name="logo-twitter" size={16} color="#38bdf8" />
-                        <Text style={[styles.deliveryTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>X (Twitter)</Text>
+                        <Text style={[styles.deliveryTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>X (Twitter)</Text>
                       </View>
                       {post.x_success || post.x_url ? (
                         <View style={[styles.deliveryBadge, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
@@ -357,23 +357,23 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
                   Live Engagement Telemetry
                 </Text>
                 <View style={styles.metricsGrid}>
-                  <View style={[styles.metricCard, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
+                  <View style={[styles.metricCard, { backgroundColor: isDark ? '#252230' : '#F5F3FB' }]}>
                     <Ionicons name="eye" size={16} color="#3b82f6" />
-                    <Text style={[styles.metricValue, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                    <Text style={[styles.metricValue, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                       {(post.youtube_views || post.metrics?.views || 0).toLocaleString()}
                     </Text>
                     <Text style={styles.metricLabel}>Views</Text>
                   </View>
-                  <View style={[styles.metricCard, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
+                  <View style={[styles.metricCard, { backgroundColor: isDark ? '#252230' : '#F5F3FB' }]}>
                     <Ionicons name="heart" size={16} color="#ec4899" />
-                    <Text style={[styles.metricValue, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                    <Text style={[styles.metricValue, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                       {(post.youtube_likes || post.metrics?.likes || 0).toLocaleString()}
                     </Text>
                     <Text style={styles.metricLabel}>Likes</Text>
                   </View>
-                  <View style={[styles.metricCard, { backgroundColor: isDark ? '#1e293b' : '#f8fafc' }]}>
+                  <View style={[styles.metricCard, { backgroundColor: isDark ? '#252230' : '#F5F3FB' }]}>
                     <Ionicons name="chatbubble-ellipses" size={16} color="#22c55e" />
-                    <Text style={[styles.metricValue, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                    <Text style={[styles.metricValue, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                       {(post.youtube_comments || post.metrics?.comments || 0).toLocaleString()}
                     </Text>
                     <Text style={styles.metricLabel}>Comments</Text>
@@ -438,12 +438,12 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
                 styles.actionBtn,
                 styles.closeSecondaryBtn,
                 {
-                  backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
-                  borderColor: isDark ? '#334155' : '#e2e8f0',
+                  backgroundColor: isDark ? '#252230' : '#F0EEF8',
+                  borderColor: isDark ? '#334155' : '#E9E6F2',
                 },
               ]}
             >
-              <Text style={[styles.closeSecondaryBtnText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              <Text style={[styles.closeSecondaryBtnText, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                 Close
               </Text>
             </Pressable>
@@ -467,10 +467,9 @@ const styles = StyleSheet.create({
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0,
     shadowRadius: 16,
-    elevation: 20,
-  },
+    elevation: 20, borderRadius: 24 , borderWidth: 0 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -544,10 +543,9 @@ const styles = StyleSheet.create({
     letterSpacing: -0.1,
   },
   captionCard: {
-    borderRadius: 12,
+    borderRadius: 24,
     padding: 14,
-    marginBottom: 14,
-  },
+    marginBottom: 14, borderWidth: 0 , shadowOpacity: 0 },
   captionText: {
     fontSize: 14,
     lineHeight: 20,
@@ -568,10 +566,9 @@ const styles = StyleSheet.create({
   metricCard: {
     flex: 1,
     padding: 12,
-    borderRadius: 12,
+    borderRadius: 24,
     alignItems: 'center',
-    gap: 4,
-  },
+    gap: 4, borderWidth: 0 , shadowOpacity: 0 },
   metricValue: {
     fontSize: 15,
     fontWeight: '800',
@@ -587,12 +584,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   deliveryTile: {
-    borderRadius: 12,
+    borderRadius: 24,
     padding: 12,
     gap: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.1)',
-  },
+    borderWidth: 0,
+    borderColor: 'rgba(148, 163, 184, 0.1)', shadowOpacity: 0 },
   deliveryHeader: {
     flexDirection: 'row',
     alignItems: 'center',

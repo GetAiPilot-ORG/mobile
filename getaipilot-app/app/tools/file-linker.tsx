@@ -493,7 +493,7 @@ export default function FileLinkerScreen() {
           </View>
 
           {!selectedFile ? (
-            <Pressable
+            <Pressable cssInterop={false}
               onPress={pickFile}
               style={({ pressed }) => [
                 styles.uploadArea,
@@ -878,7 +878,7 @@ export default function FileLinkerScreen() {
             </Text>
           </View>
 
-          <Pressable
+          <Pressable cssInterop={false}
             onPress={handleGenerateLink}
             disabled={uploading}
             style={({ pressed }) => [

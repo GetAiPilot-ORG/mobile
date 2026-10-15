@@ -16,7 +16,7 @@ import {
   View,
 } from 'react-native';
 import { StatCard } from '../components/ui/StatCard';
-import { AnimatedHero } from '../components/ui/AnimatedHero';
+import { ProductHeading } from "@/components/ProductUI";
 import { TelegramToolKey } from '../types';
 
 type SubSection = 'pages' | 'revenue' | 'channels';
@@ -115,74 +115,12 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
   return (
     <>
       {/* HERO: Command Center (Responsive Header with Telegram Animated Graphic) */}
-      <View className="overflow-hidden">
-        <View className="flex-col gap-3">
-          <AnimatedHero
-            variant="sub_manager"
-            tagText="TELEGRAM MONETIZATION HUB"
-            tagIcon="card"
-            title="VIP Community & Subscription Hub"
-            subtitle="Monetized checkouts, automated invites & KYC payouts"
-          />
-
-          {/* Status Badges & Quick Action */}
-          <View className="flex-row p-3 items-center justify-between flex-wrap gap-2">
-            <View className="flex-row items-center gap-1.5 flex-wrap flex-1 min-w-[180px]">
-              <View
-                className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-full"
-                style={{ backgroundColor: 'rgba(16,185,129,0.1)' }}
-              >
-                <View className="w-[7px] h-[7px] rounded-full bg-[#10B981]" />
-                <Text className="text-[11px] font-bold text-[#10B981]">Bot Active</Text>
-              </View>
-              <View
-                className="px-2.5 py-1 rounded-full"
-                style={{ backgroundColor: 'rgba(99,102,241,0.1)' }}
-              >
-                <Text className="text-[11px] font-bold text-[#6366F1]">
-                  {(stats.pages || []).length} Pages Live
-                </Text>
-              </View>
-              <View
-                className="px-2.5 py-1 rounded-full"
-                style={{ backgroundColor: 'rgba(2,132,199,0.1)' }}
-              >
-                <Text className="text-[11px] font-bold text-[#0284C7]">
-                  {stats.activeSubscribers ?? 0} Subscribers
-                </Text>
-              </View>
-            </View>
-
-            <View className="flex-row items-center gap-2">
-              <Pressable
-                className="flex-row items-center gap-1 bg-[#0284C7]/10 px-2.5 py-1.5 rounded-lg border border-[#0284C7]/20 self-start"
-                onPress={() => {
-                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  onRefresh();
-                }}
-              >
-                <Ionicons name="sync-outline" size={12} color="#0284C7" />
-                <Text className="text-[11px] font-bold text-[#0284C7]">Sync</Text>
-              </Pressable>
-              <Pressable
-                className="flex-row items-center gap-1 bg-[#0284C7] px-2.5 py-1.5 rounded-lg self-start"
-                onPress={() => {
-                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  onOpenModal('sub_manager');
-                }}
-              >
-                <Ionicons name="add" size={13} color="#FFFFFF" />
-                <Text className="text-[11px] font-bold text-white">New Page</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </View>
+      <ProductHeading title="Your subscriptions" action="New page" onAction={() => onOpenModal('sub_manager')} />
 
       {/* 6 KPI Cards in Responsive Rows */}
       <View
-        className="w-full border-t pt-3 mt-1 gap-2 self-stretch mb-3.5"
-        style={{ borderTopColor: isDark ? '#27272A' : '#E2E8F0' }}
+        className="w-full pt-3 mt-1 gap-2 self-stretch mb-3.5"
+        style={{ borderTopColor: isDark ? '#27272A' : '#E9E6F2' }}
       >
         {kpiRows.map((row, rowIndex) => (
           <View key={rowIndex} className="flex-row w-full gap-2.5 self-stretch mb-2.5">
@@ -244,7 +182,7 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
 
       {/* Category Filter Tabs (Overview / Tracker Screen Style) */}
       <View className="mb-3.5 p-2.5 rounded-xl" style={{ backgroundColor: colors.backgroundSecondary }}>
-        <Text className="text-[15px] font-extrabold mb-2.5" style={{ color: colors.text }}>
+        <Text className="text-[15px] font-medium mb-2.5" style={{ color: colors.text }}>
           Monetization Modules ({SUB_CATEGORIES.length})
         </Text>
         <ScrollView
@@ -258,10 +196,10 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
               <Pressable
                 key={cat.key}
                 className={`flex-row items-center gap-1.5 px-3 py-[7px] rounded-full border ${isSelected
-                  ? 'bg-[#0284C7] border-[#0284C7]'
+                  ? 'bg-[#E7DEFA] border-transparent'
                   : isDark
                     ? 'bg-[#121212] border-[#27272A]'
-                    : 'bg-[#F8FAFC] border-[#E2E8F0]'
+                    : 'bg-[#F5F3FB] border-[#E9E6F2]'
                   }`}
                 onPress={() => {
                   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -274,7 +212,7 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
                   color={isSelected ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
                 />
                 <Text
-                  className={`text-xs ${isSelected ? 'text-white font-bold' : 'font-semibold'}`}
+                  className={`text-xs ${isSelected ? 'text-[#6C55C5] font-medium' : 'font-semibold'}`}
                   style={isSelected ? undefined : { color: colors.text }}
                 >
                   {cat.label}
@@ -500,7 +438,7 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
                           </View>
                           <View style={styles.botActiveBadge}>
                             <Ionicons name="checkmark" size={12} color="#10B981" />
-                            <Text style={styles.botActiveBadgeText}>Bot Active</Text>
+
                           </View>
                         </View>
                         <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
@@ -537,7 +475,7 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
                     return (
                       <View style={[styles.chanCard, { backgroundColor: colors.backgroundSecondary }]}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                          <View style={[styles.chanAvatar, { backgroundColor: '#F1F5F9' }]}><Text style={[styles.chanAvatarText, { color: '#0284C7' }]}>{discTitle.charAt(0).toUpperCase()}</Text></View>
+                          <View style={[styles.chanAvatar, { backgroundColor: '#F0EEF8' }]}><Text style={[styles.chanAvatarText, { color: '#0284C7' }]}>{discTitle.charAt(0).toUpperCase()}</Text></View>
                           <View style={{ flex: 1 }}>
                             <Text style={[styles.chanTitle, txt]}>{discTitle}</Text>
                             <Text style={styles.chanId}>ID: {disc.chat_id || disc.channel_id || 'N/A'} • {disc.members || 0} Members</Text>
@@ -566,31 +504,31 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
 };
 
 const styles = StyleSheet.create({
-  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
+  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
   cardDark: { backgroundColor: '#121212', borderColor: '#27272A' },
-  textLight: { color: '#0F172A' },
-  textDark: { color: '#F8FAFC' },
-  borderLight: { borderColor: '#E2E8F0' },
+  textLight: { color: '#1C1A25' },
+  textDark: { color: '#F5F3FB' },
+  borderLight: { borderColor: '#E9E6F2' },
   borderDark: { borderColor: '#27272A' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 16, borderWidth: 1, marginBottom: 14 },
-  headerTitle: { fontSize: 16, fontWeight: '800' },
-  headerSub: { fontSize: 11, fontWeight: '500', marginTop: 2 },
+  headerTitle: { fontSize: 28, fontWeight: '500', lineHeight: 36 , letterSpacing: -0.5 },
+  headerSub: { fontSize: 13, fontWeight: '500', marginTop: 2 },
   activeBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(16,185,129,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 20 },
   dotGreen: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981' },
   activeBadgeText: { fontSize: 10, fontWeight: '700', color: '#10B981' },
-  newBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#0284C7', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 8 },
+  newBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#17171C', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 28, minHeight: 44 , shadowOpacity: 0 },
   newBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
   iconBtn: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   metricsContainer: { width: '100%', alignSelf: 'stretch', gap: 10, marginBottom: 12 },
   metricsRow: { flexDirection: 'row', gap: 10, width: '100%', alignSelf: 'stretch', marginBottom: 10 },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 12, width: '100%' },
-  statCard: { width: '48%', padding: 12, borderRadius: 14, borderWidth: 1 },
+  statCard: { width: '48%', padding: 12, borderRadius: 24, borderWidth: 0, shadowOpacity: 0 },
   statHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  statLabel: { fontSize: 8.5, fontWeight: '800', color: '#94A3B8', letterSpacing: 0.4, flex: 1 },
+  statLabel: { fontSize: 8.5, fontWeight: '800', color: '#777383', letterSpacing: 0.4, flex: 1 },
   statIconBadge: { width: 24, height: 24, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   statVal: { fontSize: 22, fontWeight: '800' },
-  statSub: { fontSize: 10, color: '#64748B', marginTop: 2 },
-  launchBanner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderRadius: 12, marginBottom: 14 },
+  statSub: { fontSize: 13, color: '#716B7C', marginTop: 2 },
+  launchBanner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderRadius: 24, borderWidth: 0, marginBottom: 4 },
   launchBannerLight: { backgroundColor: '#F0FDF4', borderColor: '#A7F3D0' },
   launchBannerDark: { backgroundColor: 'rgba(16,185,129,0.08)', borderColor: 'rgba(16,185,129,0.2)' },
   launchTitle: { fontSize: 13, fontWeight: '700' },
@@ -604,13 +542,13 @@ const styles = StyleSheet.create({
   segTabActive: { backgroundColor: '#0284C7' },
   segTabText: { fontSize: 11, fontWeight: '600' },
   segTabTextActive: { color: '#FFFFFF', fontWeight: '700' },
-  searchBar: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, borderWidth: 1, flex: 1 },
+  searchBar: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 22, paddingHorizontal: 12, paddingVertical: 9, borderWidth: 0, flex: 1 , minHeight: 48 },
   searchInput: { flex: 1, fontSize: 13 },
   viewToggle: { width: 38, height: 38, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   pagesGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 10, width: '100%' },
-  pageCardGrid: { width: '48.5%', padding: 12, borderRadius: 14, marginBottom: 10 },
-  pageCardList: { padding: 14, borderRadius: 14, marginBottom: 10 },
-  pageCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  pageCardGrid: { width: '48.5%', padding: 12, borderRadius: 24, borderWidth: 0, marginBottom: 10 , shadowOpacity: 0 },
+  pageCardList: { padding: 14, borderRadius: 24, borderWidth: 0, marginBottom: 10 , shadowOpacity: 0 },
+  pageCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 , borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   pageIconCircle: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   pageStatusBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 6, paddingVertical: 2.5, borderRadius: 6, maxWidth: '65%' },
   dotStatus: { width: 5, height: 5, borderRadius: 2.5 },
@@ -622,27 +560,27 @@ const styles = StyleSheet.create({
   pageActionRow: { flexDirection: 'row', gap: 6, marginTop: 10 },
   pageActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(2,132,199,0.1)', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 },
   pageActionBtnText: { color: '#0284C7', fontSize: 11, fontWeight: '700' },
-  primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#0284C7', borderRadius: 12, paddingVertical: 13 },
+  primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#17171C', borderRadius: 28, paddingVertical: 13 , minHeight: 44 , shadowOpacity: 0 },
   primaryBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
-  sectionCard: { padding: 14, borderRadius: 16, marginBottom: 12 },
+  sectionCard: { padding: 14, borderRadius: 24, borderWidth: 0, shadowOpacity: 0 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
   sectionIconCircle: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  sectionTitle: { fontSize: 14, fontWeight: '800', flex: 1 },
+  sectionTitle: { fontSize: 18, fontWeight: '500', flex: 1 , lineHeight: 24 },
   finRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1 },
   finLabel: { fontSize: 12, fontWeight: '600' },
   finVal: { fontSize: 15, fontWeight: '800' },
   kycRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   kycIconCircle: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   kycLabel: { fontSize: 13, fontWeight: '600' },
-  kycSub: { fontSize: 10, color: '#64748B', marginTop: 1 },
-  filterPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  filterPillLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
+  kycSub: { fontSize: 13, color: '#716B7C', marginTop: 1 },
+  filterPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
+  filterPillLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2' },
   filterPillDark: { backgroundColor: '#121212', borderColor: '#27272A' },
-  filterPillActive: { backgroundColor: '#0284C7' },
+  filterPillActive: { backgroundColor: '#0284C7', borderColor: '#0284C7' },
   filterPillText: { fontSize: 12, fontWeight: '600' },
   filterPillTextActive: { color: '#FFFFFF', fontWeight: '700' },
   txnRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 10, borderRadius: 10, marginBottom: 6 },
-  txnRowLight: { backgroundColor: '#F8FAFC' },
+  txnRowLight: { backgroundColor: '#F5F3FB' },
   txnRowDark: { backgroundColor: 'rgba(255,255,255,0.04)' },
   txnId: { fontSize: 12, fontWeight: '700' },
   txnDate: { fontSize: 10, color: '#64748B', marginTop: 1 },
@@ -655,7 +593,7 @@ const styles = StyleSheet.create({
   chanTabActive: { backgroundColor: '#0284C7' },
   chanTabText: { fontSize: 12, fontWeight: '600' },
   chanTabTextActive: { color: '#FFFFFF', fontWeight: '700' },
-  chanCard: { padding: 12, borderRadius: 12 },
+  chanCard: { padding: 12, borderRadius: 24, borderWidth: 0, shadowOpacity: 0 },
   chanAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#0284C7', alignItems: 'center', justifyContent: 'center' },
   chanAvatarText: { color: '#FFF', fontSize: 14, fontWeight: '800' },
   chanTitle: { fontSize: 13, fontWeight: '700' },

@@ -98,16 +98,14 @@ export function ClientProfilesScreen({ onBack }: ClientProfilesScreenProps = {})
           </Pressable>
           <View>
             <View style={styles.titleRow}>
-              <Text style={[styles.title, { color: colors.text }]}>Client Profiles</Text>
+              <Text style={[styles.title, { color: colors.text }]}>Your clients</Text>
               <View style={[styles.countBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Text style={[styles.countText, { color: colors.textMuted }]}>
                   {data?.total_count ?? profiles.length}
                 </Text>
               </View>
             </View>
-            <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-              GST billing profiles & legal entities
-            </Text>
+
           </View>
         </View>
 
@@ -198,7 +196,7 @@ export function ClientProfilesScreen({ onBack }: ClientProfilesScreenProps = {})
               : null;
 
             return (
-              <Pressable
+              <Pressable cssInterop={false}
                 style={({ pressed }) => [
                   styles.card,
                   {
@@ -334,10 +332,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
+    fontSize: 28,
+    fontWeight: '500',
+    letterSpacing: -0.5, lineHeight: 36 },
   countBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -349,18 +346,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#17171C',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 10,
-  },
+    borderRadius: 28, minHeight: 44 , shadowOpacity: 0 },
   addBtnText: {
     color: '#FFFFFF',
     fontSize: 13,
@@ -370,13 +366,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    borderRadius: 12,
+    borderRadius: 22,
     paddingHorizontal: 12,
     paddingVertical: 8,
     marginHorizontal: 16,
     marginBottom: 12,
-    borderWidth: 1,
-  },
+    borderWidth: 0, minHeight: 48 },
   searchInput: {
     flex: 1,
     fontSize: 14,
@@ -386,16 +381,14 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   card: {
-    borderRadius: 14,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     padding: 14,
-    marginBottom: 10,
-  },
+    marginBottom: 10, shadowOpacity: 0 },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-  },
+    gap: 12, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   avatar: {
     width: 42,
     height: 42,
@@ -410,14 +403,12 @@ const styles = StyleSheet.create({
   },
   cardMain: {
     flex: 1,
-    minWidth: 0,
-  },
+    minWidth: 0, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   cardTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
-  },
+    gap: 8, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   name: {
     fontSize: 15,
     fontWeight: '700',

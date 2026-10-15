@@ -66,14 +66,12 @@ export const LeadListScreen: React.FC<LeadListScreenProps> = ({ onSelectLead, on
           ) : null}
           <View>
             <View style={styles.titleRow}>
-              <Text style={[styles.title, { color: colors.text }]}>Leads & Contacts</Text>
+              <Text style={[styles.title, { color: colors.text }]}>Your leads</Text>
               <View style={[styles.countBadge, { backgroundColor: colors.surface }]}>
                 <Text style={styles.countText}>{totalCount}</Text>
               </View>
             </View>
-            <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-              Prospects & customer directory
-            </Text>
+
           </View>
         </View>
 
@@ -243,10 +241,9 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
+    fontSize: 28,
+    fontWeight: '500',
+    letterSpacing: -0.5, lineHeight: 36 },
   countBadge: {
     backgroundColor: '#262A34',
     paddingHorizontal: 8,
@@ -259,19 +256,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   subtitle: {
-    color: '#9CA3AF',
-    fontSize: 12,
+    color: '#716B7C',
+    fontSize: 13,
     marginTop: 2,
   },
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#17171C',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 10,
-  },
+    borderRadius: 28, minHeight: 44 , shadowOpacity: 0 },
   addBtnText: {
     color: '#FFFFFF',
     fontSize: 13,
@@ -290,12 +286,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     backgroundColor: '#181A20',
-    borderRadius: 12,
+    borderRadius: 22,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: '#262A34',
-  },
+    borderWidth: 0,
+    borderColor: '#262A34', minHeight: 48 },
   searchInput: {
     flex: 1,
     color: '#FFFFFF',
@@ -377,11 +372,10 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   emptyAddBtn: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#17171C',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 10,
-  },
+    borderRadius: 28, minHeight: 44 , shadowOpacity: 0 },
   emptyAddBtnText: {
     color: '#FFFFFF',
     fontSize: 14,
