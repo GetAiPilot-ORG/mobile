@@ -32,6 +32,7 @@ import { useNetwork } from "../../src/contexts/NetworkContext";
 import { apiClient } from "../../src/core/api/client";
 import { usePlatformSubscription } from "../../src/hooks/usePlatformSubscription";
 import { supabase } from "../../src/lib/supabase";
+import { TestNotificationButton } from "@/components/TestNotification";
 
 
 interface LoginDevice {
@@ -322,6 +323,7 @@ export default function HomeScreen() {
   return (
     <AppScreen safeArea={false}>
       <AppTopBar showPlanBadge />
+      <TestNotificationButton />
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 128, gap: 28 }}

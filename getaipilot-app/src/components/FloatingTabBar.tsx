@@ -144,18 +144,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
           },
         ]}
         pointerEvents="none"
-      >
-        <BlurView
-          intensity={Platform.OS === 'ios' ? 75 : 95}
-          tint={isDark ? 'dark' : 'light'}
-          blurMethod="dimezisBlurView"
-          style={[
-            StyleSheet.absoluteFill,
-            Platform.OS === 'web'
-              ? ({ backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' } as any)
-              : undefined,
-          ]}
-        />
+      >\
         <View
           style={[
             StyleSheet.absoluteFill,
@@ -188,18 +177,6 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
             },
           ]}
         >
-          {/* Inner Blur on the Pill */}
-          <BlurView
-            intensity={Platform.OS === 'ios' ? 85 : 90}
-            tint={isDark ? 'dark' : 'light'}
-            blurMethod="dimezisBlurView"
-            style={[
-              StyleSheet.absoluteFill,
-              Platform.OS === 'web'
-                ? ({ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' } as any)
-                : undefined,
-            ]}
-          />
           <View
             style={[
               StyleSheet.absoluteFill,
@@ -246,58 +223,58 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
 
             return (
               <TabMotion key={route.key} active={isFocused}>
-              {isFocused ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: true }}
-                  accessibilityLabel={options?.tabBarAccessibilityLabel || config.label}
-                  testID={options?.tabBarButtonTestID}
-                  onPress={onPress}
-                  onLongPress={onLongPress}
-                  style={[
-                    styles.activePill,
-                    { backgroundColor: colors.accentSoft },
-                  ]}
-                >
-                  <HugeiconsIcon
-                    icon={IconComponent}
-                    size={19}
-                    color={colors.accent}
-                    strokeWidth={2}
-                  />
-                  <Text
+                {isFocused ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: true }}
+                    accessibilityLabel={options?.tabBarAccessibilityLabel || config.label}
+                    testID={options?.tabBarButtonTestID}
+                    onPress={onPress}
+                    onLongPress={onLongPress}
                     style={[
-                      styles.activeLabel,
-                      { color: colors.accent },
+                      styles.activePill,
+                      { backgroundColor: colors.accentSoft },
                     ]}
-                    numberOfLines={1}
                   >
-                    {config.label}
-                  </Text>
-                </Pressable>
-              ) : (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ selected: false }}
-                accessibilityLabel={options?.tabBarAccessibilityLabel || config.label}
-                testID={options?.tabBarButtonTestID}
-                onPress={onPress}
-                onLongPress={onLongPress}
-                style={[
-                  styles.inactiveButton,
-                  {
-                    backgroundColor: 'transparent',
-                  },
-                ]}
-              >
-                <HugeiconsIcon
-                  icon={IconComponent}
-                  size={20}
-                  color={colors.textMuted}
-                  strokeWidth={1.75}
-                />
-              </Pressable>
-              )}
+                    <HugeiconsIcon
+                      icon={IconComponent}
+                      size={19}
+                      color={colors.accent}
+                      strokeWidth={2}
+                    />
+                    <Text
+                      style={[
+                        styles.activeLabel,
+                        { color: colors.accent },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {config.label}
+                    </Text>
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: false }}
+                    accessibilityLabel={options?.tabBarAccessibilityLabel || config.label}
+                    testID={options?.tabBarButtonTestID}
+                    onPress={onPress}
+                    onLongPress={onLongPress}
+                    style={[
+                      styles.inactiveButton,
+                      {
+                        backgroundColor: 'transparent',
+                      },
+                    ]}
+                  >
+                    <HugeiconsIcon
+                      icon={IconComponent}
+                      size={20}
+                      color={colors.textMuted}
+                      strokeWidth={1.75}
+                    />
+                  </Pressable>
+                )}
               </TabMotion>
             );
           })}
