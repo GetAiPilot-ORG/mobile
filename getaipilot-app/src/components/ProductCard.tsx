@@ -66,12 +66,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     >
       <View style={styles.header}>
         {logoImage ? (
-          <View style={[styles.logoSurface, { backgroundColor: `${themeColor}18` }]}>
+          <View style={[styles.logoSurface]}>
             <Image source={logoImage} style={styles.logo} resizeMode="contain" />
           </View>
         ) : (
           <View
-            style={[styles.logoSurface, { backgroundColor: `${themeColor}18` }]}
+            style={[styles.logoSurface]}
           >
             <Text style={styles.fallbackIcon}>{icon || '⚡'}</Text>
           </View>
@@ -121,8 +121,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   logoSurface: {
-    width: 48,
-    height: 48,
+    width: 50,
+    height: 50,
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',

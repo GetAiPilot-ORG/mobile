@@ -51,7 +51,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({
             backgroundColor: iconBg || colors.accentSoft,
           }}
         >
-          <HugeiconsIcon icon={icon} size={21} color={colors.text} strokeWidth={1.8} />
+          <HugeiconsIcon icon={icon} size={21} color={'#000000'} strokeWidth={1.8} />
         </View>
         {badge ? (
           <View

@@ -6,8 +6,6 @@ import {
   ProductTabItem,
 } from '../../../src/components/ProductFloatingBottomBar';
 import { CRMDashboardScreen } from "../../../src/features/crm/screens/CRMDashboardScreen";
-import { GoogleCalendarScreen } from "../../../src/features/crm/screens/GoogleCalendarScreen";
-import { CommunicationScreen } from "../../../src/features/team/screens/CommunicationScreen";
 import { PlannerScreen } from "../../../src/features/team/screens/PlannerScreen";
 import { TeamScreen } from "../../../src/features/team/screens/TeamScreen";
 import { useCrmTheme } from '@/features/crm/hooks/useCrmTheme';
@@ -97,8 +95,6 @@ export default function CRMIndexRoute() {
         )}
         {activeTab === "team" && <TeamScreen />}
         {activeTab === "planner" && <PlannerScreen />}
-        {activeTab === "calendar" && <GoogleCalendarScreen />}
-        {activeTab === "communication" && <CommunicationScreen />}
       </View>
 
       <ProductFloatingBottomBar

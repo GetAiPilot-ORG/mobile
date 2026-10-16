@@ -1,0 +1,1132 @@
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  Easing,
+  Modal,
+  Platform,
+  Pressable,
+  Share,
+  StyleSheet,
+  Text,
+  TextInput,
+  useWindowDimensions,
+  View,
+} from 'react-native';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
+import {
+  AlertTriangle,
+  Check,
+  CheckCircle2,
+  Copy,
+  Gift,
+  Info,
+  LogOut,
+  Share2,
+  Smartphone,
+  Sparkles,
+  Trash2,
+  User,
+  X,
+} from 'lucide-react-native';
+import { useTheme, getColors } from '@/theme';
+
+export type ThemedDialogType =
+  | 'logout'
+  | 'referral'
+  | 'destructive'
+  | 'success'
+  | 'warning'
+  | 'info'
+  | 'default';
+
+export type DialogButtonLayout = 'auto' | 'row' | 'column';
+export type DialogButtonAlign = 'stretch' | 'right' | 'center' | 'left';
+
+export type DialogButtonVariant =
+  | 'primary'
+  | 'destructive'
+  | 'secondary'
+  | 'ghost'
+  | 'outline'
+  | 'referral'
+  | 'success';
+
+export interface DialogButton {
+  text: string;
+  onPress?: () => void | Promise<void>;
+  variant?: DialogButtonVariant;
+  textColor?: string;
+  backgroundColor?: string;
+  borderColor?: string;
+  loading?: boolean;
+  disabled?: boolean;
+  icon?: React.ReactNode;
+}
+
+export interface ThemedDialogProps {
+  visible: boolean;
+  onClose: () => void;
+  type?: ThemedDialogType;
+  title: string;
+  description?: string;
+  icon?: React.ReactNode;
+  dismissable?: boolean;
+  showCloseButton?: boolean;
+  buttonLayout?: DialogButtonLayout;
+  buttonAlign?: DialogButtonAlign;
+  alignRight?: boolean;
+  textAlign?: 'left' | 'center' | 'right';
+
+  // Custom Card Colors
+  backgroundColor?: string;
+  borderColor?: string;
+
+  // Buttons
+  primaryButton?: DialogButton;
+  secondaryButton?: DialogButton;
+  buttons?: DialogButton[];
+
+  // Specialized referral options
+  referralCode?: string;
+  referralLink?: string;
+  referralReward?: string;
+  onShareReferral?: () => void;
+
+  // Specialized logout/account options
+  accountEmail?: string;
+  accountName?: string;
+  deviceName?: string;
+
+  // Custom body
+  children?: React.ReactNode;
+
+  // Prompt / Input options
+  isPrompt?: boolean;
+  promptValue?: string;
+  promptPlaceholder?: string;
+  onPromptChange?: (text: string) => void;
+  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
+  secureTextEntry?: boolean;
+
+  // Custom button texts
+  confirmText?: string;
+  cancelText?: string;
+
+  // Custom button colors
+  confirmTextColor?: string;
+  confirmBgColor?: string;
+  confirmBorderColor?: string;
+  cancelTextColor?: string;
+  cancelBgColor?: string;
+  cancelBorderColor?: string;
+}
+
+export const ThemedDialog: React.FC<ThemedDialogProps> = ({
+  visible,
+  onClose,
+  type = 'default',
+  title,
+  description,
+  icon,
+  dismissable = true,
+  showCloseButton = false,
+  buttonLayout = 'auto',
+  buttonAlign = 'stretch',
+  alignRight = false,
+  textAlign,
+  backgroundColor,
+  borderColor,
+  primaryButton,
+  secondaryButton,
+  buttons,
+  referralCode,
+  referralLink,
+  referralReward,
+  onShareReferral,
+  accountEmail,
+  accountName,
+  deviceName,
+  children,
+  isPrompt = false,
+  promptValue = '',
+  promptPlaceholder,
+  onPromptChange,
+  keyboardType = 'default',
+  secureTextEntry = false,
+  confirmText,
+  cancelText,
+  confirmTextColor,
+  confirmBgColor,
+  confirmBorderColor,
+  cancelTextColor,
+  cancelBgColor,
+  cancelBorderColor,
+}) => {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
+  const [currentPromptValue, setCurrentPromptValue] = useState(promptValue || '');
+
+  useEffect(() => {
+    if (visible && isPrompt) {
+      setCurrentPromptValue(promptValue || '');
+    }
+  }, [visible, isPrompt, promptValue]);
+
+  // Animations
+  const backdropAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.92)).current;
+  const translateYAnim = useRef(new Animated.Value(14)).current;
+
+  useEffect(() => {
+    if (visible) {
+      setCopiedCode(false);
+      Haptics.impactAsync(
+        type === 'logout' || type === 'destructive'
+          ? Haptics.ImpactFeedbackStyle.Medium
+          : Haptics.ImpactFeedbackStyle.Light
+      ).catch(() => { });
+
+      Animated.parallel([
+        Animated.timing(backdropAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+          easing: Easing.out(Easing.quad),
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 85,
+          friction: 9,
+          useNativeDriver: true,
+        }),
+        Animated.spring(translateYAnim, {
+          toValue: 0,
+          tension: 85,
+          friction: 9,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(backdropAnim, {
+          toValue: 0,
+          duration: 150,
+          useNativeDriver: true,
+          easing: Easing.in(Easing.quad),
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 0.94,
+          duration: 150,
+          useNativeDriver: true,
+          easing: Easing.in(Easing.quad),
+        }),
+        Animated.timing(translateYAnim, {
+          toValue: 10,
+          duration: 150,
+          useNativeDriver: true,
+          easing: Easing.in(Easing.quad),
+        }),
+      ]).start();
+    }
+  }, [visible, type]);
+
+  const handleDismiss = () => {
+    if (!dismissable) return;
+    Haptics.selectionAsync().catch(() => { });
+    onClose();
+  };
+
+  const handleCopyCode = async () => {
+    if (!referralCode) return;
+    try {
+      await Clipboard.setStringAsync(referralCode);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2400);
+    } catch (err) {
+      console.warn('[ThemedDialog] Copy error:', err);
+    }
+  };
+
+  const handleDefaultShare = async () => {
+    if (onShareReferral) {
+      onShareReferral();
+      return;
+    }
+    const link = referralLink || `https://getaipilot.com/?ref=${encodeURIComponent(referralCode || '')}`;
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
+      await Share.share({
+        title: 'Join GetAiPilot with my referral code!',
+        message: `Boost your productivity with GetAiPilot! Use my referral code ${referralCode || ''} to get started: ${link}`,
+        url: link,
+      });
+    } catch (err) {
+      console.warn('[ThemedDialog] Share error:', err);
+    }
+  };
+
+  const executeButtonAction = async (btn: DialogButton, id: string) => {
+    if (btn.disabled || btn.loading || loadingMap[id]) return;
+
+    if (btn.variant === 'destructive') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
+    } else {
+      Haptics.selectionAsync().catch(() => { });
+    }
+
+    if (btn.onPress) {
+      try {
+        setLoadingMap((prev) => ({ ...prev, [id]: true }));
+        await btn.onPress();
+      } catch (err) {
+        console.error('[ThemedDialog] Action error:', err);
+      } finally {
+        setLoadingMap((prev) => ({ ...prev, [id]: false }));
+      }
+    }
+  };
+
+  // Determine badge styling based on dialog type
+  const getTypeConfig = () => {
+    switch (type) {
+      case 'logout':
+        return {
+          badgeBg: isDark ? 'rgba(239, 68, 68, 0.14)' : 'rgba(239, 68, 68, 0.10)',
+          badgeBorder: isDark ? 'rgba(239, 68, 68, 0.28)' : 'rgba(239, 68, 68, 0.20)',
+          iconColor: '#EF4444',
+          defaultIcon: <LogOut size={24} color="#EF4444" strokeWidth={2.2} />,
+          accentColor: '#EF4444',
+          defaultPrimaryVariant: 'destructive' as const,
+        };
+      case 'destructive':
+        return {
+          badgeBg: isDark ? 'rgba(239, 68, 68, 0.14)' : 'rgba(239, 68, 68, 0.10)',
+          badgeBorder: isDark ? 'rgba(239, 68, 68, 0.28)' : 'rgba(239, 68, 68, 0.20)',
+          iconColor: '#EF4444',
+          defaultIcon: <AlertTriangle size={24} color="#EF4444" strokeWidth={2.2} />,
+          accentColor: '#EF4444',
+          defaultPrimaryVariant: 'destructive' as const,
+        };
+      case 'referral':
+        return {
+          badgeBg: isDark ? 'rgba(185, 168, 255, 0.16)' : 'rgba(108, 85, 197, 0.12)',
+          badgeBorder: isDark ? 'rgba(185, 168, 255, 0.32)' : 'rgba(108, 85, 197, 0.22)',
+          iconColor: isDark ? '#B9A8FF' : '#6C55C5',
+          defaultIcon: <Gift size={24} color={isDark ? '#B9A8FF' : '#6C55C5'} strokeWidth={2.2} />,
+          accentColor: isDark ? '#B9A8FF' : '#6C55C5',
+          defaultPrimaryVariant: 'primary' as const,
+        };
+      case 'success':
+        return {
+          badgeBg: isDark ? 'rgba(48, 209, 88, 0.15)' : 'rgba(22, 163, 74, 0.12)',
+          badgeBorder: isDark ? 'rgba(48, 209, 88, 0.30)' : 'rgba(22, 163, 74, 0.20)',
+          iconColor: isDark ? '#30D158' : '#16A34A',
+          defaultIcon: <CheckCircle2 size={24} color={isDark ? '#30D158' : '#16A34A'} strokeWidth={2.2} />,
+          accentColor: isDark ? '#30D158' : '#16A34A',
+          defaultPrimaryVariant: 'primary' as const,
+        };
+      case 'warning':
+        return {
+          badgeBg: isDark ? 'rgba(255, 159, 10, 0.15)' : 'rgba(182, 68, 0, 0.10)',
+          badgeBorder: isDark ? 'rgba(255, 159, 10, 0.30)' : 'rgba(182, 68, 0, 0.20)',
+          iconColor: isDark ? '#FF9F0A' : '#B64400',
+          defaultIcon: <AlertTriangle size={24} color={isDark ? '#FF9F0A' : '#B64400'} strokeWidth={2.2} />,
+          accentColor: isDark ? '#FF9F0A' : '#B64400',
+          defaultPrimaryVariant: 'primary' as const,
+        };
+      case 'info':
+      default:
+        return {
+          badgeBg: isDark ? 'rgba(185, 168, 255, 0.14)' : 'rgba(108, 85, 197, 0.10)',
+          badgeBorder: isDark ? 'rgba(185, 168, 255, 0.28)' : 'rgba(108, 85, 197, 0.18)',
+          iconColor: isDark ? '#B9A8FF' : '#6C55C5',
+          defaultIcon: <Info size={24} color={isDark ? '#B9A8FF' : '#6C55C5'} strokeWidth={2.2} />,
+          accentColor: isDark ? '#B9A8FF' : '#6C55C5',
+          defaultPrimaryVariant: 'primary' as const,
+        };
+    }
+  };
+
+  const typeConfig = getTypeConfig();
+
+  // If type is referral and no primaryButton is supplied, configure a default Share button
+  const effectivePrimaryButton =
+    primaryButton ||
+    (type === 'referral' && referralCode
+      ? {
+        text: 'Share Link',
+        icon: <Share2 size={15} color={colors.buttonPrimaryForeground} strokeWidth={2.2} />,
+        variant: 'primary' as const,
+        onPress: handleDefaultShare,
+      }
+      : undefined);
+
+  // Determine button list:
+  // For 2 buttons: Secondary (Cancel/Done) first on Left, Primary (Confirm/Sign Out) second on Right
+  const finalSecondaryButton: DialogButton | undefined =
+    secondaryButton ||
+    (cancelText
+      ? {
+        text: cancelText,
+        variant: 'secondary',
+        textColor: cancelTextColor,
+        backgroundColor: cancelBgColor,
+        borderColor: cancelBorderColor,
+        onPress: onClose,
+      }
+      : undefined);
+
+  const finalPrimaryButton: DialogButton | undefined =
+    effectivePrimaryButton ||
+    (confirmText
+      ? {
+        text: confirmText,
+        variant: (type === 'destructive' || type === 'logout' ? 'destructive' : 'primary'),
+        textColor: confirmTextColor,
+        backgroundColor: confirmBgColor,
+        borderColor: confirmBorderColor,
+        onPress: onClose,
+      }
+      : undefined);
+
+  let resolvedButtons: DialogButton[] = buttons || [
+    ...(finalSecondaryButton ? [finalSecondaryButton] : []),
+    ...(finalPrimaryButton
+      ? [
+        {
+          variant: finalPrimaryButton.variant || typeConfig.defaultPrimaryVariant,
+          ...finalPrimaryButton,
+        },
+      ]
+      : []),
+  ];
+
+  if (resolvedButtons.length === 0) {
+    resolvedButtons.push({
+      text: 'OK',
+      variant: 'primary',
+      onPress: onClose,
+    });
+  }
+
+  // Determine whether to layout buttons in a row side-by-side or stacked in a column
+  const isRowLayout =
+    buttonLayout === 'row' ||
+    (buttonLayout === 'auto' &&
+      resolvedButtons.length === 2 &&
+      resolvedButtons.every((b) => (b.text || '').length <= 13));
+
+  // Ensure that in a 2-button row, Cancel is on the Left and Sign Out / Destructive is on the Right
+  if (isRowLayout && resolvedButtons.length === 2) {
+    const firstText = (resolvedButtons[0].text || '').toLowerCase();
+    const secondText = (resolvedButtons[1].text || '').toLowerCase();
+    const isFirstCancel =
+      resolvedButtons[0].variant === 'secondary' ||
+      firstText.includes('cancel') ||
+      firstText.includes('stay') ||
+      firstText.includes('back') ||
+      firstText.includes('dismiss');
+    const isFirstSignOut =
+      resolvedButtons[0].variant === 'destructive' ||
+      firstText.includes('sign out') ||
+      firstText.includes('logout') ||
+      firstText.includes('delete');
+    const isSecondCancel =
+      resolvedButtons[1].variant === 'secondary' ||
+      secondText.includes('cancel') ||
+      secondText.includes('stay') ||
+      secondText.includes('back') ||
+      secondText.includes('dismiss');
+
+    if (isFirstSignOut && isSecondCancel) {
+      resolvedButtons = [resolvedButtons[1], resolvedButtons[0]];
+    }
+  }
+
+  const renderButton = (btn: DialogButton, index: number) => {
+    const btnId = `btn-${index}`;
+    const isLoading = btn.loading || loadingMap[btnId];
+    const lowerText = (btn.text || '').toLowerCase();
+
+    // Determine specific role "kam ke hisab se"
+    let effectiveVariant: DialogButtonVariant = btn.variant || 'primary';
+    if (!btn.variant) {
+      if (
+        lowerText.includes('no') ||
+        lowerText.includes('dismiss') ||
+        lowerText.includes('close') ||
+        lowerText.includes('not now') ||
+        lowerText.includes('later') ||
+        lowerText.includes('stay') ||
+        (resolvedButtons.length === 2 && index === 0)
+      ) {
+        effectiveVariant = 'secondary';
+      } else if (
+        lowerText.includes('logout') ||
+        lowerText.includes('log out') ||
+        lowerText.includes('sign out') ||
+        lowerText.includes('signout') ||
+        lowerText.includes('delete') ||
+        lowerText.includes('remove') ||
+        type === 'logout' ||
+        type === 'destructive'
+      ) {
+        effectiveVariant = 'destructive';
+      } else if (
+        lowerText.includes('share') ||
+        lowerText.includes('refer') ||
+        lowerText.includes('invite') ||
+        type === 'referral'
+      ) {
+        effectiveVariant = 'referral';
+      } else if (
+        lowerText.includes('save') ||
+        lowerText.includes('success') ||
+        type === 'success'
+      ) {
+        effectiveVariant = 'success';
+      }
+    }
+
+    const isDestructive = effectiveVariant === 'destructive';
+    const isReferral = effectiveVariant === 'referral';
+    const isSuccess = effectiveVariant === 'success';
+    const isSecondary = effectiveVariant === 'secondary' || effectiveVariant === 'outline';
+    const isGhost = effectiveVariant === 'ghost';
+
+    let btnBg = colors.buttonPrimary;
+    let btnTextColor = colors.buttonPrimaryForeground;
+    let btnBorderColor = 'transparent';
+    let btnShadow: any = {};
+    let defaultIcon: React.ReactNode = null;
+
+    if (isDestructive) {
+      // Destructive task: Sign Out, Delete, Revoke
+      // Styled with soft red background, red text, and subtle border
+      const isSignOut =
+        lowerText.includes('sign out') ||
+        lowerText.includes('signout') ||
+        lowerText.includes('logout') ||
+        lowerText.includes('log out') ||
+        type === 'logout';
+
+      btnBg = isDark ? 'rgba(239, 68, 68, 0.16)' : '#FEE2E2';
+      btnTextColor = isDark ? '#EF4444' : '#DC2626';
+      btnBorderColor = isDark ? 'rgba(239, 68, 68, 0.32)' : 'rgba(220, 38, 38, 0.22)';
+      btnShadow = {};
+
+      defaultIcon = isSignOut ? (
+        <LogOut size={15} color={btnTextColor} strokeWidth={2.2} />
+      ) : lowerText.includes('delete') || lowerText.includes('remove') ? (
+        <Trash2 size={15} color={btnTextColor} strokeWidth={2.2} />
+      ) : (
+        <LogOut size={15} color={btnTextColor} strokeWidth={2.2} />
+      );
+    } else if (isReferral) {
+      // Referral task: Share, Invite, Copy code
+      btnBg = isDark ? '#8B5CF6' : '#7C3AED';
+      btnTextColor = '#FFFFFF';
+      btnBorderColor = isDark ? 'rgba(185, 168, 255, 0.35)' : 'transparent';
+      btnShadow = Platform.select({
+        ios: {
+          shadowColor: '#7C3AED',
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: isDark ? 0.4 : 0.25,
+          shadowRadius: 5,
+        },
+        android: { elevation: 3 },
+      }) || {};
+      defaultIcon = <Share2 size={15} color="#FFFFFF" strokeWidth={2.2} />;
+    } else if (isSuccess) {
+      // Success task: Save, Done, Confirm
+      btnBg = isDark ? '#30D158' : '#16A34A';
+      btnTextColor = '#FFFFFF';
+      btnBorderColor = 'transparent';
+      btnShadow = Platform.select({
+        ios: {
+          shadowColor: '#16A34A',
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: isDark ? 0.35 : 0.25,
+          shadowRadius: 5,
+        },
+        android: { elevation: 3 },
+      }) || {};
+      defaultIcon = <Check size={15} color="#FFFFFF" strokeWidth={2.4} />;
+    } else if (isSecondary) {
+      // Passive/Dismiss task: Cancel, Back, Later
+      btnBg = isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9';
+      btnTextColor = isDark ? '#CBD5E1' : '#475569';
+      btnBorderColor = isDark ? 'rgba(255, 255, 255, 0.14)' : '#E2E8F0';
+    } else if (isGhost) {
+      btnBg = 'transparent';
+      btnTextColor = colors.mutedText;
+    } else {
+      // Standard Primary task
+      btnBg = isDark ? '#B9A8FF' : '#17171C';
+      btnTextColor = isDark ? '#17171C' : '#FFFFFF';
+      btnShadow = Platform.select({
+        ios: {
+          shadowColor: isDark ? '#B9A8FF' : '#000000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0.25 : 0.15,
+          shadowRadius: 4,
+        },
+        android: { elevation: 2 },
+      }) || {};
+    }
+
+    const finalBg = btn.backgroundColor || btnBg;
+    const finalTextColor = btn.textColor || btnTextColor;
+    const finalBorderColor = btn.borderColor || btnBorderColor;
+
+    let iconToRender = btn.icon !== undefined ? btn.icon : defaultIcon;
+    if (iconToRender && React.isValidElement(iconToRender) && btn.textColor && !btn.icon) {
+      iconToRender = React.cloneElement(iconToRender as React.ReactElement<any>, {
+        color: finalTextColor,
+      });
+    }
+
+    const isRightAligned = buttonAlign === 'right' || alignRight === true;
+
+    return (
+      <Pressable
+        key={btnId}
+        style={({ pressed }) => [
+          styles.buttonBase,
+          isRowLayout && !isRightAligned && styles.buttonFlex,
+          isRowLayout && isRightAligned && { minWidth: 92, paddingHorizontal: 16 },
+          !isRowLayout && isRightAligned && { alignSelf: 'flex-end', minWidth: 100 },
+          {
+            backgroundColor: finalBg,
+            borderColor: finalBorderColor,
+            borderWidth:
+              isSecondary ||
+                isDestructive ||
+                Boolean(btn.borderColor) ||
+                Boolean(finalBorderColor && finalBorderColor !== 'transparent')
+                ? 1
+                : 0,
+            opacity: btn.disabled ? 0.45 : pressed ? 0.88 : 1,
+            transform: [{ scale: pressed && !btn.disabled && !isLoading ? 0.98 : 1 }],
+          },
+          btnShadow,
+        ]}
+        onPress={() => executeButtonAction(btn, btnId)}
+        disabled={btn.disabled || isLoading}
+        accessibilityRole="button"
+        accessibilityLabel={btn.text}
+      >
+        {isLoading ? (
+          <ActivityIndicator size="small" color={finalTextColor} />
+        ) : (
+          <View style={styles.buttonInner}>
+            {iconToRender && <View style={styles.buttonIcon}>{iconToRender}</View>}
+            <Text
+              style={[
+                styles.buttonText,
+                {
+                  color: finalTextColor,
+                  fontWeight: isSecondary ? '600' : '700',
+                },
+              ]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {btn.text}
+            </Text>
+          </View>
+        )}
+      </Pressable>
+    );
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      onRequestClose={handleDismiss}
+      statusBarTranslucent
+    >
+      <View style={styles.overlayContainer}>
+        {/* Animated Dim Backdrop */}
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: isDark ? 'rgba(10, 9, 14, 0.72)' : 'rgba(15, 23, 42, 0.45)',
+              opacity: backdropAnim,
+            },
+          ]}
+        >
+          <Pressable style={StyleSheet.absoluteFill} onPress={handleDismiss} />
+        </Animated.View>
+
+        {/* Dialog Card */}
+        <Animated.View
+          style={[
+            styles.cardContainer,
+            {
+              maxWidth: Math.min(windowWidth - 40, 360),
+              backgroundColor: backgroundColor || (isDark ? '#1C1A25' : '#FFFFFF'),
+              borderColor: borderColor || (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'),
+              transform: [{ scale: scaleAnim }, { translateY: translateYAnim }],
+              opacity: backdropAnim,
+            },
+          ]}
+        >
+          {/* Top Right Close Button (Optional) */}
+          {dismissable && showCloseButton && (
+            <Pressable
+              style={({ pressed }) => [
+                styles.closeButton,
+                {
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                  opacity: pressed ? 0.7 : 1,
+                },
+              ]}
+              onPress={handleDismiss}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Close dialog"
+            >
+              <X size={16} color={isDark ? '#ACA6BB' : '#696575'} strokeWidth={2.4} />
+            </Pressable>
+          )}
+
+          {/* Centered Icon Badge */}
+          <View
+            style={[
+              styles.iconBadge,
+              {
+                backgroundColor: typeConfig.badgeBg,
+                borderColor: typeConfig.badgeBorder,
+              },
+            ]}
+          >
+            {icon || typeConfig.defaultIcon}
+          </View>
+
+          {/* Title */}
+          <Text
+            style={[
+              styles.title,
+              { color: colors.text },
+              (textAlign || (alignRight ? 'right' : undefined)) && {
+                textAlign: textAlign || (alignRight ? 'right' : 'center'),
+              },
+            ]}
+          >
+            {title}
+          </Text>
+
+          {/* Description */}
+          {description ? (
+            <Text
+              style={[
+                styles.description,
+                { color: colors.mutedText },
+                (textAlign || (alignRight ? 'right' : undefined)) && {
+                  textAlign: textAlign || (alignRight ? 'right' : 'center'),
+                },
+              ]}
+            >
+              {description}
+            </Text>
+          ) : null}
+
+          {/* Prompt Input Field */}
+          {isPrompt && (
+            <View style={styles.promptContainer}>
+              <TextInput
+                style={[
+                  styles.promptInput,
+                  {
+                    backgroundColor: isDark ? '#14131B' : '#F5F3FB',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.10)',
+                    color: colors.text,
+                  },
+                ]}
+                value={currentPromptValue}
+                onChangeText={(text) => {
+                  setCurrentPromptValue(text);
+                  onPromptChange?.(text);
+                }}
+                placeholder={promptPlaceholder || 'Enter value...'}
+                placeholderTextColor={colors.mutedText}
+                keyboardType={keyboardType}
+                secureTextEntry={secureTextEntry}
+                autoFocus
+              />
+            </View>
+          )}
+
+          {/* SPECIALIZED: Referral Content */}
+          {type === 'referral' && referralCode && (
+            <View style={styles.referralSection}>
+              {/* Tap to copy code box */}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.referralCodeBox,
+                  {
+                    backgroundColor: isDark ? '#14131B' : '#F5F3FB',
+                    borderColor: copiedCode
+                      ? typeConfig.accentColor
+                      : isDark
+                        ? 'rgba(185, 168, 255, 0.25)'
+                        : 'rgba(108, 85, 197, 0.20)',
+                    opacity: pressed ? 0.85 : 1,
+                  },
+                ]}
+                onPress={handleCopyCode}
+                accessibilityRole="button"
+                accessibilityLabel="Copy referral code"
+              >
+                <View style={styles.referralCodeLeft}>
+                  <Text style={[styles.referralCodeLabel, { color: colors.mutedText }]}>
+                    YOUR REFERRAL CODE
+                  </Text>
+                  <Text style={[styles.referralCodeValue, { color: colors.text }]}>
+                    {referralCode}
+                  </Text>
+                </View>
+
+                <View
+                  style={[
+                    styles.copyPill,
+                    {
+                      backgroundColor: copiedCode
+                        ? isDark
+                          ? 'rgba(48, 209, 88, 0.20)'
+                          : 'rgba(22, 163, 74, 0.12)'
+                        : isDark
+                          ? 'rgba(185, 168, 255, 0.18)'
+                          : 'rgba(108, 85, 197, 0.12)',
+                    },
+                  ]}
+                >
+                  {copiedCode ? (
+                    <>
+                      <Check size={13} color={isDark ? '#30D158' : '#16A34A'} strokeWidth={2.4} />
+                      <Text style={[styles.copyPillText, { color: isDark ? '#30D158' : '#16A34A' }]}>
+                        Copied!
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={13} color={typeConfig.accentColor} strokeWidth={2.2} />
+                      <Text style={[styles.copyPillText, { color: typeConfig.accentColor }]}>
+                        Tap to copy
+                      </Text>
+                    </>
+                  )}
+                </View>
+              </Pressable>
+
+              {/* Reward perk badge */}
+              <View
+                style={[
+                  styles.rewardBadge,
+                  {
+                    backgroundColor: isDark ? 'rgba(185, 168, 255, 0.08)' : 'rgba(108, 85, 197, 0.06)',
+                  },
+                ]}
+              >
+                <Sparkles size={15} color={typeConfig.accentColor} strokeWidth={2} />
+                <Text style={[styles.rewardText, { color: colors.text }]}>
+                  {referralReward || 'Earn 20% recurring commission on every friend who subscribes.'}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* SPECIALIZED: Logout / Account Details */}
+          {type === 'logout' && (accountEmail || accountName || deviceName) && (
+            <View
+              style={[
+                styles.accountBadgeContainer,
+                {
+                  backgroundColor: isDark ? '#14131B' : '#F5F3FB',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)',
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.accountAvatarCircle,
+                  {
+                    backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.10)',
+                  },
+                ]}
+              >
+                {deviceName ? (
+                  <Smartphone size={16} color="#EF4444" strokeWidth={2} />
+                ) : (
+                  <User size={16} color="#EF4444" strokeWidth={2} />
+                )}
+              </View>
+              <View style={styles.accountTextCol}>
+                <Text
+                  style={[styles.accountPrimaryText, { color: colors.text }]}
+                  numberOfLines={1}
+                >
+                  {deviceName || accountName || 'Current Session'}
+                </Text>
+                {accountEmail ? (
+                  <Text
+                    style={[styles.accountSubText, { color: colors.mutedText }]}
+                    numberOfLines={1}
+                  >
+                    {accountEmail}
+                  </Text>
+                ) : null}
+              </View>
+            </View>
+          )}
+
+          {/* Custom Children */}
+          {children && <View style={styles.customContent}>{children}</View>}
+
+          {/* Action Buttons */}
+          <View
+            style={[
+              styles.buttonsContainer,
+              isRowLayout ? styles.buttonsRow : styles.buttonsColumn,
+              (buttonAlign === 'right' || alignRight) && {
+                justifyContent: 'flex-end',
+                alignItems: isRowLayout ? 'center' : 'flex-end',
+              },
+              buttonAlign === 'center' && {
+                justifyContent: 'center',
+                alignItems: isRowLayout ? 'center' : 'center',
+              },
+              buttonAlign === 'left' && {
+                justifyContent: 'flex-start',
+                alignItems: isRowLayout ? 'center' : 'flex-start',
+              },
+            ]}
+          >
+            {resolvedButtons.map((btn, index) => renderButton(btn, index))}
+          </View>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+};
+
+const styles = StyleSheet.create({
+  overlayContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+  },
+  cardContainer: {
+    width: '100%',
+    borderRadius: 24,
+    borderWidth: 1,
+    paddingTop: 24,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    alignSelf: 'center',
+    position: 'relative',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.30,
+        shadowRadius: 20,
+      },
+      android: {
+        elevation: 10,
+      },
+      web: {
+        boxShadow: '0 16px 40px -8px rgba(0, 0, 0, 0.35)',
+      },
+    }),
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  iconBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  title: {
+    fontSize: 18.5,
+    fontWeight: '700',
+    textAlign: 'center',
+    alignSelf: 'stretch',
+    letterSpacing: -0.3,
+    marginBottom: 6,
+    paddingHorizontal: 4,
+  },
+  description: {
+    fontSize: 13.5,
+    lineHeight: 19.5,
+    textAlign: 'center',
+    alignSelf: 'stretch',
+    paddingHorizontal: 6,
+    marginBottom: 16,
+  },
+  referralSection: {
+    width: '100%',
+    marginBottom: 16,
+    gap: 10,
+  },
+  referralCodeBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+  },
+  referralCodeLeft: {
+    flex: 1,
+  },
+  referralCodeLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  referralCodeValue: {
+    fontSize: 16.5,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+  },
+  copyPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    gap: 4,
+  },
+  copyPillText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
+  rewardBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    gap: 8,
+  },
+  rewardText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '500',
+  },
+  accountBadgeContainer: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 16,
+    gap: 10,
+  },
+  accountAvatarCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  accountTextCol: {
+    flex: 1,
+  },
+  accountPrimaryText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  accountSubText: {
+    fontSize: 11.5,
+    marginTop: 1,
+  },
+  customContent: {
+    width: '100%',
+    marginBottom: 16
+  },
+  promptContainer: {
+    width: '100%',
+    marginTop: 14,
+    marginBottom: 6,
+  },
+  promptInput: {
+    width: '100%',
+    height: 46,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    fontSize: 15,
+  },
+  buttonsContainer: {
+    width: '100%',
+    marginTop: 18,
+  },
+  buttonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  buttonsColumn: {
+    flexDirection: 'column',
+    gap: 10,
+  },
+  buttonBase: {
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+  },
+  buttonFlex: {
+    flex: 1,
+  },
+  buttonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+  buttonIcon: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonText: {
+    fontSize: 15,
+    letterSpacing: -0.2,
+  },
+});
