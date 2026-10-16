@@ -323,7 +323,7 @@ export default function HomeScreen() {
   return (
     <AppScreen safeArea={false}>
       <AppTopBar showPlanBadge />
-      <TestNotificationButton />
+      {/* <TestNotificationButton /> */}
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 128, gap: 28 }}

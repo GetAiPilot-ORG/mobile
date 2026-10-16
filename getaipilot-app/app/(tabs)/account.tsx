@@ -29,6 +29,7 @@ import { useNotifications } from '../../src/hooks/useNotifications';
 import { BiometricService, BiometricSettings } from '../../src/lib/biometrics';
 import { supabase } from '../../src/lib/supabase';
 import { Profile } from '../../src/types/database';
+import { TestNotificationButton } from '@/components/TestNotification';
 
 type AccountTab = 'overview' | 'edit' | 'security' | 'billing' | 'preferences';
 
@@ -719,6 +720,7 @@ export default function AccountScreen() {
 
   return (
     <AppScreen safeArea="top">
+      <TestNotificationButton />
       <ScrollView
         style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}
         contentContainerStyle={styles.scrollContent}
@@ -1499,8 +1501,8 @@ export default function AccountScreen() {
                           isSelected
                             ? colors.primaryForeground
                             : isDark
-                            ? '#8E8E93'
-                            : '#64748B'
+                              ? '#8E8E93'
+                              : '#64748B'
                         }
                       />
                       <Text
@@ -1559,8 +1561,8 @@ export default function AccountScreen() {
                       {expoPushToken
                         ? 'Token: ExponentPushToken (Active)'
                         : isDevice
-                        ? 'Connected to push service'
-                        : 'Simulator Mode (Local alerts active)'}
+                          ? 'Connected to push service'
+                          : 'Simulator Mode (Local alerts active)'}
                     </Text>
                   </View>
                   <Pressable

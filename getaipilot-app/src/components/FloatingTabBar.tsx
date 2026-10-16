@@ -136,15 +136,15 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
     <View style={styles.dockRoot} pointerEvents="box-none">
       {/* 2. Rounded navigation dock */}
       {/* 1. Full-bleed Bottom Frosted Backdrop that blurs all scrolled content behind it and fills the bottom screen area */}
-      <View
+      <Pressable
         style={[
           styles.backdropWrapper,
           {
-            height: 56 + bottomOffset + 12,
+            height: 52 + bottomOffset,
           },
         ]}
-        pointerEvents="none"
-      >\
+        disabled={true}
+      >
         <View
           style={[
             StyleSheet.absoluteFill,
@@ -159,7 +159,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
             },
           ]}
         />
-      </View>
+      </Pressable>
 
       {/* 2. Floating Pill Tab Bar with rounded frosted glassmorphism */}
       <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
