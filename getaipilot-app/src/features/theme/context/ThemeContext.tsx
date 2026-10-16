@@ -3,6 +3,7 @@ import { Appearance, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme as useNativeWindColorScheme } from 'nativewind';
 import * as SystemUI from 'expo-system-ui';
+import * as NavigationBar from 'expo-navigation-bar';
 import { getColors, AppColors } from '../constants/colors';
 import { ThemeMode, ThemeContextType } from '../types';
 
@@ -10,29 +11,24 @@ export { getColors, AppColors };
 
 const THEME_STORAGE_KEY = '@gap_app_theme_mode';
 
-const defaultIsDark = (() => {
-  if (typeof window !== 'undefined' && window.matchMedia) {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  }
-  return Appearance.getColorScheme() === 'dark';
-})();
+const defaultIsDark = false;
 
 const defaultColors = getColors(defaultIsDark);
 
 export const ThemeContext = createContext<ThemeContextType>({
-  themeMode: 'system',
+  themeMode: 'light',
   theme: defaultIsDark ? 'dark' : 'light',
   isDark: defaultIsDark,
   tailwindClass: defaultIsDark ? 'dark' : 'light',
   colors: defaultColors,
   color: defaultColors,
   getColors: (dark?: boolean) => getColors(dark !== undefined ? dark : defaultIsDark),
-  setThemeMode: async () => {},
-  toggleTheme: async () => {},
+  setThemeMode: async () => { },
+  toggleTheme: async () => { },
 });
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
+  const [themeMode, setThemeModeState] = useState<ThemeMode>('light');
   const [systemScheme, setSystemScheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined' && window.matchMedia) {
       return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -56,7 +52,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (Platform.OS === 'web' && typeof window !== 'undefined' && window.matchMedia) {
       mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
-      setSystemScheme(mediaQueryList.matches ? 'dark' : 'light');
 
       mediaListener = (e: MediaQueryListEvent) => {
         setSystemScheme(e.matches ? 'dark' : 'light');
@@ -105,7 +100,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Synchronize Web document and body
   useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
-      const bg = isDark ? '#41444B' : '#DFD8C8';
+      const bg = getColors(isDark).background;
       if (isDark) {
         document.documentElement.classList.add('dark');
         document.documentElement.classList.remove('light');
@@ -120,12 +115,20 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [isDark]);
 
-  // Synchronize SystemUI background color
+  // Synchronize SystemUI background color & Android Navigation Bar
   useEffect(() => {
     try {
-      SystemUI.setBackgroundColorAsync(isDark ? '#41444B' : '#DFD8C8');
+      SystemUI.setBackgroundColorAsync(getColors(isDark).background);
     } catch (e) {
       // safe fallback
+    }
+
+    if (Platform.OS === 'android') {
+      try {
+        NavigationBar.setStyle(isDark ? 'dark' : 'light');
+      } catch (e) {
+        // safe fallback
+      }
     }
   }, [isDark]);
 

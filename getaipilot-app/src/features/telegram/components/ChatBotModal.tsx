@@ -252,7 +252,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
             </Text>
           </View>
           <Pressable style={[styles.closeBtn, isDark ? styles.closeBtnDark : styles.closeBtnLight]} onPress={onClose}>
-            <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+            <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
           </Pressable>
         </View>
 
@@ -284,7 +284,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
             <ActivityIndicator size="large" color="#0284C7" style={{ marginVertical: 40 }} />
           ) : (chatbots || []).length === 0 ? (
             <View style={[styles.emptyCard, isDark ? styles.cardDark : styles.cardLight]}>
-              <Ionicons name="chatbubbles-outline" size={40} color="#94A3B8" />
+              <Ionicons name="chatbubbles-outline" size={40} color="#777383" />
               <Text style={[styles.emptyTitle, isDark ? styles.textDark : styles.textLight]}>
                 No AI Chatbots Connected
               </Text>
@@ -453,7 +453,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                   Connect Telegram AI Bot
                 </Text>
                 <Pressable onPress={() => setIsConnectOpen(false)}>
-                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
                 </Pressable>
               </View>
 
@@ -465,7 +465,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                   <TextInput
                     style={[styles.input, isDark ? styles.inputTextDark : styles.inputTextLight]}
                     placeholder="123456789:ABCdefGHIjklMNOpqr..."
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor="#777383"
                     value={botToken}
                     onChangeText={setBotToken}
                     autoCapitalize="none"
@@ -479,7 +479,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                   <TextInput
                     style={[styles.input, isDark ? styles.inputTextDark : styles.inputTextLight]}
                     placeholder="e.g. Ads Bot or Support Agent"
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor="#777383"
                     value={supportName}
                     onChangeText={setSupportName}
                   />
@@ -492,7 +492,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                   <TextInput
                     style={[styles.input, isDark ? styles.inputTextDark : styles.inputTextLight]}
                     placeholder="sk-..."
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor="#777383"
                     value={apiKey}
                     onChangeText={setApiKey}
                     secureTextEntry
@@ -507,7 +507,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                   <TextInput
                     style={[styles.input, isDark ? styles.inputTextDark : styles.inputTextLight]}
                     placeholder="e.g. Multimedia Knowledge Base"
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor="#777383"
                     value={knowledgeBaseName}
                     onChangeText={setKnowledgeBaseName}
                   />
@@ -520,7 +520,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                   <TextInput
                     style={[styles.input, isDark ? styles.inputTextDark : styles.inputTextLight, { textAlignVertical: 'top' }]}
                     placeholder="You are a helpful customer sales & support agent for..."
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor="#777383"
                     value={businessInfo}
                     onChangeText={setBusinessInfo}
                     multiline
@@ -552,7 +552,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                   Edit {editingChatbot?.bot_name}
                 </Text>
                 <Pressable onPress={() => setEditingChatbot(null)}>
-                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
                 </Pressable>
               </View>
 
@@ -575,7 +575,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                   <TextInput
                     style={[styles.input, isDark ? styles.inputTextDark : styles.inputTextLight]}
                     placeholder="Update API Key..."
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor="#777383"
                     value={apiKey}
                     onChangeText={setApiKey}
                     secureTextEntry
@@ -634,7 +634,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                   <Text style={styles.subtitle}>Tap a contact to read full conversation thread</Text>
                 </View>
                 <Pressable onPress={() => setActiveSessionBot(null)}>
-                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
                 </Pressable>
               </View>
 
@@ -642,7 +642,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                 <ActivityIndicator size="large" color="#0284C7" style={{ marginVertical: 30 }} />
               ) : (sessions || []).length === 0 ? (
                 <View style={{ alignItems: 'center', paddingVertical: 30, gap: 6 }}>
-                  <Ionicons name="chatbubbles-outline" size={36} color="#94A3B8" />
+                  <Ionicons name="chatbubbles-outline" size={36} color="#777383" />
                   <Text style={[styles.emptyTitle, isDark ? styles.textDark : styles.textLight]}>
                     No Active Sessions Yet
                   </Text>
@@ -705,7 +705,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                     setActiveUserThread(null);
                   }}
                 >
-                  <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+                  <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
                 </Pressable>
 
                 <View style={styles.threadHeaderInfo}>
@@ -718,7 +718,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                 </View>
 
                 <Pressable onPress={() => setActiveUserThread(null)}>
-                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+                  <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
                 </Pressable>
               </View>
 
@@ -752,7 +752,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                 <ActivityIndicator size="large" color="#0284C7" style={{ marginVertical: 40 }} />
               ) : (threadData?.messages || []).length === 0 ? (
                 <View style={{ alignItems: 'center', paddingVertical: 40, gap: 6 }}>
-                  <Ionicons name="chatbubble-ellipses-outline" size={36} color="#94A3B8" />
+                  <Ionicons name="chatbubble-ellipses-outline" size={36} color="#777383" />
                   <Text style={[styles.emptyTitle, isDark ? styles.textDark : styles.textLight]}>
                     No Messages Recorded
                   </Text>
@@ -821,7 +821,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  containerLight: { backgroundColor: '#F8FAFC' },
+  containerLight: { backgroundColor: '#F5F3FB' },
   containerDark: { backgroundColor: '#0B0F19' },
 
   // Header
@@ -833,13 +833,13 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 1,
   },
-  borderLight: { borderBottomColor: '#E2E8F0' },
+  borderLight: { borderBottomColor: '#E9E6F2' },
   borderDark: { borderBottomColor: '#27272A' },
   headerLeft: { flex: 1 },
-  title: { fontSize: 18, fontWeight: '700' },
-  textLight: { color: '#0F172A' },
-  textDark: { color: '#F8FAFC' },
-  subtitle: { color: '#64748B', fontSize: 12, marginTop: 2 },
+  title: { fontSize: 28, fontWeight: '500', lineHeight: 36 , letterSpacing: -0.5 },
+  textLight: { color: '#1C1A25' },
+  textDark: { color: '#F5F3FB' },
+  subtitle: { color: '#716B7C', fontSize: 13, marginTop: 2 },
   closeBtn: {
     width: 32,
     height: 32,
@@ -847,7 +847,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeBtnLight: { backgroundColor: '#F1F5F9' },
+  closeBtnLight: { backgroundColor: '#F0EEF8' },
   closeBtnDark: { backgroundColor: '#27272A' },
 
   scrollArea: { flex: 1 },
@@ -855,7 +855,7 @@ const styles = StyleSheet.create({
 
   // Action Banner
   topActionRow: { gap: 10 },
-  headerDescription: { fontSize: 12.5, color: '#64748B', lineHeight: 17 },
+  headerDescription: { fontSize: 13.5, color: '#716B7C', lineHeight: 17 },
   connectMainBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -868,21 +868,19 @@ const styles = StyleSheet.create({
   connectMainBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13.5 },
 
   // Bot Cards List
-  botCardsList: { gap: 14 },
+  botCardsList: { gap: 14 , borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   botCard: {
     padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 12,
-  },
-  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
+    borderRadius: 24,
+    borderWidth: 0,
+    gap: 12, shadowOpacity: 0 },
+  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
   cardDark: { backgroundColor: '#121212', borderColor: '#27272A' },
 
   botCardTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-  },
+    gap: 12, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   avatarWrap: {
     width: 44,
     height: 44,
@@ -906,7 +904,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
   },
-  metaRowLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
+  metaRowLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2' },
   metaRowDark: { backgroundColor: '#1F2430', borderColor: '#27272A' },
   metaLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   metaLabel: { fontSize: 11.5, color: '#64748B', fontWeight: '500' },
@@ -935,8 +933,7 @@ const styles = StyleSheet.create({
   openBotBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-  },
+    gap: 4, borderRadius: 28 , backgroundColor: '#17171C' , minHeight: 44 , shadowOpacity: 0 },
   openBotText: { fontSize: 12, color: '#0284C7', fontWeight: '700' },
 
   // Primary Actions
@@ -951,7 +948,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
   },
-  btnLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
+  btnLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2' },
   btnDark: { backgroundColor: '#1F2430', borderColor: '#27272A' },
   actionBtnPrimaryText: { fontSize: 12, fontWeight: '700' },
 
@@ -970,21 +967,19 @@ const styles = StyleSheet.create({
   // Empty Box
   emptyCard: {
     padding: 30,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     alignItems: 'center',
     gap: 8,
-    marginVertical: 20,
-  },
+    marginVertical: 20, shadowOpacity: 0 },
   emptyTitle: { fontSize: 15, fontWeight: '700' },
-  emptySubtitle: { fontSize: 12, color: '#94A3B8', textAlign: 'center', lineHeight: 17 },
+  emptySubtitle: { fontSize: 13, color: '#716B7C', textAlign: 'center', lineHeight: 17 },
   emptyAddBtn: {
     marginTop: 8,
-    backgroundColor: '#0284C7',
+    backgroundColor: '#17171C',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 10,
-  },
+    borderRadius: 28, minHeight: 44 , shadowOpacity: 0 },
   emptyAddBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 12.5 },
 
   // Modals
@@ -998,25 +993,22 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 440,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 18,
-  },
+    borderRadius: 24,
+    borderWidth: 0,
+    padding: 18, shadowOpacity: 0 },
   sessionsCard: {
     width: '100%',
     maxWidth: 460,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 18,
-  },
+    borderRadius: 24,
+    borderWidth: 0,
+    padding: 18, shadowOpacity: 0 },
   threadCard: {
     width: '100%',
     maxWidth: 480,
     maxHeight: '90%',
-    borderRadius: 18,
-    borderWidth: 1,
-    padding: 16,
-  },
+    borderRadius: 24,
+    borderWidth: 0,
+    padding: 16, shadowOpacity: 0 },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1033,8 +1025,8 @@ const styles = StyleSheet.create({
   },
   inputLight: { backgroundColor: '#FFFFFF', borderColor: '#CBD5E1' },
   inputDark: { backgroundColor: '#1F2430', borderColor: '#334155' },
-  input: { fontSize: 12.5, padding: 0 },
-  inputTextLight: { color: '#0F172A' },
+  input: { fontSize: 12.5, padding: 0 , borderRadius: 22 , borderWidth: 0 , minHeight: 48 },
+  inputTextLight: { color: '#1C1A25' },
   inputTextDark: { color: '#FFFFFF' },
   submitModalBtn: {
     backgroundColor: '#0284C7',
@@ -1127,8 +1119,8 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 2,
   },
   bubbleAssistantLight: {
-    backgroundColor: '#F1F5F9',
-    borderColor: '#E2E8F0',
+    backgroundColor: '#F0EEF8',
+    borderColor: '#E9E6F2',
     borderWidth: 1,
     borderBottomLeftRadius: 2,
   },
@@ -1142,6 +1134,6 @@ const styles = StyleSheet.create({
   textUserMessage: { color: '#FFFFFF' },
   messageTimeText: { fontSize: 9.5, marginTop: 4, alignSelf: 'flex-end' },
   timeUserText: { color: 'rgba(255, 255, 255, 0.7)' },
-  timeAssistantText: { color: '#94A3B8' },
+  timeAssistantText: { color: '#777383' },
   btnDisabled: { opacity: 0.5 },
 });

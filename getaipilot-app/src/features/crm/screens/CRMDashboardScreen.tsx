@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useCallback } from "react";
 import {
+  Dimensions,
   Linking,
   Pressable,
   RefreshControl,
@@ -17,6 +18,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { teamApi } from "../../team/api/team.api";
 import { crmApi } from "../api/crm.api";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const OVERVIEW_CARD_WIDTH = Math.floor((SCREEN_WIDTH - 32 - 10) / 2);
 
 const WEB_APP_URL = "https://getaipilot.in";
 
@@ -45,27 +49,27 @@ const ENTITY_TILES = [
     bg: "#E6F2EC",
     route: "/crm/tasks",
   },
-  {
-    key: "invoices",
-    label: "Invoices",
-    icon: "receipt",
-    color: "#B8863B",
-    bg: "#F5EEDD",
-    route: "/crm/invoices",
-  },
-  {
-    key: "quotations",
-    label: "Quotations",
-    icon: "document-text",
-    color: "#B85C5C",
-    bg: "#F5E8E8",
-    route: "/crm/quotations",
-  },
+  // {
+  //   key: "invoices",
+  //   label: "Invoices",
+  //   icon: "receipt",
+  //   color: "#B8863B",
+  //   bg: "#F5EEDD",
+  //   route: "/crm/invoices",
+  // },
+  // {
+  //   key: "quotations",
+  //   label: "Quotations",
+  //   icon: "document-text",
+  //   color: "#B85C5C",
+  //   bg: "#F5E8E8",
+  //   route: "/crm/quotations",
+  // },
   {
     key: "billing-profiles",
     label: "Client Profiles",
     icon: "card",
-    color: "#CABFAB",
+    color: "#E7DEFA",
     bg: "#F0ECE3",
     route: "/crm/billing-profiles",
   },
@@ -119,11 +123,11 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
     await Promise.all([refetchOrg(), refetchDash(), refetchTeam()]);
   }, [refetchOrg, refetchDash, refetchTeam]);
 
-  const bg = colors.background
-  const card = colors.surface
-  const text = colors.text
-  const sub = colors.text
-  const border = colors.border
+  const bg = colors.background;
+  const card = colors.surface;
+  const text = colors.text;
+  const sub = colors.textMuted || colors.textSecondary || colors.text;
+  const border = colors.border;
 
   const planTier = org?.subscription_tier || "free";
   const isPro = planTier !== "free";
@@ -176,23 +180,7 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
             </Pressable>
             <View style={{ flex: 1 }}>
               <Text style={[s.headerTitle, { color: text }]} numberOfLines={1}>CRM Dashboard</Text>
-              <Text style={[s.headerSub, { color: sub }]} numberOfLines={1}>
-                {org?.name || "Your Organization"}
-              </Text>
             </View>
-          </View>
-          <View
-            style={[
-              s.tierBadge,
-              { backgroundColor: isPro ? colors.products.crm : colors.mutedForeground },
-            ]}
-          >
-            <Ionicons
-              name={isPro ? "star" : "star-outline"}
-              size={12}
-              color="#FFF"
-            />
-            <Text style={s.tierText}>{planTier.toUpperCase()}</Text>
           </View>
         </View>
 
@@ -453,8 +441,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 4,
     width: "100%",
-    maxWidth: 1100,
-    alignSelf: "center",
   },
   header: {
     flexDirection: "row",
@@ -462,7 +448,7 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 14,
   },
-  headerTitle: { fontSize: 24, fontWeight: "800", letterSpacing: -0.5 },
+  headerTitle: { fontSize: 28, fontWeight: '500', letterSpacing: -0.5, lineHeight: 36 },
   headerSub: { fontSize: 13, marginTop: 2 },
   tierBadge: {
     flexDirection: "row",
@@ -473,9 +459,9 @@ const s = StyleSheet.create({
     borderRadius: 20,
   },
   tierText: { color: "#FFF", fontSize: 11, fontWeight: "700" },
-  card: { borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 12 },
-  billingCard: { borderWidth: 1.5 },
-  cardRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  card: { borderRadius: 24, borderWidth: 0, padding: 16, marginBottom: 12 , shadowOpacity: 0 },
+  billingCard: { borderWidth: 0, borderRadius: 24 , shadowOpacity: 0 },
+  cardRow: { flexDirection: "row", alignItems: "center", gap: 12 , borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   iconCircle: {
     width: 44,
     height: 44,
@@ -483,8 +469,8 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  cardTitle: { fontSize: 15, fontWeight: "700" },
-  cardSub: { fontSize: 12, marginTop: 2 },
+  cardTitle: { fontSize: 15, fontWeight: "700" , borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
+  cardSub: { fontSize: 13, marginTop: 2 , borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   statusDot: { width: 8, height: 8, borderRadius: 4 },
   planMetrics: { flexDirection: "row", marginTop: 16, marginBottom: 12 },
   planMetric: { flex: 1, alignItems: "center" },
@@ -503,11 +489,10 @@ const s = StyleSheet.create({
   statsRow: { flexDirection: "row", gap: 12, marginBottom: 4 },
   statCard: {
     flex: 1,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     padding: 14,
-    minHeight: 110,
-  },
+    minHeight: 110, shadowOpacity: 0 },
   statHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -535,7 +520,7 @@ const s = StyleSheet.create({
   viewFeatureText: { fontSize: 12, fontWeight: "600" },
   lockedText: { fontSize: 11, marginTop: 6, fontWeight: "500" },
   sectionHeader: { marginTop: 8, marginBottom: 10 },
-  sectionTitle: { fontSize: 17, fontWeight: "700", letterSpacing: -0.2 },
+  sectionTitle: { fontSize: 18, fontWeight: '500', letterSpacing: -0.2 , lineHeight: 24 },
   overviewGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -543,30 +528,27 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   overviewCard: {
-    width: "47%",
-    borderRadius: 14,
-    borderWidth: 1,
+    width: OVERVIEW_CARD_WIDTH,
+    borderRadius: 24,
+    borderWidth: 0,
     padding: 14,
     alignItems: "flex-start",
-    gap: 4,
-  },
+    gap: 4, shadowOpacity: 0 },
   overviewValue: { fontSize: 24, fontWeight: "800", letterSpacing: -0.5 },
   overviewLabel: { fontSize: 12 },
-  tilesGrid: { gap: 8 },
+  tilesGrid: { gap: 8 , borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   tile: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 14,
-  },
+    borderRadius: 24,
+    borderWidth: 0,
+    padding: 14, shadowOpacity: 0 },
   tileIcon: {
     width: 40,
     height: 40,
-    borderRadius: 10,
+    borderRadius: 24,
     alignItems: "center",
-    justifyContent: "center",
-  },
-  tileLabel: { flex: 1, fontSize: 15, fontWeight: "600" },
+    justifyContent: "center", borderWidth: 0 , shadowOpacity: 0 },
+  tileLabel: { flex: 1, fontSize: 15, fontWeight: "600" , borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
 });

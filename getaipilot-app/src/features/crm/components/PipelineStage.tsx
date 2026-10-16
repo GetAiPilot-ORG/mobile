@@ -45,7 +45,7 @@ export const PipelineStage: React.FC<PipelineStageProps> = ({
         <View
           style={[
             styles.countBadge,
-            { backgroundColor: isSelected ? accentColor : isDark ? '#2C2C2E' : '#E5E7EB' },
+            { backgroundColor: isSelected ? accentColor : isDark ? '#3A3549' : '#E9E6F2' },
           ]}
         >
           <Text

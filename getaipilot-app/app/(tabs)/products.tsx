@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { ScrollView, RefreshControl, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme, getColors } from '@/theme';
 import { AppScreen } from '../../src/components/AppScreen';
@@ -41,11 +41,43 @@ export default function ProductsScreen() {
     setIsRefreshing(false);
   };
 
+  const products = [
+    {
+      key: 'whatsapp', name: 'WhatsApp Hub', category: 'Messaging automation',
+      description: 'Broadcasts, customer triggers, and Meta Cloud API workflows.',
+      logoImage: require('../../assets/images/products/whatsapp.png'),
+      themeColor: colors.products.whatsapp, isEnabled: hasWhatsApp, route: '/products/whatsapp',
+    },
+    {
+      key: 'telegram', name: 'Telegram', category: 'Channel automation',
+      description: 'Forward messages, apply filters, and manage channel workflows.',
+      logoImage: require('../../assets/images/products/telegram.png'),
+      themeColor: colors.products.telegram, isEnabled: hasTelegram, route: '/products/telegram',
+    },
+    {
+      key: 'voice_ai', name: 'Voice AI', category: 'AI calling',
+      description: 'Run conversational calls for leads, support, and bookings.',
+      logoImage: require('../../assets/images/products/voice.png'),
+      themeColor: colors.products.voice, isEnabled: hasVoice, route: '/products/voice',
+    },
+    {
+      key: 'social', name: 'Social Pilot', category: 'Social publishing',
+      description: 'Schedule and publish content across your connected channels.',
+      logoImage: require('../../assets/images/products/social.png'),
+      themeColor: colors.products.social, isEnabled: hasSocial, route: '/products/social',
+    },
+    {
+      key: 'crm', name: 'Smart CRM', category: 'Sales workspace',
+      description: 'Track leads, deals, pipeline stages, and client follow-ups.',
+      logoImage: require('../../assets/images/products/crm.png'),
+      themeColor: colors.products.crm, isEnabled: hasCRM, route: '/products/crm',
+    },
+  ];
+
   return (
     <AppScreen safeArea={false}>
       <AppTopBar
         title="Product Suite"
-        subtitle="Connected AI Automation Engines"
         showPlanBadge={true}
       />
 
@@ -53,8 +85,9 @@ export default function ProductsScreen() {
         <ProductsSkeleton />
       ) : (
         <ScrollView
-          style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}
-          contentContainerStyle={styles.scrollContent}
+          className="flex-1"
+          style={{ backgroundColor: colors.background }}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 140 }}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
@@ -64,73 +97,30 @@ export default function ProductsScreen() {
           }
           showsVerticalScrollIndicator={false}
         >
-        <ProductCard
-          name="GAP WhatsApp Hub"
-          category="Messaging Automation"
-          description="Send broadcasts, automate customer triggers, and manage campaign webhooks with Meta Cloud API."
-          logoImage={require('../../assets/images/products/whatsapp.png')}
-          themeColor={colors.products.whatsapp}
-          status={getStatus('whatsapp')}
-          onPress={() => router.push('/products/whatsapp' as any)}
-        />
+          <View style={{ marginBottom: 24 }}>
+            <Text style={{ fontSize: 30, lineHeight: 36, fontWeight: '600', letterSpacing: -0.75, color: colors.text }}>
+              Your products
+            </Text>
+            <Text style={{ marginTop: 7, fontSize: 14, lineHeight: 21, color: colors.textSecondary }}>
+              Open a workspace or explore another product.
+            </Text>
+          </View>
 
-        <ProductCard
-          name="GAP Telegram Auto-Forwarder"
-          category="Channel Routing"
-          description="Auto-forward messages across channels with real-time word filters, text replacements, and join bot."
-          logoImage={require('../../assets/images/products/telegram.png')}
-          themeColor={colors.products.telegram}
-          status={getStatus('telegram')}
-          onPress={() => router.push('/products/telegram' as any)}
-        />
-
-        <ProductCard
-          name="GAP AI Voice Pilot"
-          category="Telecalling Automation"
-          description="Ultra-low latency conversational AI telecallers for lead qualification, inbound support, and bookings."
-          logoImage={require('../../assets/images/products/voice.png')}
-          themeColor={colors.products.voice}
-          status={getStatus('voice_ai')}
-          onPress={() => router.push('/products/voice' as any)}
-        />
-
-        <ProductCard
-          name="GAP Social Pilot"
-          category="Multi-Channel Sync"
-          description="Schedule and cross-publish content across Instagram, YouTube, X, LinkedIn, Facebook, and Bluesky."
-          logoImage={require('../../assets/images/products/social.png')}
-          themeColor={colors.products.social}
-          status={getStatus('social')}
-          onPress={() => router.push('/products/social' as any)}
-        />
-
-        <ProductCard
-          name="GAP Smart CRM"
-          category="Pipeline & Leads"
-          description="Track prospects, deal values, conversion stages, and automated client follow-ups across channels."
-          logoImage={require('../../assets/images/products/crm.png')}
-          themeColor={colors.products.crm}
-          status={getStatus('crm')}
-          onPress={() => router.push('/products/crm' as any)}
-        />
+          {products.map((product) => (
+            <ProductCard
+              key={product.key}
+              name={product.name}
+              category={product.category}
+              description={product.description}
+              logoImage={product.logoImage}
+              themeColor={product.themeColor}
+              status={getStatus(product.key)}
+              isEnabled={product.isEnabled}
+              onPress={() => router.push(product.route as any)}
+            />
+          ))}
         </ScrollView>
       )}
     </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewLight: {
-    backgroundColor: '#F2F2F7',
-  },
-  scrollViewDark: {
-    backgroundColor: '#000000',
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 140,
-  },
-});

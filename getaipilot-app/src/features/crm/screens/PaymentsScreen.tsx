@@ -1,9 +1,13 @@
 import { getColors, useTheme } from '../../../theme';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
-import { ActivityIndicator, FlatList, Linking, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Linking, Platform, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { crmApi } from '../api/crm.api';
+import { RecordPaymentModal } from '../components/RecordPaymentModal';
+import { useCreatePayment } from '../hooks/usePayments';
 import { CRMPayment } from '../types';
 
 const WEB_APP_URL = 'https://getaipilot.in';
@@ -26,6 +30,9 @@ export function PaymentsScreen({ onBack }: PaymentsScreenProps = {}) {
   const router = useRouter();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+
+  const [showRecordModal, setShowRecordModal] = useState(false);
+  const createPayment = useCreatePayment();
 
   const handleBack = () => {
     if (onBack) {
@@ -82,7 +89,15 @@ export function PaymentsScreen({ onBack }: PaymentsScreenProps = {}) {
             <Text style={[s.subtitle, { color: sub }]}>₹{totalCollected.toLocaleString('en-IN')} collected</Text>
           </View>
         </View>
-        <Pressable style={s.createBtn} onPress={() => Linking.openURL(`${WEB_APP_URL}/dashboard/crm/payments/record`).catch(() => { })}>
+        <Pressable
+          style={s.createBtn}
+          onPress={() => {
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+            }
+            setShowRecordModal(true);
+          }}
+        >
           <Ionicons name="add" size={18} color="#FFF" />
           <Text style={s.createBtnText}>Record</Text>
         </Pressable>
@@ -128,17 +143,36 @@ export function PaymentsScreen({ onBack }: PaymentsScreenProps = {}) {
           }}
         />
       )}
+
+      {/* Record Payment Modal */}
+      <RecordPaymentModal
+        visible={showRecordModal}
+        onClose={() => setShowRecordModal(false)}
+        onSubmit={async (payment) => {
+          try {
+            await createPayment.mutateAsync(payment);
+            if (Platform.OS !== 'web') {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+            }
+            Alert.alert('Payment Recorded 🎉', `₹${payment.amount} payment was logged successfully.`);
+          } catch (err: any) {
+            Alert.alert('Error', err?.message || 'Failed to record payment');
+            throw err;
+          }
+        }}
+        isLoading={createPayment.isPending}
+      />
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  title: { fontSize: 22, fontWeight: '800', letterSpacing: -0.4 },
-  subtitle: { fontSize: 12, marginTop: 2 },
-  createBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#EC4899', paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12 },
+  title: { fontSize: 28, fontWeight: '500', letterSpacing: -0.5, lineHeight: 36 },
+  subtitle: { fontSize: 13, marginTop: 2 },
+  createBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#17171C', paddingHorizontal: 14, paddingVertical: 9, borderRadius: 28, minHeight: 44 , shadowOpacity: 0 },
   createBtnText: { color: '#FFF', fontWeight: '700', fontSize: 13 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 14, borderWidth: 1, padding: 14 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 24, borderWidth: 0, padding: 18 },
   methodIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   paymentMethod: { fontSize: 14, fontWeight: '700' },
   invRef: { fontSize: 12, marginTop: 2 },

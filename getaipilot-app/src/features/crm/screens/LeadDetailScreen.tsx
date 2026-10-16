@@ -734,12 +734,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: 28,
+    fontWeight: '500',
     flex: 1,
     marginHorizontal: 12,
-    textAlign: 'center',
-  },
+    textAlign: 'center', lineHeight: 36 , letterSpacing: -0.5 },
   scroll: {
     flex: 1,
   },
@@ -754,7 +753,7 @@ const styles = StyleSheet.create({
   },
   cardLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    borderColor: '#E9E6F2',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -764,10 +763,9 @@ const styles = StyleSheet.create({
   profileCard: {
     marginHorizontal: 16,
     marginTop: 14,
-    borderRadius: 18,
+    borderRadius: 24,
     padding: 16,
-    borderWidth: 1,
-  },
+    borderWidth: 0, shadowOpacity: 0 },
   profileRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -860,16 +858,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   touchpointSub: {
-    fontSize: 10,
+    fontSize: 13,
     marginTop: 2,
   },
   stepperCard: {
     marginHorizontal: 16,
     marginTop: 14,
-    borderRadius: 18,
+    borderRadius: 24,
     padding: 16,
-    borderWidth: 1,
-  },
+    borderWidth: 0, shadowOpacity: 0 },
   stepperHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -918,7 +915,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#262A34',
   },
   stepCircleFutureLight: {
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#E9E6F2',
   },
   stepNumber: {
     fontSize: 11,
@@ -941,15 +938,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#262A34',
   },
   stepLineFutureLight: {
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#E9E6F2',
   },
   scoreCard: {
     marginHorizontal: 16,
     marginTop: 14,
-    borderRadius: 18,
+    borderRadius: 24,
     padding: 16,
-    borderWidth: 1,
-  },
+    borderWidth: 0, shadowOpacity: 0 },
   scoreTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -961,7 +957,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   scoreSubtitle: {
-    fontSize: 11,
+    fontSize: 13,
     marginTop: 2,
   },
   scoreBadge: {
@@ -1035,7 +1031,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   navTabTextSelectedLight: {
-    color: '#0F172A',
+    color: '#1C1A25',
     fontWeight: '700',
   },
   tabContent: {
@@ -1046,15 +1042,13 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   infoCard: {
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
-    borderWidth: 1,
-  },
+    borderWidth: 0, shadowOpacity: 0 },
   infoCardTitle: {
     fontSize: 15,
     fontWeight: '700',
-    marginBottom: 14,
-  },
+    marginBottom: 14, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -1093,17 +1087,16 @@ const styles = StyleSheet.create({
   },
   subHeaderBtnText: {
     color: '#3B82F6',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   emptyTabCard: {
-    borderRadius: 14,
+    borderRadius: 24,
     padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderStyle: 'dashed',
-  },
+    borderWidth: 0,
+    borderStyle: 'dashed', shadowOpacity: 0 },
   emptyTabText: {
     fontSize: 13,
     marginTop: 8,

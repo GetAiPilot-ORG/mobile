@@ -91,3 +91,20 @@ export interface QrStatusResponse {
   amount?: number;
   status?: string;
 }
+
+export interface RazorpayPaymentLink {
+  paymentLinkId: string;
+  shortUrl: string;
+  amount: number;
+  currency: string;
+}
+
+export interface CreatePaymentLinkParams {
+  amount: number;
+  currency?: string;
+  product?: string;
+  planId: string;
+  planName: string;
+  billingInterval: PaymentInterval;
+  notes?: Record<string, string>;
+}

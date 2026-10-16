@@ -25,9 +25,12 @@ import { DeviceSessionsSkeleton } from '../../src/components/skeletonScreen';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { apiClient } from '../../src/core/api/client';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
+import { useNotifications } from '../../src/hooks/useNotifications';
 import { BiometricService, BiometricSettings } from '../../src/lib/biometrics';
 import { supabase } from '../../src/lib/supabase';
 import { Profile } from '../../src/types/database';
+import { TestNotificationButton } from '@/components/TestNotification';
+import { useThemedDialog } from '@/components';
 
 type AccountTab = 'overview' | 'edit' | 'security' | 'billing' | 'preferences';
 
@@ -95,8 +98,8 @@ const getDeviceRegistrationPayload = async () => {
 };
 
 const TABS: { id: AccountTab; label: string }[] = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'edit', label: 'Edit Profile' },
+  { id: 'overview', label: 'Profile' },
+  { id: 'edit', label: 'Edit' },
   { id: 'security', label: 'Security' },
   { id: 'billing', label: 'Billing' },
   { id: 'preferences', label: 'Settings' },
@@ -109,7 +112,16 @@ export default function AccountScreen() {
   const colors = getColors(isDark);
   const { user, signOut } = useAuth();
   const { isAdmin, planLabel, isActive, plan } = usePlatformSubscription();
+  const {
+    expoPushToken,
+    permissionGranted,
+    requestPermissions,
+    sendTestNotification,
+    isDevice,
+  } = useNotifications();
+  const [isSendingTestPush, setIsSendingTestPush] = useState(false);
   const queryClient = useQueryClient();
+  const { confirmLogout, confirm: confirmDialog, showAlert } = useThemedDialog();
 
   const [activeTab, setActiveTab] = useState<AccountTab>('overview');
 
@@ -451,6 +463,45 @@ export default function AccountScreen() {
     }
   };
 
+  const handleTogglePush = async (val: boolean) => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (val) {
+      const token = await requestPermissions();
+      if (token || permissionGranted || !isDevice) {
+        setPushEnabled(true);
+        await AsyncStorage.setItem('@pref_push', 'true');
+        if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        Alert.alert(
+          'Notifications Required',
+          'Please enable notifications for GetAiPilot in your device settings to receive instant alerts.'
+        );
+        setPushEnabled(false);
+        await AsyncStorage.setItem('@pref_push', 'false');
+      }
+    } else {
+      setPushEnabled(false);
+      await AsyncStorage.setItem('@pref_push', 'false');
+    }
+  };
+
+  const handleSendTestPush = async () => {
+    if (isSendingTestPush) return;
+    setIsSendingTestPush(true);
+    try {
+      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await sendTestNotification(
+        'GetAiPilot Alert 🚀',
+        'Push notifications are configured and active in your ecosystem.'
+      );
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (err: any) {
+      Alert.alert('Notice', err?.message || 'Could not trigger test notification.');
+    } finally {
+      setIsSendingTestPush(false);
+    }
+  };
+
   // Save Profile Handler
   const handleSaveProfile = async () => {
     if (!user?.id) return;
@@ -609,65 +660,55 @@ export default function AccountScreen() {
     return `Signed in ${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
   };
 
+  const displayName =
+    fullName || profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+
   const handleSignOutOtherDevice = (device: DeviceSession) => {
-    Alert.alert(
-      'Sign Out Device',
-      `Sign out ${device.deviceName}? It will need to sign in again to use GetAiPilot.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            setSigningOutDeviceId(device.sessionId);
-            try {
-              await apiClient.delete(`/mobile/v1/auth/device-sessions/${encodeURIComponent(device.sessionId)}`);
-              await refetchDeviceSessions();
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            } catch (error: any) {
-              Alert.alert('Could Not Sign Out Device', error.message || 'Please try again.');
-            } finally {
-              setSigningOutDeviceId(null);
-            }
-          },
-        },
-      ]
-    );
+    confirmDialog({
+      title: 'Sign Out Device',
+      message: `Sign out ${device.deviceName}? It will need to sign in again to use GetAiPilot.`,
+      confirmText: 'Sign Out',
+      destructive: true,
+      onConfirm: async () => {
+        setSigningOutDeviceId(device.sessionId);
+        try {
+          await apiClient.delete(`/mobile/v1/auth/device-sessions/${encodeURIComponent(device.sessionId)}`);
+          await refetchDeviceSessions();
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch (error: any) {
+          showAlert({
+            title: 'Could Not Sign Out Device',
+            message: error.message || 'Please try again.',
+            type: 'destructive',
+          });
+        } finally {
+          setSigningOutDeviceId(null);
+        }
+      },
+    });
   };
 
   // Sign Out Handler
   const handleSignOut = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out from GetAiPilot?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              await signOut();
-            } catch (err: any) {
-              console.error('Sign out error:', err);
-            }
-          },
-        },
-      ]
-    );
+    confirmLogout({
+      accountEmail: user?.email,
+      accountName: displayName,
+      onConfirm: async () => {
+        try {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          await signOut();
+        } catch (err: any) {
+          console.error('Sign out error:', err);
+        }
+      },
+      confirmBgColor: 'rgba(239, 68, 68, 0.16)',
+      confirmTextColor: '#EF4444',
+      cancelBgColor: 'rgba(255, 255, 255, 0.08)',
+      buttonAlign: 'right'
+    });
   };
 
-  const displayName =
-    fullName || profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const initials = displayName.charAt(0).toUpperCase();
-  const joinDate = (profile?.created_at || user?.created_at)
-    ? new Date(profile?.created_at || user?.created_at!).toLocaleDateString('en-US', {
-      month: 'short',
-      year: 'numeric',
-    })
-    : 'Jan 2026';
-
   // Calculate Subscription Days Left
   const getDaysLeft = () => {
     if (!subData?.expires_at) return 30;
@@ -678,16 +719,17 @@ export default function AccountScreen() {
 
   return (
     <AppScreen safeArea="top">
+      <TestNotificationButton />
       <ScrollView
         style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Apple ID / iCloud Profile Hero Card */}
+        {/* Minimal profile summary */}
         <View style={[styles.heroCard, isDark ? styles.heroCardDark : styles.heroCardLight]}>
           <View style={styles.heroTop}>
             <View style={[styles.avatar, isDark ? styles.avatarDark : styles.avatarLight]}>
-              <Text style={styles.avatarText}>{initials}</Text>
+              <Text style={[styles.avatarText, isDark && styles.avatarTextDark]}>{initials}</Text>
             </View>
             <View style={styles.heroInfo}>
               <Text style={[styles.heroName, isDark && styles.heroNameDark]} numberOfLines={1}>
@@ -698,8 +740,8 @@ export default function AccountScreen() {
               </Text>
               <View style={styles.badgeRow}>
                 <View style={[styles.badge, isDark ? styles.badgeDark : styles.badgeLight]}>
-                  <Ionicons name="checkmark-circle" size={13} color="#0A84FF" style={{ marginRight: 4 }} />
-                  <Text style={[styles.badgeText, { color: '#0A84FF' }]}>Verified Account</Text>
+                  <Ionicons name="checkmark-circle" size={13} color={colors.accent} style={{ marginRight: 4 }} />
+                  <Text style={[styles.badgeText, { color: colors.accent }]}>Verified</Text>
                 </View>
                 {profile?.is_admin && (
                   <View style={[styles.badge, isDark ? styles.adminBadgeDark : styles.adminBadgeLight]}>
@@ -711,23 +753,19 @@ export default function AccountScreen() {
             </View>
           </View>
 
-          <View style={[styles.statsRow, isDark ? styles.statsRowDark : styles.statsRowLight]}>
+          <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>Status</Text>
-              <Text style={[styles.statValue, { color: '#10B981' }]}>{isActive ? '● Active' : 'Free Trial'}</Text>
-            </View>
-            <View style={[styles.statItem, styles.statDivider, isDark ? styles.statDividerDark : styles.statDividerLight]}>
-              <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>Member Since</Text>
-              <Text style={[styles.statValue, isDark && styles.statValueDark]}>{joinDate}</Text>
+              <Text style={[styles.statValue, { color: colors.success }]}>{isActive ? 'Active' : 'Free'}</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>Plan</Text>
-              <Text style={[styles.statValue, { color: '#0A84FF', fontWeight: '800' }]}>{planLabel || 'Free'}</Text>
+              <Text style={[styles.statValue, { color: colors.accent }]}>{planLabel || 'Free'}</Text>
             </View>
           </View>
         </View>
 
-        {/* Apple iOS 18 Segmented Control with Animated Sliding Pill */}
+        {/* Account sections */}
         <View
           onLayout={(e: LayoutChangeEvent) => setTabsTrackWidth(e.nativeEvent.layout.width)}
           style={[styles.tabsTrack, isDark ? styles.tabsTrackDark : styles.tabsTrackLight]}
@@ -753,6 +791,9 @@ export default function AccountScreen() {
                 key={tab.id}
                 style={styles.tabButton}
                 onPress={() => handleTabChange(tab.id)}
+                accessibilityRole="tab"
+                accessibilityLabel={tab.label}
+                accessibilityState={{ selected: isTabActive }}
               >
                 <Text
                   style={[
@@ -772,75 +813,35 @@ export default function AccountScreen() {
         {/* TAB 1: OVERVIEW */}
         {activeTab === 'overview' && (
           <View style={styles.tabContent}>
-            {/* Account Information Card */}
+            {/* Essential account information */}
             <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
-              ACCOUNT INFORMATION
+              Account
             </Text>
             <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
               <View style={[styles.infoRow, isDark ? styles.infoRowDark : styles.infoRowLight]}>
                 <Text style={[styles.infoLabel, isDark && styles.infoLabelDark]}>Email</Text>
                 <Text style={[styles.infoValue, isDark && styles.infoValueDark]}>{user?.email || '-'}</Text>
               </View>
-              <View style={[styles.infoRow, isDark ? styles.infoRowDark : styles.infoRowLight]}>
+              <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
                 <Text style={[styles.infoLabel, isDark && styles.infoLabelDark]}>Phone</Text>
                 <Text style={[styles.infoValue, isDark && styles.infoValueDark]}>{phone || 'Not provided'}</Text>
-              </View>
-              <View style={[styles.infoRow, isDark ? styles.infoRowDark : styles.infoRowLight]}>
-                <Text style={[styles.infoLabel, isDark && styles.infoLabelDark]}>Business Name</Text>
-                <Text style={[styles.infoValue, isDark && styles.infoValueDark]}>{profile?.business_name || 'Individual'}</Text>
-              </View>
-              <View style={[styles.infoRow, isDark ? styles.infoRowDark : styles.infoRowLight]}>
-                <Text style={[styles.infoLabel, isDark && styles.infoLabelDark]}>Website</Text>
-                <Text style={[styles.infoValue, isDark && styles.infoValueDark]}>{profile?.website || 'Not provided'}</Text>
-              </View>
-              <View style={[styles.infoRow, isDark ? styles.infoRowDark : styles.infoRowLight]}>
-                <Text style={[styles.infoLabel, isDark && styles.infoLabelDark]}>Location</Text>
-                <Text style={[styles.infoValue, isDark && styles.infoValueDark]}>
-                  {profile?.city ? `${profile.city}, ${profile.country || ''}` : profile?.country || 'Not set'}
-                </Text>
-              </View>
-              <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
-                <Text style={[styles.infoLabel, isDark && styles.infoLabelDark]}>Account ID</Text>
-                <Text style={[styles.infoValue, isDark && styles.infoValueDark, { fontSize: 12.5 }]}>
-                  {user?.id ? `${user.id.slice(0, 10)}...` : '-'}
-                </Text>
-              </View>
-            </View>
-
-            {/* Connected Platform Card */}
-            <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
-              CONNECTED PLATFORMS
-            </Text>
-            <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
-              <View style={[styles.infoRow, isDark ? styles.infoRowDark : styles.infoRowLight]}>
-                <Text style={[styles.infoLabel, isDark && styles.infoLabelDark]}>Telegram ID</Text>
-                <Text style={[styles.infoValue, isDark && styles.infoValueDark]}>
-                  {profile?.telegram_user_id ? String(profile.telegram_user_id) : 'Not linked'}
-                </Text>
-              </View>
-              <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
-                <Text style={[styles.infoLabel, isDark && styles.infoLabelDark]}>Account Type</Text>
-                <Text style={[styles.infoValue, isDark && styles.infoValueDark]}>{profile?.account_type || 'Personal'}</Text>
               </View>
             </View>
 
             {/* Resources & Quick Actions Card */}
             <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
-              RESOURCES & SETTINGS
+              Manage
             </Text>
             <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
               <Pressable
                 style={[styles.navRow, isDark ? styles.navRowDark : styles.navRowLight]}
                 onPress={() => router.push('/account/help' as any)}
               >
-                <View style={[styles.navIconBox, { backgroundColor: '#0A84FF' }]}>
-                  <Ionicons name="book" size={16} color="#FFFFFF" />
+                <View style={[styles.navIconBox, { backgroundColor: isDark ? '#39304A' : '#E7DEFA' }]}>
+                  <Ionicons name="book-outline" size={18} color={colors.accent} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.navRowTitle, isDark && styles.navRowTitleDark]}>Help Center & Docs</Text>
-                  <Text style={[styles.navRowSubtitle, isDark && styles.navRowSubtitleDark]}>
-                    Tutorials, FAQs, and ticket submission
-                  </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
               </Pressable>
@@ -849,30 +850,11 @@ export default function AccountScreen() {
                 style={[styles.navRow, isDark ? styles.navRowDark : styles.navRowLight]}
                 onPress={() => router.push('/account/plans' as any)}
               >
-                <View style={[styles.navIconBox, { backgroundColor: '#8B5CF6' }]}>
-                  <Ionicons name="diamond" size={16} color="#FFFFFF" />
+                <View style={[styles.navIconBox, { backgroundColor: isDark ? '#49372D' : '#F9E5D4' }]}>
+                  <Ionicons name="diamond-outline" size={18} color={colors.text} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.navRowTitle, isDark && styles.navRowTitleDark]}>Plans & Subscriptions</Text>
-                  <Text style={[styles.navRowSubtitle, isDark && styles.navRowSubtitleDark]}>
-                    Upgrade quota, view GAP Max features
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
-              </Pressable>
-
-              <Pressable
-                style={[styles.navRow, isDark ? styles.navRowDark : styles.navRowLight]}
-                onPress={() => router.push('/Referral' as any)}
-              >
-                <View style={[styles.navIconBox, { backgroundColor: '#10B981' }]}>
-                  <Ionicons name="gift" size={16} color="#FFFFFF" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.navRowTitle, isDark && styles.navRowTitleDark]}>Refer & Earn</Text>
-                  <Text style={[styles.navRowSubtitle, isDark && styles.navRowSubtitleDark]}>
-                    Invite friends, unlock rewards & plan discounts
-                  </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
               </Pressable>
@@ -881,82 +863,16 @@ export default function AccountScreen() {
                 style={[styles.navRow, { borderBottomWidth: 0 }]}
                 onPress={() => router.push('/account/customize' as any)}
               >
-                <View style={[styles.navIconBox, { backgroundColor: '#64748B' }]}>
-                  <Ionicons name="options" size={16} color="#FFFFFF" />
+                <View style={[styles.navIconBox, { backgroundColor: isDark ? '#263D3D' : '#D8F0F0' }]}>
+                  <Ionicons name="options-outline" size={18} color={colors.text} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.navRowTitle, isDark && styles.navRowTitleDark]}>Customize App</Text>
-                  <Text style={[styles.navRowSubtitle, isDark && styles.navRowSubtitleDark]}>
-                    Toggle shortcuts, tool visibility & density
-                  </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
               </Pressable>
             </View>
 
-            {/* Admin Center (Protected) */}
-            {(profile?.is_admin || isAdmin) && (
-              <>
-                <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
-                  ADMINISTRATION
-                </Text>
-                <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight, { borderColor: '#10B981' }]}>
-                  <View style={styles.adminTitleRow}>
-                    <Text style={[styles.cardTitle, { color: '#10B981', marginBottom: 0 }]}>
-                      🛡️ Admin Console
-                    </Text>
-                    <View style={styles.adminTag}>
-                      <Text style={styles.adminTagText}>STAFF ONLY</Text>
-                    </View>
-                  </View>
-                  <Text style={[styles.adminSubtitle, isDark && styles.adminSubtitleDark]}>
-                    Authorized access to platform management, outreach, and store revenue.
-                  </Text>
-
-                  <Pressable
-                    style={[styles.navRow, isDark ? styles.navRowDark : styles.navRowLight]}
-                    onPress={() => router.push('/(tabs)/admin' as any)}
-                  >
-                    <View style={[styles.navIconBox, { backgroundColor: '#EF4444' }]}>
-                      <Ionicons name="pulse" size={16} color="#FFFFFF" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.navRowTitle, isDark && styles.navRowTitleDark]}>System Maintenance Hub</Text>
-                      <Text style={[styles.navRowSubtitle, isDark && styles.navRowSubtitleDark]}>Platform kill-switch & product health</Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
-                  </Pressable>
-
-                  <Pressable
-                    style={[styles.navRow, isDark ? styles.navRowDark : styles.navRowLight]}
-                    onPress={() => router.push('/admin/sales-leads' as any)}
-                  >
-                    <View style={[styles.navIconBox, { backgroundColor: '#10B981' }]}>
-                      <Ionicons name="people" size={16} color="#FFFFFF" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.navRowTitle, isDark && styles.navRowTitleDark]}>Sales Leads & Outreach</Text>
-                      <Text style={[styles.navRowSubtitle, isDark && styles.navRowSubtitleDark]}>Prospects, follow-ups & pipeline</Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
-                  </Pressable>
-
-                  <Pressable
-                    style={[styles.navRow, { borderBottomWidth: 0 }]}
-                    onPress={() => router.push('/admin/monetize' as any)}
-                  >
-                    <View style={[styles.navIconBox, { backgroundColor: '#F59E0B' }]}>
-                      <Ionicons name="cash" size={16} color="#FFFFFF" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.navRowTitle, isDark && styles.navRowTitleDark]}>Monetize & Revenue Engine</Text>
-                      <Text style={[styles.navRowSubtitle, isDark && styles.navRowSubtitleDark]}>Store catalog, payout stats & revenue</Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
-                  </Pressable>
-                </View>
-              </>
-            )}
           </View>
         )}
 
@@ -1102,7 +1018,7 @@ export default function AccountScreen() {
                   value={biometricSettings.enabled}
                   onValueChange={handleToggleBiometric}
                   disabled={isUpdatingBiometrics}
-                  trackColor={{ false: isDark ? '#3A3A3C' : '#E5E7EB', true: '#10B981' }}
+                  trackColor={{ false: isDark ? '#3A3A3C' : '#E9E6F2', true: '#10B981' }}
                   thumbColor="#FFFFFF"
                 />
               </View>
@@ -1168,17 +1084,17 @@ export default function AccountScreen() {
                 style={styles.deviceRefreshButton}
               >
                 {isRefreshingDeviceSessions ? (
-                  <ActivityIndicator size="small" color="#0A84FF" />
+                  <ActivityIndicator size="small" color="#6C55C5" />
                 ) : (
-                  <Ionicons name="refresh" size={15} color="#0A84FF" />
+                  <Ionicons name="refresh" size={15} color="#6C55C5" />
                 )}
                 <Text style={styles.deviceRefreshText}>Refresh</Text>
               </Pressable>
             </View>
             <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
               <View style={[styles.deviceSummaryRow, isDark ? styles.actionRowDark : styles.actionRowLight]}>
-                <View style={[styles.rowIconCircle, { backgroundColor: 'rgba(10, 132, 255, 0.15)' }]}>
-                  <Ionicons name="phone-portrait-outline" size={18} color="#0A84FF" />
+                <View style={[styles.rowIconCircle, { backgroundColor: 'rgba(108, 85, 197, 0.15)' }]}>
+                  <Ionicons name="phone-portrait-outline" size={18} color="#6C55C5" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.actionTitle, isDark && styles.actionTitleDark]}>
@@ -1301,7 +1217,7 @@ export default function AccountScreen() {
             <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
               ACTIVE SUBSCRIPTION
             </Text>
-            <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight, { borderColor: '#0A84FF', borderWidth: 1.5 }]}>
+            <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight, { borderColor: '#6C55C5', borderWidth: 1.5 }]}>
               <View style={styles.planCardHeader}>
                 <View>
                   <Text style={[styles.planCardTitle, isDark && styles.planCardTitleDark]}>
@@ -1312,7 +1228,7 @@ export default function AccountScreen() {
                   </Text>
                 </View>
                 <View style={[styles.badge, isDark ? styles.badgeDark : styles.badgeLight]}>
-                  <Text style={[styles.badgeText, { color: '#0A84FF', fontWeight: '800' }]}>
+                  <Text style={[styles.badgeText, { color: '#6C55C5', fontWeight: '800' }]}>
                     {isActive || subData?.subscription_status === 'active' || profile?.subscription ? 'Active' : 'Trial'}
                   </Text>
                 </View>
@@ -1528,7 +1444,7 @@ export default function AccountScreen() {
                     <Text style={[styles.invoiceModalLabel, { fontSize: 16, fontWeight: 'bold' }, isDark && styles.invoiceModalLabelDark]}>
                       Total Paid:
                     </Text>
-                    <Text style={[styles.invoiceModalVal, { fontSize: 18, fontWeight: '800', color: '#0A84FF' }]}>
+                    <Text style={[styles.invoiceModalVal, { fontSize: 18, fontWeight: '800', color: '#6C55C5' }]}>
                       ₹{((selectedInvoice.amount_paise || 0) / 100).toFixed(2)}
                     </Text>
                   </View>
@@ -1584,8 +1500,8 @@ export default function AccountScreen() {
                           isSelected
                             ? colors.primaryForeground
                             : isDark
-                            ? '#8E8E93'
-                            : '#64748B'
+                              ? '#8E8E93'
+                              : '#64748B'
                         }
                       />
                       <Text
@@ -1609,18 +1525,73 @@ export default function AccountScreen() {
             <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
               <View style={[styles.switchRow, isDark ? styles.switchRowDark : styles.switchRowLight]}>
                 <View style={{ flex: 1, paddingRight: 10 }}>
-                  <Text style={[styles.switchTitle, isDark && styles.switchTitleDark]}>Push Notifications</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={[styles.switchTitle, isDark && styles.switchTitleDark]}>Push Notifications</Text>
+                    {pushEnabled && (
+                      <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#10B981' }} />
+                    )}
+                  </View>
                   <Text style={[styles.switchSubtitle, isDark && styles.switchSubtitleDark]}>
-                    Receive instant alerts on bot and campaign events
+                    Receive instant alerts on bot, quota, and campaign events
                   </Text>
                 </View>
                 <Switch
                   value={pushEnabled}
                   onValueChange={(val) => handleTogglePref('@pref_push', val, setPushEnabled)}
-                  trackColor={{ false: isDark ? '#3A3A3C' : '#E5E7EB', true: '#0A84FF' }}
+                  trackColor={{ false: isDark ? '#3A3A3C' : '#E9E6F2', true: '#6C55C5' }}
                   thumbColor="#FFFFFF"
                 />
               </View>
+
+              {pushEnabled && (
+                <View
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 10,
+                    borderBottomWidth: StyleSheet.hairlineWidth,
+                    borderBottomColor: isDark ? '#2C2C2E' : '#E5E7EB',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <View style={{ flex: 1, paddingRight: 12 }}>
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: isDark ? '#94A3B8' : '#64748B' }}>
+                      {expoPushToken
+                        ? 'Token: ExponentPushToken (Active)'
+                        : isDevice
+                          ? 'Connected to push service'
+                          : 'Simulator Mode (Local alerts active)'}
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={handleSendTestPush}
+                    disabled={isSendingTestPush}
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 12,
+                      backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#ECFDF5',
+                      borderWidth: 1,
+                      borderColor: isDark ? 'rgba(16, 185, 129, 0.35)' : '#A7F3D0',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 5,
+                    }}
+                  >
+                    {isSendingTestPush ? (
+                      <ActivityIndicator size="small" color="#10B981" />
+                    ) : (
+                      <>
+                        <Ionicons name="notifications" size={13} color="#10B981" />
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#10B981' }}>
+                          Test Push
+                        </Text>
+                      </>
+                    )}
+                  </Pressable>
+                </View>
+              )}
 
               <View style={[styles.switchRow, isDark ? styles.switchRowDark : styles.switchRowLight]}>
                 <View style={{ flex: 1, paddingRight: 10 }}>
@@ -1632,7 +1603,7 @@ export default function AccountScreen() {
                 <Switch
                   value={emailAlerts}
                   onValueChange={(val) => handleTogglePref('@pref_email', val, setEmailAlerts)}
-                  trackColor={{ false: isDark ? '#3A3A3C' : '#E5E7EB', true: '#0A84FF' }}
+                  trackColor={{ false: isDark ? '#3A3A3C' : '#E9E6F2', true: '#6C55C5' }}
                   thumbColor="#FFFFFF"
                 />
               </View>
@@ -1650,7 +1621,7 @@ export default function AccountScreen() {
                   value={biometricSettings.enabled}
                   onValueChange={handleToggleBiometric}
                   disabled={isUpdatingBiometrics}
-                  trackColor={{ false: isDark ? '#3A3A3C' : '#E5E7EB', true: '#10B981' }}
+                  trackColor={{ false: isDark ? '#3A3A3C' : '#E9E6F2', true: '#10B981' }}
                   thumbColor="#FFFFFF"
                 />
               </View>
@@ -1667,7 +1638,7 @@ export default function AccountScreen() {
         </Pressable>
 
         <Text style={[styles.versionText, isDark && styles.versionTextDark]}>
-          GetAiPilot Hub Mobile v1.0.0 (Build 2026)
+          GetAiPilot v1.0.0
         </Text>
       </ScrollView>
     </AppScreen>
@@ -1679,39 +1650,27 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollViewLight: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F5F3FB',
   },
   scrollViewDark: {
-    backgroundColor: '#000000',
+    backgroundColor: '#14131B',
   },
   scrollContent: {
     padding: 16,
     paddingBottom: 150,
   },
-  // ─── Apple ID Profile Hero ────────────────────────────────────
+  // ─── Minimal profile summary ──────────────────────────────────
   heroCard: {
     borderRadius: 22,
     padding: 18,
     marginBottom: 18,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   heroCardLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E5E7EB',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
+    backgroundColor: '#E7DEFA',
   },
   heroCardDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 4,
+    backgroundColor: '#39304A',
   },
   heroTop: {
     flexDirection: 'row',
@@ -1725,28 +1684,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
-    borderWidth: 2,
+    borderWidth: 0,
   },
   avatarLight: {
-    backgroundColor: '#0A84FF',
-    borderColor: '#EBF5FF',
+    backgroundColor: '#6C55C5',
   },
   avatarDark: {
-    backgroundColor: '#0A84FF',
-    borderColor: 'rgba(10, 132, 255, 0.45)',
+    backgroundColor: '#B9A8FF',
   },
   avatarText: {
     fontSize: 26,
-    fontWeight: '800',
+    fontWeight: '600',
     color: '#FFFFFF',
+  },
+  avatarTextDark: {
+    color: '#202027',
   },
   heroInfo: {
     flex: 1,
   },
   heroName: {
     fontSize: 20,
-    fontWeight: '800',
-    color: '#000000',
+    fontWeight: '600',
+    color: '#202027',
     letterSpacing: -0.4,
   },
   heroNameDark: {
@@ -1773,20 +1733,20 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   badgeLight: {
-    backgroundColor: '#EBF5FF',
+    backgroundColor: '#FFFFFF',
   },
   badgeDark: {
-    backgroundColor: 'rgba(10, 132, 255, 0.16)',
+    backgroundColor: 'rgba(255, 255, 255, 0.10)',
   },
   badgeText: {
     fontSize: 11,
     fontWeight: '700',
   },
   badgeTextLight: {
-    color: '#0A84FF',
+    color: '#6C55C5',
   },
   badgeTextDark: {
-    color: '#0A84FF',
+    color: '#6C55C5',
   },
   adminBadgeLight: {
     backgroundColor: '#DCFCE7',
@@ -1796,44 +1756,26 @@ const styles = StyleSheet.create({
   },
   statsRow: {
     flexDirection: 'row',
-    borderTopWidth: 1,
-    paddingTop: 14,
-  },
-  statsRowLight: {
-    borderTopColor: '#F2F4F7',
-  },
-  statsRowDark: {
-    borderTopColor: '#2C2C2E',
+    gap: 10,
+    paddingTop: 4,
   },
   statItem: {
     flex: 1,
-    alignItems: 'center',
-  },
-  statDivider: {
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-  },
-  statDividerLight: {
-    borderColor: '#F2F4F7',
-  },
-  statDividerDark: {
-    borderColor: '#2C2C2E',
+    alignItems: 'flex-start',
   },
   statLabel: {
     fontSize: 10.5,
     color: '#8E8E93',
     marginBottom: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    fontWeight: '700',
+    fontWeight: '500',
   },
   statLabelDark: {
     color: '#8E8E93',
   },
   statValue: {
     fontSize: 13.5,
-    fontWeight: '700',
-    color: '#000000',
+    fontWeight: '600',
+    color: '#202027',
   },
   statValueDark: {
     color: '#FFFFFF',
@@ -1845,17 +1787,15 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 4,
     marginBottom: 20,
-    borderWidth: 1,
+    borderWidth: 0,
     position: 'relative',
     height: 44,
   },
   tabsTrackLight: {
-    backgroundColor: '#F2F4F7',
-    borderColor: '#E5E7EB',
+    backgroundColor: '#F0EEF8',
   },
   tabsTrackDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
+    backgroundColor: '#252230',
   },
   slidingTabPill: {
     position: 'absolute',
@@ -1866,20 +1806,10 @@ const styles = StyleSheet.create({
     pointerEvents: 'none' as any,
   },
   slidingTabPillLight: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: '#E7DEFA',
   },
   slidingTabPillDark: {
-    backgroundColor: '#0A84FF',
-    shadowColor: '#0A84FF',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 3,
+    backgroundColor: '#39304A',
   },
   tabButton: {
     flex: 1,
@@ -1899,43 +1829,42 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
   },
   tabTextActiveLight: {
-    color: '#000000',
-    fontWeight: '800',
+    color: '#6C55C5',
+    fontWeight: '700',
   },
   tabTextActiveDark: {
-    color: '#FFFFFF',
-    fontWeight: '800',
+    color: '#B9A8FF',
+    fontWeight: '700',
   },
   tabContent: {
     marginBottom: 8,
   },
   // ─── Section Captions & Cards ─────────────────────────────────
   sectionCaption: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#6B7280',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginBottom: 8,
-    marginLeft: 4,
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '600',
+    color: '#202027',
+    letterSpacing: -0.25,
+    marginBottom: 10,
   },
   sectionCaptionDark: {
-    color: '#8E8E93',
+    color: '#F0EEF8',
   },
   card: {
-    borderRadius: 18,
+    borderRadius: 24,
     paddingHorizontal: 16,
     paddingVertical: 4,
     marginBottom: 20,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   cardLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E5E7EB',
+    borderColor: '#E9E6F2',
   },
   cardDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
+    backgroundColor: '#252230',
+    borderColor: '#3A3549',
   },
   cardTitle: {
     fontSize: 16,
@@ -1951,10 +1880,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   infoRowLight: {
-    borderBottomColor: '#F2F4F7',
+    borderBottomColor: '#F0EEF8',
   },
   infoRowDark: {
-    borderBottomColor: '#2C2C2E',
+    borderBottomColor: '#3A3549',
   },
   infoLabel: {
     fontSize: 14,
@@ -1978,27 +1907,28 @@ const styles = StyleSheet.create({
   navRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    minHeight: 64,
+    paddingVertical: 10,
+    borderBottomWidth: 0,
     gap: 12,
   },
   navRowLight: {
-    borderBottomColor: '#F2F4F7',
+    borderBottomColor: '#F0EEF8',
   },
   navRowDark: {
-    borderBottomColor: '#2C2C2E',
+    borderBottomColor: '#3A3549',
   },
   navIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
   navRowTitle: {
-    fontSize: 14.5,
-    fontWeight: '700',
-    color: '#000000',
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#202027',
   },
   navRowTitleDark: {
     color: '#FFFFFF',
@@ -2009,36 +1939,6 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   navRowSubtitleDark: {
-    color: '#8E8E93',
-  },
-  adminTitleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 12,
-    marginBottom: 4,
-  },
-  adminTag: {
-    backgroundColor: 'rgba(16, 185, 129, 0.16)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.3)',
-  },
-  adminTagText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#10B981',
-    letterSpacing: 0.5,
-  },
-  adminSubtitle: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginBottom: 10,
-    lineHeight: 16,
-  },
-  adminSubtitleDark: {
     color: '#8E8E93',
   },
   // ─── Form Inputs ──────────────────────────────────────────────
@@ -2060,12 +1960,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   inputLight: {
-    backgroundColor: '#F8F9FA',
-    borderColor: '#E5E7EB',
+    backgroundColor: '#F5F3FB',
+    borderColor: '#E9E6F2',
     color: '#000000',
   },
   inputDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
     borderColor: '#3A3A3C',
     color: '#FFFFFF',
   },
@@ -2073,13 +1973,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   primaryButton: {
-    backgroundColor: '#0A84FF',
+    backgroundColor: '#6C55C5',
     paddingVertical: 14,
     borderRadius: 24,
     alignItems: 'center',
     marginTop: 20,
     marginBottom: 12,
-    shadowColor: '#0A84FF',
+    shadowColor: '#6C55C5',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -2098,10 +1998,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   actionRowLight: {
-    borderBottomColor: '#F2F4F7',
+    borderBottomColor: '#F0EEF8',
   },
   actionRowDark: {
-    borderBottomColor: '#2C2C2E',
+    borderBottomColor: '#3A3549',
   },
   rowIconCircle: {
     width: 36,
@@ -2135,11 +2035,11 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   secondaryButtonLight: {
-    backgroundColor: '#F2F4F7',
-    borderColor: '#E5E7EB',
+    backgroundColor: '#F0EEF8',
+    borderColor: '#E9E6F2',
   },
   secondaryButtonDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
     borderColor: '#3A3A3C',
   },
   secondaryButtonText: {
@@ -2172,10 +2072,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   switchRowLight: {
-    borderBottomColor: '#F2F4F7',
+    borderBottomColor: '#F0EEF8',
   },
   switchRowDark: {
-    borderBottomColor: '#2C2C2E',
+    borderBottomColor: '#3A3549',
   },
   switchTitle: {
     fontSize: 14.5,
@@ -2202,17 +2102,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   signOutButtonLight: {
-    backgroundColor: '#FEE2E2',
-    borderColor: '#FCA5A5',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#F7DFE9',
   },
   signOutButtonDark: {
     backgroundColor: 'rgba(239, 68, 68, 0.12)',
     borderColor: 'rgba(239, 68, 68, 0.28)',
   },
   signOutButtonText: {
-    color: '#EF4444',
-    fontWeight: '800',
-    fontSize: 15,
+    color: '#C24162',
+    fontWeight: '600',
+    fontSize: 14,
   },
   versionText: {
     textAlign: 'center',
@@ -2242,7 +2142,7 @@ const styles = StyleSheet.create({
   planCardPrice: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#0A84FF',
+    color: '#6C55C5',
     marginTop: 2,
   },
   planProgressContainer: {
@@ -2275,14 +2175,14 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressBarTrackLight: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#E9E6F2',
   },
   progressBarTrackDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#0A84FF',
+    backgroundColor: '#6C55C5',
     borderRadius: 3,
   },
   invoiceRow: {
@@ -2293,10 +2193,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   invoiceRowLight: {
-    borderBottomColor: '#F2F4F7',
+    borderBottomColor: '#F0EEF8',
   },
   invoiceRowDark: {
-    borderBottomColor: '#2C2C2E',
+    borderBottomColor: '#3A3549',
   },
   invoiceNumber: {
     fontSize: 13.5,
@@ -2364,11 +2264,11 @@ const styles = StyleSheet.create({
   },
   invoiceModalLight: {
     backgroundColor: '#FFFFFF',
-    borderTopColor: '#E5E7EB',
+    borderTopColor: '#E9E6F2',
   },
   invoiceModalDark: {
-    backgroundColor: '#1C1C1E',
-    borderTopColor: '#2C2C2E',
+    backgroundColor: '#252230',
+    borderTopColor: '#3A3549',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -2378,10 +2278,10 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
   modalHeaderLight: {
-    borderBottomColor: '#F2F4F7',
+    borderBottomColor: '#F0EEF8',
   },
   modalHeaderDark: {
-    borderBottomColor: '#2C2C2E',
+    borderBottomColor: '#3A3549',
   },
   modalTitle: {
     fontSize: 18,
@@ -2416,10 +2316,10 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   invoiceModalDividerLight: {
-    backgroundColor: '#F2F4F7',
+    backgroundColor: '#F0EEF8',
   },
   invoiceModalDividerDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
   },
   sectionHeaderRow: {
     flexDirection: 'row',
@@ -2436,7 +2336,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   deviceRefreshText: {
-    color: '#0A84FF',
+    color: '#6C55C5',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -2513,10 +2413,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   timeoutSegmentTrackLight: {
-    backgroundColor: '#F2F4F7',
+    backgroundColor: '#F0EEF8',
   },
   timeoutSegmentTrackDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
   },
   timeoutPill: {
     flex: 1,
@@ -2573,20 +2473,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   themeOptionPillLight: {
-    backgroundColor: '#F2F4F7',
-    borderColor: '#E5E7EB',
+    backgroundColor: '#F0EEF8',
+    borderColor: '#E9E6F2',
   },
   themeOptionPillDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
     borderColor: '#3A3A3C',
   },
   themeOptionPillSelectedLight: {
-    backgroundColor: '#CABFAB',
-    borderColor: '#CABFAB',
+    backgroundColor: '#E7DEFA',
+    borderColor: '#E7DEFA',
   },
   themeOptionPillSelectedDark: {
-    backgroundColor: '#CABFAB',
-    borderColor: '#CABFAB',
+    backgroundColor: '#E7DEFA',
+    borderColor: '#E7DEFA',
   },
   themeOptionText: {
     fontSize: 13,

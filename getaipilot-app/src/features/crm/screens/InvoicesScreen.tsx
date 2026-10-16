@@ -155,9 +155,9 @@ export function InvoicesScreen({ onBack }: InvoicesScreenProps = {}) {
 const s = StyleSheet.create({
   safe: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  title: { fontSize: 22, fontWeight: '800', letterSpacing: -0.4 },
-  subtitle: { fontSize: 12, marginTop: 2 },
-  createBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#3B82F6', paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12 },
+  title: { fontSize: 28, fontWeight: '500', letterSpacing: -0.5, lineHeight: 36 },
+  subtitle: { fontSize: 13, marginTop: 2 },
+  createBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#17171C', paddingHorizontal: 14, paddingVertical: 9, borderRadius: 28, minHeight: 44 , shadowOpacity: 0 },
   createBtnText: { color: '#FFF', fontWeight: '700', fontSize: 13 },
   filterRow: { marginBottom: 12 },
   filterChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },

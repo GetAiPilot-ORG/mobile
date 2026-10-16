@@ -122,13 +122,15 @@ export default function HelpCenterScreen() {
   };
 
   return (
-    <AppScreen safeArea={false} backgroundColor={isDark ? '#000000' : '#F8FAFC'}>
-      <AppTopBar title="Help & Support" subtitle="Documentation, FAQs & Dedicated Engineering" showBack={true} />
+    <AppScreen safeArea={false} backgroundColor={isDark ? '#000000' : '#F5F3FB'}>
+      <AppTopBar title="Help & Support" 
+      // subtitle="Documentation, FAQs & Dedicated Engineering"
+      showBack={true} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Quick Connect Inset Group */}
         <View style={styles.quickContactContainer}>
-          <Text style={[styles.sectionHeader, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+          <Text style={[styles.sectionHeader, { color: isDark ? '#777383' : '#64748B' }]}>
             INSTANT CONNECT
           </Text>
 
@@ -154,7 +156,7 @@ export default function HelpCenterScreen() {
               <Text style={[styles.contactCardTitle, { color: isDark ? '#FFFFFF' : '#065F46' }]}>
                 WhatsApp Priority
               </Text>
-              <Text style={[styles.contactCardSub, { color: isDark ? '#9CA3AF' : '#047857' }]}>
+              <Text style={[styles.contactCardSub, { color: isDark ? '#777383' : '#047857' }]}>
                 24/7 Live Concierge
               </Text>
             </Pressable>
@@ -180,7 +182,7 @@ export default function HelpCenterScreen() {
               <Text style={[styles.contactCardTitle, { color: isDark ? '#FFFFFF' : '#1E40AF' }]}>
                 Email Support
               </Text>
-              <Text style={[styles.contactCardSub, { color: isDark ? '#9CA3AF' : '#3B82F6' }]}>
+              <Text style={[styles.contactCardSub, { color: isDark ? '#777383' : '#3B82F6' }]}>
                 support@getaipilot.in
               </Text>
             </Pressable>
@@ -191,7 +193,7 @@ export default function HelpCenterScreen() {
               styles.docsBanner,
               {
                 backgroundColor: isDark ? '#0D1117' : '#FFFFFF',
-                borderColor: isDark ? '#1F242F' : '#E2E8F0',
+                borderColor: isDark ? '#1F242F' : '#E9E6F2',
               },
             ]}
             onPress={handleOpenDocs}
@@ -208,7 +210,7 @@ export default function HelpCenterScreen() {
               <Text style={[styles.docsTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
                 GetAIPilot Architecture & API Docs
               </Text>
-              <Text style={[styles.docsSub, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+              <Text style={[styles.docsSub, { color: isDark ? '#777383' : '#64748B' }]}>
                 Explore guides, REST APIs, Webhook schemas and samples
               </Text>
             </View>
@@ -218,7 +220,7 @@ export default function HelpCenterScreen() {
 
         {/* FAQs Section */}
         <View style={styles.faqSection}>
-          <Text style={[styles.sectionHeader, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+          <Text style={[styles.sectionHeader, { color: isDark ? '#777383' : '#64748B' }]}>
             KNOWLEDGE BASE
           </Text>
 
@@ -258,7 +260,7 @@ export default function HelpCenterScreen() {
                         selectedCategory === cat.key
                           ? '#000000'
                           : isDark
-                          ? '#9CA3AF'
+                          ? '#777383'
                           : '#64748B',
                       fontWeight: selectedCategory === cat.key ? '800' : '600',
                     },
@@ -293,7 +295,7 @@ export default function HelpCenterScreen() {
                           : '#10B981'
                         : isDark
                         ? '#1F242F'
-                        : '#E2E8F0',
+                        : '#E9E6F2',
                     },
                   ]}
                   onPress={() => handleToggleFaq(idx)}
@@ -312,7 +314,7 @@ export default function HelpCenterScreen() {
                               : '#D1FAE5'
                             : isDark
                             ? '#161B22'
-                            : '#F1F5F9',
+                            : '#F0EEF8',
                         },
                       ]}
                     >
@@ -323,7 +325,7 @@ export default function HelpCenterScreen() {
                     <View
                       style={[
                         styles.faqAnswerBox,
-                        { borderTopColor: isDark ? '#21262D' : '#E2E8F0' },
+                        { borderTopColor: isDark ? '#21262D' : '#E9E6F2' },
                       ]}
                     >
                       <Text style={[styles.faqAnswerText, { color: isDark ? '#D1D5DB' : '#334155' }]}>
@@ -339,7 +341,7 @@ export default function HelpCenterScreen() {
 
         {/* Create Support Ticket */}
         <View style={styles.ticketSection}>
-          <Text style={[styles.sectionHeader, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+          <Text style={[styles.sectionHeader, { color: isDark ? '#777383' : '#64748B' }]}>
             SUBMIT AN ENGINEERING TICKET
           </Text>
 
@@ -348,7 +350,7 @@ export default function HelpCenterScreen() {
               styles.ticketCard,
               {
                 backgroundColor: isDark ? '#0D1117' : '#FFFFFF',
-                borderColor: isDark ? '#1F242F' : '#E2E8F0',
+                borderColor: isDark ? '#1F242F' : '#E9E6F2',
               },
             ]}
           >
@@ -370,7 +372,7 @@ export default function HelpCenterScreen() {
                             : '#D1FAE5'
                           : isDark
                           ? '#161B22'
-                          : '#F8FAFC',
+                          : '#F5F3FB',
                         borderColor: isSelected
                           ? '#10B981'
                           : isDark
@@ -390,7 +392,7 @@ export default function HelpCenterScreen() {
                           color: isSelected
                             ? '#10B981'
                             : isDark
-                            ? '#9CA3AF'
+                            ? '#777383'
                             : '#64748B',
                           fontWeight: isSelected ? '700' : '600',
                         },
@@ -410,13 +412,13 @@ export default function HelpCenterScreen() {
               style={[
                 styles.input,
                 {
-                  backgroundColor: isDark ? '#161B22' : '#F8FAFC',
+                  backgroundColor: isDark ? '#161B22' : '#F5F3FB',
                   borderColor: isDark ? '#21262D' : '#CBD5E1',
                   color: isDark ? '#FFFFFF' : '#0F172A',
                 },
               ]}
               placeholder="e.g. Webhook delivery failure on WhatsApp trigger"
-              placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+              placeholderTextColor={isDark ? '#6B7280' : '#777383'}
               value={ticketSubject}
               onChangeText={setTicketSubject}
             />
@@ -429,13 +431,13 @@ export default function HelpCenterScreen() {
                 styles.input,
                 styles.textArea,
                 {
-                  backgroundColor: isDark ? '#161B22' : '#F8FAFC',
+                  backgroundColor: isDark ? '#161B22' : '#F5F3FB',
                   borderColor: isDark ? '#21262D' : '#CBD5E1',
                   color: isDark ? '#FFFFFF' : '#0F172A',
                 },
               ]}
               placeholder="Describe what occurred, payload details, or steps to reproduce..."
-              placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+              placeholderTextColor={isDark ? '#6B7280' : '#777383'}
               value={ticketMessage}
               onChangeText={setTicketMessage}
               multiline
@@ -479,14 +481,14 @@ const styles = StyleSheet.create({
   },
   contactCardWhatsApp: {
     flex: 1,
-    borderWidth: 1,
-    borderRadius: 20,
+    borderWidth: 0,
+    borderRadius: 24,
     padding: 16,
   },
   contactCardEmail: {
     flex: 1,
-    borderWidth: 1,
-    borderRadius: 20,
+    borderWidth: 0,
+    borderRadius: 24,
     padding: 16,
   },
   contactIconCircleWhatsApp: {
@@ -519,8 +521,8 @@ const styles = StyleSheet.create({
   docsBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 18,
+    borderWidth: 0,
+    borderRadius: 24,
     padding: 14,
     gap: 12,
   },
@@ -568,8 +570,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   faqCard: {
-    borderWidth: 1,
-    borderRadius: 16,
+    borderWidth: 0,
+    borderRadius: 24,
     padding: 16,
   },
   faqHeaderRow: {
@@ -609,8 +611,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   ticketCard: {
-    borderWidth: 1,
-    borderRadius: 20,
+    borderWidth: 0,
+    borderRadius: 24,
     padding: 18,
   },
   inputLabel: {

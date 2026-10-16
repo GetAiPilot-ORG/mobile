@@ -10,8 +10,6 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { AppScreen } from '../../src/components/AppScreen';
 import { useTheme, getColors, ThemeMode, ThemeSelector, spacing, radius } from '@/features/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -114,8 +112,8 @@ export default function CustomizeAppScreen() {
             style={[
               styles.backButton,
               {
-                backgroundColor: isDark ? '#1C1C1E' : '#F2F4F7',
-                borderColor: isDark ? '#2C2C2E' : '#E5E7EB',
+                backgroundColor: isDark ? '#252230' : '#F0EEF8',
+                borderColor: isDark ? '#3A3549' : '#E9E6F2',
               },
             ]}
             onPress={() => {
@@ -152,8 +150,8 @@ export default function CustomizeAppScreen() {
           style={[
             styles.card,
             {
-              backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-              borderColor: isDark ? '#2C2C2E' : '#E5E7EB',
+              backgroundColor: isDark ? '#252230' : '#FFFFFF',
+              borderColor: isDark ? '#3A3549' : '#E9E6F2',
             },
           ]}
         >
@@ -163,14 +161,14 @@ export default function CustomizeAppScreen() {
           <View
             style={[
               styles.row,
-              { borderBottomColor: isDark ? '#2C2C2E' : '#E5E7EB' },
+              { borderBottomColor: isDark ? '#3A3549' : '#E9E6F2' },
             ]}
           >
             <View style={{ flex: 1, paddingRight: 12 }}>
               <Text style={[styles.rowTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
                 Compact Dashboard Mode
               </Text>
-              <Text style={[styles.rowSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+              <Text style={[styles.rowSubtitle, { color: isDark ? '#777383' : '#64748B' }]}>
                 Use condensed product cards to view more items on screen
               </Text>
             </View>
@@ -186,7 +184,7 @@ export default function CustomizeAppScreen() {
               <Text style={[styles.rowTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
                 Haptic Touch Feedback
               </Text>
-              <Text style={[styles.rowSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+              <Text style={[styles.rowSubtitle, { color: isDark ? '#777383' : '#64748B' }]}>
                 Vibrate device on quick tool launches and bot interactions
               </Text>
             </View>
@@ -204,7 +202,7 @@ export default function CustomizeAppScreen() {
           <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
             Automation Products Visibility
           </Text>
-          <Text style={[styles.sectionSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+          <Text style={[styles.sectionSubtitle, { color: isDark ? '#777383' : '#64748B' }]}>
             Toggled items appear on your Home Dashboard quick launcher.
           </Text>
 
@@ -212,8 +210,8 @@ export default function CustomizeAppScreen() {
             style={[
               styles.card,
               {
-                backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                borderColor: isDark ? '#2C2C2E' : '#E5E7EB',
+                backgroundColor: isDark ? '#252230' : '#FFFFFF',
+                borderColor: isDark ? '#3A3549' : '#E9E6F2',
               },
             ]}
           >
@@ -222,7 +220,7 @@ export default function CustomizeAppScreen() {
                 key={item.id}
                 style={[
                   styles.row,
-                  { borderBottomColor: isDark ? '#2C2C2E' : '#E5E7EB' },
+                  { borderBottomColor: isDark ? '#3A3549' : '#E9E6F2' },
                   idx === automationItems.length - 1 && { borderBottomWidth: 0 },
                 ]}
               >
@@ -230,7 +228,7 @@ export default function CustomizeAppScreen() {
                   <Text style={[styles.rowTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
                     {item.name}
                   </Text>
-                  <Text style={[styles.rowSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+                  <Text style={[styles.rowSubtitle, { color: isDark ? '#777383' : '#64748B' }]}>
                     {item.desc}
                   </Text>
                 </View>
@@ -250,7 +248,7 @@ export default function CustomizeAppScreen() {
           <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
             Free Tools Hub Visibility
           </Text>
-          <Text style={[styles.sectionSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+          <Text style={[styles.sectionSubtitle, { color: isDark ? '#777383' : '#64748B' }]}>
             Control which tools are prioritized in your Tools shortcuts.
           </Text>
 
@@ -258,8 +256,8 @@ export default function CustomizeAppScreen() {
             style={[
               styles.card,
               {
-                backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                borderColor: isDark ? '#2C2C2E' : '#E5E7EB',
+                backgroundColor: isDark ? '#252230' : '#FFFFFF',
+                borderColor: isDark ? '#3A3549' : '#E9E6F2',
               },
             ]}
           >
@@ -268,7 +266,7 @@ export default function CustomizeAppScreen() {
                 key={item.id}
                 style={[
                   styles.row,
-                  { borderBottomColor: isDark ? '#2C2C2E' : '#E5E7EB' },
+                  { borderBottomColor: isDark ? '#3A3549' : '#E9E6F2' },
                   idx === toolItems.length - 1 && { borderBottomWidth: 0 },
                 ]}
               >
@@ -276,7 +274,7 @@ export default function CustomizeAppScreen() {
                   <Text style={[styles.rowTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
                     {item.name}
                   </Text>
-                  <Text style={[styles.rowSubtitle, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+                  <Text style={[styles.rowSubtitle, { color: isDark ? '#777383' : '#64748B' }]}>
                     {item.desc}
                   </Text>
                 </View>
@@ -350,7 +348,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    borderWidth: 1,
+    borderWidth: 0,
     marginBottom: spacing.lg,
   },
   cardTitle: {
@@ -400,7 +398,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: radius.xl,
     padding: 14,
-    borderWidth: 1.5,
+    borderWidth: 0.5,
     alignItems: 'center',
     position: 'relative',
     minHeight: 120,
@@ -408,11 +406,11 @@ const styles = StyleSheet.create({
   },
   themeCardLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E5E7EB',
+    borderColor: '#E9E6F2',
   },
   themeCardDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
+    backgroundColor: '#252230',
+    borderColor: '#3A3549',
   },
   themeCardSelected: {
     borderWidth: 2,

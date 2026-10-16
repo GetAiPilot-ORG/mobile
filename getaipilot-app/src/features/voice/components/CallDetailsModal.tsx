@@ -69,10 +69,12 @@ export const CallDetailsModal: React.FC<CallDetailsModalProps> = ({
 
   const handleOpenRecording = async () => {
     let url = call.recordingUrl;
-    if (!url) return;
-
-    if (!url.startsWith("http://") && !url.startsWith("https://")) {
-      url = `https://api.vomyra.com/recordings/${url}`;
+    if (!url || (!url.startsWith("http://") && !url.startsWith("https://"))) {
+      Alert.alert(
+        "Recording Unavailable",
+        "The audio recording is being processed or unavailable for this call.",
+      );
+      return;
     }
 
     try {
@@ -163,7 +165,7 @@ export const CallDetailsModal: React.FC<CallDetailsModalProps> = ({
               style={[styles.headerSubtitle, { color: colors.textSecondary }]}
               numberOfLines={1}
             >
-              {call.time || "Recent"} • Assistant:{" "}
+              {call.time || "Recent"} • Assistant: {" "}
               {call.assistant || "Voice Assistant"}
             </Text>
           </View>
@@ -246,7 +248,7 @@ export const CallDetailsModal: React.FC<CallDetailsModalProps> = ({
               <Text
                 style={[
                   styles.summaryBodyText,
-                  { color: isDark ? "#E2E8F0" : "#334155" },
+                  { color: isDark ? "#E9E6F2" : "#334155" },
                 ]}
               >
                 {call.summary || "Conversation completed and logged successfully."}
@@ -276,7 +278,7 @@ export const CallDetailsModal: React.FC<CallDetailsModalProps> = ({
               style={[
                 styles.transcriptContainer,
                 {
-                  backgroundColor: isDark ? "#121216" : "#F8FAFC",
+                  backgroundColor: isDark ? "#121216" : "#F5F3FB",
                   borderColor: colors.border,
                 },
               ]}
@@ -537,7 +539,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   headerSubtitle: {
-    fontSize: 11.5,
+    fontSize: 13.5,
     fontWeight: "500",
   },
   closeBtn: {
@@ -552,7 +554,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 12,
     gap: 12,
     paddingBottom: 32,
@@ -564,7 +566,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 9,
     borderRadius: 10,
-    borderWidth: 1,
   },
   audioBarLeft: {
     flexDirection: "row",
@@ -576,11 +577,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   summaryCard: {
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 24,
     padding: 10,
-    gap: 7,
-  },
+    gap: 7, borderWidth: 0 , shadowOpacity: 0 },
   summaryHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -594,7 +593,6 @@ const styles = StyleSheet.create({
   summaryInnerBox: {
     padding: 9,
     borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
   },
   summaryBodyText: {
     fontSize: 12,
@@ -616,7 +614,6 @@ const styles = StyleSheet.create({
   },
   transcriptContainer: {
     borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
     padding: 10,
     gap: 8,
   },
@@ -636,7 +633,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#1C1A25",
     alignItems: "center",
     justifyContent: "center",
     marginTop: 2,
@@ -657,9 +654,7 @@ const styles = StyleSheet.create({
     maxWidth: "80%",
     gap: 2,
   },
-  chatBubbleAssistant: {
-    borderWidth: StyleSheet.hairlineWidth,
-  },
+  chatBubbleAssistant: {},
   chatBubbleCustomer: {},
   bubbleHeaderRow: {
     flexDirection: "row",
@@ -692,13 +687,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   metaGridCard: {
-    width: "48%",
-    flexGrow: 1,
+    width: "48.5%",
     padding: 9,
-    borderRadius: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: 2,
-  },
+    borderRadius: 24,
+    gap: 2, borderWidth: 0 , shadowOpacity: 0 },
   metaGridLabel: {
     fontSize: 9.5,
     fontWeight: "700",

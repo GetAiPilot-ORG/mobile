@@ -25,11 +25,11 @@ export const UsageMeterCard: React.FC<UsageMeterCardProps> = ({
     <View style={[styles.container, isDark ? styles.containerDark : styles.containerLight]}>
       <View style={styles.header}>
         <Text style={[styles.label, { color: isDark ? '#cbd5e1' : '#0f172a' }]}>{label}</Text>
-        <Text style={[styles.values, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+        <Text style={[styles.values, { color: isDark ? '#777383' : '#64748b' }]}>
           {current.toLocaleString()}{unit} / {max.toLocaleString()}{unit}
         </Text>
       </View>
-      <View style={[styles.track, { backgroundColor: isDark ? '#1e293b' : '#e2e8f0' }]}>
+      <View style={[styles.track, { backgroundColor: isDark ? '#1e293b' : '#E9E6F2' }]}>
         <View
           style={[
             styles.bar,
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   },
   containerLight: {
     backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
+    borderColor: '#E9E6F2',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,

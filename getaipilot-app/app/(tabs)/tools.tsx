@@ -1,16 +1,28 @@
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { ComponentProps, useState } from "react";
 import {
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
+import {
+  Calendar03Icon,
+  File01Icon,
+  Folder01Icon,
+  Link01Icon,
+  PaintBrush01Icon,
+  QrCode01Icon,
+  Rocket01Icon,
+  SmartPhone01Icon,
+  VoiceToTextIcon,
+  WhatsappIcon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react-native";
 import { useTheme, getColors } from "../../src/theme";
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
-import { SearchInput } from "../../src/components/SearchInput";
 import { ToolCard } from "../../src/components/ToolCard";
 import {
   openAuthenticatedTemplate,
@@ -22,7 +34,8 @@ interface ToolItem {
   title: string;
   category: string;
   description: string;
-  icon: string;
+  icon: ComponentProps<typeof HugeiconsIcon>["icon"];
+  iconBg: string;
   badge: string;
   route: string;
   builder?: {
@@ -35,31 +48,34 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
   {
     id: "my-designs",
     title: "My Designs",
-    category: "Templates",
+    category: "TEMPLATES",
     description:
       "Manage and customize your saved bio websites and campaign landing pages.",
-    icon: "🎨",
-    badge: "Canvas",
+    icon: PaintBrush01Icon,
+    iconBg: "#F7DFE9",
+    badge: "CANVAS",
     route: "/tools/my-designs",
   },
   {
     id: "bio-templates",
     title: "Bio Templates",
-    category: "Templates",
+    category: "TEMPLATES",
     description:
       "Pick mobile bio site themes optimized for creators, agencies, and businesses.",
-    icon: "🔗",
-    badge: "Popular",
+    icon: SmartPhone01Icon,
+    iconBg: "#E7DEFA",
+    badge: "POPULAR",
     route: "/tools/bio-templates",
   },
   {
     id: "landing-templates",
     title: "Landing Templates",
-    category: "Templates",
+    category: "TEMPLATES",
     description:
       "Pre-built high-converting lead capture funnels and product waitlist pages.",
-    icon: "🚀",
-    badge: "Ready",
+    icon: Rocket01Icon,
+    iconBg: "#E7DEFA",
+    badge: "READY",
     route: "/tools/landing-templates",
     builder: {
       targetTool: "landing-templates",
@@ -68,92 +84,88 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
   {
     id: "quick-forms",
     title: "QuickForms",
-    category: "Utilities",
+    category: "UTILITIES",
     description:
       "Embeddable survey forms and customer consultation intake funnels.",
-    icon: "📝",
-    badge: "CRM Sync",
+    icon: File01Icon,
+    iconBg: "#D8F0F0",
+    badge: "FREE",
     route: "/tools/quick-forms",
   },
   {
     id: "wa-link",
     title: "WhatsApp Link",
-    category: "Messaging",
+    category: "MESSAGING",
     description:
       "Direct click-to-chat links with custom prefilled messages & QR codes.",
-    icon: "💬",
-    badge: "Popular",
+    icon: WhatsappIcon,
+    iconBg: "#E0F1E6",
+    badge: "POPULAR",
     route: "/tools/whatsapp-link",
   },
   {
     id: "shortener",
     title: "Link Shortener",
-    category: "Utilities",
+    category: "UTILITIES",
     description:
       "Shorten long URLs into branded links with real-time click tracking.",
-    icon: "⚡",
-    badge: "Fast",
+    icon: Link01Icon,
+    iconBg: "#D8F0F0",
+    badge: "FAST",
     route: "/tools/link-shortener",
   },
   {
     id: "file-linker",
     title: "File Linker",
-    category: "Utilities",
+    category: "UTILITIES",
     description:
       "Generate trackable public direct download links for PDFs and media assets.",
-    icon: "📁",
-    badge: "Cloud",
+    icon: Folder01Icon,
+    iconBg: "#F9E5D4",
+    badge: "CLOUD",
     route: "/tools/file-linker",
   },
   {
     id: "event-links",
     title: "Event Links",
-    category: "Utilities",
+    category: "UTILITIES",
     description:
       "1-click calendar invites for Google Calendar, Apple iCal, and webinars.",
-    icon: "📅",
-    badge: "Calendar",
+    icon: Calendar03Icon,
+    iconBg: "#D8F0F0",
+    badge: "CALENDAR",
     route: "/tools/event-links",
   },
   {
     id: "speech-to-text",
     title: "AI Speech to Text",
-    category: "AI Audio",
+    category: "AI AUDIO",
     description:
       "Transcribe customer voice notes, audio meetings, and voice memos to text.",
-    icon: "🎙️",
-    badge: "AI Powered",
+    icon: VoiceToTextIcon,
+    iconBg: "#E7DEFA",
+    badge: "AI POWERED",
     route: "/tools/speech-to-text",
   },
   {
     id: "qr-gen",
     title: "QR Generator",
-    category: "Utilities",
+    category: "UTILITIES",
     description:
       "High-resolution custom QR codes for websites, text, and Wi-Fi credentials.",
-    icon: "📱",
-    badge: "Free",
+    icon: QrCode01Icon,
+    iconBg: "#F7DFE9",
+    badge: "FREE",
     route: "/tools/qr-code",
   },
-  // {
-  //   id: "website-audit",
-  //   title: "Website Health Audit",
-  //   category: "AI Audio",
-  //   description:
-  //     "Instantly audit SEO, performance, UX, and conversion with an AI health score.",
-  //   icon: "🔍",
-  //   badge: "AI Score",
-  //   route: "/tools/website-audit",
-  // },
 ];
 
-const CATEGORIES = ["All", "Templates", "Messaging", "Utilities", "AI Audio"];
+const CATEGORIES = ["All", "TEMPLATES", "MESSAGING", "UTILITIES", "AI AUDIO"];
 
 export default function FreeToolsScreen() {
   const router = useRouter();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
-  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [openingToolId, setOpeningToolId] = useState<string | null>(null);
@@ -190,70 +202,79 @@ export default function FreeToolsScreen() {
       tool.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tool.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory =
-      selectedCategory === "All" || tool.category === selectedCategory;
+      selectedCategory === "All" ||
+      tool.category.toLowerCase() === selectedCategory.toLowerCase();
     return matchesSearch && matchesCategory;
   });
 
   return (
     <AppScreen safeArea={false}>
       <AppTopBar
-        title="Free Tools Hub"
-        subtitle="Complete Utility Inventory (10 Tools)"
+        title="Tools"
         showBack={false}
         showPlanBadge={true}
       />
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={{ padding: 16, paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero Card */}
-        <View style={[styles.heroCard, isDark && styles.heroCardDark]}>
-          <Text style={styles.heroTitle}>Production Utilities</Text>
-          <Text style={[styles.heroSub, isDark && styles.heroSubDark]}>
-            Zero-cost growth tools powered by GetAIPilot infrastructure. No
-            credit card required.
-          </Text>
+        <View style={{ marginBottom: 20, gap: 8 }}>
+          <Text style={{ fontSize: 30, lineHeight: 38, fontWeight: "500", letterSpacing: -0.6, color: colors.text }}>Create something</Text>
+          <Text style={{ fontSize: 14, color: colors.textSecondary }}>Simple tools for your next idea.</Text>
+        </View>
+        {/* Category Tabs (Folder Style matching inbox status tabs) */}
+        <View style={{ position: "relative", marginVertical: 16 }}>
+
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 2 }}
+          >
+            {CATEGORIES.map((cat) => {
+              const isActive = selectedCategory === cat;
+              return (
+                <Pressable
+                  key={cat}
+                  onPress={() => setSelectedCategory(cat)}
+                  style={{
+                    height: 44,
+                    paddingHorizontal: 14,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    borderRadius: 22,
+                    marginRight: 8,
+                    borderTopWidth: 0,
+                    borderLeftWidth: 0,
+                    borderRightWidth: 0,
+                    borderBottomWidth: 0,
+                    borderTopColor: isActive ? colors.primary : "transparent",
+                    borderLeftColor: isActive ? colors.primary : "transparent",
+                    borderRightColor: isActive ? colors.primary : "transparent",
+                    borderBottomColor: isActive ? colors.background : "transparent",
+                    backgroundColor: isActive ? colors.accentSoft : colors.card,
+                    zIndex: isActive ? 2 : 1,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12.5,
+                      fontWeight: isActive ? "700" : "500",
+                      letterSpacing: -0.1,
+                      color: isActive ? colors.accent : colors.textSecondary,
+                    }}
+                  >
+                    {cat}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
         </View>
 
-        {/* Search Bar */}
-        <SearchInput
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Search all 10 tools..."
-        />
-
-        {/* Category Pills */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoryScroll}
-        >
-          {CATEGORIES.map((cat) => (
-            <Pressable
-              key={cat}
-              style={[
-                styles.categoryChip,
-                isDark && styles.categoryChipDark,
-                selectedCategory === cat && styles.categoryChipActive,
-              ]}
-              onPress={() => setSelectedCategory(cat)}
-            >
-              <Text
-                style={[
-                  styles.categoryText,
-                  isDark && styles.categoryTextDark,
-                  selectedCategory === cat && styles.categoryTextActive,
-                ]}
-              >
-                {cat}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-
         {/* Tools Grid */}
-        <View style={styles.toolsList}>
+        <View className="mt-1 ">
           {filteredTools.map((tool) => (
             <ToolCard
               key={tool.id}
@@ -261,6 +282,7 @@ export default function FreeToolsScreen() {
               category={tool.category}
               description={tool.description}
               icon={tool.icon}
+              iconBg={tool.iconBg}
               badge={tool.badge}
               onPress={() => void handleToolPress(tool)}
             />
@@ -269,75 +291,4 @@ export default function FreeToolsScreen() {
       </ScrollView>
     </AppScreen>
   );
-}
-
-function createStyles(colors: ReturnType<typeof getColors>, isDark: boolean) {
-  return StyleSheet.create({
-    scrollContent: {
-      padding: 16,
-      paddingBottom: 140,
-    },
-    heroCard: {
-      backgroundColor: colors.card,
-      borderRadius: 18,
-      padding: 18,
-      marginBottom: 16,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    heroCardDark: {
-      backgroundColor: colors.card,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    heroTitle: {
-      fontSize: 18,
-      fontWeight: "900",
-      color: colors.foreground,
-    },
-    heroSub: {
-      fontSize: 13,
-      color: colors.mutedForeground,
-      marginTop: 4,
-      lineHeight: 18,
-    },
-    heroSubDark: {
-      color: colors.mutedForeground,
-    },
-    categoryScroll: {
-      flexDirection: "row",
-      marginBottom: 16,
-    },
-    categoryChip: {
-      paddingHorizontal: 14,
-      paddingVertical: 7,
-      borderRadius: 20,
-      backgroundColor: colors.card,
-      marginRight: 8,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    categoryChipDark: {
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-    },
-    categoryChipActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
-    },
-    categoryText: {
-      fontSize: 12,
-      fontWeight: "700",
-      color: colors.mutedForeground,
-    },
-    categoryTextDark: {
-      color: colors.mutedForeground,
-    },
-    categoryTextActive: {
-      color: colors.primaryForeground,
-    },
-    toolsList: {
-      marginTop: 4,
-    },
-  });
 }

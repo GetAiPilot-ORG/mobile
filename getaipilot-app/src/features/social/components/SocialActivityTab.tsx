@@ -1,26 +1,17 @@
+import { ProductHeading,useProductPalette } from "@/components/ProductUI";
+import React,{ useState } from 'react';
+import { Pressable,ScrollView,Text,View } from 'react-native';
 import {
-  Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import React,
-  { useState } from 'react';
-import { Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import {
-  ActivitySubTab,
-  InstapilotConversation,
-  SystemProductStatus,
-  SystemSettings,
-  YoutubeChannelAccount,
+ActivitySubTab,
+InstapilotConversation,
+SystemProductStatus,
+SystemSettings,
+YoutubeChannelAccount,
 } from '../types';
 import { ActivityAutoDMSubTab } from './activity/ActivityAutoDMSubTab';
 import { ActivityInstapilotSubTab } from './activity/ActivityInstapilotSubTab';
 import { ActivityQueueSubTab } from './activity/ActivityQueueSubTab';
 import { ActivityYouTubeSubTab } from './activity/ActivityYouTubeSubTab';
-import { useTheme, getColors } from '@/theme';
 
 export interface SocialActivityTabProps {
   queueLoading: boolean;
@@ -63,138 +54,16 @@ export const SocialActivityTab: React.FC<SocialActivityTabProps> = ({
   youtubeAccountsLoading = false,
   onRefreshYoutubeAccounts,
 }) => {
-  const { isDark } = useTheme();
-  const colors = getColors(isDark);
+  const colors = useProductPalette();
   const [activeSubTab, setActiveSubTab] = useState<ActivitySubTab>('queue');
 
   return (
-    <View style={styles.container}>
-      {/* Sub-Tabs Top Segmented Navigation (Horizontally scrollable for small screens) */}
-      <View style={[styles.segmentedWrapper, { backgroundColor: isDark ? '#1e293b' : '#e2e8f0' }]}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.segmentedScroll}
-        >
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setActiveSubTab('queue');
-            }}
-            style={[
-              styles.segmentItem,
-              activeSubTab === 'queue' && [
-                styles.segmentItemActive,
-                { backgroundColor: isDark ? '#0f172a' : '#ffffff' },
-              ],
-            ]}
-          >
-            <Ionicons
-              name="time"
-              size={14}
-              color={activeSubTab === 'queue' ? '#ec4899' : isDark ? '#94a3b8' : '#64748b'}
-            />
-            <Text
-              style={[
-                styles.segmentText,
-                { color: activeSubTab === 'queue' ? '#ec4899' : isDark ? '#94a3b8' : '#64748b' },
-              ]}
-              numberOfLines={1}
-            >
-              Queue ({queueList.length})
-            </Text>
-          </Pressable>
+    <View className="gap-4">
+      <ProductHeading title="Your publishing" action="Create a post" onAction={onOpenCreateModal} />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 10 }}>
+        {([{ key: 'queue', title: 'Queue' }, { key: 'instapilot', title: 'Instagram' }, { key: 'youtube', title: 'YouTube' }, { key: 'autodm', title: 'Auto replies' }] as const).map((tab) => <Pressable key={tab.key} onPress={() => setActiveSubTab(tab.key)} accessibilityRole="button" accessibilityState={{ selected: activeSubTab === tab.key }} style={{ borderRadius: 24, paddingHorizontal: 18, minHeight: 44, justifyContent: 'center', backgroundColor: activeSubTab === tab.key ? colors.lavender : colors.card }}><Text style={{ color: activeSubTab === tab.key ? colors.accent : colors.textSecondary, fontSize: 13 }}>{tab.title}</Text></Pressable>)}
+      </ScrollView>
 
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setActiveSubTab('instapilot');
-            }}
-            style={[
-              styles.segmentItem,
-              activeSubTab === 'instapilot' && [
-                styles.segmentItemActive,
-                { backgroundColor: isDark ? '#0f172a' : '#ffffff' },
-              ],
-            ]}
-          >
-            <Ionicons
-              name="logo-instagram"
-              size={14}
-              color={activeSubTab === 'instapilot' ? '#e1306c' : isDark ? '#94a3b8' : '#64748b'}
-            />
-            <Text
-              style={[
-                styles.segmentText,
-                { color: activeSubTab === 'instapilot' ? '#e1306c' : isDark ? '#94a3b8' : '#64748b' },
-              ]}
-              numberOfLines={1}
-            >
-              Instapilot
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setActiveSubTab('youtube');
-            }}
-            style={[
-              styles.segmentItem,
-              activeSubTab === 'youtube' && [
-                styles.segmentItemActive,
-                { backgroundColor: isDark ? '#0f172a' : '#ffffff' },
-              ],
-            ]}
-          >
-            <Ionicons
-              name="logo-youtube"
-              size={14}
-              color={activeSubTab === 'youtube' ? '#ff0000' : isDark ? '#94a3b8' : '#64748b'}
-            />
-            <Text
-              style={[
-                styles.segmentText,
-                { color: activeSubTab === 'youtube' ? '#ff0000' : isDark ? '#94a3b8' : '#64748b' },
-              ]}
-              numberOfLines={1}
-            >
-              YouTube
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setActiveSubTab('autodm');
-            }}
-            style={[
-              styles.segmentItem,
-              activeSubTab === 'autodm' && [
-                styles.segmentItemActive,
-                { backgroundColor: isDark ? '#0f172a' : '#ffffff' },
-              ],
-            ]}
-          >
-            <Ionicons
-              name="flash"
-              size={14}
-              color={activeSubTab === 'autodm' ? '#3b82f6' : isDark ? '#94a3b8' : '#64748b'}
-            />
-            <Text
-              style={[
-                styles.segmentText,
-                { color: activeSubTab === 'autodm' ? '#3b82f6' : isDark ? '#94a3b8' : '#64748b' },
-              ]}
-              numberOfLines={1}
-            >
-              AutoDM
-            </Text>
-          </Pressable>
-        </ScrollView>
-      </View>
-
-      {/* Subtab Contents */}
       {activeSubTab === 'queue' && (
         <ActivityQueueSubTab
           queueLoading={queueLoading}
@@ -238,41 +107,3 @@ export const SocialActivityTab: React.FC<SocialActivityTabProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    gap: 16,
-  },
-  segmentedWrapper: {
-    borderRadius: 12,
-    padding: 3,
-  },
-  segmentedScroll: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    minWidth: '100%',
-  },
-  segmentItem: {
-    flex: 1,
-    minWidth: 85,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 9,
-    gap: 5,
-  },
-  segmentItemActive: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  segmentText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-});

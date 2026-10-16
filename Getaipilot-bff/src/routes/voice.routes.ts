@@ -273,5 +273,23 @@ export async function voiceRoutes(fastify: FastifyInstance) {
     const transactions = await VoiceAdapter.getBillingTransactions(user);
     return reply.send(transactions);
   });
+
+  // 9. VoicePilot Authenticated SSO Web Handoff URL
+  fastify.post('/voice/sso-url', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const body = (request.body || {}) as { target?: string; redirectPath?: string };
+    const target = body.redirectPath || body.target || '/dashboard/phone-numbers';
+    const ssoUrl = await VoiceAdapter.getVoiceHandoffUrl(user, target);
+    return reply.send({ success: true, ssoUrl });
+  });
+
+  fastify.get('/voice/sso-url', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const query = (request.query || {}) as { target?: string; redirectPath?: string };
+    const target = query.redirectPath || query.target || '/dashboard/phone-numbers';
+    const ssoUrl = await VoiceAdapter.getVoiceHandoffUrl(user, target);
+    return reply.send({ success: true, ssoUrl });
+  });
 }
+
 

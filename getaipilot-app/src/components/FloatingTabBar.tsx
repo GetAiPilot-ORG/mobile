@@ -1,4 +1,15 @@
-import { Ionicons } from '@expo/vector-icons';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import {
+  Home01Icon,
+  Message01Icon,
+  UserGroupIcon,
+  Calendar01Icon,
+  TelescopeIcon,
+  Activity01Icon,
+  ShieldCheckIcon,
+  Mail01Icon,
+} from '@hugeicons/core-free-icons';
 import * as Haptics from 'expo-haptics';
 import React from 'react';
 import {
@@ -11,58 +22,46 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, getColors } from '@/theme';
-import { usePlatformSubscription } from '../hooks/usePlatformSubscription';
 import { useAuth } from '../contexts/AuthContext';
-
-type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
+import { TabMotion } from './TabMotion';
 
 interface TabItemConfig {
   label: string;
-  activeIcon: IoniconsName;
-  inactiveIcon: IoniconsName;
+  icon: any;
 }
 
 const TAB_CONFIG: Record<string, TabItemConfig> = {
   index: {
     label: 'Home',
-    activeIcon: 'home',
-    inactiveIcon: 'home-outline',
+    icon: Home01Icon,
   },
   inbox: {
     label: 'Inbox',
-    activeIcon: 'chatbubbles',
-    inactiveIcon: 'chatbubbles-outline',
+    icon: Message01Icon,
   },
-
   team: {
     label: 'Team',
-    activeIcon: 'people',
-    inactiveIcon: 'people-outline',
+    icon: UserGroupIcon,
   },
   planner: {
     label: 'Planner',
-    activeIcon: 'calendar',
-    inactiveIcon: 'calendar-outline',
+    icon: Calendar01Icon,
   },
   tools: {
     label: 'Tools',
-    activeIcon: 'telescope',
-    inactiveIcon: 'telescope-outline',
+    icon: TelescopeIcon,
   },
   activity: {
     label: 'Activity',
-    activeIcon: 'pulse',
-    inactiveIcon: 'pulse-outline',
+    icon: Activity01Icon,
   },
   admin: {
     label: 'Admin',
-    activeIcon: 'shield-checkmark',
-    inactiveIcon: 'shield-checkmark-outline'
+    icon: ShieldCheckIcon,
   },
   communication: {
     label: 'Connect',
-    activeIcon: 'mail',
-    inactiveIcon: 'mail-outline',
+    icon: Mail01Icon,
   },
 };
 
@@ -74,14 +73,13 @@ export interface FloatingTabBarProps {
 }
 
 const tabSpringAnimation = {
-  duration: 260,
+  duration: 180,
   create: {
     type: LayoutAnimation.Types.easeInEaseOut,
     property: LayoutAnimation.Properties.opacity,
   },
   update: {
-    type: LayoutAnimation.Types.spring,
-    springDamping: 0.75,
+    type: LayoutAnimation.Types.easeInEaseOut,
   },
   delete: {
     type: LayoutAnimation.Types.easeInEaseOut,
@@ -93,8 +91,12 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+  const reducedMotion = useReducedMotion();
   const { user, profile } = useAuth();
-  const { isAdmin: isPlatformAdmin } = usePlatformSubscription();
+
+  if (!state?.routes || !descriptors || !navigation) {
+    return null;
+  }
 
   const userRole = (user?.role || profile?.role || '').toLowerCase();
   const isAdmin = Boolean(
@@ -107,7 +109,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   const bottomOffset = Math.max(insets.bottom, 12);
 
   // Filter visible routes: Home, Inbox, Tools, Activity, and Admin ONLY for admin users
-  const visibleRoutes = state.routes.filter((route: any) => {
+  const visibleRoutes = (state.routes || []).filter((route: any) => {
     const descriptor = descriptors[route.key];
     const options = descriptor ? descriptor.options : {};
 
@@ -116,7 +118,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
       return false;
     }
 
-    // Admin tab (shield-checkmark) should ONLY show when the user is admin
+    // Admin tab should ONLY show when the user is admin
     if (route.name === 'admin') {
       return Boolean(isAdmin);
     }
@@ -131,151 +133,193 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   );
 
   return (
-    <View style={[styles.floatingWrapper, { bottom: bottomOffset }]}>
-      <View
+    <View style={styles.dockRoot} pointerEvents="box-none">
+      {/* 2. Rounded navigation dock */}
+      {/* 1. Full-bleed Bottom Frosted Backdrop that blurs all scrolled content behind it and fills the bottom screen area */}
+      <Pressable
         style={[
-          styles.tabBarContainer,
+          styles.backdropWrapper,
           {
-            backgroundColor: colors.card,
-            borderColor: colors.border,
+            height: 52 + bottomOffset,
           },
         ]}
+        disabled={true}
       >
-        {visibleRoutes.map((route: { key: string; name: string }, index: number) => {
-          const descriptor = descriptors[route.key];
-          const options = descriptor ? descriptor.options : ({} as any);
-          const isFocused = activeVisibleIndex === index;
-          const config = TAB_CONFIG[route.name];
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: isDark
+                ? 'rgba(17, 16, 15, 0.65)'
+                : 'rgba(247, 245, 242, 0.70)',
+              // borderTopWidth: StyleSheet.hairlineWidth,
+              borderTopColor: isDark
+                ? 'rgba(255, 255, 255, 0.08)'
+                : 'rgba(0, 0, 0, 0.06)',
+            },
+          ]}
+        />
+      </Pressable>
 
-          const onPress = () => {
-            if (Platform.OS !== 'web') {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }
+      {/* 2. Floating Pill Tab Bar with rounded frosted glassmorphism */}
+      <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
+        <View
+          style={[
+            styles.tabBarContainer,
+            {
+              backgroundColor: colors.card,
+              borderWidth: 0,
+              shadowColor: '#000000',
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: isDark ? 0.2 : 0.06,
+              shadowRadius: 18,
+              elevation: 3,
+            },
+          ]}
+        >
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                backgroundColor: isDark
+                  ? 'rgba(25, 23, 21, 0.70)'
+                  : 'rgba(253, 252, 251, 0.75)',
+              },
+            ]}
+          />
 
-            LayoutAnimation.configureNext(tabSpringAnimation);
+          {visibleRoutes.map((route: { key: string; name: string }, index: number) => {
+            const descriptor = descriptors[route.key];
+            const options = descriptor ? descriptor.options : ({} as any);
+            const isFocused = activeVisibleIndex === index;
+            const config = TAB_CONFIG[route.name];
 
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: route.key,
-              canPreventDefault: true,
-            });
+            const onPress = () => {
+              if (Platform.OS !== 'web') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
 
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name);
-            }
-          };
+              if (!reducedMotion) LayoutAnimation.configureNext(tabSpringAnimation);
 
-          const onLongPress = () => {
-            navigation.emit({
-              type: 'tabLongPress',
-              target: route.key,
-            });
-          };
+              const event = navigation.emit({
+                type: 'tabPress',
+                target: route.key,
+                canPreventDefault: true,
+              });
 
-          const iconName = isFocused ? config.activeIcon : config.inactiveIcon;
+              if (!isFocused && !event.defaultPrevented) {
+                navigation.navigate(route.name);
+              }
+            };
 
-          if (isFocused) {
+            const onLongPress = () => {
+              navigation.emit({
+                type: 'tabLongPress',
+                target: route.key,
+              });
+            };
+
+            const IconComponent = config?.icon || Home01Icon;
+
             return (
-              <Pressable
-                key={route.key}
-                accessibilityRole="button"
-                accessibilityState={{ selected: true }}
-                accessibilityLabel={options.tabBarAccessibilityLabel}
-                testID={options.tabBarButtonTestID}
-                onPress={onPress}
-                onLongPress={onLongPress}
-                style={[
-                  styles.activePill,
-                  { backgroundColor: colors.primary },
-                ]}
-              >
-                <Ionicons
-                  name={iconName}
-                  size={19}
-                  color={isDark ? '#FFFFFF' : '#FFFFFF'}
-                />
-                <Text
-                  style={[
-                    styles.activeLabel,
-                    { color: colors.primaryForeground },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {config.label}
-                </Text>
-              </Pressable>
+              <TabMotion key={route.key} active={isFocused}>
+                {isFocused ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: true }}
+                    accessibilityLabel={options?.tabBarAccessibilityLabel || config.label}
+                    testID={options?.tabBarButtonTestID}
+                    onPress={onPress}
+                    onLongPress={onLongPress}
+                    style={[
+                      styles.activePill,
+                      { backgroundColor: colors.accentSoft },
+                    ]}
+                  >
+                    <HugeiconsIcon
+                      icon={IconComponent}
+                      size={19}
+                      color={colors.accent}
+                      strokeWidth={2}
+                    />
+                    <Text
+                      style={[
+                        styles.activeLabel,
+                        { color: colors.accent },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {config.label}
+                    </Text>
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: false }}
+                    accessibilityLabel={options?.tabBarAccessibilityLabel || config.label}
+                    testID={options?.tabBarButtonTestID}
+                    onPress={onPress}
+                    onLongPress={onLongPress}
+                    style={[
+                      styles.inactiveButton,
+                      {
+                        backgroundColor: 'transparent',
+                      },
+                    ]}
+                  >
+                    <HugeiconsIcon
+                      icon={IconComponent}
+                      size={20}
+                      color={colors.textMuted}
+                      strokeWidth={1.75}
+                    />
+                  </Pressable>
+                )}
+              </TabMotion>
             );
-          }
-
-          return (
-            <Pressable
-              key={route.key}
-              accessibilityRole="button"
-              accessibilityState={{ selected: false }}
-              accessibilityLabel={options.tabBarAccessibilityLabel}
-              testID={options.tabBarButtonTestID}
-              onPress={onPress}
-              onLongPress={onLongPress}
-              style={[
-                styles.inactiveButton,
-                {
-                  backgroundColor: isDark
-                    ? 'rgba(255, 255, 255, 0.07)'
-                    : 'rgba(0, 0, 0, 0.04)',
-                },
-              ]}
-            >
-              <Ionicons
-                name={iconName}
-                size={20}
-                color={colors.textMuted}
-              />
-            </Pressable>
-          );
-        })}
+          })}
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  dockRoot: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 9999,
+  },
+  backdropWrapper: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
   floatingWrapper: {
     position: 'absolute',
     left: 16,
     right: 16,
     alignItems: 'center',
-    zIndex: 9999,
-    pointerEvents: 'box-none' as any,
+    zIndex: 10000,
   },
   tabBarContainer: {
+    width: '100%',
+    maxWidth: 420,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-around',
     alignSelf: 'center',
     height: 52,
     borderRadius: 26,
-    paddingHorizontal: 4,
+    paddingHorizontal: 6,
     paddingVertical: 4,
-    borderWidth: 1,
-    gap: 6,
-  },
-  tabBarContainerLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 18,
-    elevation: 12,
-  },
-  tabBarContainerDark: {
-    backgroundColor: '#0A111B',
-    borderColor: '#234563',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.45,
-    shadowRadius: 24,
-    elevation: 14,
+    borderWidth: 0,
+    overflow: 'hidden',
+    gap: 4,
   },
   activePill: {
     flexDirection: 'row',
@@ -287,28 +331,14 @@ const styles = StyleSheet.create({
     gap: 6,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18,
+    shadowOpacity: 0,
     shadowRadius: 6,
-    elevation: 5,
-  },
-  activePillDark: {
-    backgroundColor: 'rgba(47, 140, 255, 0.16)',
-    borderWidth: 1,
-    borderColor: '#3E9BFF',
-  },
-  activePillLight: {
-    backgroundColor: '#0F172A',
+    elevation: 0,
   },
   activeLabel: {
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: -0.2,
-  },
-  activeLabelDark: {
-    color: '#FFFFFF',
-  },
-  activeLabelLight: {
-    color: '#FFFFFF',
   },
   inactiveButton: {
     alignItems: 'center',
@@ -316,11 +346,5 @@ const styles = StyleSheet.create({
     height: 44,
     width: 44,
     borderRadius: 22,
-  },
-  inactiveButtonDark: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-  },
-  inactiveButtonLight: {
-    backgroundColor: 'rgba(0, 0, 0, 0.04)',
   },
 });

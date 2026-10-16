@@ -15,3 +15,7 @@ export * from './SearchInput';
 export * from './OfflineNotice';
 export * from './GlobalErrorBoundary';
 export * from './skeletonScreen';
+export * from './splash/AnimatedSplashScreen';
+export * from './TabMotion';
+export * from './ThemedDialog';
+export * from '../contexts/ThemedDialogContext';

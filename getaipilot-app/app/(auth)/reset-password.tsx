@@ -164,7 +164,7 @@ export default function ResetPasswordScreen() {
                 <TextInput
                   style={[styles.inputFlex, isDark && styles.inputTextDark]}
                   placeholder="Min. 6 characters"
-                  placeholderTextColor={isDark ? '#6B7280' : '#9CA3AF'}
+                  placeholderTextColor={isDark ? '#6B7280' : '#777383'}
                   secureTextEntry={!showPassword}
                   value={password}
                   onChangeText={setPassword}
@@ -178,7 +178,7 @@ export default function ResetPasswordScreen() {
                   <Ionicons
                     name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                     size={20}
-                    color={isDark ? '#9CA3AF' : '#6B7280'}
+                    color={isDark ? '#777383' : '#6B7280'}
                   />
                 </Pressable>
               </View>
@@ -190,7 +190,7 @@ export default function ResetPasswordScreen() {
               <TextInput
                 style={[styles.input, isDark && styles.inputDark]}
                 placeholder="Re-enter password"
-                placeholderTextColor={isDark ? '#6B7280' : '#9CA3AF'}
+                placeholderTextColor={isDark ? '#6B7280' : '#777383'}
                 secureTextEntry={!showPassword}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
@@ -223,7 +223,7 @@ export default function ResetPasswordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F5F3FB',
   },
   containerDark: {
     backgroundColor: '#000000',
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     maxWidth: 300,
   },
   subtitleDark: {
-    color: '#9CA3AF',
+    color: '#777383',
   },
   feedbackBox: {
     flexDirection: 'row',
@@ -308,14 +308,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#E9E6F2',
     paddingHorizontal: 14,
     fontSize: 15,
     color: '#111827',
   },
   inputDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
+    backgroundColor: '#252230',
+    borderColor: '#3A3549',
     color: '#FFFFFF',
   },
   passwordInputContainer: {
@@ -323,14 +323,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#E9E6F2',
     paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
   },
   passwordInputContainerDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
+    backgroundColor: '#252230',
+    borderColor: '#3A3549',
   },
   inputFlex: {
     flex: 1,

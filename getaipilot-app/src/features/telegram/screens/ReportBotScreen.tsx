@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Image,
   Linking,
   Modal,
@@ -15,12 +16,14 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
 import { useTheme } from '../../../contexts/ThemeContext';
 import { supabase } from '../../../lib/supabase';
 import { telegramSupabase } from '../api/telegramSupabase';
+import { ProductHeading } from "@/components/ProductUI";
 import { ReportBotBrandProfile, TelegramToolKey } from '../types';
 
 interface Props { summary?: any; onOpenModal: (key: TelegramToolKey) => void; }
@@ -55,7 +58,7 @@ const LOGO_PRESETS = [
 ];
 
 export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
-  const { isDark } = useTheme();
+  const { isDark, colors } = useTheme();
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<ReportBotTab>('profile');
@@ -293,99 +296,220 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
     }
   };
 
+  const { width } = useWindowDimensions();
+  const isWide = width >= 768;
+  const numColumns = isWide ? 4 : 2;
+  const cardWidthPercent = numColumns === 4 ? '23.5%' : '48.5%';
+
+  const reportKpis = [
+    {
+      title: 'BRAND ENTITY',
+      value: advisoryFirm ? advisoryFirm.slice(0, 16) : 'Unassigned',
+      icon: 'shield-checkmark-outline' as const,
+      color: '#EAB308',
+      subtext: sebiRegistration ? `SEBI: ${sebiRegistration}` : 'Setup Profile',
+    },
+    {
+      title: 'MAPPED CHANNELS',
+      value: `${dashboard?.channelsCount ?? 0} Channels`,
+      icon: 'paper-plane-outline' as const,
+      color: '#0284C7',
+      subtext: 'Auto-PDF listener',
+    },
+    {
+      title: 'REPORT ARCHIVE',
+      value: `${dashboard?.reportsCount ?? 0} Reports`,
+      icon: 'document-text-outline' as const,
+      color: '#10B981',
+      subtext: 'Branded PDF storage',
+    },
+    {
+      title: 'DAEMON STATUS',
+      value: 'DM CONNECTED',
+      icon: 'radio-outline' as const,
+      color: '#8B5CF6',
+      subtext: 'Instant PDF generator',
+    },
+  ];
+
   return (
-    <View style={styles.container}>
-      {/* Top Header Card */}
-      <View style={[styles.topCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        {/* Top Header */}
-        <View style={[styles.header, { borderColor: colors.border }]}>
-          <View style={{ flex: 1, paddingRight: 8 }}>
-            <Text style={[styles.title, { color: colors.text }]}>GAP Report Bot</Text>
-            <Text style={styles.subtitle} numberOfLines={2}>
-              Convert Telegram trading calls into branded SEBI research PDFs.
+    <View style={styles.container} className="gap-3.5">
+      {/* 1. Cyber Animated Hero Banner */}
+      <ProductHeading title="Research reports" />
+
+      {/* 2. Responsive KPI Command Cards */}
+      <View className="flex-row flex-wrap gap-2.5 w-full">
+        {reportKpis.map((kpi, idx) => (
+          <View
+            key={idx}
+            className="p-3.5 rounded-2xl flex-col justify-between"
+            style={{
+              backgroundColor: colors.card,
+              width: cardWidthPercent,
+              minHeight: 88,
+            }}
+          >
+            <View className="flex-row items-center justify-between mb-1">
+              <Text
+                className="text-[10px] font-bold uppercase "
+                style={{ color: isDark ? '#94A3B8' : '#64748B' }}
+                numberOfLines={1}
+              >
+                {kpi.title}
+              </Text>
+              <View
+                className="w-6 h-6 rounded-lg items-center justify-center"
+                style={{ backgroundColor: `${kpi.color}15` }}
+              >
+                <Ionicons name={kpi.icon} size={13} color={kpi.color} />
+              </View>
+            </View>
+
+            <Text
+              className="text-sm font-medium"
+              style={{ color: colors.text }}
+              numberOfLines={1}
+            >
+              {kpi.value}
+            </Text>
+
+            <Text
+              className="text-[10px] font-medium mt-0.5"
+              style={{ color: isDark ? '#64748B' : '#94A3B8' }}
+              numberOfLines={1}
+            >
+              {kpi.subtext}
             </Text>
           </View>
+        ))}
+      </View>
+
+      {/* 3. Action Toolbar & Controls */}
+      <View
+        className="w-full flex-row items-center justify-between p-3.5 rounded-2xl"
+        style={{ backgroundColor: colors.card }}
+      >
+        <View className="flex-1 pr-3">
+          <Text className="text-xs font-bold" style={{ color: colors.text }}>
+            SEBI Research Daemon
+          </Text>
+          <Text className="text-[11px]" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
+            Auto converts calls to branded PDFs
+          </Text>
         </View>
 
-        {/* Action Header Buttons: Start Bot & Refresh Status */}
-        <View style={[styles.actionHeaderRow, { borderColor: colors.border }]}>
-          <Pressable style={styles.startBotBtn} onPress={handleStartBot}>
-            <Ionicons name="paper-plane-outline" size={14} color="#FFFFFF" />
-            <Text style={styles.startBotBtnText}>Start Bot</Text>
-            <Ionicons name="open-outline" size={12} color="#FFFFFF" />
+        <View className="flex-row items-center gap-2">
+          <Pressable
+            className="flex-row items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0284C7] active:opacity-90 shadow-sm"
+            onPress={handleStartBot}
+          >
+            <Ionicons name="paper-plane" size={13} color="#FFFFFF" />
+            <Text className="text-white text-xs font-bold">Start Bot</Text>
           </Pressable>
 
           <Pressable
-            style={[styles.refreshBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            className="w-8 h-8 rounded-xl items-center justify-center active:opacity-80"
+            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F0EEF8' }}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               refetch();
             }}
             disabled={isRefetching}
           >
-            <Ionicons name="refresh-outline" size={14} color={colors.text} />
-            <Text style={[styles.refreshBtnText, { color: colors.text }]}>
-              {isRefetching ? 'Refreshing...' : 'Refresh Status'}
-            </Text>
+            <Ionicons name="refresh-outline" size={15} color={colors.text} />
           </Pressable>
         </View>
+      </View>
 
-        {/* 3-Segment Tab Bar & Live Status Bar */}
-        <View style={styles.tabBarSection}>
-          <View style={styles.tabsRow}>
-            <Pressable
-              style={[styles.tabPill, activeTab === 'profile' && styles.tabPillActive]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setActiveTab('profile');
-              }}
-            >
-              <Text style={[styles.tabPillText, activeTab === 'profile' && styles.tabPillTextActive]}>
-                Brand Profile
-              </Text>
-            </Pressable>
+      {/* 4. Category Filter Pill Bar */}
+      <View
+        className="w-full flex-row items-center p-1.5 rounded-2xl gap-2"
+        style={{ backgroundColor: colors.card }}
+      >
+        <Pressable
+          className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl ${activeTab === 'profile' ? 'bg-[#0284C7]' : ''
+            }`}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setActiveTab('profile');
+          }}
+        >
+          <Ionicons
+            name="shield-checkmark-outline"
+            size={13}
+            color={activeTab === 'profile' ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
+          />
+          <Text
+            className={`text-xs font-bold ${activeTab === 'profile' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
+              }`}
+          >
+            Brand Profile
+          </Text>
+        </Pressable>
 
-            <Pressable
-              style={[styles.tabPill, activeTab === 'channels' && styles.tabPillActive]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setActiveTab('channels');
-              }}
+        <Pressable
+          className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl ${activeTab === 'channels' ? 'bg-[#0284C7]' : ''
+            }`}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setActiveTab('channels');
+          }}
+        >
+          <Ionicons
+            name="paper-plane-outline"
+            size={13}
+            color={activeTab === 'channels' ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
+          />
+          <Text
+            className={`text-xs font-bold ${activeTab === 'channels' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
+              }`}
+          >
+            Channels
+          </Text>
+          <View
+            className={`px-1.5 py-0.2 rounded-full ${activeTab === 'channels' ? 'bg-white/20' : 'bg-black/10'
+              }`}
+          >
+            <Text
+              className={`text-[9px] font-medium ${activeTab === 'channels' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
+                }`}
             >
-              <Text style={[styles.tabPillText, activeTab === 'channels' && styles.tabPillTextActive]}>
-                Channels ({dashboard?.channelsCount ?? 0})
-              </Text>
-            </Pressable>
-
-            <Pressable
-              style={[styles.tabPill, activeTab === 'archive' && styles.tabPillActive]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setActiveTab('archive');
-              }}
-            >
-              <Text style={[styles.tabPillText, activeTab === 'archive' && styles.tabPillTextActive]}>
-                Archive ({dashboard?.reportsCount ?? 0})
-              </Text>
-            </Pressable>
+              {dashboard?.channelsCount ?? 0}
+            </Text>
           </View>
+        </Pressable>
 
-          {/* Live Status Indicators */}
-          <View style={styles.statusPillsRow}>
-            <View style={styles.statusIndicator}>
-              <View style={styles.dotGreen} />
-              <Text style={styles.statusText}>DM Connected</Text>
-            </View>
-            <View style={styles.statusIndicator}>
-              <View style={styles.dotGreen} />
-              <Text style={styles.statusText}>Channels {dashboard?.channelsCount ?? 0}</Text>
-            </View>
-            <View style={styles.statusIndicator}>
-              <View style={styles.dotGreen} />
-              <Text style={styles.statusText}>Reports {dashboard?.reportsCount ?? 0}</Text>
-            </View>
+        <Pressable
+          className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl ${activeTab === 'archive' ? 'bg-[#0284C7]' : ''
+            }`}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setActiveTab('archive');
+          }}
+        >
+          <Ionicons
+            name="archive-outline"
+            size={13}
+            color={activeTab === 'archive' ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
+          />
+          <Text
+            className={`text-xs font-bold ${activeTab === 'archive' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
+              }`}
+          >
+            Archive
+          </Text>
+          <View
+            className={`px-1.5 py-0.2 rounded-full ${activeTab === 'archive' ? 'bg-white/20' : 'bg-black/10'
+              }`}
+          >
+            <Text
+              className={`text-[9px] font-medium ${activeTab === 'archive' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
+                }`}
+            >
+              {dashboard?.reportsCount ?? 0}
+            </Text>
           </View>
-        </View>
+        </Pressable>
       </View>
 
       <View style={styles.bodyContent}>
@@ -505,7 +629,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
 
                   <View style={styles.row}>
                     {/* Interactive Pressable Logo Box */}
-                    <Pressable
+                    <Pressable cssInterop={false}
                       style={({ pressed }) => [
                         styles.logoUploadBox,
                         { borderColor: colors.border, backgroundColor: colors.card },
@@ -602,7 +726,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                     </View>
                     <View style={styles.completedBadge}>
                       <View style={styles.dotGreen} />
-                      <Text style={styles.completedBadgeText}>Live Synced</Text>
+
                     </View>
                   </View>
 
@@ -693,23 +817,13 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                   </View>
                 </View>
 
-                {(dashboard?.channels || []).length === 0 ? (
-                  <View style={styles.emptyBox}>
-                    <Ionicons name="radio-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
-                    <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                      No Channels Connected Yet
-                    </Text>
-                    <Text style={styles.emptyDesc}>
-                      Add @ResearchReport233_bot as an Admin to your Telegram trading channel to begin auto-converting calls.
-                    </Text>
-                    <Pressable style={[styles.startBotBtn, { marginTop: 12 }]} onPress={handleStartBot}>
-                      <Ionicons name="add" size={16} color="#FFFFFF" />
-                      <Text style={styles.startBotBtnText}>Connect Channel</Text>
-                    </Pressable>
-                  </View>
-                ) : (
-                  (dashboard?.channels || []).map((ch: any, idx: number) => (
-                    <View key={`ch_${ch.id || idx}`} style={[styles.channelItem, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                <FlatList
+                  data={dashboard?.channels || []}
+                  keyExtractor={(ch, idx) => `ch_${ch.id || idx}`}
+                  scrollEnabled={false}
+                  ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+                  renderItem={({ item: ch }) => (
+                    <View style={[styles.channelItem, { borderColor: colors.border, backgroundColor: colors.card }]}>
                       <View style={styles.channelIcon}>
                         <Ionicons name="megaphone" size={16} color="#0284C7" />
                       </View>
@@ -721,8 +835,23 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                       </View>
                       <Ionicons name="checkmark-circle" size={18} color="#10B981" />
                     </View>
-                  ))
-                )}
+                  )}
+                  ListEmptyComponent={
+                    <View style={styles.emptyBox}>
+                      <Ionicons name="radio-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
+                      <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                        No Channels Connected Yet
+                      </Text>
+                      <Text style={styles.emptyDesc}>
+                        Add @ResearchReport233_bot as an Admin to your Telegram trading channel to begin auto-converting calls.
+                      </Text>
+                      <Pressable style={[styles.startBotBtn, { marginTop: 12 }]} onPress={handleStartBot}>
+                        <Ionicons name="add" size={16} color="#FFFFFF" />
+                        <Text style={styles.startBotBtnText}>Connect Channel</Text>
+                      </Pressable>
+                    </View>
+                  }
+                />
               </View>
             )}
 
@@ -740,19 +869,13 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                   </View>
                 </View>
 
-                {(dashboard?.reports || []).length === 0 ? (
-                  <View style={styles.emptyBox}>
-                    <Ionicons name="document-text-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
-                    <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                      No Reports Generated Yet
-                    </Text>
-                    <Text style={styles.emptyDesc}>
-                      When you post trading calls in your connected channels, formatted SEBI compliance PDFs will appear here.
-                    </Text>
-                  </View>
-                ) : (
-                  (dashboard?.reports || []).map((rep: any) => (
-                    <View key={rep.id} style={[styles.reportItem, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                <FlatList
+                  data={dashboard?.reports || []}
+                  keyExtractor={(rep, idx) => String(rep.id || idx)}
+                  scrollEnabled={false}
+                  ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+                  renderItem={({ item: rep }) => (
+                    <View style={[styles.reportItem, { borderColor: colors.border, backgroundColor: colors.card }]}>
                       <View style={styles.reportIconCircle}>
                         <Ionicons name="document-text" size={18} color="#EF4444" />
                       </View>
@@ -778,8 +901,19 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                         <Ionicons name={rep.pdfUrl ? "download-outline" : "eye-outline"} size={16} color="#0284C7" />
                       </Pressable>
                     </View>
-                  ))
-                )}
+                  )}
+                  ListEmptyComponent={
+                    <View style={styles.emptyBox}>
+                      <Ionicons name="document-text-outline" size={32} color="#0284C7" style={{ marginBottom: 6 }} />
+                      <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                        No Reports Generated Yet
+                      </Text>
+                      <Text style={styles.emptyDesc}>
+                        When you post trading calls in your connected channels, formatted SEBI compliance PDFs will appear here.
+                      </Text>
+                    </View>
+                  }
+                />
               </View>
             )}
           </>
@@ -1048,9 +1182,9 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
 
 const styles = StyleSheet.create({
   container: { width: '100%', marginBottom: 12 },
-  topCard: { borderRadius: 16, borderWidth: 1, overflow: 'hidden', marginBottom: 14 },
-  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  cardDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
+  topCard: { borderRadius: 24, borderWidth: 0, overflow: 'hidden', marginBottom: 14 , shadowOpacity: 0 },
+  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
+  cardDark: { backgroundColor: '#1C1A25', borderColor: '#3A3549' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1059,12 +1193,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 1,
   },
-  borderLight: { borderBottomColor: '#E2E8F0' },
+  borderLight: { borderBottomColor: '#E9E6F2' },
   borderDark: { borderBottomColor: '#162B3F' },
-  title: { fontSize: 18, fontWeight: '800' },
-  textLight: { color: '#0F172A' },
+  title: { fontSize: 28, fontWeight: '500', lineHeight: 36 , letterSpacing: -0.5 },
+  textLight: { color: '#1C1A25' },
   textDark: { color: '#F7FAFC' },
-  subtitle: { color: '#64748B', fontSize: 11.5, marginTop: 3, lineHeight: 16 },
+  subtitle: { color: '#716B7C', fontSize: 13.5, marginTop: 3, lineHeight: 16 },
   closeBtn: {
     width: 32,
     height: 32,
@@ -1072,8 +1206,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeBtnLight: { backgroundColor: '#F1F5F9' },
-  closeBtnDark: { backgroundColor: '#101C2A' },
+  closeBtnLight: { backgroundColor: '#F0EEF8' },
+  closeBtnDark: { backgroundColor: '#2C2839' },
 
   // Action Header Row
   actionHeaderRow: {
@@ -1103,8 +1237,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
   },
-  btnLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  btnDark: { backgroundColor: '#101C2A', borderColor: '#234563' },
+  btnLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
+  btnDark: { backgroundColor: '#2C2839', borderColor: '#3A3549' },
   refreshBtnText: { fontSize: 12, fontWeight: '600' },
 
   // Tabs Section & Status Bar
@@ -1173,27 +1307,25 @@ const styles = StyleSheet.create({
   // Form Card
   formCard: {
     padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 16,
-  },
+    borderRadius: 24,
+    borderWidth: 0,
+    marginBottom: 16, shadowOpacity: 0 },
   formHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 16,
   },
-  sectionTitle: { fontSize: 16, fontWeight: '800' },
-  sectionSubtitle: { color: '#64748B', fontSize: 11, marginTop: 2 },
+  sectionTitle: { fontSize: 18, fontWeight: '500', lineHeight: 24 },
+  sectionSubtitle: { color: '#716B7C', fontSize: 13, marginTop: 2 },
   saveBtn: {
-    backgroundColor: '#0284C7',
+    backgroundColor: '#17171C',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 7,
-    borderRadius: 8,
-  },
+    borderRadius: 28, minHeight: 44 , shadowOpacity: 0 },
   saveBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
   groupHeading: {
     fontSize: 13,
@@ -1207,14 +1339,13 @@ const styles = StyleSheet.create({
   field: { marginBottom: 12 },
   label: { color: '#64748B', fontSize: 10, fontWeight: '800', marginBottom: 5, letterSpacing: 0.5 },
   input: {
-    borderWidth: 1,
-    borderRadius: 10,
+    borderWidth: 0,
+    borderRadius: 22,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 13,
-  },
-  inputLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0', color: '#0F172A' },
-  inputDark: { backgroundColor: '#0A1420', borderColor: '#1B334A', color: '#F7FAFC' },
+    fontSize: 13, minHeight: 48 },
+  inputLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2', color: '#1C1A25' },
+  inputDark: { backgroundColor: '#252230', borderColor: '#3A3549', color: '#F7FAFC' },
 
   // Logo Upload Box (Pressable)
   logoUploadBox: {
@@ -1227,8 +1358,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 6,
   },
-  logoUploadBoxLight: { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1' },
-  logoUploadBoxDark: { backgroundColor: '#0A1420', borderColor: '#1B334A' },
+  logoUploadBoxLight: { backgroundColor: '#F5F3FB', borderColor: '#CBD5E1' },
+  logoUploadBoxDark: { backgroundColor: '#252230', borderColor: '#3A3549' },
   logoUploadBoxActive: { borderStyle: 'solid', borderColor: '#0284C7' },
   logoUploadLabel: { fontSize: 10, fontWeight: '700', color: '#64748B', marginTop: 4 },
   uploadBtnMini: {
@@ -1283,14 +1414,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#0284C7',
   },
   nativeUploadBtnLight: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F0EEF8',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E9E6F2',
   },
   nativeUploadBtnDark: {
-    backgroundColor: '#101C2A',
+    backgroundColor: '#2C2839',
     borderWidth: 1,
-    borderColor: '#234563',
+    borderColor: '#3A3549',
   },
   nativeUploadBtnTitle: {
     color: '#FFFFFF',
@@ -1299,27 +1430,26 @@ const styles = StyleSheet.create({
   },
   nativeUploadBtnSub: {
     color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 10,
+    fontSize: 13,
     marginTop: 1,
   },
 
   // PDF Preview Card
   previewCard: {
     padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 16,
-  },
+    borderRadius: 24,
+    borderWidth: 0,
+    marginBottom: 16, shadowOpacity: 0 },
   previewCardLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    borderColor: '#E9E6F2',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 3,
   },
-  previewCardDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
+  previewCardDark: { backgroundColor: '#1C1A25', borderColor: '#3A3549' },
   previewHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1327,7 +1457,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   previewTitle: { fontSize: 16, fontWeight: '800' },
-  previewSubtitle: { color: '#64748B', fontSize: 11, marginTop: 2 },
+  previewSubtitle: { color: '#716B7C', fontSize: 13, marginTop: 2 },
   completedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1348,8 +1478,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 14,
   },
-  pdfPaperLight: { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1' },
-  pdfPaperDark: { backgroundColor: '#0A1420', borderColor: '#1B334A' },
+  pdfPaperLight: { backgroundColor: '#F5F3FB', borderColor: '#CBD5E1' },
+  pdfPaperDark: { backgroundColor: '#252230', borderColor: '#3A3549' },
   pdfHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1398,8 +1528,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
   },
-  metricBoxLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  metricBoxDark: { backgroundColor: '#0A1420', borderColor: '#1B334A' },
+  metricBoxLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
+  metricBoxDark: { backgroundColor: '#252230', borderColor: '#3A3549' },
   metricKey: { fontSize: 9, fontWeight: '800', color: '#64748B' },
   metricVal: { fontSize: 13, fontWeight: '800', marginTop: 2 },
   pdfDisclaimerSnippet: {
@@ -1416,7 +1546,7 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(148, 163, 184, 0.2)',
     paddingTop: 6,
   },
-  pdfPagesCount: { fontSize: 10, color: '#94A3B8', fontWeight: '600' },
+  pdfPagesCount: { fontSize: 10, color: '#777383', fontWeight: '600' },
   pdfPoweredBy: { fontSize: 10, color: '#0284C7', fontWeight: '700' },
 
   previewBtn: {
@@ -1459,8 +1589,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 8,
   },
-  itemLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
-  itemDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
+  itemLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2' },
+  itemDark: { backgroundColor: '#1C1A25', borderColor: '#3A3549' },
   channelIcon: {
     width: 32,
     height: 32,
@@ -1501,12 +1631,11 @@ const styles = StyleSheet.create({
   dialogCard: {
     width: '100%',
     maxWidth: 400,
-    borderRadius: 18,
+    borderRadius: 24,
     padding: 20,
-    borderWidth: 1,
-  },
-  dialogCardLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
-  dialogCardDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
+    borderWidth: 0, shadowOpacity: 0 },
+  dialogCardLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
+  dialogCardDark: { backgroundColor: '#1C1A25', borderColor: '#3A3549' },
   dialogHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1514,7 +1643,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   dialogTitle: { fontSize: 16, fontWeight: '800' },
-  dialogSub: { color: '#64748B', fontSize: 11, marginTop: 2 },
+  dialogSub: { color: '#716B7C', fontSize: 13, marginTop: 2 },
   dialogCloseBtn: {
     width: 28,
     height: 28,
@@ -1553,8 +1682,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
   },
-  presetItemLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
-  presetItemDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
+  presetItemLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2' },
+  presetItemDark: { backgroundColor: '#1C1A25', borderColor: '#3A3549' },
   presetItemActive: { borderColor: '#0284C7', backgroundColor: 'rgba(2, 132, 199, 0.12)' },
   presetImage: {
     width: 32,
@@ -1592,7 +1721,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(148, 163, 184, 0.15)',
   },
   viewerTitle: { fontSize: 15, fontWeight: '800' },
-  viewerSub: { fontSize: 11, color: '#64748B' },
+  viewerSub: { fontSize: 13, color: '#716B7C' },
   viewerActionBtn: {
     width: 36,
     height: 36,
@@ -1628,7 +1757,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   fullPdfPageLight: { backgroundColor: '#FFFFFF', borderColor: '#CBD5E1' },
-  fullPdfPageDark: { backgroundColor: '#0B1420', borderColor: '#234563' },
+  fullPdfPageDark: { backgroundColor: '#1C1A25', borderColor: '#3A3549' },
   pageNumberBadge: {
     position: 'absolute',
     top: 14,
@@ -1660,7 +1789,7 @@ const styles = StyleSheet.create({
   },
   fullPdfAvatarText: { color: '#FFFFFF', fontSize: 20, fontWeight: '900' },
   fullPdfFirmTitle: { fontSize: 17, fontWeight: '800', color: '#0284C7', marginBottom: 2 },
-  fullPdfMetaText: { fontSize: 10, color: '#64748B', lineHeight: 14 },
+  fullPdfMetaText: { fontSize: 13, color: '#716B7C', lineHeight: 14 },
   pdfDivider: {
     height: 1,
     backgroundColor: 'rgba(148, 163, 184, 0.25)',
@@ -1702,7 +1831,7 @@ const styles = StyleSheet.create({
     borderColor: '#CBD5E1',
   },
   matrixLabel: { fontSize: 9, fontWeight: '800', color: '#64748B' },
-  matrixValue: { fontSize: 14, fontWeight: '900', marginTop: 2, color: '#0F172A' },
+  matrixValue: { fontSize: 14, fontWeight: '900', marginTop: 2, color: '#1C1A25' },
   pdfSectionBlock: {
     marginBottom: 14,
   },
@@ -1745,6 +1874,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  footerAddressText: { fontSize: 9, color: '#94A3B8' },
+  footerAddressText: { fontSize: 9, color: '#777383' },
   footerEngineText: { fontSize: 9, fontWeight: '700', color: '#0284C7' },
 });

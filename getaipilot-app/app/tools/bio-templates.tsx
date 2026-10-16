@@ -213,10 +213,6 @@ export default function BioTemplatesScreen() {
               {templateName}
             </Text>
 
-            <Text style={styles.templateId} numberOfLines={1}>
-              {item.template_id}
-            </Text>
-
             {formData.channelTitle ? (
               <Text style={styles.channelTitle} numberOfLines={1}>
                 {formData.channelTitle}
@@ -250,7 +246,7 @@ export default function BioTemplatesScreen() {
 
             {/* Actions */}
             <View style={styles.actions}>
-              <Pressable
+              <Pressable cssInterop={false}
                 style={({ pressed }) => [
                   styles.previewButton,
                   pressed && styles.pressed,
@@ -260,7 +256,7 @@ export default function BioTemplatesScreen() {
                 <Text style={styles.previewButtonText}>Preview</Text>
               </Pressable>
 
-              <Pressable
+              <Pressable cssInterop={false}
                 style={({ pressed }) => [
                   styles.editButton,
                   pressed && styles.pressed,
@@ -275,7 +271,7 @@ export default function BioTemplatesScreen() {
                 )}
               </Pressable>
 
-              <Pressable
+              <Pressable cssInterop={false}
                 style={({ pressed }) => [
                   styles.deleteButton,
                   pressed && styles.pressed,
@@ -301,7 +297,7 @@ export default function BioTemplatesScreen() {
     <AppScreen safeArea={false} backgroundColor={colors.background}>
       <AppTopBar
         title="Bio Templates"
-        subtitle="Your downloaded templates"
+        // subtitle="Your downloaded templates"
         showBack
       />
 
@@ -335,7 +331,7 @@ export default function BioTemplatesScreen() {
 
                 <Pressable
                   style={{
-                    backgroundColor: "#0A84FF",
+                    backgroundColor: colors.buttonPrimary,
                     paddingHorizontal: 12,
                     paddingVertical: 8,
                     borderRadius: 8,
@@ -343,7 +339,7 @@ export default function BioTemplatesScreen() {
                   }}
                   onPress={handleOpenBioDashboard}
                 >
-                  <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700" }}>Web Dashboard ↗</Text>
+                  <Text style={{ color: colors.buttonPrimaryForeground, fontSize: 12, fontWeight: "600" }}>Web dashboard ↗</Text>
                 </Pressable>
 
                 <View style={styles.countBadge}>
@@ -364,7 +360,7 @@ export default function BioTemplatesScreen() {
 
               <Pressable
                 style={{
-                  backgroundColor: "#0A84FF",
+                  backgroundColor: colors.buttonPrimary,
                   paddingHorizontal: 18,
                   paddingVertical: 12,
                   borderRadius: 10,
@@ -372,7 +368,7 @@ export default function BioTemplatesScreen() {
                 }}
                 onPress={() => handleOpenEditor({ id: "creators-v1" } as any)}
               >
-                <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "700" }}>Create Bio Page 🚀</Text>
+                <Text style={{ color: colors.buttonPrimaryForeground, fontSize: 14, fontWeight: "600" }}>Create bio page</Text>
               </Pressable>
             </View>
           }
@@ -426,8 +422,8 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: colors.card,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     borderColor: colors.border,
     padding: 16,
     marginBottom: 16,
@@ -462,8 +458,8 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
 
   templateCard: {
     backgroundColor: colors.card,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     borderColor: colors.border,
     overflow: "hidden",
     marginBottom: 14,
@@ -516,12 +512,6 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     fontSize: 17,
     fontWeight: "800",
     color: colors.foreground,
-  },
-
-  templateId: {
-    marginTop: 3,
-    fontSize: 11,
-    color: colors.mutedForeground,
   },
 
   channelTitle: {

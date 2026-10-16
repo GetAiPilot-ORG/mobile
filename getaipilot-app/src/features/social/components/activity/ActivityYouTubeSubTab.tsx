@@ -167,10 +167,10 @@ export const ActivityYouTubeSubTab: React.FC<ActivityYouTubeSubTabProps> = ({
       {/* Header Action Row */}
       <View style={styles.headerActionRow}>
         <View style={styles.headerTextCol}>
-          <Text style={[styles.subTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+          <Text style={[styles.subTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
             YouTube Studio
           </Text>
-          <Text style={[styles.subDesc, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+          <Text style={[styles.subDesc, { color: isDark ? '#777383' : '#64748b' }]}>
             Video publishing, Shorts manager & channel telemetry
           </Text>
         </View>
@@ -191,8 +191,8 @@ export const ActivityYouTubeSubTab: React.FC<ActivityYouTubeSubTabProps> = ({
         style={[
           styles.ytSystemHealthCard,
           {
-            backgroundColor: isDark ? '#0f172a' : '#ffffff',
-            borderColor: isDark ? '#1e293b' : '#e2e8f0',
+            backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+            borderColor: isDark ? '#252230' : '#E9E6F2',
           },
         ]}
       >
@@ -204,7 +204,7 @@ export const ActivityYouTubeSubTab: React.FC<ActivityYouTubeSubTabProps> = ({
                 { backgroundColor: isSystemOperational ? '#22c55e' : '#f59e0b' },
               ]}
             />
-            <Text style={[styles.ytSystemHealthTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+            <Text style={[styles.ytSystemHealthTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
               {productStatus?.product_name || 'GAP Social Pilot'}
             </Text>
             <View
@@ -236,8 +236,8 @@ export const ActivityYouTubeSubTab: React.FC<ActivityYouTubeSubTabProps> = ({
         style={[
           styles.card,
           {
-            backgroundColor: isDark ? '#0f172a' : '#ffffff',
-            borderColor: isDark ? '#1e293b' : '#e2e8f0',
+            backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+            borderColor: isDark ? '#252230' : '#E9E6F2',
           },
         ]}
       >
@@ -253,7 +253,7 @@ export const ActivityYouTubeSubTab: React.FC<ActivityYouTubeSubTabProps> = ({
             </View>
           )}
           <View style={styles.profileInfoCol}>
-            <Text style={[styles.profileName, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+            <Text style={[styles.profileName, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
               {activeYtAccount?.youtube?.snippet?.title ||
                 activeYtAccount?.account_name ||
                 (activeYtAccount?.connected ? 'Connected YouTube Channel' : 'No Channel Connected')}
@@ -272,7 +272,7 @@ export const ActivityYouTubeSubTab: React.FC<ActivityYouTubeSubTabProps> = ({
         {/* 3. Analytics on Top of the List (4 Metrics Grid) */}
         <View style={styles.igMetricsGrid}>
           <View style={styles.igMetricBox}>
-            <Text style={[styles.igMetricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+            <Text style={[styles.igMetricNum, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
               {subscribersDisplay}
             </Text>
             <Text style={styles.igMetricLabel}>Subscribers</Text>
@@ -284,7 +284,7 @@ export const ActivityYouTubeSubTab: React.FC<ActivityYouTubeSubTabProps> = ({
             <Text style={styles.igMetricLabel}>Total Views</Text>
           </View>
           <View style={styles.igMetricBox}>
-            <Text style={[styles.igMetricNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+            <Text style={[styles.igMetricNum, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
               {videosCountDisplay}
             </Text>
             <Text style={styles.igMetricLabel}>Videos</Text>
@@ -303,17 +303,17 @@ export const ActivityYouTubeSubTab: React.FC<ActivityYouTubeSubTabProps> = ({
         style={[
           styles.card,
           {
-            backgroundColor: isDark ? '#0f172a' : '#ffffff',
-            borderColor: isDark ? '#1e293b' : '#e2e8f0',
+            backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+            borderColor: isDark ? '#252230' : '#E9E6F2',
             paddingBottom: 6,
           },
         ]}
       >
         <View style={styles.ytSectionHeaderRow}>
-          <Text style={[styles.cardSectionTitle, { color: isDark ? '#f8fafc' : '#0f172a', marginBottom: 0 }]}>
+          <Text style={[styles.cardSectionTitle, { color: isDark ? '#F5F3FB' : '#1C1A25', marginBottom: 0 }]}>
             Video Broadcasts & Telemetry
           </Text>
-          <Text style={[styles.ytVideosTotalText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+          <Text style={[styles.ytVideosTotalText, { color: isDark ? '#777383' : '#64748b' }]}>
             {filteredYtVideos.length} {filteredYtVideos.length === 1 ? 'item' : 'items'}
           </Text>
         </View>
@@ -323,23 +323,23 @@ export const ActivityYouTubeSubTab: React.FC<ActivityYouTubeSubTabProps> = ({
           style={[
             styles.inboxSearchInputBox,
             {
-              backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+              backgroundColor: isDark ? '#252230' : '#F5F3FB',
               borderColor: isDark ? '#334155' : '#cbd5e1',
               marginVertical: 10,
             },
           ]}
         >
-          <Ionicons name="search" size={15} color={isDark ? '#94a3b8' : '#64748b'} />
+          <Ionicons name="search" size={15} color={isDark ? '#777383' : '#64748b'} />
           <TextInput
-            style={[styles.inboxSearchInput, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+            style={[styles.inboxSearchInput, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}
             placeholder="Search videos, shorts, or tags..."
-            placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
+            placeholderTextColor={isDark ? '#64748b' : '#777383'}
             value={youtubeSearch}
             onChangeText={setYoutubeSearch}
           />
           {Boolean(youtubeSearch) && (
             <Pressable onPress={() => setYoutubeSearch('')}>
-              <Ionicons name="close-circle" size={16} color={isDark ? '#94a3b8' : '#64748b'} />
+              <Ionicons name="close-circle" size={16} color={isDark ? '#777383' : '#64748b'} />
             </Pressable>
           )}
         </View>
@@ -360,7 +360,7 @@ export const ActivityYouTubeSubTab: React.FC<ActivityYouTubeSubTabProps> = ({
                   styles.ytCategoryChip,
                   isSelected
                     ? [styles.ytCategoryChipActive, { backgroundColor: '#ff0000' }]
-                    : { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' },
+                    : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
                 ]}
               >
                 <Text
@@ -386,7 +386,7 @@ export const ActivityYouTubeSubTab: React.FC<ActivityYouTubeSubTabProps> = ({
                   <Text
                     style={[
                       styles.ytCategoryCountText,
-                      { color: isSelected ? '#ffffff' : isDark ? '#94a3b8' : '#64748b' },
+                      { color: isSelected ? '#ffffff' : isDark ? '#777383' : '#64748b' },
                     ]}
                   >
                     {count}
@@ -402,10 +402,10 @@ export const ActivityYouTubeSubTab: React.FC<ActivityYouTubeSubTabProps> = ({
       {filteredYtVideos.length === 0 ? (
         <View style={styles.inboxEmptyBox}>
           <Ionicons name="videocam-outline" size={32} color={isDark ? '#475569' : '#cbd5e1'} />
-          <Text style={[styles.inboxEmptyTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+          <Text style={[styles.inboxEmptyTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
             No videos found
           </Text>
-          <Text style={[styles.inboxEmptyDesc, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+          <Text style={[styles.inboxEmptyDesc, { color: isDark ? '#777383' : '#64748b' }]}>
             No items match the &quot;{youtubeCategory}&quot; category filter.
           </Text>
         </View>
@@ -427,8 +427,8 @@ export const ActivityYouTubeSubTab: React.FC<ActivityYouTubeSubTabProps> = ({
                 style={[
                   styles.ytVideoCard,
                   {
-                    backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                    borderColor: isDark ? '#1e293b' : '#e2e8f0',
+                    backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+                    borderColor: isDark ? '#252230' : '#E9E6F2',
                   },
                 ]}
               >
@@ -523,7 +523,7 @@ export const ActivityYouTubeSubTab: React.FC<ActivityYouTubeSubTabProps> = ({
                     </View>
 
                     <Text
-                      style={[styles.ytVideoTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+                      style={[styles.ytVideoTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}
                       numberOfLines={2}
                     >
                       {video.title}
@@ -605,7 +605,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   subDesc: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   primaryActionBtn: {
@@ -614,20 +614,18 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 10,
-    alignSelf: 'center',
-  },
+    borderRadius: 28,
+    alignSelf: 'center', backgroundColor: '#17171C' , minHeight: 44 , shadowOpacity: 0 },
   primaryActionBtnText: {
     color: '#ffffff',
     fontSize: 12,
     fontWeight: '800',
   },
   ytSystemHealthCard: {
-    borderRadius: 12,
+    borderRadius: 24,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderWidth: 1,
-  },
+    borderWidth: 0, shadowOpacity: 0 },
   ytSystemHealthRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -660,17 +658,17 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   ytSystemHealthSub: {
-    fontSize: 11,
-    color: '#94a3b8',
+    fontSize: 13,
+    color: '#716B7C',
     fontWeight: '500',
   },
   card: {
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0,
     shadowRadius: 2,
     elevation: 1,
     gap: 12,
@@ -698,7 +696,7 @@ const styles = StyleSheet.create({
   },
   profileStatus: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: '#777383',
     marginTop: 2,
   },
   ytChannelSubtitleRow: {
@@ -724,7 +722,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: '#E9E6F2',
     alignSelf: 'center',
   },
   linkAccBtnText: {
@@ -752,7 +750,7 @@ const styles = StyleSheet.create({
   },
   igMetricLabel: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: '#777383',
     marginTop: 2,
     textAlign: 'center',
   },
@@ -763,8 +761,7 @@ const styles = StyleSheet.create({
   },
   cardSectionTitle: {
     fontSize: 14,
-    fontWeight: '700',
-  },
+    fontWeight: '700', borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   ytVideosTotalText: {
     fontSize: 12,
     fontWeight: '600',
@@ -830,11 +827,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   ytVideoCard: {
-    borderRadius: 14,
+    borderRadius: 24,
     padding: 12,
-    borderWidth: 1,
-    gap: 10,
-  },
+    borderWidth: 0,
+    gap: 10, shadowOpacity: 0 },
   ytVideoMainRow: {
     flexDirection: 'row',
     gap: 10,
@@ -919,12 +915,12 @@ const styles = StyleSheet.create({
   },
   ytVideoMeta: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: '#777383',
     fontWeight: '500',
   },
   ytVideoDateText: {
     fontSize: 10,
-    color: '#94a3b8',
+    color: '#777383',
   },
   ytVideoActionsRow: {
     flexDirection: 'row',

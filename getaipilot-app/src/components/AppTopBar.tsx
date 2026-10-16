@@ -1,16 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { ArrowLeft01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useRouter, usePathname } from 'expo-router';
 import { useAuthStore } from '../core/store/authStore';
 import { useTheme, getColors } from '@/theme';
 import React, { useEffect } from 'react';
-import { BackHandler, Platform, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, Platform, Pressable, StatusBar, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 import { usePlatformSubscription } from '../hooks/usePlatformSubscription';
-
-const brandLogo = require("../../assets/images/logo.jpg");
 
 export interface AppTopBarProps {
   title?: string;
@@ -128,7 +127,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
   const shouldShowBack = showBack !== undefined ? showBack : !!title;
 
   const { planLabel, isActive } = usePlatformSubscription();
-  const displayPlanBadge = showPlanBadge !== undefined ? showPlanBadge : (!title && !shouldShowBack);
+  const displayPlanBadge = !!showPlanBadge;
 
   const handlePlanBadgePress = () => {
     if (Platform.OS !== "web") {
@@ -185,29 +184,27 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
 
   return (
     <View
-      style={[
-        styles.container,
-        { paddingTop: topPadding, backgroundColor: colors.background },
-      ]}
+      className="flex-row items-center justify-between w-full px-4 pb-3.5 shrink-0"
+      style={{ paddingTop: topPadding, backgroundColor: colors.background }}
     >
-      <View style={styles.leftSection}>
+      <View className="flex-row items-center flex-1 mr-2.5 min-w-0">
         {shouldShowBack ? (
-          <Pressable
+          <Pressable cssInterop={false}
             onPress={handleBack}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Back"
+            style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] }]}
           >
             <View
-              style={[
-                styles.backButton,
-                isDark ? styles.backButtonDark : styles.backButtonLight,
-              ]}
+              className="w-11 h-11 rounded-full justify-center items-center mr-3"
+              style={{ backgroundColor: colors.card }}
             >
-              <Ionicons
-                name="chevron-back"
+              <HugeiconsIcon
+                icon={ArrowLeft01Icon}
                 size={20}
                 color={colors.foreground}
+                strokeWidth={2}
               />
             </View>
           </Pressable>
@@ -215,59 +212,57 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
           leftElement
         ) : !title ? (
           /* Profile Avatar Button on the Left for Home */
-          <Pressable
+          <Pressable cssInterop={false}
             onPress={handleProfilePress}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Profile Account"
+            style={({ pressed }) => [{ opacity: pressed ? 0.75 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] }]}
           >
             <View
-              style={[
-                styles.profileBtn,
-                isDark ? styles.profileBtnDark : styles.profileBtnLight,
-              ]}
+              className={`w-[42px] h-[42px] rounded-full justify-center items-center mr-2.5 border-[1.5px] shrink-0 ${isDark ? 'border-[#3A3549]' : 'border-[#E9E6F2]'
+                }`}
             >
               {avatarUrl ? (
-                <Image source={{ uri: avatarUrl }} style={styles.profileAvatarImg} contentFit="cover" />
+                <Image
+                  source={{ uri: avatarUrl }}
+                  style={{ width: 42, height: 42, borderRadius: 21, borderWidth: 0, borderColor: isDark ? '#3A3549' : '#E7DEFA' }}
+                  contentFit='cover'
+                />
               ) : (
-                <View style={styles.profileAvatarCircle}>
-                  <Text style={styles.profileAvatarText}>{avatarInitial}</Text>
+                <View className="w-[42px] h-[42px] rounded-full bg-[#E7DEFA] items-center justify-center shrink-0">
+                  <Text className="text-[#41444B] text-lg font-bold">
+                    {avatarInitial}
+                  </Text>
                 </View>
               )}
             </View>
           </Pressable>
         ) : null}
 
-        <View style={styles.titleWrapper}>
+        <View className="flex-1 justify-center min-w-0">
           {title ? (
             <Text
-              style={[styles.title, isDark ? styles.titleDark : styles.titleLight]}
+              className={`text-[17px] font-bold tracking-tight ${isDark ? 'text-[#F7FAFC]' : 'text-[#41444B]'
+                }`}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
               {title}
             </Text>
           ) : (
-            <>
-              <Text
-                style={[styles.title, isDark ? styles.titleDark : styles.titleLight]}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {displayName}
-              </Text>
-              <Text
-                style={[styles.subtitle, isDark ? styles.subtitleDark : styles.subtitleLight]}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {subtitle || "Workspace Hub"}
-              </Text>
-            </>
+            <Text
+              className={`text-[18px] font-extrabold tracking-tight ${isDark ? 'text-[#F7FAFC]' : 'text-[#1E293B]'
+                }`}
+              numberOfLines={1}
+            >
+              GetAiPilot
+            </Text>
           )}
           {title && subtitle ? (
             <Text
-              style={[styles.subtitle, isDark ? styles.subtitleDark : styles.subtitleLight]}
+              className={`text-xs mt-0.5 tracking-tight font-normal ${isDark ? 'text-[#ACA6BB]' : 'text-[#6B7076]'
+                }`}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
@@ -278,265 +273,55 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
       </View>
 
       {rightElement ? (
-        <View style={styles.rightSection}>{rightElement}</View>
+        <View className="flex-row items-center shrink-0">{rightElement}</View>
       ) : displayPlanBadge ? (
-        <View style={styles.rightSection}>
-          <Pressable
+        <View className="flex-row items-center shrink-0">
+          <Pressable cssInterop={false}
             onPress={handlePlanBadgePress}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel={`Current workspace plan: ${planLabel || 'Free'}. Tap to view and upgrade plans`}
+            style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] }]}
           >
             <View
-              style={[
-                styles.planBadge,
-                isDark ? styles.planBadgeDark : styles.planBadgeLight,
-              ]}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+                height: 36,
+                paddingHorizontal: 12,
+                borderRadius: 18,
+                borderWidth: 0,
+                borderColor: isDark ? 'rgba(47, 140, 255, 0.4)' : 'rgba(10, 132, 255, 0.25)',
+                backgroundColor: colors.accentSoft,
+                alignSelf: 'center',
+              }}
             >
               <View
-                style={[
-                  styles.planDot,
-                  { backgroundColor: isActive ? '#30D158' : '#F59E0B' },
-                ]}
-              />
-              <Ionicons
-                name="sparkles"
-                size={13}
-                color={isActive ? '#0A84FF' : '#F59E0B'}
-                style={styles.planSparkles}
+                className="w-[7px] h-[7px] rounded-full shrink-0"
+                style={{ backgroundColor: isActive ? '#30D158' : '#F59E0B' }}
               />
               <Text
-                style={[
-                  styles.planBadgeText,
-                  isDark ? styles.planBadgeTextDark : styles.planBadgeTextLight,
-                ]}
+                className="text-[13px] font-medium shrink-0"
+                style={{ color: colors.accent }}
                 numberOfLines={1}
                 ellipsizeMode="tail"
               >
                 {planLabel || 'Free Plan'}
               </Text>
-              <Ionicons
-                name="chevron-forward"
+              <HugeiconsIcon
+                icon={ArrowRight01Icon}
                 size={13}
-                color={isDark ? '#60A5FA' : '#0A84FF'}
-                style={styles.planChevron}
+                color={colors.accent}
+                strokeWidth={2}
+                className="ml-0.5 shrink-0"
               />
             </View>
           </Pressable>
         </View>
       ) : (
-        <View style={styles.rightEmpty} />
+        <View className="w-0 h-0" />
       )}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: "100%",
-    paddingHorizontal: 16,
-    paddingBottom: 14,
-    borderBottomWidth: 0,
-    flexShrink: 0,
-  },
-  containerLight: {
-    backgroundColor: 'transparent',
-    borderBottomWidth: 0,
-  },
-  containerDark: {
-    backgroundColor: 'transparent',
-    borderBottomWidth: 0,
-  },
-  leftSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    marginRight: 10,
-    minWidth: 0,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    borderWidth: 1,
-  },
-  backButtonLight: {
-    backgroundColor: '#F8F5EF',
-    borderColor: '#D2CABA',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  backButtonDark: {
-    backgroundColor: '#0A111B',
-    borderColor: '#1B334A',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  backButtonPressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.94 }],
-  },
-  profileBtn: {
-    width: 42,
-    height: 42,
-    minWidth: 42,
-    minHeight: 42,
-    maxWidth: 42,
-    maxHeight: 42,
-    borderRadius: 21,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 11,
-    borderWidth: 1.5,
-    flexShrink: 0,
-  },
-  profileBtnLight: {
-    borderColor: '#D2CABA',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  profileBtnDark: {
-    borderColor: '#1B334A',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  profileBtnPressed: {
-    opacity: 0.75,
-    transform: [{ scale: 0.94 }],
-  },
-  profileAvatarImg: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 21,
-  },
-  profileAvatarCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#CABFAB',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexShrink: 0,
-  },
-  profileAvatarText: {
-    color: '#41444B',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  titleWrapper: {
-    flex: 1,
-    justifyContent: 'center',
-    minWidth: 0,
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
-  titleLight: {
-    color: '#41444B',
-  },
-  titleDark: {
-    color: '#F7FAFC',
-  },
-  subtitle: {
-    fontSize: 12,
-    marginTop: 2,
-    letterSpacing: -0.1,
-    fontWeight: '400',
-  },
-  subtitleLight: {
-    color: '#6B7076',
-  },
-  subtitleDark: {
-    color: '#8FA3B8',
-  },
-  rightSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexShrink: 0,
-  },
-  rightEmpty: {
-    width: 0,
-    height: 0,
-  },
-  planBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'nowrap',
-    gap: 6,
-    height: 36,
-    paddingHorizontal: 12,
-    borderRadius: 18,
-    borderWidth: 1.5,
-    flexShrink: 0,
-    alignSelf: 'center',
-  },
-  planBadgeLight: {
-    backgroundColor: 'rgba(10, 132, 255, 0.08)',
-    borderColor: 'rgba(10, 132, 255, 0.25)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  planBadgeDark: {
-    backgroundColor: 'rgba(47, 140, 255, 0.14)',
-    borderColor: 'rgba(47, 140, 255, 0.42)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  planBadgePressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.95 }],
-  },
-  planDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    marginRight: 6,
-    flexShrink: 0,
-  },
-  planSparkles: {
-    marginRight: 6,
-    flexShrink: 0,
-  },
-  planChevron: {
-    marginLeft: 4,
-    flexShrink: 0,
-  },
-  planBadgeText: {
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-    flexShrink: 0,
-  },
-  planBadgeTextLight: {
-    color: '#0A84FF',
-  },
-  planBadgeTextDark: {
-    color: '#38BDF8',
-  },
-});

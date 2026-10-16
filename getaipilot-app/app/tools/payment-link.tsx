@@ -63,7 +63,9 @@ export default function PaymentLinkGeneratorScreen() {
 
   return (
     <AppScreen safeArea={false} backgroundColor={colors.background}>
-      <AppTopBar title="UPI Payment Link Generator" subtitle="Instant Collection Links" showBack={true} />
+      <AppTopBar title="UPI Payment Link Generator" 
+      // subtitle="Instant Collection Links"
+       showBack={true} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>
@@ -143,10 +145,10 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   card: {
     backgroundColor: colors.card,
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 18,
     marginBottom: 16,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
   },
   cardTitle: {
@@ -192,10 +194,10 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   resultCard: {
     backgroundColor: colors.card,
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 20,
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: '#16B882',
   },
   resultTitle: {

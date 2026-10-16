@@ -223,7 +223,7 @@ export default function LoginScreen() {
 
           {/* Heading */}
           <Text style={[styles.heading, isDark && styles.headingDark]}>
-            Log in with your phone{"\n"}number or account
+            Welcome back
           </Text>
 
           {/* Inline Feedback Banner */}
@@ -256,7 +256,7 @@ export default function LoginScreen() {
               <TextInput
                 style={[styles.nativeInput, isDark && styles.nativeInputDark]}
                 placeholder="Phone number or email"
-                placeholderTextColor={isDark ? "#636366" : "#8E8E93"}
+                placeholderTextColor={colors.inputPlaceholder}
                 value={identifier}
                 onChangeText={setIdentifier}
                 autoCapitalize="none"
@@ -295,7 +295,7 @@ export default function LoginScreen() {
                     isDark && styles.nativeInputDark,
                   ]}
                   placeholder="Password"
-                  placeholderTextColor={isDark ? "#636366" : "#8E8E93"}
+                  placeholderTextColor={colors.inputPlaceholder}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -433,10 +433,10 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F5F3FB",
   },
   containerDark: {
-    backgroundColor: "#000000",
+    backgroundColor: "#14131B",
   },
   scrollContent: {
     flexGrow: 1,
@@ -459,14 +459,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     shadowColor: "#3B82F6",
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.06,
     shadowRadius: 16,
     elevation: 6,
   },
   logoWrapperDark: {
-    backgroundColor: "#1C1C1E",
+    backgroundColor: "#252230",
     shadowColor: "#8B5CF6",
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.1,
   },
   logoImage: {
     width: '100%',
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 24,
-    fontWeight: "800",
+    fontWeight: "600",
     color: "#000000",
     textAlign: "center",
     lineHeight: 31,
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
   feedbackBanner: {
     paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: 12,
+    borderRadius: 24,
     marginBottom: 18,
   },
   feedbackBannerError: {
@@ -512,13 +512,13 @@ const styles = StyleSheet.create({
     color: "#16A34A",
   },
   inputGroup: {
-    backgroundColor: "#F2F4F7",
+    backgroundColor: "#F0EEF8",
     borderRadius: 16,
     overflow: "hidden",
     marginBottom: 16,
   },
   inputGroupDark: {
-    backgroundColor: "#1C1C1E",
+    backgroundColor: "#252230",
   },
   inputRow: {
     flexDirection: "row",
@@ -539,11 +539,11 @@ const styles = StyleSheet.create({
   },
   hairlineDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: "#E9E6F2",
     marginLeft: 16,
   },
   hairlineDividerDark: {
-    backgroundColor: "#2C2C2E",
+    backgroundColor: "#3A3549",
   },
   clearBtn: {
     width: 20,
@@ -557,7 +557,7 @@ const styles = StyleSheet.create({
   clearBtnText: {
     fontSize: 10,
     color: "#4B5563",
-    fontWeight: "800",
+    fontWeight: "600",
   },
   eyeBtn: {
     paddingHorizontal: 8,
@@ -569,7 +569,7 @@ const styles = StyleSheet.create({
     color: "#6B7280",
   },
   eyeBtnTextDark: {
-    color: "#9CA3AF",
+    color: "#777383",
   },
   saveLoginRow: {
     flexDirection: "row",
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 6,
     borderWidth: 1.8,
-    borderColor: "#9CA3AF",
+    borderColor: "#777383",
     backgroundColor: "transparent",
     justifyContent: "center",
     alignItems: "center",
@@ -591,8 +591,8 @@ const styles = StyleSheet.create({
     borderColor: "#4B5563",
   },
   checkboxActive: {
-    backgroundColor: "#0084FF",
-    borderColor: "#0084FF",
+    backgroundColor: "#17171C",
+    borderColor: "#17171C",
   },
   checkmarkIcon: {
     color: "#FFFFFF",
@@ -605,23 +605,23 @@ const styles = StyleSheet.create({
     color: "#4B5563",
   },
   saveLoginTextDark: {
-    color: "#9CA3AF",
+    color: "#777383",
   },
   primaryButton: {
-    backgroundColor: "#0084FF",
+    backgroundColor: "#17171C",
     paddingVertical: 15,
     borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
-    shadowColor: "#0084FF",
+    shadowColor: "#17171C",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 3,
   },
   primaryButtonDisabled: {
-    backgroundColor: "#F2F4F7",
+    backgroundColor: "#F0EEF8",
     shadowOpacity: 0,
     elevation: 0,
   },
@@ -632,10 +632,10 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   primaryButtonTextDisabled: {
-    color: "#9CA3AF",
+    color: "#777383",
   },
   secondaryButton: {
-    backgroundColor: "#F2F4F7",
+    backgroundColor: "#F0EEF8",
     paddingVertical: 15,
     borderRadius: 28,
     alignItems: "center",
@@ -643,7 +643,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   secondaryButtonDark: {
-    backgroundColor: "#1C1C1E",
+    backgroundColor: "#252230",
   },
   secondaryButtonText: {
     color: "#000000",
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   forgotPasswordLink: {
-    color: "#0084FF",
+    color: "#17171C",
     fontSize: 15,
     fontWeight: "600",
     letterSpacing: -0.2,
@@ -674,6 +674,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   otpToggleTextDark: {
-    color: "#9CA3AF",
+    color: "#777383",
   },
 });

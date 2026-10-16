@@ -1,19 +1,34 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
-
-# dependencies
+# Dependencies
 node_modules/
+.pnp
+.pnp.js
 
 # Expo
-.eas
 .expo/
+.eas/
 dist/
 web-build/
 expo-env.d.ts
 
-.impeccable
+# Build & compiled outputs
+build/
+*.tsbuildinfo
 
-# Native
-.claude
+# Impeccable & AI tooling
+.impeccable/
+.impeccable
+.claude/
+.gemini/
+
+# Environment variables & secrets
+.env
+.env.production
+.env.*
+.env.local
+.env.*.local
+!.env.example
+
+# Native build files & keys
 .kotlin/
 *.orig.*
 *.jks
@@ -21,29 +36,47 @@ expo-env.d.ts
 *.p12
 *.key
 *.mobileprovision
-
-# Metro
-.metro-health-check*
-
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
-
-# macOS
-.DS_Store
 *.pem
+*.keystore
+!debug.keystore
 
-# local env files
-.env
-.env*.local
-.env.*
+# Metro & Bundler
+.metro-health-check*
+*.jsbundle
 
-# typescript
-*.tsbuildinfo
+# Root-level generated native builds
+/android/
+/ios/
 
-example
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# generated native folders
-/ios
-/android
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs & Editors
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Temporary & cache
+*.tmp
+*.temp
+.cache/

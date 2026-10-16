@@ -234,7 +234,7 @@ export function BiometricGuard({ children }: BiometricGuardProps) {
             )}
 
             {/* Primary Action Button: Face ID / Biometrics */}
-            <Pressable
+            <Pressable cssInterop={false}
               style={({ pressed }) => [
                 styles.unlockButton,
                 pressed && styles.unlockButtonPressed,
@@ -246,7 +246,7 @@ export function BiometricGuard({ children }: BiometricGuardProps) {
             </Pressable>
 
             {/* Secondary Action: Device Passcode Fallback */}
-            <Pressable
+            <Pressable cssInterop={false}
               style={({ pressed }) => [
                 styles.fallbackButton,
                 pressed && { opacity: 0.7 },
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
     width: 90,
     height: 90,
     borderRadius: 45,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#252230',
     borderWidth: 1.5,
     borderColor: 'rgba(16, 185, 129, 0.4)',
     alignItems: 'center',

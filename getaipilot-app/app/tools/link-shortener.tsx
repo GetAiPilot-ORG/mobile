@@ -49,7 +49,9 @@ export default function LinkShortenerScreen() {
 
   return (
     <AppScreen safeArea={false} backgroundColor={colors.background}>
-      <AppTopBar title="Instant Link Shortener" subtitle="Custom Slugs & Analytics" showBack={true} />
+      <AppTopBar title="Instant Link Shortener" 
+      // subtitle="Custom Slugs & Analytics" 
+      showBack={true} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>
@@ -112,10 +114,10 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   card: {
     backgroundColor: colors.card,
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 18,
     marginBottom: 16,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
   },
   cardTitle: {
@@ -161,9 +163,9 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   resultCard: {
     backgroundColor: colors.card,
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 18,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.primary,
   },
   resultTitle: {

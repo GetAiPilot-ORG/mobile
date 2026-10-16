@@ -120,7 +120,9 @@ export default function SpeechToTextScreen() {
 
   return (
     <AppScreen safeArea={false} backgroundColor={theme.bg}>
-      <AppTopBar title="AI Speech-to-Text" subtitle="Voice Notes & Audio Transcriber" showBack={true} />
+      <AppTopBar title="AI Speech-to-Text" 
+      // subtitle="Voice Notes & Audio Transcriber" 
+      showBack={true} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Main Recording Studio Card */}
@@ -217,7 +219,7 @@ export default function SpeechToTextScreen() {
               <Text style={[styles.cardHeading, { color: theme.text }]}>AI Output</Text>
 
               {/* Segmented Switcher (Full Text vs Summary) */}
-              <View style={[styles.outputTabs, { backgroundColor: isDark ? '#141416' : '#E5E7EB' }]}>
+              <View style={[styles.outputTabs, { backgroundColor: isDark ? '#141416' : '#E9E6F2' }]}>
                 <Pressable
                   style={[styles.outputTabBtn, activeTab === 'transcript' && { backgroundColor: theme.primary }]}
                   onPress={() => setActiveTab('transcript')}
@@ -267,7 +269,7 @@ export default function SpeechToTextScreen() {
             {/* Actions Bar */}
             <View style={styles.resultsActionRow}>
               <Pressable
-                style={[styles.actionBtn, { backgroundColor: isDark ? '#2C2C2E' : '#E5E7EB' }]}
+                style={[styles.actionBtn, { backgroundColor: isDark ? '#3A3549' : '#E9E6F2' }]}
                 onPress={handleCopyText}
               >
                 <Text style={[styles.actionBtnText, { color: theme.text }]}>
@@ -295,10 +297,10 @@ const styles = StyleSheet.create({
     paddingBottom: 50,
   },
   card: {
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 18,
     marginBottom: 16,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   cardTitle: {
     fontSize: 16.5,

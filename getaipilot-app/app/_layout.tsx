@@ -2,23 +2,27 @@ import "../src/global.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as Linking from "expo-linking";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { LogBox, Platform, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import { NavigationBar } from "expo-navigation-bar";
 import "react-native-gesture-handler";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GlobalErrorBoundary } from "../src/components/GlobalErrorBoundary";
 import { OfflineNotice } from "../src/components/OfflineNotice";
-import { LayoutSkeletonScreen } from "../src/components/skeletonScreen";
+import { AnimatedSplashScreen } from "../src/components/splash/AnimatedSplashScreen";
 import { AuthProvider } from "../src/contexts/AuthContext";
+import { NotificationProvider } from "../src/contexts/NotificationContext";
 import { NetworkProvider, useNetwork } from "../src/contexts/NetworkContext";
 import { RazorpayProvider } from "../src/contexts/RazorpayContext";
 import { ThemeProvider, useTheme, getColors } from "@/theme";
 import { useAuthStore } from "../src/core/store/authStore";
 import { captureReferralParam, handlePendingReferral } from "../src/services/referralService";
+import { ThemedDialogProvider } from "../src/contexts/ThemedDialogContext";
 
-// Suppress known deprecation noise in development & Web runtimes
+// Suppress all warning popups and known deprecation noise
+LogBox.ignoreAllLogs(true);
 LogBox.ignoreLogs([
   '"shadow*" style props are deprecated. Use "boxShadow".',
   "props.pointerEvents is deprecated. Use style.pointerEvents",
@@ -126,21 +130,25 @@ function AuthRouteGuard() {
     const segment0 = segments[0] as string | undefined;
     const inAuthGroup = segment0 === "(auth)";
 
-    if (authStatus === "unauthenticated" && !inAuthGroup) {
-      if (__DEV__) {
-        console.log(
-          "[AuthGuard] Unauthenticated user on protected route -> navigating to login",
-        );
+    const timer = setTimeout(() => {
+      if (authStatus === "unauthenticated" && !inAuthGroup) {
+        if (__DEV__) {
+          console.log(
+            "[AuthGuard] Unauthenticated user on protected route -> navigating to login",
+          );
+        }
+        router.replace("/(auth)/login" as any);
+      } else if (authStatus === "authenticated" && inAuthGroup) {
+        if (__DEV__) {
+          console.log(
+            "[AuthGuard] Authenticated user on auth route -> navigating to tabs",
+          );
+        }
+        router.replace("/(tabs)" as any);
       }
-      router.replace("/(auth)/login" as any);
-    } else if (authStatus === "authenticated" && inAuthGroup) {
-      if (__DEV__) {
-        console.log(
-          "[AuthGuard] Authenticated user on auth route -> navigating to tabs",
-        );
-      }
-      router.replace("/(tabs)" as any);
-    }
+    }, 1);
+
+    return () => clearTimeout(timer);
   }, [authStatus, segments]);
 
   return null;
@@ -149,15 +157,21 @@ function AuthRouteGuard() {
 function SplashOverlay() {
   const authStatus = useAuthStore((s) => s.authStatus);
   const { networkChecked } = useNetwork();
+  const [splashFinished, setSplashFinished] = useState(false);
 
-  // Display layout skeleton while checking network or hydrating authentication state
-  if (networkChecked && authStatus !== "hydrating") {
+  // Keep splash visible during animation and session/network checks
+  if (splashFinished && networkChecked && authStatus !== "hydrating") {
     return null;
   }
 
   return (
     <View style={[StyleSheet.absoluteFill, styles.splashContainer]}>
-      <LayoutSkeletonScreen />
+      <AnimatedSplashScreen
+        minDurationMs={180}
+        onAnimationComplete={() => {
+          setSplashFinished(true);
+        }}
+      />
     </View>
   );
 }
@@ -165,9 +179,11 @@ function SplashOverlay() {
 function RootThemedContainer({ children }: { children: React.ReactNode }) {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+
   return (
     <View style={[styles.rootContainer, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? "light" : "dark"} />
+      {Platform.OS === "android" && <NavigationBar style={isDark ? "dark" : "light"} />}
       {children}
     </View>
   );
@@ -264,13 +280,17 @@ export default function RootLayout() {
               <QueryClientProvider client={queryClient}>
                 <RootThemedContainer>
                   <AuthProvider>
-                    <RazorpayProvider>
-                      <ReferralLinkListener />
-                      <AuthRouteGuard />
-                      <ThemedNavigationStack />
-                      <OfflineNotice />
-                      <SplashOverlay />
-                    </RazorpayProvider>
+                    <NotificationProvider>
+                      <RazorpayProvider>
+                        <ThemedDialogProvider>
+                          <ReferralLinkListener />
+                          <AuthRouteGuard />
+                          <ThemedNavigationStack />
+                          <OfflineNotice />
+                          <SplashOverlay />
+                        </ThemedDialogProvider>
+                      </RazorpayProvider>
+                    </NotificationProvider>
                   </AuthProvider>
                 </RootThemedContainer>
               </QueryClientProvider>

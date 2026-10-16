@@ -124,7 +124,7 @@ export default function AuthCallbackScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F5F3FB',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   subtitleDark: {
-    color: '#9CA3AF',
+    color: '#777383',
   },
   redirectText: {
     fontSize: 12,

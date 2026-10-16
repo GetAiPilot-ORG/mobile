@@ -43,7 +43,7 @@ export const ConversationItem: React.FC<ConversationItemProps> = ({ conversation
   const time = formatMessageTime(conversation.last_message.created_at);
 
   return (
-    <Pressable
+    <Pressable cssInterop={false}
       style={({ pressed }) => [
         styles.container,
         isDark ? styles.containerDark : styles.containerLight,
@@ -52,25 +52,25 @@ export const ConversationItem: React.FC<ConversationItemProps> = ({ conversation
       onPress={onPress}
     >
       <View style={[styles.avatar, isDark ? styles.avatarDark : styles.avatarLight]}>
-        <Text style={[styles.avatarLetter, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+        <Text style={[styles.avatarLetter, { color: isDark ? '#F5F3FB' : '#0f172a' }]}>
           {conversation.contact.name ? conversation.contact.name.charAt(0).toUpperCase() : 'U'}
         </Text>
       </View>
       <View style={styles.info}>
         <View style={styles.topRow}>
-          <Text style={[styles.name, { color: isDark ? '#f8fafc' : '#0f172a' }]} numberOfLines={1}>
+          <Text style={[styles.name, { color: isDark ? '#F5F3FB' : '#0f172a' }]} numberOfLines={1}>
             {conversation.contact.name}
           </Text>
-          <Text style={[styles.time, { color: isDark ? '#64748b' : '#94a3b8' }]}>{time}</Text>
+          <Text style={[styles.time, { color: isDark ? '#64748b' : '#777383' }]}>{time}</Text>
         </View>
         <View style={styles.metaRow}>
-          <Text style={[styles.handle, { color: isDark ? '#64748b' : '#94a3b8' }]} numberOfLines={1}>
+          <Text style={[styles.handle, { color: isDark ? '#64748b' : '#777383' }]} numberOfLines={1}>
             {conversation.contact.handle_or_phone}
           </Text>
           <ChannelBadge channel={conversation.channel} />
         </View>
         <View style={styles.bottomRow}>
-          <Text style={[styles.lastMessage, { color: isDark ? '#94a3b8' : '#64748b' }]} numberOfLines={1}>
+          <Text style={[styles.lastMessage, { color: isDark ? '#777383' : '#64748b' }]} numberOfLines={1}>
             {conversation.last_message.direction === 'outbound' ? 'You: ' : ''}
             {conversation.last_message.content}
           </Text>
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
   },
   containerLight: {
     backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
+    borderColor: '#E9E6F2',
   },
   pressed: {
     opacity: 0.75,
@@ -120,8 +120,8 @@ const styles = StyleSheet.create({
     borderColor: '#334155',
   },
   avatarLight: {
-    backgroundColor: '#f1f5f9',
-    borderColor: '#e2e8f0',
+    backgroundColor: '#F0EEF8',
+    borderColor: '#E9E6F2',
   },
   avatarLetter: {
     fontSize: 18,

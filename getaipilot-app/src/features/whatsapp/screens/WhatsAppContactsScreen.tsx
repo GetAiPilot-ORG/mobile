@@ -1,3 +1,4 @@
+import { ProductPageHeader } from "@/components/ProductUI";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
@@ -9,7 +10,6 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -113,83 +113,46 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
     }
   };
 
+  const contacts = data?.contacts || [];
   const tags = [
     "All",
-    "VIP",
-    "Enterprise",
-    "Lead",
-    "Retail",
-    "High-Value",
-    "Agency",
-    "Creator",
+    ...Array.from(
+      new Set(
+        contacts.flatMap((c) => c.tags || [])
+      )
+    ),
   ];
-
-  const contacts = data?.contacts || [];
-  const totalCount = data?.total_count ?? contacts.length;
 
   return (
     <SafeAreaView
       edges={["top", "left", "right"]}
-      style={[styles.safeArea, { backgroundColor: color.background }]}
+      className="flex-1"
+      style={{ backgroundColor: color.background }}
     >
-      <View style={styles.container}>
-        {/* Header matching Overview Tab */}
-        <View
-          style={[
-            styles.header,
-            isDark ? styles.headerDark : styles.headerLight,
-          ]}
-        >
-          <View style={styles.headerLeftRow}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.backButton,
-                isDark ? styles.backButtonDark : styles.backButtonLight,
-                pressed && styles.backButtonPressed,
-              ]}
-              onPress={handleBack}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityRole="button"
-              accessibilityLabel="Back"
-            >
-              <Ionicons
-                name="chevron-back"
-                size={20}
-                color={isDark ? "#F8FAFC" : "#0F172A"}
-              />
-            </Pressable>
-            <Text
-              style={[
-                styles.title,
-                isDark ? styles.titleDark : styles.titleLight,
-              ]}
-            >
-              WhatsApp Contacts
-            </Text>
-          </View>
-        </View>
+      <View className="flex-1">
+        <ProductPageHeader title="Your contacts" onBack={handleBack} />
 
         {/* Search Bar */}
-        <View style={styles.searchContainer}>
+        <View className="px-4 pt-3 pb-1.5">
           <View
-            style={[
-              styles.searchBar,
-              isDark ? styles.searchBarDark : styles.searchBarLight,
-            ]}
+            className={`flex-row items-center rounded-xl px-3 h-10 border ${
+              isDark
+                ? "bg-[#252230] border-[#3A3549]"
+                : "bg-[#F0EEF8] border-[#E9E6F2]"
+            }`}
           >
             <Ionicons
               name="search"
               size={17}
               color={isDark ? "#8E8E93" : "#8E8E93"}
-              style={styles.searchIcon}
+              style={{ marginRight: 8 }}
             />
             <TextInput
-              style={[
-                styles.searchInput,
-                isDark ? styles.textPrimaryDark : styles.textPrimaryLight,
-              ]}
+              className={`flex-1 text-sm font-medium py-0 ${
+                isDark ? "text-[#F5F3FB]" : "text-[#1C1A25]"
+              }`}
               placeholder="Search contacts by name or phone..."
-              placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
+              placeholderTextColor={isDark ? "#64748B" : "#777383"}
               value={searchQuery}
               onChangeText={setSearchQuery}
               clearButtonMode="while-editing"
@@ -207,11 +170,16 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
         </View>
 
         {/* Tag Filters */}
-        <View style={styles.tagWrapper}>
+        <View className="py-1.5 mb-1.5">
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.tagList}
+            contentContainerStyle={{
+              paddingHorizontal: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+            }}
           >
             {tags.map((item) => {
               const isSelected =
@@ -219,15 +187,15 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
               return (
                 <Pressable
                   key={item}
-                  style={({ pressed }) => [
-                    styles.tagChip,
-                    isDark ? styles.tagChipDark : styles.tagChipLight,
-                    isSelected &&
-                      (isDark
-                        ? styles.tagChipActiveDark
-                        : styles.tagChipActiveLight),
-                    pressed && styles.tagChipPressed,
-                  ]}
+                  className={`px-4 py-1.5 rounded-full border items-center justify-center active:opacity-80 ${
+                    isSelected
+                      ? isDark
+                        ? "bg-white border-white"
+                        : "bg-black border-black"
+                      : isDark
+                      ? "bg-[#252230] border-[#3A3549]"
+                      : "bg-[#F0EEF8] border-[#E9E6F2]"
+                  }`}
                   onPress={() => {
                     if (Platform.OS !== "web") {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -236,14 +204,15 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
                   }}
                 >
                   <Text
-                    style={[
-                      styles.tagChipText,
-                      isDark ? styles.tagChipTextDark : styles.tagChipTextLight,
-                      isSelected &&
-                        (isDark
-                          ? styles.tagChipTextActiveDark
-                          : styles.tagChipTextActiveLight),
-                    ]}
+                    className={`text-xs font-semibold tracking-tight ${
+                      isSelected
+                        ? isDark
+                          ? "text-black font-bold"
+                          : "text-white font-bold"
+                        : isDark
+                        ? "text-[#8E8E93]"
+                        : "text-[#6B7280]"
+                    }`}
                   >
                     {item}
                   </Text>
@@ -258,13 +227,17 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
           <CrmListSkeleton />
         ) : (
           <FlatList
-            style={styles.contactsFlatList}
+            className="flex-1"
             data={contacts}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <ContactCard contact={item} onOpenChat={handleOpenChat} />
             )}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={{
+              paddingHorizontal: 16,
+              paddingTop: 4,
+              paddingBottom: 130,
+            }}
             refreshControl={
               <RefreshControl
                 refreshing={isRefetching}
@@ -273,14 +246,11 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
               />
             }
             ListEmptyComponent={
-              <View style={styles.emptyContainer}>
+              <View className="p-10 items-center justify-center">
                 <Text
-                  style={[
-                    styles.emptyText,
-                    isDark
-                      ? styles.textSecondaryDark
-                      : styles.textSecondaryLight,
-                  ]}
+                  className={`text-sm text-center ${
+                    isDark ? "text-[#8E8E93]" : "text-[#64748B]"
+                  }`}
                 >
                   No contacts found matching your query
                 </Text>
@@ -307,200 +277,3 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  headerDark: {
-    backgroundColor: "#000000",
-    borderBottomColor: "rgba(255, 255, 255, 0.08)",
-  },
-  headerLight: {
-    backgroundColor: "#FFFFFF",
-    borderBottomColor: "rgba(0, 0, 0, 0.06)",
-  },
-  headerLeftRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-    borderWidth: 1,
-  },
-  backButtonLight: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  backButtonDark: {
-    backgroundColor: "#1C1C1E",
-    borderColor: "#2C2C2E",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  backButtonPressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.94 }],
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "700",
-    letterSpacing: -0.4,
-  },
-  titleLight: {
-    color: "#0F172A",
-  },
-  titleDark: {
-    color: "#F8FAFC",
-  },
-  subtitle: {
-    fontSize: 12,
-    fontWeight: "400",
-    marginTop: 1,
-    letterSpacing: -0.1,
-  },
-  subtitleLight: {
-    color: "#64748B",
-  },
-  subtitleDark: {
-    color: "#8E8E93",
-  },
-  searchContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 6,
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 40,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  searchBarDark: {
-    backgroundColor: "#1C1C1E",
-    borderColor: "#2C2C2E",
-  },
-  searchBarLight: {
-    backgroundColor: "#F2F2F7",
-    borderColor: "#E5E7EB",
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: "500",
-    paddingVertical: 0,
-  },
-  tagWrapper: {
-    paddingVertical: 6,
-    marginBottom: 6,
-  },
-  tagList: {
-    paddingHorizontal: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  tagChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-    borderRadius: 100,
-    borderWidth: StyleSheet.hairlineWidth,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tagChipDark: {
-    backgroundColor: "#1C1C1E",
-    borderColor: "#2C2C2E",
-  },
-  tagChipLight: {
-    backgroundColor: "#F2F2F7",
-    borderColor: "#E5E7EB",
-  },
-  tagChipActiveDark: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#FFFFFF",
-  },
-  tagChipActiveLight: {
-    backgroundColor: "#000000",
-    borderColor: "#000000",
-  },
-  tagChipPressed: {
-    opacity: 0.8,
-  },
-  tagChipText: {
-    fontSize: 12.5,
-    fontWeight: "600",
-    letterSpacing: -0.1,
-  },
-  tagChipTextDark: {
-    color: "#8E8E93",
-  },
-  tagChipTextLight: {
-    color: "#6B7280",
-  },
-  tagChipTextActiveDark: {
-    color: "#000000",
-    fontWeight: "700",
-  },
-  tagChipTextActiveLight: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-  },
-  contactsFlatList: {
-    flex: 1,
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 130,
-  },
-  emptyContainer: {
-    padding: 40,
-    alignItems: "center",
-  },
-  emptyText: {
-    fontSize: 14,
-    textAlign: "center",
-  },
-  textPrimaryDark: {
-    color: "#F8FAFC",
-  },
-  textPrimaryLight: {
-    color: "#0F172A",
-  },
-  textSecondaryDark: {
-    color: "#8E8E93",
-  },
-  textSecondaryLight: {
-    color: "#64748B",
-  },
-});

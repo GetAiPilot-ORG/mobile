@@ -1,8 +1,8 @@
-import React from 'react';
-import { StyleSheet, Text, View, Pressable, Linking } from 'react-native';
+import { useProductPalette } from "@/components/ProductUI";
 import { Ionicons } from '@expo/vector-icons';
-import { CRMContact, ContactStatus } from '../types';
-import { useTheme, getColors } from '@/theme';
+import React from 'react';
+import { Linking,Pressable,Text,View } from 'react-native';
+import { CRMContact,ContactStatus } from '../types';
 
 interface LeadCardProps {
   lead: CRMContact;
@@ -14,11 +14,11 @@ interface LeadCardProps {
 }
 
 const STATUS_CONFIG: Partial<Record<ContactStatus, { label: string; bg: string; text: string; dot: string }>> = {
-  lead: { label: 'New Lead', bg: 'rgba(202, 191, 171, 0.22)', text: '#9B8F70', dot: '#CABFAB' },
+  lead: { label: 'New Lead', bg: 'rgba(202, 191, 171, 0.22)', text: '#9B8F70', dot: '#E7DEFA' },
   prospect: { label: 'Prospect', bg: 'rgba(184, 134, 59, 0.15)', text: '#B8863B', dot: '#B8863B' },
   customer: { label: 'Customer', bg: 'rgba(79, 138, 104, 0.15)', text: '#4F8A68', dot: '#4F8A68' },
   churned: { label: 'Churned', bg: 'rgba(184, 92, 92, 0.15)', text: '#B85C5C', dot: '#B85C5C' },
-  open: { label: 'Open', bg: 'rgba(202, 191, 171, 0.22)', text: '#9B8F70', dot: '#CABFAB' },
+  open: { label: 'Open', bg: 'rgba(202, 191, 171, 0.22)', text: '#9B8F70', dot: '#E7DEFA' },
   active: { label: 'Active', bg: 'rgba(79, 138, 104, 0.15)', text: '#4F8A68', dot: '#4F8A68' },
   archived: { label: 'Archived', bg: 'rgba(138, 141, 145, 0.15)', text: '#8A8D91', dot: '#8A8D91' },
 };
@@ -31,14 +31,13 @@ export const LeadCard: React.FC<LeadCardProps> = ({
   onQuickEmail,
   dealValue,
 }) => {
-  const { isDark } = useTheme();
-  const colors = getColors(isDark);
+  const colors = useProductPalette();
 
   const statusCfg = STATUS_CONFIG[lead.status] || {
     label: lead.status || 'Lead',
     bg: 'rgba(202, 191, 171, 0.22)',
     text: '#9B8F70',
-    dot: '#CABFAB',
+    dot: '#E7DEFA',
   };
 
   const handleCall = () => {
@@ -68,7 +67,6 @@ export const LeadCard: React.FC<LeadCardProps> = ({
     }
   };
 
-  // Format deal value display if provided or present on lead
   const formattedValue = dealValue != null
     ? typeof dealValue === 'number'
       ? dealValue >= 100000
@@ -79,239 +77,30 @@ export const LeadCard: React.FC<LeadCardProps> = ({
       ? `₹${Number((lead as any).lead_value).toLocaleString()}`
       : null;
 
+  const name = lead.name || [lead.first_name, lead.last_name].filter(Boolean).join(' ') || 'Unnamed lead';
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.card,
-        { backgroundColor: colors.card, borderColor: colors.cardBorder },
-        pressed && { backgroundColor: colors.cardHover, borderColor: colors.primary },
-      ]}
-      onPress={onPress}
-    >
-      <View style={styles.header}>
-        <View style={[styles.avatar, { backgroundColor: colors.surfaceSecondary }]}>
-          <Text style={[styles.avatarText, { color: colors.textPrimary }]}>
-            {(lead.first_name?.[0] || lead.name?.[0] || 'L').toUpperCase()}
-            {(lead.last_name?.[0] || '').toUpperCase()}
-          </Text>
+    <View style={{ backgroundColor: colors.card, borderRadius: 24, padding: 20, marginBottom: 14, gap: 16 }}>
+      <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={"Open " + name} style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
+        <View style={{ width: 46, height: 46, borderRadius: 18, backgroundColor: colors.peach, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 18, color: colors.text }}>{name.charAt(0).toUpperCase()}</Text></View>
+        <View style={{ flex: 1, gap: 5 }}><Text style={{ fontSize: 16, color: colors.text, fontWeight: '500' }}>{name}</Text>{lead.company && <Text style={{ fontSize: 12, color: colors.textSecondary }}>{lead.company}</Text>}</View>
+        <Ionicons name="chevron-forward" size={17} color={colors.iconSecondary} />
+      </Pressable>
+      <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+        <View style={{ backgroundColor: colors.lavender, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ color: colors.text, fontSize: 12 }}>{statusCfg.label}</Text></View>
+        {formattedValue && <Text style={{ color: colors.text, fontSize: 13 }}>{formattedValue}</Text>}
+        {lead.assignee?.name && <Text style={{ fontSize: 12, color: colors.textSecondary }}>{lead.assignee.name}</Text>}
+      </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
+        <View style={{ flex: 1, gap: 4 }}>
+          {lead.phone && <Text style={{ fontSize: 12, color: colors.textSecondary }}>{lead.phone}</Text>}
+          {lead.email && <Text numberOfLines={1} style={{ fontSize: 12, color: colors.textSecondary }}>{lead.email}</Text>}
         </View>
-
-        <View style={styles.nameBlock}>
-          <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
-            {lead.name || `${lead.first_name || ''} ${lead.last_name || ''}`.trim() || 'Unnamed Lead'}
-          </Text>
-          {lead.company || lead.job_title ? (
-            <Text style={[styles.company, { color: colors.mutedText }]} numberOfLines={1}>
-              {[lead.job_title, lead.company].filter(Boolean).join(' • ')}
-            </Text>
-          ) : null}
-        </View>
-
-        <View style={{ alignItems: 'flex-end', gap: 4 }}>
-          {formattedValue && (
-            <View style={[styles.dealBadge, { backgroundColor: colors.warningSoft }]}>
-              <Text style={styles.dealBadgeText}>{formattedValue}</Text>
-            </View>
-          )}
-          <View style={[styles.statusBadge, { backgroundColor: statusCfg.bg }]}>
-            <View style={[styles.statusDot, { backgroundColor: statusCfg.dot }]} />
-            <Text style={[styles.statusText, { color: statusCfg.text }]}>{statusCfg.label}</Text>
-          </View>
+        <View style={{ flexDirection: 'row', gap: 6 }}>
+          {lead.phone && <Pressable onPress={handleWhatsApp} accessibilityRole="button" accessibilityLabel={"Message " + name} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="logo-whatsapp" size={19} color={colors.text} /></Pressable>}
+          {lead.phone && <Pressable onPress={handleCall} accessibilityRole="button" accessibilityLabel={"Call " + name} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.lavender, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="call-outline" size={19} color={colors.text} /></Pressable>}
+          {lead.email && <Pressable onPress={handleEmail} accessibilityRole="button" accessibilityLabel={"Email " + name} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.peach, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="mail-outline" size={19} color={colors.text} /></Pressable>}
         </View>
       </View>
-
-      {/* Meta Contact Information */}
-      {(lead.phone || lead.email) ? (
-        <View style={[styles.metaRow, { borderTopColor: colors.divider }]}>
-          {lead.phone ? (
-            <View style={styles.metaItem}>
-              <Ionicons name="call-outline" size={13} color={colors.iconMuted} />
-              <Text style={[styles.metaText, { color: colors.mutedText }]} numberOfLines={1}>
-                {lead.phone}
-              </Text>
-            </View>
-          ) : null}
-
-          {lead.email ? (
-            <View style={styles.metaItem}>
-              <Ionicons name="mail-outline" size={13} color={colors.iconMuted} />
-              <Text style={[styles.metaText, { color: colors.mutedText }]} numberOfLines={1}>
-                {lead.email}
-              </Text>
-            </View>
-          ) : null}
-        </View>
-      ) : null}
-
-      {/* Footer: Assignee & 1-Tap Quick Touchpoints */}
-      <View style={[styles.footer, { borderTopColor: colors.divider }]}>
-        <View style={styles.assigneeBlock}>
-          <Ionicons name="person-circle-outline" size={16} color={colors.iconMuted} />
-          <Text style={[styles.assigneeText, { color: colors.mutedText }]} numberOfLines={1}>
-            {lead.assignee?.name || 'Unassigned'}
-          </Text>
-        </View>
-
-        <View style={styles.actionButtons}>
-          {lead.phone ? (
-            <Pressable
-              style={[styles.touchpointBtn, { backgroundColor: isDark ? 'rgba(37, 211, 102, 0.15)' : '#DCFCE7' }]}
-              onPress={handleWhatsApp}
-              hitSlop={6}
-            >
-              <Ionicons name="logo-whatsapp" size={15} color="#25D366" />
-            </Pressable>
-          ) : null}
-
-          {lead.phone ? (
-            <Pressable
-              style={[styles.touchpointBtn, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#D1FAE5' }]}
-              onPress={handleCall}
-              hitSlop={6}
-            >
-              <Ionicons name="call" size={14} color="#10B981" />
-            </Pressable>
-          ) : null}
-
-          {lead.email ? (
-            <Pressable
-              style={[styles.touchpointBtn, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#DBEAFE' }]}
-              onPress={handleEmail}
-              hitSlop={6}
-            >
-              <Ionicons name="mail" size={14} color="#3B82F6" />
-            </Pressable>
-          ) : null}
-
-          <View style={styles.chevron}>
-            <Ionicons name="chevron-forward" size={16} color={colors.iconMuted} />
-          </View>
-        </View>
-      </View>
-    </Pressable>
+    </View>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  avatarText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  nameBlock: {
-    flex: 1,
-    marginRight: 8,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: -0.2,
-  },
-  company: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  metaRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    paddingVertical: 6,
-    borderTopWidth: 1,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  metaText: {
-    fontSize: 12,
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 8,
-    borderTopWidth: 1,
-  },
-  assigneeBlock: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    flex: 1,
-  },
-  assigneeText: {
-    fontSize: 12,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  dealBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  dealBadgeText: {
-    color: '#B8863B',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  touchpointBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chevron: {
-    marginLeft: 4,
-  },
-});

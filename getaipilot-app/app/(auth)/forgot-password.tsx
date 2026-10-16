@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   logoWrapperDark: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#252230',
     shadowColor: '#8B5CF6',
     shadowOpacity: 0.4,
   },
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 24,
-    fontWeight: '800',
+    fontWeight: '600',
     color: '#000000',
     textAlign: 'center',
     lineHeight: 31,
@@ -269,12 +269,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   subheadingDark: {
-    color: '#9CA3AF',
+    color: '#777383',
   },
   feedbackBanner: {
     paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: 12,
+    borderRadius: 24,
     marginBottom: 18,
   },
   feedbackBannerError: {
@@ -296,13 +296,13 @@ const styles = StyleSheet.create({
     color: '#16A34A',
   },
   inputGroup: {
-    backgroundColor: '#F2F4F7',
+    backgroundColor: '#F0EEF8',
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 20,
   },
   inputGroupDark: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#252230',
   },
   inputRow: {
     flexDirection: 'row',
@@ -332,23 +332,23 @@ const styles = StyleSheet.create({
   clearBtnText: {
     fontSize: 10,
     color: '#4B5563',
-    fontWeight: '800',
+    fontWeight: '600',
   },
   primaryButton: {
-    backgroundColor: '#0084FF',
+    backgroundColor: '#17171C',
     paddingVertical: 15,
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
-    shadowColor: '#0084FF',
+    shadowColor: '#17171C',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 3,
   },
   primaryButtonDisabled: {
-    backgroundColor: '#F2F4F7',
+    backgroundColor: '#F0EEF8',
     shadowOpacity: 0,
     elevation: 0,
   },
@@ -359,10 +359,10 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   primaryButtonTextDisabled: {
-    color: '#9CA3AF',
+    color: '#777383',
   },
   secondaryButton: {
-    backgroundColor: '#F2F4F7',
+    backgroundColor: '#F0EEF8',
     paddingVertical: 15,
     borderRadius: 28,
     alignItems: 'center',
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   secondaryButtonDark: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#252230',
   },
   secondaryButtonText: {
     color: '#000000',

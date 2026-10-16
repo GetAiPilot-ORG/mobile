@@ -265,10 +265,10 @@ export const SocialPlansScreen: React.FC = () => {
   };
 
   return (
-    <AppScreen safeArea={false} backgroundColor={isDark ? '#000000' : '#F8FAFC'}>
+    <AppScreen safeArea={false} backgroundColor={isDark ? '#000000' : '#F5F3FB'}>
       <AppTopBar
         title="SocialPilot Plans"
-        subtitle="Multi-Channel Quotas & Pricing"
+        // subtitle="Multi-Channel Quotas & Pricing"
         showBack={true}
       />
 
@@ -281,8 +281,8 @@ export const SocialPlansScreen: React.FC = () => {
           style={[
             styles.activePlanCard,
             {
-              backgroundColor: isDark ? '#0f172a' : '#ffffff',
-              borderColor: isDark ? '#1e293b' : '#e2e8f0',
+              backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+              borderColor: isDark ? '#252230' : '#E9E6F2',
             },
           ]}
         >
@@ -292,10 +292,10 @@ export const SocialPlansScreen: React.FC = () => {
                 <Ionicons name="shield-checkmark" size={18} color="#ec4899" />
               </View>
               <View>
-                <Text style={[styles.activeCardTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                <Text style={[styles.activeCardTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                   Active Plan: {currentPlanName}
                 </Text>
-                <Text style={[styles.activeCardSub, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                <Text style={[styles.activeCardSub, { color: isDark ? '#777383' : '#64748b' }]}>
                   {subscription?.current_period_end
                     ? `Renews ${new Date(subscription.current_period_end).toLocaleDateString()} · ${subscription.billing_interval?.toUpperCase() || 'QUARTERLY'}`
                     : 'Standard Free Workspace Quotas'}
@@ -310,30 +310,30 @@ export const SocialPlansScreen: React.FC = () => {
 
           {/* Quota Metrics Row */}
           <View style={styles.quotaPillsRow}>
-            <View style={[styles.quotaPill, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+            <View style={[styles.quotaPill, { backgroundColor: isDark ? '#252230' : '#F0EEF8' }]}>
               <Ionicons name="apps" size={12} color="#ec4899" />
-              <Text style={[styles.quotaPillText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              <Text style={[styles.quotaPillText, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                 {limits.social_accounts} Channels
               </Text>
             </View>
 
-            <View style={[styles.quotaPill, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+            <View style={[styles.quotaPill, { backgroundColor: isDark ? '#252230' : '#F0EEF8' }]}>
               <Ionicons name="calendar" size={12} color="#3b82f6" />
-              <Text style={[styles.quotaPillText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              <Text style={[styles.quotaPillText, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                 {limits.scheduled_queue >= 1000000 ? 'Unlimited' : `${limits.scheduled_queue}`} Queue
               </Text>
             </View>
 
-            <View style={[styles.quotaPill, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+            <View style={[styles.quotaPill, { backgroundColor: isDark ? '#252230' : '#F0EEF8' }]}>
               <Ionicons name="chatbubbles" size={12} color="#8b5cf6" />
-              <Text style={[styles.quotaPillText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              <Text style={[styles.quotaPillText, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                 {limits.autodm_automations >= 1000000 ? 'Unlimited' : `${limits.autodm_automations}`} AutoDM
               </Text>
             </View>
 
-            <View style={[styles.quotaPill, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+            <View style={[styles.quotaPill, { backgroundColor: isDark ? '#252230' : '#F0EEF8' }]}>
               <Ionicons name="time" size={12} color="#06b6d4" />
-              <Text style={[styles.quotaPillText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              <Text style={[styles.quotaPillText, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                 {limits.history_days}d History
               </Text>
             </View>
@@ -342,10 +342,10 @@ export const SocialPlansScreen: React.FC = () => {
 
         {/* 2. Billing Cycle Switcher */}
         <View style={styles.sectionHeadingWrap}>
-          <Text style={[styles.sectionHeading, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+          <Text style={[styles.sectionHeading, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
             Choose Your Billing Interval
           </Text>
-          <Text style={[styles.sectionSub, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+          <Text style={[styles.sectionSub, { color: isDark ? '#777383' : '#64748b' }]}>
             Save up to 30% with annual & semi-annual commitments
           </Text>
         </View>
@@ -371,9 +371,9 @@ export const SocialPlansScreen: React.FC = () => {
                       backgroundColor: isSelected
                         ? '#ec4899'
                         : isDark
-                          ? '#1e293b'
+                          ? '#252230'
                           : '#ffffff',
-                      borderColor: isSelected ? '#ec4899' : isDark ? '#334155' : '#e2e8f0',
+                      borderColor: isSelected ? '#ec4899' : isDark ? '#334155' : '#E9E6F2',
                     },
                   ]}
                 >
@@ -424,14 +424,14 @@ export const SocialPlansScreen: React.FC = () => {
                 style={[
                   styles.planCard,
                   {
-                    backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                    backgroundColor: isDark ? '#1C1A25' : '#ffffff',
                     borderColor: isCurrent
                       ? '#22c55e'
                       : plan.isPopular
                         ? '#ec4899'
                         : isDark
-                          ? '#1e293b'
-                          : '#e2e8f0',
+                          ? '#252230'
+                          : '#E9E6F2',
                   },
                 ]}
               >
@@ -439,7 +439,7 @@ export const SocialPlansScreen: React.FC = () => {
                 <View style={styles.planCardTop}>
                   <View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <Text style={[styles.planTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                      <Text style={[styles.planTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                         {plan.name}
                       </Text>
                       {plan.isPopular && (
@@ -455,7 +455,7 @@ export const SocialPlansScreen: React.FC = () => {
                         </View>
                       )}
                     </View>
-                    <Text style={[styles.planTagline, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                    <Text style={[styles.planTagline, { color: isDark ? '#777383' : '#64748b' }]}>
                       {plan.tagline}
                     </Text>
                   </View>
@@ -465,23 +465,23 @@ export const SocialPlansScreen: React.FC = () => {
                 <View style={styles.priceRow}>
                   {plan.id === 'free' ? (
                     <View style={styles.priceValueWrap}>
-                      <Text style={[styles.priceCurrency, { color: isDark ? '#f8fafc' : '#0f172a' }]}>₹</Text>
-                      <Text style={[styles.priceLarge, { color: isDark ? '#f8fafc' : '#0f172a' }]}>0</Text>
-                      <Text style={[styles.pricePeriod, { color: isDark ? '#94a3b8' : '#64748b' }]}>/ month</Text>
+                      <Text style={[styles.priceCurrency, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>₹</Text>
+                      <Text style={[styles.priceLarge, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>0</Text>
+                      <Text style={[styles.pricePeriod, { color: isDark ? '#777383' : '#64748b' }]}>/ month</Text>
                     </View>
                   ) : (
                     <View>
                       <View style={styles.priceValueWrap}>
-                        <Text style={[styles.priceCurrency, { color: isDark ? '#f8fafc' : '#0f172a' }]}>₹</Text>
-                        <Text style={[styles.priceLarge, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                        <Text style={[styles.priceCurrency, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>₹</Text>
+                        <Text style={[styles.priceLarge, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                           {Math.round(price)}
                         </Text>
-                        <Text style={[styles.pricePeriod, { color: isDark ? '#94a3b8' : '#64748b' }]}>/ mo</Text>
+                        <Text style={[styles.pricePeriod, { color: isDark ? '#777383' : '#64748b' }]}>/ mo</Text>
                         {hasDiscount && (
                           <Text style={styles.originalPrice}>₹{originalPrice}</Text>
                         )}
                       </View>
-                      <Text style={[styles.billingFrequency, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                      <Text style={[styles.billingFrequency, { color: isDark ? '#777383' : '#64748b' }]}>
                         {selectedInterval === 'month'
                           ? 'Billed monthly'
                           : `Billed ${BILLING_INTERVALS.find(b => b.key === selectedInterval)?.label.toLowerCase()}`}
@@ -511,7 +511,7 @@ export const SocialPlansScreen: React.FC = () => {
                   </Pressable>
                 )}
 
-                <View style={[styles.divider, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]} />
+                <View style={[styles.divider, { backgroundColor: isDark ? '#252230' : '#F0EEF8' }]} />
 
                 {/* Workspace Limits List */}
                 <Text style={[styles.specsTitle, { color: isDark ? '#cbd5e1' : '#334155' }]}>
@@ -523,7 +523,7 @@ export const SocialPlansScreen: React.FC = () => {
                     <Text style={[styles.specLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
                       Connected Channels:
                     </Text>
-                    <Text style={[styles.specVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                    <Text style={[styles.specVal, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                       {plan.limits.social_accounts} Accounts
                     </Text>
                   </View>
@@ -533,7 +533,7 @@ export const SocialPlansScreen: React.FC = () => {
                     <Text style={[styles.specLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
                       Scheduled Queue:
                     </Text>
-                    <Text style={[styles.specVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                    <Text style={[styles.specVal, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                       {plan.limits.scheduled_queue >= 1000000 ? 'Unlimited' : `${plan.limits.scheduled_queue} Posts`}
                     </Text>
                   </View>
@@ -543,7 +543,7 @@ export const SocialPlansScreen: React.FC = () => {
                     <Text style={[styles.specLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
                       AutoDM Automations:
                     </Text>
-                    <Text style={[styles.specVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                    <Text style={[styles.specVal, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                       {plan.limits.autodm_automations >= 1000000 ? 'Unlimited' : `${plan.limits.autodm_automations} Rule`}
                     </Text>
                   </View>
@@ -553,7 +553,7 @@ export const SocialPlansScreen: React.FC = () => {
                     <Text style={[styles.specLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
                       Monthly AutoDM Replies:
                     </Text>
-                    <Text style={[styles.specVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                    <Text style={[styles.specVal, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                       {plan.limits.autodm_replies_per_month >= 1000000 ? 'Unlimited' : `${plan.limits.autodm_replies_per_month} /mo`}
                     </Text>
                   </View>
@@ -563,7 +563,7 @@ export const SocialPlansScreen: React.FC = () => {
                     <Text style={[styles.specLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
                       Audience Contacts:
                     </Text>
-                    <Text style={[styles.specVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                    <Text style={[styles.specVal, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                       {plan.limits.contacts >= 1000000 ? 'Unlimited' : `${plan.limits.contacts} Contacts`}
                     </Text>
                   </View>
@@ -573,7 +573,7 @@ export const SocialPlansScreen: React.FC = () => {
                     <Text style={[styles.specLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
                       Analytics History:
                     </Text>
-                    <Text style={[styles.specVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                    <Text style={[styles.specVal, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                       {plan.limits.history_days} Days
                     </Text>
                   </View>
@@ -583,13 +583,13 @@ export const SocialPlansScreen: React.FC = () => {
                     <Text style={[styles.specLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
                       Team Seats:
                     </Text>
-                    <Text style={[styles.specVal, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                    <Text style={[styles.specVal, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                       {plan.limits.team_members} Member{plan.limits.team_members > 1 ? 's' : ''}
                     </Text>
                   </View>
                 </View>
 
-                <View style={[styles.divider, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]} />
+                <View style={[styles.divider, { backgroundColor: isDark ? '#252230' : '#F0EEF8' }]} />
 
                 {/* Features Checklist */}
                 <Text style={[styles.specsTitle, { color: isDark ? '#cbd5e1' : '#334155' }]}>
@@ -621,7 +621,7 @@ export const SocialPlansScreen: React.FC = () => {
                     <Ionicons
                       name={plan.features.approval_workflow ? 'checkmark-circle' : 'close-circle'}
                       size={15}
-                      color={plan.features.approval_workflow ? '#22c55e' : isDark ? '#64748b' : '#94a3b8'}
+                      color={plan.features.approval_workflow ? '#22c55e' : isDark ? '#64748b' : '#777383'}
                     />
                     <Text
                       style={[
@@ -629,7 +629,7 @@ export const SocialPlansScreen: React.FC = () => {
                         {
                           color: plan.features.approval_workflow
                             ? isDark ? '#cbd5e1' : '#475569'
-                            : isDark ? '#64748b' : '#94a3b8',
+                            : isDark ? '#64748b' : '#777383',
                         },
                       ]}
                     >
@@ -641,7 +641,7 @@ export const SocialPlansScreen: React.FC = () => {
                     <Ionicons
                       name={plan.features.api ? 'checkmark-circle' : 'close-circle'}
                       size={15}
-                      color={plan.features.api ? '#22c55e' : isDark ? '#64748b' : '#94a3b8'}
+                      color={plan.features.api ? '#22c55e' : isDark ? '#64748b' : '#777383'}
                     />
                     <Text
                       style={[
@@ -649,7 +649,7 @@ export const SocialPlansScreen: React.FC = () => {
                         {
                           color: plan.features.api
                             ? isDark ? '#cbd5e1' : '#475569'
-                            : isDark ? '#64748b' : '#94a3b8',
+                            : isDark ? '#64748b' : '#777383',
                         },
                       ]}
                     >
@@ -675,33 +675,33 @@ export const SocialPlansScreen: React.FC = () => {
 
         {/* 4. FAQ Section */}
         <View style={styles.faqSection}>
-          <Text style={[styles.faqHeaderTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+          <Text style={[styles.faqHeaderTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
             Frequently Asked Questions
           </Text>
 
-          <View style={[styles.faqCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff', borderColor: isDark ? '#1e293b' : '#e2e8f0' }]}>
-            <Text style={[styles.faqQuestion, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+          <View style={[styles.faqCard, { backgroundColor: isDark ? '#1C1A25' : '#ffffff', borderColor: isDark ? '#252230' : '#E9E6F2' }]}>
+            <Text style={[styles.faqQuestion, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
               Can I upgrade or change billing cycles anytime?
             </Text>
-            <Text style={[styles.faqAnswer, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+            <Text style={[styles.faqAnswer, { color: isDark ? '#777383' : '#64748b' }]}>
               Yes. You can switch between Monthly, Quarterly, and Annual plans at any moment. Your new quotas will be activated instantly on your account.
             </Text>
           </View>
 
-          <View style={[styles.faqCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff', borderColor: isDark ? '#1e293b' : '#e2e8f0' }]}>
-            <Text style={[styles.faqQuestion, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+          <View style={[styles.faqCard, { backgroundColor: isDark ? '#1C1A25' : '#ffffff', borderColor: isDark ? '#252230' : '#E9E6F2' }]}>
+            <Text style={[styles.faqQuestion, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
               What happens if I reach my queue limit on Free?
             </Text>
-            <Text style={[styles.faqAnswer, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+            <Text style={[styles.faqAnswer, { color: isDark ? '#777383' : '#64748b' }]}>
               On the Free plan, you can have up to 10 publications in your scheduled broadcast queue. Once a post is sent, you can schedule another, or upgrade to Starter/Growth for unlimited queue slots.
             </Text>
           </View>
 
-          <View style={[styles.faqCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff', borderColor: isDark ? '#1e293b' : '#e2e8f0' }]}>
-            <Text style={[styles.faqQuestion, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+          <View style={[styles.faqCard, { backgroundColor: isDark ? '#1C1A25' : '#ffffff', borderColor: isDark ? '#252230' : '#E9E6F2' }]}>
+            <Text style={[styles.faqQuestion, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
               Are all social media channels supported?
             </Text>
-            <Text style={[styles.faqAnswer, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+            <Text style={[styles.faqAnswer, { color: isDark ? '#777383' : '#64748b' }]}>
               SocialPilot connects with Instagram, Facebook, YouTube, LinkedIn, X (Twitter), and Pinterest, with cross-posting supported across all plans.
             </Text>
           </View>
@@ -713,7 +713,7 @@ export const SocialPlansScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 48,
     gap: 18,
@@ -742,7 +742,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   activeCardSub: {
-    fontSize: 11,
+    fontSize: 13,
     marginTop: 2,
   },
   activeBadgePill: {
@@ -790,7 +790,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   sectionSub: {
-    fontSize: 12,
+    fontSize: 13,
   },
   intervalScrollWrap: {
     marginVertical: -4,
@@ -825,21 +825,20 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   planCard: {
-    borderRadius: 18,
-    borderWidth: 1.5,
+    borderRadius: 24,
+    borderWidth: 0,
     padding: 18,
     gap: 14,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0,
     shadowRadius: 4,
     elevation: 2,
   },
   planCardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
+    alignItems: 'flex-start', borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   planTitle: {
     fontSize: 22,
     fontWeight: '900',
@@ -904,7 +903,7 @@ const styles = StyleSheet.create({
   originalPrice: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#94a3b8',
+    color: '#777383',
     textDecorationLine: 'line-through',
     marginLeft: 8,
   },
@@ -989,11 +988,10 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   faqCard: {
-    borderRadius: 14,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     padding: 14,
-    gap: 6,
-  },
+    gap: 6, shadowOpacity: 0 },
   faqQuestion: {
     fontSize: 13,
     fontWeight: '700',

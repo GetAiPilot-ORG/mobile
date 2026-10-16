@@ -185,9 +185,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
                 <Ionicons
                   name={med.type === 'image' ? 'image' : med.type === 'audio' ? 'mic' : 'document'}
                   size={16}
-                  color={isDark ? '#e2e8f0' : '#475569'}
+                  color={isDark ? '#E9E6F2' : '#475569'}
                 />
-                <Text style={[styles.mediaText, { color: isDark ? '#f8fafc' : '#1e293b' }]}>
+                <Text style={[styles.mediaText, { color: isDark ? '#F5F3FB' : '#1e293b' }]}>
                   {med.type === 'image' ? 'Photo' : med.type === 'audio' ? 'Voice Note' : 'Document'}
                 </Text>
               </View>

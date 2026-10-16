@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build & compiled outputs
+dist/
+build/
+*.tsbuildinfo
+
+# AI & tooling
+.impeccable/
+.claude/
+.gemini/
+
+# Debug logs
+logs/
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+pnpm-debug.*
+
+# macOS / OS
+.DS_Store
+*.pem
+
+# Environment variables
+.env
+.env.production
+.env.*
+.env.local
+.env.*.local
+!.env.example
+
+# IDEs & Editors
+.idea/
+*.iml
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json

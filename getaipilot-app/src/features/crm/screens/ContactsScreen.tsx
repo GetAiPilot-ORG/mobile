@@ -1,8 +1,11 @@
 import { getColors, useTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import {
+  Alert,
   FlatList,
+  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -12,7 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CrmListSkeleton } from '../../../components/skeletonScreen';
-import { CreateLeadModal } from '../components/CreateLeadModal';
+import { CreateContactModal } from '../components/CreateContactModal';
 import { LeadCard } from '../components/LeadCard';
 import { useContacts, useCreateContact } from '../hooks/useContacts';
 
@@ -50,30 +53,36 @@ export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onSelectContact,
             </Pressable>
           ) : null}
           <View>
-            <Text style={[styles.title, { color: colors.text }]}>All Contacts</Text>
-            <Text style={[styles.subtitle, { color: colors.text }]}>Complete customer and partner phonebook</Text>
+            <Text style={[styles.title, { color: colors.text }]}>Your contacts</Text>
+
           </View>
         </View>
 
-        <Pressable style={styles.addBtn} onPress={() => setShowAddModal(true)} hitSlop={8}>
+        <Pressable
+          style={styles.addBtn}
+          onPress={() =>
+            setShowAddModal(true)
+          }
+          hitSlop={8}
+        >
           <Ionicons name="person-add" size={16} color="#FFFFFF" />
           <Text style={styles.addBtnText}>Contact</Text>
         </Pressable>
       </View>
 
       {/* Search */}
-      <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.text }]}>
-        <Ionicons name="search" size={16} color={colors.text} />
+      <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Ionicons name="search" size={16} color={colors.textMuted} />
         <TextInput
           style={[styles.searchInput, { color: colors.text }]}
           placeholder="Search all contacts & companies..."
-          placeholderTextColor={colors.text}
+          placeholderTextColor={colors.textMuted}
           value={search}
           onChangeText={setSearch}
         />
         {search ? (
           <Pressable onPress={() => setSearch('')}>
-            <Ionicons name="close-circle" size={16} color={colors.text} />
+            <Ionicons name="close-circle" size={16} color={colors.textMuted} />
           </Pressable>
         ) : null}
       </View>
@@ -83,9 +92,9 @@ export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onSelectContact,
         <CrmListSkeleton />
       ) : contacts.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="people-outline" size={48} color={colors.text} />
+          <Ionicons name="people-outline" size={48} color={colors.textMuted} />
           <Text style={[styles.emptyTitle, { color: colors.text }]}>No contacts found</Text>
-          <Text style={[styles.emptySubtitle, { color: colors.text }]}>
+          <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
             {search ? `No records matching "${search}"` : 'Your contact book is currently empty.'}
           </Text>
         </View>
@@ -109,12 +118,21 @@ export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onSelectContact,
         />
       )}
 
-      {/* Add Modal */}
-      <CreateLeadModal
+      {/* Add Contact Modal */}
+      <CreateContactModal
         visible={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSubmit={async (c) => {
-          await createContact.mutateAsync(c);
+          try {
+            await createContact.mutateAsync(c);
+            if (Platform.OS !== 'web') {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
+            Alert.alert('Contact Created 🎉', `${c.first_name || 'Contact'} was added to your CRM directory.`);
+          } catch (err: any) {
+            Alert.alert('Error', err?.message || 'Failed to create contact');
+            throw err;
+          }
         }}
         isLoading={createContact.isPending}
       />
@@ -144,23 +162,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#1E2028',
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
+    fontSize: 28,
+    fontWeight: '500',
+    letterSpacing: -0.5, lineHeight: 36 },
   subtitle: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#17171C',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 10,
-  },
+    borderRadius: 28, minHeight: 44 , shadowOpacity: 0 },
   addBtnText: {
     color: '#FFFFFF',
     fontSize: 13,
@@ -170,13 +186,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    borderRadius: 12,
+    borderRadius: 22,
     paddingHorizontal: 12,
     paddingVertical: 8,
     marginHorizontal: 16,
     marginBottom: 12,
-    borderWidth: 1,
-  },
+    borderWidth: 0, minHeight: 48 },
   searchInput: {
     flex: 1,
     fontSize: 14,

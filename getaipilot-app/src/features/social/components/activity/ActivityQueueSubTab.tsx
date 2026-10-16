@@ -95,10 +95,10 @@ export const ActivityQueueSubTab: React.FC<ActivityQueueSubTabProps> = ({
     <View style={styles.subContent}>
       <View style={styles.headerActionRow}>
         <View style={styles.headerTextCol}>
-          <Text style={[styles.subTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+          <Text style={[styles.subTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
             Scheduled Broadcast Queue
           </Text>
-          <Text style={[styles.subDesc, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+          <Text style={[styles.subDesc, { color: isDark ? '#777383' : '#64748b' }]}>
             Pending publications automatically firing across channels
           </Text>
         </View>
@@ -193,8 +193,8 @@ export const ActivityQueueSubTab: React.FC<ActivityQueueSubTabProps> = ({
                         ? 'rgba(236, 72, 153, 0.2)'
                         : 'rgba(236, 72, 153, 0.1)'
                       : isDark
-                        ? '#1e293b'
-                        : '#f1f5f9',
+                        ? '#252230'
+                        : '#F0EEF8',
                     borderColor: isSelected ? tab.color : 'transparent',
                   },
                 ]}
@@ -203,7 +203,7 @@ export const ActivityQueueSubTab: React.FC<ActivityQueueSubTabProps> = ({
                   style={[
                     styles.statusFilterLabel,
                     {
-                      color: isSelected ? tab.color : isDark ? '#94a3b8' : '#64748b',
+                      color: isSelected ? tab.color : isDark ? '#777383' : '#64748b',
                     },
                   ]}
                 >
@@ -225,7 +225,7 @@ export const ActivityQueueSubTab: React.FC<ActivityQueueSubTabProps> = ({
                     style={[
                       styles.statusCountText,
                       {
-                        color: isSelected ? '#ffffff' : isDark ? '#94a3b8' : '#64748b',
+                        color: isSelected ? '#ffffff' : isDark ? '#777383' : '#64748b',
                       },
                     ]}
                   >
@@ -242,11 +242,11 @@ export const ActivityQueueSubTab: React.FC<ActivityQueueSubTabProps> = ({
         <ActivityIndicator size="large" color="#ec4899" style={{ marginVertical: 40 }} />
       ) : filteredQueueList.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="calendar-outline" size={48} color={isDark ? '#475569' : '#94a3b8'} />
-          <Text style={[styles.emptyTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+          <Ionicons name="calendar-outline" size={48} color={isDark ? '#475569' : '#777383'} />
+          <Text style={[styles.emptyTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
             {queueStatusFilter === 'ALL' ? 'Queue is Empty' : `No ${queueStatusFilter} posts`}
           </Text>
-          <Text style={[styles.emptyDesc, { color: isDark ? '#64748b' : '#94a3b8' }]}>
+          <Text style={[styles.emptyDesc, { color: isDark ? '#64748b' : '#777383' }]}>
             {queueStatusFilter === 'ALL'
               ? 'You have no scheduled social posts waiting in the queue. Plan your next broadcast in advance!'
               : `There are currently no broadcasts with status "${queueStatusFilter}".`}
@@ -304,7 +304,7 @@ export const ActivityQueueSubTab: React.FC<ActivityQueueSubTabProps> = ({
                 minute: '2-digit',
               })}`;
               timingIcon = 'time-outline';
-              timingColor = '#94a3b8';
+              timingColor = '#777383';
             }
 
             const liveUrl =
@@ -329,8 +329,8 @@ export const ActivityQueueSubTab: React.FC<ActivityQueueSubTabProps> = ({
                 style={[
                   styles.card,
                   {
-                    backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                    borderColor: isDark ? '#1e293b' : '#e2e8f0',
+                    backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+                    borderColor: isDark ? '#252230' : '#E9E6F2',
                   },
                 ]}
               >
@@ -371,7 +371,7 @@ export const ActivityQueueSubTab: React.FC<ActivityQueueSubTabProps> = ({
                       style={[
                         styles.queueThumbContainer,
                         {
-                          backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
+                          backgroundColor: isDark ? '#252230' : '#F0EEF8',
                           justifyContent: 'center',
                           alignItems: 'center',
                         },
@@ -383,7 +383,7 @@ export const ActivityQueueSubTab: React.FC<ActivityQueueSubTabProps> = ({
 
                   <View style={styles.queueCaptionCol}>
                     <Text
-                      style={[styles.postFullCaption, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+                      style={[styles.postFullCaption, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}
                       numberOfLines={3}
                     >
                       {item.caption || 'No caption'}
@@ -470,19 +470,18 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   subDesc: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   primaryActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#ec4899',
+    backgroundColor: '#17171C',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 10,
-    alignSelf: 'center',
-  },
+    borderRadius: 28,
+    alignSelf: 'center', minHeight: 44 , shadowOpacity: 0 },
   primaryActionBtnText: {
     color: '#ffffff',
     fontSize: 12,
@@ -494,8 +493,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     gap: 12,
     marginBottom: 10,
   },
@@ -504,7 +503,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   queueQuotaSub: {
-    fontSize: 11,
+    fontSize: 13,
     marginTop: 2,
   },
   queueUpgradeBtn: {
@@ -552,12 +551,12 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   card: {
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0,
     shadowRadius: 2,
     elevation: 1,
     gap: 12,
@@ -567,8 +566,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 6,
-  },
+    gap: 6, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   channelsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -675,8 +673,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     flexWrap: 'wrap',
-    marginTop: 4,
-  },
+    marginTop: 4, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   actionLink: {
     flex: 1,
     minWidth: 110,

@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, TextInput, StyleSheet, Pressable, Text } from 'react-native';
-import { useTheme } from '../contexts/ThemeContext';
+import { View, TextInput, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/theme';
 
 interface SearchInputProps {
   value: string;
@@ -10,87 +11,26 @@ interface SearchInputProps {
 }
 
 export const SearchInput: React.FC<SearchInputProps> = ({
-  value,
-  onChangeText,
-  placeholder = 'Search...',
-  onClear,
+  value, onChangeText, placeholder = 'Search…', onClear,
 }) => {
-  const { isDark } = useTheme();
-
+  const { colors } = useTheme();
   return (
-    <View style={[styles.container, isDark && styles.containerDark]}>
-      <Text style={styles.searchIcon}>🔍</Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: 24, paddingHorizontal: 16, minHeight: 50, marginBottom: 16, gap: 10 }}>
+      <Ionicons name="search-outline" size={19} color={colors.textSecondary} />
       <TextInput
-        style={[styles.input, isDark && styles.inputDark]}
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={isDark ? '#72869A' : '#9CA3AF'}
-        autoCapitalize="none"
-        autoCorrect={false}
+        style={{ flex: 1, fontSize: 14, color: colors.text, paddingVertical: 12 }}
+        value={value} onChangeText={onChangeText} placeholder={placeholder}
+        accessibilityLabel={placeholder}
+        placeholderTextColor={colors.inputPlaceholder}
+        autoCapitalize="none" autoCorrect={false}
       />
       {value.length > 0 && (
-        <Pressable
-          style={[styles.clearBtn, isDark && styles.clearBtnDark]}
-          onPress={() => {
-            onChangeText('');
-            if (onClear) onClear();
-          }}
-          hitSlop={8}
-        >
-          <Text style={[styles.clearText, isDark && styles.clearTextDark]}>✕</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel="Clear search"
+          style={{ width: 32, height: 40, alignItems: 'center', justifyContent: 'center' }}
+          onPress={() => { onChangeText(''); onClear?.(); }} hitSlop={6}>
+          <Ionicons name="close-circle" size={19} color={colors.textSecondary} />
         </Pressable>
       )}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 44,
-    marginBottom: 14,
-  },
-  containerDark: {
-    backgroundColor: '#0A1420',
-    borderColor: '#1B334A',
-  },
-  searchIcon: {
-    fontSize: 14,
-    marginRight: 8,
-  },
-  input: {
-    flex: 1,
-    fontSize: 14,
-    color: '#000000',
-    paddingVertical: 0,
-  },
-  inputDark: {
-    color: '#F7FAFC',
-  },
-  clearBtn: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#F2F4F7',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  clearBtnDark: {
-    backgroundColor: '#101C2A',
-  },
-  clearText: {
-    fontSize: 11,
-    color: '#6B7280',
-    fontWeight: 'bold',
-  },
-  clearTextDark: {
-    color: '#8FA3B8',
-  },
-});

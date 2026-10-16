@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Linking,
   Modal,
   Pressable,
@@ -12,7 +13,8 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  View
+  useWindowDimensions,
+  View,
 } from 'react-native';
 import { supabase } from '../../../lib/supabase';
 import { TelegramToolKey } from '../types';
@@ -32,6 +34,7 @@ interface ChatMessage {
 import { getColors, useTheme } from '@/theme';
 import { useQuery } from '@tanstack/react-query';
 import { telegramSupabase } from '../api/telegramSupabase';
+import { ProductHeading } from "@/components/ProductUI";
 
 interface ChatUser {
   id: string;
@@ -161,25 +164,117 @@ export const ChatBotScreen: React.FC<Props> = () => {
     Alert.alert('Settings Saved', 'Bot personality & knowledge base updated successfully!');
   };
 
+  const { width } = useWindowDimensions();
+  const isWide = width >= 768;
+  const numColumns = isWide ? 4 : 2;
+  const cardWidthPercent = numColumns === 4 ? '23.5%' : '48.5%';
+
+  const chatKpis = [
+    {
+      title: 'ACTIVE BOTS',
+      value: `${bots.length} Connected`,
+      icon: 'hardware-chip-outline' as const,
+      color: '#0284C7',
+      subtext: 'Configured agents',
+    },
+    {
+      title: 'AI ENGINE',
+      value: 'OpenAI / LLM',
+      icon: 'sparkles-outline' as const,
+      color: '#38BDF8',
+      subtext: 'Live inference',
+    },
+    {
+      title: 'KNOWLEDGE BASE',
+      value: 'Active Docs',
+      icon: 'document-text-outline' as const,
+      color: '#10B981',
+      subtext: 'Custom prompt memory',
+    },
+    {
+      title: 'ENGINE STATUS',
+      value: '24/7 Listening',
+      icon: 'shield-checkmark-outline' as const,
+      color: '#8B5CF6',
+      subtext: 'Instant user replies',
+    },
+  ];
+
   return (
-    <View style={styles.container}>
-      {/* Top Header */}
-      <View style={styles.headerRow}>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.mainTitle, txt]}>Chat Bot Automation</Text>
-          <Text style={styles.mainSub}>
-            Attach an AI Assistant to your Telegram Bot. Map business details, upload documents, and link API keys to create automated support agents.
+    <View style={styles.container} className="gap-3.5">
+      {/* 1. Cyber Animated Hero Banner */}
+      <ProductHeading title="Your chatbot" />
+
+      {/* 2. Responsive KPI Command Cards */}
+      <View className="flex-row flex-wrap gap-2.5 w-full">
+        {chatKpis.map((kpi, idx) => (
+          <View
+            key={idx}
+            className="p-3.5 rounded-2xl flex-col justify-between"
+            style={{
+              backgroundColor: colors.card,
+              width: cardWidthPercent,
+              minHeight: 88,
+            }}
+          >
+            <View className="flex-row items-center justify-between mb-1">
+              <Text
+                className="text-[10px] font-bold uppercase "
+                style={{ color: isDark ? '#94A3B8' : '#64748B' }}
+                numberOfLines={1}
+              >
+                {kpi.title}
+              </Text>
+              <View
+                className="w-6 h-6 rounded-lg items-center justify-center"
+                style={{ backgroundColor: `${kpi.color}15` }}
+              >
+                <Ionicons name={kpi.icon} size={13} color={kpi.color} />
+              </View>
+            </View>
+
+            <Text
+              className="text-sm font-medium"
+              style={{ color: colors.text }}
+              numberOfLines={1}
+            >
+              {kpi.value}
+            </Text>
+
+            <Text
+              className="text-[10px] font-medium mt-0.5"
+              style={{ color: isDark ? '#64748B' : '#94A3B8' }}
+              numberOfLines={1}
+            >
+              {kpi.subtext}
+            </Text>
+          </View>
+        ))}
+      </View>
+
+      {/* 3. Action Toolbar */}
+      <View
+        className="w-full flex-row items-center justify-between p-3.5 rounded-2xl"
+        style={{ backgroundColor: colors.card }}
+      >
+        <View className="flex-1 pr-3">
+          <Text className="text-xs font-bold" style={{ color: colors.text }}>
+            Connected Assistants ({bots.length})
+          </Text>
+          <Text className="text-[11px]" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
+            AI agents managing incoming user queries
           </Text>
         </View>
+
         <Pressable
-          style={styles.connectBotBtn}
+          className="flex-row items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0284C7] active:opacity-90 shadow-sm"
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setIsConfigModalOpen(true);
           }}
         >
-          <Ionicons name="add" size={16} color="#FFFFFF" />
-          <Text style={styles.connectBotBtnText}>Connect Telegram Bot</Text>
+          <Ionicons name="add" size={14} color="#FFFFFF" />
+          <Text className="text-white text-xs font-bold">Connect Bot</Text>
         </Pressable>
       </View>
 
@@ -370,12 +465,17 @@ export const ChatBotScreen: React.FC<Props> = () => {
           {/* Active Users Horizontal Switcher */}
           <View style={[styles.activeUsersSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={styles.activeUsersLabel}>ACTIVE USERS ({chatUsers.length})</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
-              {chatUsers.map((u) => {
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingVertical: 4 }}
+              ItemSeparatorComponent={() => <View style={{ width: 8 }} />}
+              data={chatUsers}
+              keyExtractor={(u) => u.id}
+              renderItem={({ item: u }) => {
                 const isSelected = activeUser?.telegramUserId === u.telegramUserId;
                 return (
                   <Pressable
-                    key={u.id}
                     style={[
                       styles.userPill,
                       { backgroundColor: colors.card, borderColor: colors.border },
@@ -395,8 +495,8 @@ export const ChatBotScreen: React.FC<Props> = () => {
                     </View>
                   </Pressable>
                 );
-              })}
-            </ScrollView>
+              }}
+            />
           </View>
 
           {/* Chat Messages Area */}
@@ -417,11 +517,16 @@ export const ChatBotScreen: React.FC<Props> = () => {
             </View>
           </View>
 
-          <ScrollView style={styles.chatStream} contentContainerStyle={{ padding: 16, gap: 12 }}>
-            {activeUser ? (chatMessages[activeUser.telegramUserId] || []).map((msg) => {
+          <FlatList
+            style={styles.chatStream}
+            contentContainerStyle={{ padding: 16 }}
+            ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+            data={activeUser ? (chatMessages[activeUser.telegramUserId] || []) : []}
+            keyExtractor={(msg) => msg.id}
+            renderItem={({ item: msg }) => {
               if (msg.isError) {
                 return (
-                  <View key={msg.id} style={styles.errorBubble}>
+                  <View style={styles.errorBubble}>
                     <Text style={styles.errorBubbleText}>{msg.text}</Text>
                     <Text style={styles.errorBubbleTime}>{msg.time}</Text>
                   </View>
@@ -431,7 +536,6 @@ export const ChatBotScreen: React.FC<Props> = () => {
               const isUser = msg.sender === 'user';
               return (
                 <View
-                  key={msg.id}
                   style={[styles.msgRow, isUser ? styles.msgRowUser : styles.msgRowBot]}
                 >
                   <View
@@ -451,12 +555,13 @@ export const ChatBotScreen: React.FC<Props> = () => {
                   </View>
                 </View>
               );
-            }) : (
+            }}
+            ListEmptyComponent={
               <View style={{ alignItems: 'center', padding: 20 }}>
                 <Text style={styles.modalHeaderSub}>No active users found.</Text>
               </View>
-            )}
-          </ScrollView>
+            }
+          />
 
           {/* Prompt Refine Training Banner */}
           <View style={[styles.refineBanner, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -606,27 +711,33 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 <Text style={styles.pdfUploadText}>Click to add PDF documents</Text>
               </Pressable>
 
-              {pdfDocuments.map((doc) => (
-                <View key={doc.id} style={[styles.pdfDocItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Ionicons name="document-text" size={18} color="#10B981" />
-                    <Text style={[styles.pdfDocName, txt]}>{doc.name}</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <View style={styles.trainedBadge}>
-                      <Text style={styles.trainedBadgeText}>{doc.status}</Text>
+              <FlatList
+                data={pdfDocuments}
+                keyExtractor={(doc) => doc.id}
+                scrollEnabled={false}
+                ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+                renderItem={({ item: doc }) => (
+                  <View style={[styles.pdfDocItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Ionicons name="document-text" size={18} color="#10B981" />
+                      <Text style={[styles.pdfDocName, txt]}>{doc.name}</Text>
                     </View>
-                    <Pressable
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setPdfDocuments((prev) => prev.filter((d) => d.id !== doc.id));
-                      }}
-                    >
-                      <Ionicons name="trash-outline" size={16} color="#94A3B8" />
-                    </Pressable>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <View style={styles.trainedBadge}>
+                        <Text style={styles.trainedBadgeText}>{doc.status}</Text>
+                      </View>
+                      <Pressable
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          setPdfDocuments((prev) => prev.filter((d) => d.id !== doc.id));
+                        }}
+                      >
+                        <Ionicons name="trash-outline" size={16} color="#94A3B8" />
+                      </Pressable>
+                    </View>
                   </View>
-                </View>
-              ))}
+                )}
+              />
             </View>
 
             {/* OPENAI OR GEMINI API KEY */}
@@ -680,8 +791,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   mainSub: {
-    fontSize: 12.5,
-    color: '#64748B',
+    fontSize: 13.5,
+    color: '#716B7C',
     lineHeight: 18,
   },
   connectBotBtn: {
@@ -699,14 +810,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   botCard: {
-    borderRadius: 18,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     padding: 16,
-    marginBottom: 16,
-  },
+    marginBottom: 16, shadowOpacity: 0 },
   cardLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    borderColor: '#E9E6F2',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
@@ -717,17 +827,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#121212',
     borderColor: '#27272A',
   },
-  textLight: { color: '#0F172A' },
-  textDark: { color: '#F8FAFC' },
-  borderLight: { borderColor: '#E2E8F0' },
+  textLight: { color: '#1C1A25' },
+  textDark: { color: '#F5F3FB' },
+  borderLight: { borderColor: '#E9E6F2' },
   borderDark: { borderColor: '#27272A' },
 
   botCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginBottom: 14,
-  },
+    marginBottom: 14, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   botIconWrapper: {
     width: 46,
     height: 46,
@@ -752,7 +861,7 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 14,
   },
-  specsTableLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
+  specsTableLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2' },
   specsTableDark: { backgroundColor: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' },
   specRow: {
     flexDirection: 'row',
@@ -770,8 +879,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
-  },
+    marginBottom: 12, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   listeningBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -847,8 +955,7 @@ const styles = StyleSheet.create({
 
   cardFooterRow: {
     flexDirection: 'row',
-    gap: 8,
-  },
+    gap: 8, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   footerBtn: {
     flex: 1,
     alignItems: 'center',
@@ -856,7 +963,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
   },
-  footerBtnLight: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
+  footerBtnLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
   footerBtnDark: { backgroundColor: '#1E2430', borderColor: '#27272A' },
   footerBtnText: { fontSize: 12, fontWeight: '700' },
 
@@ -881,7 +988,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalHeaderTitle: { fontSize: 16, fontWeight: '800' },
-  modalHeaderSub: { fontSize: 11, color: '#64748B', marginTop: 1 },
+  modalHeaderSub: { fontSize: 13, color: '#716B7C', marginTop: 1 },
   closeBtn: {
     width: 32,
     height: 32,
@@ -912,7 +1019,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
   },
-  userPillLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
+  userPillLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2' },
   userPillDark: { backgroundColor: '#161C28', borderColor: '#27272A' },
   userPillActive: { borderColor: '#0284C7', backgroundColor: 'rgba(2, 132, 199, 0.08)' },
   userAvatarMini: {
@@ -925,7 +1032,7 @@ const styles = StyleSheet.create({
   },
   userAvatarText: { fontSize: 11, fontWeight: '800', color: '#334155' },
   userPillName: { fontSize: 12, fontWeight: '700' },
-  userPillId: { fontSize: 9.5, color: '#94A3B8' },
+  userPillId: { fontSize: 9.5, color: '#777383' },
 
   // Chat conversation
   chatHeader: {
@@ -947,7 +1054,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E9E6F2',
   },
   chatActionText: { fontSize: 11, fontWeight: '600' },
   chatActionBtnDanger: {
@@ -978,7 +1085,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 2,
   },
   msgBubbleBotLight: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F0EEF8',
     borderBottomLeftRadius: 2,
   },
   msgBubbleBotDark: {
@@ -1016,7 +1123,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderTopWidth: 1,
   },
-  refineBannerLight: { backgroundColor: '#F8FAFC', borderTopColor: '#E2E8F0' },
+  refineBannerLight: { backgroundColor: '#F5F3FB', borderTopColor: '#E9E6F2' },
   refineBannerDark: { backgroundColor: '#121722', borderTopColor: '#27272A' },
   refineText: { fontSize: 11, color: '#64748B', flex: 1 },
   goToPromptBtn: {
@@ -1036,7 +1143,7 @@ const styles = StyleSheet.create({
   },
   connectedBadgeText: { fontSize: 9.5, fontWeight: '800', color: '#0284C7' },
   fieldLabel: { fontSize: 11, fontWeight: '800', marginBottom: 6, letterSpacing: 0.3 },
-  fieldHelper: { fontSize: 10.5, color: '#64748B', marginTop: 4 },
+  fieldHelper: { fontSize: 13.5, color: '#716B7C', marginTop: 4 },
   behaviorBadge: {
     backgroundColor: 'rgba(139, 92, 246, 0.1)',
     paddingHorizontal: 6,
@@ -1046,12 +1153,11 @@ const styles = StyleSheet.create({
   behaviorBadgeText: { fontSize: 9, fontWeight: '800', color: '#8B5CF6' },
 
   input: {
-    borderWidth: 1,
-    borderRadius: 10,
+    borderWidth: 0,
+    borderRadius: 22,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 13,
-  },
+    fontSize: 13, minHeight: 48 },
   inputMulti: {
     borderWidth: 1,
     borderRadius: 10,
@@ -1070,8 +1176,8 @@ const styles = StyleSheet.create({
     minHeight: 120,
     textAlignVertical: 'top',
   },
-  inputLight: { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1', color: '#0F172A' },
-  inputDark: { backgroundColor: '#161C28', borderColor: '#27272A', color: '#F8FAFC' },
+  inputLight: { backgroundColor: '#F5F3FB', borderColor: '#CBD5E1', color: '#1C1A25' },
+  inputDark: { backgroundColor: '#161C28', borderColor: '#27272A', color: '#F5F3FB' },
 
   tabLink: { fontSize: 10, fontWeight: '700', color: '#64748B' },
   tabLinkActive: { color: '#8B5CF6' },
@@ -1095,7 +1201,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  imageRagBoxLight: { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1' },
+  imageRagBoxLight: { backgroundColor: '#F5F3FB', borderColor: '#CBD5E1' },
   imageRagBoxDark: { backgroundColor: '#161C28', borderColor: '#334155' },
   imageRagText: { fontSize: 11, fontWeight: '700', color: '#64748B' },
 
@@ -1109,7 +1215,7 @@ const styles = StyleSheet.create({
     gap: 4,
     marginBottom: 8,
   },
-  pdfUploadBoxLight: { backgroundColor: '#F8FAFC', borderColor: '#CBD5E1' },
+  pdfUploadBoxLight: { backgroundColor: '#F5F3FB', borderColor: '#CBD5E1' },
   pdfUploadBoxDark: { backgroundColor: '#161C28', borderColor: '#334155' },
   pdfUploadText: { fontSize: 11, fontWeight: '700', color: '#64748B' },
 
@@ -1121,7 +1227,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
   },
-  pdfDocItemLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
+  pdfDocItemLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2' },
   pdfDocItemDark: { backgroundColor: '#161C28', borderColor: '#27272A' },
   pdfDocName: { fontSize: 12, fontWeight: '700' },
   trainedBadge: {

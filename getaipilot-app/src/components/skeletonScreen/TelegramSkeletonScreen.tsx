@@ -71,11 +71,13 @@ export function TelegramSkeleton() {
 const styles = StyleSheet.create({
   grid: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    width: "100%",
+    gap: 10,
     marginBottom: 16,
   },
   halfCard: {
-    width: "48.5%",
+    flex: 1,
+    minWidth: 0,
   },
   statCard: {
     padding: 14,

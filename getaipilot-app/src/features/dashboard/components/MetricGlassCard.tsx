@@ -26,19 +26,19 @@ export const MetricGlassCard: React.FC<MetricGlassCardProps> = ({
         <View style={[styles.iconContainer, { backgroundColor: `${accentColor}1A` }]}>
           <Text style={[styles.iconText, { color: accentColor }]}>{icon}</Text>
         </View>
-        <Text style={[styles.title, { color: isDark ? '#94a3b8' : '#64748b' }]}>{title}</Text>
+        <Text style={[styles.title, { color: isDark ? '#777383' : '#64748b' }]}>{title}</Text>
       </View>
-      <Text style={[styles.value, { color: isDark ? '#f8fafc' : '#0f172a' }]}>{value}</Text>
-      {subtitle ? <Text style={[styles.subtitle, { color: isDark ? '#64748b' : '#94a3b8' }]}>{subtitle}</Text> : null}
+      <Text style={[styles.value, { color: isDark ? '#F5F3FB' : '#0f172a' }]}>{value}</Text>
+      {subtitle ? <Text style={[styles.subtitle, { color: isDark ? '#64748b' : '#777383' }]}>{subtitle}</Text> : null}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0,
     flex: 1,
     minWidth: 140,
     margin: 6,
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
   },
   cardLight: {
     backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
+    borderColor: '#E9E6F2',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,

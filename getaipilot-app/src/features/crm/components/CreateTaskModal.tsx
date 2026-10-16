@@ -25,6 +25,7 @@ interface CreateTaskModalProps {
   defaultContactId?: string;
   defaultDealId?: string;
   isLoading?: boolean;
+  orgId?: string;
 }
 
 const PRIORITIES: Array<{ key: TaskPriority; label: string; color: string }> = [
@@ -41,6 +42,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   defaultContactId,
   defaultDealId,
   isLoading,
+  orgId,
 }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
@@ -85,6 +87,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         contact_id: contactId || null,
         deal_id: dealId || null,
         assigned_to: assignedTo || null,
+        ...(orgId ? { org_id: orgId } : {}),
       });
       handleClose();
     } catch (err: any) {
@@ -384,11 +387,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
+    fontSize: 28,
+    fontWeight: '500', lineHeight: 36 , letterSpacing: -0.5 },
   headerSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   closeBtn: {
@@ -419,12 +421,11 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   input: {
-    borderRadius: 10,
-    borderWidth: 1,
+    borderRadius: 22,
+    borderWidth: 0,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 14,
-  },
+    fontSize: 14, minHeight: 48 },
   textArea: {
     minHeight: 70,
     textAlignVertical: 'top',
