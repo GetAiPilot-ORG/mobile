@@ -1,9 +1,9 @@
-import React,{ useState } from 'react';
+import React, { useState } from 'react';
 import {
-Pressable,
-ScrollView,
-Text,
-View
+  Pressable,
+  ScrollView,
+  Text,
+  View
 } from 'react-native';
 
 import {
@@ -13,11 +13,11 @@ import {
   Forward01Icon,
   CrownIcon,
   CheckmarkCircle01Icon,
-  BotIcon,
   Megaphone01Icon,
+  BotMessageSquareIcon,
 } from '@hugeicons/core-free-icons';
-import { ProductHeading,ProductMetrics,ProductRow,ProductSection,useProductPalette } from '@/components/ProductUI';
-import { TelegramHubTool,TelegramToolKey } from '../types';
+import { ProductHeading, ProductMetrics, ProductRow, ProductSection, useProductPalette } from '@/components/ProductUI';
+import { TelegramHubTool, TelegramToolKey } from '../types';
 
 type TelegramCategory = 'all' | 'automation' | 'monetization' | 'growth';
 
@@ -140,13 +140,13 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
   const toolsSource: TelegramHubTool[] =
     hub.tools && hub.tools.length > 0
       ? hub.tools.map((t: TelegramHubTool) => {
-          const defaultDef = DEFAULT_TELEGRAM_TOOLS.find((d) => d.key === t.key);
-          return {
-            ...t,
-            badge: t.badge || defaultDef?.badge,
-            description: t.description || t.statusText || defaultDef?.description || '',
-          };
-        })
+        const defaultDef = DEFAULT_TELEGRAM_TOOLS.find((d) => d.key === t.key);
+        return {
+          ...t,
+          badge: t.badge || defaultDef?.badge,
+          description: t.description || t.statusText || defaultDef?.description || '',
+        };
+      })
       : DEFAULT_TELEGRAM_TOOLS;
 
   const filteredTools = toolsSource.filter((tool: TelegramHubTool) => {
@@ -180,7 +180,7 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
     autoforward: Forward01Icon,
     sub_manager: CrownIcon,
     auto_approve: CheckmarkCircle01Icon,
-    chatbot: BotIcon,
+    chatbot: BotMessageSquareIcon,
     broadcast: Megaphone01Icon,
   };
   const tones = ['mint', 'lavender', 'peach', 'pink'] as const;

@@ -19,6 +19,7 @@ import { RazorpayProvider } from "../src/contexts/RazorpayContext";
 import { ThemeProvider, useTheme, getColors } from "@/theme";
 import { useAuthStore } from "../src/core/store/authStore";
 import { captureReferralParam, handlePendingReferral } from "../src/services/referralService";
+import { ThemedDialogProvider } from "../src/contexts/ThemedDialogContext";
 
 // Suppress all warning popups and known deprecation noise
 LogBox.ignoreAllLogs(true);
@@ -281,11 +282,13 @@ export default function RootLayout() {
                   <AuthProvider>
                     <NotificationProvider>
                       <RazorpayProvider>
-                        <ReferralLinkListener />
-                        <AuthRouteGuard />
-                        <ThemedNavigationStack />
-                        <OfflineNotice />
-                        <SplashOverlay />
+                        <ThemedDialogProvider>
+                          <ReferralLinkListener />
+                          <AuthRouteGuard />
+                          <ThemedNavigationStack />
+                          <OfflineNotice />
+                          <SplashOverlay />
+                        </ThemedDialogProvider>
                       </RazorpayProvider>
                     </NotificationProvider>
                   </AuthProvider>

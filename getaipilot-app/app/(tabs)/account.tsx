@@ -29,6 +29,8 @@ import { useNotifications } from '../../src/hooks/useNotifications';
 import { BiometricService, BiometricSettings } from '../../src/lib/biometrics';
 import { supabase } from '../../src/lib/supabase';
 import { Profile } from '../../src/types/database';
+import { TestNotificationButton } from '@/components/TestNotification';
+import { useThemedDialog } from '@/components';
 
 type AccountTab = 'overview' | 'edit' | 'security' | 'billing' | 'preferences';
 
@@ -119,6 +121,7 @@ export default function AccountScreen() {
   } = useNotifications();
   const [isSendingTestPush, setIsSendingTestPush] = useState(false);
   const queryClient = useQueryClient();
+  const { confirmLogout, confirm: confirmDialog, showAlert } = useThemedDialog();
 
   const [activeTab, setActiveTab] = useState<AccountTab>('overview');
 
@@ -657,57 +660,54 @@ export default function AccountScreen() {
     return `Signed in ${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
   };
 
+  const displayName =
+    fullName || profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+
   const handleSignOutOtherDevice = (device: DeviceSession) => {
-    Alert.alert(
-      'Sign Out Device',
-      `Sign out ${device.deviceName}? It will need to sign in again to use GetAiPilot.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            setSigningOutDeviceId(device.sessionId);
-            try {
-              await apiClient.delete(`/mobile/v1/auth/device-sessions/${encodeURIComponent(device.sessionId)}`);
-              await refetchDeviceSessions();
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            } catch (error: any) {
-              Alert.alert('Could Not Sign Out Device', error.message || 'Please try again.');
-            } finally {
-              setSigningOutDeviceId(null);
-            }
-          },
-        },
-      ]
-    );
+    confirmDialog({
+      title: 'Sign Out Device',
+      message: `Sign out ${device.deviceName}? It will need to sign in again to use GetAiPilot.`,
+      confirmText: 'Sign Out',
+      destructive: true,
+      onConfirm: async () => {
+        setSigningOutDeviceId(device.sessionId);
+        try {
+          await apiClient.delete(`/mobile/v1/auth/device-sessions/${encodeURIComponent(device.sessionId)}`);
+          await refetchDeviceSessions();
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch (error: any) {
+          showAlert({
+            title: 'Could Not Sign Out Device',
+            message: error.message || 'Please try again.',
+            type: 'destructive',
+          });
+        } finally {
+          setSigningOutDeviceId(null);
+        }
+      },
+    });
   };
 
   // Sign Out Handler
   const handleSignOut = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out from GetAiPilot?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              await signOut();
-            } catch (err: any) {
-              console.error('Sign out error:', err);
-            }
-          },
-        },
-      ]
-    );
+    confirmLogout({
+      accountEmail: user?.email,
+      accountName: displayName,
+      onConfirm: async () => {
+        try {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          await signOut();
+        } catch (err: any) {
+          console.error('Sign out error:', err);
+        }
+      },
+      confirmBgColor: 'rgba(239, 68, 68, 0.16)',
+      confirmTextColor: '#EF4444',
+      cancelBgColor: 'rgba(255, 255, 255, 0.08)',
+      buttonAlign: 'right'
+    });
   };
 
-  const displayName =
-    fullName || profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const initials = displayName.charAt(0).toUpperCase();
   // Calculate Subscription Days Left
   const getDaysLeft = () => {
@@ -719,6 +719,7 @@ export default function AccountScreen() {
 
   return (
     <AppScreen safeArea="top">
+      <TestNotificationButton />
       <ScrollView
         style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}
         contentContainerStyle={styles.scrollContent}
@@ -1499,8 +1500,8 @@ export default function AccountScreen() {
                           isSelected
                             ? colors.primaryForeground
                             : isDark
-                            ? '#8E8E93'
-                            : '#64748B'
+                              ? '#8E8E93'
+                              : '#64748B'
                         }
                       />
                       <Text
@@ -1559,8 +1560,8 @@ export default function AccountScreen() {
                       {expoPushToken
                         ? 'Token: ExponentPushToken (Active)'
                         : isDevice
-                        ? 'Connected to push service'
-                        : 'Simulator Mode (Local alerts active)'}
+                          ? 'Connected to push service'
+                          : 'Simulator Mode (Local alerts active)'}
                     </Text>
                   </View>
                   <Pressable
