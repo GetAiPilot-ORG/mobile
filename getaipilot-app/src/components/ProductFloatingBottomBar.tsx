@@ -134,14 +134,14 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
     <View style={styles.dockRoot} pointerEvents="box-none">
       {/* 2. Rounded navigation dock */}
       {/* 1. Full-bleed Bottom Frosted Backdrop that blurs all scrolled content behind it and fills the bottom screen area */}
-      <View
+      <Pressable
         style={[
           styles.backdropWrapper,
           {
             height: 56 + bottomOffset + 12,
           },
         ]}
-        pointerEvents="none"
+        disabled={true}
       >
         <View
           style={[
@@ -157,7 +157,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
             },
           ]}
         />
-      </View>
+      </Pressable>
 
       {/* 2. Floating Pill Tab Bar with rounded frosted glassmorphism */}
       <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
