@@ -75,20 +75,6 @@ const PLATFORMS: PlatformOption[] = [
     icon: 'logo-linkedin',
     tone: 'lavender',
   },
-  {
-    id: 'bluesky',
-    name: 'Bluesky',
-    subtitle: 'Open Social Network',
-    icon: 'cloudy',
-    tone: 'mint',
-  },
-  {
-    id: 'mastodon',
-    name: 'Mastodon',
-    subtitle: 'Decentralized Social Feed',
-    icon: 'logo-mastodon',
-    tone: 'lavender',
-  },
 
   // --- Coming Soon ---
   {
@@ -121,6 +107,22 @@ const PLATFORMS: PlatformOption[] = [
     subtitle: 'Local Business Profiles',
     icon: 'business-outline',
     tone: 'peach',
+    comingSoon: true,
+  },
+  {
+    id: 'bluesky',
+    name: 'Bluesky',
+    subtitle: 'Open Social Network',
+    icon: 'cloudy',
+    tone: 'mint',
+    comingSoon: true,
+  },
+  {
+    id: 'mastodon',
+    name: 'Mastodon',
+    subtitle: 'Decentralized Social Feed',
+    icon: 'logo-mastodon',
+    tone: 'lavender',
     comingSoon: true,
   },
 ];
