@@ -152,7 +152,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
               backgroundColor: isDark
                 ? 'rgba(17, 16, 15, 0.65)'
                 : 'rgba(247, 245, 242, 0.70)',
-              // borderTopWidth: StyleSheet.hairlineWidth,ß
+              // borderTopWidth: StyleSheet.hairlineWidth,
               borderTopColor: isDark
                 ? 'rgba(255, 255, 255, 0.08)'
                 : 'rgba(0, 0, 0, 0.06)',

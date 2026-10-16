@@ -28,6 +28,13 @@ export function getLocalDevBffUrl(): string {
  * Physical LAN device (via Expo Metro host), and Production env.
  */
 export function resolveBffBaseUrl(): string {
+  if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location) {
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return 'http://localhost:4000';
+    }
+  }
+
   const customUrl = process.env.EXPO_PUBLIC_BFF_URL;
   if (customUrl && !customUrl.includes('bff.getaipilot.in')) {
     return customUrl;
@@ -155,7 +162,14 @@ class ApiClient {
       return await response.json();
     } catch (error: any) {
       // Auto-fallback on network failure if not already retried
-      if (!_isRetry && (error?.message?.includes('Network request failed') || error?.message?.includes('Failed to fetch'))) {
+      const isNetworkError =
+        error?.message?.includes('Network request failed') ||
+        error?.message?.includes('Failed to fetch') ||
+        error?.message?.includes('NetworkError') ||
+        error?.message?.includes('NoRouteToHost') ||
+        error?.message?.includes('unreachable');
+
+      if (!_isRetry && isNetworkError) {
         const fallbackBase = this.baseUrl.includes('app.getaipilot.com')
           ? getLocalDevBffUrl()
           : 'https://app.getaipilot.com';

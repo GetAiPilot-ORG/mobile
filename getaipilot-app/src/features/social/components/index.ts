@@ -1,4 +1,5 @@
 export * from './AccountsModal';
+export * from './ConnectChannelModal';
 export * from './CreatePostModal';
 export * from './PostDetailsModal';
 export * from './SocialOverviewTab';

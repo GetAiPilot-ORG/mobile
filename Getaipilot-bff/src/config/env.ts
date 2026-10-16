@@ -1,6 +1,11 @@
 import dotenv from 'dotenv';
+import path from 'path';
 import { z } from 'zod';
 
+const isProduction = process.env.NODE_ENV === 'production';
+if (isProduction) {
+  dotenv.config({ path: path.resolve(process.cwd(), '.env.production') });
+}
 dotenv.config();
 
 const envSchema = z.object({
