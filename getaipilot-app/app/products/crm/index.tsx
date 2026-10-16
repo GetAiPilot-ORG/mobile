@@ -33,21 +33,7 @@ const CRM_TABS: ProductTabItem[] = [
     activeIcon: "calendar",
     inactiveIcon: "calendar-outline",
     description: "Upcoming birthdays & company holidays",
-  },
-  {
-    key: "calendar",
-    label: "Calendar",
-    activeIcon: "calendar-clear",
-    inactiveIcon: "calendar-clear-outline",
-    description: "Google Calendar integration",
-  },
-  {
-    key: "communication",
-    label: "Communication",
-    activeIcon: "mail",
-    inactiveIcon: "mail-outline",
-    description: "Email, team chat & work from home",
-  },
+  }
 ];
 
 export default function CRMIndexRoute() {
