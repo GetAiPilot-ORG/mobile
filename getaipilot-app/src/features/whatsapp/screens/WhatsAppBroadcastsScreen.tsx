@@ -87,10 +87,10 @@ export const WhatsAppBroadcastsScreen: React.FC<
         {/* Filter Pills */}
         <View className="flex-row px-4 py-3 gap-2">
           {statusTabs.map((tab) => {
-            const isSelected = selectedStatus === tab;
+            const isSelected = selectedStatus === tab.id;
             return (
               <Pressable
-                key={tab}
+                key={tab.id}
                 className={`px-4 py-2 rounded-full border active:opacity-80 ${
                   isSelected
                     ? isDark
@@ -100,7 +100,7 @@ export const WhatsAppBroadcastsScreen: React.FC<
                     ? "bg-[#252230] border-[#3A3549]"
                     : "bg-[#F0EEF8] border-[#E9E6F2]"
                 }`}
-                onPress={() => handleStatusSelect(tab)}
+                onPress={() => handleStatusSelect(tab.id)}
               >
                 <Text
                   className={`text-xs font-semibold tracking-tight ${
@@ -113,7 +113,7 @@ export const WhatsAppBroadcastsScreen: React.FC<
                       : "text-[#6B7280]"
                   }`}
                 >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  {tab.label}
                 </Text>
               </Pressable>
             );
