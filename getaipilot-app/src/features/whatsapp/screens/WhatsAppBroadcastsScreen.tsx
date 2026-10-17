@@ -8,11 +8,12 @@ import {
   Platform,
   Pressable,
   RefreshControl,
+  ScrollView,
   Text,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useTheme } from "@/theme";
+import { getColors, useTheme } from "@/theme";
 import { WhatsAppBroadcastsSkeleton } from "../../../components/skeletonScreen";
 import { BroadcastCard } from "../components";
 import { useWhatsAppBroadcasts } from "../hooks/useWhatsAppBroadcasts";
@@ -28,6 +29,7 @@ export const WhatsAppBroadcastsScreen: React.FC<
 > = ({ onBack }) => {
   const router = useRouter();
   const { isDark } = useTheme();
+  const color = getColors(isDark);
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedBroadcast, setSelectedBroadcast] =
     useState<WhatsAppBroadcast | null>(null);
@@ -66,7 +68,12 @@ export const WhatsAppBroadcastsScreen: React.FC<
   }
 
   const broadcasts = data?.broadcasts || [];
-  const statusTabs = ["all", "completed", "queued", "scheduled"];
+  const statusTabs = [
+    { id: "all", label: "All" },
+    { id: "completed", label: "Completed" },
+    { id: "queued", label: "Queued" },
+    { id: "scheduled", label: "Scheduled" },
+  ];
 
   return (
     <SafeAreaView
@@ -135,7 +142,7 @@ export const WhatsAppBroadcastsScreen: React.FC<
               <RefreshControl
                 refreshing={isRefetching}
                 onRefresh={refetch}
-                tintColor={isDark ? "#FFFFFF" : "#0A84FF"}
+                tintColor="#25D366"
               />
             }
             ListEmptyComponent={

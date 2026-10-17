@@ -29,6 +29,7 @@ interface SocialOverviewTabProps {
   onOpenAccountsModal: () => void;
   onOpenConnectModal: () => void;
   onNavigateToTab: (tab: 'overview' | 'trends' | 'inbox' | 'activity') => void;
+  isLocked?: boolean;
 }
 
 
@@ -36,7 +37,7 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
   overviewLoading, overviewError, onRetryOverview, overviewData, entitlementsData,
   connectedList, postsList, queueList, totalSentCount, totalScheduledCount,
   computedSuccessRate, selectedRange, onChangeRange, onOpenCreateModal,
-  onOpenAccountsModal, onOpenConnectModal, onNavigateToTab,
+  onOpenAccountsModal, onNavigateToTab, isLocked = false,
 }) => {
   const colors = useProductPalette();
   const router = useRouter();
@@ -58,7 +59,7 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
       ]);
       return;
     }
-    onOpenConnectModal();
+    // onOpenConnectModal();
   };
   if (overviewLoading && !overviewData) return <SocialScreenSkeleton />;
   if (overviewError && !overviewData) return <ProductEmpty title="Couldn't load your workspace" description={overviewError.message || 'Check your connection and try again.'} action="Try again" onAction={onRetryOverview} />;
@@ -66,7 +67,7 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
   const instagram = connectedList.filter((account) => (account.provider || account.platform) === 'instagram');
   const growth = overviewData?.instagramGrowth;
   return <View>
-    <ProductHeading title={"Your content,\nyour next chapter."} action="Create a post" onAction={onOpenCreateModal} />
+    <ProductHeading title={"Your content,\nyour next chapter."} action="Create a post" isLocked={isLocked} onAction={onOpenCreateModal} />
     <ProductSection title="Your channels" action="Manage" onAction={onOpenAccountsModal}>
       {!connectedList.length ? <ProductEmpty title="Bring your channels together" description="Connect a social account to start publishing." action="Connect account" onAction={connect} /> :
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 4 }}>

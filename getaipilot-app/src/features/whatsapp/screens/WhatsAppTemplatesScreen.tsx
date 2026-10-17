@@ -126,6 +126,14 @@ export const WhatsAppTemplatesScreen: React.FC<
                 ? "bg-[#121214] border-[#3A3549]"
                 : "bg-[#F5F3FB] border-[#E9E6F2]"
             }`}
+            style={{
+              borderWidth: 0,
+              elevation: 2,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: isDark ? 0.25 : 0.05,
+              shadowRadius: 4,
+            }}
           >
             <Ionicons
               name="search-outline"
@@ -153,15 +161,91 @@ export const WhatsAppTemplatesScreen: React.FC<
               </Pressable>
             )}
           </View>
+        </View>
 
-          {/* Category Tabs */}
+        {/* Folder-Style Category Tab Bar (WhatsApp Green from color.ts) */}
+        <View className="px-4 pt-2 mb-1">
+          <View style={{ position: "relative" }}>
+            {/* Continuous baseline across full width in WhatsApp Green */}
+            <View
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 1.5,
+                backgroundColor: color.products.whatsapp,
+              }}
+            />
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 2 }}
+            >
+              {categoryOptions.map((cat) => {
+                const isActive = activeCategory === cat.val;
+                const activeColor = isDark
+                  ? color.products.whatsapp
+                  : (color.products.whatsappDark || "#075E54");
+
+                return (
+                  <Pressable
+                    key={cat.val}
+                    onPress={() => {
+                      if (Platform.OS !== "web") {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }
+                      setActiveCategory(cat.val);
+                    }}
+                    style={{
+                      height: 40,
+                      paddingHorizontal: 14,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderTopLeftRadius: isActive ? 10 : 0,
+                      borderTopRightRadius: isActive ? 10 : 0,
+                      borderTopWidth: 1.5,
+                      borderLeftWidth: 1.5,
+                      borderRightWidth: 1.5,
+                      borderBottomWidth: 1.5,
+                      borderTopColor: isActive ? color.products.whatsapp : "transparent",
+                      borderLeftColor: isActive ? color.products.whatsapp : "transparent",
+                      borderRightColor: isActive ? color.products.whatsapp : "transparent",
+                      borderBottomColor: isActive ? color.background : "transparent",
+                      backgroundColor: isActive ? color.background : "transparent",
+                      zIndex: isActive ? 2 : 1,
+                    }}
+                  >
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        fontSize: 13,
+                        fontWeight: isActive ? "600" : "500",
+                        letterSpacing: -0.1,
+                        color: isActive
+                          ? activeColor
+                          : (color.textSecondary || (isDark ? "#94A3B8" : "#64748B")),
+                      }}
+                    >
+                      {cat.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+
+        {/* Status Pills & Sync Meta Row */}
+        <View className="flex-row items-center justify-between px-4 py-2 mb-1">
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{
               flexDirection: "row",
               gap: 6,
-              paddingBottom: 2,
+              alignItems: "center",
             }}
           >
             {categoryOptions.map((cat) => {
@@ -313,14 +397,21 @@ export const WhatsAppTemplatesScreen: React.FC<
 
             {/* Sync Meta Templates Button */}
             <Pressable
-              className="flex-row items-center gap-1 px-2 py-1 rounded-md bg-emerald-500/10 active:opacity-75"
+              className={`flex-row items-center px-2.5 py-1 rounded-full active:opacity-75 ${
+                activeStatus === "ALL"
+                  ? isDark
+                    ? "bg-white/20"
+                    : "bg-black/10"
+                  : isDark
+                  ? "bg-white/[0.06]"
+                  : "bg-black/[0.04]"
+              }`}
               onPress={() => {
                 if (Platform.OS !== "web") {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }
-                refetch();
+                setActiveStatus("ALL");
               }}
-              disabled={isRefetching}
             >
               <Ionicons
                 name="refresh-outline"
@@ -332,7 +423,90 @@ export const WhatsAppTemplatesScreen: React.FC<
                 {isRefetching ? "Refreshing…" : "Refresh"}
               </Text>
             </Pressable>
-          </View>
+
+            {/* Approved */}
+            <Pressable
+              className={`flex-row items-center gap-1 px-2.5 py-1 rounded-full active:opacity-75 ${
+                activeStatus === "APPROVED"
+                  ? "bg-emerald-500/25"
+                  : "bg-emerald-500/10"
+              }`}
+              onPress={() => {
+                if (Platform.OS !== "web") {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                setActiveStatus(
+                  activeStatus === "APPROVED" ? "ALL" : "APPROVED",
+                );
+              }}
+            >
+              <Ionicons name="checkmark-circle" size={11} color="#25D366" />
+              <Text className="text-[11px] font-bold text-emerald-500">
+                Approved ({stats.approved})
+              </Text>
+            </Pressable>
+
+            {/* In Review / Pending */}
+            <Pressable
+              className={`flex-row items-center gap-1 px-2.5 py-1 rounded-full active:opacity-75 ${
+                activeStatus === "PENDING"
+                  ? "bg-amber-500/25"
+                  : "bg-amber-500/10"
+              }`}
+              onPress={() => {
+                if (Platform.OS !== "web") {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                setActiveStatus(
+                  activeStatus === "PENDING" ? "ALL" : "PENDING",
+                );
+              }}
+            >
+              <Ionicons name="time" size={11} color="#F59E0B" />
+              <Text className="text-[11px] font-bold text-amber-500">
+                In Review ({stats.pending})
+              </Text>
+            </Pressable>
+
+            {/* Rejected */}
+            <Pressable
+              className={`flex-row items-center gap-1 px-2.5 py-1 rounded-full active:opacity-75 ${
+                activeStatus === "REJECTED"
+                  ? "bg-rose-500/25"
+                  : "bg-rose-500/10"
+              }`}
+              onPress={() => {
+                if (Platform.OS !== "web") {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                setActiveStatus(
+                  activeStatus === "REJECTED" ? "ALL" : "REJECTED",
+                );
+              }}
+            >
+              <Ionicons name="alert-circle" size={11} color="#EF4444" />
+              <Text className="text-[11px] font-bold text-rose-500">
+                Rejected ({stats.rejected})
+              </Text>
+            </Pressable>
+          </ScrollView>
+
+          {/* Sync Meta Button */}
+          <Pressable
+            className="flex-row items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 active:opacity-75 ml-2"
+            onPress={() => {
+              if (Platform.OS !== "web") {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
+              refetch();
+            }}
+            disabled={isRefetching}
+          >
+            <Ionicons name="refresh" size={12} color="#25D366" />
+            <Text className="text-[11px] font-bold text-emerald-500">
+              {isRefetching ? "Syncing..." : "Sync Meta"}
+            </Text>
+          </Pressable>
         </View>
 
         {/* Templates FlatList */}

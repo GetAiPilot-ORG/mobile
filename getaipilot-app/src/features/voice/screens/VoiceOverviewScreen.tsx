@@ -1,15 +1,17 @@
-import { ProductActions,ProductButton,ProductEmpty,ProductHeading,ProductMetrics,ProductRow,ProductSection,useProductPalette } from "@/components/ProductUI";
+import { FeaturePlanModal } from "@/components/FeaturePlanModal";
+import { ProductActions, ProductButton, ProductEmpty, ProductHeading, ProductMetrics, ProductRow, ProductSection, useProductPalette } from "@/components/ProductUI";
+import { usePlatformSubscription } from "@/hooks/usePlatformSubscription";
 import { useTheme } from "@/theme";
-import { useQuery,useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
-import React from "react";
+import React, { useState } from "react";
 import {
-RefreshControl,
-ScrollView,
-Text,
-View
+  RefreshControl,
+  ScrollView,
+  Text,
+  View
 } from "react-native";
-import { VoiceOverview,voiceApi } from "../api/voiceApi";
+import { VoiceOverview, voiceApi } from "../api/voiceApi";
 import { VoicePlanExpiredBanner } from "../components";
 import { openVoiceWebBilling } from "../utils/voiceBilling";
 
@@ -39,6 +41,16 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
   const queryClient = useQueryClient();
   const { isDark } = useTheme();
   const palette = useProductPalette();
+  const { hasVoice } = usePlatformSubscription();
+  const [planModalVisible, setPlanModalVisible] = useState(false);
+  const [lockedFeatureName, setLockedFeatureName] = useState("AI Voice Calls");
+
+  const openLockModal = (name: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setLockedFeatureName(name);
+    setPlanModalVisible(true);
+  };
+
   const {
     data = EMPTY,
     isLoading,
@@ -75,37 +87,192 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
       : parseInt(creditDisplay.replace(/\D/g, "") || "0", 10);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: palette.background }}
-      contentContainerStyle={{ padding: 20, paddingBottom: 130 }}
-      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => { refetch(); queryClient.invalidateQueries({ queryKey: ["voice", "assistants"] }); queryClient.invalidateQueries({ queryKey: ["voice", "numbers"] }); }} tintColor={palette.accent} />}
-      showsVerticalScrollIndicator={false}>
-      <ProductHeading title={"A better way\nto call."} action="Make a call" onAction={() => onOpenTriggerCall?.()} />
-      {data?.isPlanExpired && <VoicePlanExpiredBanner overview={data} onNavigateToLines={() => navigate("contacts")} />}
-      <View style={{ backgroundColor: palette.lavender, borderRadius: 26, padding: 22, marginBottom: 26, gap: 18 }}>
-        <Text style={{ fontSize: 13, color: palette.textSecondary }}>Your calling balance</Text>
-        <Text style={{ fontSize: 34, fontWeight: "500", color: palette.text }}>{rawMinutes.toLocaleString()} <Text style={{ fontSize: 16 }}>AI mins</Text></Text>
-        <ProductButton label="Add minutes" onPress={() => openVoiceWebBilling(queryClient, isDark)} />
-      </View>
-      <ProductMetrics items={[
-        { label: "Assistants", value: totalAssistantsCount },
-        { label: "Campaigns", value: activeCampaignsCount, onPress: () => navigate("campaigns") },
-        { label: "Calls", value: totalCallsCount, onPress: () => navigate("calls") },
-      ]} />
-      <ProductSection title="Get started">
-        <ProductActions items={[
-          { title: "New assistant", icon: "sparkles-outline", tone: "lavender", onPress: () => onOpenCreateAssistant?.() },
-          { title: "New campaign", icon: "megaphone-outline", tone: "mint", onPress: () => onOpenCreateCampaign ? onOpenCreateCampaign() : navigate("campaigns") },
-          { title: "Call history", icon: "call-outline", tone: "peach", onPress: () => navigate("calls") },
-        ]} />
-      </ProductSection>
-      <ProductSection title="Your assistants" action="Add new" onAction={() => onOpenCreateAssistant?.()}>
-        {assistants.length === 0 ? <ProductEmpty title={isLoading ? "Loading assistants…" : "Your first assistant starts here"} description="Set up a voice and instructions for your calls." action="Create assistant" onAction={() => onOpenCreateAssistant?.()} /> :
-          assistants.map((assistant) => <ProductRow key={assistant.id} title={assistant.name} detail="Choose for a call" icon="sparkles-outline" tone="lavender" onPress={() => onOpenTriggerCall?.(assistant.id)} />)}
-      </ProductSection>
-      <ProductSection title="Phone lines" onAction={() => navigate("contacts")}>
-        {numbers.length === 0 ? <ProductEmpty title="No phone lines yet" action="Manage lines" onAction={() => navigate("contacts")} /> :
-          numbers.slice(0, 3).map((number) => <ProductRow key={number.id} title={number.phone_number} detail={number.status} icon="phone-portrait-outline" onPress={() => navigate("contacts")} />)}
-      </ProductSection>
-    </ScrollView>
+    <>
+      <ScrollView
+        style={{ flex: 1, backgroundColor: palette.background }}
+        contentContainerStyle={{ padding: 20, paddingBottom: 130 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={() => {
+              refetch();
+              queryClient.invalidateQueries({ queryKey: ["voice", "assistants"] });
+              queryClient.invalidateQueries({ queryKey: ["voice", "numbers"] });
+            }}
+            tintColor={palette.accent}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        <ProductHeading
+          title={"A better way\nto call."}
+          action="Make a call"
+          isLocked={!hasVoice}
+          onAction={() => {
+            if (!hasVoice) {
+              openLockModal("AI Voice Calls");
+              return;
+            }
+            onOpenTriggerCall?.();
+          }}
+        />
+
+        {data?.isPlanExpired && (
+          <VoicePlanExpiredBanner
+            overview={data}
+            onNavigateToLines={() => navigate("contacts")}
+          />
+        )}
+
+        <View
+          style={{
+            backgroundColor: palette.lavender,
+            borderRadius: 26,
+            padding: 22,
+            marginBottom: 26,
+            gap: 18,
+          }}
+        >
+          <Text style={{ fontSize: 13, color: palette.textSecondary }}>Your calling balance</Text>
+          <Text style={{ fontSize: 34, fontWeight: "500", color: palette.text }}>
+            {rawMinutes.toLocaleString()} <Text style={{ fontSize: 16 }}>AI mins</Text>
+          </Text>
+          <ProductButton
+            label="Add minutes"
+            isLocked={!hasVoice}
+            onPress={() => {
+              if (!hasVoice) {
+                openLockModal("AI Calling Minutes");
+                return;
+              }
+              openVoiceWebBilling(queryClient, isDark);
+            }}
+          />
+        </View>
+
+        <ProductMetrics
+          items={[
+            { label: "Assistants", value: totalAssistantsCount },
+            { label: "Campaigns", value: activeCampaignsCount, onPress: () => navigate("campaigns") },
+            { label: "Calls", value: totalCallsCount, onPress: () => navigate("calls") },
+          ]}
+        />
+
+        <ProductSection title="Get started">
+          <ProductActions
+            items={[
+              {
+                title: "New assistant",
+                icon: "sparkles-outline",
+                tone: "lavender",
+                isLocked: !hasVoice,
+                onPress: () => {
+                  if (!hasVoice) {
+                    openLockModal("AI Voice Assistants");
+                    return;
+                  }
+                  onOpenCreateAssistant?.();
+                },
+              },
+              {
+                title: "New campaign",
+                icon: "megaphone-outline",
+                tone: "mint",
+                isLocked: !hasVoice,
+                onPress: () => {
+                  if (!hasVoice) {
+                    openLockModal("Voice Campaigns");
+                    return;
+                  }
+                  if (onOpenCreateCampaign) {
+                    onOpenCreateCampaign();
+                  } else {
+                    navigate("campaigns");
+                  }
+                },
+              },
+              {
+                title: "Call history",
+                icon: "call-outline",
+                tone: "peach",
+                onPress: () => navigate("calls"),
+              },
+            ]}
+          />
+        </ProductSection>
+
+        <ProductSection
+          title="Your assistants"
+          action="Add new"
+          onAction={() => {
+            if (!hasVoice) {
+              openLockModal("Custom AI Voice Assistants");
+              return;
+            }
+            onOpenCreateAssistant?.();
+          }}
+        >
+          {assistants.length === 0 ? (
+            <ProductEmpty
+              title={isLoading ? "Loading assistants…" : "Your first assistant starts here"}
+              description="Set up a voice and instructions for your calls."
+              action="Create assistant"
+              onAction={() => {
+                if (!hasVoice) {
+                  openLockModal("Custom AI Voice Assistants");
+                  return;
+                }
+                onOpenCreateAssistant?.();
+              }}
+            />
+          ) : (
+            assistants.map((assistant) => (
+              <ProductRow
+                key={assistant.id}
+                title={assistant.name}
+                detail="Choose for a call"
+                icon="sparkles-outline"
+                tone="lavender"
+                isLocked={!hasVoice}
+                onPress={() => {
+                  if (!hasVoice) {
+                    openLockModal("AI Voice Calls");
+                    return;
+                  }
+                  onOpenTriggerCall?.(assistant.id);
+                }}
+              />
+            ))
+          )}
+        </ProductSection>
+
+        <ProductSection title="Phone lines" onAction={() => navigate("contacts")}>
+          {numbers.length === 0 ? (
+            <ProductEmpty
+              title="No phone lines yet"
+              action="Manage lines"
+              onAction={() => navigate("contacts")}
+            />
+          ) : (
+            numbers.slice(0, 3).map((number) => (
+              <ProductRow
+                key={number.id}
+                title={number.phone_number}
+                detail={number.status}
+                icon="phone-portrait-outline"
+                onPress={() => navigate("contacts")}
+              />
+            ))
+          )}
+        </ProductSection>
+      </ScrollView>
+
+      <FeaturePlanModal
+        visible={planModalVisible}
+        onClose={() => setPlanModalVisible(false)}
+        category="calling"
+        featureName={lockedFeatureName}
+      />
+    </>
   );
 };

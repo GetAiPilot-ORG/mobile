@@ -560,6 +560,80 @@ export class NotificationService {
         break;
       }
 
+      // Handover: AI to Real Human takeover (WhatsApp, Instagram, Social)
+      case 'conversation.handover':
+      case 'conversation.bot_toggled': {
+        if (event === 'conversation.bot_toggled' && data?.bot_enabled !== false) {
+          return; // Only notify when AI is disabled and real human takes over
+        }
+        const channelName = data?.channel || 'chat';
+        const contact = data?.contact_name || data?.sender_name || 'Customer';
+        title = `👤 Human Takeover Requested`;
+        body = `AI stopped for ${contact} on ${channelName}. Real human agent is now required.`;
+        channelId = 'messages';
+        targetRoute = data?.conversation_id ? `/inbox/${data.conversation_id}` : '/inbox';
+        extraData = {
+          type: 'handover',
+          conversationId: data?.conversation_id || data?.conversationId,
+          channel: channelName,
+        };
+        break;
+      }
+
+      // WhatsApp Number Connected
+      case 'whatsapp.connected':
+      case 'whatsapp.connection.updated': {
+        if (event === 'whatsapp.connection.updated' && data?.status !== 'connected' && data?.status !== 'active') {
+          return;
+        }
+        const phone = data?.phone_number || data?.phone || 'Account';
+        title = `🟢 WhatsApp Number Connected`;
+        body = `WhatsApp Business account (${phone}) is now connected and operational.`;
+        channelId = 'messages';
+        targetRoute = '/(tabs)';
+        extraData = { type: 'whatsapp_connected', phone };
+        break;
+      }
+
+      // Social Media Account Connected (Social Pilot)
+      case 'social.account.connected': {
+        const platform = data?.provider || data?.platform || 'Social';
+        const name = data?.name || data?.username || data?.account_name || '';
+        title = `🔗 Social Account Connected`;
+        body = `${platform} account ${name ? `(${name}) ` : ''}has been successfully connected to Social Pilot.`;
+        channelId = 'campaigns';
+        targetRoute = '/tools';
+        extraData = { type: 'social_connected', provider: platform };
+        break;
+      }
+
+      // WhatsApp Template Verified / Approved
+      case 'whatsapp.template.approved':
+      case 'whatsapp.template.updated': {
+        if (event === 'whatsapp.template.updated' && data?.status !== 'APPROVED' && data?.status !== 'approved') {
+          return;
+        }
+        const templateName = data?.template_name || data?.name || 'Template';
+        title = `✅ WhatsApp Template Verified`;
+        body = `Template "${templateName}" has been approved by Meta and is ready to send.`;
+        channelId = 'campaigns';
+        targetRoute = '/(tabs)';
+        extraData = { type: 'template_verified', templateName };
+        break;
+      }
+
+      // New Team Member Added
+      case 'team.member.created': {
+        const memberName = data?.name || data?.first_name || data?.email || 'New member';
+        const role = data?.role || 'Member';
+        title = `👥 New Team Member Added`;
+        body = `${memberName} has been added to your workspace team as ${role}.`;
+        channelId = 'admin';
+        targetRoute = '/crm';
+        extraData = { type: 'team_member', memberId: data?.id };
+        break;
+      }
+
       // 3. AI Voice Agent & Calls
       case 'call.started': {
         title = `📞 Voice AI Call In Progress`;
@@ -722,10 +796,27 @@ export class NotificationService {
 
             const title = row.title || 'GetAiPilot Alert';
             const body = row.description || row.content || '';
-            const channelId = row.type === 'system' ? 'system' : row.type === 'leave' ? 'admin' : 'default';
-            const route = row.link || '/(tabs)/activity';
+            let channelId = 'default';
+            let route = row.link || '/(tabs)/activity';
 
-            console.log(`[NotificationService] Realtime DB notification bridged: "${title}" (Target: ${row.user_id || 'org'})`);
+            const rawType = (row.type || 'info').toLowerCase();
+            if (rawType.includes('whatsapp') || rawType === 'messages') {
+              channelId = 'messages';
+              route = row.link || '/(tabs)';
+            } else if (rawType.includes('handover') || rawType.includes('takeover') || rawType.includes('human')) {
+              channelId = 'messages';
+              route = row.link || '/inbox';
+            } else if (rawType.includes('social') || rawType.includes('template') || rawType.includes('campaign')) {
+              channelId = 'campaigns';
+              route = row.link || '/tools';
+            } else if (rawType.includes('team') || rawType.includes('member') || rawType === 'admin' || rawType === 'leave') {
+              channelId = 'admin';
+              route = row.link || '/crm';
+            } else if (rawType === 'system') {
+              channelId = 'system';
+            }
+
+            console.log(`[NotificationService] Realtime DB notification bridged: "${title}" (Type: ${row.type}, Channel: ${channelId})`);
 
             if (row.user_id) {
               await this.sendToUser(row.user_id, {
