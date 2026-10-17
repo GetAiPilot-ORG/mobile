@@ -45,9 +45,9 @@ const CATEGORIES: TrendCategory[] = [
 ];
 
 const REGIONS = [
-  { id: 'US', label: '🇺🇸 US' },
-  { id: 'GLOBAL', label: '🌐 Global' },
-  { id: 'IN', label: '🇮🇳 India' },
+  { id: 'GLOBAL', label: 'Global', icon: 'globe-outline' as const },
+  { id: 'US', label: 'US', icon: 'location-outline' as const },
+  { id: 'IN', label: 'India', icon: 'location-outline' as const },
 ];
 
 export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
@@ -310,6 +310,7 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
                 onPress={() => handleSelectRegion(r.id)}
                 style={[
                   styles.regionChip,
+                  { flexDirection: 'row', alignItems: 'center', gap: 4 },
                   {
                     backgroundColor: isRegActive
                       ? isDark
@@ -321,6 +322,11 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
                   },
                 ]}
               >
+                <Ionicons
+                  name={r.icon}
+                  size={12}
+                  color={isRegActive ? '#ffffff' : isDark ? '#777383' : '#64748b'}
+                />
                 <Text
                   style={[
                     styles.regionText,

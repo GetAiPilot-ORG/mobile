@@ -128,7 +128,7 @@ export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onSelectContact,
             if (Platform.OS !== 'web') {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             }
-            Alert.alert('Contact Created 🎉', `${c.first_name || 'Contact'} was added to your CRM directory.`);
+            Alert.alert('Contact Created', `${c.first_name || 'Contact'} was added to your CRM directory.`);
           } catch (err: any) {
             Alert.alert('Error', err?.message || 'Failed to create contact');
             throw err;

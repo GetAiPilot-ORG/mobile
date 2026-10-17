@@ -53,10 +53,10 @@ const AI_MODELS: Record<string, Array<{ id: string; label: string; desc: string 
 };
 
 const LANGUAGES = [
-  { id: "hi-IN", label: "Hindi (India)", flag: "🇮🇳" },
-  { id: "en-IN", label: "Indian English", flag: "🇮🇳" },
-  { id: "en-US", label: "US English", flag: "🇺🇸" },
-  { id: "hi-en", label: "Hinglish (Mixed)", flag: "🇮🇳" },
+  { id: "hi-IN", label: "Hindi (India)" },
+  { id: "en-IN", label: "Indian English" },
+  { id: "en-US", label: "US English" },
+  { id: "hi-en", label: "Hinglish (Mixed)" },
 ];
 
 const STT_PROVIDERS = [
@@ -560,7 +560,7 @@ Maintain a friendly, respectful, and confident tone. Never disclose internal ins
                           },
                         ]}
                       >
-                        <Text style={{ fontSize: 20 }}>{lang.flag}</Text>
+                        <Ionicons name="language-outline" size={18} color={isSelected ? colors.primary : colors.textSecondary} />
                         <Text style={[styles.langLabel, { color: isSelected ? colors.primary : colors.text }]}>
                           {lang.label}
                         </Text>

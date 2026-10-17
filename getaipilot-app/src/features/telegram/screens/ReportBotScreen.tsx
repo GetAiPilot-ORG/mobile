@@ -289,7 +289,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
     try {
       await Share.share({
         title: `${advisoryFirm} - SEBI Research Report`,
-        message: `📊 SEBI Research Call: BUY NIFTY 24000 CE (Entry: Rs 150 | Target: Rs 200 | SL: Rs 120) by ${researchAnalyst} (${sebiRegistration}). Visit: https://${website}`,
+        message: `SEBI Research Call: BUY NIFTY 24000 CE (Entry: Rs 150 | Target: Rs 200 | SL: Rs 120) by ${researchAnalyst} (${sebiRegistration}). Visit: https://${website}`,
       });
     } catch {
       // Ignored

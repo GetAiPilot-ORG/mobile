@@ -10,6 +10,7 @@ import {
   Share,
   Linking,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
 import { useTheme, getColors, AppColors } from '@/theme';
@@ -89,8 +90,9 @@ export default function WhatsAppLinkGeneratorScreen() {
             multiline
           />
 
-          <Pressable style={styles.generateBtn} onPress={handleGenerate}>
-            <Text style={styles.generateBtnText}>Generate WhatsApp Link ✨</Text>
+          <Pressable style={[styles.generateBtn, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }]} onPress={handleGenerate}>
+            <Ionicons name="sparkles" size={16} color="#FFFFFF" />
+            <Text style={styles.generateBtnText}>Generate WhatsApp Link</Text>
           </Pressable>
         </View>
 
@@ -105,10 +107,12 @@ export default function WhatsAppLinkGeneratorScreen() {
 
             <View style={styles.btnRow}>
               <Pressable style={styles.actionBtnShare} onPress={handleShare}>
-                <Text style={styles.btnText}>Share Link 🔗</Text>
+                <Ionicons name="share-social-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                <Text style={styles.btnText}>Share Link</Text>
               </Pressable>
               <Pressable style={styles.actionBtnTest} onPress={handleTestLink}>
-                <Text style={styles.btnText}>Open in WhatsApp 💬</Text>
+                <Ionicons name="logo-whatsapp" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                <Text style={styles.btnText}>Open in WhatsApp</Text>
               </Pressable>
             </View>
           </View>

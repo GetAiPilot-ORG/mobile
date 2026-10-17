@@ -55,8 +55,9 @@ export function PlannerScreen() {
         </View>
         <View style={{ alignItems: 'flex-end' }}>
           {isToday ? (
-            <View style={[s.badge, { backgroundColor: '#FDF2F8' }]}>
-              <Text style={{ color: '#EC4899', fontSize: 11, fontWeight: '700' }}>🎂 Today!</Text>
+            <View style={[s.badge, { backgroundColor: '#FDF2F8', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+              <Ionicons name="sparkles" size={11} color="#EC4899" />
+              <Text style={{ color: '#EC4899', fontSize: 11, fontWeight: '700' }}>Today!</Text>
             </View>
           ) : (
             <View style={[s.badge, { backgroundColor: isSoon ? '#FFF7F0' : colors.surface }]}>

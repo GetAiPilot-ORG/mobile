@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { apiClient } from "../../../core/api/client";
 import { useTheme, getColors } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
 
 export const ToolsScreen: React.FC = () => {
   const router = useRouter();
@@ -21,80 +22,90 @@ export const ToolsScreen: React.FC = () => {
   const colors = getColors(isDark);
   const [openingTool, setOpeningTool] = useState<string | null>(null);
 
-  const nativeTools = [
+  const nativeTools: Array<{
+    title: string;
+    route: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    desc: string;
+  }> = [
     {
       title: "QR Code Generator",
       route: "/tools/qr-code",
-      icon: "🏁",
+      icon: "qr-code-outline",
       desc: "Create custom styled QR codes",
     },
     {
       title: "Link Shortener",
       route: "/tools/link-shortener",
-      icon: "🔗",
+      icon: "link-outline",
       desc: "Short links with click tracking",
     },
     {
       title: "WhatsApp Direct Link",
       route: "/tools/whatsapp-link",
-      icon: "💬",
+      icon: "logo-whatsapp",
       desc: "Instant chat links with prefilled text",
     },
     {
       title: "UPI Payment Link",
       route: "/tools/payment-link",
-      icon: "💳",
+      icon: "card-outline",
       desc: "One-click UPI payment links",
     },
     {
       title: "File Cloud Linker",
       route: "/tools/file-linker",
-      icon: "📁",
+      icon: "document-text-outline",
       desc: "Share documents & media files",
     },
     {
       title: "Event Calendar Links",
       route: "/tools/event-links",
-      icon: "📅",
+      icon: "calendar-outline",
       desc: "Add-to-calendar event URLs",
     },
     {
       title: "AI Speech-to-Text",
       route: "/tools/speech-to-text",
-      icon: "🎙️",
+      icon: "mic-outline",
       desc: "Transcribe voice memos to text",
     },
     {
       title: "Website SEO Audit",
       route: "/tools/website-audit",
-      icon: "⚡",
+      icon: "speedometer-outline",
       desc: "Performance and metadata checks",
     },
     {
       title: "QuickForms Creator",
       route: "/tools/quick-forms",
-      icon: "📝",
+      icon: "reader-outline",
       desc: "Dynamic lead generation forms",
     },
   ];
 
-  const webviewBuilders = [
+  const webviewBuilders: Array<{
+    id: string;
+    title: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    desc: string;
+  }> = [
     {
       id: "landing-templates",
       title: "Landing Page Builder",
-      icon: "🌐",
+      icon: "globe-outline",
       desc: "Visual landing page designer",
     },
     {
       id: "bio-builder",
       title: "Link-in-Bio Builder",
-      icon: "👤",
+      icon: "person-outline",
       desc: "Mobile-first social bio link canvas",
     },
     {
       id: "flow-builder",
       title: "Automation Flow Builder",
-      icon: "⚡",
+      icon: "git-network-outline",
       desc: "Visual conversational bot flows",
     },
   ];
@@ -144,7 +155,9 @@ export const ToolsScreen: React.FC = () => {
               ]}
               onPress={() => router.push(tool.route as any)}
             >
-              <Text style={styles.toolIcon}>{tool.icon}</Text>
+              <View style={[styles.iconBox, { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.15)' : '#EEF2FF' }]}>
+                <Ionicons name={tool.icon} size={20} color="#6366f1" />
+              </View>
               <Text style={[styles.toolTitle, { color: isDark ? "#F5F3FB" : "#0f172a" }]}>{tool.title}</Text>
               <Text style={[styles.toolDesc, { color: isDark ? "#777383" : "#64748b" }]} numberOfLines={2}>
                 {tool.desc}
@@ -169,7 +182,9 @@ export const ToolsScreen: React.FC = () => {
               disabled={openingTool === builder.id}
               onPress={() => handleOpenBuilder(builder.id)}
             >
-              <Text style={styles.builderIcon}>{builder.icon}</Text>
+              <View style={[styles.builderIconBox, { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.15)' : '#EEF2FF' }]}>
+                <Ionicons name={builder.icon} size={22} color="#6366f1" />
+              </View>
               <View style={styles.builderInfo}>
                 <Text style={[styles.builderTitle, { color: isDark ? "#F5F3FB" : "#0f172a" }]}>{builder.title}</Text>
                 <Text style={[styles.builderDesc, { color: isDark ? "#777383" : "#64748b" }]}>{builder.desc}</Text>
@@ -177,7 +192,10 @@ export const ToolsScreen: React.FC = () => {
               {openingTool === builder.id ? (
                 <ActivityIndicator size="small" color="#6366f1" />
               ) : (
-                <Text style={styles.builderAction}>Launch ↗</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Text style={styles.builderAction}>Launch</Text>
+                  <Ionicons name="open-outline" size={14} color="#818cf8" />
+                </View>
               )}
             </Pressable>
           ))}
@@ -226,7 +244,22 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardPressed: { opacity: 0.8 },
-  toolIcon: { fontSize: 24, marginBottom: 8 },
+  iconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  builderIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
   toolTitle: {
     fontSize: 14,
     fontWeight: "700",

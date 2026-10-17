@@ -12,6 +12,7 @@ import {
   Sparkles,
   Users,
   Wallet,
+  X,
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -422,7 +423,7 @@ export default function ReferralScreen() {
                   <Text style={[styles.progressSubtitle, { color: colors.textSecondary }]}>
                     {nextMilestone
                       ? `${completedCount} / ${nextMilestone.requiredReferrals} referrals to ${nextMilestone.title}`
-                      : "Diamond VIP status achieved! 🏆"}
+                      : "Diamond VIP status achieved!"}
                   </Text>
                   <Text style={[styles.progressPercentText, { color: colors.text }]}>
                     {progressPercent}%
@@ -563,9 +564,9 @@ export default function ReferralScreen() {
               </View>
               <Pressable
                 onPress={() => setShowMilestonesModal(false)}
-                style={[styles.modalCloseBtn, { backgroundColor: colors.primaryMuted }]}
+                style={[styles.modalCloseBtn, { backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center' }]}
               >
-                <Text style={{ color: colors.text, fontWeight: "700" }}>✕</Text>
+                <X size={16} color={colors.text} />
               </Pressable>
             </View>
 
