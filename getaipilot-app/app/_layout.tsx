@@ -2,7 +2,7 @@ import "../src/global.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as Linking from "expo-linking";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { LogBox, Platform, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { NavigationBar } from "expo-navigation-bar";
@@ -11,13 +11,15 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GlobalErrorBoundary } from "../src/components/GlobalErrorBoundary";
 import { OfflineNotice } from "../src/components/OfflineNotice";
-import { LayoutSkeletonScreen } from "../src/components/skeletonScreen";
+import { AnimatedSplashScreen } from "../src/components/splash/AnimatedSplashScreen";
 import { AuthProvider } from "../src/contexts/AuthContext";
+import { NotificationProvider } from "../src/contexts/NotificationContext";
 import { NetworkProvider, useNetwork } from "../src/contexts/NetworkContext";
 import { RazorpayProvider } from "../src/contexts/RazorpayContext";
 import { ThemeProvider, useTheme, getColors } from "@/theme";
 import { useAuthStore } from "../src/core/store/authStore";
 import { captureReferralParam, handlePendingReferral } from "../src/services/referralService";
+import { ThemedDialogProvider } from "../src/contexts/ThemedDialogContext";
 
 // Suppress all warning popups and known deprecation noise
 LogBox.ignoreAllLogs(true);
@@ -155,15 +157,21 @@ function AuthRouteGuard() {
 function SplashOverlay() {
   const authStatus = useAuthStore((s) => s.authStatus);
   const { networkChecked } = useNetwork();
+  const [splashFinished, setSplashFinished] = useState(false);
 
-  // Display layout skeleton while checking network or hydrating authentication state
-  if (networkChecked && authStatus !== "hydrating") {
+  // Keep splash visible during animation and session/network checks
+  if (splashFinished && networkChecked && authStatus !== "hydrating") {
     return null;
   }
 
   return (
     <View style={[StyleSheet.absoluteFill, styles.splashContainer]}>
-      <LayoutSkeletonScreen />
+      <AnimatedSplashScreen
+        minDurationMs={180}
+        onAnimationComplete={() => {
+          setSplashFinished(true);
+        }}
+      />
     </View>
   );
 }
@@ -272,13 +280,17 @@ export default function RootLayout() {
               <QueryClientProvider client={queryClient}>
                 <RootThemedContainer>
                   <AuthProvider>
-                    <RazorpayProvider>
-                      <ReferralLinkListener />
-                      <AuthRouteGuard />
-                      <ThemedNavigationStack />
-                      <OfflineNotice />
-                      <SplashOverlay />
-                    </RazorpayProvider>
+                    <NotificationProvider>
+                      <RazorpayProvider>
+                        <ThemedDialogProvider>
+                          <ReferralLinkListener />
+                          <AuthRouteGuard />
+                          <ThemedNavigationStack />
+                          <OfflineNotice />
+                          <SplashOverlay />
+                        </ThemedDialogProvider>
+                      </RazorpayProvider>
+                    </NotificationProvider>
                   </AuthProvider>
                 </RootThemedContainer>
               </QueryClientProvider>

@@ -250,8 +250,8 @@ export const SocialInboxTab = () => {
         style={[
           styles.headerCard,
           {
-            backgroundColor: isDark ? '#0f172a' : '#ffffff',
-            borderColor: isDark ? '#1e293b' : '#e2e8f0',
+            backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+            borderColor: isDark ? '#252230' : '#E9E6F2',
           },
         ]}
       >
@@ -259,11 +259,11 @@ export const SocialInboxTab = () => {
           <View style={{ flex: 1 }}>
             <View style={styles.headerTitleRow}>
               <View style={styles.livePulseDot} />
-              <Text style={[styles.tabHeading, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              <Text style={[styles.tabHeading, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                 Social Inbox
               </Text>
             </View>
-            <Text style={[styles.tabSubheading, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+            <Text style={[styles.tabSubheading, { color: isDark ? '#777383' : '#64748b' }]}>
               Instagram Direct Messages, Comments & Customer Inquiries
             </Text>
           </View>
@@ -276,7 +276,7 @@ export const SocialInboxTab = () => {
               }}
               style={[
                 styles.iconBtn,
-                { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' },
+                { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
               ]}
             >
               <Ionicons
@@ -294,10 +294,10 @@ export const SocialInboxTab = () => {
           <View
             style={[
               styles.statPill,
-              { backgroundColor: isDark ? '#1e293b' : '#f8fafc', borderColor: isDark ? '#334155' : '#e2e8f0' },
+              { backgroundColor: isDark ? '#252230' : '#F5F3FB', borderColor: isDark ? '#334155' : '#E9E6F2' },
             ]}
           >
-            <Text style={[styles.statNum, { color: isDark ? '#f8fafc' : '#0f172a' }]}>{totalCount}</Text>
+            <Text style={[styles.statNum, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>{totalCount}</Text>
             <Text style={styles.statLabel}>Total</Text>
           </View>
 
@@ -305,12 +305,12 @@ export const SocialInboxTab = () => {
             style={[
               styles.statPill,
               {
-                backgroundColor: unreadCount > 0 ? 'rgba(244, 63, 94, 0.12)' : isDark ? '#1e293b' : '#f8fafc',
-                borderColor: unreadCount > 0 ? '#f43f5e' : isDark ? '#334155' : '#e2e8f0',
+                backgroundColor: unreadCount > 0 ? 'rgba(244, 63, 94, 0.12)' : isDark ? '#252230' : '#F5F3FB',
+                borderColor: unreadCount > 0 ? '#f43f5e' : isDark ? '#334155' : '#E9E6F2',
               },
             ]}
           >
-            <Text style={[styles.statNum, { color: unreadCount > 0 ? '#f43f5e' : isDark ? '#f8fafc' : '#0f172a' }]}>
+            <Text style={[styles.statNum, { color: unreadCount > 0 ? '#f43f5e' : isDark ? '#F5F3FB' : '#1C1A25' }]}>
               {unreadCount}
             </Text>
             <Text style={styles.statLabel}>Unread</Text>
@@ -319,7 +319,7 @@ export const SocialInboxTab = () => {
           <View
             style={[
               styles.statPill,
-              { backgroundColor: isDark ? '#1e293b' : '#f8fafc', borderColor: isDark ? '#334155' : '#e2e8f0' },
+              { backgroundColor: isDark ? '#252230' : '#F5F3FB', borderColor: isDark ? '#334155' : '#E9E6F2' },
             ]}
           >
             <Text style={[styles.statNum, { color: '#22c55e' }]}>{repliedCount}</Text>
@@ -339,18 +339,18 @@ export const SocialInboxTab = () => {
             styles.channelChip,
             selectedPlatform === 'all'
               ? [styles.channelChipActive, { backgroundColor: '#e1306c' }]
-              : { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' },
+              : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
           ]}
         >
           <Ionicons
             name="chatbubbles"
             size={14}
-            color={selectedPlatform === 'all' ? '#ffffff' : isDark ? '#94a3b8' : '#64748b'}
+            color={selectedPlatform === 'all' ? '#ffffff' : isDark ? '#777383' : '#64748b'}
           />
           <Text
             style={[
               styles.channelChipText,
-              { color: selectedPlatform === 'all' ? '#ffffff' : isDark ? '#f8fafc' : '#0f172a' },
+              { color: selectedPlatform === 'all' ? '#ffffff' : isDark ? '#F5F3FB' : '#1C1A25' },
             ]}
           >
             All Platforms
@@ -366,7 +366,7 @@ export const SocialInboxTab = () => {
             styles.channelChip,
             selectedPlatform === 'instagram'
               ? [styles.channelChipActive, { backgroundColor: '#e1306c' }]
-              : { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' },
+              : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
           ]}
         >
           <Ionicons
@@ -377,7 +377,7 @@ export const SocialInboxTab = () => {
           <Text
             style={[
               styles.channelChipText,
-              { color: selectedPlatform === 'instagram' ? '#ffffff' : isDark ? '#f8fafc' : '#0f172a' },
+              { color: selectedPlatform === 'instagram' ? '#ffffff' : isDark ? '#F5F3FB' : '#1C1A25' },
             ]}
           >
             Instagram
@@ -393,7 +393,7 @@ export const SocialInboxTab = () => {
             styles.channelChip,
             selectedPlatform === 'facebook'
               ? [styles.channelChipActive, { backgroundColor: '#1877f2' }]
-              : { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' },
+              : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
           ]}
         >
           <Ionicons
@@ -404,7 +404,7 @@ export const SocialInboxTab = () => {
           <Text
             style={[
               styles.channelChipText,
-              { color: selectedPlatform === 'facebook' ? '#ffffff' : isDark ? '#f8fafc' : '#0f172a' },
+              { color: selectedPlatform === 'facebook' ? '#ffffff' : isDark ? '#F5F3FB' : '#1C1A25' },
             ]}
           >
             Facebook
@@ -417,8 +417,8 @@ export const SocialInboxTab = () => {
         style={[
           styles.searchContainer,
           {
-            backgroundColor: isDark ? '#0f172a' : '#ffffff',
-            borderColor: isDark ? '#1e293b' : '#e2e8f0',
+            backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+            borderColor: isDark ? '#252230' : '#E9E6F2',
           },
         ]}
       >
@@ -426,22 +426,22 @@ export const SocialInboxTab = () => {
           style={[
             styles.searchInputBox,
             {
-              backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+              backgroundColor: isDark ? '#252230' : '#F5F3FB',
               borderColor: isDark ? '#334155' : '#cbd5e1',
             },
           ]}
         >
-          <Ionicons name="search" size={15} color={isDark ? '#94a3b8' : '#64748b'} />
+          <Ionicons name="search" size={15} color={isDark ? '#777383' : '#64748b'} />
           <TextInput
-            style={[styles.searchInput, { color: isDark ? '#f8fafc' : '#0f172a' }]}
+            style={[styles.searchInput, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}
             placeholder="Search by username, handle or message..."
-            placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
+            placeholderTextColor={isDark ? '#64748b' : '#777383'}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
           {Boolean(searchQuery) && (
             <Pressable onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={16} color={isDark ? '#94a3b8' : '#64748b'} />
+              <Ionicons name="close-circle" size={16} color={isDark ? '#777383' : '#64748b'} />
             </Pressable>
           )}
         </View>
@@ -462,8 +462,8 @@ export const SocialInboxTab = () => {
                     backgroundColor: isSelected
                       ? 'rgba(225, 48, 108, 0.14)'
                       : isDark
-                        ? '#1e293b'
-                        : '#f1f5f9',
+                        ? '#252230'
+                        : '#F0EEF8',
                     borderColor: isSelected ? '#e1306c' : 'transparent',
                   },
                 ]}
@@ -472,7 +472,7 @@ export const SocialInboxTab = () => {
                   style={[
                     styles.statusChipText,
                     {
-                      color: isSelected ? '#e1306c' : isDark ? '#94a3b8' : '#64748b',
+                      color: isSelected ? '#e1306c' : isDark ? '#777383' : '#64748b',
                       fontWeight: isSelected ? '700' : '500',
                     },
                   ]}
@@ -489,7 +489,7 @@ export const SocialInboxTab = () => {
       {convsLoading && conversations.length === 0 ? (
         <View style={styles.loadingCenter}>
           <ActivityIndicator size="large" color="#e1306c" />
-          <Text style={[styles.loadingText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+          <Text style={[styles.loadingText, { color: isDark ? '#777383' : '#64748b' }]}>
             Loading inbox conversations from social channels...
           </Text>
         </View>
@@ -498,16 +498,16 @@ export const SocialInboxTab = () => {
           style={[
             styles.emptyCard,
             {
-              backgroundColor: isDark ? '#0f172a' : '#ffffff',
-              borderColor: isDark ? '#1e293b' : '#e2e8f0',
+              backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+              borderColor: isDark ? '#252230' : '#E9E6F2',
             },
           ]}
         >
           <Ionicons name="chatbubble-ellipses-outline" size={44} color={isDark ? '#475569' : '#cbd5e1'} />
-          <Text style={[styles.emptyTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+          <Text style={[styles.emptyTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
             No Conversations Found
           </Text>
-          <Text style={[styles.emptyDesc, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+          <Text style={[styles.emptyDesc, { color: isDark ? '#777383' : '#64748b' }]}>
             {searchQuery
               ? `No messages matched "${searchQuery}".`
               : 'Direct messages and comments across connected accounts will appear here.'}
@@ -527,18 +527,18 @@ export const SocialInboxTab = () => {
             const timeFormatted = formatMessageTime(conv.createdAt);
 
             return (
-              <Pressable
+              <Pressable cssInterop={false}
                 key={conv.id || conv.databaseId}
                 onPress={() => handleOpenConversation(conv)}
                 style={({ pressed }) => [
                   styles.convCard,
                   {
-                    backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                    backgroundColor: isDark ? '#1C1A25' : '#ffffff',
                     borderColor: conv.unread
                       ? '#e1306c'
                       : isDark
-                        ? '#1e293b'
-                        : '#e2e8f0',
+                        ? '#252230'
+                        : '#E9E6F2',
                     opacity: pressed ? 0.85 : 1,
                   },
                 ]}
@@ -589,7 +589,7 @@ export const SocialInboxTab = () => {
                     <Text
                       style={[
                         styles.contactName,
-                        { color: isDark ? '#f8fafc' : '#0f172a' },
+                        { color: isDark ? '#F5F3FB' : '#1C1A25' },
                         conv.unread ? { fontWeight: '800' } : null,
                       ]}
                       numberOfLines={1}
@@ -614,7 +614,7 @@ export const SocialInboxTab = () => {
                     style={[
                       styles.previewText,
                       { color: isDark ? '#cbd5e1' : '#475569' },
-                      conv.unread ? { color: isDark ? '#ffffff' : '#0f172a', fontWeight: '600' } : null,
+                      conv.unread ? { color: isDark ? '#ffffff' : '#1C1A25', fontWeight: '600' } : null,
                     ]}
                     numberOfLines={2}
                   >
@@ -667,11 +667,10 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   headerCard: {
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 14,
-  },
+    padding: 0,
+    borderRadius: 24,
+    borderWidth: 0,
+    gap: 14, shadowOpacity: 0, backgroundColor: 'transparent' , marginBottom: 24 },
   headerTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -694,7 +693,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   tabSubheading: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 3,
     lineHeight: 16,
   },
@@ -742,7 +741,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: '#777383',
     marginTop: 2,
     fontWeight: '600',
   },
@@ -810,10 +809,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 40,
     paddingHorizontal: 24,
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 10,
-  },
+    borderRadius: 24,
+    borderWidth: 0,
+    gap: 10, shadowOpacity: 0 },
   emptyTitle: {
     fontSize: 16,
     fontWeight: '800',
@@ -842,10 +840,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     padding: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 12,
-  },
+    borderRadius: 24,
+    borderWidth: 0,
+    gap: 12, shadowOpacity: 0 },
   avatarContainer: {
     position: 'relative',
   },
@@ -893,7 +890,7 @@ const styles = StyleSheet.create({
   },
   convTimeText: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: '#777383',
     marginLeft: 6,
   },
   convHandleRow: {
@@ -909,7 +906,7 @@ const styles = StyleSheet.create({
   },
   convAccountTag: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: '#777383',
     marginLeft: 4,
   },
   previewText: {
@@ -1007,8 +1004,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   threadMetaText: {
-    fontSize: 11,
-    color: '#94a3b8',
+    fontSize: 13,
+    color: '#716B7C',
     fontWeight: '600',
   },
   sampleChatBubbleWrap: {

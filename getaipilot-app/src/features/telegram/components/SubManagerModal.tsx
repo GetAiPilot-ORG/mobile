@@ -425,7 +425,7 @@ export const SubManagerModal: React.FC<SubManagerModalProps> = ({
               style={[styles.closeBtn, isDark ? styles.closeBtnDark : styles.closeBtnLight]}
               onPress={onClose}
             >
-              <Ionicons name="close" size={18} color={isDark ? '#FFFFFF' : '#0F172A'} />
+              <Ionicons name="close" size={18} color={isDark ? '#FFFFFF' : '#1C1A25'} />
             </Pressable>
           </View>
         </View>
@@ -461,17 +461,17 @@ export const SubManagerModal: React.FC<SubManagerModalProps> = ({
                   {/* Search Row */}
                   <View style={styles.searchRow}>
                     <View style={[styles.searchBox, isDark ? styles.searchBoxDark : styles.searchBoxLight]}>
-                      <Ionicons name="search" size={16} color="#94A3B8" />
+                      <Ionicons name="search" size={16} color="#777383" />
                       <TextInput
                         style={[styles.searchInput, isDark ? styles.textDark : styles.textLight]}
                         placeholder="Search pages by name or slug..."
-                        placeholderTextColor="#94A3B8"
+                        placeholderTextColor="#777383"
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                       />
                       {searchQuery.length > 0 && (
                         <Pressable onPress={() => setSearchQuery('')}>
-                          <Ionicons name="close-circle" size={16} color="#94A3B8" />
+                          <Ionicons name="close-circle" size={16} color="#777383" />
                         </Pressable>
                       )}
                     </View>
@@ -487,7 +487,7 @@ export const SubManagerModal: React.FC<SubManagerModalProps> = ({
                     </View>
                   ) : filteredPages.length === 0 ? (
                     <View style={[styles.emptyCard, isDark ? styles.cardDark : styles.cardLight]}>
-                      <Ionicons name="document-text-outline" size={40} color="#94A3B8" />
+                      <Ionicons name="document-text-outline" size={40} color="#777383" />
                       <Text style={[styles.emptyTitle, isDark ? styles.textDark : styles.textLight]}>
                         No Pages Found
                       </Text>
@@ -678,7 +678,7 @@ export const SubManagerModal: React.FC<SubManagerModalProps> = ({
                   <TextInput
                     style={[styles.formInput, isDark ? styles.formInputDark : styles.formInputLight]}
                     placeholder="e.g. VIP Forex & Crypto Signals"
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor="#777383"
                     value={formTitle}
                     onChangeText={handleTitleChange}
                   />
@@ -689,7 +689,7 @@ export const SubManagerModal: React.FC<SubManagerModalProps> = ({
                   <TextInput
                     style={[styles.formInput, isDark ? styles.formInputDark : styles.formInputLight]}
                     placeholder="vip-signals"
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor="#777383"
                     value={formSlug}
                     onChangeText={setFormSlug}
                     autoCapitalize="none"
@@ -705,7 +705,7 @@ export const SubManagerModal: React.FC<SubManagerModalProps> = ({
                       isDark ? styles.formInputDark : styles.formInputLight,
                     ]}
                     placeholder="Tell members what benefits they receive upon joining..."
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor="#777383"
                     value={formDescription}
                     onChangeText={setFormDescription}
                     multiline
@@ -730,7 +730,7 @@ export const SubManagerModal: React.FC<SubManagerModalProps> = ({
                   <TextInput
                     style={[styles.formInput, isDark ? styles.formInputDark : styles.formInputLight, { marginBottom: 8 }]}
                     placeholder="Plan Name (e.g. VIP Monthly)"
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor="#777383"
                     value={planDraftName}
                     onChangeText={setPlanDraftName}
                   />
@@ -739,7 +739,7 @@ export const SubManagerModal: React.FC<SubManagerModalProps> = ({
                     <TextInput
                       style={[styles.formInput, { flex: 1 }, isDark ? styles.formInputDark : styles.formInputLight]}
                       placeholder="₹ 999"
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor="#777383"
                       keyboardType="numeric"
                       value={planDraftPrice}
                       onChangeText={setPlanDraftPrice}
@@ -865,7 +865,7 @@ export const SubManagerModal: React.FC<SubManagerModalProps> = ({
                     Bank KYC Details
                   </Text>
                   <Pressable onPress={() => setBankModalVisible(false)}>
-                    <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+                    <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
                   </Pressable>
                 </View>
 
@@ -907,7 +907,7 @@ export const SubManagerModal: React.FC<SubManagerModalProps> = ({
                     {plansInspectorPage.title}
                   </Text>
                   <Pressable onPress={() => setPlansInspectorPage(null)}>
-                    <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#0F172A'} />
+                    <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
                   </Pressable>
                 </View>
 
@@ -940,10 +940,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   containerLight: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F5F3FB',
   },
   containerDark: {
-    backgroundColor: '#0F172A',
+    backgroundColor: '#1C1A25',
   },
   header: {
     flexDirection: 'row',
@@ -954,7 +954,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   borderLight: {
-    borderColor: '#E2E8F0',
+    borderColor: '#E9E6F2',
   },
   borderDark: {
     borderColor: '#334155',
@@ -967,18 +967,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
+    fontSize: 28,
+    fontWeight: '500', lineHeight: 36 , letterSpacing: -0.5 },
   subtitle: {
-    fontSize: 11,
-    color: '#64748B',
+    fontSize: 13,
+    color: '#716B7C',
   },
   textLight: {
-    color: '#0F172A',
+    color: '#1C1A25',
   },
   textDark: {
-    color: '#F8FAFC',
+    color: '#F5F3FB',
   },
   newBtnTop: {
     flexDirection: 'row',
@@ -1012,10 +1011,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   closeBtnLight: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F0EEF8',
   },
   closeBtnDark: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#252230',
   },
   tabBar: {
     flexDirection: 'row',
@@ -1037,7 +1036,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#EFF6FF',
   },
   tabItemActiveDark: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#252230',
   },
   tabText: {
     fontSize: 11.5,
@@ -1049,7 +1048,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   tabBadge: {
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#E9E6F2',
     paddingHorizontal: 5,
     paddingVertical: 1,
     borderRadius: 10,
@@ -1071,13 +1070,13 @@ const styles = StyleSheet.create({
   },
   cardLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    borderWidth: 1,
+    borderColor: '#E9E6F2',
+    borderWidth: 0,
   },
   cardDark: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#252230',
     borderColor: '#334155',
-    borderWidth: 1,
+    borderWidth: 0,
   },
   compactStatBar: {
     flexDirection: 'row',
@@ -1114,16 +1113,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 10,
     height: 38,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 8,
-  },
+    borderRadius: 22,
+    borderWidth: 0,
+    gap: 8, minHeight: 48 },
   searchBoxLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    borderColor: '#E9E6F2',
   },
   searchBoxDark: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#252230',
     borderColor: '#334155',
   },
   searchInput: {
@@ -1135,15 +1133,13 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   pageCard: {
-    borderRadius: 12,
-    padding: 12,
-  },
+    borderRadius: 24,
+    padding: 12, borderWidth: 0 , shadowOpacity: 0 },
   pageCardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
-  },
+    marginBottom: 8, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   pageAvatar: {
     width: 34,
     height: 34,
@@ -1174,10 +1170,10 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   urlPillLight: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F5F3FB',
   },
   urlPillDark: {
-    backgroundColor: '#0F172A',
+    backgroundColor: '#1C1A25',
   },
   urlPillText: {
     fontSize: 11,
@@ -1243,8 +1239,7 @@ const styles = StyleSheet.create({
   },
   revenueHeroCard: {
     padding: 16,
-    borderRadius: 14,
-  },
+    borderRadius: 24, borderWidth: 0 , shadowOpacity: 0 },
   revenueHeroLabel: {
     fontSize: 9,
     fontWeight: '700',
@@ -1258,7 +1253,7 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   revenueHeroSub: {
-    fontSize: 10,
+    fontSize: 13,
     color: 'rgba(255,255,255,0.85)',
   },
   revenueHeroDivider: {
@@ -1283,17 +1278,14 @@ const styles = StyleSheet.create({
   },
   sectionCard: {
     padding: 14,
-    borderRadius: 12,
-  },
+    borderRadius: 24, borderWidth: 0 , shadowOpacity: 0 },
   sectionCardTitle: {
     fontSize: 13,
-    fontWeight: '700',
-  },
+    fontWeight: '700', borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   sectionCardSub: {
-    fontSize: 10.5,
-    color: '#64748B',
-    marginTop: 2,
-  },
+    fontSize: 13.5,
+    color: '#716B7C',
+    marginTop: 2, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   verifiedActiveBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1380,7 +1372,7 @@ const styles = StyleSheet.create({
   countryPill: {
     paddingHorizontal: 8,
     height: 38,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#E9E6F2',
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1388,7 +1380,7 @@ const styles = StyleSheet.create({
   countryText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#1C1A25',
   },
   phoneInput: {
     flex: 1,
@@ -1432,16 +1424,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
+    borderRadius: 24,
+    borderWidth: 0, shadowOpacity: 0 },
   channelTitle: {
     fontSize: 12,
     fontWeight: '700',
   },
   channelId: {
     fontSize: 9.5,
-    color: '#94A3B8',
+    color: '#777383',
   },
   formGroup: {
     marginTop: 10,
@@ -1461,13 +1452,13 @@ const styles = StyleSheet.create({
   },
   formInputLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    color: '#0F172A',
+    borderColor: '#E9E6F2',
+    color: '#1C1A25',
   },
   formInputDark: {
-    backgroundColor: '#0F172A',
+    backgroundColor: '#1C1A25',
     borderColor: '#334155',
-    color: '#F8FAFC',
+    color: '#F5F3FB',
   },
   formTextArea: {
     height: 65,
@@ -1576,16 +1567,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
-    borderRadius: 12,
-    gap: 8,
-  },
+    borderRadius: 24,
+    gap: 8, borderWidth: 0 , shadowOpacity: 0 },
   emptyTitle: {
     fontSize: 14,
     fontWeight: '700',
   },
   emptySub: {
-    fontSize: 11,
-    color: '#64748B',
+    fontSize: 13,
+    color: '#716B7C',
     textAlign: 'center',
     maxWidth: 240,
   },
@@ -1614,17 +1604,16 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 320,
-    borderRadius: 14,
+    borderRadius: 24,
     padding: 16,
-    gap: 10,
-  },
+    gap: 10, borderWidth: 0 , shadowOpacity: 0 },
   modalTitle: {
     fontSize: 15,
     fontWeight: '700',
   },
   modalSub: {
-    fontSize: 10,
-    color: '#64748B',
+    fontSize: 13,
+    color: '#716B7C',
     textAlign: 'center',
   },
   qrBox: {
@@ -1676,9 +1665,8 @@ const styles = StyleSheet.create({
   },
   readinessCard: {
     padding: 12,
-    borderRadius: 12,
-    marginBottom: 10,
-  },
+    borderRadius: 24,
+    marginBottom: 10, borderWidth: 0 , shadowOpacity: 0 },
   readinessHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1696,9 +1684,8 @@ const styles = StyleSheet.create({
   stepPillCard: {
     width: 130,
     padding: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
+    borderRadius: 24,
+    borderWidth: 0, shadowOpacity: 0 },
   stepNumBadge: {
     fontSize: 8.5,
     fontWeight: '700',
@@ -1711,11 +1698,9 @@ const styles = StyleSheet.create({
   stepCardTitle: {
     fontSize: 11,
     fontWeight: '700',
-    marginTop: 3,
-  },
+    marginTop: 3, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   stepCardSub: {
     fontSize: 9.5,
-    color: '#64748B',
-    marginTop: 1,
-  },
+    color: '#716B7C',
+    marginTop: 1, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
 });

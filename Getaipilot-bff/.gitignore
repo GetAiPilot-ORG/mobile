@@ -1,57 +1,43 @@
 # Dependencies
-
 node_modules/
+.pnp
+.pnp.js
 
-# Expo
-
-.expo/
-.eas/
+# Build & compiled outputs
 dist/
-web-build/
-expo-env.d.ts
+build/
+*.tsbuildinfo
 
-# Impeccable
-
+# AI & tooling
 .impeccable/
-
-# Claude
-
 .claude/
-
-# Native build files
-
-.kotlin/
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
-
-# Metro
-
-.metro-health-check*
+.gemini/
 
 # Debug logs
-
+logs/
+*.log
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+pnpm-debug.*
 
-# macOS
-
+# macOS / OS
 .DS_Store
 *.pem
 
-# Environment variables - keep secrets out of Git
-
+# Environment variables
 .env
+.env.production
 .env.*
 .env.local
 .env.*.local
 !.env.example
 
-
-# TypeScript
-
-*.tsbuildinfo
+# IDEs & Editors
+.idea/
+*.iml
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json

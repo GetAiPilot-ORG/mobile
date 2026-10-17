@@ -21,6 +21,7 @@ import { supabase } from '../../src/lib/supabase';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SystemProduct, SystemSettings, SystemMaintenanceLog } from '../../src/types/database';
 import { AdminTabSkeleton } from '../../src/components/skeletonScreen';
+import { apiClient } from '../../src/core/api/client';
 
 export default function AdminMaintenanceScreen() {
   const { isDark } = useTheme();
@@ -142,6 +143,17 @@ export default function AdminMaintenanceScreen() {
     onSuccess: (enabled) => {
       queryClient.invalidateQueries({ queryKey: ['admin-system-settings'] });
       queryClient.invalidateQueries({ queryKey: ['admin-maintenance-logs'] });
+
+      // Dispatch real-time push notification to all platform admins
+      apiClient.post('/mobile/v1/admin/notify-activity', {
+        action: 'maintenance_toggle',
+        title: enabled ? '🛡️ Global Maintenance Enabled' : '✅ Global Maintenance Disabled',
+        message: enabled
+          ? 'Platform-wide maintenance mode has been activated.'
+          : 'Platform-wide maintenance has been turned off. Services restored.',
+        details: { enabled, productName: 'All Platform Services' },
+      }).catch(() => {});
+
       Alert.alert(
         'Updated',
         enabled
@@ -189,6 +201,16 @@ export default function AdminMaintenanceScreen() {
       queryClient.invalidateQueries({ queryKey: ['admin-system-products'] });
       queryClient.invalidateQueries({ queryKey: ['admin-maintenance-logs'] });
       setIsManageOpen(false);
+
+      // Dispatch real-time push notification to all platform admins
+      apiClient.post('/mobile/v1/admin/notify-activity', {
+        action: 'maintenance_toggle',
+        details: {
+          enabled: Boolean(data.maintenance_enabled),
+          productName: data.product_name || data.product_key,
+        },
+      }).catch(() => {});
+
       Alert.alert('Success', `Updated settings for ${data.product_name || 'product'}.`);
     },
     onError: (err: any) => {
@@ -503,10 +525,10 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.card,
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
     marginBottom: 16,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
   },
   globalCardAlert: {
@@ -563,10 +585,10 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   serviceCard: {
     backgroundColor: colors.card,
-    borderRadius: 14,
+    borderRadius: 24,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
   },
   serviceHeader: {
@@ -628,10 +650,10 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
   },
   logCard: {
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: 24,
     padding: 14,
     marginBottom: 10,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
   },
   logHeader: {
@@ -663,7 +685,7 @@ const createStyles = (colors: AppColors) => StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: 24,
   },
   emptyText: {
     color: colors.mutedForeground,

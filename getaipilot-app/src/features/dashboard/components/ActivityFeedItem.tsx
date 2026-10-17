@@ -28,10 +28,10 @@ export const ActivityFeedItem: React.FC<ActivityFeedItemProps> = ({
       <View style={styles.indicator} />
       <View style={styles.content}>
         <View style={styles.headerRow}>
-          <Text style={[styles.title, { color: isDark ? '#f1f5f9' : '#0f172a' }]}>{title}</Text>
-          <Text style={[styles.time, { color: isDark ? '#64748b' : '#94a3b8' }]}>{formattedTime}</Text>
+          <Text style={[styles.title, { color: isDark ? '#F0EEF8' : '#0f172a' }]}>{title}</Text>
+          <Text style={[styles.time, { color: isDark ? '#64748b' : '#777383' }]}>{formattedTime}</Text>
         </View>
-        <Text style={[styles.description, { color: isDark ? '#94a3b8' : '#64748b' }]}>{description}</Text>
+        <Text style={[styles.description, { color: isDark ? '#777383' : '#64748b' }]}>{description}</Text>
       </View>
     </View>
   );

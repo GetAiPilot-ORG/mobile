@@ -1,9 +1,17 @@
 export const radius = {
   xs: 4,
   sm: 8,
-  md: 12,
+  md: 10,
+  links: 10,
   lg: 16,
+  navigation: 20,
   xl: 20,
   xxl: 24,
+  cards: 24,
+  images: 28,
+  pills: 36,
+  badges: 10,
+  inputs: 18,
+  buttons: 9999,
   full: 9999,
 };

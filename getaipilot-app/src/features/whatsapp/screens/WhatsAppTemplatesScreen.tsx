@@ -1,3 +1,4 @@
+import { ProductPageHeader } from "@/components/ProductUI";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
@@ -108,50 +109,22 @@ export const WhatsAppTemplatesScreen: React.FC<
       edges={["top", "left", "right"]}
     >
       <View className="flex-1">
-        {/* Top Header */}
+        <ProductPageHeader title="Message templates" onBack={handleBack} />
+
+        {/* Filter & Search Controls Card */}
         <View
-          className={`flex-row items-center px-4 py-3.5 shadow-sm ${
-            isDark ? "bg-[#1F2C34]" : "bg-[#075E54]"
+          className={`m-3.5 p-3 rounded-[24px] border-0  ${
+            isDark
+              ? "bg-[#252230] border-[#3A3549]"
+              : "bg-white border-transparent"
           }`}
-          style={{
-            borderBottomWidth: 0,
-            elevation: 4,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.15,
-            shadowRadius: 4,
-          }}
         >
-          <View className="flex-row items-center flex-1">
-            <Pressable
-              className="w-9 h-9 rounded-full justify-center items-center mr-3 active:opacity-70 active:scale-95 bg-white/15"
-              onPress={handleBack}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityRole="button"
-              accessibilityLabel="Back"
-              style={{ borderWidth: 0 }}
-            >
-              <Ionicons
-                name="chevron-back"
-                size={20}
-                color="#FFFFFF"
-              />
-            </Pressable>
-
-            <View className="flex-row items-center gap-2">
-              <Ionicons name="logo-whatsapp" size={22} color="#25D366" />
-              <Text className="text-lg font-bold tracking-tight text-white">
-                Message Templates
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Search Bar */}
-        <View className="px-4 pt-3 pb-1.5">
+          {/* Search Bar */}
           <View
-            className={`flex-row items-center rounded-2xl px-3.5 h-11 ${
-              isDark ? "bg-[#1F2C34]" : "bg-white"
+            className={`flex-row items-center rounded-xl px-3 h-10 border mb-2.5 ${
+              isDark
+                ? "bg-[#121214] border-[#3A3549]"
+                : "bg-[#F5F3FB] border-[#E9E6F2]"
             }`}
             style={{
               borderWidth: 0,
@@ -163,17 +136,17 @@ export const WhatsAppTemplatesScreen: React.FC<
             }}
           >
             <Ionicons
-              name="search"
-              size={17}
-              color={color.textSecondary || (isDark ? "#94A3B8" : "#64748B")}
+              name="search-outline"
+              size={18}
+              color={isDark ? "#64748B" : "#777383"}
               style={{ marginRight: 8 }}
             />
             <TextInput
               className={`flex-1 text-sm font-medium py-0 ${
-                isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
+                isDark ? "text-[#F5F3FB]" : "text-[#1C1A25]"
               }`}
-              placeholder="Search templates by name or text..."
-              placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
+              placeholder="Search template name or message..."
+              placeholderTextColor={isDark ? "#64748B" : "#777383"}
               value={searchQuery}
               onChangeText={setSearchQuery}
               clearButtonMode="while-editing"
@@ -183,7 +156,7 @@ export const WhatsAppTemplatesScreen: React.FC<
                 <Ionicons
                   name="close-circle"
                   size={16}
-                  color={isDark ? "#64748B" : "#94A3B8"}
+                  color={isDark ? "#64748B" : "#777383"}
                 />
               </Pressable>
             )}
@@ -275,7 +248,154 @@ export const WhatsAppTemplatesScreen: React.FC<
               alignItems: "center",
             }}
           >
-            {/* All */}
+            {categoryOptions.map((cat) => {
+              const isSelected = activeCategory === cat.val;
+              return (
+                <Pressable
+                  key={cat.val}
+                  className={`px-3 py-1.5 rounded-full border active:opacity-80 ${
+                    isSelected
+                      ? isDark
+                        ? "bg-white border-white"
+                        : "bg-black border-black"
+                      : isDark
+                      ? "bg-white/[0.05] border-white/[0.08]"
+                      : "bg-[#F0EEF8] border-[#E9E6F2]"
+                  }`}
+                  onPress={() => {
+                    if (Platform.OS !== "web") {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }
+                    setActiveCategory(cat.val);
+                  }}
+                >
+                  <Text
+                    className={`text-xs ${
+                      isSelected
+                        ? isDark
+                          ? "text-black font-bold"
+                          : "text-white font-bold"
+                        : isDark
+                        ? "text-[#777383] font-medium"
+                        : "text-[#64748B] font-medium"
+                    }`}
+                  >
+                    {cat.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          {/* Status Stats Row with Clickable Badges */}
+          <View
+            className={`flex-row items-center justify-between mt-2.5 pt-2.5  ${
+              isDark ? "border-white/[0.08]" : "border-black/[0.06]"
+            }`}
+          >
+            <View className="flex-row items-center gap-1.5 flex-wrap flex-1">
+              {/* All Badge */}
+              <Pressable
+                className={`px-2 py-1 rounded-md border active:opacity-75 ${
+                  activeStatus === "ALL"
+                    ? isDark
+                      ? "bg-white/10 border-white/20"
+                      : "bg-black/10 border-black/20"
+                    : isDark
+                    ? "bg-white/[0.04] border-transparent"
+                    : "bg-black/[0.04] border-transparent"
+                }`}
+                onPress={() => {
+                  if (Platform.OS !== "web") {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  setActiveStatus("ALL");
+                }}
+              >
+                <Text
+                  className={`text-[11px] font-medium ${
+                    isDark ? "text-[#777383]" : "text-[#64748B]"
+                  }`}
+                >
+                  All: {" "}
+                  <Text
+                    className={`font-bold ${
+                      isDark ? "text-[#F5F3FB]" : "text-[#1C1A25]"
+                    }`}
+                  >
+                    {stats.total}
+                  </Text>
+                </Text>
+              </Pressable>
+
+              {/* Approved Badge */}
+              <Pressable
+                className={`flex-row items-center gap-1 px-2 py-1 rounded-md border active:opacity-75 ${
+                  activeStatus === "APPROVED"
+                    ? "bg-emerald-500/20 border-emerald-500/40"
+                    : "bg-emerald-500/10 border-transparent"
+                }`}
+                onPress={() => {
+                  if (Platform.OS !== "web") {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  setActiveStatus(
+                    activeStatus === "APPROVED" ? "ALL" : "APPROVED",
+                  );
+                }}
+              >
+                <Ionicons name="checkmark-circle" size={12} color="#25D366" />
+                <Text className="text-[11px] font-bold text-emerald-500">
+                  {stats.approved}
+                </Text>
+              </Pressable>
+
+              {/* Pending Badge */}
+              <Pressable
+                className={`flex-row items-center gap-1 px-2 py-1 rounded-md border active:opacity-75 ${
+                  activeStatus === "PENDING"
+                    ? "bg-amber-500/20 border-amber-500/40"
+                    : "bg-amber-500/10 border-transparent"
+                }`}
+                onPress={() => {
+                  if (Platform.OS !== "web") {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  setActiveStatus(
+                    activeStatus === "PENDING" ? "ALL" : "PENDING",
+                  );
+                }}
+              >
+                <Ionicons name="time-outline" size={12} color="#FBBF24" />
+                <Text className="text-[11px] font-bold text-amber-400">
+                  {stats.pending}
+                </Text>
+              </Pressable>
+
+              {/* Rejected Badge */}
+              <Pressable
+                className={`flex-row items-center gap-1 px-2 py-1 rounded-md border active:opacity-75 ${
+                  activeStatus === "REJECTED"
+                    ? "bg-red-500/20 border-red-500/40"
+                    : "bg-red-500/10 border-transparent"
+                }`}
+                onPress={() => {
+                  if (Platform.OS !== "web") {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  setActiveStatus(
+                    activeStatus === "REJECTED" ? "ALL" : "REJECTED",
+                  );
+                }}
+              >
+                <Ionicons name="close-circle" size={12} color="#F87171" />
+                <Text className="text-[11px] font-bold text-red-400">
+                  {stats.rejected}
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* Sync Meta Templates Button */}
             <Pressable
               className={`flex-row items-center px-2.5 py-1 rounded-full active:opacity-75 ${
                 activeStatus === "ALL"
@@ -293,18 +413,14 @@ export const WhatsAppTemplatesScreen: React.FC<
                 setActiveStatus("ALL");
               }}
             >
-              <Text
-                className={`text-[11px] font-semibold ${
-                  activeStatus === "ALL"
-                    ? isDark
-                      ? "text-white font-bold"
-                      : "text-black font-bold"
-                    : isDark
-                    ? "text-[#94A3B8]"
-                    : "text-[#64748B]"
-                }`}
-              >
-                All ({stats.total})
+              <Ionicons
+                name="refresh-outline"
+                size={13}
+                color="#25D366"
+                style={isRefetching ? { transform: [{ rotate: "45deg" }] } : {}}
+              />
+              <Text className="text-xs font-semibold text-emerald-500">
+                {isRefetching ? "Refreshing…" : "Refresh"}
               </Text>
             </Pressable>
 
@@ -403,7 +519,7 @@ export const WhatsAppTemplatesScreen: React.FC<
             keyExtractor={(item) => item.id || item.name}
             renderItem={({ item }) => <TemplateCard template={item} />}
             contentContainerStyle={{
-              paddingHorizontal: 16,
+              paddingHorizontal: 20,
               paddingBottom: 130,
             }}
             refreshControl={
@@ -422,14 +538,14 @@ export const WhatsAppTemplatesScreen: React.FC<
                 />
                 <Text
                   className={`text-base font-bold mt-3 mb-1 text-center ${
-                    isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
+                    isDark ? "text-[#F5F3FB]" : "text-[#1C1A25]"
                   }`}
                 >
-                  No WhatsApp Templates Found
+                  No templates yet
                 </Text>
                 <Text
                   className={`text-xs text-center leading-4 max-w-[280px] ${
-                    isDark ? "text-[#64748B]" : "text-[#94A3B8]"
+                    isDark ? "text-[#64748B]" : "#777383"
                   }`}
                 >
                   {searchQuery ||
@@ -443,38 +559,6 @@ export const WhatsAppTemplatesScreen: React.FC<
           />
         )}
 
-        {/* Meta Status Bar Footer (Borderless WhatsApp Theme) */}
-        <View
-          className={`flex-row items-center justify-between px-4 py-2.5 shadow-xs ${
-            isDark
-              ? "bg-[#1C1C1E]"
-              : "bg-white"
-          }`}
-          style={{
-            borderTopWidth: 0,
-            elevation: 2,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: -1 },
-            shadowOpacity: isDark ? 0.2 : 0.04,
-            shadowRadius: 3,
-          }}
-        >
-          <Text
-            className={`text-xs font-medium ${
-              isDark ? "text-[#94A3B8]" : "text-[#64748B]"
-            }`}
-          >
-            Showing {filteredTemplates.length} of {templates?.length || 0}{" "}
-            templates
-          </Text>
-
-          <View className="flex-row items-center gap-1.5 bg-emerald-500/15 px-2.5 py-1 rounded-full">
-            <View className="w-1.5 h-1.5 rounded-full bg-[#25D366]" />
-            <Text className="text-[11px] font-bold text-emerald-500">
-              Meta Cloud Live
-            </Text>
-          </View>
-        </View>
       </View>
     </SafeAreaView>
   );

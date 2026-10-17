@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   logoWrapperDark: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#252230',
     shadowColor: '#8B5CF6',
     shadowOpacity: 0.4,
   },
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 24,
-    fontWeight: '800',
+    fontWeight: '600',
     color: '#000000',
     textAlign: 'center',
     lineHeight: 31,
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
   feedbackBanner: {
     paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: 12,
+    borderRadius: 24,
     marginBottom: 18,
   },
   feedbackBannerError: {
@@ -381,13 +381,13 @@ const styles = StyleSheet.create({
     color: '#16A34A',
   },
   inputGroup: {
-    backgroundColor: '#F2F4F7',
+    backgroundColor: '#F0EEF8',
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 16,
   },
   inputGroupDark: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#252230',
   },
   inputRow: {
     flexDirection: 'row',
@@ -407,11 +407,11 @@ const styles = StyleSheet.create({
   },
   hairlineDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#E9E6F2',
     marginLeft: 16,
   },
   hairlineDividerDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
   },
   clearBtn: {
     width: 20,
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
   clearBtnText: {
     fontSize: 10,
     color: '#4B5563',
-    fontWeight: '800',
+    fontWeight: '600',
   },
   eyeBtn: {
     paddingHorizontal: 8,
@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   eyeBtnTextDark: {
-    color: '#9CA3AF',
+    color: '#777383',
   },
   termsText: {
     fontSize: 12,
@@ -448,27 +448,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   termsTextDark: {
-    color: '#9CA3AF',
+    color: '#777383',
   },
   termsHighlight: {
-    color: '#0084FF',
+    color: '#17171C',
     fontWeight: '600',
   },
   primaryButton: {
-    backgroundColor: '#0084FF',
+    backgroundColor: '#17171C',
     paddingVertical: 15,
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
-    shadowColor: '#0084FF',
+    shadowColor: '#17171C',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 3,
   },
   primaryButtonDisabled: {
-    backgroundColor: '#F2F4F7',
+    backgroundColor: '#F0EEF8',
     shadowOpacity: 0,
     elevation: 0,
   },
@@ -479,10 +479,10 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   primaryButtonTextDisabled: {
-    color: '#9CA3AF',
+    color: '#777383',
   },
   secondaryButton: {
-    backgroundColor: '#F2F4F7',
+    backgroundColor: '#F0EEF8',
     paddingVertical: 15,
     borderRadius: 28,
     alignItems: 'center',
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   secondaryButtonDark: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#252230',
   },
   secondaryButtonText: {
     color: '#000000',

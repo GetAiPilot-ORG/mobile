@@ -48,12 +48,19 @@ export async function socialRoutes(fastify: FastifyInstance) {
     return reply.send(accounts);
   });
 
-  fastify.post('/social/accounts/disconnect', { preHandler: [authenticateToken, requirePermission('social.post')] }, async (request, reply) => {
+  const handleDisconnect = async (request: any, reply: any) => {
     const user = request.user as JWTPayload;
-    const body = request.body as { provider: string; accountId?: string; pageId?: string };
-    const result = await SocialAdapter.disconnectAccount(user, body);
+    const body = (request.body || {}) as { provider?: string; accountId?: string; pageId?: string };
+    const query = (request.query || {}) as { provider?: string; accountId?: string; pageId?: string };
+    const provider = body.provider || query.provider || '';
+    const accountId = body.accountId || query.accountId;
+    const pageId = body.pageId || query.pageId;
+    const result = await SocialAdapter.disconnectAccount(user, { provider, accountId, pageId });
     return reply.send(result);
-  });
+  };
+
+  fastify.post('/social/accounts/disconnect', { preHandler: [authenticateToken, requirePermission('social.read')] }, handleDisconnect);
+  fastify.delete('/social/accounts/disconnect', { preHandler: [authenticateToken, requirePermission('social.read')] }, handleDisconnect);
 
   // 3. Posts History & Queue
   fastify.get('/social/posts', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
@@ -336,5 +343,22 @@ export async function socialRoutes(fastify: FastifyInstance) {
     const target = query.target || query.redirectPath || 'new-post';
     const ssoUrl = await SocialAdapter.getSocialHandoffUrl(user, target);
     return reply.send({ success: true, ssoUrl });
+  });
+
+  // 11. Direct Social OAuth Connect URL
+  fastify.get('/social/connect-url', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const query = (request.query || {}) as { platform?: string; provider?: string };
+    const provider = query.platform || query.provider || 'instagram';
+    const connectUrl = await SocialAdapter.getConnectUrl(user, provider);
+    return reply.send({ success: true, connectUrl, platform: provider });
+  });
+
+  fastify.post('/social/connect-url', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const body = (request.body || {}) as { platform?: string; provider?: string };
+    const provider = body.platform || body.provider || 'instagram';
+    const connectUrl = await SocialAdapter.getConnectUrl(user, provider);
+    return reply.send({ success: true, connectUrl, platform: provider });
   });
 }

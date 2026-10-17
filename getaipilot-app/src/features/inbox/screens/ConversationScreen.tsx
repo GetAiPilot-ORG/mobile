@@ -86,7 +86,8 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   const [showContactDrawer, setShowContactDrawer] = useState<boolean>(false);
   const [isBotPaused, setIsBotPaused] = useState<boolean>(initialConversation?.bot_paused || false);
   const [assignedAgentName, setAssignedAgentName] = useState<string>(
-    initialConversation?.assigned_agent_name || initialConversation?.assigned_to || 'Unassigned'
+    initialConversation?.assigned_agent_name
+      || (initialConversation?.assigned_to ? 'Assigned' : 'Unassigned')
   );
 
   const flatListRef = useRef<FlatList>(null);
@@ -387,9 +388,9 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
 
   if (!conversation) {
     return (
-      <View style={[styles.root, { backgroundColor: isDark ? '#000000' : '#f2f2f7', paddingTop: headerTopPadding }]}>
+      <View style={[styles.root, { backgroundColor: isDark ? '#000000' : '#F0EEF8', paddingTop: headerTopPadding }]}>
         <View style={styles.centerContainer}>
-          <Text style={[styles.notFoundTitle, { color: isDark ? '#f2f2f7' : '#000000' }]}>
+          <Text style={[styles.notFoundTitle, { color: isDark ? '#F0EEF8' : '#000000' }]}>
             Conversation not found
           </Text>
           <Pressable style={styles.backPill} onPress={handleBack}>
@@ -402,7 +403,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
 
   return (
     <View
-      style={[styles.root, { backgroundColor: isDark ? '#000000' : '#f2f2f7' }]}
+      style={[styles.root, { backgroundColor: isDark ? '#000000' : '#F0EEF8' }]}
       {...panResponder.panHandlers}
     >
       <KeyboardAvoidingView
@@ -419,7 +420,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
         >
           {/* Top Row: Back Button + Contact Info + CRM Button */}
           <View style={styles.headerTopRow}>
-            <Pressable
+            <Pressable cssInterop={false}
               style={({ pressed }) => [
                 styles.backBtn,
                 pressed && (isDark ? styles.btnPressedDark : styles.btnPressedLight),
@@ -466,7 +467,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
 
             {/* Quick Actions (+ CRM) */}
             <View style={styles.headerRightActions}>
-              <Pressable
+              <Pressable cssInterop={false}
                 style={({ pressed }) => [
                   styles.crmBtn,
                   pressed && { opacity: 0.75 },
@@ -578,7 +579,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <View style={[styles.emptyIconCircle, { backgroundColor: isDark ? '#1C1C1E' : '#E5E5EA' }]}>
+              <View style={[styles.emptyIconCircle, { backgroundColor: isDark ? '#252230' : '#E5E5EA' }]}>
                 <Ionicons name="chatbubbles" size={32} color={isDark ? '#636366' : '#8E8E93'} />
               </View>
               <Text style={[styles.emptyTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>
@@ -690,7 +691,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
               </Text>
 
               <View style={styles.closedCardActions}>
-                <Pressable
+                <Pressable cssInterop={false}
                   style={({ pressed }) => [
                     styles.closedSwitchBtn,
                     pressed && { opacity: 0.8 },
@@ -739,7 +740,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
                   multiline
                 />
 
-                <Pressable
+                <Pressable cssInterop={false}
                   style={({ pressed }) => [
                     styles.sendBtn,
                     !inputText.trim() &&
@@ -812,7 +813,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
                 style={[styles.assignOptionBtn, isDark ? styles.assignOptionDark : styles.assignOptionLight]}
                 onPress={() => handleAssignAgent(null)}
               >
-                <View style={[styles.agentAvatarPill, { backgroundColor: isDark ? '#2C2C2E' : '#E5E5EA' }]}>
+                <View style={[styles.agentAvatarPill, { backgroundColor: isDark ? '#3A3549' : '#E5E5EA' }]}>
                   <Ionicons name="close-circle-outline" size={16} color={isDark ? '#8E8E93' : '#687076'} />
                 </View>
                 <View style={{ flex: 1 }}>
@@ -1136,8 +1137,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerDark: {
-    backgroundColor: '#1C1C1E',
-    borderBottomColor: '#2C2C2E',
+    backgroundColor: '#252230',
+    borderBottomColor: '#3A3549',
   },
   headerLight: {
     backgroundColor: '#FFFFFF',
@@ -1290,11 +1291,11 @@ const styles = StyleSheet.create({
     paddingTop: 6,
   },
   composerDark: {
-    backgroundColor: '#1C1C1E',
-    borderTopColor: '#2C2C2E',
+    backgroundColor: '#252230',
+    borderTopColor: '#3A3549',
   },
   composerLight: {
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#F0EEF8',
     borderTopColor: '#E5E5EA',
   },
   composerWrapperNoteDark: {
@@ -1312,7 +1313,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   segmentDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
   },
   segmentLight: {
     backgroundColor: '#E5E5EA',
@@ -1362,7 +1363,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   closedCard: {
-    borderRadius: 14,
+    borderRadius: 24,
     padding: 12,
     borderWidth: StyleSheet.hairlineWidth,
   },
@@ -1435,7 +1436,7 @@ const styles = StyleSheet.create({
     minHeight: 40,
   },
   inputRowDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
     borderColor: '#3A3A3C',
   },
   inputRowLight: {
@@ -1511,8 +1512,8 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   modalBoxDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
+    backgroundColor: '#252230',
+    borderColor: '#3A3549',
   },
   modalBoxLight: {
     backgroundColor: '#FFFFFF',
@@ -1542,11 +1543,11 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   assignOptionDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
     borderColor: '#3A3A3C',
   },
   assignOptionLight: {
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#F0EEF8',
     borderColor: '#E5E5EA',
   },
   agentAvatarPill: {
@@ -1580,7 +1581,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   memberRowDark: {
-    borderBottomColor: '#2C2C2E',
+    borderBottomColor: '#3A3549',
   },
   memberRowLight: {
     borderBottomColor: '#E5E5EA',
@@ -1613,7 +1614,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   roleTagDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
   },
   roleTagLight: {
     backgroundColor: '#E5E5EA',
@@ -1624,15 +1625,15 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   guideCard: {
-    borderRadius: 12,
+    borderRadius: 24,
     padding: 12,
     marginBottom: 10,
   },
   guideCardDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
   },
   guideCardLight: {
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#F0EEF8',
   },
   guideCardTitle: {
     color: '#34C759',
@@ -1662,7 +1663,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   borderDark: {
-    borderBottomColor: '#2C2C2E',
+    borderBottomColor: '#3A3549',
   },
   borderLight: {
     borderBottomColor: '#E5E5EA',
@@ -1742,10 +1743,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   drawerSecondaryBtnDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
   },
   drawerSecondaryBtnLight: {
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#F0EEF8',
   },
   drawerSecondaryBtnText: {
     color: '#0A84FF',
@@ -1767,12 +1768,12 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   inputDark: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#3A3549',
     borderColor: '#3A3A3C',
     color: '#FFFFFF',
   },
   inputLight: {
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#F0EEF8',
     borderColor: '#D1D1D6',
     color: '#000000',
   },

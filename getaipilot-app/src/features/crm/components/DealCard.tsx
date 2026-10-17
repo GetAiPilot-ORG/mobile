@@ -29,7 +29,7 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, onPress, onStageChange
 
   return (
     <Pressable
-      className="rounded-2xl p-4 mb-3 border shadow-sm shadow-black/5 active:opacity-90 active:scale-[0.99]"
+      className="rounded-[24px] p-4 mb-3 border-0  shadow-black/5 active:opacity-90 active:scale-[0.99]"
       style={{
         backgroundColor: colors.card,
         borderColor: colors.border,
@@ -89,7 +89,7 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, onPress, onStageChange
       </View>
 
       <View
-        className="flex-row items-center justify-between pt-2 border-t mt-1"
+        className="flex-row items-center justify-between pt-2  mt-1"
         style={{ borderTopColor: colors.border }}
       >
         <View className="flex-row items-center gap-1">

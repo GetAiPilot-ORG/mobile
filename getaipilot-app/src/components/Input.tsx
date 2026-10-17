@@ -24,28 +24,21 @@ export const Input: React.FC<InputProps> = ({
   style,
   ...props
 }) => {
-  const { isDark } = useTheme();
+  const { colors } = useTheme();
 
-  const variantStyles: Record<InputVariant, string> = {
-    default: isDark
-      ? 'bg-[#0A1420] border border-[#1B334A] text-white'
-      : 'bg-white border border-[#E5E7EB] text-slate-900',
-    filled: isDark
-      ? 'bg-[#0A111B] border border-transparent text-white'
-      : 'bg-[#F2F4F7] border border-transparent text-slate-900',
-  };
 
   return (
     <View className={`w-full ${containerClassName}`}>
       {label && (
-        <Text className={`text-sm mb-1.5 font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+        <Text className="text-sm mb-2 font-medium" style={{ color: colors.text }}>
           {label}
         </Text>
       )}
       <TextInput
-        className={`rounded-xl px-4 py-3 text-base ${variantStyles[variant]} ${className}`}
-        placeholderTextColor={placeholderTextColor || (isDark ? '#8FA3B8' : '#94A3B8')}
-        style={style}
+        className={`rounded-xl px-4 py-3 text-base ${className}`}
+        placeholderTextColor={placeholderTextColor || colors.inputPlaceholder}
+        accessibilityLabel={props.accessibilityLabel || label || props.placeholder}
+        style={[{ backgroundColor: colors.inputBackground, color: colors.text, borderRadius: 18, minHeight: 50, borderWidth: error ? 1 : 0, borderColor: colors.destructive }, style]}
         {...props}
       />
       {error ? (
@@ -53,7 +46,7 @@ export const Input: React.FC<InputProps> = ({
           {error}
         </Text>
       ) : helperText ? (
-        <Text className={`text-xs mt-1 ${isDark ? 'text-[#8FA3B8]' : 'text-slate-500'}`}>
+        <Text className="text-xs mt-2" style={{ color: colors.textSecondary }}>
           {helperText}
         </Text>
       ) : null}

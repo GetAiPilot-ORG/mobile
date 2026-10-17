@@ -183,15 +183,26 @@ export const VoiceScreen: React.FC = () => {
           shadowRadius: 4,
         }}
       >
-        <View className="flex-row items-center justify-between w-full max-w-[1100px] self-center">
-          <View className="flex-row items-center flex-1 mr-2">
-            <Pressable
-              onPress={handleBack}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              className="w-9 h-9 rounded-full justify-center items-center mr-3 active:opacity-70 active:scale-95 bg-white/15"
-              style={{ borderWidth: 0 }}
-              accessibilityRole="button"
-              accessibilityLabel="Back"
+        <View className="flex-row items-center gap-1.5">
+          <Pressable
+            onPress={handleBack}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            className="w-10 h-10 rounded-full justify-center items-center mr-2 active:opacity-70 active:scale-95 shadow-xs"
+            style={{
+              backgroundColor: isDark ? "#252230" : "#FFFFFF",
+            }}
+          >
+            <Ionicons
+              name="chevron-back"
+              size={20}
+              color={colors.text}
+            />
+          </Pressable>
+
+          <View className="justify-center">
+            <Text
+              className="text-xl font-semibold tracking-tight"
+              style={{ color: colors.text }}
             >
               <Ionicons
                 name="chevron-back"

@@ -1,21 +1,12 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ProductActions,ProductButton,ProductEmpty,ProductHeading,ProductMetrics,ProductRow,ProductSection,useProductPalette } from "@/components/ProductUI";
+import { useTheme } from "@/theme";
+import { useQuery,useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { Bot, Database, Megaphone, Phone, PhoneCall } from "lucide-react-native";
+import React from "react";
 import {
-  Bot,
-  Database,
-  Megaphone,
-  Phone,
-  PhoneCall,
-  Sparkles,
-  Zap,
-} from "lucide-react-native";
-import React, { useEffect, useRef } from "react";
-import {
-  Animated,
-  Easing,
   Platform,
   Pressable,
   RefreshControl,
@@ -23,8 +14,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { useTheme, getColors } from "@/theme";
-import { VoiceOverview, voiceApi } from "../api/voiceApi";
+import { VoiceOverview,voiceApi } from "../api/voiceApi";
 import { VoicePlanExpiredBanner } from "../components";
 import { openVoiceWebBilling } from "../utils/voiceBilling";
 
@@ -432,11 +422,9 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
   onOpenCreateCampaign,
   onOpenCreateAssistant,
 }) => {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const { isDark } = useTheme();
   const themeColors = getColors(isDark);
-
   const {
     data = EMPTY,
     isLoading,
@@ -460,16 +448,13 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
   const colors = {
     ...themeColors,
     background: themeColors.background,
-    surface: isDark ? "#1A1528" : "#FFFFFF",
+    surface: themeColors.card,
     surfaceAlt: themeColors.surfaceSecondary,
     border: themeColors.border,
     text: themeColors.text,
     textSecondary: themeColors.textMuted,
-    primary: themeColors.products?.voice || "#A855F7",
-    primaryDark: themeColors.products?.voiceDark || "#7E22CE",
-    primaryLight:
-      themeColors.products?.voiceSoft ||
-      (isDark ? "rgba(168, 85, 247, 0.16)" : "#F3E8FF"),
+    primary: themeColors.products?.voice || "#5B3AF5",
+    primaryLight: themeColors.products?.voiceSoft || (isDark ? "rgba(91, 58, 245, 0.2)" : "#EDE9FE"),
     green: themeColors.success,
     greenLight: themeColors.successSoft,
     chevron: themeColors.iconMuted,
@@ -498,8 +483,8 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
       style={{ backgroundColor: colors.background }}
       contentContainerStyle={{
         paddingHorizontal: 16,
-        paddingTop: 12,
-        paddingBottom: 180,
+        paddingTop: 8,
+        paddingBottom: 130,
         gap: 16,
         width: "100%",
       }}
@@ -508,46 +493,25 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
           refreshing={isRefetching}
           onRefresh={() => {
             refetch();
-            queryClient.invalidateQueries({
-              queryKey: ["voice", "assistants"],
-            });
+            queryClient.invalidateQueries({ queryKey: ["voice", "assistants"] });
             queryClient.invalidateQueries({ queryKey: ["voice", "numbers"] });
           }}
-          tintColor={isDark ? "#C084FC" : colors.primary}
+          tintColor={isDark ? "#FFFFFF" : colors.primary}
         />
       }
       showsVerticalScrollIndicator={false}
     >
-      {/* 1. TELEPHONY TELEMETRY STATUS RIBBON */}
-      <View
-        className="flex-row items-center justify-between px-3.5 py-2.5 rounded-2xl"
-        style={{
-          backgroundColor: isDark ? "#171224" : "#F5F3FF",
-          borderWidth: 0,
-        }}
-      >
-        <View className="flex-row items-center gap-2 flex-1 mr-2">
-          <LivePulseDot color="#10B981" />
-          <View className="flex-1">
-            <Text
-              className="text-[11px] font-extrabold uppercase tracking-wider"
-              style={{ color: isDark ? "#C084FC" : "#6B21A8" }}
-              numberOfLines={1}
-            >
-              Telecom Cloud Ready
-            </Text>
-            <Text
-              className="text-[10px] font-medium"
-              style={{ color: colors.textSecondary }}
-              numberOfLines={1}
-            >
-              Autonomous Inbound & Outbound AI Telephony
-            </Text>
-          </View>
-        </View>
-
-        {/* Live Audio Telemetry Animation */}
-        <VoiceSoundwaveAnimation color={isDark ? "#C084FC" : "#7E22CE"} />
+      {/* 1. EXECUTIVE PULSE BRIEFING TITLE */}
+      <View className="pt-0.5 gap-1 w-full">
+        <Text
+          className="text-2xl font-extrabold tracking-tight"
+          style={{ color: colors.text }}
+        >
+          Executive Pulse Briefing
+        </Text>
+        <Text className="text-sm font-medium" style={{ color: colors.textSecondary }}>
+          Your AI voice workforce is active and ready.
+        </Text>
       </View>
 
       {/* EXPIRED PLAN NOTICE BANNER */}
@@ -558,114 +522,88 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
         />
       )}
 
-      {/* 2. EXECUTIVE VOICE BALANCE & FLEET HERO CARD */}
+
+      {/* 2. TOP HERO GRADIENT CARD */}
       <LinearGradient
-        colors={
-          isDark
-            ? ["#261947", "#1A1033", "#120B24"]
-            : ["#581C87", "#4C1D95", "#3B0764"]
-        }
+        colors={["#5844E3", "#5136EE", "#3B50DF"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        className="w-full rounded-2xl p-4 sm:p-5 shadow-lg overflow-hidden relative"
-        style={{
-          borderRadius: 20,
-          borderWidth: 0,
-          elevation: 4,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.2,
-          shadowRadius: 8,
-        }}
+        className="w-full rounded-2xl p-4 sm:p-5 shadow-md shadow-indigo-500/20"
+        style={{ borderRadius: 16 }}
       >
-        {/* Subtle Watermark Accent */}
-        <View className="absolute -bottom-4 -right-4 opacity-10">
-          <Ionicons name="call" size={130} color="#FFFFFF" />
-        </View>
-
-        {/* Top Header Row in Card */}
-        <View className="flex-row items-center justify-between mb-3">
-          <View className="flex-row items-center gap-1.5 bg-white/15 px-2.5 py-1 rounded-full">
-            <Ionicons name="flash" size={12} color="#FDE047" />
-            <Text className="text-[10.5px] font-extrabold text-white uppercase tracking-wider">
-              AI Voice Minutes Pool
-            </Text>
-          </View>
-
+        <View className="flex-row items-center justify-between">
+          {/* Active Campaigns */}
           <Pressable
-            className="flex-row items-center gap-1 bg-white/20 active:opacity-75 px-3 py-1 rounded-xl"
-            onPress={() => {
-              if (Platform.OS !== "web") {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              openVoiceWebBilling(queryClient, isDark);
-            }}
-          >
-            <Ionicons name="add-circle-outline" size={14} color="#FFFFFF" />
-            <Text className="text-xs font-bold text-white">+ Add Minutes</Text>
-          </Pressable>
-        </View>
-
-        {/* Balance Metric */}
-        <View className="mb-4">
-          <View className="flex-row items-baseline gap-1.5">
-            <Text
-              className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight"
-              numberOfLines={1}
-            >
-              {rawMinutes.toLocaleString()}
-            </Text>
-            <Text className="text-base font-bold text-purple-200">
-              Minutes
-            </Text>
-          </View>
-          <Text className="text-xs text-purple-200/80 font-medium mt-1">
-            Available for live telecalling campaigns & inbound agent handling
-          </Text>
-        </View>
-
-        {/* Fleet Status Interactive Chips Row */}
-        <View
-          className="flex-row items-center gap-2 pt-3 border-t border-white/15"
-          style={{ borderTopWidth: 1, borderTopColor: "rgba(255, 255, 255, 0.15)" }}
-        >
-          {/* Active Campaigns Chip */}
-          <Pressable
-            className="flex-1 flex-row items-center justify-between bg-white/10 active:opacity-75 px-3 py-2 rounded-xl"
+            className="flex-1 flex-row items-center gap-3 active:opacity-80 p-4"
+            style={{ minWidth: 0 }}
             onPress={() => navigate("campaigns")}
           >
-            <View className="flex-row items-center gap-2 flex-1 min-w-0">
-              <Ionicons name="megaphone-outline" size={15} color="#FDE047" />
+            <View className="w-10 h-10 rounded-xl bg-white/15 items-center justify-center shrink-0">
+              <Ionicons
+                name="megaphone-outline"
+                size={20}
+                color="#FFFFFF"
+              />
+            </View>
+
+            <View className="flex-1" style={{ minWidth: 0 }}>
               <Text
-                className="text-xs font-bold text-white"
+                className="text-white text-base font-extrabold tracking-tight"
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
+                {activeCampaignsCount} Active
+              </Text>
+
+              <Text
+                className="text-white/80 text-xs font-medium mt-0.5"
                 numberOfLines={1}
               >
-                {activeCampaignsCount} Active Run
+                Campaigns
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={13} color="rgba(255,255,255,0.7)" />
           </Pressable>
 
-          {/* Virtual Phone Lines Chip */}
+          {/* Divider */}
+          <View className="w-px h-10 bg-white/20 mx-3 shrink-0" />
+
+          {/* AI Voice Balance */}
           <Pressable
-            className="flex-1 flex-row items-center justify-between bg-white/10 active:opacity-75 px-3 py-2 rounded-xl"
-            onPress={() => navigate("contacts")}
+            className="flex-1 flex-row items-center gap-3 active:opacity-80 p-4"
+            style={{ minWidth: 0 }}
+            onPress={() => openVoiceWebBilling(queryClient, isDark)}
           >
-            <View className="flex-row items-center gap-2 flex-1 min-w-0">
-              <Ionicons name="call-outline" size={15} color="#A7F3D0" />
+            <View className="w-10 h-10 rounded-xl bg-white/15 items-center justify-center shrink-0">
+              <Ionicons
+                name="flash-outline"
+                size={20}
+                color="#FFFFFF"
+              />
+            </View>
+
+            <View className="flex-1" style={{ minWidth: 0 }}>
               <Text
-                className="text-xs font-bold text-white"
+                className="text-white text-base font-extrabold tracking-tight"
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
+                {rawMinutes.toLocaleString()} Mins
+              </Text>
+
+              <Text
+                className="text-white/80 text-xs font-medium mt-0.5"
                 numberOfLines={1}
               >
-                {data?.totalNumbersCount ?? numbers.length} Phone Lines
+                AI Voice Balance
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={13} color="rgba(255,255,255,0.7)" />
           </Pressable>
         </View>
       </LinearGradient>
 
-      {/* 3. 2x2 CORE TELEPHONY METRICS (Clean & Borderless) */}
+      {/* 3. 2x2 METRICS GRID */}
       <View className="w-full gap-3">
         {/* Row 1: AI Assistants & Dedicated Phone Lines */}
         <View className="flex-row gap-3 w-full">
@@ -673,40 +611,24 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
           <View className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
             <Pressable
               onPress={() => {
-                if (Platform.OS !== "web") {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 if (onOpenCreateAssistant) {
                   onOpenCreateAssistant();
                 }
               }}
-              className="rounded-2xl p-3.5 justify-between active:opacity-80 min-h-[96px]"
+              className="rounded-2xl p-3.5 justify-between active:opacity-75 shadow-xs min-h-[92px]"
               style={{
                 backgroundColor: colors.surface,
-                borderWidth: 0,
-                elevation: 2,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: isDark ? 0.25 : 0.05,
-                shadowRadius: 4,
               }}
             >
               <View className="flex-row items-center justify-between mb-2">
                 <View
-                  className="w-9 h-9 rounded-xl items-center justify-center shrink-0"
-                  style={{
-                    backgroundColor: isDark
-                      ? "rgba(168, 85, 247, 0.18)"
-                      : "#F3E8FF",
-                  }}
+                  className="w-8 h-8 rounded-xl items-center justify-center shrink-0"
+                  style={{ backgroundColor: colors.primaryLight }}
                 >
-                  <Bot size={18} color={isDark ? "#C084FC" : "#7E22CE"} strokeWidth={2.2} />
+                  <Bot size={17} color={colors.primary} strokeWidth={2.2} />
                 </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={14}
-                  color={colors.chevron}
-                />
+                <Ionicons name="chevron-forward" size={14} color={colors.chevron} />
               </View>
               <View>
                 <Text
@@ -717,11 +639,11 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
                   {totalAssistantsCount}
                 </Text>
                 <Text
-                  className="text-xs font-semibold mt-0.5"
+                  className="text-xs font-medium mt-0.5"
                   style={{ color: colors.textSecondary }}
                   numberOfLines={1}
                 >
-                  AI Voice Assistants
+                  AI Assistants
                 </Text>
               </View>
             </Pressable>
@@ -731,37 +653,23 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
           <View className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
             <Pressable
               onPress={() => navigate("contacts")}
-              className="rounded-2xl p-3.5 justify-between active:opacity-80 min-h-[96px]"
+              className="rounded-2xl p-3.5 justify-between active:opacity-75 shadow-xs min-h-[92px]"
               style={{
                 backgroundColor: colors.surface,
-                borderWidth: 0,
-                elevation: 2,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: isDark ? 0.25 : 0.05,
-                shadowRadius: 4,
               }}
             >
               <View className="flex-row items-center justify-between mb-2">
                 <View
-                  className="w-9 h-9 rounded-xl items-center justify-center shrink-0"
+                  className="w-8 h-8 rounded-xl items-center justify-center shrink-0"
                   style={{
                     backgroundColor: isDark
-                      ? "rgba(99, 102, 241, 0.18)"
+                      ? "rgba(99, 102, 241, 0.15)"
                       : "#EEF2FF",
                   }}
                 >
-                  <PhoneCall
-                    size={18}
-                    color={isDark ? "#818CF8" : "#4F46E5"}
-                    strokeWidth={2.2}
-                  />
+                  <PhoneCall size={17} color="#6366F1" strokeWidth={2.2} />
                 </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={14}
-                  color={colors.chevron}
-                />
+                <Ionicons name="chevron-forward" size={14} color={colors.chevron} />
               </View>
               <View>
                 <Text
@@ -772,54 +680,40 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
                   {data?.totalNumbersCount ?? numbers.length}
                 </Text>
                 <Text
-                  className="text-xs font-semibold mt-0.5"
+                  className="text-xs font-medium mt-0.5"
                   style={{ color: colors.textSecondary }}
                   numberOfLines={1}
                 >
-                  Phone Numbers
+                  Phone Lines
                 </Text>
               </View>
             </Pressable>
           </View>
         </View>
 
-        {/* Row 2: Total Calls & Active Campaigns */}
+        {/* Row 2: Total Calls & Voice Wallet */}
         <View className="flex-row gap-3 w-full">
           {/* Card 3: Total Calls */}
           <View className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
             <Pressable
               onPress={() => navigate("calls")}
-              className="rounded-2xl p-3.5 justify-between active:opacity-80 min-h-[96px]"
+              className="rounded-2xl p-3.5 justify-between active:opacity-75 shadow-xs min-h-[92px]"
               style={{
                 backgroundColor: colors.surface,
-                borderWidth: 0,
-                elevation: 2,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: isDark ? 0.25 : 0.05,
-                shadowRadius: 4,
               }}
             >
               <View className="flex-row items-center justify-between mb-2">
                 <View
-                  className="w-9 h-9 rounded-xl items-center justify-center shrink-0"
+                  className="w-8 h-8 rounded-xl items-center justify-center shrink-0"
                   style={{
                     backgroundColor: isDark
-                      ? "rgba(14, 165, 233, 0.18)"
+                      ? "rgba(14, 165, 233, 0.15)"
                       : "#E0F2FE",
                   }}
                 >
-                  <Phone
-                    size={18}
-                    color={isDark ? "#38BDF8" : "#0284C7"}
-                    strokeWidth={2.2}
-                  />
+                  <Phone size={17} color="#0EA5E9" strokeWidth={2.2} />
                 </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={14}
-                  color={colors.chevron}
-                />
+                <Ionicons name="chevron-forward" size={14} color={colors.chevron} />
               </View>
               <View>
                 <Text
@@ -830,65 +724,51 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
                   {totalCallsCount}
                 </Text>
                 <Text
-                  className="text-xs font-semibold mt-0.5"
+                  className="text-xs font-medium mt-0.5"
                   style={{ color: colors.textSecondary }}
                   numberOfLines={1}
                 >
-                  Calls Dispatched
+                  Total Calls
                 </Text>
               </View>
             </Pressable>
           </View>
 
-          {/* Card 4: Campaigns Log */}
+          {/* Card 4: Wallet Status */}
           <View className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
             <Pressable
-              onPress={() => navigate("campaigns")}
-              className="rounded-2xl p-3.5 justify-between active:opacity-80 min-h-[96px]"
+              onPress={() => openVoiceWebBilling(queryClient, isDark)}
+              className="rounded-2xl p-3.5 justify-between active:opacity-75 shadow-xs min-h-[92px]"
               style={{
                 backgroundColor: colors.surface,
-                borderWidth: 0,
-                elevation: 2,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: isDark ? 0.25 : 0.05,
-                shadowRadius: 4,
               }}
             >
               <View className="flex-row items-center justify-between mb-2">
                 <View
-                  className="w-9 h-9 rounded-xl items-center justify-center shrink-0"
+                  className="w-8 h-8 rounded-xl items-center justify-center shrink-0"
                   style={{
                     backgroundColor: isDark
-                      ? "rgba(16, 185, 129, 0.18)"
+                      ? "rgba(16, 185, 129, 0.15)"
                       : "#DCFCE7",
                   }}
                 >
-                  <Megaphone
-                    size={18}
-                    color={isDark ? "#34D399" : "#059669"}
-                    strokeWidth={2.2}
-                  />
+                  <Database size={17} color={colors.green} strokeWidth={2.2} />
                 </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={14}
-                  color={colors.chevron}
-                />
+                <Ionicons name="chevron-forward" size={14} color={colors.chevron} />
               </View>
               <View>
                 <Text
                   className="text-2xl font-extrabold tracking-tight text-emerald-500"
                   numberOfLines={1}
                 >
-                  {activeCampaignsCount}
+                  {rawMinutes.toLocaleString()}
                 </Text>
                 <Text
-                  className="text-xs font-semibold mt-0.5"
+                  className="text-xs font-medium mt-0.5"
                   style={{ color: colors.textSecondary }}
                   numberOfLines={1}
                 >
-                  Voice Campaigns
+                  AI Mins Balance
                 </Text>
               </View>
             </Pressable>
@@ -896,245 +776,159 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
         </View>
       </View>
 
-      {/* 4. AI VOICE ENGINE LIVE TELEMETRY & SPEECH VISUALIZER */}
-      <View
-        className="w-full rounded-2xl p-4 overflow-hidden"
-        style={{
-          backgroundColor: isDark ? "#171224" : "#FAF5FF",
-          borderWidth: 0,
-          elevation: 1,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: isDark ? 0.2 : 0.04,
-          shadowRadius: 4,
-        }}
-      >
-        <View className="flex-row items-center justify-between mb-3">
-          <View className="flex-row items-center gap-2">
-            <LivePulseDot color="#10B981" />
-            <Text
-              className="text-xs font-extrabold uppercase tracking-wider"
-              style={{ color: isDark ? "#E9D5FF" : "#6B21A8" }}
-            >
-              Real-Time Speech Engine
-            </Text>
-          </View>
-          <View className="flex-row items-center gap-2">
-            <TelemetryWaveSpectrum isDark={isDark} />
-            <View
-              className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-full"
-              style={{
-                backgroundColor: isDark
-                  ? "rgba(16, 185, 129, 0.18)"
-                  : "#DCFCE7",
-              }}
-            >
-              <View className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <Text className="text-[10.5px] font-bold text-emerald-600 dark:text-emerald-400">
-                99.9% Uptime
-              </Text>
-            </View>
-          </View>
-        </View>
+      {/* 4. QUICK ACTIONS SECTION */}
+      <View className="gap-2 w-full">
+        <Text
+          className="text-xs font-bold tracking-wider uppercase px-1"
+          style={{ color: colors.textSecondary }}
+        >
+          Quick Actions
+        </Text>
 
-        {/* 3 Telemetry Metrics Strip */}
-        <View className="flex-row items-center justify-between gap-2 pt-1">
-          <View className="flex-1 items-center px-1">
-            <Text
-              className="text-[11px] font-semibold"
-              style={{ color: colors.textSecondary }}
-            >
-              Avg Latency
-            </Text>
-            <Text
-              className="text-sm font-extrabold mt-0.5"
-              style={{ color: isDark ? "#34D399" : "#059669" }}
-            >
-              ~340ms
-            </Text>
-            <Text
-              className="text-[10px] font-medium"
-              style={{ color: colors.textSecondary }}
-            >
-              Ultra-low streaming
-            </Text>
-          </View>
-
-          <View
+        <View className="flex-col gap-2.5">
+          {/* Action 1: Create Assistant */}
+          <Pressable
+            className="flex-row items-center justify-between w-full p-3.5 rounded-2xl active:opacity-80 shadow-xs"
             style={{
-              width: 1,
-              height: 28,
-              backgroundColor: isDark
-                ? "rgba(255, 255, 255, 0.08)"
-                : "rgba(0, 0, 0, 0.06)",
+              backgroundColor: colors.surface,
             }}
-          />
-
-          <View className="flex-1 items-center px-1">
-            <Text
-              className="text-[11px] font-semibold"
-              style={{ color: colors.textSecondary }}
-            >
-              Audio Fidelity
-            </Text>
-            <Text
-              className="text-sm font-extrabold mt-0.5"
-              style={{ color: isDark ? "#C084FC" : "#7E22CE" }}
-            >
-              48 kHz
-            </Text>
-            <Text
-              className="text-[10px] font-medium"
-              style={{ color: colors.textSecondary }}
-            >
-              Dual-Channel HD
-            </Text>
-          </View>
-
-          <View
-            style={{
-              width: 1,
-              height: 28,
-              backgroundColor: isDark
-                ? "rgba(255, 255, 255, 0.08)"
-                : "rgba(0, 0, 0, 0.06)",
-            }}
-          />
-
-          <View className="flex-1 items-center px-1">
-            <Text
-              className="text-[11px] font-semibold"
-              style={{ color: colors.textSecondary }}
-            >
-              Telephony Link
-            </Text>
-            <Text
-              className="text-sm font-extrabold mt-0.5"
-              style={{ color: isDark ? "#60A5FA" : "#2563EB" }}
-            >
-              SIP / WebRTC
-            </Text>
-            <Text
-              className="text-[10px] font-medium"
-              style={{ color: colors.textSecondary }}
-            >
-              Carrier Trunking
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* 5. EXECUTIVE ORCHESTRATION ACTIONS */}
-      <View className="gap-2.5 w-full">
-        <View className="flex-row items-center justify-between px-1">
-          <Text
-            className="text-xs font-bold tracking-wider uppercase"
-            style={{ color: colors.textSecondary }}
-          >
-            Orchestration & Telephony Actions
-          </Text>
-          <Text
-            className="text-[11px] font-semibold"
-            style={{ color: isDark ? "#C084FC" : "#7E22CE" }}
-          >
-            4 Quick Actions
-          </Text>
-        </View>
-
-        <View className="flex-col gap-3">
-          {/* Action 1: Trigger Outbound Test Call */}
-          <TactileActionCard
-            icon={<Ionicons name="call" size={20} color="#FFFFFF" />}
-            iconGradient={["#10B981", "#059669"]}
-            title="Test Voice Agent Call"
-            badgeText="Live Dial"
-            badgeBg={isDark ? "rgba(16, 185, 129, 0.2)" : "#DCFCE7"}
-            badgeTextColor={isDark ? "#34D399" : "#059669"}
-            description="Trigger an instant outbound test call to your mobile number with live agent speech"
-            tags={["Direct Phone", "<380ms Latency"]}
-            actionLabel="Test Call"
-            accentColor="#10B981"
-            isDark={isDark}
-            surfaceColor={colors.surface}
-            textColor={colors.text}
-            textSecondary={colors.textSecondary}
             onPress={() => {
-              if (onOpenTriggerCall) {
-                onOpenTriggerCall(assistants[0]?.id);
-              } else {
-                navigate("calls");
-              }
-            }}
-          />
-
-          {/* Action 2: Create Assistant */}
-          <TactileActionCard
-            icon={<Bot size={20} color="#FFFFFF" strokeWidth={2.2} />}
-            iconGradient={["#A855F7", "#7E22CE"]}
-            title="Create Voice Agent"
-            badgeText="AI Studio"
-            badgeBg={isDark ? "rgba(168, 85, 247, 0.2)" : "#F3E8FF"}
-            badgeTextColor={isDark ? "#C084FC" : "#7E22CE"}
-            description="Configure LLM instructions, conversational persona, voice tone & telephony rules"
-            tags={["Custom Knowledge", "Multi-LLM"]}
-            actionLabel="Build"
-            accentColor={isDark ? "#C084FC" : "#7E22CE"}
-            isDark={isDark}
-            surfaceColor={colors.surface}
-            textColor={colors.text}
-            textSecondary={colors.textSecondary}
-            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               if (onOpenCreateAssistant) {
                 onOpenCreateAssistant();
               } else {
                 navigate("overview");
               }
             }}
-          />
+          >
+            <View className="flex-row items-center gap-3 flex-1 mr-2 min-w-0">
+              <View
+                className="w-10 h-10 rounded-xl items-center justify-center shrink-0"
+                style={{ backgroundColor: colors.primaryLight }}
+              >
+                <Bot size={20} color={colors.primary} strokeWidth={2.2} />
+              </View>
+              <View className="flex-1 min-w-0">
+                <Text
+                  className="text-[15px] font-bold tracking-tight"
+                  style={{ color: colors.text }}
+                  numberOfLines={1}
+                >
+                  Create Assistant
+                </Text>
+                <Text
+                  className="text-xs mt-0.5"
+                  style={{ color: colors.textSecondary }}
+                  numberOfLines={1}
+                >
+                  Configure AI voice persona & instructions
+                </Text>
+              </View>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={colors.chevron}
+            />
+          </Pressable>
 
-          {/* Action 3: Start Campaign */}
-          <TactileActionCard
-            icon={<Ionicons name="play" size={19} color="#FFFFFF" style={{ marginLeft: 2 }} />}
-            iconGradient={["#6366F1", "#4F46E5"]}
-            title="Launch Voice Campaign"
-            badgeText="Auto-Dialer"
-            badgeBg={isDark ? "rgba(99, 102, 241, 0.2)" : "#EEF2FF"}
-            badgeTextColor={isDark ? "#818CF8" : "#4F46E5"}
-            description="Broadcast automated conversational telecalling campaigns to your targeted contact lists"
-            tags={["Contact Lists", "Auto-Dialer"]}
-            actionLabel="Launch"
-            accentColor="#6366F1"
-            isDark={isDark}
-            surfaceColor={colors.surface}
-            textColor={colors.text}
-            textSecondary={colors.textSecondary}
+          {/* Action 2: Start Campaign */}
+          <Pressable
+            className="flex-row items-center justify-between w-full p-3.5 rounded-2xl active:opacity-80 shadow-xs"
+            style={{
+              backgroundColor: colors.surface,
+            }}
             onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               if (onOpenCreateCampaign) {
                 onOpenCreateCampaign();
               } else {
                 navigate("campaigns");
               }
             }}
-          />
+          >
+            <View className="flex-row items-center gap-3 flex-1 mr-2 min-w-0">
+              <View
+                className="w-10 h-10 rounded-xl items-center justify-center shrink-0"
+                style={{
+                  backgroundColor: isDark
+                    ? "rgba(16, 185, 129, 0.15)"
+                    : "#DCFCE7",
+                }}
+              >
+                <Ionicons
+                  name="play"
+                  size={18}
+                  color="#10B981"
+                  style={{ marginLeft: 2 }}
+                />
+              </View>
+              <View className="flex-1 min-w-0">
+                <Text
+                  className="text-[15px] font-bold tracking-tight"
+                  style={{ color: colors.text }}
+                  numberOfLines={1}
+                >
+                  Start Campaign
+                </Text>
+                <Text
+                  className="text-xs mt-0.5"
+                  style={{ color: colors.textSecondary }}
+                  numberOfLines={1}
+                >
+                  Launch outbound telecalling to contacts
+                </Text>
+              </View>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={colors.chevron}
+            />
+          </Pressable>
 
-          {/* Action 4: View Call Logs */}
-          <TactileActionCard
-            icon={<Ionicons name="mic" size={20} color="#FFFFFF" />}
-            iconGradient={["#0EA5E9", "#0284C7"]}
-            title="Call Recordings & Transcripts"
-            badgeText="Audio & Sentiment"
-            badgeBg={isDark ? "rgba(14, 165, 233, 0.2)" : "#E0F2FE"}
-            badgeTextColor={isDark ? "#38BDF8" : "#0284C7"}
-            description="Listen to audio recordings, inspect turn-by-turn transcripts, sentiment & latency"
-            tags={["Audio Playback", "Sentiment AI"]}
-            actionLabel="Browse"
-            accentColor="#0EA5E9"
-            isDark={isDark}
-            surfaceColor={colors.surface}
-            textColor={colors.text}
-            textSecondary={colors.textSecondary}
+          {/* Action 3: View Call Logs */}
+          <Pressable
+            className="flex-row items-center justify-between w-full p-3.5 rounded-2xl active:opacity-80 shadow-xs"
+            style={{
+              backgroundColor: colors.surface,
+            }}
             onPress={() => navigate("calls")}
-          />
+          >
+            <View className="flex-row items-center gap-3 flex-1 mr-2 min-w-0">
+              <View
+                className="w-10 h-10 rounded-xl items-center justify-center shrink-0"
+                style={{
+                  backgroundColor: isDark
+                    ? "rgba(14, 165, 233, 0.15)"
+                    : "#E0F2FE",
+                }}
+              >
+                <Ionicons name="list" size={18} color="#0EA5E9" />
+              </View>
+              <View className="flex-1 min-w-0">
+                <Text
+                  className="text-[15px] font-bold tracking-tight"
+                  style={{ color: colors.text }}
+                  numberOfLines={1}
+                >
+                  View Call Logs
+                </Text>
+                <Text
+                  className="text-xs mt-0.5"
+                  style={{ color: colors.textSecondary }}
+                  numberOfLines={1}
+                >
+                  Review call transcripts and recordings
+                </Text>
+              </View>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={colors.chevron}
+            />
+          </Pressable>
         </View>
       </View>
     </ScrollView>

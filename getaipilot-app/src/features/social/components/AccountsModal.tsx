@@ -1,8 +1,9 @@
-import {
-  Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import React from 'react';
+import React, { useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   Modal,
   Platform,
@@ -12,13 +13,14 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useTheme, getColors } from '@/theme';
+import { useTheme } from '@/theme';
 
 interface AccountsModalProps {
   visible: boolean;
   accounts: any;
   onClose: () => void;
   onDisconnect?: (provider: string, accountId?: string) => Promise<void>;
+  onOpenConnectModal?: () => void;
   isLoading?: boolean;
 }
 
@@ -27,9 +29,10 @@ export const AccountsModal: React.FC<AccountsModalProps> = ({
   accounts,
   onClose,
   onDisconnect,
+  onOpenConnectModal,
 }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
+  const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
 
   if (!visible) return null;
 
@@ -48,13 +51,54 @@ export const AccountsModal: React.FC<AccountsModalProps> = ({
   }
 
   const getProviderIcon = (provider: string) => {
-    const p = provider.toLowerCase();
-    if (p.includes('instagram')) return { icon: 'logo-instagram', color: '#EC4899' };
-    if (p.includes('youtube')) return { icon: 'logo-youtube', color: '#EF4444' };
-    if (p.includes('facebook')) return { icon: 'logo-facebook', color: '#3B82F6' };
-    if (p.includes('twitter') || p.includes('x')) return { icon: 'logo-twitter', color: '#38BDF8' };
-    if (p.includes('linkedin')) return { icon: 'logo-linkedin', color: '#0A66C2' };
-    return { icon: 'globe-outline', color: '#8E8E93' };
+    const p = (provider || '').toLowerCase();
+    if (p.includes('instagram')) return { icon: 'logo-instagram' as const, color: '#EC4899' };
+    if (p.includes('threads')) return { icon: 'at-circle' as const, color: '#1C1A25' };
+    if (p.includes('youtube')) return { icon: 'logo-youtube' as const, color: '#EF4444' };
+    if (p.includes('facebook')) return { icon: 'logo-facebook' as const, color: '#3B82F6' };
+    if (p.includes('twitter') || p.includes('x')) return { icon: 'logo-twitter' as const, color: '#38BDF8' };
+    if (p.includes('linkedin')) return { icon: 'logo-linkedin' as const, color: '#0A66C2' };
+    if (p.includes('bluesky')) return { icon: 'cloudy' as const, color: '#0285FF' };
+    if (p.includes('mastodon')) return { icon: 'logo-mastodon' as const, color: '#6364FF' };
+    if (p.includes('reddit')) return { icon: 'logo-reddit' as const, color: '#FF4500' };
+    if (p.includes('google')) return { icon: 'business-outline' as const, color: '#4285F4' };
+    if (p.includes('pinterest')) return { icon: 'logo-pinterest' as const, color: '#E60023' };
+    return { icon: 'globe-outline' as const, color: '#8E8E93' };
+  };
+
+  const handleDisconnectPress = (acc: any, username: string, provider: string) => {
+    const accountId = acc.id || acc.accountId || acc.account_id || acc.pageId || acc.page_id;
+    const targetKey = accountId || provider;
+
+    const executeDisconnect = async () => {
+      if (!onDisconnect) return;
+      try {
+        setDisconnectingId(targetKey);
+        if (Platform.OS !== 'web') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }
+        await onDisconnect(provider, accountId);
+      } catch (err: any) {
+        Alert.alert('Disconnect Failed', err?.message || 'Could not disconnect channel. Please try again.');
+      } finally {
+        setDisconnectingId(null);
+      }
+    };
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      if (window.confirm(`Are you sure you want to disconnect ${username} (${provider.toUpperCase()})?`)) {
+        executeDisconnect();
+      }
+    } else {
+      Alert.alert(
+        'Disconnect Channel',
+        `Are you sure you want to disconnect ${username} (${provider.toUpperCase()})?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Disconnect', style: 'destructive', onPress: executeDisconnect },
+        ]
+      );
+    }
   };
 
   return (
@@ -81,7 +125,7 @@ export const AccountsModal: React.FC<AccountsModalProps> = ({
               style={styles.closeBtn}
               hitSlop={8}
             >
-              <Ionicons name="close" size={20} color={isDark ? '#94A3B8' : '#64748B'} />
+              <Ionicons name="close" size={20} color={isDark ? '#777383' : '#64748B'} />
             </Pressable>
           </View>
 
@@ -93,62 +137,118 @@ export const AccountsModal: React.FC<AccountsModalProps> = ({
                   No active channels connected
                 </Text>
                 <Text style={[styles.emptySub, { color: isDark ? '#8E8E93' : '#64748B' }]}>
-                  Connect Instagram, YouTube, Facebook, LinkedIn or X on the GetAiPilot web portal.
+                  Connect your Instagram, Threads, YouTube, Facebook, LinkedIn or X channels to start broadcasting.
                 </Text>
+                {onOpenConnectModal && (
+                  <Pressable
+                    onPress={() => {
+                      onClose();
+                      onOpenConnectModal();
+                    }}
+                    style={styles.emptyConnectBtn}
+                  >
+                    <Ionicons name="add-circle-outline" size={18} color="#FFFFFF" />
+                    <Text style={styles.emptyConnectBtnText}>Connect a Channel</Text>
+                  </Pressable>
+                )}
               </View>
             ) : (
-              accountList.map((acc, index) => {
-                const isLive = acc.connected !== false;
-                const username = acc.username || acc.name || acc.channelTitle || 'Connected Account';
-                const provider = acc.provider || acc.platform || 'channel';
-                const followers = acc.followers || acc.subscriberCount;
-                const provInfo = getProviderIcon(provider);
+              <>
+                {accountList.map((acc, index) => {
+                  const isLive = acc.connected !== false;
+                  const username = acc.username || acc.name || acc.channelTitle || 'Connected Account';
+                  const provider = acc.provider || acc.platform || 'channel';
+                  const followers = acc.followers || acc.subscriberCount;
+                  const provInfo = getProviderIcon(provider);
+                  const accountId = acc.id || acc.accountId || acc.account_id || acc.pageId || acc.page_id;
+                  const targetKey = accountId || provider;
+                  const isDisconnectingThis = disconnectingId === targetKey;
 
-                return (
-                  <View
-                    key={index}
+                  return (
+                    <View
+                      key={index}
+                      style={[
+                        styles.accountCard,
+                        isDark ? styles.accountCardDark : styles.accountCardLight,
+                      ]}
+                    >
+                      <View style={styles.cardLeft}>
+                        {acc.profilePicture || acc.profile_picture_url || acc.thumbnailUrl ? (
+                          <Image
+                            source={{ uri: acc.profilePicture || acc.profile_picture_url || acc.thumbnailUrl }}
+                            style={styles.avatar}
+                          />
+                        ) : (
+                          <View style={[styles.avatarPlaceholder, { backgroundColor: provInfo.color }]}>
+                            <Text style={styles.avatarInitial}>{username[0]?.toUpperCase()}</Text>
+                          </View>
+                        )}
+                        <View style={styles.infoCol}>
+                          <View style={styles.nameRow}>
+                            <Text
+                              style={[styles.accountName, isDark ? styles.textLight : styles.textDark]}
+                              numberOfLines={1}
+                            >
+                              {username}
+                            </Text>
+                            <View
+                              style={[
+                                styles.liveDot,
+                                { backgroundColor: isLive ? '#22C55E' : '#EF4444' },
+                              ]}
+                            />
+                          </View>
+                          <Text style={[styles.providerSubText, { color: isDark ? '#8E8E93' : '#64748B' }]}>
+                            {provider.charAt(0).toUpperCase() + provider.slice(1).toLowerCase()}
+                            {followers != null ? ` • ${Number(followers).toLocaleString()} audience` : ''}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Disconnect Action Button */}
+                      {onDisconnect && (
+                        <Pressable
+                          onPress={() => handleDisconnectPress(acc, username, provider)}
+                          disabled={isDisconnectingThis}
+                          style={[
+                            styles.disconnectBtn,
+                            isDisconnectingThis && { opacity: 0.6 },
+                          ]}
+                          hitSlop={6}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Disconnect ${username}`}
+                        >
+                          {isDisconnectingThis ? (
+                            <ActivityIndicator size="small" color="#EF4444" />
+                          ) : (
+                            <View style={styles.disconnectInner}>
+                              <Ionicons name="trash-outline" size={14} color="#EF4444" />
+                              <Text style={styles.disconnectBtnText}>Disconnect</Text>
+                            </View>
+                          )}
+                        </Pressable>
+                      )}
+                    </View>
+                  );
+                })}
+
+                {/* In-Modal Connect Channel Prompt */}
+                {onOpenConnectModal && (
+                  <Pressable
+                    onPress={() => {
+                      onClose();
+                      onOpenConnectModal();
+                    }}
                     style={[
-                      styles.accountCard,
-                      isDark ? styles.accountCardDark : styles.accountCardLight,
+                      styles.addNewChannelRow,
+                      { borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)' },
                     ]}
                   >
-                    <View style={styles.cardLeft}>
-                      {acc.profilePicture || acc.profile_picture_url || acc.thumbnailUrl ? (
-                        <Image
-                          source={{ uri: acc.profilePicture || acc.profile_picture_url || acc.thumbnailUrl }}
-                          style={styles.avatar}
-                        />
-                      ) : (
-                        <View style={[styles.avatarPlaceholder, { backgroundColor: provInfo.color }]}>
-                          <Text style={styles.avatarInitial}>{username[0]?.toUpperCase()}</Text>
-                        </View>
-                      )}
-                      <View style={styles.infoCol}>
-                        <View style={styles.nameRow}>
-                          <Text
-                            style={[styles.accountName, isDark ? styles.textLight : styles.textDark]}
-                            numberOfLines={1}
-                          >
-                            {username}
-                          </Text>
-                          <View
-                            style={[
-                              styles.liveDot,
-                              { backgroundColor: isLive ? '#22C55E' : '#EF4444' },
-                            ]}
-                          />
-                        </View>
-                        <Text style={[styles.providerSubText, { color: isDark ? '#8E8E93' : '#64748B' }]}>
-                          {provider.charAt(0).toUpperCase() + provider.slice(1).toLowerCase()}
-                          {followers != null ? ` • ${Number(followers).toLocaleString()} audience` : ''}
-                        </Text>
-                      </View>
-                    </View>
-
-
-                  </View>
-                );
-              })
+                    <Ionicons name="add" size={18} color="#EC4899" />
+                    <Text style={styles.addNewChannelText}>Connect another channel</Text>
+                  </Pressable>
+                )}
+              </>
             )}
           </ScrollView>
 
@@ -179,25 +279,25 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalCard: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '80%',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    maxHeight: '85%',
     padding: 20,
-    borderWidth: 1,
+    borderWidth: 0,
     borderBottomWidth: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.1,
     shadowRadius: 16,
     elevation: 20,
   },
   modalCardDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#2C2C2E',
+    backgroundColor: '#1E1B28',
+    borderColor: '#3A3549',
   },
   modalCardLight: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E5E7EB',
+    borderColor: '#E9E6F2',
   },
   header: {
     flexDirection: 'row',
@@ -218,9 +318,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 17,
+    fontSize: 20,
     fontWeight: '700',
-    letterSpacing: -0.3,
+    letterSpacing: -0.4,
   },
   closeBtn: {
     width: 32,
@@ -230,64 +330,77 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   scrollBody: {
-    maxHeight: 380,
+    maxHeight: 420,
   },
   emptyWrap: {
     paddingVertical: 36,
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
   emptyText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     marginTop: 6,
   },
   emptySub: {
-    fontSize: 12.5,
+    fontSize: 13.5,
     textAlign: 'center',
     paddingHorizontal: 20,
-    lineHeight: 18,
+    lineHeight: 19,
+  },
+  emptyConnectBtn: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#EC4899',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  emptyConnectBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   accountCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: 1,
+    padding: 14,
+    borderRadius: 20,
     marginBottom: 10,
   },
   accountCardDark: {
-    backgroundColor: '#121214',
-    borderColor: '#2C2C2E',
+    backgroundColor: '#272335',
   },
   accountCardLight: {
-    backgroundColor: '#F8F9FA',
-    borderColor: '#E5E7EB',
+    backgroundColor: '#F7F5FC',
   },
   cardLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     flex: 1,
+    marginRight: 10,
   },
   avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.12)',
   },
   avatarPlaceholder: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarInitial: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
   infoCol: {
@@ -301,32 +414,62 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   accountName: {
-    fontSize: 14.5,
+    fontSize: 15,
     fontWeight: '600',
     letterSpacing: -0.2,
   },
   liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
   },
   providerSubText: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '500',
   },
   disconnectBtn: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 10,
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  disconnectInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  disconnectBtnText: {
+    color: '#EF4444',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  addNewChannelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    marginTop: 6,
+    marginBottom: 10,
+  },
+  addNewChannelText: {
+    color: '#EC4899',
+    fontSize: 13.5,
+    fontWeight: '600',
   },
   footer: {
-    marginTop: 14,
-    paddingTop: 12,
+    marginTop: 12,
+    paddingTop: 8,
   },
   doneBtn: {
-    backgroundColor: '#0A84FF',
-    paddingVertical: 12,
-    borderRadius: 12,
+    backgroundColor: '#1C1A25',
+    paddingVertical: 13,
+    borderRadius: 16,
     alignItems: 'center',
   },
   doneBtnText: {
@@ -335,9 +478,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   textLight: {
-    color: '#F8FAFC',
+    color: '#F5F3FB',
   },
   textDark: {
-    color: '#0F172A',
+    color: '#1C1A25',
   },
 });

@@ -1,3 +1,4 @@
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import React, { useState } from 'react';
 import {
   LayoutAnimation,
@@ -11,10 +12,10 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useTheme, getColors } from '@/theme';
+import { TabMotion } from './TabMotion';
 
 export type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -40,14 +41,13 @@ export interface ProductFloatingBottomBarProps {
 }
 
 const tabSpringAnimation = {
-  duration: 260,
+  duration: 180,
   create: {
     type: LayoutAnimation.Types.easeInEaseOut,
     property: LayoutAnimation.Properties.opacity,
   },
   update: {
-    type: LayoutAnimation.Types.spring,
-    springDamping: 0.75,
+    type: LayoutAnimation.Types.easeInEaseOut,
   },
   delete: {
     type: LayoutAnimation.Types.easeInEaseOut,
@@ -69,6 +69,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+  const reducedMotion = useReducedMotion();
 
   const [isMoreModalVisible, setIsMoreModalVisible] = useState(false);
 
@@ -125,33 +126,23 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
     setIsMoreModalVisible(false);
-    LayoutAnimation.configureNext(tabSpringAnimation);
+    if (!reducedMotion) LayoutAnimation.configureNext(tabSpringAnimation);
     onChangeTab(key);
   };
 
   return (
     <View style={styles.dockRoot} pointerEvents="box-none">
+      {/* 2. Rounded navigation dock */}
       {/* 1. Full-bleed Bottom Frosted Backdrop that blurs all scrolled content behind it and fills the bottom screen area */}
-      <View
+      <Pressable
         style={[
           styles.backdropWrapper,
           {
             height: 56 + bottomOffset + 12,
           },
         ]}
-        pointerEvents="none"
+        disabled={true}
       >
-        <BlurView
-          intensity={Platform.OS === 'ios' ? 75 : 95}
-          tint={isDark ? 'dark' : 'light'}
-          experimentalBlurMethod="dimezisBlurView"
-          style={[
-            StyleSheet.absoluteFill,
-            Platform.OS === 'web'
-              ? ({ backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' } as any)
-              : undefined,
-          ]}
-        />
         <View
           style={[
             StyleSheet.absoluteFill,
@@ -166,7 +157,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
             },
           ]}
         />
-      </View>
+      </Pressable>
 
       {/* 2. Floating Pill Tab Bar with rounded frosted glassmorphism */}
       <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
@@ -174,29 +165,16 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
           style={[
             styles.tabBarContainer,
             {
-              borderColor: isDark
-                ? 'rgba(255, 255, 255, 0.12)'
-                : 'rgba(0, 0, 0, 0.08)',
+              backgroundColor: colors.card,
+              borderWidth: 0,
               shadowColor: '#000000',
               shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: isDark ? 0.45 : 0.12,
+              shadowOpacity: isDark ? 0.2 : 0.06,
               shadowRadius: 18,
-              elevation: 12,
+              elevation: 3,
             },
           ]}
         >
-          {/* Inner Blur on the Pill */}
-          <BlurView
-            intensity={Platform.OS === 'ios' ? 85 : 70}
-            tint={isDark ? 'dark' : 'light'}
-            experimentalBlurMethod="dimezisBlurView"
-            style={[
-              StyleSheet.absoluteFill,
-              Platform.OS === 'web'
-                ? ({ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' } as any)
-                : undefined,
-            ]}
-          />
           <View
             style={[
               StyleSheet.absoluteFill,
@@ -221,77 +199,75 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
               if (isMoreTab) {
                 setIsMoreModalVisible(true);
               } else {
-                LayoutAnimation.configureNext(tabSpringAnimation);
+                if (!reducedMotion) LayoutAnimation.configureNext(tabSpringAnimation);
                 onChangeTab(item.key);
               }
             };
 
-            if (isFocused) {
-              return (
-                <Pressable
-                  key={item.key}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: true }}
-                  onPress={onPress}
-                  style={[
-                    styles.activePill,
-                    { backgroundColor: activeColor },
-                  ]}
-                >
-                  <Ionicons
-                    name={iconName}
-                    size={19}
-                    color="#FFFFFF"
-                  />
-                  <Text
-                    style={styles.activeLabel}
-                    numberOfLines={1}
-                  >
-                    {isMoreTab && isOverflowActive
-                      ? overflowItems.find((o) => o.key === activeKey)?.label || item.label
-                      : item.label}
-                  </Text>
-                  {'badge' in item && item.badge ? (
-                    <View style={styles.badgePillActive}>
-                      <Text style={[styles.badgeTextActive, { color: activeColor }]}>
-                        {item.badge}
-                      </Text>
-                    </View>
-                  ) : null}
-                </Pressable>
-              );
-            }
-
             return (
-              <Pressable
-                key={item.key}
-                accessibilityRole="button"
-                accessibilityState={{ selected: false }}
-                onPress={onPress}
-                style={[
-                  styles.inactiveButton,
-                  {
-                    backgroundColor: isDark
-                      ? 'rgba(255, 255, 255, 0.07)'
-                      : 'rgba(0, 0, 0, 0.04)',
-                  },
-                ]}
-              >
-                <View style={styles.iconWrap}>
-                  <Ionicons
-                    name={iconName}
-                    size={20}
-                    color={colors.textMuted}
-                  />
-                  {'badge' in item && item.badge ? (
-                    <View style={[styles.badgeInactive, { backgroundColor: activeColor }]}>
-                      <Text style={styles.badgeTextInactive}>{item.badge}</Text>
+              <TabMotion key={item.key} active={isFocused}>
+                {isFocused ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: true }}
+                    accessibilityLabel={item.label}
+                    onPress={onPress}
+                    style={[
+                      styles.activePill,
+                      { backgroundColor: colors.accentSoft },
+                    ]}
+                  >
+                    <Ionicons
+                      name={iconName}
+                      size={19}
+                      color={colors.accent}
+                    />
+                    <Text
+                      style={[styles.activeLabel, { color: colors.accent }]}
+                      numberOfLines={1}
+                    >
+                      {isMoreTab && isOverflowActive
+                        ? overflowItems.find((o) => o.key === activeKey)?.label || item.label
+                        : item.label}
+                    </Text>
+                    {'badge' in item && item.badge ? (
+                      <View style={styles.badgePillActive}>
+                        <Text style={[styles.badgeTextActive, { color: activeColor }]}>
+                          {item.badge}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: false }}
+                    accessibilityLabel={item.label}
+                    onPress={onPress}
+                    style={[
+                      styles.inactiveButton,
+                      {
+                        backgroundColor: 'transparent',
+                      },
+                    ]}
+                  >
+                    <View style={styles.iconWrap}>
+                      <Ionicons
+                        name={iconName}
+                        size={20}
+                        color={colors.textMuted}
+                      />
+                      {'badge' in item && item.badge ? (
+                        <View style={[styles.badgeInactive, { backgroundColor: colors.accentSoft }]}>
+                          <Text style={[styles.badgeTextInactive, { color: colors.accent }]}>{item.badge}</Text>
+                        </View>
+                      ) : isMoreTab && isOverflowActive ? (
+                        <View style={[styles.moreActiveDot, { backgroundColor: colors.accentSoft }]} />
+                      ) : null}
                     </View>
-                  ) : isMoreTab && isOverflowActive ? (
-                    <View style={[styles.moreActiveDot, { backgroundColor: activeColor }]} />
-                  ) : null}
-                </View>
-              </Pressable>
+                  </Pressable>
+                )}
+              </TabMotion>
             );
           })}
         </View>
@@ -302,7 +278,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
         <Modal
           visible={isMoreModalVisible}
           transparent
-          animationType="fade"
+          animationType={reducedMotion ? "none" : "fade"}
           onRequestClose={() => setIsMoreModalVisible(false)}
         >
           <TouchableWithoutFeedback onPress={() => setIsMoreModalVisible(false)}>
@@ -317,24 +293,11 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
                     },
                   ]}
                 >
-                  <BlurView
-                    intensity={Platform.OS === 'ios' ? 85 : 95}
-                    tint={isDark ? 'dark' : 'light'}
-                    experimentalBlurMethod="dimezisBlurView"
-                    style={[
-                      StyleSheet.absoluteFill,
-                      Platform.OS === 'web'
-                        ? ({ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' } as any)
-                        : undefined,
-                    ]}
-                  />
                   <View
                     style={[
                       StyleSheet.absoluteFill,
                       {
-                        backgroundColor: isDark
-                          ? 'rgba(25, 23, 21, 0.88)'
-                          : 'rgba(253, 252, 251, 0.90)',
+                        backgroundColor: colors.card,
                       },
                     ]}
                   />
@@ -375,7 +338,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
                       <Ionicons
                         name="close"
                         size={18}
-                        color={isDark ? '#8FA3B8' : '#64748B'}
+                        color={isDark ? '#ACA6BB' : '#64748B'}
                       />
                     </Pressable>
                   </View>
@@ -415,7 +378,7 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
                             <Ionicons
                               name={isItemActive ? item.activeIcon : item.inactiveIcon}
                               size={18}
-                              color={isItemActive ? activeColor : isDark ? '#8FA3B8' : '#64748B'}
+                              color={isItemActive ? activeColor : isDark ? '#ACA6BB' : '#64748B'}
                             />
                           </View>
 
@@ -495,17 +458,19 @@ const styles = StyleSheet.create({
     zIndex: 10000,
   },
   tabBarContainer: {
+    width: '100%',
+    maxWidth: 420,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-around',
     alignSelf: 'center',
     height: 52,
     borderRadius: 26,
-    paddingHorizontal: 4,
+    paddingHorizontal: 6,
     paddingVertical: 4,
-    borderWidth: 1,
+    borderWidth: 0,
     overflow: 'hidden',
-    gap: 6,
+    gap: 4,
   },
   activePill: {
     flexDirection: 'row',
@@ -517,9 +482,9 @@ const styles = StyleSheet.create({
     gap: 6,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18,
+    shadowOpacity: 0,
     shadowRadius: 6,
-    elevation: 5,
+    elevation: 0,
   },
   activeLabel: {
     fontSize: 13,
@@ -576,7 +541,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(20, 19, 27, 0.42)',
     justifyContent: 'flex-end',
     alignItems: 'center',
   },
@@ -586,15 +551,15 @@ const styles = StyleSheet.create({
     right: 20,
     maxWidth: 380,
     borderRadius: 24,
-    borderWidth: 1,
+    borderWidth: 0,
     padding: 16,
     maxHeight: 340,
     overflow: 'hidden',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 20,
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    elevation: 12,
   },
   modalHeader: {
     flexDirection: 'row',

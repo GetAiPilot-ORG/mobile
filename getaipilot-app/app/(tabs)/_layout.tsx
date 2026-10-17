@@ -1,18 +1,12 @@
 import { Tabs } from "expo-router";
 import { FloatingTabBar } from "../../src/components/FloatingTabBar";
-import { useAuth } from "../../src/contexts/AuthContext";
 import { useTheme, getColors } from "@/theme";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 export default function TabLayout() {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
-  const { user, profile } = useAuth();
-  const userRole = (user?.role || profile?.role || "").toLowerCase();
-  const isAdmin = Boolean(
-    userRole === "admin" ||
-    (user as any)?.is_admin === true ||
-    profile?.is_admin === true,
-  );
+  const reducedMotion = useReducedMotion();
 
   return (
     <Tabs
@@ -20,6 +14,11 @@ export default function TabLayout() {
       tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,
+        animation: reducedMotion ? "none" : "shift",
+        transitionSpec: {
+          animation: "timing",
+          config: { duration: 220 },
+        },
         sceneStyle: { backgroundColor: colors.background },
         tabBarStyle: {
           position: "absolute",

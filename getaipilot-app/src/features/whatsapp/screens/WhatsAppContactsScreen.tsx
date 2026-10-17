@@ -1,3 +1,4 @@
+import { ProductPageHeader } from "@/components/ProductUI";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
@@ -185,51 +186,15 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
       style={{ backgroundColor: color.background }}
     >
       <View className="flex-1">
-        {/* Header matching WhatsApp Suite */}
-        <View
-          className={`flex-row items-center px-4 py-3.5 shadow-sm ${
-            isDark ? "bg-[#1F2C34]" : "bg-[#075E54]"
-          }`}
-          style={{
-            borderBottomWidth: 0,
-            elevation: 4,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.15,
-            shadowRadius: 4,
-          }}
-        >
-          <View className="flex-row items-center flex-1">
-            <Pressable
-              className="w-9 h-9 rounded-full justify-center items-center mr-3 active:opacity-70 active:scale-95 bg-white/15"
-              onPress={handleBack}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityRole="button"
-              accessibilityLabel="Back"
-              style={{ borderWidth: 0 }}
-            >
-              <Ionicons
-                name="chevron-back"
-                size={20}
-                color="#FFFFFF"
-              />
-            </Pressable>
-            <View className="flex-row items-center gap-2">
-              <Ionicons name="logo-whatsapp" size={22} color="#25D366" />
-              <Text className="text-lg font-bold tracking-tight text-white">
-                WhatsApp Contacts
-              </Text>
-            </View>
-          </View>
-        </View>
+        <ProductPageHeader title="Your contacts" onBack={handleBack} />
 
         {/* Search Bar (Borderless) */}
         <View className="px-4 pt-3 pb-1.5">
           <View
             className={`flex-row items-center rounded-xl px-3 h-10 shadow-sm ${
               isDark
-                ? "bg-[#1C1C1E]"
-                : "bg-white"
+                ? "bg-[#252230] border-[#3A3549]"
+                : "bg-[#F0EEF8] border-[#E9E6F2]"
             }`}
             style={{
               borderWidth: 0,
@@ -248,10 +213,10 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
             />
             <TextInput
               className={`flex-1 text-sm font-medium py-0 ${
-                isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
+                isDark ? "text-[#F5F3FB]" : "text-[#1C1A25]"
               }`}
               placeholder="Search contacts by name or phone..."
-              placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
+              placeholderTextColor={isDark ? "#64748B" : "#777383"}
               value={searchQuery}
               onChangeText={setSearchQuery}
               clearButtonMode="while-editing"
@@ -268,59 +233,50 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
           </View>
         </View>
 
-        {/* Folder-Style Status Filter Tab Bar (WhatsApp Green from color.ts) */}
-        <View className="px-4 pt-1 mb-2">
-          <View style={{ position: "relative" }}>
-            {/* Continuous baseline across full width in WhatsApp Green */}
-            <View
-              style={{
-                position: "absolute",
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: 1.5,
-                backgroundColor: color.products.whatsapp,
-              }}
-            />
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 2 }}
-            >
-              {allTabs.map((tab) => {
-                const isActive = activeFilter === tab.id;
-                const activeColor = isDark
-                  ? color.products.whatsapp
-                  : (color.products.whatsappDark || "#075E54");
-
-                return (
-                  <Pressable
-                    key={tab.id}
-                    onPress={() => {
-                      if (Platform.OS !== "web") {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      }
-                      setActiveFilter(tab.id);
-                    }}
-                    style={{
-                      height: 40,
-                      paddingHorizontal: 13,
-                      justifyContent: "center",
-                      alignItems: "center",
-                      borderTopLeftRadius: isActive ? 10 : 0,
-                      borderTopRightRadius: isActive ? 10 : 0,
-                      borderTopWidth: 1.5,
-                      borderLeftWidth: 1.5,
-                      borderRightWidth: 1.5,
-                      borderBottomWidth: 1.5,
-                      borderTopColor: isActive ? color.products.whatsapp : "transparent",
-                      borderLeftColor: isActive ? color.products.whatsapp : "transparent",
-                      borderRightColor: isActive ? color.products.whatsapp : "transparent",
-                      borderBottomColor: isActive ? color.background : "transparent",
-                      backgroundColor: isActive ? color.background : "transparent",
-                      zIndex: isActive ? 2 : 1,
-                    }}
+        {/* Tag Filters */}
+        <View className="py-1.5 mb-1.5">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingHorizontal: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            {tags.map((item) => {
+              const isSelected =
+                item === "All" ? !selectedTag : selectedTag === item;
+              return (
+                <Pressable
+                  key={item}
+                  className={`px-4 py-1.5 rounded-full border items-center justify-center active:opacity-80 ${
+                    isSelected
+                      ? isDark
+                        ? "bg-white border-white"
+                        : "bg-black border-black"
+                      : isDark
+                      ? "bg-[#252230] border-[#3A3549]"
+                      : "bg-[#F0EEF8] border-[#E9E6F2]"
+                  }`}
+                  onPress={() => {
+                    if (Platform.OS !== "web") {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }
+                    setSelectedTag(item === "All" ? undefined : item);
+                  }}
+                >
+                  <Text
+                    className={`text-xs font-semibold tracking-tight ${
+                      isSelected
+                        ? isDark
+                          ? "text-black font-bold"
+                          : "text-white font-bold"
+                        : isDark
+                        ? "text-[#8E8E93]"
+                        : "text-[#6B7280]"
+                    }`}
                   >
                     <Text
                       numberOfLines={1}

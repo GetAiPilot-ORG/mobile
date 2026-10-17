@@ -430,10 +430,10 @@ export const ActivityAutoDMSubTab: React.FC<ActivityAutoDMSubTabProps> = ({
       {/* Header Action Row */}
       <View style={styles.headerActionRow}>
         <View style={styles.headerTextCol}>
-          <Text style={[styles.subTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+          <Text style={[styles.subTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
             Gap AutoDM
           </Text>
-          <Text style={[styles.subDesc, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+          <Text style={[styles.subDesc, { color: isDark ? '#777383' : '#64748b' }]}>
             Automated Instagram comment-to-DM triggers & lead captures
           </Text>
         </View>
@@ -507,7 +507,7 @@ export const ActivityAutoDMSubTab: React.FC<ActivityAutoDMSubTabProps> = ({
         <View style={styles.topAccountsHeader}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Ionicons name="logo-instagram" size={17} color="#e1306c" />
-            <Text style={[styles.topAccountsTitle, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+            <Text style={[styles.topAccountsTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
               Connected Profiles ({availableAccounts.length})
             </Text>
           </View>
@@ -536,8 +536,8 @@ export const ActivityAutoDMSubTab: React.FC<ActivityAutoDMSubTabProps> = ({
                 style={[
                   styles.accountCardItem,
                   {
-                    backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                    borderColor: isSelected ? '#e1306c' : isDark ? '#1e293b' : '#e2e8f0',
+                    backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+                    borderColor: isSelected ? '#e1306c' : isDark ? '#252230' : '#E9E6F2',
                   },
                   isSelected && styles.accountCardItemSelected,
                 ]}
@@ -558,7 +558,7 @@ export const ActivityAutoDMSubTab: React.FC<ActivityAutoDMSubTabProps> = ({
                     <Text
                       style={[
                         styles.accountCardName,
-                        { color: isDark ? '#f8fafc' : '#0f172a' },
+                        { color: isDark ? '#F5F3FB' : '#1C1A25' },
                         isSelected && { fontWeight: '700' },
                       ]}
                       numberOfLines={1}
@@ -580,10 +580,10 @@ export const ActivityAutoDMSubTab: React.FC<ActivityAutoDMSubTabProps> = ({
                 </View>
 
                 <View style={styles.accountCardStatsRow}>
-                  <Text style={[styles.accountCardStatText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                  <Text style={[styles.accountCardStatText, { color: isDark ? '#777383' : '#64748b' }]}>
                     👥 {followers} followers
                   </Text>
-                  <Text style={[styles.accountCardStatText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                  <Text style={[styles.accountCardStatText, { color: isDark ? '#777383' : '#64748b' }]}>
                     📸 {posts} posts
                   </Text>
                 </View>
@@ -611,8 +611,8 @@ export const ActivityAutoDMSubTab: React.FC<ActivityAutoDMSubTabProps> = ({
           style={[
             styles.autodmAccountCard,
             {
-              backgroundColor: isDark ? '#0f172a' : '#ffffff',
-              borderColor: isDark ? '#1e293b' : '#e2e8f0',
+              backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+              borderColor: isDark ? '#252230' : '#E9E6F2',
             },
           ]}
         >
@@ -630,7 +630,7 @@ export const ActivityAutoDMSubTab: React.FC<ActivityAutoDMSubTabProps> = ({
 
             <View style={{ flex: 1 }}>
               <View style={styles.autodmAccountTitleRow}>
-                <Text style={[styles.autodmAccountName, { color: isDark ? '#f8fafc' : '#0f172a' }]} numberOfLines={1}>
+                <Text style={[styles.autodmAccountName, { color: isDark ? '#F5F3FB' : '#1C1A25' }]} numberOfLines={1}>
                   {activeAutoDMAccount?.full_name || activeAutoDMAccount?.username || 'Instagram Account'}
                 </Text>
                 <View style={styles.autodmWebhookBadge}>
@@ -655,7 +655,7 @@ export const ActivityAutoDMSubTab: React.FC<ActivityAutoDMSubTabProps> = ({
                 refetchAutoDMMedia();
                 refetchAutoDMContacts();
               }}
-              style={[styles.autodmRefreshBtn, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}
+              style={[styles.autodmRefreshBtn, { backgroundColor: isDark ? '#252230' : '#F0EEF8' }]}
             >
               <Ionicons
                 name={autodmStatusLoading || autodmMetricsLoading || autodmMediaLoading ? 'sync' : 'refresh'}
@@ -672,15 +672,15 @@ export const ActivityAutoDMSubTab: React.FC<ActivityAutoDMSubTabProps> = ({
         style={[
           styles.card,
           {
-            backgroundColor: isDark ? '#0f172a' : '#ffffff',
-            borderColor: isDark ? '#1e293b' : '#e2e8f0',
+            backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+            borderColor: isDark ? '#252230' : '#E9E6F2',
           },
         ]}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Ionicons name="analytics" size={15} color="#3b82f6" />
-            <Text style={{ fontSize: 13, fontWeight: '700', color: isDark ? '#f8fafc' : '#0f172a' }}>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: isDark ? '#F5F3FB' : '#1C1A25' }}>
               AutoDM Telemetry (Last 7 Days)
             </Text>
           </View>
@@ -743,13 +743,13 @@ export const ActivityAutoDMSubTab: React.FC<ActivityAutoDMSubTabProps> = ({
                 styles.autodmCategoryTab,
                 isSelected
                   ? [styles.autodmCategoryTabActive, { backgroundColor: '#3b82f6' }]
-                  : { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' },
+                  : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
               ]}
             >
               <Ionicons
                 name={iconName as any}
                 size={14}
-                color={isSelected ? '#ffffff' : isDark ? '#94a3b8' : '#64748b'}
+                color={isSelected ? '#ffffff' : isDark ? '#777383' : '#64748b'}
               />
               <Text
                 style={[
@@ -855,7 +855,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   subDesc: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   primaryActionBtn: {
@@ -864,9 +864,8 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 10,
-    alignSelf: 'center',
-  },
+    borderRadius: 28,
+    alignSelf: 'center', backgroundColor: '#17171C' , minHeight: 44 , shadowOpacity: 0 },
   primaryActionBtnText: {
     color: '#ffffff',
     fontSize: 12,
@@ -878,8 +877,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     gap: 12,
     marginBottom: 10,
   },
@@ -888,7 +887,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   autodmQuotaSub: {
-    fontSize: 11,
+    fontSize: 13,
     marginTop: 2,
   },
   autodmUpgradeBtn: {
@@ -903,10 +902,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   autodmAccountCard: {
-    borderWidth: 1,
-    borderRadius: 14,
-    padding: 14,
-  },
+    borderWidth: 0,
+    borderRadius: 24,
+    padding: 14, shadowOpacity: 0 },
   autodmAccountRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -958,7 +956,7 @@ const styles = StyleSheet.create({
   },
   autodmAccountHandle: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: '#777383',
     marginTop: 2,
     fontWeight: '500',
   },
@@ -970,12 +968,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   card: {
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0,
     shadowRadius: 2,
     elevation: 1,
   },
@@ -996,7 +994,7 @@ const styles = StyleSheet.create({
   },
   igMetricLabel: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: '#777383',
     marginTop: 2,
     textAlign: 'center',
   },
@@ -1062,13 +1060,13 @@ const styles = StyleSheet.create({
   },
   accountCardItem: {
     width: 220,
-    borderRadius: 16,
-    borderWidth: 1.5,
+    borderRadius: 24,
+    borderWidth: 0,
     padding: 12,
     gap: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0,
     shadowRadius: 3,
     elevation: 2,
   },
@@ -1078,8 +1076,7 @@ const styles = StyleSheet.create({
   },
   accountCardHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-  },
+    alignItems: 'center', borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   accountAvatarWrapper: {
     position: 'relative',
   },
@@ -1110,14 +1107,12 @@ const styles = StyleSheet.create({
   },
   accountCardName: {
     fontSize: 14,
-    fontWeight: '600',
-  },
+    fontWeight: '600', borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   accountCardHandle: {
     fontSize: 11,
     color: '#e1306c',
     fontWeight: '600',
-    marginTop: 1,
-  },
+    marginTop: 1, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   selectedCheckBadge: {
     marginLeft: 4,
   },
@@ -1127,17 +1122,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 4,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(148, 163, 184, 0.15)',
-  },
+    borderTopColor: 'rgba(148, 163, 184, 0.15)', borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   accountCardStatText: {
     fontSize: 11,
-    fontWeight: '600',
-  },
+    fontWeight: '600', borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   accountCardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
+    justifyContent: 'space-between', borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   accountStatusPill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1166,14 +1158,13 @@ const styles = StyleSheet.create({
   },
   addAccountCard: {
     width: 140,
-    borderRadius: 16,
-    borderWidth: 1.5,
+    borderRadius: 24,
+    borderWidth: 0,
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
-    gap: 8,
-  },
+    gap: 8, shadowOpacity: 0 },
   addAccountCircle: {
     width: 38,
     height: 38,

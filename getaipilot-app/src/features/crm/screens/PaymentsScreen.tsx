@@ -168,11 +168,11 @@ export function PaymentsScreen({ onBack }: PaymentsScreenProps = {}) {
 
 const s = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  title: { fontSize: 22, fontWeight: '800', letterSpacing: -0.4 },
-  subtitle: { fontSize: 12, marginTop: 2 },
-  createBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#EC4899', paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12 },
+  title: { fontSize: 28, fontWeight: '500', letterSpacing: -0.5, lineHeight: 36 },
+  subtitle: { fontSize: 13, marginTop: 2 },
+  createBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#17171C', paddingHorizontal: 14, paddingVertical: 9, borderRadius: 28, minHeight: 44 , shadowOpacity: 0 },
   createBtnText: { color: '#FFF', fontWeight: '700', fontSize: 13 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 14, borderWidth: 1, padding: 14 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 24, borderWidth: 0, padding: 18 },
   methodIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   paymentMethod: { fontSize: 14, fontWeight: '700' },
   invRef: { fontSize: 12, marginTop: 2 },

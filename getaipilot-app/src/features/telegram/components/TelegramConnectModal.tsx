@@ -132,19 +132,19 @@ export const TelegramConnectModal: React.FC<TelegramConnectModalProps> = ({
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View style={[styles.modalCard, { backgroundColor: isDark ? '#0f172a' : '#ffffff' }]}>
+        <View style={[styles.modalCard, { backgroundColor: isDark ? '#1C1A25' : '#ffffff' }]}>
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <View style={[styles.iconWrap, { backgroundColor: 'rgba(14, 165, 233, 0.15)' }]}>
                 <Ionicons name="paper-plane" size={20} color="#0ea5e9" />
               </View>
-              <Text style={[styles.title, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+              <Text style={[styles.title, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                 {isConnected ? 'Telegram Account' : 'Connect Telegram'}
               </Text>
             </View>
             <Pressable onPress={onClose} style={styles.closeBtn}>
-              <Ionicons name="close" size={20} color={isDark ? '#94a3b8' : '#64748b'} />
+              <Ionicons name="close" size={20} color={isDark ? '#777383' : '#64748b'} />
             </Pressable>
           </View>
 
@@ -162,7 +162,7 @@ export const TelegramConnectModal: React.FC<TelegramConnectModalProps> = ({
               <View style={styles.accountBadge}>
                 <Ionicons name="checkmark-circle" size={24} color="#22c55e" />
                 <View>
-                  <Text style={[styles.accountPhone, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                  <Text style={[styles.accountPhone, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
                     {connectedPhone || 'Telegram Active'}
                   </Text>
                   <Text style={styles.accountStatus}>MTProto Session Connected</Text>
@@ -187,22 +187,22 @@ export const TelegramConnectModal: React.FC<TelegramConnectModalProps> = ({
             <View style={styles.formWrap}>
               {step === 'phone' && (
                 <View>
-                  <Text style={[styles.stepHint, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                  <Text style={[styles.stepHint, { color: isDark ? '#777383' : '#64748b' }]}>
                     Enter your international phone number with country code to connect your Telegram account.
                   </Text>
                   <TextInput
                     value={phone}
                     onChangeText={setPhone}
                     placeholder="+919876543210"
-                    placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
+                    placeholderTextColor={isDark ? '#475569' : '#777383'}
                     keyboardType="phone-pad"
                     autoFocus
                     style={[
                       styles.input,
                       {
-                        backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                        color: isDark ? '#f8fafc' : '#0f172a',
-                        borderColor: isDark ? '#334155' : '#e2e8f0',
+                        backgroundColor: isDark ? '#252230' : '#F5F3FB',
+                        color: isDark ? '#F5F3FB' : '#1C1A25',
+                        borderColor: isDark ? '#334155' : '#E9E6F2',
                       },
                     ]}
                   />
@@ -222,22 +222,22 @@ export const TelegramConnectModal: React.FC<TelegramConnectModalProps> = ({
 
               {step === 'otp' && (
                 <View>
-                  <Text style={[styles.stepHint, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                  <Text style={[styles.stepHint, { color: isDark ? '#777383' : '#64748b' }]}>
                     Enter the login code sent directly to your Telegram mobile or desktop application.
                   </Text>
                   <TextInput
                     value={otp}
                     onChangeText={setOtp}
                     placeholder="12345"
-                    placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
+                    placeholderTextColor={isDark ? '#475569' : '#777383'}
                     keyboardType="number-pad"
                     autoFocus
                     style={[
                       styles.input,
                       {
-                        backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                        color: isDark ? '#f8fafc' : '#0f172a',
-                        borderColor: isDark ? '#334155' : '#e2e8f0',
+                        backgroundColor: isDark ? '#252230' : '#F5F3FB',
+                        color: isDark ? '#F5F3FB' : '#1C1A25',
+                        borderColor: isDark ? '#334155' : '#E9E6F2',
                       },
                     ]}
                   />
@@ -257,22 +257,22 @@ export const TelegramConnectModal: React.FC<TelegramConnectModalProps> = ({
 
               {step === 'password' && (
                 <View>
-                  <Text style={[styles.stepHint, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+                  <Text style={[styles.stepHint, { color: isDark ? '#777383' : '#64748b' }]}>
                     Your Telegram account is protected by 2-Step Verification. Enter your cloud password.
                   </Text>
                   <TextInput
                     value={password}
                     onChangeText={setPassword}
                     placeholder="2FA Password"
-                    placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
+                    placeholderTextColor={isDark ? '#475569' : '#777383'}
                     secureTextEntry
                     autoFocus
                     style={[
                       styles.input,
                       {
-                        backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                        color: isDark ? '#f8fafc' : '#0f172a',
-                        borderColor: isDark ? '#334155' : '#e2e8f0',
+                        backgroundColor: isDark ? '#252230' : '#F5F3FB',
+                        color: isDark ? '#F5F3FB' : '#1C1A25',
+                        borderColor: isDark ? '#334155' : '#E9E6F2',
                       },
                     ]}
                   />
@@ -307,8 +307,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
-    paddingBottom: 36,
-  },
+    paddingBottom: 36, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -328,9 +327,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: 17,
-    fontWeight: '800',
-  },
+    fontSize: 28,
+    fontWeight: '500', lineHeight: 36 , letterSpacing: -0.5 },
   closeBtn: {
     padding: 4,
   },
@@ -357,13 +355,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   input: {
-    borderWidth: 1,
-    borderRadius: 10,
+    borderWidth: 0,
+    borderRadius: 22,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-    marginBottom: 14,
-  },
+    marginBottom: 14, minHeight: 48 },
   submitBtn: {
     backgroundColor: '#0ea5e9',
     paddingVertical: 14,

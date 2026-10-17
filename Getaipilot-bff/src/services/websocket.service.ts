@@ -1,4 +1,5 @@
 import { WebSocket } from 'ws';
+import { NotificationService } from './notification.service.js';
 
 export interface RealtimeEvent {
   event:
@@ -49,20 +50,26 @@ export class WebSocketService {
   }
 
   public static broadcastToOrg(organizationId: string, event: RealtimeEvent['event'], data: any) {
+    // 1. Deliver to open WebSocket clients (Foreground real-time stream)
     const orgSockets = this.connections.get(organizationId);
-    if (!orgSockets || orgSockets.size === 0) return;
+    if (orgSockets && orgSockets.size > 0) {
+      const payload = JSON.stringify({
+        event,
+        data,
+        organizationId,
+        timestamp: new Date().toISOString(),
+      });
 
-    const payload = JSON.stringify({
-      event,
-      data,
-      organizationId,
-      timestamp: new Date().toISOString(),
-    });
-
-    for (const socket of orgSockets) {
-      if (socket.readyState === WebSocket.OPEN) {
-        socket.send(payload);
+      for (const socket of orgSockets) {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(payload);
+        }
       }
     }
+
+    // 2. Dispatch high-priority Push Notification (covers Foreground, Background, and Kill/Terminated mode)
+    NotificationService.dispatchOrgEventNotification(organizationId, event, data).catch((err) => {
+      console.warn(`[WebSocketService] Push notification dispatch notice (${event}):`, err?.message || err);
+    });
   }
 }

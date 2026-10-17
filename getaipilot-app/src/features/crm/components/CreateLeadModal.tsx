@@ -358,12 +358,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
+    fontSize: 28,
+    fontWeight: '500',
+    letterSpacing: -0.5, lineHeight: 36 },
   headerSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   closeBtn: {
@@ -397,12 +396,11 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   input: {
-    borderRadius: 10,
-    borderWidth: 1,
+    borderRadius: 22,
+    borderWidth: 0,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 14,
-  },
+    fontSize: 14, minHeight: 48 },
   textArea: {
     minHeight: 70,
     textAlignVertical: 'top',

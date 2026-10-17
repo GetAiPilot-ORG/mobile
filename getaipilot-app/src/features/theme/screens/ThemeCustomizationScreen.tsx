@@ -136,8 +136,8 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     marginVertical: 16,
   },
   summaryRow: {

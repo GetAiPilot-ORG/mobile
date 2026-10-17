@@ -434,10 +434,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   headerTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    letterSpacing: -0.2,
-  },
+    fontSize: 28,
+    fontWeight: '500',
+    letterSpacing: -0.5, lineHeight: 36 },
   headerSubtitle: {
     fontSize: 13,
     fontWeight: "500",
@@ -458,11 +457,10 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   infoCard: {
-    borderRadius: 14,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     padding: 14,
-    gap: 10,
-  },
+    gap: 10, shadowOpacity: 0 },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -491,7 +489,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   sectionSubheading: {
-    fontSize: 12,
+    fontSize: 13,
     lineHeight: 16,
   },
   emptyAssistantBox: {
@@ -507,7 +505,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   emptyAstSub: {
-    fontSize: 12,
+    fontSize: 13,
     textAlign: "center",
   },
   assistantItem: {
@@ -541,7 +539,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   astItemSub: {
-    fontSize: 11.5,
+    fontSize: 13.5,
     marginTop: 1,
   },
   radioCircle: {
@@ -581,8 +579,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     height: 48,
-    borderRadius: 12,
-  },
+    borderRadius: 28, backgroundColor: '#17171C' , minHeight: 44 , shadowOpacity: 0 },
   saveBtnText: {
     color: "#FFFFFF",
     fontSize: 14,

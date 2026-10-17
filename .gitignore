@@ -1,0 +1,82 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Expo
+.expo/
+.eas/
+dist/
+web-build/
+expo-env.d.ts
+
+# Build & compiled outputs
+build/
+*.tsbuildinfo
+
+# Impeccable & AI tooling
+.impeccable/
+.impeccable
+.claude/
+.gemini/
+
+# Environment variables & secrets
+.env
+.env.production
+.env.*
+.env.local
+.env.*.local
+!.env.example
+
+# Native build files & keys
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+*.keystore
+!debug.keystore
+
+# Metro & Bundler
+.metro-health-check*
+*.jsbundle
+
+# Root-level generated native builds
+/android/
+/ios/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs & Editors
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Temporary & cache
+*.tmp
+*.temp
+.cache/

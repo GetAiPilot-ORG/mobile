@@ -1,13 +1,14 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useTheme, getColors } from '@/theme';
 
 interface ToolCardProps {
   title: string;
   category: string;
   description: string;
-  icon: string;
+  icon: React.ComponentProps<typeof HugeiconsIcon>['icon'];
   iconBg?: string;
   badge?: string;
   onPress: () => void;
@@ -15,7 +16,6 @@ interface ToolCardProps {
 
 export const ToolCard: React.FC<ToolCardProps> = ({
   title,
-  category,
   description,
   icon,
   iconBg,
@@ -24,7 +24,6 @@ export const ToolCard: React.FC<ToolCardProps> = ({
 }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
-  const isIonicon = icon && /^[a-z0-9-]+$/i.test(icon);
 
   return (
     <Pressable
@@ -52,11 +51,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({
             backgroundColor: iconBg || colors.accentSoft,
           }}
         >
-          {isIonicon ? (
-            <Ionicons name={icon as any} size={21} color="#FFFFFF" />
-          ) : (
-            <Text className="text-xl">{icon}</Text>
-          )}
+          <HugeiconsIcon icon={icon} size={21} color={'#000000'} strokeWidth={1.8} />
         </View>
         {badge ? (
           <View
@@ -70,7 +65,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({
             <Text
               style={{
                 fontSize: 9.5,
-                fontWeight: "800",
+                fontWeight: "600",
                 letterSpacing: 0.8,
                 color: colors.accent,
               }}
@@ -85,19 +80,8 @@ export const ToolCard: React.FC<ToolCardProps> = ({
       <View style={{ gap: 3, marginBottom: 10 }}>
         <Text
           style={{
-            fontSize: 9.5,
-            fontWeight: "800",
-            letterSpacing: 1.2,
-            textTransform: "uppercase",
-            color: colors.textSecondary,
-          }}
-        >
-          {category}
-        </Text>
-        <Text
-          style={{
             fontSize: 15,
-            fontWeight: "800",
+            fontWeight: "600",
             letterSpacing: -0.3,
             color: colors.text,
           }}
@@ -107,8 +91,8 @@ export const ToolCard: React.FC<ToolCardProps> = ({
         </Text>
         <Text
           style={{
-            fontSize: 11.5,
-            lineHeight: 16,
+            fontSize: 13,
+            lineHeight: 19,
             color: colors.textSecondary,
           }}
           numberOfLines={2}
@@ -124,14 +108,14 @@ export const ToolCard: React.FC<ToolCardProps> = ({
           alignItems: "center",
           justifyContent: "space-between",
           paddingTop: 11,
-          borderTopWidth: 1,
+          borderTopWidth: 0,
           borderTopColor: isDark
             ? "rgba(255,255,255,0.06)"
             : "rgba(0,0,0,0.05)",
         }}
       >
         <Text
-          style={{ fontSize: 11.5, fontWeight: "700", color: colors.primary }}
+          style={{ fontSize: 13, fontWeight: "700", color: colors.primary }}
         >
           Launch Tool
         </Text>
@@ -145,7 +129,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({
             backgroundColor: colors.primaryMuted,
           }}
         >
-          <Ionicons name="arrow-forward" size={11} color={colors.primary} />
+          <HugeiconsIcon icon={ArrowRight01Icon} size={12} color={colors.primary} strokeWidth={2} />
         </View>
       </View>
     </Pressable>

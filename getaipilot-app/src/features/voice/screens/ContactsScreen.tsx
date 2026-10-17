@@ -279,7 +279,7 @@ export const ContactsScreen: React.FC = () => {
       {/* 1. TITLE SECTION */}
       <View className="pt-0.5 gap-0.5 w-full">
         <Text
-          className="text-2xl leading-7 font-extrabold tracking-tight"
+          className="text-2xl leading-7 font-semibold tracking-tight"
           style={{ color: colors.text }}
         >
           {activeSubTab === "contacts"
@@ -481,7 +481,7 @@ export const ContactsScreen: React.FC = () => {
                 </Text>
               </View>
               <Text
-                className="text-[19px] font-extrabold tracking-tight mt-0.5"
+                className="text-[19px] font-semibold tracking-tight mt-0.5"
                 style={{ color: colors.text }}
                 adjustsFontSizeToFit
                 numberOfLines={1}
@@ -509,7 +509,7 @@ export const ContactsScreen: React.FC = () => {
                 </Text>
               </View>
               <Text
-                className="text-[19px] font-extrabold tracking-tight mt-0.5"
+                className="text-[19px] font-semibold tracking-tight mt-0.5"
                 style={{ color: colors.text }}
                 adjustsFontSizeToFit
                 numberOfLines={1}
@@ -533,7 +533,7 @@ export const ContactsScreen: React.FC = () => {
                 </Text>
               </View>
               <Text
-                className="text-[19px] font-extrabold tracking-tight mt-0.5"
+                className="text-[19px] font-semibold tracking-tight mt-0.5"
                 style={{ color: colors.text }}
                 adjustsFontSizeToFit
                 numberOfLines={1}
@@ -635,7 +635,7 @@ export const ContactsScreen: React.FC = () => {
                 <Ionicons name="people" size={30} color={colors.primary} />
               </View>
               <Text
-                className="text-base font-extrabold tracking-tight"
+                className="text-base font-semibold tracking-tight"
                 style={{ color: colors.text }}
               >
                 No contacts found
@@ -672,7 +672,7 @@ export const ContactsScreen: React.FC = () => {
                         style={{ backgroundColor: colors.primaryLight }}
                       >
                         <Text
-                          className="text-xs font-extrabold"
+                          className="text-xs font-semibold"
                           style={{ color: colors.primary }}
                         >
                           {initials}
@@ -758,7 +758,7 @@ export const ContactsScreen: React.FC = () => {
                 </Text>
               </View>
               <Text
-                className="text-[19px] font-extrabold tracking-tight mt-0.5"
+                className="text-[19px] font-semibold tracking-tight mt-0.5"
                 style={{ color: colors.text }}
                 adjustsFontSizeToFit
                 numberOfLines={1}
@@ -789,7 +789,7 @@ export const ContactsScreen: React.FC = () => {
                 </Text>
               </View>
               <Text
-                className="text-[19px] font-extrabold tracking-tight mt-0.5"
+                className="text-[19px] font-semibold tracking-tight mt-0.5"
                 style={{ color: colors.green }}
                 adjustsFontSizeToFit
                 numberOfLines={1}
@@ -820,7 +820,7 @@ export const ContactsScreen: React.FC = () => {
                 </Text>
               </View>
               <Text
-                className="text-[19px] font-extrabold tracking-tight mt-0.5"
+                className="text-[19px] font-semibold tracking-tight mt-0.5"
                 style={{ color: colors.amber }}
                 adjustsFontSizeToFit
                 numberOfLines={1}
@@ -858,7 +858,7 @@ export const ContactsScreen: React.FC = () => {
               </Text>
               <Text
                 className="text-[11px] font-medium"
-                style={{ color: isDark ? "#94A3B8" : "#4338CA" }}
+                style={{ color: isDark ? "#777383" : "#4338CA" }}
                 numberOfLines={1}
               >
                 Buy &amp; renew business numbers on VoicePilot Web
@@ -894,7 +894,7 @@ export const ContactsScreen: React.FC = () => {
                 />
               </View>
               <Text
-                className="text-base font-extrabold tracking-tight"
+                className="text-base font-semibold tracking-tight"
                 style={{ color: colors.text }}
               >
                 No phone lines found
@@ -956,7 +956,7 @@ export const ContactsScreen: React.FC = () => {
                       <View className="flex-1 min-w-0 gap-0.5">
                         <View className="flex-row items-center justify-between gap-1.5">
                           <Text
-                            className="text-sm font-extrabold tracking-tight"
+                            className="text-sm font-semibold tracking-tight"
                             style={{ color: colors.text }}
                             numberOfLines={1}
                           >
@@ -1061,7 +1061,7 @@ export const ContactsScreen: React.FC = () => {
                 </Text>
               </View>
               <Text
-                className="text-[19px] font-extrabold tracking-tight mt-0.5"
+                className="text-[19px] font-semibold tracking-tight mt-0.5"
                 style={{ color: colors.text }}
                 adjustsFontSizeToFit
                 numberOfLines={1}
@@ -1092,7 +1092,7 @@ export const ContactsScreen: React.FC = () => {
                 </Text>
               </View>
               <Text
-                className="text-[19px] font-extrabold tracking-tight mt-0.5"
+                className="text-[19px] font-semibold tracking-tight mt-0.5"
                 style={{ color: colors.green }}
                 adjustsFontSizeToFit
                 numberOfLines={1}
@@ -1123,7 +1123,7 @@ export const ContactsScreen: React.FC = () => {
                 </Text>
               </View>
               <Text
-                className="text-[19px] font-extrabold tracking-tight mt-0.5"
+                className="text-[19px] font-semibold tracking-tight mt-0.5"
                 style={{ color: colors.amber }}
                 adjustsFontSizeToFit
                 numberOfLines={1}
@@ -1152,7 +1152,7 @@ export const ContactsScreen: React.FC = () => {
                 <Ionicons name="mic-outline" size={30} color={colors.primary} />
               </View>
               <Text
-                className="text-base font-extrabold tracking-tight"
+                className="text-base font-semibold tracking-tight"
                 style={{ color: colors.text }}
               >
                 No Voice Agents Found
@@ -1178,7 +1178,7 @@ export const ContactsScreen: React.FC = () => {
                 return (
                   <View
                     key={ast.id}
-                    className="rounded-2xl p-3 gap-2.5 shadow-xs"
+                    className="rounded-[24px] p-3 gap-2.5 "
                     style={{
                       backgroundColor: colors.surface,
                     }}
@@ -1232,7 +1232,7 @@ export const ContactsScreen: React.FC = () => {
                           style={{ color: colors.textSecondary }}
                           numberOfLines={1}
                         >
-                          Voice:{" "}
+                          Voice: {" "}
                           {ast.config_snapshot?.voice?.name || "Neural AI Audio"}
                         </Text>
                       </View>

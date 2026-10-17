@@ -114,10 +114,10 @@ export default function AdminMonetizeScreen() {
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.card,
-      borderRadius: 16,
+      borderRadius: 24,
       padding: 16,
       marginBottom: 16,
-      borderWidth: 1,
+      borderWidth: 0,
       borderColor: colors.border,
     },
     gatewayTitleRow: {
@@ -145,9 +145,9 @@ export default function AdminMonetizeScreen() {
     metricCard: {
       width: "48%",
       backgroundColor: colors.card,
-      borderRadius: 14,
+      borderRadius: 24,
       padding: 14,
-      borderWidth: 1,
+      borderWidth: 0,
       borderColor: colors.border,
     },
     metricLabel: {
@@ -192,10 +192,10 @@ export default function AdminMonetizeScreen() {
     },
     addFormCard: {
       backgroundColor: colors.card,
-      borderRadius: 16,
+      borderRadius: 24,
       padding: 16,
       marginBottom: 16,
-      borderWidth: 1,
+      borderWidth: 0,
       borderColor: colors.primary,
     },
     formTitle: {
@@ -235,10 +235,10 @@ export default function AdminMonetizeScreen() {
     },
     card: {
       backgroundColor: colors.card,
-      borderRadius: 16,
+      borderRadius: 24,
       padding: 16,
       marginBottom: 12,
-      borderWidth: 1,
+      borderWidth: 0,
       borderColor: colors.border,
     },
     productCardHeader: {

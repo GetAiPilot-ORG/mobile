@@ -1,224 +1,240 @@
-
 export const getColors = (isDark: boolean = false) => ({
-  // BRAND
-  primary: isDark ? "#C56BFF" : "#B044F2",
-  primaryHover: isDark ? "#D18AFF" : "#9635D6",
-  primaryPressed: isDark ? "#B653F2" : "#8129BE",
-  primaryForeground: "#FFFFFF",
-  primaryMuted: isDark ? "#352440" : "#F2E8FA",
+  // Soft pastel mobile palette
+  galleryWhite: "#ffffff",
+  studioMist: "#f5f5f7",
+  paperFrost: "#fafafc",
+  hairlineSilver: "#d6d6d6",
+  controlGray: "#e6e6e8",
+  ink: "#1d1d1f",
+  slate: "#696575",
+  steel: "#86868b",
+  appleBlue: "#0066cc",
+  pricingBlue: "#0071e3",
+  launchOrange: "#b64400",
 
-  accent: isDark ? "#D66BDF" : "#D83DCE",
-  accentHover: isDark ? "#E18AE8" : "#B82DB0",
-  accentForeground: "#FFFFFF",
+  // BRAND & ACCENT
+  primary: isDark ? "#B9A8FF" : "#17171C",
+  primaryHover: isDark ? "#CBBEFF" : "#6C55C5",
+  primaryPressed: isDark ? "#A18BEF" : "#55419F",
+  primaryForeground: isDark ? "#202027" : "#FFFFFF",
+  primaryMuted: isDark ? "rgba(185, 168, 255, 0.16)" : "#E9E3FA",
+
+  accent: isDark ? "#B9A8FF" : "#6C55C5",
+  accentHover: isDark ? "#CBBEFF" : "#55419F",
+  accentForeground: isDark ? "#202027" : "#FFFFFF",
   accentSoft: isDark
-    ? "rgba(214, 107, 223, 0.16)"
-    : "rgba(216, 61, 206, 0.10)",
+    ? "rgba(185, 168, 255, 0.16)"
+    : "#E9E3FA",
 
-  // BACKGROUNDS
-  background: isDark ? "#11100F" : "#F7F5F2",
-  canvas: isDark ? "#11100F" : "#F7F5F2",
-  backgroundSecondary: isDark ? "#191715" : "#F0EDE8",
-  backgroundTertiary: isDark ? "#201D1A" : "#EAE5DF",
+  // BACKGROUNDS & CANVAS
+  background: isDark ? "#14131B" : "#F5F3FB",
+  canvas: isDark ? "#14131B" : "#F5F3FB",
+  backgroundSecondary: isDark ? "#1C1A25" : "#F0EEF8",
+  backgroundTertiary: isDark ? "#252230" : "#F8F7FC",
 
-  backgroundDark: "#11100F",
-  backgroundLight: "#F7F5F2",
-  canvasDark: "#11100F",
-  canvasLight: "#F7F5F2",
+  backgroundDark: "#14131B",
+  backgroundLight: "#FFFFFF",
+  canvasDark: "#14131B",
+  canvasLight: "#FFFFFF",
 
-  // SURFACES
-  surface: isDark ? "#191715" : "#FDFCFB",
-  surfaceSecondary: isDark ? "#201D1A" : "#F0EDE8",
-  surfaceTertiary: isDark ? "#26221F" : "#EAE5DF",
-  surfaceGrouped: isDark ? "#191715" : "#F0EDE8",
-  surfaceElevated: isDark ? "#26221F" : "#FFFFFF",
-  surfaceHover: isDark ? "#302B26" : "#F0EDE8",
-  surfacePressed: isDark ? "#39332E" : "#E7E2DC",
-  surfaceDark: "#191715",
-  surfaceLight: "#FDFCFB",
+  // SURFACES (Gallery White on Studio Mist)
+  surface: isDark ? "#1C1A25" : "#FFFFFF",
+  surfaceSecondary: isDark ? "#252230" : "#F0EEF8",
+  surfaceTertiary: isDark ? "#2C2839" : "#F8F7FC",
+  surfaceGrouped: isDark ? "#252230" : "#F0EEF8",
+  surfaceElevated: isDark ? "#2C2839" : "#FFFFFF",
+  surfaceHover: isDark ? "#1F1F23" : "#F0EEF8",
+  surfacePressed: isDark ? "#26262B" : "#E5E0F1",
+  surfaceDark: "#1C1A25",
+  surfaceLight: "#FFFFFF",
 
-  // TEXT
-  text: isDark ? "#F5F1EB" : "#211E1A",
-  mutedText: isDark ? "#B6ADA3" : "#77716A",
-  foreground: isDark ? "#F5F1EB" : "#211E1A",
-  foregroundDark: "#F5F1EB",
-  foregroundLight: "#211E1A",
-  textPrimary: isDark ? "#F5F1EB" : "#211E1A",
-  textSecondary: isDark ? "#B6ADA3" : "#77716A",
-  textTertiary: isDark ? "#A49B91" : "#8A837B",
-  textMuted: isDark ? "#898078" : "#8A837B",
-  textDisabled: isDark ? "#706961" : "#AAA39B",
-  textInverse: isDark ? "#211E1A" : "#FFFFFF",
+  // TYPOGRAPHY (Ink, Slate, Steel)
+  text: isDark ? "#F0EEF8" : "#202027",
+  mutedText: isDark ? "#ACA6BB" : "#696575",
+  foreground: isDark ? "#F0EEF8" : "#202027",
+  foregroundDark: "#F0EEF8",
+  foregroundLight: "#202027",
+  textPrimary: isDark ? "#F0EEF8" : "#202027",
+  textSecondary: isDark ? "#ACA6BB" : "#696575",
+  textTertiary: isDark ? "#A39CB2" : "#716B7C",
+  textMuted: isDark ? "#ACA6BB" : "#696575",
+  textDisabled: isDark ? "#555558" : "#716B7C",
+  textInverse: isDark ? "#202027" : "#FFFFFF",
 
-  // CARDS
-  card: isDark ? "#191715" : "#FDFCFB",
-  cardBackground: isDark ? "#191715" : "#FDFCFB",
-  cardDark: "#191715",
-  cardLight: "#FDFCFB",
-  cardForeground: isDark ? "#F5F1EB" : "#211E1A",
-  cardBorder: isDark ? "#39332E" : "#E7E2DC",
-  cardBorderDark: "#39332E",
-  cardBorderLight: "#E7E2DC",
-  cardHover: isDark ? "#26221F" : "#F7F3EE",
-  cardShell: isDark ? "#201D1A" : "#F0EDE8",
-  cardShellBorder: isDark ? "#39332E" : "#E7E2DC",
+  // CARDS (28px radius, flat & shadowless, hairline dividers)
+  card: isDark ? "#1C1A25" : "#FFFFFF",
+  cardBackground: isDark ? "#1C1A25" : "#FFFFFF",
+  cardDark: "#1C1A25",
+  cardLight: "#FFFFFF",
+  cardForeground: isDark ? "#F0EEF8" : "#202027",
+  cardBorder: isDark ? "#2C2C2E" : "#E9E6F2",
+  cardBorderDark: "#2C2C2E",
+  cardBorderLight: "#E9E6F2",
+  cardHover: isDark ? "#2C2839" : "#F8F7FC",
+  cardShell: isDark ? "#252230" : "#F0EEF8",
+  cardShellBorder: isDark ? "#2C2C2E" : "#E5E0F1",
 
-  // BORDERS
-  border: isDark ? "#39332E" : "#E7E2DC",
-  borderDark: "#39332E",
-  borderLight: isDark ? "#302B26" : "#F0EDE8",
-  borderStrong: isDark ? "#51483F" : "#D2CAC0",
-  divider: isDark ? "#302B26" : "#EAE5DF",
-  focusBorder: isDark ? "#C56BFF" : "#B044F2",
+  // BORDERS & HAIRLINES
+  border: isDark ? "#2C2C2E" : "#E9E6F2",
+  borderDark: "#2C2C2E",
+  borderLight: isDark ? "#1C1C1E" : "#E5E0F1",
+  borderStrong: isDark ? "#3A3A3C" : "#716B7C",
+  divider: isDark ? "#1C1C1E" : "#E9E6F2",
+  focusBorder: isDark ? "#B9A8FF" : "#6C55C5",
 
-  // INPUTS
-  input: isDark ? "#191715" : "#FDFCFB",
-  inputBackground: isDark ? "#191715" : "#FDFCFB",
-  inputForeground: isDark ? "#F5F1EB" : "#211E1A",
-  inputPlaceholder: isDark ? "#A49B91" : "#8A837B",
-  inputBorder: isDark ? "#39332E" : "#E7E2DC",
-  inputBorderFocus: isDark ? "#C56BFF" : "#B044F2",
-  inputDisabled: isDark ? "#201D1A" : "#F0EDE8",
-  inputDisabledText: isDark ? "#706961" : "#AAA39B",
+  // INPUTS (980px pill radius)
+  input: isDark ? "#252230" : "#F8F7FC",
+  inputBackground: isDark ? "#252230" : "#F8F7FC",
+  inputForeground: isDark ? "#F0EEF8" : "#202027",
+  inputPlaceholder: isDark ? "#ACA6BB" : "#716B7C",
+  inputBorder: isDark ? "#3A3A3C" : "#E9E6F2",
+  inputBorderFocus: isDark ? "#B9A8FF" : "#6C55C5",
+  inputDisabled: isDark ? "#1C1C1E" : "#F0EEF8",
+  inputDisabledText: isDark ? "#555558" : "#716B7C",
 
-  // BUTTONS
-  buttonPrimary: isDark ? "#C56BFF" : "#B044F2",
-  buttonPrimaryHover: isDark ? "#D18AFF" : "#9635D6",
-  buttonPrimaryPressed: isDark ? "#B653F2" : "#8129BE",
-  buttonPrimaryForeground: "#FFFFFF",
+  // BUTTONS (9999px pills, Pricing Blue or transparent outline)
+  buttonPrimary: isDark ? "#B9A8FF" : "#17171C",
+  buttonPrimaryHover: isDark ? "#CBBEFF" : "#6C55C5",
+  buttonPrimaryPressed: isDark ? "#A18BEF" : "#55419F",
+  buttonPrimaryForeground: isDark ? "#202027" : "#FFFFFF",
 
-  buttonSecondary: isDark ? "#26221F" : "#F0EDE8",
-  buttonSecondaryHover: isDark ? "#302B26" : "#E7E2DC",
-  buttonSecondaryPressed: isDark ? "#39332E" : "#DCD5CC",
-  buttonSecondaryForeground: isDark ? "#F5F1EB" : "#211E1A",
+  buttonSecondary: isDark ? "#1C1C1E" : "#F0EEF8",
+  buttonSecondaryHover: isDark ? "#2C2C2E" : "#E5E0F1",
+  buttonSecondaryPressed: isDark ? "#3A3A3C" : "#E9E6F2",
+  buttonSecondaryForeground: isDark ? "#F0EEF8" : "#202027",
 
   buttonGhost: "transparent",
   buttonGhostHover: isDark
-    ? "rgba(255, 255, 255, 0.06)"
-    : "rgba(33, 30, 26, 0.04)",
+    ? "rgba(255, 255, 255, 0.08)"
+    : "rgba(29, 29, 31, 0.04)",
   buttonGhostPressed: isDark
-    ? "rgba(255, 255, 255, 0.10)"
-    : "rgba(33, 30, 26, 0.08)",
-  buttonGhostForeground: isDark ? "#F5F1EB" : "#211E1A",
+    ? "rgba(255, 255, 255, 0.12)"
+    : "rgba(29, 29, 31, 0.08)",
+  buttonGhostForeground: isDark ? "#F0EEF8" : "#202027",
 
-  buttonDisabled: isDark ? "#26221F" : "#EAE5DF",
-  buttonDisabledForeground: isDark ? "#706961" : "#AAA39B",
+  buttonDisabled: isDark ? "#1C1C1E" : "#E5E0F1",
+  buttonDisabledForeground: isDark ? "#555558" : "#716B7C",
 
-  // STATUS & FEEDBACK
-  success: isDark ? "#34D399" : "#16845B",
-  successHover: isDark ? "#6EE7B7" : "#116B49",
+  // STATUS & LAUNCH TOKENS
+  launch: "#B64400",
+  launchForeground: "#FFFFFF",
+  launchSoft: "rgba(182, 68, 0, 0.10)",
+
+  success: isDark ? "#30D158" : "#16A34A",
+  successHover: isDark ? "#5AE37C" : "#15803D",
   successForeground: "#FFFFFF",
   successSoft: isDark
-    ? "rgba(52, 211, 153, 0.16)"
-    : "rgba(22, 132, 91, 0.10)",
+    ? "rgba(48, 209, 88, 0.16)"
+    : "rgba(22, 163, 74, 0.10)",
 
-  warning: isDark ? "#FBBF24" : "#A66B12",
-  warningHover: isDark ? "#FCD34D" : "#87550D",
-  warningForeground: isDark ? "#211E1A" : "#FFFFFF",
+  warning: isDark ? "#FF9F0A" : "#B64400",
+  warningHover: isDark ? "#FFB340" : "#943700",
+  warningForeground: isDark ? "#202027" : "#FFFFFF",
   warningSoft: isDark
-    ? "rgba(251, 191, 36, 0.16)"
-    : "rgba(166, 107, 18, 0.10)",
+    ? "rgba(255, 159, 10, 0.16)"
+    : "rgba(182, 68, 0, 0.10)",
 
-  destructive: isDark ? "#FF7185" : "#D94352",
-  destructiveHover: isDark ? "#FF91A0" : "#B52E3D",
-  destructivePressed: isDark ? "#F05265" : "#982536",
+  destructive: isDark ? "#FF453A" : "#D70015",
+  destructiveHover: isDark ? "#FF6961" : "#B50012",
+  destructivePressed: isDark ? "#D32F2F" : "#8E000F",
   destructiveForeground: "#FFFFFF",
   destructiveSoft: isDark
-    ? "rgba(255, 113, 133, 0.16)"
-    : "rgba(217, 67, 82, 0.10)",
+    ? "rgba(255, 69, 58, 0.16)"
+    : "rgba(215, 0, 21, 0.10)",
 
-  info: isDark ? "#79B8FF" : "#3979B8",
-  infoHover: isDark ? "#9ACBFF" : "#2D6296",
-  infoForeground: "#FFFFFF",
+  info: isDark ? "#B9A8FF" : "#6C55C5",
+  infoHover: isDark ? "#CBBEFF" : "#55419F",
+  infoForeground: isDark ? "#202027" : "#FFFFFF",
   infoSoft: isDark
-    ? "rgba(121, 184, 255, 0.16)"
-    : "rgba(57, 121, 184, 0.10)",
+    ? "rgba(185, 168, 255, 0.16)"
+    : "rgba(0, 102, 204, 0.10)",
 
-  muted: isDark ? "#201D1A" : "#F0EDE8",
-  mutedHover: isDark ? "#302B26" : "#E7E2DC",
-  mutedForeground: isDark ? "#B6ADA3" : "#77716A",
+  muted: isDark ? "#252230" : "#F0EEF8",
+  mutedHover: isDark ? "#1C1C1E" : "#E5E0F1",
+  mutedForeground: isDark ? "#ACA6BB" : "#696575",
 
-  secondary: isDark ? "#201D1A" : "#F0EDE8",
-  secondaryHover: isDark ? "#302B26" : "#E7E2DC",
-  secondaryForeground: isDark ? "#F5F1EB" : "#211E1A",
+  secondary: isDark ? "#252230" : "#F0EEF8",
+  secondaryHover: isDark ? "#1C1C1E" : "#E5E0F1",
+  secondaryForeground: isDark ? "#F0EEF8" : "#202027",
 
-  // LINKS & TABS
-  link: isDark ? "#D18AFF" : "#9635D6",
-  linkHover: isDark ? "#E0B4FF" : "#8129BE",
-  linkVisited: isDark ? "#D6A0E8" : "#86519A",
+  // LINKS & TABS (Apple Blue #6C55C5)
+  link: isDark ? "#B9A8FF" : "#6C55C5",
+  linkHover: isDark ? "#CBBEFF" : "#17171C",
+  linkVisited: isDark ? "#A370F7" : "#681DA8",
 
-  tabBackground: isDark ? "#191715" : "#F0EDE8",
-  tabActive: isDark ? "#C56BFF" : "#B044F2",
+  tabBackground: isDark ? "#1C1A25" : "#F8F7FC",
+  tabActive: isDark ? "#B9A8FF" : "#6C55C5",
   tabActiveBackground: isDark
-    ? "rgba(197, 107, 255, 0.16)"
-    : "rgba(176, 68, 242, 0.08)",
-  tabInactive: isDark ? "#B6ADA3" : "#77716A",
-  tabBorder: isDark ? "#39332E" : "#E7E2DC",
+    ? "rgba(185, 168, 255, 0.14)"
+    : "#E9E3FA",
+  tabInactive: isDark ? "#ACA6BB" : "#696575",
+  tabBorder: isDark ? "#2C2C2E" : "#E9E6F2",
 
-  // NAVIGATION & BADGES
-  navigationBackground: isDark ? "#191715" : "#FDFCFB",
-  navigationBorder: isDark ? "#39332E" : "#E7E2DC",
-  navigationActive: isDark ? "#C56BFF" : "#B044F2",
-  navigationInactive: isDark ? "#A49B91" : "#8A837B",
+  // NAVIGATION (20px container radius, 44px height)
+  navigationBackground: isDark ? "#1C1A25" : "#FFFFFF",
+  navigationBorder: isDark ? "#2C2C2E" : "#E9E6F2",
+  navigationActive: isDark ? "#B9A8FF" : "#6C55C5",
+  navigationInactive: isDark ? "#ACA6BB" : "#696575",
 
   badgePrimary: isDark
-    ? "rgba(197, 107, 255, 0.16)"
-    : "rgba(176, 68, 242, 0.10)",
-  badgePrimaryText: isDark ? "#DDB4FF" : "#8129BE",
+    ? "rgba(185, 168, 255, 0.16)"
+    : "#E9E3FA",
+  badgePrimaryText: isDark ? "#CBBEFF" : "#17171C",
 
   badgeSuccess: isDark
-    ? "rgba(52, 211, 153, 0.16)"
-    : "rgba(22, 132, 91, 0.10)",
-  badgeSuccessText: isDark ? "#6EE7B7" : "#116B49",
+    ? "rgba(48, 209, 88, 0.16)"
+    : "rgba(22, 163, 74, 0.10)",
+  badgeSuccessText: isDark ? "#5AE37C" : "#15803D",
 
   badgeWarning: isDark
-    ? "rgba(251, 191, 36, 0.16)"
-    : "rgba(166, 107, 18, 0.10)",
-  badgeWarningText: isDark ? "#FCD34D" : "#87550D",
+    ? "rgba(255, 159, 10, 0.16)"
+    : "rgba(182, 68, 0, 0.10)",
+  badgeWarningText: isDark ? "#FFB340" : "#B64400",
 
   badgeDanger: isDark
-    ? "rgba(255, 113, 133, 0.16)"
-    : "rgba(217, 67, 82, 0.10)",
-  badgeDangerText: isDark ? "#FF91A0" : "#B52E3D",
+    ? "rgba(255, 69, 58, 0.16)"
+    : "rgba(215, 0, 21, 0.10)",
+  badgeDangerText: isDark ? "#FF6961" : "#D70015",
 
-  badgeNeutral: isDark ? "#26221F" : "#F0EDE8",
-  badgeNeutralText: isDark ? "#B6ADA3" : "#77716A",
+  badgeNeutral: isDark ? "#1C1C1E" : "#F0EEF8",
+  badgeNeutralText: isDark ? "#ACA6BB" : "#696575",
 
-  // OVERLAYS, MODALS & SKELETONS
+  // OVERLAYS & MODALS
   overlay: isDark
-    ? "rgba(0, 0, 0, 0.72)"
-    : "rgba(33, 30, 26, 0.35)",
-  modalBackground: isDark ? "#191715" : "#FDFCFB",
-  modalBorder: isDark ? "#39332E" : "#E7E2DC",
-  modalTitle: isDark ? "#F5F1EB" : "#211E1A",
-  modalDescription: isDark ? "#B6ADA3" : "#77716A",
+    ? "rgba(0, 0, 0, 0.78)"
+    : "rgba(29, 29, 31, 0.35)",
+  modalBackground: isDark ? "#1C1A25" : "#FFFFFF",
+  modalBorder: isDark ? "#2C2C2E" : "#E9E6F2",
+  modalTitle: isDark ? "#F0EEF8" : "#202027",
+  modalDescription: isDark ? "#ACA6BB" : "#696575",
 
-  skeleton: isDark ? "#26221F" : "#E7E2DC",
-  skeletonHighlight: isDark ? "#39332E" : "#F0EDE8",
+  skeleton: isDark ? "#1C1C1E" : "#E5E0F1",
+  skeletonHighlight: isDark ? "#2C2C2E" : "#F0EEF8",
 
   // ICONS
-  iconPrimary: isDark ? "#F5F1EB" : "#211E1A",
-  iconSecondary: isDark ? "#B6ADA3" : "#77716A",
-  iconMuted: isDark ? "#898078" : "#8A837B",
-  iconActive: isDark ? "#C56BFF" : "#B044F2",
-  iconSuccess: isDark ? "#34D399" : "#16845B",
-  iconWarning: isDark ? "#FBBF24" : "#A66B12",
-  iconDanger: isDark ? "#FF7185" : "#D94352",
-  iconInfo: isDark ? "#79B8FF" : "#3979B8",
+  iconPrimary: isDark ? "#F0EEF8" : "#202027",
+  iconSecondary: isDark ? "#ACA6BB" : "#696575",
+  iconMuted: isDark ? "#A39CB2" : "#716B7C",
+  iconActive: isDark ? "#B9A8FF" : "#6C55C5",
+  iconSuccess: isDark ? "#30D158" : "#16A34A",
+  iconWarning: isDark ? "#FF9F0A" : "#B64400",
+  iconDanger: isDark ? "#FF453A" : "#D70015",
+  iconInfo: isDark ? "#B9A8FF" : "#6C55C5",
 
-  online: isDark ? "#34D399" : "#16845B",
-  offline: isDark ? "#898078" : "#8A837B",
-  busy: isDark ? "#FBBF24" : "#A66B12",
-  error: isDark ? "#FF7185" : "#D94352",
+  online: isDark ? "#30D158" : "#16A34A",
+  offline: isDark ? "#A39CB2" : "#716B7C",
+  busy: isDark ? "#FF9F0A" : "#B64400",
+  error: isDark ? "#FF453A" : "#D70015",
 
   selection: isDark
-    ? "rgba(197, 107, 255, 0.25)"
-    : "rgba(176, 68, 242, 0.12)",
+    ? "rgba(185, 168, 255, 0.25)"
+    : "#E9E3FA",
   ripple: isDark
     ? "rgba(255, 255, 255, 0.08)"
-    : "rgba(33, 30, 26, 0.06)",
+    : "rgba(29, 29, 31, 0.05)",
   shadow: isDark
-    ? "rgba(0, 0, 0, 0.35)"
-    : "rgba(33, 30, 26, 0.08)",
+    ? "rgba(0, 0, 0, 0.40)"
+    : "rgba(0, 0, 0, 0.04)",
   transparent: "transparent",
 
   // PRODUCT ACCENTS
