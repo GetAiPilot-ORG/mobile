@@ -9,12 +9,14 @@ import {
   StyleSheet,
 } from 'react-native';
 
+import { FeaturePlanModal } from '../../../components/FeaturePlanModal';
 import { AppScreen } from '../../../components/AppScreen';
 import { AppTopBar } from '../../../components/AppTopBar';
 import {
   ProductFloatingBottomBar,
   ProductTabItem,
 } from '../../../components/ProductFloatingBottomBar';
+import { usePlatformSubscription } from '../../../hooks/usePlatformSubscription';
 import { useTheme, getColors } from '../../../theme';
 import { apiClient } from '../../../core/api/client';
 import {
@@ -72,6 +74,7 @@ export const SocialScreen: React.FC = () => {
   const queryClient = useQueryClient();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+  const { hasSocial } = usePlatformSubscription();
 
   const [activeTab, setActiveTab] = useState<SocialTabType>('overview');
   const [selectedPost, setSelectedPost] = useState<any | null>(null);
@@ -79,6 +82,14 @@ export const SocialScreen: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAccountsModal, setShowAccountsModal] = useState(false);
   const [initialCaptionForCreate, setInitialCaptionForCreate] = useState<string | undefined>(undefined);
+  const [planModalVisible, setPlanModalVisible] = useState(false);
+  const [lockedFeatureName, setLockedFeatureName] = useState("Social Pilot");
+
+  const openLockModal = (name: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setLockedFeatureName(name);
+    setPlanModalVisible(true);
+  };
 
   // Safe Back Handler for Header and Hardware Back
   const handleBack = useCallback(() => {
@@ -489,7 +500,12 @@ export const SocialScreen: React.FC = () => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSelectedRange(days);
             }}
+            isLocked={!hasSocial}
             onOpenCreateModal={() => {
+              if (!hasSocial) {
+                openLockModal("Multi-Platform Post Publishing");
+                return;
+              }
               setInitialCaptionForCreate(undefined);
               setShowCreateModal(true);
             }}
@@ -506,6 +522,10 @@ export const SocialScreen: React.FC = () => {
             trendsList={trendsList}
             onRefreshTrends={refetchTrends}
             onUseTrendInPost={(trend) => {
+              if (!hasSocial) {
+                openLockModal("AI Trend-to-Post Creation");
+                return;
+              }
               setInitialCaptionForCreate(trend.title || trend.caption || '');
               setShowCreateModal(true);
             }}
@@ -525,6 +545,10 @@ export const SocialScreen: React.FC = () => {
             connectedAccounts={connectedList}
             entitlementsData={entitlementsData}
             onOpenCreateModal={() => {
+              if (!hasSocial) {
+                openLockModal("Multi-Platform Post Publishing");
+                return;
+              }
               setInitialCaptionForCreate(undefined);
               setShowCreateModal(true);
             }}
@@ -605,6 +629,13 @@ export const SocialScreen: React.FC = () => {
         }}
         accentColor="#EC4899"
         moreMenuTitle="SocialPilot Menu"
+      />
+
+      <FeaturePlanModal
+        visible={planModalVisible}
+        onClose={() => setPlanModalVisible(false)}
+        category="social"
+        featureName={lockedFeatureName}
       />
     </AppScreen>
   );

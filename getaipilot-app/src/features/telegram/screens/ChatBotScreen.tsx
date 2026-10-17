@@ -38,6 +38,8 @@ import { useQuery } from '@tanstack/react-query';
 import { telegramSupabase } from '../api/telegramSupabase';
 import { ProductHeading } from "@/components/ProductUI";
 import { ConnectBotTokenModal } from '../components/ConnectBotTokenModal';
+import { usePlatformSubscription } from '@/hooks/usePlatformSubscription';
+import { FeaturePlanModal } from '@/components/FeaturePlanModal';
 
 interface ChatUser {
   id: string;
@@ -54,6 +56,9 @@ export const ChatBotScreen: React.FC<Props> = () => {
   const txt = { color: colors.text };
   const border = { borderColor: colors.border };
   const inputStyle = { backgroundColor: colors.card, borderColor: colors.border };
+
+  const { hasTelegram } = usePlatformSubscription();
+  const [lockedModal, setLockedModal] = useState<{ visible: boolean; title: string } | null>(null);
 
   // Bot states
   const [isBotListening, setIsBotListening] = useState(true);
@@ -300,7 +305,10 @@ export const ChatBotScreen: React.FC<Props> = () => {
           className="flex-row items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0284C7] active:opacity-90 shadow-sm"
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            // setIsConnectTokenModalOpen(true);
+            if (!hasTelegram) {
+              setLockedModal({ visible: true, title: 'Telegram AI Assistant' });
+              return;
+            }
             if (botToken) {
               setIsConfigModalOpen(true);
             } else {
@@ -308,7 +316,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
             }
           }}
         >
-          <Ionicons name="add" size={14} color="#FFFFFF" />
+          <Ionicons name={hasTelegram ? "add" : "lock-closed"} size={13} color="#FFFFFF" />
           <Text className="text-white text-xs font-bold">Connect Bot</Text>
         </Pressable>
       </View>
@@ -328,10 +336,13 @@ export const ChatBotScreen: React.FC<Props> = () => {
             Connect an AI assistant to handle your Telegram bot's user queries automatically.
           </Text>
           <TouchableOpacity
-            style={
-              styles.connectBotBtn}
+            style={styles.connectBotBtn}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              if (!hasTelegram) {
+                setLockedModal({ visible: true, title: 'Telegram AI Assistant' });
+                return;
+              }
               if (botToken) {
                 setIsConfigModalOpen(true);
               } else {
@@ -339,7 +350,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
               }
             }}
           >
-            <Ionicons name="add" size={16} color="#FFFFFF" />
+            <Ionicons name={hasTelegram ? "add" : "lock-closed"} size={15} color="#FFFFFF" />
             <Text style={styles.connectBotBtnText}>Connect a Bot</Text>
           </TouchableOpacity>
         </View>
@@ -872,6 +883,14 @@ export const ChatBotScreen: React.FC<Props> = () => {
             setIsConfigModalOpen(true);
           }, 350);
         }}
+      />
+
+      {/* Plan Gate Modal */}
+      <FeaturePlanModal
+        visible={Boolean(lockedModal?.visible)}
+        onClose={() => setLockedModal(null)}
+        featureName={lockedModal?.title || 'AI ChatBot'}
+        category="telegram"
       />
     </View>
   );
