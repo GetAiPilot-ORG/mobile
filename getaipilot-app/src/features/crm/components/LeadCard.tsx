@@ -77,30 +77,179 @@ export const LeadCard: React.FC<LeadCardProps> = ({
       ? `₹${Number((lead as any).lead_value).toLocaleString()}`
       : null;
 
-  const name = lead.name || [lead.first_name, lead.last_name].filter(Boolean).join(' ') || 'Unnamed lead';
+  const rawName = lead.name || [lead.first_name, lead.last_name].filter(Boolean).join(' ') || 'Unnamed lead';
+  const name = rawName.replace(/\s*-\s*$/, '').trim() || 'Unnamed lead';
   return (
-    <View style={{ backgroundColor: colors.card, borderRadius: 24, padding: 20, marginBottom: 14, gap: 16 }}>
-      <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={"Open " + name} style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
-        <View style={{ width: 46, height: 46, borderRadius: 18, backgroundColor: colors.peach, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 18, color: colors.text }}>{name.charAt(0).toUpperCase()}</Text></View>
-        <View style={{ flex: 1, gap: 5 }}><Text style={{ fontSize: 16, color: colors.text, fontWeight: '500' }}>{name}</Text>{lead.company && <Text style={{ fontSize: 12, color: colors.textSecondary }}>{lead.company}</Text>}</View>
-        <Ionicons name="chevron-forward" size={17} color={colors.iconSecondary} />
-      </Pressable>
-      <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-        <View style={{ backgroundColor: colors.lavender, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ color: colors.text, fontSize: 12 }}>{statusCfg.label}</Text></View>
-        {formattedValue && <Text style={{ color: colors.text, fontSize: 13 }}>{formattedValue}</Text>}
-        {lead.assignee?.name && <Text style={{ fontSize: 12, color: colors.textSecondary }}>{lead.assignee.name}</Text>}
-      </View>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
-        <View style={{ flex: 1, gap: 4 }}>
-          {lead.phone && <Text style={{ fontSize: 12, color: colors.textSecondary }}>{lead.phone}</Text>}
-          {lead.email && <Text numberOfLines={1} style={{ fontSize: 12, color: colors.textSecondary }}>{lead.email}</Text>}
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={"Open " + name}
+      style={{
+        backgroundColor: colors.card,
+        borderRadius: 16,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: colors.border || 'transparent',
+      }}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        {/* Avatar */}
+        <View
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 12,
+            backgroundColor: colors.peach,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text }}>
+            {name.charAt(0).toUpperCase()}
+          </Text>
         </View>
-        <View style={{ flexDirection: 'row', gap: 6 }}>
-          {lead.phone && <Pressable onPress={handleWhatsApp} accessibilityRole="button" accessibilityLabel={"Message " + name} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="logo-whatsapp" size={19} color={colors.text} /></Pressable>}
-          {lead.phone && <Pressable onPress={handleCall} accessibilityRole="button" accessibilityLabel={"Call " + name} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.lavender, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="call-outline" size={19} color={colors.text} /></Pressable>}
-          {lead.email && <Pressable onPress={handleEmail} accessibilityRole="button" accessibilityLabel={"Email " + name} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.peach, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="mail-outline" size={19} color={colors.text} /></Pressable>}
+
+        {/* Info Column */}
+        <View style={{ flex: 1, minWidth: 0, justifyContent: 'center' }}>
+          {/* Name & Status Pill Row */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text
+              numberOfLines={1}
+              style={{
+                fontSize: 14,
+                color: colors.text,
+                fontWeight: '600',
+                flexShrink: 1,
+              }}
+            >
+              {name}
+            </Text>
+            <View
+              style={{
+                backgroundColor: colors.lavender,
+                borderRadius: 8,
+                paddingHorizontal: 7,
+                paddingVertical: 1.5,
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.text,
+                  fontSize: 10,
+                  fontWeight: '600',
+                }}
+              >
+                {statusCfg.label}
+              </Text>
+            </View>
+            {Boolean(formattedValue) ? (
+              <Text
+                style={{
+                  color: colors.accent || colors.text,
+                  fontSize: 11,
+                  fontWeight: '700',
+                  marginLeft: 'auto',
+                }}
+              >
+                {formattedValue}
+              </Text>
+            ) : null}
+          </View>
+
+          {/* Subtitle: Phone / Email / Company */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 }}>
+            {lead.phone ? (
+              <Text
+                numberOfLines={1}
+                style={{ fontSize: 11, color: colors.textSecondary }}
+              >
+                {lead.phone}
+              </Text>
+            ) : null}
+            {lead.email ? (
+              <Text
+                numberOfLines={1}
+                style={{
+                  fontSize: 11,
+                  color: colors.textSecondary,
+                  flex: 1,
+                }}
+              >
+                {lead.email}
+              </Text>
+            ) : null}
+            {!lead.phone && !lead.email && Boolean(lead.company) ? (
+              <Text
+                numberOfLines={1}
+                style={{ fontSize: 11, color: colors.textSecondary }}
+              >
+                {lead.company}
+              </Text>
+            ) : null}
+          </View>
+        </View>
+
+        {/* Action Buttons (Compact 30x30 rounded badges) */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+          {lead.phone ? (
+            <Pressable
+              onPress={handleWhatsApp}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel={"Message " + name}
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: 15,
+                backgroundColor: colors.mint,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Ionicons name="logo-whatsapp" size={15} color={colors.text} />
+            </Pressable>
+          ) : null}
+          {lead.phone ? (
+            <Pressable
+              onPress={handleCall}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel={"Call " + name}
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: 15,
+                backgroundColor: colors.lavender,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Ionicons name="call-outline" size={14} color={colors.text} />
+            </Pressable>
+          ) : null}
+          {lead.email ? (
+            <Pressable
+              onPress={handleEmail}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel={"Email " + name}
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: 15,
+                backgroundColor: colors.peach,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Ionicons name="mail-outline" size={14} color={colors.text} />
+            </Pressable>
+          ) : null}
+          <Ionicons name="chevron-forward" size={15} color={colors.iconSecondary || colors.textSecondary} />
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 };

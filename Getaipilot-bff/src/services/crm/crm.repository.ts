@@ -1088,7 +1088,7 @@ export class CRMRepository {
   public static async getAttendanceRecords(orgId: string, filters: { member_id?: string; date_from?: string; date_to?: string; status?: string; limit?: number } = {}): Promise<{ records: any[]; total_count: number }> {
     let query = crmSupabase
       .from('attendance_records')
-      .select('*, member:crm_members(id, name, email, role)', { count: 'exact' })
+      .select('*, member:crm_members!member_id(id, name, email, role)', { count: 'exact' })
       .eq('org_id', orgId);
 
     if (filters.member_id) query = query.eq('member_id', filters.member_id);
