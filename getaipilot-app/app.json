@@ -58,7 +58,7 @@
         "expo-navigation-bar",
         {
           "enforceContrast": false,
-          "barStyle": "dark"
+          "style": "dark"
         }
       ],
       "expo-router",
@@ -83,7 +83,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/logobag.png",
+          "icon": "./assets/images/notification-icon.png",
           "color": "#10B981"
         }
       ]

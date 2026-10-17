@@ -69,9 +69,10 @@ export interface ThemedDialogProps {
   visible: boolean;
   onClose: () => void;
   type?: ThemedDialogType;
-  title: string;
+  title?: string;
   description?: string;
   icon?: React.ReactNode;
+  showIcon?: boolean;
   dismissable?: boolean;
   showCloseButton?: boolean;
   buttonLayout?: DialogButtonLayout;
@@ -130,6 +131,7 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
   title,
   description,
   icon,
+  showIcon = true,
   dismissable = true,
   showCloseButton = false,
   buttonLayout = 'auto',
@@ -702,37 +704,42 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
           )}
 
           {/* Centered Icon Badge */}
-          <View
-            style={[
-              styles.iconBadge,
-              {
-                backgroundColor: typeConfig.badgeBg,
-                borderColor: typeConfig.badgeBorder,
-              },
-            ]}
-          >
-            {icon || typeConfig.defaultIcon}
-          </View>
+          {showIcon && (icon || typeConfig.defaultIcon) ? (
+            <View
+              style={[
+                styles.iconBadge,
+                {
+                  backgroundColor: typeConfig.badgeBg,
+                  borderColor: typeConfig.badgeBorder,
+                },
+              ]}
+            >
+              {icon || typeConfig.defaultIcon}
+            </View>
+          ) : null}
 
           {/* Title */}
-          <Text
-            style={[
-              styles.title,
-              { color: colors.text },
-              (textAlign || (alignRight ? 'right' : undefined)) && {
-                textAlign: textAlign || (alignRight ? 'right' : 'center'),
-              },
-            ]}
-          >
-            {title}
-          </Text>
+          {title ? (
+            <Text
+              style={[
+                styles.title,
+                { color: colors.text },
+                (textAlign || (alignRight ? 'right' : undefined)) && {
+                  textAlign: textAlign || (alignRight ? 'right' : 'center'),
+                },
+              ]}
+            >
+              {title}
+            </Text>
+          ) : null}
 
           {/* Description */}
           {description ? (
             <Text
               style={[
                 styles.description,
-                { color: colors.mutedText },
+                { color: !title ? colors.text : colors.mutedText },
+                !title && { fontSize: 16, fontWeight: '600', lineHeight: 22, marginTop: 4, marginBottom: 18 },
                 (textAlign || (alignRight ? 'right' : undefined)) && {
                   textAlign: textAlign || (alignRight ? 'right' : 'center'),
                 },
@@ -930,7 +937,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   cardContainer: {
-    width: '100%',
+    width: '75%',
     borderRadius: 24,
     borderWidth: 1,
     paddingTop: 24,

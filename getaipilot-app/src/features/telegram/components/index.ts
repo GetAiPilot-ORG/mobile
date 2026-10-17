@@ -10,4 +10,5 @@ export * from './ChatBotModal';
 export * from './ReactionsModal';
 export * from './TelegramLoginModal';
 export * from './DashboardAnalyticsCharts';
+export * from './ConnectBotTokenModal';
 export * from './ui/StatCard';

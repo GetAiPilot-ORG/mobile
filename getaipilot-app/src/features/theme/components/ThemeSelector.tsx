@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, Text } from 'react-native';
-import { useTheme, getColors } from '@/theme';
+import { useTheme } from '../hooks/useTheme';
+import { getColors } from '../constants/colors';
 import { ThemeModeCard } from './ThemeModeCard';
 import { ThemeMode } from '../types';
 

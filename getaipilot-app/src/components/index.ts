@@ -19,3 +19,4 @@ export * from './splash/AnimatedSplashScreen';
 export * from './TabMotion';
 export * from './ThemedDialog';
 export * from '../contexts/ThemedDialogContext';
+export * from './FeaturePlanModal';

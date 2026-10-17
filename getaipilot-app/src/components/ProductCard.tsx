@@ -1,6 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { View, Text, Pressable, Image, Platform, StyleSheet } from 'react-native';
-import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
+import { ArrowRight01Icon } from '@/constants/icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import * as Haptics from 'expo-haptics';
 import { useTheme, getColors } from '@/theme';
@@ -41,17 +42,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   const isMaintenance = status === 'maintenance';
-  const statusLabel = isMaintenance ? 'Maintenance' : isEnabled ? 'Active' : 'Explore';
+  const statusLabel = isMaintenance ? 'Maintenance' : isEnabled ? 'Active' : 'Locked';
   const statusBackground = isMaintenance
     ? (isDark ? '#49372D' : '#F9E5D4')
     : isEnabled
       ? (isDark ? '#303B32' : '#E0F1E6')
-      : colors.accentSoft;
+      : (isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7');
   const statusColor = isMaintenance
     ? (isDark ? '#F3C38C' : '#8A4B08')
     : isEnabled
       ? (isDark ? '#A7DCB7' : '#277344')
-      : colors.accent;
+      : '#D97706';
 
   return (
     <Pressable
@@ -77,7 +78,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </View>
         )}
         <View style={[styles.status, { backgroundColor: statusBackground }]}>
-          <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+          {!isEnabled && !isMaintenance ? (
+            <Ionicons name="lock-closed" size={11} color={statusColor} />
+          ) : (
+            <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+          )}
           <Text style={[styles.statusText, { color: statusColor }]}>
             {statusLabel}
           </Text>
