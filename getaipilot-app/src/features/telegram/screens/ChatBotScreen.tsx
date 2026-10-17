@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
+import * as DocumentPicker from 'expo-document-picker';
 import * as Haptics from 'expo-haptics';
 import React, { useEffect, useState } from 'react';
 import {
@@ -13,6 +14,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -35,6 +37,9 @@ import { getColors, useTheme } from '@/theme';
 import { useQuery } from '@tanstack/react-query';
 import { telegramSupabase } from '../api/telegramSupabase';
 import { ProductHeading } from "@/components/ProductUI";
+import { ConnectBotTokenModal } from '../components/ConnectBotTokenModal';
+import { usePlatformSubscription } from '@/hooks/usePlatformSubscription';
+import { FeaturePlanModal } from '@/components/FeaturePlanModal';
 
 interface ChatUser {
   id: string;
@@ -52,13 +57,18 @@ export const ChatBotScreen: React.FC<Props> = () => {
   const border = { borderColor: colors.border };
   const inputStyle = { backgroundColor: colors.card, borderColor: colors.border };
 
+  const { hasTelegram } = usePlatformSubscription();
+  const [lockedModal, setLockedModal] = useState<{ visible: boolean; title: string } | null>(null);
+
   // Bot states
   const [isBotListening, setIsBotListening] = useState(true);
+  const [isConnectTokenModalOpen, setIsConnectTokenModalOpen] = useState(false);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isChatsDrawerOpen, setIsChatsDrawerOpen] = useState(false);
   const [isApiKeyVisible, setIsApiKeyVisible] = useState(false);
 
   // Config Form State
+  const [botToken, setBotToken] = useState('');
   const [supportBotName, setSupportBotName] = useState('');
   const [botUsername, setBotUsername] = useState('');
   const [systemPrompt, setSystemPrompt] = useState('');
@@ -156,6 +166,31 @@ export const ChatBotScreen: React.FC<Props> = () => {
       [activeUser.telegramUserId]: [],
     }));
     Alert.alert('Reset', `Chat memory cleared for ${activeUser.name}`);
+  };
+
+  const handlePickPdf = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf'],
+        copyToCacheDirectory: true,
+        multiple: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const newDocs = result.assets.map((asset, index) => ({
+          id: asset.uri || `${Date.now()}-${index}`,
+          name: asset.name || 'document.pdf',
+          status: 'Trained',
+        }));
+
+        setPdfDocuments((prev) => [...prev, ...newDocs]);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } catch (err: any) {
+      console.warn('PDF picker error:', err);
+      Alert.alert('File Picker Error', err?.message || 'Failed to select PDF files.');
+    }
   };
 
   const handleSaveConfig = () => {
@@ -270,10 +305,18 @@ export const ChatBotScreen: React.FC<Props> = () => {
           className="flex-row items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0284C7] active:opacity-90 shadow-sm"
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setIsConfigModalOpen(true);
+            if (!hasTelegram) {
+              setLockedModal({ visible: true, title: 'Telegram AI Assistant' });
+              return;
+            }
+            if (botToken) {
+              setIsConfigModalOpen(true);
+            } else {
+              setIsConnectTokenModalOpen(true);
+            }
           }}
         >
-          <Ionicons name="add" size={14} color="#FFFFFF" />
+          <Ionicons name={hasTelegram ? "add" : "lock-closed"} size={13} color="#FFFFFF" />
           <Text className="text-white text-xs font-bold">Connect Bot</Text>
         </Pressable>
       </View>
@@ -284,156 +327,207 @@ export const ChatBotScreen: React.FC<Props> = () => {
           <ActivityIndicator size="small" color="#0284C7" />
         </View>
       ) : bots.length === 0 ? (
-        <View style={{ padding: 24, alignItems: 'center', backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: border.borderColor }}>
-          <Ionicons name="chatbubbles-outline" size={32} color="#0284C7" style={{ marginBottom: 10 }} />
-          <Text style={[styles.mainTitle, txt, { fontSize: 18, marginBottom: 6 }]}>No ChatBots Connected</Text>
-          <Text style={[styles.mainSub, { textAlign: 'center', marginBottom: 16 }]}>Connect an AI assistant to handle your Telegram bot's user queries automatically.</Text>
-          <Pressable
+        <View style={[styles.emptyContainer, card]}>
+          <View style={styles.emptyIconCircle}>
+            <Ionicons name="chatbubbles-outline" size={28} color="#0284C7" />
+          </View>
+          <Text style={[styles.mainTitle, txt, { fontSize: 17, marginBottom: 4 }]}>No ChatBots Connected</Text>
+          <Text style={[styles.mainSub, { textAlign: 'center', marginBottom: 16 }]}>
+            Connect an AI assistant to handle your Telegram bot's user queries automatically.
+          </Text>
+          <TouchableOpacity
             style={styles.connectBotBtn}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setIsConfigModalOpen(true);
+              if (!hasTelegram) {
+                setLockedModal({ visible: true, title: 'Telegram AI Assistant' });
+                return;
+              }
+              if (botToken) {
+                setIsConfigModalOpen(true);
+              } else {
+                setIsConnectTokenModalOpen(true);
+              }
             }}
           >
-            <Ionicons name="add" size={16} color="#FFFFFF" />
+            <Ionicons name={hasTelegram ? "add" : "lock-closed"} size={15} color="#FFFFFF" />
             <Text style={styles.connectBotBtnText}>Connect a Bot</Text>
-          </Pressable>
+          </TouchableOpacity>
         </View>
       ) : (
-        bots.map((bot: any) => (
-          <View key={bot.id} style={[styles.botCard, card]}>
-            {/* Bot Card Header */}
-            <View style={styles.botCardHeader}>
-              <View style={styles.botIconWrapper}>
-                <Ionicons name="hardware-chip" size={24} color="#0284C7" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.botName, txt]}>{bot.support_name || bot.bot_name}</Text>
-                <Text style={styles.botUsername}>@{bot.bot_username || 'unknown_bot'}</Text>
-              </View>
-            </View>
-
-            {/* Specs Table */}
-            <View style={[styles.specsTable, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <View style={styles.specRow}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-                  <Ionicons name="person-circle-outline" size={14} color="#64748B" />
-                  <Text style={styles.specLabel}>Support Name</Text>
+        bots.map((bot: any) => {
+          const isActive = bot.status === 'active';
+          return (
+            <View key={bot.id} style={[styles.botCard, card]}>
+              {/* 1. Card Header */}
+              <View style={styles.botCardHeader}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+                  <View style={[styles.botIconWrapper, { backgroundColor: isDark ? 'rgba(2, 132, 199, 0.15)' : '#E0F2FE' }]}>
+                    <Ionicons name="hardware-chip" size={22} color="#0284C7" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.botName, txt]} numberOfLines={1}>
+                      {bot.support_name || bot.bot_name || 'AI Assistant'}
+                    </Text>
+                    <Text style={styles.botUsername} numberOfLines={1}>
+                      @{bot.bot_username || 'unknown_bot'}
+                    </Text>
+                  </View>
                 </View>
-                <Text style={[styles.specValue, txt]}>{bot.support_name || 'Support'}</Text>
-              </View>
 
-              <View style={styles.specRow}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-                  <Ionicons name="settings-outline" size={14} color="#64748B" />
-                  <Text style={styles.specLabel}>Model API</Text>
+                {/* Status Pill in Header */}
+                <View style={[styles.statusBadge, isActive ? styles.statusBadgeActive : styles.statusBadgePaused]}>
+                  <View style={[styles.statusDot, { backgroundColor: isActive ? '#10B981' : '#F59E0B' }]} />
+                  <Text style={[styles.statusBadgeText, { color: isActive ? '#059669' : '#D97706' }]}>
+                    {isActive ? 'LISTENING' : 'PAUSED'}
+                  </Text>
                 </View>
-                <Text style={[styles.specValue, txt]}>{bot.provider || 'OpenAI'}</Text>
               </View>
 
-              <View style={[styles.specRow, { borderBottomWidth: 0 }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-                  <Ionicons name="document-text-outline" size={14} color="#64748B" />
-                  <Text style={styles.specLabel}>Knowledge Base</Text>
+              {/* 2. Sleek Specs Strip */}
+              <View style={[styles.specsStrip, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC', borderColor: isDark ? 'rgba(255, 255, 255, 0.07)' : '#E2E8F0' }]}>
+                <View style={styles.specCol}>
+                  <Text style={styles.specColLabel}>SUPPORT</Text>
+                  <Text style={[styles.specColValue, txt]} numberOfLines={1}>
+                    {bot.support_name || 'Support'}
+                  </Text>
                 </View>
-                <Text style={[styles.specValueLink, { color: '#0284C7' }]}>{bot.knowledge_base_name || 'General KB'}</Text>
+                <View style={[styles.specDivider, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0' }]} />
+                <View style={styles.specCol}>
+                  <Text style={styles.specColLabel}>AI MODEL</Text>
+                  <Text style={[styles.specColValue, txt]} numberOfLines={1}>
+                    {bot.provider || 'OpenAI'}
+                  </Text>
+                </View>
+                <View style={[styles.specDivider, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0' }]} />
+                <View style={styles.specCol}>
+                  <Text style={styles.specColLabel}>KNOWLEDGE</Text>
+                  <Text style={[styles.specColValue, { color: '#0284C7' }]} numberOfLines={1}>
+                    {bot.knowledge_base_name || 'General KB'}
+                  </Text>
+                </View>
               </View>
-            </View>
 
-            {/* Status and Action Buttons */}
-            <View style={styles.cardActionsRow}>
-              <View style={styles.listeningBadge}>
-                <View style={styles.dotGreen} />
-                <Text style={styles.listeningText}>
-                  {bot.status === 'active' ? 'LISTENING' : 'PAUSED'}
-                </Text>
+              {/* 3. Primary Action Buttons */}
+              <View style={styles.mainActionsRow}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.primaryActionBtn,
+                    styles.chatsBtn,
+                    pressed && { opacity: 0.8 },
+                  ]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setIsChatsDrawerOpen(true);
+                  }}
+                >
+                  <Ionicons name="chatbubbles" size={15} color="#0284C7" />
+                  <Text style={styles.chatsBtnText}>Live Chats</Text>
+                </Pressable>
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.primaryActionBtn,
+                    styles.openLinkBtn,
+                    pressed && { opacity: 0.8 },
+                  ]}
+                  onPress={() => {
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    Linking.openURL(`https://t.me/${bot.bot_username || ''}`);
+                  }}
+                >
+                  <Ionicons name="paper-plane-outline" size={14} color="#0284C7" />
+                  <Text style={styles.openLinkText}>Open Bot</Text>
+                  <Ionicons name="open-outline" size={12} color="#0284C7" />
+                </Pressable>
               </View>
 
-              <Pressable style={styles.openLinkBtn} onPress={() => {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                Linking.openURL(`https://t.me/${bot.bot_username || ''}`);
-              }}>
-                <Text style={styles.openLinkText}>Open Bot Link</Text>
-                <Ionicons name="open-outline" size={13} color="#0284C7" />
-              </Pressable>
-            </View>
+              {/* 4. Utility Footer Row */}
+              <View style={styles.cardFooterRow}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.footerBtn,
+                    { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF', borderColor: colors.border },
+                    pressed && { opacity: 0.7 },
+                  ]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setSupportBotName(bot.support_name || '');
+                    setBotUsername(`@${bot.bot_username || ''}`);
+                    setSystemPrompt(bot.business_info || '');
+                    setApiKey(bot.api_key || '');
+                    setIsConfigModalOpen(true);
+                  }}
+                >
+                  <Ionicons name="create-outline" size={13} color={isDark ? '#94A3B8' : '#64748B'} />
+                  <Text style={[styles.footerBtnText, txt]}>Edit</Text>
+                </Pressable>
 
-            {/* Chats & Reset Buttons */}
-            <View style={styles.mainActionsRow}>
-              <Pressable
-                style={styles.chatsBtn}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setIsChatsDrawerOpen(true);
-                }}
-              >
-                <Ionicons name="chatbubbles" size={15} color="#0284C7" />
-                <Text style={styles.chatsBtnText}>Chats</Text>
-              </Pressable>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.footerBtn,
+                    { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF', borderColor: colors.border },
+                    pressed && { opacity: 0.7 },
+                  ]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    Alert.alert('Status Update', `Bot ${isActive ? 'paused' : 'resumed'}.`);
+                  }}
+                >
+                  <Ionicons
+                    name={isActive ? 'pause-circle-outline' : 'play-circle-outline'}
+                    size={13}
+                    color={isActive ? '#F59E0B' : '#10B981'}
+                  />
+                  <Text style={[styles.footerBtnText, txt]}>{isActive ? 'Pause' : 'Resume'}</Text>
+                </Pressable>
 
-              <Pressable
-                style={styles.resetHistoryBtn}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  Alert.alert('Reset History', 'Are you sure you want to clear the full chat history?', [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                      text: 'Reset',
-                      style: 'destructive',
-                      onPress: () => {
-                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                        Alert.alert('History Cleared', 'Bot conversation history has been reset.');
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.footerBtn,
+                    { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF', borderColor: colors.border },
+                    pressed && { opacity: 0.7 },
+                  ]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    Alert.alert('Reset History', 'Are you sure you want to clear the full chat history?', [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Reset',
+                        style: 'destructive',
+                        onPress: () => {
+                          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                          Alert.alert('History Cleared', 'Bot conversation history has been reset.');
+                        },
                       },
-                    },
-                  ]);
-                }}
-              >
-                <Ionicons name="refresh" size={15} color="#D97706" />
-                <Text style={styles.resetHistoryText}>Reset History</Text>
-              </Pressable>
+                    ]);
+                  }}
+                >
+                  <Ionicons name="refresh-outline" size={13} color={isDark ? '#94A3B8' : '#64748B'} />
+                  <Text style={[styles.footerBtnText, txt]}>Reset</Text>
+                </Pressable>
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.footerBtn,
+                    { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.08)' : '#FEF2F2', borderColor: isDark ? 'rgba(239,68,68,0.2)' : '#FECACA' },
+                    pressed && { opacity: 0.7 },
+                  ]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    Alert.alert('Delete Bot', 'Are you sure you want to remove this bot?', [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Delete', style: 'destructive' },
+                    ]);
+                  }}
+                >
+                  <Ionicons name="trash-outline" size={13} color="#EF4444" />
+                  <Text style={[styles.footerBtnText, { color: '#EF4444' }]}>Delete</Text>
+                </Pressable>
+              </View>
             </View>
-
-            {/* Footer Actions: Edit | Pause | Delete */}
-            <View style={styles.cardFooterRow}>
-              <Pressable
-                style={[styles.footerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSupportBotName(bot.support_name || '');
-                  setBotUsername(`@${bot.bot_username || ''}`);
-                  setSystemPrompt(bot.business_info || '');
-                  setApiKey(bot.api_key || '');
-                  setIsConfigModalOpen(true);
-                }}
-              >
-                <Text style={[styles.footerBtnText, txt]}>Edit</Text>
-              </Pressable>
-
-              <Pressable
-                style={[styles.footerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  Alert.alert('Status Update', 'Bot paused/resumed.');
-                }}
-              >
-                <Text style={[styles.footerBtnText, txt]}>{bot.status === 'active' ? 'Pause' : 'Resume'}</Text>
-              </Pressable>
-
-              <Pressable
-                style={[styles.footerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  Alert.alert('Delete Bot', 'Are you sure you want to remove this bot?', [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Delete', style: 'destructive' },
-                  ]);
-                }}
-              >
-                <Text style={[styles.footerBtnText, { color: '#EF4444' }]}>Delete</Text>
-              </Pressable>
-            </View>
-          </View>
-        ))
+          );
+        })
       )}
 
       {/* ────────────────────────────────────────────────────────────────────────
@@ -601,8 +695,8 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 <Ionicons name="hardware-chip" size={18} color="#0284C7" />
               </View>
               <View>
-                <Text style={[styles.modalHeaderTitle, txt]}>{supportBotName}</Text>
-                <Text style={styles.modalHeaderSub}>{botUsername}</Text>
+                <Text style={[styles.modalHeaderTitle, txt]}>{supportBotName || 'Configure Bot'}</Text>
+                <Text style={styles.modalHeaderSub}>{botUsername || '@bot'}</Text>
               </View>
               <View style={styles.connectedBadge}>
                 <Text style={styles.connectedBadgeText}>CONNECTED</Text>
@@ -618,7 +712,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
             <View>
               <Text style={[styles.fieldLabel, txt]}>SUPPORT BOT NAME</Text>
               <TextInput
-                style={[styles.input, inputStyle]}
+                style={[styles.input, { color: colors.text, borderColor: colors.border }]}
                 value={supportBotName}
                 onChangeText={setSupportBotName}
                 placeholder="Enter support bot name"
@@ -701,11 +795,10 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 PDF KNOWLEDGE DOCUMENTS ({pdfDocuments.length} UPLOADED)
               </Text>
               <Pressable
-                style={[styles.pdfUploadBox, { backgroundColor: colors.card, borderColor: colors.border }]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  Alert.alert('Upload PDF', 'Choose business PDF documentation to train the bot.');
-                }}
+                style={
+                  styles.pdfUploadBox
+                }
+                onPress={handlePickPdf}
               >
                 <Ionicons name="cloud-upload-outline" size={24} color="#64748B" />
                 <Text style={styles.pdfUploadText}>Click to add PDF documents</Text>
@@ -770,6 +863,35 @@ export const ChatBotScreen: React.FC<Props> = () => {
           </ScrollView>
         </View>
       </Modal>
+
+      {/* ────────────────────────────────────────────────────────────────────────
+          MODAL 3: CONNECT BOT VIA TOKEN MODAL
+      ──────────────────────────────────────────────────────────────────────── */}
+      <ConnectBotTokenModal
+        visible={isConnectTokenModalOpen}
+        onClose={() => setIsConnectTokenModalOpen(false)}
+        onSuccess={({ token, bot }) => {
+          setIsConnectTokenModalOpen(false);
+          if (token) setBotToken(token);
+          if (bot?.first_name || bot?.username) {
+            setSupportBotName(bot.first_name || bot.username || 'AI Assistant');
+            const uname = bot.username || 'bot';
+            setBotUsername(uname.startsWith('@') ? uname : `@${uname}`);
+          }
+          // Delay to ensure the token modal finishes native dismiss animation
+          setTimeout(() => {
+            setIsConfigModalOpen(true);
+          }, 350);
+        }}
+      />
+
+      {/* Plan Gate Modal */}
+      <FeaturePlanModal
+        visible={Boolean(lockedModal?.visible)}
+        onClose={() => setLockedModal(null)}
+        featureName={lockedModal?.title || 'AI ChatBot'}
+        category="telegram"
+      />
     </View>
   );
 };
@@ -795,25 +917,42 @@ const styles = StyleSheet.create({
     color: '#716B7C',
     lineHeight: 18,
   },
+  emptyContainer: {
+    padding: 24,
+    alignItems: 'center',
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  emptyIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   connectBotBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#024AD8',
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderRadius: 10,
+    gap: 6,
+    backgroundColor: '#0284C7',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
   },
   connectBotBtnText: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
+
   botCard: {
-    borderRadius: 24,
-    borderWidth: 0,
+    borderRadius: 20,
+    borderWidth: 1,
     padding: 16,
-    marginBottom: 16, shadowOpacity: 0 },
+    marginBottom: 16,
+  },
   cardLight: {
     backgroundColor: '#FFFFFF',
     borderColor: '#E9E6F2',
@@ -835,137 +974,133 @@ const styles = StyleSheet.create({
   botCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 14, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
   botIconWrapper: {
-    width: 46,
-    height: 46,
-    borderRadius: 12,
-    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
   botName: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '700',
   },
   botUsername: {
     fontSize: 12,
     color: '#64748B',
-    fontWeight: '600',
+    fontWeight: '500',
     marginTop: 2,
   },
-  specsTable: {
+
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 4.5,
+    borderRadius: 16,
+  },
+  statusBadgeActive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+  },
+  statusBadgePaused: {
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+  },
+
+  specsStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderRadius: 12,
     borderWidth: 1,
-    padding: 10,
-    marginBottom: 14,
+    paddingVertical: 9,
+    paddingHorizontal: 8,
+    marginBottom: 12,
   },
-  specsTableLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2' },
-  specsTableDark: { backgroundColor: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' },
-  specRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  specCol: {
+    flex: 1,
     alignItems: 'center',
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(148, 163, 184, 0.15)',
+    paddingHorizontal: 4,
   },
-  specLabel: { fontSize: 12, color: '#64748B', fontWeight: '500' },
-  specValue: { fontSize: 12, fontWeight: '700' },
-  specValueLink: { fontSize: 12, fontWeight: '700' },
-
-  cardActionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
-  listeningBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
-  },
-  dotGreen: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: '#10B981',
-  },
-  listeningText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#059669',
-  },
-  openLinkBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    borderWidth: 1,
-    borderColor: '#BAE6FD',
-    backgroundColor: 'rgba(2, 132, 199, 0.05)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  openLinkText: {
-    fontSize: 12,
-    color: '#0284C7',
+  specColLabel: {
+    fontSize: 9,
     fontWeight: '700',
+    color: '#94A3B8',
+    letterSpacing: 0.5,
+    marginBottom: 3,
+  },
+  specColValue: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  specDivider: {
+    width: 1,
+    height: 20,
   },
 
   mainActionsRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: 14,
+    gap: 8,
+    marginBottom: 10,
   },
-  chatsBtn: {
+  primaryActionBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: 'rgba(2, 132, 199, 0.1)',
-    paddingVertical: 10,
-    borderRadius: 10,
+    height: 40,
+    borderRadius: 11,
+    borderWidth: 1,
+  },
+  chatsBtn: {
+    backgroundColor: 'rgba(2, 132, 199, 0.12)',
+    borderColor: 'rgba(2, 132, 199, 0.25)',
   },
   chatsBtnText: {
     color: '#0284C7',
     fontSize: 13,
     fontWeight: '700',
   },
-  resetHistoryBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-    paddingVertical: 10,
-    borderRadius: 10,
+  openLinkBtn: {
+    backgroundColor: 'rgba(2, 132, 199, 0.05)',
+    borderColor: 'rgba(2, 132, 199, 0.18)',
   },
-  resetHistoryText: {
-    color: '#D97706',
+  openLinkText: {
     fontSize: 13,
-    fontWeight: '700',
+    color: '#0284C7',
+    fontWeight: '600',
   },
 
   cardFooterRow: {
     flexDirection: 'row',
-    gap: 8, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
+    gap: 6,
+  },
   footerBtn: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    borderRadius: 8,
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 7.5,
+    borderRadius: 9,
     borderWidth: 1,
   },
   footerBtnLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
   footerBtnDark: { backgroundColor: '#1E2430', borderColor: '#27272A' },
-  footerBtnText: { fontSize: 12, fontWeight: '700' },
+  footerBtnText: { fontSize: 11, fontWeight: '600' },
 
   // Modal styling
   modalContainer: { flex: 1 },
@@ -1157,7 +1292,8 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 13, minHeight: 48 },
+    fontSize: 13, minHeight: 48
+  },
   inputMulti: {
     borderWidth: 1,
     borderRadius: 10,

@@ -1,13 +1,15 @@
+import { FeaturePlanModal } from '../../../components/FeaturePlanModal';
+import { usePlatformSubscription } from '../../../hooks/usePlatformSubscription';
 import { getColors, useTheme } from '../../../theme';
 import {
   Ionicons
 } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Dimensions,
-  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -21,8 +23,6 @@ import { crmApi } from "../api/crm.api";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const OVERVIEW_CARD_WIDTH = Math.floor((SCREEN_WIDTH - 32 - 10) / 2);
-
-const WEB_APP_URL = "https://getaipilot.in";
 
 const ENTITY_TILES = [
   {
@@ -49,22 +49,6 @@ const ENTITY_TILES = [
     bg: "#E6F2EC",
     route: "/crm/tasks",
   },
-  // {
-  //   key: "invoices",
-  //   label: "Invoices",
-  //   icon: "receipt",
-  //   color: "#B8863B",
-  //   bg: "#F5EEDD",
-  //   route: "/crm/invoices",
-  // },
-  // {
-  //   key: "quotations",
-  //   label: "Quotations",
-  //   icon: "document-text",
-  //   color: "#B85C5C",
-  //   bg: "#F5E8E8",
-  //   route: "/crm/quotations",
-  // },
   {
     key: "billing-profiles",
     label: "Client Profiles",
@@ -129,9 +113,19 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
   const sub = colors.textMuted || colors.textSecondary || colors.text;
   const border = colors.border;
 
+  const { hasCRM } = usePlatformSubscription();
+  const [planModalVisible, setPlanModalVisible] = useState(false);
+  const [lockedFeatureName, setLockedFeatureName] = useState("Smart CRM");
+
+  const openLockModal = (name: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setLockedFeatureName(name);
+    setPlanModalVisible(true);
+  };
+
   const planTier = org?.subscription_tier || "free";
-  const isPro = planTier !== "free";
-  const planStatus = org?.plan_status || "inactive";
+  const isPro = planTier !== "free" || hasCRM;
+  const planStatus = hasCRM ? "active" : (org?.plan_status || "inactive");
   const planEndDate = org?.plan_end_date;
 
   const stats = dashboard?.stats;
@@ -184,79 +178,6 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
           </View>
         </View>
 
-        {/* Subscription & Plans Card */}
-        <View style={[s.card, { backgroundColor: card, borderColor: border }]}>
-          <View style={s.cardRow}>
-            <View style={[s.iconCircle, { backgroundColor: colors.accentSoft }]}>
-              <Ionicons name="diamond" size={20} color={colors.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[s.cardTitle, { color: text }]}>
-                Subscription & Plan
-              </Text>
-              <Text style={[s.cardSub, { color: sub }]}>
-                {org?.plan?.name ||
-                  planTier.charAt(0).toUpperCase() + planTier.slice(1)}{" "}
-                Plan
-                {planEndDate
-                  ? ` · Expires ${new Date(planEndDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`
-                  : ""}
-              </Text>
-            </View>
-            <View
-              style={[
-                s.statusDot,
-                {
-                  backgroundColor:
-                    planStatus === "active" ? "#10B981" : "#F59E0B",
-                },
-              ]}
-            />
-          </View>
-
-          <View style={s.planMetrics}>
-            <View style={s.planMetric}>
-              <Text style={[s.planMetricValue, { color: text }]}>
-                {org?.max_users ?? "∞"}
-              </Text>
-              <Text style={[s.planMetricLabel, { color: sub }]}>Max Users</Text>
-            </View>
-            <View style={[s.planMetricDivider, { backgroundColor: border }]} />
-            <View style={s.planMetric}>
-              <Text style={[s.planMetricValue, { color: text }]}>
-                {org?.max_contacts ?? "∞"}
-              </Text>
-              <Text style={[s.planMetricLabel, { color: sub }]}>
-                Max Contacts
-              </Text>
-            </View>
-            <View style={[s.planMetricDivider, { backgroundColor: border }]} />
-            <View style={s.planMetric}>
-              <Text style={[s.planMetricValue, { color: text }]}>
-                {org?.billing_cycle || "N/A"}
-              </Text>
-              <Text style={[s.planMetricLabel, { color: sub }]}>Billing</Text>
-            </View>
-          </View>
-
-          <Pressable
-            style={[
-              s.upgradeBtn,
-              { backgroundColor: isPro ? colors.success : colors.primary },
-            ]}
-            onPress={() => router.push('/account/plans?category=crm' as any)}
-          >
-            <Ionicons
-              name={isPro ? "checkmark-circle" : "arrow-up-circle"}
-              size={16}
-              color={colors.buttonPrimaryForeground}
-            />
-            <Text style={[s.upgradeBtnText, { color: colors.buttonPrimaryForeground }]}>
-              {isPro ? "Plan Active" : "Upgrade Plan"}
-            </Text>
-          </Pressable>
-        </View>
-
         {/* Billing Settings Card */}
         <Pressable
           style={[
@@ -288,15 +209,20 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
         {/* Stats Row */}
         <View style={s.statsRow}>
           {/* Auto Invoice Stat */}
-          <View
+          <Pressable
             style={[
               s.statCard,
               {
                 backgroundColor: card,
                 borderColor: border,
-                opacity: isPro ? 1 : 0.6,
+                opacity: isPro ? 1 : 0.75,
               },
             ]}
+            onPress={() => {
+              if (!isPro) {
+                openLockModal("Automated Invoices");
+              }
+            }}
           >
             <View style={s.statHeader}>
               <View style={[s.statIcon, { backgroundColor: colors.successSoft }]}>
@@ -312,20 +238,19 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
               {isPro ? (stats?.wonDealsThisMonth ?? 0) : "—"}
             </Text>
             <Text style={[s.statLabel, { color: sub }]}>Auto Invoices</Text>
-            {isPro && (
+            {isPro ? (
               <Pressable
                 style={s.viewFeatureBtn}
                 onPress={() => navigateTo("/crm/invoices")}
               >
                 <Text style={[s.viewFeatureText, { color: colors.success }]}>View →</Text>
               </Pressable>
-            )}
-            {!isPro && (
+            ) : (
               <Text style={[s.lockedText, { color: colors.warning }]}>
-                Pro feature
+                🔒 Upgrade to unlock
               </Text>
             )}
-          </View>
+          </Pressable>
 
           {/* Team Activity Stat */}
           <View
@@ -402,35 +327,58 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
           <Text style={[s.sectionTitle, { color: text }]}>Quick Access</Text>
         </View>
         <View style={s.tilesGrid}>
-          {ENTITY_TILES.map((tile) => (
-            <Pressable
-              key={tile.key}
-              style={[
-                s.tile,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: border,
-                },
-              ]}
-              onPress={() => navigateTo(tile.route)}
-            >
-              <View
-                style={[s.tileIcon, { backgroundColor: tile.color + "20" }]}
+          {ENTITY_TILES.map((tile) => {
+            const isFeatureLocked = !isPro && (tile.key === "deals" || tile.key === "payments" || tile.key === "billing-profiles");
+            return (
+              <Pressable
+                key={tile.key}
+                style={[
+                  s.tile,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: border,
+                  },
+                ]}
+                onPress={() => {
+                  if (isFeatureLocked) {
+                    openLockModal(tile.label);
+                    return;
+                  }
+                  navigateTo(tile.route);
+                }}
               >
-                <Ionicons
-                  name={tile.icon as any}
-                  size={22}
-                  color={tile.color}
-                />
-              </View>
-              <Text style={[s.tileLabel, { color: text }]}>{tile.label}</Text>
-              <Ionicons name="chevron-forward" size={14} color={sub} />
-            </Pressable>
-          ))}
+                <View
+                  style={[s.tileIcon, { backgroundColor: tile.color + "20" }]}
+                >
+                  <Ionicons
+                    name={tile.icon as any}
+                    size={22}
+                    color={tile.color}
+                  />
+                </View>
+                <Text style={[s.tileLabel, { color: text }]}>{tile.label}</Text>
+                {isFeatureLocked ? (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: colors.accentSoft, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 }}>
+                    <Ionicons name="lock-closed" size={11} color="#F59E0B" />
+                    <Text style={{ fontSize: 10, fontWeight: "600", color: "#F59E0B" }}>PLAN</Text>
+                  </View>
+                ) : (
+                  <Ionicons name="chevron-forward" size={14} color={sub} />
+                )}
+              </Pressable>
+            );
+          })}
         </View>
 
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      <FeaturePlanModal
+        visible={planModalVisible}
+        onClose={() => setPlanModalVisible(false)}
+        category="crm"
+        featureName={lockedFeatureName}
+      />
     </SafeAreaView>
   );
 }
@@ -459,9 +407,9 @@ const s = StyleSheet.create({
     borderRadius: 20,
   },
   tierText: { color: "#FFF", fontSize: 11, fontWeight: "700" },
-  card: { borderRadius: 24, borderWidth: 0, padding: 16, marginBottom: 12 , shadowOpacity: 0 },
-  billingCard: { borderWidth: 0, borderRadius: 24 , shadowOpacity: 0 },
-  cardRow: { flexDirection: "row", alignItems: "center", gap: 12 , borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
+  card: { borderRadius: 24, borderWidth: 0, padding: 16, marginBottom: 12, shadowOpacity: 0 },
+  billingCard: { borderWidth: 0, borderRadius: 24, shadowOpacity: 0 },
+  cardRow: { flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 24, borderWidth: 0, shadowOpacity: 0 },
   iconCircle: {
     width: 44,
     height: 44,
@@ -469,8 +417,8 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  cardTitle: { fontSize: 15, fontWeight: "700" , borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
-  cardSub: { fontSize: 13, marginTop: 2 , borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
+  cardTitle: { fontSize: 15, fontWeight: "700", borderRadius: 24, borderWidth: 0, shadowOpacity: 0 },
+  cardSub: { fontSize: 13, marginTop: 2, borderRadius: 24, borderWidth: 0, shadowOpacity: 0 },
   statusDot: { width: 8, height: 8, borderRadius: 4 },
   planMetrics: { flexDirection: "row", marginTop: 16, marginBottom: 12 },
   planMetric: { flex: 1, alignItems: "center" },
@@ -492,7 +440,9 @@ const s = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 0,
     padding: 14,
-    minHeight: 110, shadowOpacity: 0 },
+    minHeight: 110,
+    shadowOpacity: 0,
+  },
   statHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -520,7 +470,7 @@ const s = StyleSheet.create({
   viewFeatureText: { fontSize: 12, fontWeight: "600" },
   lockedText: { fontSize: 11, marginTop: 6, fontWeight: "500" },
   sectionHeader: { marginTop: 8, marginBottom: 10 },
-  sectionTitle: { fontSize: 18, fontWeight: '500', letterSpacing: -0.2 , lineHeight: 24 },
+  sectionTitle: { fontSize: 18, fontWeight: '500', letterSpacing: -0.2, lineHeight: 24 },
   overviewGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -533,22 +483,29 @@ const s = StyleSheet.create({
     borderWidth: 0,
     padding: 14,
     alignItems: "flex-start",
-    gap: 4, shadowOpacity: 0 },
+    gap: 4,
+    shadowOpacity: 0,
+  },
   overviewValue: { fontSize: 24, fontWeight: "800", letterSpacing: -0.5 },
   overviewLabel: { fontSize: 12 },
-  tilesGrid: { gap: 8 , borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
+  tilesGrid: { gap: 8, borderRadius: 24, borderWidth: 0, shadowOpacity: 0 },
   tile: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     borderRadius: 24,
     borderWidth: 0,
-    padding: 14, shadowOpacity: 0 },
+    padding: 14,
+    shadowOpacity: 0,
+  },
   tileIcon: {
     width: 40,
     height: 40,
     borderRadius: 24,
     alignItems: "center",
-    justifyContent: "center", borderWidth: 0 , shadowOpacity: 0 },
-  tileLabel: { flex: 1, fontSize: 15, fontWeight: "600" , borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
+    justifyContent: "center",
+    borderWidth: 0,
+    shadowOpacity: 0,
+  },
+  tileLabel: { flex: 1, fontSize: 15, fontWeight: "600", borderRadius: 24, borderWidth: 0, shadowOpacity: 0 },
 });
