@@ -15,7 +15,7 @@ import {
   CheckmarkCircle01Icon,
   Megaphone01Icon,
   BotMessageSquareIcon,
-} from '@hugeicons/core-free-icons';
+} from '@/constants/icons';
 import { ProductHeading, ProductMetrics, ProductRow, ProductSection, useProductPalette } from '@/components/ProductUI';
 import { TelegramHubTool, TelegramToolKey } from '../types';
 

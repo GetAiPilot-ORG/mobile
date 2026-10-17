@@ -1,7 +1,11 @@
 // Conditional import of expo-notifications to avoid errors in Expo Go
 let Notifications: typeof import('expo-notifications') | undefined;
-if (require('expo-constants').default.appOwnership !== 'expo') {
-  Notifications = require('expo-notifications');
+try {
+  if (require('expo-constants').default.appOwnership !== 'expo') {
+    Notifications = require('expo-notifications');
+  }
+} catch {
+  Notifications = undefined;
 }
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';

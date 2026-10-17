@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, Image, Platform, StyleSheet } from 'react-native';
-import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
+import { ArrowRight01Icon } from '@/constants/icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import * as Haptics from 'expo-haptics';
 import { useTheme, getColors } from '@/theme';

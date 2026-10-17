@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme, getColors } from '@/theme';
+import { useTheme } from '../hooks/useTheme';
+import { getColors } from '../constants/colors';
 import { ThemeSelector } from '../components/ThemeSelector';
 import { ProductThemeBadge } from '../components/ProductThemeBadge';
 import { getProductThemes } from '../constants/productThemes';

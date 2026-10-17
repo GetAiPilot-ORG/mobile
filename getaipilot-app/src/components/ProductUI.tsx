@@ -1,7 +1,7 @@
 import { useTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { ArrowLeft01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons';
+import { ArrowLeft01Icon, ArrowRight01Icon } from '@/constants/icons';
 import React, { useEffect, useState } from 'react';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Animated, Easing, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';

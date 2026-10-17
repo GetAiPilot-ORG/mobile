@@ -1,10 +1,9 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-// Conditional import of expo-notifications to avoid errors in Expo Go (web/managed) environment
-let Notifications: typeof import('expo-notifications') | undefined;
-if (require('expo-constants').default.appOwnership !== 'expo') {
-  // Only import when not running in Expo Go
-  Notifications = require('expo-notifications');
-}
+import type {
+  Notification,
+  EventSubscription,
+  NotificationResponse,
+} from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
@@ -12,9 +11,20 @@ import { Platform } from 'react-native';
 import { NotificationService } from '../services/notificationService';
 import { useAuth } from './AuthContext';
 
+type NotificationsModule = typeof import('expo-notifications');
+
+let Notifications: NotificationsModule | null = null;
+try {
+  if (Constants.appOwnership !== 'expo') {
+    Notifications = require('expo-notifications');
+  }
+} catch {
+  Notifications = null;
+}
+
 export interface NotificationContextType {
   expoPushToken: string | null;
-  notification: Notifications.Notification | null;
+  notification: Notification | null;
   clearNotification: () => void;
   permissionGranted: boolean;
   isDevice: boolean;
@@ -53,12 +63,12 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const { user } = useAuth();
 
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
-  const [notification, setNotification] = useState<Notifications.Notification | null>(null);
+  const [notification, setNotification] = useState<Notification | null>(null);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
 
-  const notificationListener = useRef<Notifications.EventSubscription | null>(null);
-  const responseListener = useRef<Notifications.EventSubscription | null>(null);
+  const notificationListener = useRef<EventSubscription | null>(null);
+  const responseListener = useRef<EventSubscription | null>(null);
   const lastHandledNotificationId = useRef<string | null>(null);
 
   const clearNotification = () => {
@@ -97,7 +107,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   /**
    * Core handler for user tapping a notification (Kill, Background, or Foreground mode)
    */
-  const handleNotificationResponse = (response: Notifications.NotificationResponse) => {
+  const handleNotificationResponse = (response: NotificationResponse) => {
     const notifId = response?.notification?.request?.identifier;
     if (notifId && lastHandledNotificationId.current === notifId) {
       return; // Deduplicate so cold-boot doesn't execute twice

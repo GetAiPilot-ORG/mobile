@@ -1,6 +1,6 @@
 import React from 'react';
 import { ProductRow } from '@/components/ProductUI';
-import { UserIcon } from '@hugeicons/core-free-icons';
+import { UserIcon } from '@/constants/icons';
 import { WhatsAppContact } from '../types';
 
 interface ContactCardProps { contact: WhatsAppContact; onOpenChat?: (contact: WhatsAppContact) => void; }

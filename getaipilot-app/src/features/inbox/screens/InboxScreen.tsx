@@ -8,7 +8,7 @@ import {
   Add01Icon,
   BubbleChatAddIcon,
   BubbleChatIcon,
-} from "@hugeicons/core-free-icons";
+} from "@/constants/icons";
 import { useProductPalette } from "@/components/ProductUI";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useMemo, useState } from "react";
