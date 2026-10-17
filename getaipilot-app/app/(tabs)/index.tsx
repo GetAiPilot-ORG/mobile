@@ -323,13 +323,13 @@ export default function HomeScreen() {
   return (
     <AppScreen safeArea={false}>
       <AppTopBar showPlanBadge />
-      {/* <TestNotificationButton /> */}
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 128, gap: 28 }}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={color.accent} />}
         showsVerticalScrollIndicator={false}
       >
+        <TestNotificationButton />
         <View>
           <Text style={{ maxWidth: 310, fontSize: 32, lineHeight: 38, fontWeight: "600", letterSpacing: -0.85, color: color.text }}>Your work,{"\n"}made effortless.</Text>
           <View style={{ flexDirection: "row", gap: 8, marginTop: 22 }}>

@@ -15,9 +15,7 @@ type NotificationsModule = typeof import('expo-notifications');
 
 let Notifications: NotificationsModule | null = null;
 try {
-  if (Constants.appOwnership !== 'expo') {
-    Notifications = require('expo-notifications');
-  }
+  Notifications = require('expo-notifications');
 } catch {
   Notifications = null;
 }
@@ -56,8 +54,8 @@ const NOOP_CONTEXT: NotificationContextType = {
 };
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
-  // IMPORTANT: All hooks must be called unconditionally, before any early return.
-  const canUseNotifications = Constants.appOwnership !== 'expo';
+  // Can use notifications if module loaded
+  const canUseNotifications = Boolean(Notifications);
 
   const router = useRouter();
   const { user } = useAuth();
