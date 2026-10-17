@@ -17,7 +17,10 @@ import {
   BotMessageSquareIcon,
 } from '@/constants/icons';
 import { ProductHeading, ProductMetrics, ProductRow, ProductSection, useProductPalette } from '@/components/ProductUI';
+import { usePlatformSubscription } from '@/hooks/usePlatformSubscription';
+import { FeaturePlanModal } from '@/components/FeaturePlanModal';
 import { TelegramHubTool, TelegramToolKey } from '../types';
+import { Ionicons } from '@expo/vector-icons';
 
 type TelegramCategory = 'all' | 'automation' | 'monetization' | 'growth';
 
@@ -133,7 +136,9 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
   onOpenModal,
 }) => {
   const colors = useProductPalette();
+  const { hasTelegram } = usePlatformSubscription();
   const [selectedCategory, setSelectedCategory] = useState<TelegramCategory>('all');
+  const [lockedModal, setLockedModal] = useState<{ visible: boolean; title: string } | null>(null);
 
   const hub = summary?.hub || { totalModules: 8, completedModules: 8, tools: [] };
 
@@ -198,14 +203,61 @@ export const OverviewScreen: React.FC<OverviewScreenProps> = ({
           <View style={{ flex: 1, gap: 5 }}><Text style={{ fontSize: 24, color: colors.text }}>{forwardRules.length}</Text><Text style={{ fontSize: 12, color: colors.textSecondary }}>Forwarding rules</Text></View>
           <View style={{ flex: 1, gap: 5 }}><Text style={{ fontSize: 24, color: colors.text }}>{deepLinksCount}</Text><Text style={{ fontSize: 12, color: colors.textSecondary }}>Tracking links</Text></View>
         </View>
-        <Pressable onPress={() => onNavigate('automations')} accessibilityRole="button" accessibilityLabel="Manage forwarding rules" style={{ alignSelf: 'flex-start', backgroundColor: colors.buttonPrimary, borderRadius: 24, paddingVertical: 12, paddingHorizontal: 18 }}><Text style={{ color: colors.buttonPrimaryForeground, fontSize: 13 }}>Manage rules</Text></Pressable>
+        <Pressable
+          onPress={() => {
+            if (!hasTelegram) {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+              setLockedModal({ visible: true, title: 'Auto Forwarding Engine' });
+              return;
+            }
+            onNavigate('automations');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Manage forwarding rules"
+          style={{ alignSelf: 'flex-start', backgroundColor: colors.buttonPrimary, borderRadius: 24, paddingVertical: 12, paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center', gap: 6 }}
+        >
+          {!hasTelegram && <Ionicons name="lock-closed" size={13} color={colors.buttonPrimaryForeground} />}
+          <Text style={{ color: colors.buttonPrimaryForeground, fontSize: 13 }}>Manage rules</Text>
+        </Pressable>
       </View>
       <ProductSection title="Your tools">
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 16 }}>
           {CATEGORIES.map((cat) => <Pressable key={cat.key} onPress={() => setSelectedCategory(cat.key)} accessibilityRole="button" accessibilityState={{ selected: selectedCategory === cat.key }} style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, borderRadius: 24, backgroundColor: selectedCategory === cat.key ? colors.lavender : colors.card }}><Text style={{ fontSize: 13, color: selectedCategory === cat.key ? colors.accent : colors.textSecondary }}>{cat.label}</Text></Pressable>)}
         </ScrollView>
-        {filteredTools.map((tool, index) => <ProductRow key={tool.key} title={names[tool.key] || tool.title} detail={descriptions[tool.key] || tool.description} icon={TOOL_ICONS[tool.key] || tool.icon} tone={tones[index % 4]} onPress={() => routeByTool[tool.key] ? onNavigate(routeByTool[tool.key]) : onOpenModal(tool.key)} />)}
+        {filteredTools.map((tool, index) => {
+          const isLocked = !hasTelegram;
+          return (
+            <ProductRow
+              key={tool.key}
+              title={names[tool.key] || tool.title}
+              detail={descriptions[tool.key] || tool.description}
+              icon={TOOL_ICONS[tool.key] || tool.icon}
+              tone={tones[index % 4]}
+              isLocked={isLocked}
+              onPress={() => {
+                if (isLocked) {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+                  setLockedModal({ visible: true, title: names[tool.key] || tool.title });
+                  return;
+                }
+                if (routeByTool[tool.key]) {
+                  onNavigate(routeByTool[tool.key]);
+                } else {
+                  onOpenModal(tool.key);
+                }
+              }}
+            />
+          );
+        })}
       </ProductSection>
+
+      {/* Plan Gate Modal */}
+      <FeaturePlanModal
+        visible={Boolean(lockedModal?.visible)}
+        onClose={() => setLockedModal(null)}
+        featureName={lockedModal?.title || 'Telegram Tool'}
+        category="telegram"
+      />
     </View>
   );
 };

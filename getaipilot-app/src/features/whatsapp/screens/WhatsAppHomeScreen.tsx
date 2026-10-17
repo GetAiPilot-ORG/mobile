@@ -1,9 +1,11 @@
 import { AppTopBar } from "@/components/AppTopBar";
-import { ProductActions,ProductEmpty,ProductHeading,ProductMetrics,ProductRow,ProductSection } from "@/components/ProductUI";
+import { FeaturePlanModal } from "@/components/FeaturePlanModal";
+import { ProductActions, ProductEmpty, ProductHeading, ProductMetrics, ProductRow, ProductSection } from "@/components/ProductUI";
+import { usePlatformSubscription } from "@/hooks/usePlatformSubscription";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import React,{ useEffect,useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
 BackHandler,
 Modal,
@@ -73,6 +75,18 @@ export const WhatsAppHomeScreen: React.FC = () => {
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(
     null,
   );
+
+  const { hasWhatsApp } = usePlatformSubscription();
+  const [planModalVisible, setPlanModalVisible] = useState(false);
+  const [lockedFeatureName, setLockedFeatureName] = useState("WhatsApp Automation");
+
+  const openLockModal = (name: string) => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setLockedFeatureName(name);
+    setPlanModalVisible(true);
+  };
 
   const {
     data: status,
@@ -189,27 +203,110 @@ export const WhatsAppHomeScreen: React.FC = () => {
                 <RefreshControl
                   refreshing={statusRefetching}
                   onRefresh={handleRefresh}
-                  tintColor="#25d366"
+                  tintColor="#25D366"
                 />
               }
             >
               <ProductHeading title={"Messages that\nbring people closer."} />
-              <ConnectionStatusCard connection={currentConnection} isLoading={statusLoading} hasMultipleAccounts={connectedAccounts.length > 1} onSwitchAccountPress={() => setShowAccountSwitcher(true)} />
+              <ConnectionStatusCard
+                connection={currentConnection}
+                isLoading={statusLoading}
+                hasMultipleAccounts={connectedAccounts.length > 1}
+                onSwitchAccountPress={() => setShowAccountSwitcher(true)}
+                onConnectPress={() => {
+                  if (!hasWhatsApp) {
+                    openLockModal("WhatsApp Business Connection");
+                  }
+                }}
+              />
               <ProductSection title="Your audience">
                 <ProductActions items={[
                   { title: "Contacts", icon: "people-outline", tone: "mint", onPress: () => handleSelectTab("contacts") },
-                  { title: "Templates", icon: "document-text-outline", tone: "lavender", onPress: () => handleSelectTab("templates") },
-                  { title: "Broadcasts", icon: "megaphone-outline", tone: "peach", onPress: () => handleSelectTab("broadcasts") },
+                  {
+                    title: "Templates",
+                    icon: "document-text-outline",
+                    tone: "lavender",
+                    isLocked: !hasWhatsApp,
+                    onPress: () => {
+                      if (!hasWhatsApp) {
+                        openLockModal("WhatsApp Message Templates");
+                        return;
+                      }
+                      handleSelectTab("templates");
+                    },
+                  },
+                  {
+                    title: "Broadcasts",
+                    icon: "megaphone-outline",
+                    tone: "peach",
+                    isLocked: !hasWhatsApp,
+                    onPress: () => {
+                      if (!hasWhatsApp) {
+                        openLockModal("WhatsApp Broadcast Campaigns");
+                        return;
+                      }
+                      handleSelectTab("broadcasts");
+                    },
+                  },
                 ]} />
               </ProductSection>
               <ProductMetrics items={[
                 { label: "Contacts", value: totalContactsCount, onPress: () => handleSelectTab("contacts") },
-                { label: "Templates", value: approvedTemplatesCount, onPress: () => handleSelectTab("templates") },
+                {
+                  label: "Templates",
+                  value: approvedTemplatesCount,
+                  onPress: () => {
+                    if (!hasWhatsApp) {
+                      openLockModal("WhatsApp Message Templates");
+                      return;
+                    }
+                    handleSelectTab("templates");
+                  },
+                },
                 { label: "Delivery", value: deliveryRate },
               ]} />
-              <ProductSection title="Recent broadcasts" onAction={() => handleSelectTab("broadcasts")}>
-                {!broadcastsData?.broadcasts.length ? <ProductEmpty title="Your next message starts here" description="Choose a template and reach your audience." action="View broadcasts" onAction={() => handleSelectTab("broadcasts")} /> :
-                  broadcastsData.broadcasts.map((broadcast) => <ProductRow key={broadcast.id} title={broadcast.name} detail={broadcast.recipients_count + " recipients · " + broadcast.status} icon="megaphone-outline" tone="peach" onPress={() => router.push(("/products/whatsapp/broadcasts/" + broadcast.id) as any)} />)}
+              <ProductSection
+                title="Recent broadcasts"
+                onAction={() => {
+                  if (!hasWhatsApp) {
+                    openLockModal("WhatsApp Broadcast Campaigns");
+                    return;
+                  }
+                  handleSelectTab("broadcasts");
+                }}
+              >
+                {!broadcastsData?.broadcasts.length ? (
+                  <ProductEmpty
+                    title="Your next message starts here"
+                    description="Choose a template and reach your audience."
+                    action="View broadcasts"
+                    onAction={() => {
+                      if (!hasWhatsApp) {
+                        openLockModal("WhatsApp Broadcast Campaigns");
+                        return;
+                      }
+                      handleSelectTab("broadcasts");
+                    }}
+                  />
+                ) : (
+                  broadcastsData.broadcasts.map((broadcast) => (
+                    <ProductRow
+                      key={broadcast.id}
+                      title={broadcast.name}
+                      detail={broadcast.recipients_count + " recipients · " + broadcast.status}
+                      icon="megaphone-outline"
+                      tone="peach"
+                      isLocked={!hasWhatsApp}
+                      onPress={() => {
+                        if (!hasWhatsApp) {
+                          openLockModal("WhatsApp Broadcast Campaigns");
+                          return;
+                        }
+                        router.push(("/products/whatsapp/broadcasts/" + broadcast.id) as any);
+                      }}
+                    />
+                  ))
+                )}
               </ProductSection>
               <UsageCard usage={usage} isConnected={isConnected} />
 
@@ -220,13 +317,20 @@ export const WhatsAppHomeScreen: React.FC = () => {
         </View>
       )}
 
-      {/* Floating Bottom Navigation Bar */}
+      {/* Floating Bottom Navigation Bar with WhatsApp Green Accent */}
       <ProductFloatingBottomBar
         items={WHATSAPP_TABS}
         activeKey={activeTab}
         onChangeTab={(tab) => handleSelectTab(tab as WhatsAppTab)}
-        accentColor="#0A84FF"
+        accentColor={isDark ? "#25D366" : "#075E54"}
         moreMenuTitle="WhatsApp Business Suite"
+      />
+
+      <FeaturePlanModal
+        visible={planModalVisible}
+        onClose={() => setPlanModalVisible(false)}
+        category="whatsapp"
+        featureName={lockedFeatureName}
       />
 
       {/* Account Switcher Modal (iOS Bottom Sheet) */}
@@ -238,11 +342,15 @@ export const WhatsAppHomeScreen: React.FC = () => {
       >
         <View className="flex-1 bg-black/60 justify-end sm:justify-center items-center p-4">
           <View
-            className={`w-full max-w-[420px] rounded-3xl p-5 border shadow-2xl ${
+            className={`w-full max-w-[420px] rounded-3xl p-5 shadow-2xl ${
               isDark
                 ? "bg-[#252230] border-[#3A3549]"
                 : "bg-white border-transparent"
             }`}
+            style={{
+              borderWidth: 0,
+              elevation: 8,
+            }}
           >
             <View className="flex-row justify-between items-center mb-4">
               <View>
@@ -281,15 +389,16 @@ export const WhatsAppHomeScreen: React.FC = () => {
                 return (
                   <Pressable
                     key={account.id}
-                    className={`flex-row items-center p-3 rounded-2xl border active:opacity-75 ${
+                    className={`flex-row items-center p-3 rounded-2xl active:opacity-75 ${
                       isSelected
                         ? isDark
-                          ? "bg-[#0A84FF]/15 border-[#0A84FF]"
-                          : "bg-[#007AFF]/10 border-[#007AFF]"
+                          ? "bg-[#25D366]/20"
+                          : "bg-[#25D366]/12"
                         : isDark
                         ? "bg-[#3A3549] border-transparent"
                         : "bg-[#F5F3FB] border-transparent"
                     }`}
+                    style={{ borderWidth: 0 }}
                     onPress={() => {
                       if (Platform.OS !== "web") {
                         Haptics.selectionAsync();
@@ -303,7 +412,7 @@ export const WhatsAppHomeScreen: React.FC = () => {
                         isDark ? "bg-[#3A3A3C]" : "bg-white"
                       }`}
                     >
-                      <Ionicons name="logo-whatsapp" size={20} color="#22C55E" />
+                      <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
                     </View>
                     <View className="flex-1">
                       <Text
@@ -325,7 +434,7 @@ export const WhatsAppHomeScreen: React.FC = () => {
                       <Ionicons
                         name="checkmark-circle"
                         size={20}
-                        color={isDark ? "#0A84FF" : "#007AFF"}
+                        color={isDark ? "#25D366" : "#075E54"}
                       />
                     )}
                   </Pressable>

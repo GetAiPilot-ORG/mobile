@@ -36,7 +36,13 @@ export const WhatsAppMetricCard: React.FC<WhatsAppMetricCardProps> = ({
         flexBasis: Platform.OS === 'web' ? 'auto' : 0,
         minHeight: Platform.OS === 'web' ? 96 : 88,
         backgroundColor: colors.card,
-        borderColor: colors.cardBorder,
+        borderWidth: 0,
+        borderColor: 'transparent',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: isDark ? 0.25 : 0.05,
+        shadowRadius: 4,
       }}
     >
       {/* Top row with Label & Icon badge */}

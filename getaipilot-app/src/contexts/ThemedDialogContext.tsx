@@ -21,11 +21,9 @@ export interface ShowDialogOptions extends Omit<ThemedDialogProps, 'visible' | '
 }
 
 export interface LogoutConfirmOptions {
-  title?: string;
+
   description?: string;
-  accountEmail?: string;
-  accountName?: string;
-  deviceName?: string;
+
   confirmText?: string;
   cancelText?: string;
   confirmTextColor?: string;
@@ -327,10 +325,10 @@ export const ThemedAlert = {
     callbackOrButtons?:
       | ((text: string) => void)
       | Array<{
-          text?: string;
-          onPress?: (text: string) => void | Promise<void>;
-          style?: 'default' | 'cancel' | 'destructive';
-        }>,
+        text?: string;
+        onPress?: (text: string) => void | Promise<void>;
+        style?: 'default' | 'cancel' | 'destructive';
+      }>,
     type: 'default' | 'plain-text' | 'secure-text' | 'login-password' = 'default',
     defaultValue: string = '',
     keyboardType: 'default' | 'email-address' | 'numeric' | 'phone-pad' = 'default'
@@ -366,8 +364,8 @@ export const ThemedAlert = {
           b.style === 'cancel'
             ? 'secondary'
             : b.style === 'destructive'
-            ? 'destructive'
-            : 'primary',
+              ? 'destructive'
+              : 'primary',
         onPress: async () => {
           try {
             await b.onPress?.(currentInput);
@@ -457,11 +455,7 @@ export const ThemedDialogProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const confirmLogout = useCallback(
     ({
-      title = 'Sign Out',
       description = 'Are you sure you want to sign out from GetAiPilot?',
-      accountEmail,
-      accountName,
-      deviceName,
       confirmText = 'Sign Out',
       cancelText = 'Cancel',
       confirmTextColor,
@@ -478,11 +472,7 @@ export const ThemedDialogProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }: LogoutConfirmOptions) => {
       showDialog({
         type: 'logout',
-        title,
         description,
-        accountEmail,
-        accountName,
-        deviceName,
         backgroundColor,
         borderColor,
         buttonLayout: 'row',
@@ -671,7 +661,7 @@ export const ThemedDialogProvider: React.FC<{ children: React.ReactNode }> = ({ 
       if (typeof optionsOrTitle === 'string') {
         const title = optionsOrTitle;
         let message: string | undefined;
-        let onConfirm: (value: string) => void | Promise<void> = () => {};
+        let onConfirm: (value: string) => void | Promise<void> = () => { };
         let defaultValue = defaultValueParam;
 
         if (typeof messageOrOnConfirm === 'function') {

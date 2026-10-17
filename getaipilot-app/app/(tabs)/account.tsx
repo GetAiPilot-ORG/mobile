@@ -691,8 +691,6 @@ export default function AccountScreen() {
   // Sign Out Handler
   const handleSignOut = () => {
     confirmLogout({
-      accountEmail: user?.email,
-      accountName: displayName,
       onConfirm: async () => {
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

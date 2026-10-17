@@ -189,6 +189,10 @@ export class NotificationService {
 
       const token = tokenData.data;
       if (token) {
+        console.log('==============================================');
+        console.log('🔥 [NotificationService] EXPO PUSH TOKEN:');
+        console.log(token);
+        console.log('==============================================');
         await AsyncStorage.setItem(PUSH_TOKEN_STORAGE_KEY, token);
       }
 
@@ -197,7 +201,7 @@ export class NotificationService {
         status: 'granted',
       };
     } catch (error: any) {
-      console.warn('[NotificationService] Failed to obtain Expo push token:', error);
+      console.warn('❌ [NotificationService] Failed to obtain Expo push token:', error?.message || error);
       return {
         token: null,
         status: 'denied',
@@ -211,6 +215,7 @@ export class NotificationService {
    */
   static async syncPushTokenWithBackend(token: string, userId: string): Promise<boolean> {
     if (!token || !userId) return false;
+    console.log(`📡 [NotificationService] Syncing push token for user ${userId}...`);
 
     try {
       const lastSyncedUser = await AsyncStorage.getItem(LAST_SYNCED_USER_KEY);
@@ -251,7 +256,9 @@ export class NotificationService {
 
         if (profileError) {
           // If profiles table doesn't have a push_token column, log quietly without breaking
-          console.warn('[NotificationService] Supabase profile push_token update notice:', profileError.message);
+          console.warn('⚠️ [NotificationService] Supabase profile push_token update notice:', profileError.message);
+        } else {
+          console.log('✅ [NotificationService] Successfully updated push_token in profiles table for user:', userId);
         }
       } catch (sbErr) {
         console.warn('[NotificationService] Supabase fallback error:', sbErr);
