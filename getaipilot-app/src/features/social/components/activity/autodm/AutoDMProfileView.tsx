@@ -402,11 +402,13 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
             }}
             style={[
               styles.statusChip,
+              { flexDirection: 'row', alignItems: 'center', gap: 6 },
               mediaFilter === 'video'
                 ? { backgroundColor: 'rgba(239, 68, 68, 0.14)', borderColor: '#ef4444' }
                 : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
             ]}
           >
+            <Ionicons name="film-outline" size={13} color={mediaFilter === 'video' ? '#ef4444' : isDark ? '#777383' : '#64748b'} />
             <Text
               style={[
                 styles.statusChipText,
@@ -416,7 +418,7 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
                 },
               ]}
             >
-              🎬 Reels ({mediaFilterCounts.reels})
+              Reels ({mediaFilterCounts.reels})
             </Text>
           </Pressable>
 
@@ -427,11 +429,13 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
             }}
             style={[
               styles.statusChip,
+              { flexDirection: 'row', alignItems: 'center', gap: 6 },
               mediaFilter === 'image'
                 ? { backgroundColor: 'rgba(16, 185, 129, 0.14)', borderColor: '#10b981' }
                 : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
             ]}
           >
+            <Ionicons name="image-outline" size={13} color={mediaFilter === 'image' ? '#10b981' : isDark ? '#777383' : '#64748b'} />
             <Text
               style={[
                 styles.statusChipText,
@@ -441,7 +445,7 @@ export const AutoDMProfileView: React.FC<AutoDMProfileViewProps> = ({
                 },
               ]}
             >
-              📷 Photos ({mediaFilterCounts.photos})
+              Photos ({mediaFilterCounts.photos})
             </Text>
           </Pressable>
         </View>

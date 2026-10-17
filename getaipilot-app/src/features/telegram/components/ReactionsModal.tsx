@@ -125,7 +125,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
     mutationFn: telegramApi.createReactionOrder,
     onSuccess: () => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Order Placed! 🚀', 'Your reaction boost order has been submitted successfully.');
+      Alert.alert('Order Placed', 'Your reaction boost order has been submitted successfully.');
       setPostLink('');
       queryClient.invalidateQueries({ queryKey: ['telegram_reactions_dashboard'] });
       setActiveTab('orders'); // Jump to orders history to see it live!

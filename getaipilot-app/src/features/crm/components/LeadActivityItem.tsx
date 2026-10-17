@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme, getColors } from '@/features/theme';
 import { CRMActivity } from '../types';
 
@@ -7,23 +8,23 @@ interface LeadActivityItemProps {
   activity: CRMActivity;
 }
 
-const TYPE_ICONS: Record<string, { icon: string; color: string }> = {
-  message: { icon: '💬', color: '#22c55e' },
-  call: { icon: '🎙️', color: '#a855f7' },
-  meeting: { icon: '📅', color: '#8b5cf6' },
-  note: { icon: '📝', color: '#3b82f6' },
-  task: { icon: '✅', color: '#6366f1' },
-  follow_up: { icon: '⏰', color: '#ec4899' },
-  email: { icon: '✉️', color: '#3b82f6' },
-  stage_change: { icon: '🔀', color: '#f59e0b' },
-  assignment: { icon: '👤', color: '#ec4899' },
-  form_submission: { icon: '📋', color: '#0ea5e9' },
+const TYPE_ICONS: Record<string, { icon: keyof typeof Ionicons.glyphMap; color: string }> = {
+  message: { icon: 'chatbubble-ellipses-outline', color: '#22c55e' },
+  call: { icon: 'call-outline', color: '#a855f7' },
+  meeting: { icon: 'calendar-outline', color: '#8b5cf6' },
+  note: { icon: 'document-text-outline', color: '#3b82f6' },
+  task: { icon: 'checkmark-circle-outline', color: '#6366f1' },
+  follow_up: { icon: 'alarm-outline', color: '#ec4899' },
+  email: { icon: 'mail-outline', color: '#3b82f6' },
+  stage_change: { icon: 'swap-horizontal-outline', color: '#f59e0b' },
+  assignment: { icon: 'person-outline', color: '#ec4899' },
+  form_submission: { icon: 'reader-outline', color: '#0ea5e9' },
 };
 
 export const LeadActivityItem: React.FC<LeadActivityItemProps> = ({ activity }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
-  const meta = TYPE_ICONS[activity.type] || { icon: '📌', color: '#6366f1' };
+  const meta = TYPE_ICONS[activity.type] || { icon: 'bookmark-outline', color: '#6366f1' };
   const time = new Date(activity.created_at).toLocaleString([], {
     month: 'short',
     day: 'numeric',
@@ -34,7 +35,7 @@ export const LeadActivityItem: React.FC<LeadActivityItemProps> = ({ activity }) 
   return (
     <View style={[styles.container, { borderBottomColor: colors.border }]}>
       <View style={[styles.iconBox, { backgroundColor: isDark ? `${meta.color}25` : `${meta.color}15` }]}>
-        <Text style={styles.iconText}>{meta.icon}</Text>
+        <Ionicons name={meta.icon} size={15} color={meta.color} />
       </View>
       <View style={styles.content}>
         <View style={styles.header}>

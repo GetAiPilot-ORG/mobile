@@ -111,7 +111,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
         <View style={styles.senderHeader}>
           {isBot ? (
             <View style={styles.botBadge}>
-              <Text style={styles.botBadgeText}>🤖 GAP AI Pilot</Text>
+              <Ionicons name="hardware-chip-outline" size={11} color="#00a884" style={{ marginRight: 3 }} />
+              <Text style={styles.botBadgeText}>GAP AI Pilot</Text>
             </View>
           ) : isOutbound ? (
             <Text style={[styles.outboundSenderText, isMe && styles.outboundSenderYou]}>

@@ -16,7 +16,7 @@ const STAGES: Array<{ key: DealStage; label: string; desc: string; color: string
   { key: 'qualified', label: 'Qualified', desc: 'Needs confirmed, decision maker identified', color: '#647D8C' },
   { key: 'proposal', label: 'Proposal', desc: 'Quote or proposal sent to client', color: '#B8863B' },
   { key: 'negotiation', label: 'Negotiation', desc: 'Reviewing pricing and contract terms', color: '#8B5CF6' },
-  { key: 'closed_won', label: 'Closed Won', desc: 'Contract signed, deal won 🎉', color: '#4F8A68' },
+  { key: 'closed_won', label: 'Closed Won', desc: 'Contract signed, deal won', color: '#4F8A68' },
   { key: 'closed_lost', label: 'Closed Lost', desc: 'Deal cancelled or lost to competitor', color: '#B85C5C' },
 ];
 

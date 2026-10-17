@@ -20,6 +20,7 @@ import { supabase } from '../../src/lib/supabase';
 import { isValidEmail } from '../../src/lib/validators';
 import { useAuthStore } from '../../src/core/store/authStore';
 import { useTheme, getColors } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
 
 const brandLogo = require('../../assets/images/icon.png');
 
@@ -183,7 +184,7 @@ export default function SignupScreen() {
                   hitSlop={10}
                   style={styles.clearBtn}
                 >
-                  <Text style={styles.clearBtnText}>✕</Text>
+                  <Ionicons name="close-circle" size={16} color={isDark ? '#6B7280' : '#9CA3AF'} />
                 </Pressable>
               )}
             </View>

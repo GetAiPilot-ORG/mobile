@@ -227,7 +227,7 @@ export const SubManagerModal: React.FC<SubManagerModalProps> = ({
 
       const res = await telegramApi.createSubManagerLandingPage(payload);
       if (res?.success) {
-        Alert.alert('Page Created! 🎉', `Your landing page is live at https://tg.getaipilot.in/p/${res.landingPage?.slug || formSlug}`);
+        Alert.alert('Page Created', `Your landing page is live at https://tg.getaipilot.in/p/${res.landingPage?.slug || formSlug}`);
         setFormTitle('');
         setFormSlug('');
         setFormDescription('');
@@ -260,7 +260,7 @@ export const SubManagerModal: React.FC<SubManagerModalProps> = ({
       if (res?.success) {
         setLinkOtpSent(true);
         if (res.phone_code_hash) setLinkCodeHash(res.phone_code_hash);
-        Alert.alert('Code Sent! 📲', `A 5-digit code was sent to your Telegram app for ${fullPhone}.`);
+        Alert.alert('Code Sent', `A 5-digit code was sent to your Telegram app for ${fullPhone}.`);
       } else {
         setLinkOtpSent(true);
       }
@@ -296,7 +296,7 @@ export const SubManagerModal: React.FC<SubManagerModalProps> = ({
         setLinkOtpSent(false);
         setLinkOtp('');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert('Telegram Linked! 🎉', 'Your Telegram account is now connected.');
+        Alert.alert('Telegram Linked', 'Your Telegram account is now connected.');
         fetchDashboard(true);
       }
     } catch (err: any) {
@@ -348,7 +348,7 @@ export const SubManagerModal: React.FC<SubManagerModalProps> = ({
   const handleCopyLink = async (url: string) => {
     await Clipboard.setStringAsync(url);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert('Link Copied 📋', `${url}\n\nCopied to clipboard.`);
+    Alert.alert('Link Copied', `${url}\n\nCopied to clipboard.`);
   };
 
   const handleOpenUrl = async (url: string) => {

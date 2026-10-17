@@ -1,12 +1,13 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme, getColors } from '@/theme';
 
 interface MetricGlassCardProps {
   title: string;
   value: string | number;
   subtitle?: string;
-  icon: string;
+  icon: keyof typeof Ionicons.glyphMap | string;
   accentColor?: string;
 }
 
@@ -24,7 +25,7 @@ export const MetricGlassCard: React.FC<MetricGlassCardProps> = ({
     <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
       <View style={styles.header}>
         <View style={[styles.iconContainer, { backgroundColor: `${accentColor}1A` }]}>
-          <Text style={[styles.iconText, { color: accentColor }]}>{icon}</Text>
+          <Ionicons name={icon as any} size={16} color={accentColor} />
         </View>
         <Text style={[styles.title, { color: isDark ? '#777383' : '#64748b' }]}>{title}</Text>
       </View>

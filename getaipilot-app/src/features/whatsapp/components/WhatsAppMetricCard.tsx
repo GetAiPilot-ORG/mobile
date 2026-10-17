@@ -62,8 +62,10 @@ export const WhatsAppMetricCard: React.FC<WhatsAppMetricCardProps> = ({
         >
           {ioniconsName ? (
             <Ionicons name={ioniconsName} size={15} color={iconColor} />
+          ) : icon && icon.length > 2 ? (
+            <Ionicons name={icon as IoniconsName} size={15} color={iconColor} />
           ) : (
-            <Text className="text-sm">{icon || '📊'}</Text>
+            <Ionicons name="stats-chart-outline" size={15} color={iconColor} />
           )}
         </View>
       </View>

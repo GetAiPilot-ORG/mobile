@@ -376,7 +376,7 @@ export const inboxApi = {
       }
 
       // Update conversation preview
-      const previewText = isNote ? `🔒 Note: ${payload.message}` : payload.message;
+      const previewText = isNote ? `Note: ${payload.message}` : payload.message;
       await supabase
         .from('w_conversations')
         .update({

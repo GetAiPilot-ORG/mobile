@@ -154,7 +154,7 @@ export function PaymentsScreen({ onBack }: PaymentsScreenProps = {}) {
             if (Platform.OS !== 'web') {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
             }
-            Alert.alert('Payment Recorded 🎉', `₹${payment.amount} payment was logged successfully.`);
+            Alert.alert('Payment Recorded', `₹${payment.amount} payment was logged successfully.`);
           } catch (err: any) {
             Alert.alert('Error', err?.message || 'Failed to record payment');
             throw err;
