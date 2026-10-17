@@ -86,11 +86,12 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
             Broadcast campaign not found
           </Text>
           <Pressable
-            className={`flex-row items-center px-4 py-2.5 rounded-full border mt-3.5 active:opacity-75 ${
+            className={`flex-row items-center px-4 py-2.5 rounded-full mt-3.5 active:opacity-75 shadow-sm ${
               isDark
                 ? "bg-[#252230] border-[#3A3549]"
                 : "bg-white border-transparent"
             }`}
+            style={{ borderWidth: 0, elevation: 1 }}
             onPress={handleBack}
           >
             <Ionicons
@@ -119,32 +120,32 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
 
   const statusBg = isCompleted
     ? isDark
-      ? "rgba(52, 199, 89, 0.16)"
-      : "rgba(52, 199, 89, 0.12)"
+      ? "rgba(37, 211, 102, 0.16)"
+      : "rgba(37, 211, 102, 0.10)"
     : isQueued
       ? isDark
         ? "rgba(10, 132, 255, 0.16)"
-        : "rgba(0, 122, 255, 0.12)"
+        : "rgba(0, 122, 255, 0.10)"
       : isScheduled
         ? isDark
-          ? "rgba(255, 159, 10, 0.16)"
-          : "rgba(255, 149, 0, 0.12)"
+          ? "rgba(251, 191, 36, 0.16)"
+          : "rgba(217, 119, 6, 0.10)"
         : isDark
           ? "rgba(255, 69, 58, 0.16)"
-          : "rgba(255, 59, 48, 0.12)";
+          : "rgba(220, 38, 38, 0.10)";
 
   const statusText = isCompleted
     ? isDark
-      ? "#30D158"
-      : "#248A3D"
+      ? "#25D366"
+      : "#075E54"
     : isQueued
       ? isDark
         ? "#0A84FF"
         : "#007AFF"
       : isScheduled
         ? isDark
-          ? "#FF9F0A"
-          : "#D97706"
+          ? "#FBBF24"
+          : "#B45309"
         : isDark
           ? "#FF453A"
           : "#DC2626";
@@ -177,15 +178,15 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
       label: `Delivered (${deliveryRate}%)`,
       value: broadcast.delivered_count.toLocaleString(),
       icon: "checkmark-done-outline" as const,
-      iconColor: isDark ? "#30D158" : "#248A3D",
-      bgColor: isDark ? "rgba(52, 199, 89, 0.12)" : "rgba(52, 199, 89, 0.08)",
+      iconColor: isDark ? "#25D366" : "#075E54",
+      bgColor: isDark ? "rgba(37, 211, 102, 0.16)" : "rgba(37, 211, 102, 0.10)",
     },
     {
       label: `Read / Opened (${readRate}%)`,
       value: broadcast.read_count.toLocaleString(),
       icon: "mail-open-outline" as const,
       iconColor: isDark ? "#38BDF8" : "#0284C7",
-      bgColor: isDark ? "rgba(56, 189, 248, 0.12)" : "rgba(2, 132, 199, 0.08)",
+      bgColor: isDark ? "rgba(56, 189, 248, 0.16)" : "rgba(2, 132, 199, 0.08)",
     },
     ...(broadcast.failed_count > 0
       ? [
@@ -215,6 +216,14 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
             ? "bg-black border-white/[0.08]"
             : "bg-white border-black/[0.06]"
         }`}
+        style={{
+          borderBottomWidth: 0,
+          elevation: 4,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.15,
+          shadowRadius: 4,
+        }}
       >
         <View className="flex-row items-center flex-1">
           <Pressable
@@ -227,6 +236,7 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Back"
+            style={{ borderWidth: 0 }}
           >
             <Ionicons
               name="chevron-back"
@@ -250,11 +260,19 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
         contentContainerStyle={{ padding: 16, paddingBottom: 130 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Campaign Summary Card */}
+        {/* Campaign Summary Card (Borderless) */}
         <View
           className={`rounded-[24px] p-4 border-0 mb-4  ${
             isDark ? "bg-[#252230] border-[#3A3549]" : "bg-white border-transparent"
           }`}
+          style={{
+            borderWidth: 0,
+            elevation: 2,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: isDark ? 0.25 : 0.05,
+            shadowRadius: 4,
+          }}
         >
           <View className="flex-row justify-between items-center mb-2">
             <Text
@@ -301,6 +319,14 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
           className={`rounded-2xl border mb-5 shadow-sm overflow-hidden ${
             isDark ? "bg-[#252230] border-[#3A3549]" : "bg-white border-transparent"
           }`}
+          style={{
+            borderWidth: 0,
+            elevation: 2,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: isDark ? 0.25 : 0.05,
+            shadowRadius: 4,
+          }}
         >
           {funnelSteps.map((step, index) => (
             <React.Fragment key={step.label}>
@@ -325,17 +351,17 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
                     isDark ? "text-[#F5F3FB]" : "text-[#1C1A25]"
                   }`}
                 >
-                  {step.value}
+                  {step.label}
                 </Text>
               </View>
-              {index < funnelSteps.length - 1 && (
-                <View
-                  className={`h-[1px] ml-15 ${
-                    isDark ? "bg-white/[0.08]" : "bg-black/[0.06]"
-                  }`}
-                />
-              )}
-            </React.Fragment>
+              <Text
+                className={`text-base font-bold ${
+                  isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
+                }`}
+              >
+                {step.value}
+              </Text>
+            </View>
           ))}
         </View>
 
@@ -351,6 +377,14 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
           className={`rounded-2xl border mb-8 shadow-sm overflow-hidden ${
             isDark ? "bg-[#252230] border-[#3A3549]" : "bg-white border-transparent"
           }`}
+          style={{
+            borderWidth: 0,
+            elevation: 2,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: isDark ? 0.25 : 0.05,
+            shadowRadius: 4,
+          }}
         >
           <View className="flex-row justify-between items-center p-3.5">
             <Text className={`text-xs font-medium ${isDark ? "text-[#777383]" : "text-[#64748B]"}`}>
@@ -360,7 +394,6 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
               {broadcast.audience_tag || "All Contacts"}
             </Text>
           </View>
-          <View className={`h-[1px] ${isDark ? "bg-white/[0.08]" : "bg-black/[0.06]"}`} />
 
           <View className="flex-row justify-between items-center p-3.5">
             <Text className={`text-xs font-medium ${isDark ? "text-[#777383]" : "text-[#64748B]"}`}>
@@ -373,7 +406,6 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
                 : "Custom"}
             </Text>
           </View>
-          <View className={`h-[1px] ${isDark ? "bg-white/[0.08]" : "bg-black/[0.06]"}`} />
 
           <View className="flex-row justify-between items-center p-3.5">
             <Text className={`text-xs font-medium ${isDark ? "text-[#777383]" : "text-[#64748B]"}`}>
@@ -388,7 +420,6 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
               ).toFixed(2)}
             </Text>
           </View>
-          <View className={`h-[1px] ${isDark ? "bg-white/[0.08]" : "bg-black/[0.06]"}`} />
 
           <View className="flex-row justify-between items-center p-3.5">
             <Text className={`text-xs font-medium ${isDark ? "text-[#777383]" : "text-[#64748B]"}`}>
