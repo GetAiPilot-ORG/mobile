@@ -245,12 +245,11 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
               gap: 8,
             }}
           >
-            {tags.map((item) => {
-              const isSelected =
-                item === "All" ? !selectedTag : selectedTag === item;
+            {allTabs.map((tab) => {
+              const isSelected = activeFilter === tab.id;
               return (
                 <Pressable
-                  key={item}
+                  key={tab.id}
                   className={`px-4 py-1.5 rounded-full border items-center justify-center active:opacity-80 ${
                     isSelected
                       ? isDark
@@ -264,7 +263,7 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
                     if (Platform.OS !== "web") {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }
-                    setSelectedTag(item === "All" ? undefined : item);
+                    setActiveFilter(tab.id);
                   }}
                 >
                   <Text
@@ -278,25 +277,13 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
                         : "text-[#6B7280]"
                     }`}
                   >
-                    <Text
-                      numberOfLines={1}
-                      style={{
-                        fontSize: 13,
-                        fontWeight: isActive ? "600" : "500",
-                        letterSpacing: -0.1,
-                        color: isActive
-                          ? activeColor
-                          : (color.textSecondary || (isDark ? "#94A3B8" : "#64748B")),
-                      }}
-                    >
-                      {tab.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+                    {tab.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
             </ScrollView>
           </View>
-        </View>
 
         {/* Contacts List */}
         {isLoading && !data ? (
