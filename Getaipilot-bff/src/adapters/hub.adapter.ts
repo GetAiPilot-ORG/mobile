@@ -59,6 +59,10 @@ export class HubAdapter {
     }
   );
 
+  public static getAdminClient(): SupabaseClient {
+    return this.adminClient;
+  }
+
   /**
    * Generates a Supabase auth magic link / token_hash for seamless SSO or mobile deep linking
    */

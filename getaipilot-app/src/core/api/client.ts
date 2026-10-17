@@ -88,6 +88,7 @@ class ApiClient {
 
     const headers: Record<string, string> = {
       Accept: 'application/json',
+      'ngrok-skip-browser-warning': 'true',
       ...(restOptions.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
       ...(customHeaders as Record<string, string>),
     };
