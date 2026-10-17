@@ -351,17 +351,17 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
                     isDark ? "text-[#F5F3FB]" : "text-[#1C1A25]"
                   }`}
                 >
-                  {step.label}
+                  {step.value}
                 </Text>
               </View>
-              <Text
-                className={`text-base font-bold ${
-                  isDark ? "text-[#F8FAFC]" : "text-[#0F172A]"
-                }`}
-              >
-                {step.value}
-              </Text>
-            </View>
+              {index < funnelSteps.length - 1 && (
+                <View
+                  className={`h-[1px] ${
+                    isDark ? "bg-white/[0.08]" : "bg-black/[0.06]"
+                  }`}
+                />
+              )}
+            </React.Fragment>
           ))}
         </View>
 

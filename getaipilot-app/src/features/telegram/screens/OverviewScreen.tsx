@@ -21,6 +21,7 @@ import { usePlatformSubscription } from '@/hooks/usePlatformSubscription';
 import { FeaturePlanModal } from '@/components/FeaturePlanModal';
 import { TelegramHubTool, TelegramToolKey } from '../types';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 
 type TelegramCategory = 'all' | 'automation' | 'monetization' | 'growth';
 
