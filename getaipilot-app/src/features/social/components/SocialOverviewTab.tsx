@@ -27,6 +27,7 @@ interface SocialOverviewTabProps {
   onChangeRange: (days: number) => void;
   onOpenCreateModal: () => void;
   onOpenAccountsModal: () => void;
+  onOpenConnectModal: () => void;
   onNavigateToTab: (tab: 'overview' | 'trends' | 'inbox' | 'activity') => void;
   isLocked?: boolean;
 }
@@ -58,7 +59,7 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
       ]);
       return;
     }
-    openSocialHandoff('new-post');
+    // onOpenConnectModal();
   };
   if (overviewLoading && !overviewData) return <SocialScreenSkeleton />;
   if (overviewError && !overviewData) return <ProductEmpty title="Couldn't load your workspace" description={overviewError.message || 'Check your connection and try again.'} action="Try again" onAction={onRetryOverview} />;

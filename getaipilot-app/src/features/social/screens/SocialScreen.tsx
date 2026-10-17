@@ -21,6 +21,7 @@ import { useTheme, getColors } from '../../../theme';
 import { apiClient } from '../../../core/api/client';
 import {
   AccountsModal,
+  ConnectChannelModal,
   CreatePostModal,
   InstapilotConversationModal,
   PostDetailsModal,
@@ -81,6 +82,7 @@ export const SocialScreen: React.FC = () => {
   const [selectedInstapilotConv, setSelectedInstapilotConv] = useState<InstapilotConversation | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAccountsModal, setShowAccountsModal] = useState(false);
+  const [showConnectModal, setShowConnectModal] = useState(false);
   const [initialCaptionForCreate, setInitialCaptionForCreate] = useState<string | undefined>(undefined);
   const [planModalVisible, setPlanModalVisible] = useState(false);
   const [lockedFeatureName, setLockedFeatureName] = useState("Social Pilot");
@@ -109,6 +111,10 @@ export const SocialScreen: React.FC = () => {
       setShowAccountsModal(false);
       return true;
     }
+    if (showConnectModal) {
+      setShowConnectModal(false);
+      return true;
+    }
     if (activeTab !== 'overview') {
       setActiveTab('overview');
       return true;
@@ -119,7 +125,7 @@ export const SocialScreen: React.FC = () => {
       router.replace('/(tabs)/products');
     }
     return true;
-  }, [selectedInstapilotConv, selectedPost, showCreateModal, showAccountsModal, activeTab, router]);
+  }, [selectedInstapilotConv, selectedPost, showCreateModal, showAccountsModal, showConnectModal, activeTab, router]);
 
   useEffect(() => {
     const onHardwareBack = () => handleBack();
@@ -510,6 +516,7 @@ export const SocialScreen: React.FC = () => {
               setShowCreateModal(true);
             }}
             onOpenAccountsModal={() => setShowAccountsModal(true)}
+            onOpenConnectModal={() => setShowConnectModal(true)}
             // onSelectPost={setSelectedPost}
             onNavigateToTab={setActiveTab}
           />
@@ -611,7 +618,20 @@ export const SocialScreen: React.FC = () => {
         onDisconnect={async (provider, id) => {
           await disconnectAccountMutation.mutateAsync({ provider, accountId: id });
         }}
+        onOpenConnectModal={() => setShowConnectModal(true)}
         isLoading={disconnectAccountMutation.isPending}
+      />
+
+      <ConnectChannelModal
+        visible={showConnectModal}
+        onClose={() => setShowConnectModal(false)}
+        connectedCount={connectedList.length}
+        channelLimit={entitlementsData?.limits?.social_accounts ?? entitlementsData?.maxChannels ?? 3}
+        planName={entitlementsData?.plan?.name || 'Current'}
+        onChannelConnected={() => {
+          refetchAccounts();
+          refetchOverview();
+        }}
       />
 
       <InstapilotConversationModal
