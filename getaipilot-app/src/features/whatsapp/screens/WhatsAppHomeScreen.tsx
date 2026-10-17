@@ -189,7 +189,7 @@ export const WhatsAppHomeScreen: React.FC = () => {
                 <RefreshControl
                   refreshing={statusRefetching}
                   onRefresh={handleRefresh}
-                  tintColor="#25d366"
+                  tintColor="#25D366"
                 />
               }
             >
@@ -220,16 +220,16 @@ export const WhatsAppHomeScreen: React.FC = () => {
         </View>
       )}
 
-      {/* Floating Bottom Navigation Bar */}
+      {/* Floating Bottom Navigation Bar with WhatsApp Green Accent */}
       <ProductFloatingBottomBar
         items={WHATSAPP_TABS}
         activeKey={activeTab}
         onChangeTab={(tab) => handleSelectTab(tab as WhatsAppTab)}
-        accentColor="#0A84FF"
+        accentColor={isDark ? "#25D366" : "#075E54"}
         moreMenuTitle="WhatsApp Business Suite"
       />
 
-      {/* Account Switcher Modal (iOS Bottom Sheet) */}
+      {/* Account Switcher Modal (Borderless) */}
       <Modal
         visible={showAccountSwitcher && connectedAccounts.length > 1}
         transparent
@@ -238,11 +238,15 @@ export const WhatsAppHomeScreen: React.FC = () => {
       >
         <View className="flex-1 bg-black/60 justify-end sm:justify-center items-center p-4">
           <View
-            className={`w-full max-w-[420px] rounded-3xl p-5 border shadow-2xl ${
+            className={`w-full max-w-[420px] rounded-3xl p-5 shadow-2xl ${
               isDark
                 ? "bg-[#252230] border-[#3A3549]"
                 : "bg-white border-transparent"
             }`}
+            style={{
+              borderWidth: 0,
+              elevation: 8,
+            }}
           >
             <View className="flex-row justify-between items-center mb-4">
               <View>
@@ -281,15 +285,16 @@ export const WhatsAppHomeScreen: React.FC = () => {
                 return (
                   <Pressable
                     key={account.id}
-                    className={`flex-row items-center p-3 rounded-2xl border active:opacity-75 ${
+                    className={`flex-row items-center p-3 rounded-2xl active:opacity-75 ${
                       isSelected
                         ? isDark
-                          ? "bg-[#0A84FF]/15 border-[#0A84FF]"
-                          : "bg-[#007AFF]/10 border-[#007AFF]"
+                          ? "bg-[#25D366]/20"
+                          : "bg-[#25D366]/12"
                         : isDark
                         ? "bg-[#3A3549] border-transparent"
                         : "bg-[#F5F3FB] border-transparent"
                     }`}
+                    style={{ borderWidth: 0 }}
                     onPress={() => {
                       if (Platform.OS !== "web") {
                         Haptics.selectionAsync();
@@ -303,7 +308,7 @@ export const WhatsAppHomeScreen: React.FC = () => {
                         isDark ? "bg-[#3A3A3C]" : "bg-white"
                       }`}
                     >
-                      <Ionicons name="logo-whatsapp" size={20} color="#22C55E" />
+                      <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
                     </View>
                     <View className="flex-1">
                       <Text
@@ -325,7 +330,7 @@ export const WhatsAppHomeScreen: React.FC = () => {
                       <Ionicons
                         name="checkmark-circle"
                         size={20}
-                        color={isDark ? "#0A84FF" : "#007AFF"}
+                        color={isDark ? "#25D366" : "#075E54"}
                       />
                     )}
                   </Pressable>
