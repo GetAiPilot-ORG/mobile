@@ -6,8 +6,6 @@ import {
   ProductTabItem,
 } from '../../../src/components/ProductFloatingBottomBar';
 import { CRMDashboardScreen } from "../../../src/features/crm/screens/CRMDashboardScreen";
-import { GoogleCalendarScreen } from "../../../src/features/crm/screens/GoogleCalendarScreen";
-import { CommunicationScreen } from "../../../src/features/team/screens/CommunicationScreen";
 import { PlannerScreen } from "../../../src/features/team/screens/PlannerScreen";
 import { TeamScreen } from "../../../src/features/team/screens/TeamScreen";
 import { useCrmTheme } from '@/features/crm/hooks/useCrmTheme';
@@ -35,21 +33,7 @@ const CRM_TABS: ProductTabItem[] = [
     activeIcon: "calendar",
     inactiveIcon: "calendar-outline",
     description: "Upcoming birthdays & company holidays",
-  },
-  {
-    key: "calendar",
-    label: "Calendar",
-    activeIcon: "calendar-clear",
-    inactiveIcon: "calendar-clear-outline",
-    description: "Google Calendar integration",
-  },
-  {
-    key: "communication",
-    label: "Communication",
-    activeIcon: "mail",
-    inactiveIcon: "mail-outline",
-    description: "Email, team chat & work from home",
-  },
+  }
 ];
 
 export default function CRMIndexRoute() {
@@ -97,8 +81,6 @@ export default function CRMIndexRoute() {
         )}
         {activeTab === "team" && <TeamScreen />}
         {activeTab === "planner" && <PlannerScreen />}
-        {activeTab === "calendar" && <GoogleCalendarScreen />}
-        {activeTab === "communication" && <CommunicationScreen />}
       </View>
 
       <ProductFloatingBottomBar

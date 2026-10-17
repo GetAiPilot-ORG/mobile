@@ -158,6 +158,10 @@ export default function OverallPricingScreen() {
 
   // Currently Selected Plan ID (for the card highlight state)
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+
+  // Detail modal state
+  const [detailModalPlan, setDetailModalPlan] = useState<PricingPlan | null>(null);
+
   const [routeCategory, setRouteCategory] = useState(params.category);
   if (routeCategory !== params.category) {
     setRouteCategory(params.category);
@@ -165,10 +169,6 @@ export default function OverallPricingScreen() {
     setActiveTab(modular ? 'modular' : 'pro');
     setSelectedEngine(modular ? params.category as PlanCategory : 'calling');
   }
-
-
-  // Detail Modal State (opens when tapping arrow icon)
-  const [detailModalPlan, setDetailModalPlan] = useState<PricingPlan | null>(null);
 
   const handleBack = () => {
     if (router.canGoBack()) {
@@ -178,9 +178,69 @@ export default function OverallPricingScreen() {
     }
   };
 
+  const openDetailModal = (plan: PricingPlan) => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setDetailModalPlan(plan);
+  };
+
   const {
+    isActive: isSubActive,
+    plan: activePlanId,
+    planLabel,
+    subscriptionStatus,
+    expiresAt,
     refresh: refreshSub,
   } = usePlatformSubscription();
+
+  const isThisPlanActive = useMemo(() => {
+    return (plan: PricingPlan): boolean => {
+      if (!isSubActive) return false;
+
+      const activePlanLower = (activePlanId || '').toLowerCase().trim();
+      const planIdLower = (plan.id || '').toLowerCase().trim();
+      const planNameLower = (plan.plan_name || '').toLowerCase().trim();
+      const planLabelLower = (plan.plan_label || '').toLowerCase().trim();
+      const currentLabelLower = (planLabel || '').toLowerCase().trim();
+
+      // 1. Direct match on plan_id, plan_name or label
+      if (
+        (activePlanLower && (planIdLower === activePlanLower || planNameLower === activePlanLower)) ||
+        (currentLabelLower && planLabelLower === currentLabelLower)
+      ) {
+        return true;
+      }
+
+      // 2. Both are GAP Pro / All-in-One plans
+      const isCardPro =
+        planIdLower.includes('all_in_one') ||
+        planIdLower.includes('gap_') ||
+        planNameLower.includes('all_in_one') ||
+        planNameLower.includes('gap_pro') ||
+        planLabelLower.includes('all-in-one') ||
+        planLabelLower.includes('gap pro');
+
+      const isSubPro =
+        activePlanLower.includes('all_in_one') ||
+        activePlanLower.includes('gap_') ||
+        activePlanLower.includes('pro') ||
+        currentLabelLower.includes('gap') ||
+        currentLabelLower.includes('all-in-one');
+
+      if (isCardPro && isSubPro) {
+        return true;
+      }
+
+      // 3. Substring match for engine plans
+      if (
+        activePlanLower.length >= 5 &&
+        (planIdLower.includes(activePlanLower) || activePlanLower.includes(planIdLower))
+      ) {
+        return true;
+      }
+
+      return false;
+    };
+  }, [isSubActive, activePlanId, planLabel]);
 
   const { user } = useAuth();
 
@@ -255,10 +315,15 @@ export default function OverallPricingScreen() {
     const plan = planToBuy || selectedPlan;
     if (!plan) return;
 
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (isThisPlanActive(plan)) {
+      Alert.alert(
+        'Plan Already Active',
+        `You already have an active subscription for ${plan.plan_label || plan.plan_name}.`
+      );
+      return;
+    }
 
-    // Close detail modal if open
-    setDetailModalPlan(null);
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     const isAddon = isAddonPlan(plan);
     const isVoicePlan =
@@ -333,10 +398,10 @@ export default function OverallPricingScreen() {
       dur.includes('year')
         ? 'year'
         : dur.includes('quarter')
-        ? 'quarterly'
-        : dur.includes('6')
-        ? 'six_months'
-        : 'month';
+          ? 'quarterly'
+          : dur.includes('6')
+            ? 'six_months'
+            : 'month';
 
     openRazorpayCheckout({
       amount: amountInRupees,
@@ -371,11 +436,6 @@ export default function OverallPricingScreen() {
     });
   };
 
-  const openDetailModal = (plan: PricingPlan) => {
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setDetailModalPlan(plan);
-  };
-
   return (
     <AppScreen safeArea={false} backgroundColor={isDark ? '#0F172A' : '#F8FAFC'}>
       <AppTopBar
@@ -397,8 +457,52 @@ export default function OverallPricingScreen() {
       >
         {/* Title Header matching Screenshot 1 & 2 */}
         <ProductHeading title="Choose your plan" />
+        <View className="items-center px-4 pt-2 pb-1">
+          <Text
+            className="text-2xl font-black tracking-tight text-center"
+            style={{ color: colors.text }}
+          >
+            Our Packages
+          </Text>
+          <Text
+            className="text-xs text-center mt-1.5 leading-4 px-4"
+            style={{ color: colors.textMuted }}
+          >
+            Select the optimal tier for your team and proceed directly with Razorpay checkout.
+          </Text>
+        </View>
 
-        {/* Top Segmented Switcher (Exact style of Screenshot 1: [ PERSONAL ] [ BUSINESS ]) */}
+        {/* Active Subscription Banner if user already has an active subscription */}
+        {isSubActive && (
+          <View
+            className="mx-1 my-2 p-3.5 rounded-2xl border flex-row items-center justify-between shadow-sm"
+            style={{
+              backgroundColor: isDark ? 'rgba(16, 185, 129, 0.12)' : '#ECFDF5',
+              borderColor: isDark ? 'rgba(16, 185, 129, 0.35)' : '#A7F3D0',
+            }}
+          >
+            <View className="flex-row items-center gap-2.5 flex-1 mr-2">
+              <View className="w-8 h-8 rounded-full items-center justify-center bg-emerald-500/20">
+                <Ionicons name="shield-checkmark" size={18} color="#10B981" />
+              </View>
+              <View className="flex-1">
+                <Text
+                  className="text-xs font-black tracking-tight"
+                  style={{ color: isDark ? '#F8FAFC' : '#065F46' }}
+                >
+                  Active Subscription: {planLabel || 'GAP Pro'}
+                </Text>
+              </View>
+            </View>
+            <View className="px-2.5 py-1 rounded-full bg-emerald-500">
+              <Text className="text-[10px] font-black text-white tracking-wider">
+                ACTIVE
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Top Segmented Switcher */}
         <View className="items-center my-3">
           <View
             className="flex-row p-1 rounded-full border shadow-sm"
@@ -423,7 +527,7 @@ export default function OverallPricingScreen() {
               }}
             >
               <Text
-                className="text-xs font-medium "
+                className="text-xs font-medium"
                 style={{
                   color: activeTab === 'pro' ? colors.accent : colors.textMuted,
                 }}
@@ -447,7 +551,7 @@ export default function OverallPricingScreen() {
               }}
             >
               <Text
-                className="text-xs font-medium "
+                className="text-xs font-medium"
                 style={{
                   color: activeTab === 'modular' ? colors.accent : colors.textMuted,
                 }}
@@ -526,13 +630,13 @@ export default function OverallPricingScreen() {
                       backgroundColor: isSelected
                         ? eng.color
                         : isDark
-                        ? '#1E293B'
-                        : '#FFFFFF',
+                          ? '#1E293B'
+                          : '#FFFFFF',
                       borderColor: isSelected
                         ? eng.color
                         : isDark
-                        ? '#334155'
-                        : '#E2E8F0',
+                          ? '#334155'
+                          : '#E2E8F0',
                     }}
                   >
                     <Ionicons
@@ -600,7 +704,7 @@ export default function OverallPricingScreen() {
             </Text>
           </View>
         ) : (
-          /* PLAN CARDS LIST: Matching Screenshots 1 & 2 directly with DYNAMIC COLORS */
+          /* PLAN CARDS LIST */
           <View className="gap-3.5 my-1">
             {displayedPlans.map((plan) => {
               const isSelected = plan.id === selectedPlan?.id;
@@ -612,10 +716,10 @@ export default function OverallPricingScreen() {
               // Pro Interval Calculations
               const proPricing = isPro
                 ? calculateGapProPricing(
-                    plan.amount,
-                    gapProInterval,
-                    hasReferralDiscount ? discountPercent : 0
-                  )
+                  plan.amount,
+                  gapProInterval,
+                  hasReferralDiscount ? discountPercent : 0
+                )
                 : null;
 
               const baseAmountInRupees = Math.round(plan.amount / 100);
@@ -643,17 +747,17 @@ export default function OverallPricingScreen() {
                 Array.isArray(plan.features) && plan.features.length > 0
                   ? plan.features.slice(0, 4)
                   : [
-                      isPro ? 'All 5 AI Engines Included' : `${plan.plan_label} Quotas`,
-                      Boolean(plan.included_call_minutes)
-                        ? `${plan.included_call_minutes} AI Calling Minutes`
-                        : 'Unlimited bot automation',
-                      Boolean(plan.included_numbers)
-                        ? `${plan.included_numbers} Virtual Dedicated Line`
-                        : 'Instant priority cloud server',
-                    ];
+                    isPro ? 'All 5 AI Engines Included' : `${plan.plan_label} Quotas`,
+                    Boolean(plan.included_call_minutes)
+                      ? `${plan.included_call_minutes} AI Calling Minutes`
+                      : 'Unlimited bot automation',
+                    Boolean(plan.included_numbers)
+                      ? `${plan.included_numbers} Virtual Dedicated Line`
+                      : 'Instant priority cloud server',
+                  ];
 
               /* ----------------------------------------------------------------- */
-              /* STATE 1: SELECTED CARD (Dynamic Color Theme Matching Screenshot 2)*/
+              /* STATE 1: SELECTED CARD                                             */
               /* ----------------------------------------------------------------- */
               if (isSelected) {
                 return (
@@ -669,7 +773,7 @@ export default function OverallPricingScreen() {
                       borderColor: theme.color,
                     }}
                   >
-                    {/* Top Row: Title + Badge + Clickable Arrow Button */}
+                    {/* Top Row: Title + Badge + Arrow + Check */}
                     <View className="flex-row items-center justify-between mb-3.5">
                       <View className="flex-row items-center gap-2.5 flex-1 mr-2">
                         <Text
@@ -682,9 +786,8 @@ export default function OverallPricingScreen() {
                         {isPopular ? (
                           <View
                             className="px-2.5 py-0.5 rounded-full"
-                            style={{ backgroundColor: colors.buttonPrimary }}
-                          >
-                            <Text className="text-[9px] font-medium text-white ">
+                            style={{ backgroundColor: colors.buttonPrimary }}>
+                            <Text className="text-[9px] font-medium text-white">
                               MOST POPULAR
                             </Text>
                           </View>
@@ -694,7 +797,7 @@ export default function OverallPricingScreen() {
                             style={{ backgroundColor: `${theme.color}25` }}
                           >
                             <Text
-                              className="text-[9px] font-medium "
+                              className="text-[9px] font-medium"
                               style={{ color: theme.color }}
                             >
                               BEST VALUE
@@ -703,22 +806,28 @@ export default function OverallPricingScreen() {
                         ) : null}
                       </View>
 
-                      {/* Right top arrow button circle: OPENS DETAIL PAGE */}
-                      <Pressable
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          openDetailModal(plan);
-                        }}
-                        className="w-8 h-8 rounded-full items-center justify-center active:scale-95"
-                        style={{ backgroundColor: colors.buttonPrimary }}
-                      >
-                        <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
-                      </Pressable>
+                      <View className="flex-row items-center gap-2">
+                        <Pressable
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            openDetailModal(plan);
+                          }}
+                          className="w-8 h-8 rounded-full items-center justify-center active:scale-95"
+                          style={{ backgroundColor: colors.buttonPrimary }}
+                        >
+                          <Ionicons name="arrow-forward" size={15} color="#FFFFFF" />
+                        </Pressable>
+                        <View
+                          className="w-7 h-7 rounded-full items-center justify-center"
+                          style={{ backgroundColor: theme.color }}
+                        >
+                          <Ionicons name="checkmark" size={15} color="#FFFFFF" />
+                        </View>
+                      </View>
                     </View>
 
                     {/* Middle Row: Features on Left, Large Price on Right */}
                     <View className="flex-row items-center justify-between gap-3">
-                      {/* Left Checklist */}
                       <View className="flex-1 gap-2">
                         {featuresToShow.map((feat, fIdx) => (
                           <View key={fIdx} className="flex-row items-center gap-2">
@@ -739,7 +848,6 @@ export default function OverallPricingScreen() {
                         ))}
                       </View>
 
-                      {/* Right Pricing Display */}
                       <View className="items-end pl-2">
                         {(isPro ? proPricing?.hasDiscount : isEligibleForDiscount) ? (
                           <View className="items-end">
@@ -787,12 +895,44 @@ export default function OverallPricingScreen() {
                         </Text>
                       </View>
                     )}
+
+                    {/* Direct 1-Tap Razorpay Button on Card */}
+                    {isThisPlanActive(plan) ? (
+                      <View
+                        className="mt-3.5 py-3 px-4 rounded-2xl items-center justify-center border"
+                        style={{
+                          backgroundColor: isDark ? 'rgba(16, 185, 129, 0.12)' : 'rgba(16, 185, 129, 0.08)',
+                          borderColor: isDark ? 'rgba(16, 185, 129, 0.35)' : 'rgba(16, 185, 129, 0.25)',
+                        }}
+                      >
+                        <View className="flex-row items-center gap-1.5">
+                          <Ionicons name="checkmark-circle" size={15} color="#10B981" />
+                          <Text className="text-emerald-500 text-xs font-black tracking-wider">
+                            ACTIVE CURRENT PLAN
+                          </Text>
+                        </View>
+                      </View>
+                    ) : (
+                      <Pressable
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleCheckout(plan);
+                        }}
+                        className="mt-3.5 py-3 rounded-2xl items-center justify-center flex-row gap-2 active:opacity-90 shadow-sm"
+                        style={{ backgroundColor: theme.color }}
+                      >
+                        <Ionicons name="card-outline" size={15} color="#FFFFFF" />
+                        <Text className="text-white text-xs font-black tracking-wider">
+                          PAY WITH RAZORPAY
+                        </Text>
+                      </Pressable>
+                    )}
                   </Pressable>
                 );
               }
 
               /* ----------------------------------------------------------------- */
-              /* STATE 2: UNSELECTED CARD (Dynamic Color Theme Matching Screenshot 1)*/
+              /* STATE 2: UNSELECTED CARD                                           */
               /* ----------------------------------------------------------------- */
               return (
                 <Pressable
@@ -815,13 +955,22 @@ export default function OverallPricingScreen() {
                     />
 
                     <View className="flex-1 min-w-0">
-                      <Text
-                        className="text-[15px] font-semibold tracking-tight"
-                        style={{ color: colors.text }}
-                        numberOfLines={1}
-                      >
-                        {plan.plan_label || plan.plan_name}
-                      </Text>
+                      <View className="flex-row items-center gap-2">
+                        <Text
+                          className="text-[15px] font-extrabold tracking-tight"
+                          style={{ color: colors.text }}
+                          numberOfLines={1}
+                        >
+                          {plan.plan_label || plan.plan_name}
+                        </Text>
+                        {isThisPlanActive(plan) && (
+                          <View className="px-1.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30">
+                            <Text className="text-[9px] font-black text-emerald-500 tracking-wider">
+                              ACTIVE
+                            </Text>
+                          </View>
+                        )}
+                      </View>
                       <Text
                         className="text-[11.5px] mt-0.5"
                         style={{ color: colors.textMuted }}
@@ -832,7 +981,7 @@ export default function OverallPricingScreen() {
                     </View>
                   </View>
 
-                  {/* Right: Price + Arrow/Chevron Button (Tap to Open Detail Page) */}
+                  {/* Right: Price + Chevron Button */}
                   <View className="flex-row items-center gap-3">
                     <View className="items-end">
                       <Text
@@ -848,11 +997,7 @@ export default function OverallPricingScreen() {
                       </Text>
                     </View>
 
-                    <Pressable
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        openDetailModal(plan);
-                      }}
+                    <View
                       className="w-7 h-7 rounded-full items-center justify-center"
                       style={{ backgroundColor: `${theme.color}15` }}
                     >
@@ -861,17 +1006,16 @@ export default function OverallPricingScreen() {
                         size={15}
                         color={theme.color}
                       />
-                    </Pressable>
+                    </View>
                   </View>
                 </Pressable>
               );
             })}
           </View>
         )}
+      </ScrollView>
 
-        </ScrollView>
-
-      {/* Floating Bottom Sticky CTA Button (Dynamic Theme Color) */}
+      {/* Floating Bottom Sticky CTA Button */}
       <View
         className="px-5 py-3 border-t"
         style={{
@@ -879,220 +1023,226 @@ export default function OverallPricingScreen() {
           borderTopColor: isDark ? '#1E293B' : '#E2E8F0',
         }}
       >
-        <Pressable
-          onPress={() => handleCheckout()}
-          disabled={!selectedPlan}
-          className="w-full py-3.5 rounded-2xl items-center justify-center flex-col gap-0.5 active:opacity-90 shadow-none"
-          style={{
-            backgroundColor: colors.buttonPrimary,
-            shadowColor: selectedTheme.color,
-            shadowOpacity: 0,
-            shadowRadius: 8,
-            elevation: 4,
-          }}
-        >
-          <View className="flex-row items-center gap-2">
-            <Text className="text-[15px] font-medium" style={{ color: colors.buttonPrimaryForeground }}>
-              {selectedPlan
-                ? `Continue to Purchase · ${
-                    isGapProPlan(selectedPlan)
-                      ? PricingService.formatPrice(
-                          calculateGapProPricing(
-                            selectedPlan.amount,
-                            gapProInterval,
-                            hasReferralDiscount ? discountPercent : 0
-                          ).totalChargedRupees * 100,
-                          selectedPlan.currency
-                        )
-                      : PricingService.formatPrice(selectedPlan.amount, selectedPlan.currency)
-                  }`
-                : 'Continue to Purchase'}
-            </Text>
-            <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+        {selectedPlan && isThisPlanActive(selectedPlan) ? (
+          <View
+            className="w-full py-3 rounded-2xl items-center justify-center flex-col gap-0.5 border"
+            style={{
+              backgroundColor: isDark ? 'rgba(16, 185, 129, 0.12)' : '#ECFDF5',
+              borderColor: isDark ? 'rgba(16, 185, 129, 0.35)' : '#A7F3D0',
+            }}
+          >
+            <View className="flex-row items-center gap-1.5">
+              <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+              <Text className="text-emerald-500 text-[14px] font-black tracking-wide">
+                Current Plan is Active
+              </Text>
+            </View>
           </View>
-
-        </Pressable>
+        ) : (
+          <Pressable
+            onPress={() => handleCheckout()}
+            disabled={!selectedPlan}
+            className="w-full py-3.5 rounded-2xl items-center justify-center flex-col gap-0.5 active:opacity-90 shadow-md"
+            style={{
+              backgroundColor: colors.buttonPrimary,
+              shadowColor: selectedTheme.color,
+              shadowOpacity: 0.35,
+              shadowRadius: 8,
+              elevation: 4,
+            }}
+          >
+            <View className="flex-row items-center gap-2">
+              <Text className="text-[15px] font-medium" style={{ color: colors.buttonPrimaryForeground }}>
+                {selectedPlan
+                  ? `Continue to Purchase · ${isGapProPlan(selectedPlan)
+                    ? PricingService.formatPrice(
+                      calculateGapProPricing(
+                        selectedPlan.amount,
+                        gapProInterval,
+                        hasReferralDiscount ? discountPercent : 0
+                      ).totalChargedRupees * 100,
+                      selectedPlan.currency
+                    )
+                    : PricingService.formatPrice(selectedPlan.amount, selectedPlan.currency)
+                  }`
+                  : 'Continue to Purchase'}
+              </Text>
+              <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+            </View>
+            <View className="flex-row items-center gap-1 opacity-90">
+              <Ionicons name="shield-checkmark" size={10} color="#FFFFFF" />
+              <Text className="text-[10px] font-bold text-white tracking-wider">
+                RAZORPAY SECURE SDK · UPI & CARDS
+              </Text>
+            </View>
+          </Pressable>
+        )}
       </View>
 
       {/* ========================================================================= */}
-      {/* DETAIL MODAL / SHEET: Opens when tapping arrow icon on any plan card      */}
+      {/* DETAIL MODAL / SHEET                                                      */}
       {/* ========================================================================= */}
-      {detailModalPlan && (
-        <Modal
-          visible={Boolean(detailModalPlan)}
-          animationType={reducedMotion ? "none" : "fade"}
-          transparent={true}
-          onRequestClose={() => setDetailModalPlan(null)}
-        >
+      <Modal
+        visible={Boolean(detailModalPlan)}
+        animationType={reducedMotion ? 'none' : 'fade'}
+        transparent={true}
+        onRequestClose={() => setDetailModalPlan(null)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <View
-            className="flex-1 justify-end"
-            style={{ backgroundColor: 'rgba(0, 0, 0, 0.65)' }}
+            style={{
+              flex: 1,
+              marginTop: 80,
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              backgroundColor: isDark ? '#0F172A' : '#FFFFFF',
+              paddingHorizontal: 20,
+              paddingTop: 20,
+            }}
           >
-            <Pressable
-              className="flex-1"
-              onPress={() => setDetailModalPlan(null)}
-            />
+            {detailModalPlan && (() => {
+              const plan = detailModalPlan;
+              const theme = getPlanTheme(plan);
+              const isPro = isGapProPlan(plan);
+              const proPricing = isPro
+                ? calculateGapProPricing(
+                  plan.amount,
+                  gapProInterval,
+                  hasReferralDiscount ? discountPercent : 0
+                )
+                : null;
 
-            <View
-              className="rounded-t-3xl border-t p-5 max-h-[85%]"
-              style={{
-                backgroundColor: isDark ? '#0F172A' : '#FFFFFF',
-                borderColor: isDark ? '#334155' : '#E2E8F0',
-              }}
-            >
-              {/* Drag Handle Bar */}
-              <View className="items-center mb-3">
-                <View
-                  className="w-10 h-1.5 rounded-full"
-                  style={{ backgroundColor: isDark ? '#334155' : '#CBD5E1' }}
-                />
-              </View>
+              const baseAmountInRupees = Math.round(plan.amount / 100);
+              const isEligibleForDiscount = hasReferralDiscount && isPro;
+              const discountedPriceRupees = isEligibleForDiscount
+                ? Math.max(1, Math.round(baseAmountInRupees * (1 - discountPercent / 100)))
+                : baseAmountInRupees;
 
-              {/* Modal Header */}
-              {(() => {
-                const plan = detailModalPlan;
-                const isPro = isGapProPlan(plan);
-                const theme = getPlanTheme(plan);
+              const formattedPrice =
+                isPro && proPricing
+                  ? PricingService.formatPrice(proPricing.baseMonthlyRupees * 100, plan.currency)
+                  : PricingService.formatPrice(plan.amount, plan.currency);
 
-                const proPricing = isPro
-                  ? calculateGapProPricing(
-                      plan.amount,
-                      gapProInterval,
-                      hasReferralDiscount ? discountPercent : 0
-                    )
-                  : null;
+              const formattedDiscountedPrice =
+                isPro && proPricing
+                  ? PricingService.formatPrice(proPricing.finalMonthlyRupees * 100, plan.currency)
+                  : PricingService.formatPrice(discountedPriceRupees * 100, plan.currency);
 
-                const baseAmountInRupees = Math.round(plan.amount / 100);
-                const isEligibleForDiscount = hasReferralDiscount && isPro;
-                const discountedPriceRupees = isEligibleForDiscount
-                  ? Math.max(1, Math.round(baseAmountInRupees * (1 - discountPercent / 100)))
-                  : baseAmountInRupees;
+              const finalChargedRupees = isPro && proPricing
+                ? proPricing.totalChargedRupees
+                : discountedPriceRupees;
 
-                const formattedPrice =
-                  isPro && proPricing
-                    ? PricingService.formatPrice(proPricing.baseMonthlyRupees * 100, plan.currency)
-                    : PricingService.formatPrice(plan.amount, plan.currency);
-
-                const formattedDiscountedPrice =
-                  isPro && proPricing
-                    ? PricingService.formatPrice(proPricing.finalMonthlyRupees * 100, plan.currency)
-                    : PricingService.formatPrice(discountedPriceRupees * 100, plan.currency);
-
-                const finalChargedRupees = isPro && proPricing
-                  ? proPricing.totalChargedRupees
-                  : discountedPriceRupees;
-
-                return (
-                  <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 14 }}>
-                    <View className="flex-row items-center justify-between">
-                      <View className="flex-row items-center gap-3 flex-1 mr-2">
-                        <View
-                          className="w-12 h-12 rounded-2xl items-center justify-center"
-                          style={{ backgroundColor: `${theme.color}20` }}
+              return (
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 14, paddingBottom: 32 }}>
+                  <View className="flex-row items-center justify-between">
+                    <View className="flex-row items-center gap-3 flex-1 mr-2">
+                      <View
+                        className="w-12 h-12 rounded-2xl items-center justify-center"
+                        style={{ backgroundColor: `${theme.color}20` }}
+                      >
+                        <Ionicons name={theme.icon} size={24} color={theme.color} />
+                      </View>
+                      <View className="flex-1">
+                        <Text
+                          className="text-lg font-medium tracking-tight"
+                          style={{ color: colors.text }}
                         >
-                          <Ionicons name={theme.icon} size={24} color={theme.color} />
-                        </View>
-                        <View className="flex-1">
-                          <Text
-                            className="text-lg font-medium tracking-tight"
-                            style={{ color: colors.text }}
+                          {plan.plan_label || plan.plan_name}
+                        </Text>
+                        <View className="flex-row items-center gap-1.5 mt-0.5">
+                          <View
+                            className="px-2 py-0.5 rounded-md"
+                            style={{ backgroundColor: `${theme.color}15` }}
                           >
-                            {plan.plan_label || plan.plan_name}
-                          </Text>
-                          <View className="flex-row items-center gap-1.5 mt-0.5">
-                            <View
-                              className="px-2 py-0.5 rounded-md"
-                              style={{ backgroundColor: `${theme.color}15` }}
+                            <Text
+                              className="text-[10px] font-medium"
+                              style={{ color: theme.color }}
                             >
-                              <Text
-                                className="text-[10px] font-medium "
-                                style={{ color: theme.color }}
-                              >
-                                {theme.badge}
+                              {theme.badge}
+                            </Text>
+                          </View>
+                          {plan.is_popular && (
+                            <View className="px-2 py-0.5 rounded-md bg-[#F59E0B]">
+                              <Text className="text-[9.5px] font-medium text-white">
+                                POPULAR
                               </Text>
                             </View>
-                            {plan.is_popular && (
-                              <View className="px-2 py-0.5 rounded-md bg-[#F59E0B]">
-                                <Text className="text-[9.5px] font-medium text-white">
-                                  POPULAR
-                                </Text>
-                              </View>
-                            )}
-                          </View>
-                        </View>
-                      </View>
-
-                      <Pressable
-                        onPress={() => setDetailModalPlan(null)}
-                        className="w-8 h-8 rounded-full items-center justify-center"
-                        style={{ backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }}
-                      >
-                        <Ionicons name="close" size={18} color={colors.text} />
-                      </Pressable>
-                    </View>
-
-                    {/* Price & Billing Summary Box */}
-                    <View
-                      className="p-4 rounded-2xl border"
-                      style={{
-                        backgroundColor: isDark ? theme.darkBg : theme.lightBg,
-                        borderColor: `${theme.color}40`,
-                      }}
-                    >
-                      <View className="flex-row items-baseline justify-between mb-1">
-                        <View className="flex-row items-baseline gap-2">
-                          <Text
-                            className="text-3xl font-medium"
-                            style={{ color: colors.text }}
-                          >
-                            {(isPro ? proPricing?.hasDiscount : isEligibleForDiscount)
-                              ? formattedDiscountedPrice
-                              : formattedPrice}
-                          </Text>
-                          {(isPro ? proPricing?.hasDiscount : isEligibleForDiscount) && (
-                            <Text
-                              className="text-base line-through font-semibold"
-                              style={{ color: colors.textMuted }}
-                            >
-                              {formattedPrice}
-                            </Text>
                           )}
-                          <Text
-                            className="text-xs font-bold"
-                            style={{ color: theme.color }}
-                          >
-                            {isPro ? '/month' : `/${plan.duration || 'monthly'}`}
-                          </Text>
                         </View>
-
-                        {isPro && proPricing && proPricing.option.discountPercent > 0 && (
-                          <View className="px-2.5 py-1 rounded-full bg-emerald-500">
-                            <Text className="text-[10px] font-medium text-white">
-                              SAVE {proPricing.option.discountPercent}%
-                            </Text>
-                          </View>
-                        )}
                       </View>
-
-                      <Text
-                        className="text-xs font-semibold mt-1"
-                        style={{ color: colors.textSecondary }}
-                      >
-                        {isPro && proPricing
-                          ? gapProInterval === 'month'
-                            ? 'Billed monthly • 30-day renewal cycle'
-                            : `Total ₹${proPricing.totalChargedRupees.toLocaleString('en-IN')} billed for ${proPricing.option.months} months (₹${proPricing.totalSavedRupees.toLocaleString('en-IN')} saved)`
-                          : plan.billing_note || plan.description || 'Production-grade workspace quotas.'}
-                      </Text>
                     </View>
 
-                    {/* Quotas Overview Pills (if available) */}
-                    {(Boolean(plan.included_call_minutes) ||
-                      Boolean(plan.included_numbers) ||
-                      Boolean(plan.included_channels)) && (
+                    <Pressable
+                      onPress={() => setDetailModalPlan(null)}
+                      className="w-8 h-8 rounded-full items-center justify-center"
+                      style={{ backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }}
+                    >
+                      <Ionicons name="close" size={18} color={colors.text} />
+                    </Pressable>
+                  </View>
+
+                  {/* Price & Billing Summary Box */}
+                  <View
+                    className="p-4 rounded-2xl border"
+                    style={{
+                      backgroundColor: isDark ? theme.darkBg : theme.lightBg,
+                      borderColor: `${theme.color}40`,
+                    }}
+                  >
+                    <View className="flex-row items-baseline justify-between mb-1">
+                      <View className="flex-row items-baseline gap-2">
+                        <Text
+                          className="text-3xl font-medium"
+                          style={{ color: colors.text }}
+                        >
+                          {(isPro ? proPricing?.hasDiscount : isEligibleForDiscount)
+                            ? formattedDiscountedPrice
+                            : formattedPrice}
+                        </Text>
+                        {(isPro ? proPricing?.hasDiscount : isEligibleForDiscount) && (
+                          <Text
+                            className="text-base line-through font-semibold"
+                            style={{ color: colors.textMuted }}
+                          >
+                            {formattedPrice}
+                          </Text>
+                        )}
+                        <Text
+                          className="text-xs font-bold"
+                          style={{ color: theme.color }}
+                        >
+                          {isPro ? '/month' : `/${plan.duration || 'monthly'}`}
+                        </Text>
+                      </View>
+
+                      {isPro && proPricing && proPricing.option.discountPercent > 0 && (
+                        <View className="px-2.5 py-1 rounded-full bg-emerald-500">
+                          <Text className="text-[10px] font-medium text-white">
+                            SAVE {proPricing.option.discountPercent}%
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+
+                    <Text
+                      className="text-xs font-semibold mt-1"
+                      style={{ color: colors.textSecondary }}
+                    >
+                      {isPro && proPricing
+                        ? gapProInterval === 'month'
+                          ? 'Billed monthly • 30-day renewal cycle'
+                          : `Total ₹${proPricing.totalChargedRupees.toLocaleString('en-IN')} billed for ${proPricing.option.months} months (₹${proPricing.totalSavedRupees.toLocaleString('en-IN')} saved)`
+                        : plan.billing_note || plan.description || 'Production-grade workspace quotas.'}
+                    </Text>
+                  </View>
+
+                  {/* Quotas Overview Pills */}
+                  {(Boolean(plan.included_call_minutes) ||
+                    Boolean(plan.included_numbers) ||
+                    Boolean(plan.included_channels)) && (
                       <View className="gap-2">
                         <Text
-                          className="text-[11px] font-medium "
+                          className="text-[11px] font-medium"
                           style={{ color: colors.textMuted }}
                         >
                           RESOURCE QUOTAS
@@ -1146,100 +1296,74 @@ export default function OverallPricingScreen() {
                       </View>
                     )}
 
-                    {/* Complete Features Checklist */}
-                    <View className="gap-2.5">
-                      <Text
-                        className="text-[11px] font-medium "
-                        style={{ color: colors.textMuted }}
-                      >
-                        ALL INCLUDED CAPABILITIES
-                      </Text>
-                      {(Array.isArray(plan.features) && plan.features.length > 0
-                        ? plan.features
-                        : [
-                            'Instant workspace activation',
-                            'Automated cloud API access',
-                            '24/7 autonomous monitoring',
-                            'GST invoice delivery via email',
-                          ]
-                      ).map((feat, idx) => (
-                        <View key={idx} className="flex-row items-start gap-2.5">
-                          <View
-                            className="w-5 h-5 rounded-full items-center justify-center mt-0.5"
-                            style={{ backgroundColor: `${theme.color}25` }}
-                          >
-                            <Ionicons name="checkmark" size={12} color={theme.color} />
-                          </View>
-                          <Text
-                            className="text-[13px] font-semibold leading-5 flex-1"
-                            style={{ color: colors.text }}
-                          >
-                            {feat}
-                          </Text>
+                  {/* Complete Features Checklist */}
+                  <View className="gap-2.5">
+                    <Text
+                      className="text-[11px] font-medium"
+                      style={{ color: colors.textMuted }}
+                    >
+                      ALL INCLUDED CAPABILITIES
+                    </Text>
+                    {(Array.isArray(plan.features) && plan.features.length > 0
+                      ? plan.features
+                      : [
+                        'Instant workspace activation',
+                        'Automated cloud API access',
+                        '24/7 autonomous monitoring',
+                        'GST invoice delivery via email',
+                      ]
+                    ).map((feat, idx) => (
+                      <View key={idx} className="flex-row items-start gap-2.5">
+                        <View
+                          className="w-5 h-5 rounded-full items-center justify-center mt-0.5"
+                          style={{ backgroundColor: `${theme.color}25` }}
+                        >
+                          <Ionicons name="checkmark" size={12} color={theme.color} />
                         </View>
-                      ))}
-                    </View>
+                        <Text
+                          className="text-[13px] font-semibold leading-5 flex-1"
+                          style={{ color: colors.text }}
+                        >
+                          {feat}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
 
-                    {/* Guarantee Perks */}
-                    <View
-                      className="p-3 rounded-2xl flex-row items-center justify-around border my-1"
-                      style={{
-                        backgroundColor: isDark ? '#1E293B' : '#F8FAFC',
-                        borderColor: isDark ? '#334155' : '#E2E8F0',
-                      }}
-                    >
-                      <View className="items-center gap-1">
-                        <Ionicons name="shield-checkmark" size={16} color="#10B981" />
-                        <Text className="text-[10px] font-bold" style={{ color: colors.textMuted }}>
-                          256-Bit SSL
-                        </Text>
-                      </View>
-                      <View className="items-center gap-1">
-                        <Ionicons name="flash" size={16} color={theme.color} />
-                        <Text className="text-[10px] font-bold" style={{ color: colors.textMuted }}>
-                          Instant Active
-                        </Text>
-                      </View>
-                      <View className="items-center gap-1">
-                        <Ionicons name="receipt-outline" size={16} color="#0284C7" />
-                        <Text className="text-[10px] font-bold" style={{ color: colors.textMuted }}>
-                          GST Invoice
-                        </Text>
-                      </View>
+                  {/* Purchase Button Inside Modal */}
+                  <Pressable
+                    onPress={() => {
+                      setDetailModalPlan(null);
+                      handleCheckout(plan);
+                    }}
+                    className="w-full py-3.5 rounded-2xl items-center justify-center flex-col gap-0.5 active:opacity-90 shadow-lg mt-2"
+                    style={{
+                      backgroundColor: colors.buttonPrimary,
+                      shadowColor: theme.color,
+                      shadowOpacity: 0.4,
+                      shadowRadius: 10,
+                      elevation: 5,
+                    }}
+                  >
+                    <View className="flex-row items-center gap-2">
+                      <Text className="text-[15px] font-medium" style={{ color: colors.buttonPrimaryForeground }}>
+                        Purchase Plan · ₹{finalChargedRupees.toLocaleString('en-IN')}
+                      </Text>
+                      <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
                     </View>
-
-                    {/* Purchase Button Inside Modal */}
-                    <Pressable
-                      onPress={() => handleCheckout(plan)}
-                      className="w-full py-3.5 rounded-2xl items-center justify-center flex-col gap-0.5 active:opacity-90 shadow-lg mt-2 mb-4"
-                      style={{
-                        backgroundColor: colors.buttonPrimary,
-                        shadowColor: theme.color,
-                        shadowOpacity: 0.4,
-                        shadowRadius: 10,
-                        elevation: 5,
-                      }}
-                    >
-                      <View className="flex-row items-center gap-2">
-                        <Text className="text-[15px] font-medium" style={{ color: colors.buttonPrimaryForeground }}>
-                          Purchase Plan · ₹{finalChargedRupees.toLocaleString('en-IN')}
-                        </Text>
-                        <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-                      </View>
-                      <View className="flex-row items-center gap-1 opacity-90">
-                        <Ionicons name="shield-checkmark" size={10} color="#FFFFFF" />
-                        <Text className="text-[10px] font-medium" style={{ color: colors.buttonPrimaryForeground }}>
-                          PAY VIA RAZORPAY SDK
-                        </Text>
-                      </View>
-                    </Pressable>
-                  </ScrollView>
-                );
-              })()}
-            </View>
+                    <View className="flex-row items-center gap-1 opacity-90">
+                      <Ionicons name="shield-checkmark" size={10} color="#FFFFFF" />
+                      <Text className="text-[10px] font-medium" style={{ color: colors.buttonPrimaryForeground }}>
+                        PAY VIA RAZORPAY SDK
+                      </Text>
+                    </View>
+                  </Pressable>
+                </ScrollView>
+              );
+            })()}
           </View>
-        </Modal>
-      )}
+        </View>
+      </Modal>
     </AppScreen>
   );
 }

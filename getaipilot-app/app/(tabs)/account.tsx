@@ -25,9 +25,12 @@ import { DeviceSessionsSkeleton } from '../../src/components/skeletonScreen';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { apiClient } from '../../src/core/api/client';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
+import { useNotifications } from '../../src/hooks/useNotifications';
 import { BiometricService, BiometricSettings } from '../../src/lib/biometrics';
 import { supabase } from '../../src/lib/supabase';
 import { Profile } from '../../src/types/database';
+import { TestNotificationButton } from '@/components/TestNotification';
+import { useThemedDialog } from '@/components';
 
 type AccountTab = 'overview' | 'edit' | 'security' | 'billing' | 'preferences';
 
@@ -108,8 +111,17 @@ export default function AccountScreen() {
   const { isDark, themeMode, setThemeMode } = useTheme();
   const colors = getColors(isDark);
   const { user, signOut } = useAuth();
-  const { planLabel, isActive } = usePlatformSubscription();
+  const { isAdmin, planLabel, isActive, plan } = usePlatformSubscription();
+  const {
+    expoPushToken,
+    permissionGranted,
+    requestPermissions,
+    sendTestNotification,
+    isDevice,
+  } = useNotifications();
+  const [isSendingTestPush, setIsSendingTestPush] = useState(false);
   const queryClient = useQueryClient();
+  const { confirmLogout, confirm: confirmDialog, showAlert } = useThemedDialog();
 
   const [activeTab, setActiveTab] = useState<AccountTab>('overview');
 
@@ -451,6 +463,45 @@ export default function AccountScreen() {
     }
   };
 
+  const handleTogglePush = async (val: boolean) => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (val) {
+      const token = await requestPermissions();
+      if (token || permissionGranted || !isDevice) {
+        setPushEnabled(true);
+        await AsyncStorage.setItem('@pref_push', 'true');
+        if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        Alert.alert(
+          'Notifications Required',
+          'Please enable notifications for GetAiPilot in your device settings to receive instant alerts.'
+        );
+        setPushEnabled(false);
+        await AsyncStorage.setItem('@pref_push', 'false');
+      }
+    } else {
+      setPushEnabled(false);
+      await AsyncStorage.setItem('@pref_push', 'false');
+    }
+  };
+
+  const handleSendTestPush = async () => {
+    if (isSendingTestPush) return;
+    setIsSendingTestPush(true);
+    try {
+      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await sendTestNotification(
+        'GetAiPilot Alert 🚀',
+        'Push notifications are configured and active in your ecosystem.'
+      );
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (err: any) {
+      Alert.alert('Notice', err?.message || 'Could not trigger test notification.');
+    } finally {
+      setIsSendingTestPush(false);
+    }
+  };
+
   // Save Profile Handler
   const handleSaveProfile = async () => {
     if (!user?.id) return;
@@ -609,57 +660,52 @@ export default function AccountScreen() {
     return `Signed in ${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
   };
 
+  const displayName =
+    fullName || profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+
   const handleSignOutOtherDevice = (device: DeviceSession) => {
-    Alert.alert(
-      'Sign Out Device',
-      `Sign out ${device.deviceName}? It will need to sign in again to use GetAiPilot.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            setSigningOutDeviceId(device.sessionId);
-            try {
-              await apiClient.delete(`/mobile/v1/auth/device-sessions/${encodeURIComponent(device.sessionId)}`);
-              await refetchDeviceSessions();
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            } catch (error: any) {
-              Alert.alert('Could Not Sign Out Device', error.message || 'Please try again.');
-            } finally {
-              setSigningOutDeviceId(null);
-            }
-          },
-        },
-      ]
-    );
+    confirmDialog({
+      title: 'Sign Out Device',
+      message: `Sign out ${device.deviceName}? It will need to sign in again to use GetAiPilot.`,
+      confirmText: 'Sign Out',
+      destructive: true,
+      onConfirm: async () => {
+        setSigningOutDeviceId(device.sessionId);
+        try {
+          await apiClient.delete(`/mobile/v1/auth/device-sessions/${encodeURIComponent(device.sessionId)}`);
+          await refetchDeviceSessions();
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch (error: any) {
+          showAlert({
+            title: 'Could Not Sign Out Device',
+            message: error.message || 'Please try again.',
+            type: 'destructive',
+          });
+        } finally {
+          setSigningOutDeviceId(null);
+        }
+      },
+    });
   };
 
   // Sign Out Handler
   const handleSignOut = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out from GetAiPilot?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              await signOut();
-            } catch (err: any) {
-              console.error('Sign out error:', err);
-            }
-          },
-        },
-      ]
-    );
+    confirmLogout({
+      onConfirm: async () => {
+        try {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          await signOut();
+        } catch (err: any) {
+          console.error('Sign out error:', err);
+        }
+      },
+      confirmBgColor: 'rgba(239, 68, 68, 0.16)',
+      confirmTextColor: '#EF4444',
+      cancelBgColor: 'rgba(255, 255, 255, 0.08)',
+      buttonAlign: 'right'
+    });
   };
 
-  const displayName =
-    fullName || profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const initials = displayName.charAt(0).toUpperCase();
   // Calculate Subscription Days Left
   const getDaysLeft = () => {
@@ -671,6 +717,7 @@ export default function AccountScreen() {
 
   return (
     <AppScreen safeArea="top">
+      <TestNotificationButton />
       <ScrollView
         style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}
         contentContainerStyle={styles.scrollContent}
@@ -1451,8 +1498,8 @@ export default function AccountScreen() {
                           isSelected
                             ? colors.primaryForeground
                             : isDark
-                            ? '#8E8E93'
-                            : '#64748B'
+                              ? '#8E8E93'
+                              : '#64748B'
                         }
                       />
                       <Text
@@ -1476,9 +1523,14 @@ export default function AccountScreen() {
             <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
               <View style={[styles.switchRow, isDark ? styles.switchRowDark : styles.switchRowLight]}>
                 <View style={{ flex: 1, paddingRight: 10 }}>
-                  <Text style={[styles.switchTitle, isDark && styles.switchTitleDark]}>Push Notifications</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={[styles.switchTitle, isDark && styles.switchTitleDark]}>Push Notifications</Text>
+                    {pushEnabled && (
+                      <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#10B981' }} />
+                    )}
+                  </View>
                   <Text style={[styles.switchSubtitle, isDark && styles.switchSubtitleDark]}>
-                    Receive instant alerts on bot and campaign events
+                    Receive instant alerts on bot, quota, and campaign events
                   </Text>
                 </View>
                 <Switch
@@ -1488,6 +1540,56 @@ export default function AccountScreen() {
                   thumbColor="#FFFFFF"
                 />
               </View>
+
+              {pushEnabled && (
+                <View
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 10,
+                    borderBottomWidth: StyleSheet.hairlineWidth,
+                    borderBottomColor: isDark ? '#2C2C2E' : '#E5E7EB',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <View style={{ flex: 1, paddingRight: 12 }}>
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: isDark ? '#94A3B8' : '#64748B' }}>
+                      {expoPushToken
+                        ? 'Token: ExponentPushToken (Active)'
+                        : isDevice
+                          ? 'Connected to push service'
+                          : 'Simulator Mode (Local alerts active)'}
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={handleSendTestPush}
+                    disabled={isSendingTestPush}
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 12,
+                      backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#ECFDF5',
+                      borderWidth: 1,
+                      borderColor: isDark ? 'rgba(16, 185, 129, 0.35)' : '#A7F3D0',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 5,
+                    }}
+                  >
+                    {isSendingTestPush ? (
+                      <ActivityIndicator size="small" color="#10B981" />
+                    ) : (
+                      <>
+                        <Ionicons name="notifications" size={13} color="#10B981" />
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#10B981' }}>
+                          Test Push
+                        </Text>
+                      </>
+                    )}
+                  </Pressable>
+                </View>
+              )}
 
               <View style={[styles.switchRow, isDark ? styles.switchRowDark : styles.switchRowLight]}>
                 <View style={{ flex: 1, paddingRight: 10 }}>

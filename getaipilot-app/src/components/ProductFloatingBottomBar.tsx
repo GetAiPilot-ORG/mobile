@@ -133,6 +133,33 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
   return (
     <View style={styles.dockRoot} pointerEvents="box-none">
       {/* 2. Rounded navigation dock */}
+      {/* 1. Full-bleed Bottom Frosted Backdrop that blurs all scrolled content behind it and fills the bottom screen area */}
+      <Pressable
+        style={[
+          styles.backdropWrapper,
+          {
+            height: 56 + bottomOffset + 12,
+          },
+        ]}
+        disabled={true}
+      >
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: isDark
+                ? 'rgba(17, 16, 15, 0.65)'
+                : 'rgba(247, 245, 242, 0.70)',
+              // borderTopWidth: StyleSheet.hairlineWidth,
+              borderTopColor: isDark
+                ? 'rgba(255, 255, 255, 0.08)'
+                : 'rgba(0, 0, 0, 0.06)',
+            },
+          ]}
+        />
+      </Pressable>
+
+      {/* 2. Floating Pill Tab Bar with rounded frosted glassmorphism */}
       <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
         <View
           style={[
@@ -148,6 +175,17 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
             },
           ]}
         >
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                backgroundColor: isDark
+                  ? 'rgba(25, 23, 21, 0.09)'
+                  : 'rgba(253, 252, 251, 0)',
+              },
+            ]}
+          />
+
           {visibleItems.map((item) => {
             const isMoreTab = item.key === '__more__';
             const isFocused = isMoreTab ? isOverflowActive : activeKey === item.key;
@@ -168,67 +206,67 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
 
             return (
               <TabMotion key={item.key} active={isFocused}>
-              {isFocused ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: true }}
-                  accessibilityLabel={item.label}
-                  onPress={onPress}
-                  style={[
-                    styles.activePill,
-                    { backgroundColor: colors.accentSoft },
-                  ]}
-                >
-                  <Ionicons
-                    name={iconName}
-                    size={19}
-                    color={colors.accent}
-                  />
-                  <Text
-                    style={[styles.activeLabel, { color: colors.accent }]}
-                    numberOfLines={1}
+                {isFocused ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: true }}
+                    accessibilityLabel={item.label}
+                    onPress={onPress}
+                    style={[
+                      styles.activePill,
+                      { backgroundColor: colors.accentSoft },
+                    ]}
                   >
-                    {isMoreTab && isOverflowActive
-                      ? overflowItems.find((o) => o.key === activeKey)?.label || item.label
-                      : item.label}
-                  </Text>
-                  {'badge' in item && item.badge ? (
-                    <View style={styles.badgePillActive}>
-                      <Text style={[styles.badgeTextActive, { color: activeColor }]}>
-                        {item.badge}
-                      </Text>
+                    <Ionicons
+                      name={iconName}
+                      size={19}
+                      color={colors.accent}
+                    />
+                    <Text
+                      style={[styles.activeLabel, { color: colors.accent }]}
+                      numberOfLines={1}
+                    >
+                      {isMoreTab && isOverflowActive
+                        ? overflowItems.find((o) => o.key === activeKey)?.label || item.label
+                        : item.label}
+                    </Text>
+                    {'badge' in item && item.badge ? (
+                      <View style={styles.badgePillActive}>
+                        <Text style={[styles.badgeTextActive, { color: activeColor }]}>
+                          {item.badge}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: false }}
+                    accessibilityLabel={item.label}
+                    onPress={onPress}
+                    style={[
+                      styles.inactiveButton,
+                      {
+                        backgroundColor: 'transparent',
+                      },
+                    ]}
+                  >
+                    <View style={styles.iconWrap}>
+                      <Ionicons
+                        name={iconName}
+                        size={20}
+                        color={colors.textMuted}
+                      />
+                      {'badge' in item && item.badge ? (
+                        <View style={[styles.badgeInactive, { backgroundColor: colors.accentSoft }]}>
+                          <Text style={[styles.badgeTextInactive, { color: colors.accent }]}>{item.badge}</Text>
+                        </View>
+                      ) : isMoreTab && isOverflowActive ? (
+                        <View style={[styles.moreActiveDot, { backgroundColor: colors.accentSoft }]} />
+                      ) : null}
                     </View>
-                  ) : null}
-                </Pressable>
-              ) : (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ selected: false }}
-                accessibilityLabel={item.label}
-                onPress={onPress}
-                style={[
-                  styles.inactiveButton,
-                  {
-                    backgroundColor: 'transparent',
-                  },
-                ]}
-              >
-                <View style={styles.iconWrap}>
-                  <Ionicons
-                    name={iconName}
-                    size={20}
-                    color={colors.textMuted}
-                  />
-                  {'badge' in item && item.badge ? (
-                    <View style={[styles.badgeInactive, { backgroundColor: colors.accentSoft }]}>
-                      <Text style={[styles.badgeTextInactive, { color: colors.accent }]}>{item.badge}</Text>
-                    </View>
-                  ) : isMoreTab && isOverflowActive ? (
-                    <View style={[styles.moreActiveDot, { backgroundColor: colors.accentSoft }]} />
-                  ) : null}
-                </View>
-              </Pressable>
-              )}
+                  </Pressable>
+                )}
               </TabMotion>
             );
           })}
@@ -255,7 +293,6 @@ export const ProductFloatingBottomBar: React.FC<ProductFloatingBottomBarProps> =
                     },
                   ]}
                 >
-
                   <View
                     style={[
                       StyleSheet.absoluteFill,

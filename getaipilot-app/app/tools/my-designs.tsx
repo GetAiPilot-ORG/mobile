@@ -27,7 +27,7 @@ import {
   Edit02Icon,
   Leaf01Icon,
   Rocket01Icon,
-} from "@hugeicons/core-free-icons";
+} from "@/constants/icons";
 
 export interface SavedBioPage {
   id: string;

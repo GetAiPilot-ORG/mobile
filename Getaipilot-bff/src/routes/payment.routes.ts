@@ -109,6 +109,50 @@ export async function paymentRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // 2b. POST /mobile/v1/payments/razorpay/create-payment-link
+  fastify.post('/payments/razorpay/create-payment-link', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+
+    const parseResult = createOrderSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        statusCode: 400,
+        error: 'ValidationError',
+        message: parseResult.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
+        issues: parseResult.error.issues,
+      });
+    }
+
+    const data = parseResult.data;
+
+    try {
+      const link = await RazorpayService.createPaymentLink({
+        userId: user.user_id,
+        userEmail: user.email,
+        userName: user.email?.split('@')[0] || 'Subscriber',
+        amount: data.amount,
+        currency: data.currency,
+        product: data.product,
+        planId: data.planId,
+        planName: data.planName,
+        billingInterval: data.billingInterval,
+        notes: data.notes,
+      });
+
+      return reply.send({
+        success: true,
+        data: link,
+      });
+    } catch (err: any) {
+      request.log.error(err);
+      return reply.status(500).send({
+        statusCode: 500,
+        error: 'PaymentLinkCreationFailed',
+        message: err?.message || 'Failed to create payment link with Razorpay',
+      });
+    }
+  });
+
   // 3. POST /mobile/v1/payments/razorpay/verify-payment
   fastify.post('/payments/razorpay/verify-payment', { preHandler: [authenticateToken] }, async (request, reply) => {
     const user = request.user as JWTPayload;

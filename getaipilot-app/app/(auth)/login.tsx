@@ -32,7 +32,7 @@ import { isValidEmail } from "../../src/lib/validators";
 
 const REMEMBER_ME_KEY = "@gap_remember_me";
 const SAVE_LOGIN_KEY = "@gap_saved_identifier";
-const brandLogo = require("../../assets/images/logobag.png");
+const brandLogo = require("../../assets/images/icon.png");
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -120,7 +120,12 @@ export default function LoginScreen() {
 
       try {
         await login(cleanIdentifier, password);
-        router.replace("/(tabs)");
+        const isOnboarded = useAuthStore.getState().onboardingCompleted;
+        if (isOnboarded === false) {
+          router.replace("/onboarding" as any);
+        } else {
+          router.replace("/(tabs)");
+        }
       } catch (err: any) {
         triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
         setFeedback({
@@ -209,13 +214,11 @@ export default function LoginScreen() {
         >
           {/* Top Brand Logo Section */}
           <View style={styles.logoSection}>
-            <View
-              style={[styles.logoWrapper, isDark && styles.logoWrapperDark]}
-            >
+            <View style={styles.logoWrapper}>
               <Image
                 source={brandLogo}
                 style={styles.logoImage}
-                contentFit="cover"
+                contentFit="contain"
                 transition={200}
               />
             </View>
@@ -449,30 +452,21 @@ const styles = StyleSheet.create({
   },
   logoSection: {
     alignItems: "center",
-    marginBottom: 24,
+    justifyContent: "center",
+    marginBottom: 20,
+    width: "100%",
   },
   logoWrapper: {
-    width: 92,
-    height: 92,
-    borderRadius: 46,
-    overflow: "hidden",
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#3B82F6",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    elevation: 6,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "transparent",
   },
   logoWrapperDark: {
-    backgroundColor: "#252230",
-    shadowColor: "#8B5CF6",
-    shadowOpacity: 0.1,
+    backgroundColor: "transparent",
   },
   logoImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 46,
-    resizeMode: "contain",
+    width: 80,
+    height: 80,
     backgroundColor: "transparent",
   },
   heading: {

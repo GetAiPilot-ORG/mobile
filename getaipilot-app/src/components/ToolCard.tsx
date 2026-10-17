@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
+import { ArrowRight01Icon } from '@/constants/icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useTheme, getColors } from '@/theme';
 
@@ -51,7 +51,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({
             backgroundColor: iconBg || colors.accentSoft,
           }}
         >
-          <HugeiconsIcon icon={icon} size={21} color={colors.text} strokeWidth={1.8} />
+          <HugeiconsIcon icon={icon} size={21} color={'#000000'} strokeWidth={1.8} />
         </View>
         {badge ? (
           <View

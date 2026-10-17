@@ -20,7 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../src/lib/supabase';
 import { isValidEmail } from '../../src/lib/validators';
 
-const brandLogo = require('../../assets/images/logo.jpg');
+const brandLogo = require('../../assets/images/icon.png');
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -83,7 +83,7 @@ export default function ForgotPasswordScreen() {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={[styles.container, { backgroundColor: colors.backgroundLight, borderWidth: 1, borderColor: colors.border }]}
+        style={[styles.container, isDark && styles.containerDark]}
       >
         <ScrollView
           contentContainerStyle={[
@@ -95,21 +95,21 @@ export default function ForgotPasswordScreen() {
         >
           {/* Top Brand Logo Section */}
           <View style={styles.logoSection}>
-            <View style={[styles.logoWrapper, { backgroundColor: colors.backgroundLight, borderWidth: 1, borderColor: colors.border }]}>
+            <View style={styles.logoWrapper}>
               <Image
                 source={brandLogo}
                 style={styles.logoImage}
-                contentFit="cover"
+                contentFit="contain"
                 transition={200}
               />
             </View>
           </View>
 
           {/* Heading */}
-          <Text style={[styles.heading, { color: colors.primary }]}>
+          <Text style={[styles.heading, isDark && styles.headingDark]}>
             Reset your account{'\n'}password
           </Text>
-          <Text style={[styles.subheading, { color: colors.textSecondary }]}>
+          <Text style={[styles.subheading, isDark && styles.subheadingDark]}>
             Enter the email associated with your GetAiPilot account and we'll send you reset instructions.
           </Text>
 
@@ -133,12 +133,12 @@ export default function ForgotPasswordScreen() {
           )}
 
           {/* Grouped iOS Input Fields Card */}
-          <View style={[styles.inputGroup, { backgroundColor: colors.backgroundLight, borderColor: colors.border }]}>
+          <View style={[styles.inputGroup, isDark && styles.inputGroupDark]}>
             <View style={styles.inputRow}>
               <TextInput
-                style={[styles.nativeInput, { backgroundColor: colors.backgroundLight, borderColor: colors.border, color: colors.text }]}
+                style={[styles.nativeInput, isDark && styles.nativeInputDark]}
                 placeholder="Account email address"
-                placeholderTextColor={colors.backgroundLight}
+                placeholderTextColor={colors.inputPlaceholder}
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
@@ -208,10 +208,10 @@ export default function ForgotPasswordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F3FB',
   },
   containerDark: {
-    backgroundColor: '#000000',
+    backgroundColor: '#14131B',
   },
   scrollContent: {
     flexGrow: 1,
@@ -224,29 +224,22 @@ const styles = StyleSheet.create({
   },
   logoSection: {
     alignItems: 'center',
-    marginBottom: 24,
+    justifyContent: 'center',
+    marginBottom: 20,
+    width: '100%',
   },
   logoWrapper: {
-    width: 92,
-    height: 92,
-    borderRadius: 46,
-    overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
   logoWrapperDark: {
-    backgroundColor: '#252230',
-    shadowColor: '#8B5CF6',
-    shadowOpacity: 0.4,
+    backgroundColor: 'transparent',
   },
   logoImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 46,
+    width: 80,
+    height: 80,
+    backgroundColor: 'transparent',
   },
   heading: {
     fontSize: 24,

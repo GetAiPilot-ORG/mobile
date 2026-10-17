@@ -9,7 +9,7 @@ import {
   Activity01Icon,
   ShieldCheckIcon,
   Mail01Icon,
-} from '@hugeicons/core-free-icons';
+} from '@/constants/icons';
 import * as Haptics from 'expo-haptics';
 import React from 'react';
 import {
@@ -135,6 +135,33 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   return (
     <View style={styles.dockRoot} pointerEvents="box-none">
       {/* 2. Rounded navigation dock */}
+      {/* 1. Full-bleed Bottom Frosted Backdrop that blurs all scrolled content behind it and fills the bottom screen area */}
+      <Pressable
+        style={[
+          styles.backdropWrapper,
+          {
+            height: 52 + bottomOffset,
+          },
+        ]}
+        disabled={true}
+      >
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: isDark
+                ? 'rgba(17, 16, 15, 0.65)'
+                : 'rgba(247, 245, 242, 0.70)',
+              // borderTopWidth: StyleSheet.hairlineWidth,
+              borderTopColor: isDark
+                ? 'rgba(255, 255, 255, 0.08)'
+                : 'rgba(0, 0, 0, 0.06)',
+            },
+          ]}
+        />
+      </Pressable>
+
+      {/* 2. Floating Pill Tab Bar with rounded frosted glassmorphism */}
       <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
         <View
           style={[
@@ -150,6 +177,17 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
             },
           ]}
         >
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                backgroundColor: isDark
+                  ? 'rgba(25, 23, 21, 0.70)'
+                  : 'rgba(253, 252, 251, 0.75)',
+              },
+            ]}
+          />
+
           {visibleRoutes.map((route: { key: string; name: string }, index: number) => {
             const descriptor = descriptors[route.key];
             const options = descriptor ? descriptor.options : ({} as any);
@@ -185,58 +223,58 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
 
             return (
               <TabMotion key={route.key} active={isFocused}>
-              {isFocused ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: true }}
-                  accessibilityLabel={options?.tabBarAccessibilityLabel || config.label}
-                  testID={options?.tabBarButtonTestID}
-                  onPress={onPress}
-                  onLongPress={onLongPress}
-                  style={[
-                    styles.activePill,
-                    { backgroundColor: colors.accentSoft },
-                  ]}
-                >
-                  <HugeiconsIcon
-                    icon={IconComponent}
-                    size={19}
-                    color={colors.accent}
-                    strokeWidth={2}
-                  />
-                  <Text
+                {isFocused ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: true }}
+                    accessibilityLabel={options?.tabBarAccessibilityLabel || config.label}
+                    testID={options?.tabBarButtonTestID}
+                    onPress={onPress}
+                    onLongPress={onLongPress}
                     style={[
-                      styles.activeLabel,
-                      { color: colors.accent },
+                      styles.activePill,
+                      { backgroundColor: colors.accentSoft },
                     ]}
-                    numberOfLines={1}
                   >
-                    {config.label}
-                  </Text>
-                </Pressable>
-              ) : (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ selected: false }}
-                accessibilityLabel={options?.tabBarAccessibilityLabel || config.label}
-                testID={options?.tabBarButtonTestID}
-                onPress={onPress}
-                onLongPress={onLongPress}
-                style={[
-                  styles.inactiveButton,
-                  {
-                    backgroundColor: 'transparent',
-                  },
-                ]}
-              >
-                <HugeiconsIcon
-                  icon={IconComponent}
-                  size={20}
-                  color={colors.textMuted}
-                  strokeWidth={1.75}
-                />
-              </Pressable>
-              )}
+                    <HugeiconsIcon
+                      icon={IconComponent}
+                      size={19}
+                      color={colors.accent}
+                      strokeWidth={2}
+                    />
+                    <Text
+                      style={[
+                        styles.activeLabel,
+                        { color: colors.accent },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {config.label}
+                    </Text>
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: false }}
+                    accessibilityLabel={options?.tabBarAccessibilityLabel || config.label}
+                    testID={options?.tabBarButtonTestID}
+                    onPress={onPress}
+                    onLongPress={onLongPress}
+                    style={[
+                      styles.inactiveButton,
+                      {
+                        backgroundColor: 'transparent',
+                      },
+                    ]}
+                  >
+                    <HugeiconsIcon
+                      icon={IconComponent}
+                      size={20}
+                      color={colors.textMuted}
+                      strokeWidth={1.75}
+                    />
+                  </Pressable>
+                )}
               </TabMotion>
             );
           })}

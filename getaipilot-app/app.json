@@ -13,7 +13,10 @@
       "bundleIdentifier": "com.unreala9.mobile",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Allow GetAIPilot to use Face ID for fast and secure authentication.",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       }
     },
     "android": {
@@ -31,7 +34,10 @@
       "package": "com.unreala9.mobile",
       "permissions": [
         "USE_BIOMETRIC",
-        "USE_FINGERPRINT"
+        "USE_FINGERPRINT",
+        "POST_NOTIFICATIONS",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
       ]
     },
     "web": {
@@ -52,7 +58,7 @@
         "expo-navigation-bar",
         {
           "enforceContrast": false,
-          "barStyle": "dark"
+          "style": "dark"
         }
       ],
       "expo-router",
@@ -73,7 +79,14 @@
       "expo-image",
       "expo-secure-store",
       "expo-asset",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#10B981"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

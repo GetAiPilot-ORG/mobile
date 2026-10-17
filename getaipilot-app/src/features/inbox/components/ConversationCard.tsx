@@ -3,9 +3,9 @@ import { Pressable, Text, View } from 'react-native';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import {
   UserIcon,
-  BotIcon,
   ArrowRight01Icon,
-} from '@hugeicons/core-free-icons';
+  BotMessageSquareIcon,
+} from '@/constants/icons';
 import { NormalizedConversation } from '../types';
 import { ChannelBadge } from './ChannelBadge';
 import { useTheme, getColors } from '@/theme';
@@ -109,7 +109,7 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation
               elevation: 2,
             }}
           >
-            <HugeiconsIcon icon={BotIcon} size={10} color={colors.accent} strokeWidth={2} />
+            <HugeiconsIcon icon={BotMessageSquareIcon} size={10} color={colors.accent} strokeWidth={2} />
           </View>
         )}
       </View>

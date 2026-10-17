@@ -9,16 +9,19 @@ import {
   StyleSheet,
 } from 'react-native';
 
+import { FeaturePlanModal } from '../../../components/FeaturePlanModal';
 import { AppScreen } from '../../../components/AppScreen';
 import { AppTopBar } from '../../../components/AppTopBar';
 import {
   ProductFloatingBottomBar,
   ProductTabItem,
 } from '../../../components/ProductFloatingBottomBar';
+import { usePlatformSubscription } from '../../../hooks/usePlatformSubscription';
 import { useTheme, getColors } from '../../../theme';
 import { apiClient } from '../../../core/api/client';
 import {
   AccountsModal,
+  ConnectChannelModal,
   CreatePostModal,
   InstapilotConversationModal,
   PostDetailsModal,
@@ -72,13 +75,23 @@ export const SocialScreen: React.FC = () => {
   const queryClient = useQueryClient();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+  const { hasSocial } = usePlatformSubscription();
 
   const [activeTab, setActiveTab] = useState<SocialTabType>('overview');
   const [selectedPost, setSelectedPost] = useState<any | null>(null);
   const [selectedInstapilotConv, setSelectedInstapilotConv] = useState<InstapilotConversation | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAccountsModal, setShowAccountsModal] = useState(false);
+  const [showConnectModal, setShowConnectModal] = useState(false);
   const [initialCaptionForCreate, setInitialCaptionForCreate] = useState<string | undefined>(undefined);
+  const [planModalVisible, setPlanModalVisible] = useState(false);
+  const [lockedFeatureName, setLockedFeatureName] = useState("Social Pilot");
+
+  const openLockModal = (name: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setLockedFeatureName(name);
+    setPlanModalVisible(true);
+  };
 
   // Safe Back Handler for Header and Hardware Back
   const handleBack = useCallback(() => {
@@ -98,6 +111,10 @@ export const SocialScreen: React.FC = () => {
       setShowAccountsModal(false);
       return true;
     }
+    if (showConnectModal) {
+      setShowConnectModal(false);
+      return true;
+    }
     if (activeTab !== 'overview') {
       setActiveTab('overview');
       return true;
@@ -108,7 +125,7 @@ export const SocialScreen: React.FC = () => {
       router.replace('/(tabs)/products');
     }
     return true;
-  }, [selectedInstapilotConv, selectedPost, showCreateModal, showAccountsModal, activeTab, router]);
+  }, [selectedInstapilotConv, selectedPost, showCreateModal, showAccountsModal, showConnectModal, activeTab, router]);
 
   useEffect(() => {
     const onHardwareBack = () => handleBack();
@@ -489,11 +506,17 @@ export const SocialScreen: React.FC = () => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSelectedRange(days);
             }}
+            isLocked={!hasSocial}
             onOpenCreateModal={() => {
+              if (!hasSocial) {
+                openLockModal("Multi-Platform Post Publishing");
+                return;
+              }
               setInitialCaptionForCreate(undefined);
               setShowCreateModal(true);
             }}
             onOpenAccountsModal={() => setShowAccountsModal(true)}
+            onOpenConnectModal={() => setShowConnectModal(true)}
             // onSelectPost={setSelectedPost}
             onNavigateToTab={setActiveTab}
           />
@@ -506,6 +529,10 @@ export const SocialScreen: React.FC = () => {
             trendsList={trendsList}
             onRefreshTrends={refetchTrends}
             onUseTrendInPost={(trend) => {
+              if (!hasSocial) {
+                openLockModal("AI Trend-to-Post Creation");
+                return;
+              }
               setInitialCaptionForCreate(trend.title || trend.caption || '');
               setShowCreateModal(true);
             }}
@@ -525,6 +552,10 @@ export const SocialScreen: React.FC = () => {
             connectedAccounts={connectedList}
             entitlementsData={entitlementsData}
             onOpenCreateModal={() => {
+              if (!hasSocial) {
+                openLockModal("Multi-Platform Post Publishing");
+                return;
+              }
               setInitialCaptionForCreate(undefined);
               setShowCreateModal(true);
             }}
@@ -587,7 +618,20 @@ export const SocialScreen: React.FC = () => {
         onDisconnect={async (provider, id) => {
           await disconnectAccountMutation.mutateAsync({ provider, accountId: id });
         }}
+        onOpenConnectModal={() => setShowConnectModal(true)}
         isLoading={disconnectAccountMutation.isPending}
+      />
+
+      <ConnectChannelModal
+        visible={showConnectModal}
+        onClose={() => setShowConnectModal(false)}
+        connectedCount={connectedList.length}
+        channelLimit={entitlementsData?.limits?.social_accounts ?? entitlementsData?.maxChannels ?? 3}
+        planName={entitlementsData?.plan?.name || 'Current'}
+        onChannelConnected={() => {
+          refetchAccounts();
+          refetchOverview();
+        }}
       />
 
       <InstapilotConversationModal
@@ -605,6 +649,13 @@ export const SocialScreen: React.FC = () => {
         }}
         accentColor="#EC4899"
         moreMenuTitle="SocialPilot Menu"
+      />
+
+      <FeaturePlanModal
+        visible={planModalVisible}
+        onClose={() => setPlanModalVisible(false)}
+        category="social"
+        featureName={lockedFeatureName}
       />
     </AppScreen>
   );

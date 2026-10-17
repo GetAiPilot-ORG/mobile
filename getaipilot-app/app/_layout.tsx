@@ -13,11 +13,13 @@ import { GlobalErrorBoundary } from "../src/components/GlobalErrorBoundary";
 import { OfflineNotice } from "../src/components/OfflineNotice";
 import { AnimatedSplashScreen } from "../src/components/splash/AnimatedSplashScreen";
 import { AuthProvider } from "../src/contexts/AuthContext";
+import { NotificationProvider } from "../src/contexts/NotificationContext";
 import { NetworkProvider, useNetwork } from "../src/contexts/NetworkContext";
 import { RazorpayProvider } from "../src/contexts/RazorpayContext";
 import { ThemeProvider, useTheme, getColors } from "@/theme";
 import { useAuthStore } from "../src/core/store/authStore";
 import { captureReferralParam, handlePendingReferral } from "../src/services/referralService";
+import { ThemedDialogProvider } from "../src/contexts/ThemedDialogContext";
 
 // Suppress all warning popups and known deprecation noise
 LogBox.ignoreAllLogs(true);
@@ -117,6 +119,7 @@ function ReferralLinkListener() {
  */
 function AuthRouteGuard() {
   const authStatus = useAuthStore((s) => s.authStatus);
+  const onboardingCompleted = useAuthStore((s) => s.onboardingCompleted);
   const segments = useSegments();
   const router = useRouter();
 
@@ -127,6 +130,7 @@ function AuthRouteGuard() {
     // 2. Identify active route group
     const segment0 = segments[0] as string | undefined;
     const inAuthGroup = segment0 === "(auth)";
+    const inOnboarding = segment0 === "onboarding";
 
     const timer = setTimeout(() => {
       if (authStatus === "unauthenticated" && !inAuthGroup) {
@@ -136,29 +140,51 @@ function AuthRouteGuard() {
           );
         }
         router.replace("/(auth)/login" as any);
-      } else if (authStatus === "authenticated" && inAuthGroup) {
-        if (__DEV__) {
-          console.log(
-            "[AuthGuard] Authenticated user on auth route -> navigating to tabs",
-          );
+      } else if (authStatus === "authenticated") {
+        // Wait until onboarding check is resolved
+        if (onboardingCompleted === null) return;
+
+        if (!onboardingCompleted) {
+          if (!inOnboarding) {
+            if (__DEV__) {
+              console.log(
+                "[AuthGuard] Incomplete onboarding -> navigating to onboarding",
+              );
+            }
+            router.replace("/onboarding" as any);
+          }
+        } else {
+          if (inAuthGroup || inOnboarding) {
+            if (__DEV__) {
+              console.log(
+                "[AuthGuard] Authenticated & onboarded -> navigating to tabs",
+              );
+            }
+            router.replace("/(tabs)" as any);
+          }
         }
-        router.replace("/(tabs)" as any);
       }
     }, 1);
 
     return () => clearTimeout(timer);
-  }, [authStatus, segments]);
+  }, [authStatus, onboardingCompleted, segments]);
 
   return null;
 }
 
 function SplashOverlay() {
   const authStatus = useAuthStore((s) => s.authStatus);
+  const onboardingCompleted = useAuthStore((s) => s.onboardingCompleted);
   const { networkChecked } = useNetwork();
   const [splashFinished, setSplashFinished] = useState(false);
 
   // Keep splash visible during animation and session/network checks
-  if (splashFinished && networkChecked && authStatus !== "hydrating") {
+  if (
+    splashFinished &&
+    networkChecked &&
+    authStatus !== "hydrating" &&
+    (authStatus === "unauthenticated" || onboardingCompleted !== null)
+  ) {
     return null;
   }
 
@@ -278,13 +304,17 @@ export default function RootLayout() {
               <QueryClientProvider client={queryClient}>
                 <RootThemedContainer>
                   <AuthProvider>
-                    <RazorpayProvider>
-                      <ReferralLinkListener />
-                      <AuthRouteGuard />
-                      <ThemedNavigationStack />
-                      <OfflineNotice />
-                      <SplashOverlay />
-                    </RazorpayProvider>
+                    <NotificationProvider>
+                      <RazorpayProvider>
+                        <ThemedDialogProvider>
+                          <ReferralLinkListener />
+                          <AuthRouteGuard />
+                          <ThemedNavigationStack />
+                          <OfflineNotice />
+                          <SplashOverlay />
+                        </ThemedDialogProvider>
+                      </RazorpayProvider>
+                    </NotificationProvider>
                   </AuthProvider>
                 </RootThemedContainer>
               </QueryClientProvider>

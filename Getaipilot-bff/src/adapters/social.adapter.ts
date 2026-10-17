@@ -330,6 +330,36 @@ export class SocialAdapter {
   }
 
   /**
+   * Generates a direct OAuth authorization URL for the specified platform provider.
+   * Directly initiates OAuth with Meta / Google / LinkedIn / Twitter without dumping to dashboard.
+   */
+  public static async getConnectUrl(user: JWTPayload, provider: string): Promise<string> {
+    const p = (provider || '').toLowerCase();
+    const normalized =
+      p === 'x' || p === 'twitter' ? 'twitter' :
+      p === 'fb' || p === 'facebook' ? 'facebook' :
+      p === 'ig' || p === 'instagram' ? 'instagram' :
+      p === 'threads' ? 'threads' :
+      p === 'yt' || p === 'youtube' ? 'youtube' :
+      p === 'li' || p === 'linkedin' ? 'linkedin' :
+      p === 'bluesky' ? 'bluesky' :
+      p === 'mastodon' ? 'mastodon' :
+      p === 'reddit' ? 'reddit' :
+      p === 'googlebusiness' || p === 'google' ? 'googleBusiness' :
+      p === 'pinterest' ? 'pinterest' : p;
+
+    const email = user.email;
+    const userId = user.user_id || (user as any).sub;
+    const token = await this.getSocialSupabaseToken(email, userId);
+
+    if (token) {
+      return `${this.baseUrl}/api/auth/${normalized}?token=${encodeURIComponent(token)}`;
+    }
+
+    return await this.getSocialHandoffUrl(user, `connect-${normalized}`);
+  }
+
+  /**
    * Returns a fully authenticated SSO Web URL for SocialPilot
    * Targets supported:
    * - 'new-post' | '/dashboard' -> https://social.getaipilot.in/dashboard
@@ -369,6 +399,34 @@ export class SocialAdapter {
       case 'automation':
       case '/dashboard/auto-dm/automations/new':
         path = '/dashboard/auto-dm/automations/new';
+        break;
+      case 'channels':
+      case 'connect':
+      case 'connect-channel':
+      case '/dashboard/channels':
+        path = '/dashboard/settings?tab=channels';
+        break;
+      case 'connect-instagram':
+        path = '/dashboard/settings?tab=channels&connect=instagram';
+        break;
+      case 'connect-threads':
+        path = '/dashboard/settings?tab=channels&connect=threads';
+        break;
+      case 'connect-facebook':
+        path = '/dashboard/settings?tab=channels&connect=facebook';
+        break;
+      case 'connect-youtube':
+        path = '/dashboard/settings?tab=channels&connect=youtube';
+        break;
+      case 'connect-linkedin':
+        path = '/dashboard/settings?tab=channels&connect=linkedin';
+        break;
+      case 'connect-x':
+      case 'connect-twitter':
+        path = '/dashboard/settings?tab=channels&connect=x';
+        break;
+      case 'connect-pinterest':
+        path = '/dashboard/settings?tab=channels&connect=pinterest';
         break;
       default:
         path = target.startsWith('/') ? target : `/${target}`;
@@ -697,9 +755,22 @@ export class SocialAdapter {
     payload: { provider: string; accountId?: string; pageId?: string }
   ) {
     const userObj = typeof user === 'string' ? { organization_id: user, user_id: user } : user;
-    return this.requestUpstream('/api/auth/disconnect', {
-      method: 'POST',
-      body: payload,
+    const p = (payload.provider || '').toLowerCase().trim();
+    const normalizedProvider =
+      p === 'ig' || p === 'instagram' ? 'instagram' :
+      p === 'fb' || p === 'facebook' ? 'facebook' :
+      p === 'threads' ? 'threads' :
+      p === 'yt' || p === 'youtube' ? 'youtube' :
+      p === 'li' || p === 'linkedin' ? 'linkedin' :
+      p === 'x' || p === 'twitter' ? 'x' :
+      p === 'pinterest' ? 'pinterest' : p;
+
+    const accountId = payload.accountId || payload.pageId;
+    const params = accountId ? { accountId } : undefined;
+
+    return this.requestUpstream(`/api/auth/disconnect/${encodeURIComponent(normalizedProvider)}`, {
+      method: 'DELETE',
+      params,
       user: userObj,
     });
   }

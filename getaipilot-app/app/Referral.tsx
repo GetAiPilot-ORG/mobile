@@ -33,6 +33,7 @@ import { useRouter } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { getColors } from "@/theme/colors";
 import { useTheme } from "../src/theme";
+import { useThemedDialog } from "@/components";
 import {
   getOrCreateReferralCode,
   getReferralEarnings,
@@ -59,6 +60,7 @@ export default function ReferralScreen() {
   const router = useRouter();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+  const { showAlert, showReferral } = useThemedDialog();
 
   const [referralCode, setReferralCode] = useState<string>("");
   const [referrals, setReferrals] = useState<Referral[]>([]);
@@ -126,24 +128,45 @@ export default function ReferralScreen() {
 
   const copyReferralCode = async () => {
     if (!referralCode) {
-      Alert.alert("Referral code unavailable", "Please wait while your referral code is being generated.");
+      showAlert({
+        type: "warning",
+        title: "Referral code unavailable",
+        message: "Please wait while your referral code is being generated.",
+      });
       return;
     }
 
     try {
       await Clipboard.setStringAsync(referralCode);
-      Alert.alert("Copied!", `Referral code ${referralCode} has been copied to your clipboard.`);
+      showAlert({
+        type: "success",
+        title: "Copied!",
+        message: `Referral code ${referralCode} has been copied to your clipboard.`,
+        buttonText: "Done",
+      });
     } catch (err) {
       console.error("Copy referral code error:", err);
     }
   };
 
   const copyReferralLink = async () => {
-    if (!referralCode) return;
+    if (!referralCode) {
+      showAlert({
+        type: "warning",
+        title: "Referral code unavailable",
+        message: "Your referral code is not available yet.",
+      });
+      return;
+    }
     const link = `${APP_REFERRAL_URL}?ref=${encodeURIComponent(referralCode)}`;
     try {
       await Clipboard.setStringAsync(link);
-      Alert.alert("Link Copied!", "Your personalized referral link has been copied to your clipboard.");
+      showAlert({
+        type: "success",
+        title: "Link Copied!",
+        message: "Your personalized referral link has been copied to your clipboard.",
+        buttonText: "Done",
+      });
     } catch (err) {
       console.error("Copy referral link error:", err);
     }
@@ -151,23 +174,36 @@ export default function ReferralScreen() {
 
   const shareReferral = async () => {
     if (!referralCode) {
-      Alert.alert("Referral code unavailable", "Your referral code is not available yet.");
+      showAlert({
+        type: "warning",
+        title: "Referral code unavailable",
+        message: "Your referral code is not available yet.",
+      });
       return;
     }
 
     const referralLink = `${APP_REFERRAL_URL}?ref=${encodeURIComponent(referralCode)}`;
 
-    try {
-      await Share.share({
-        title: "Try GetAiPilot with 5% Discount",
-        message:
-          "Hey! Try GetAiPilot — the all-in-one AI automation suite for WhatsApp, Telegram, Voice AI, CRM, and Social Marketing.\n\n" +
-          `Use my referral link for an instant 5% discount on your first plan:\n${referralLink}\n\n` +
-          `Referral Code: ${referralCode}`,
-      });
-    } catch (err) {
-      console.error("Share referral error:", err);
-    }
+    showReferral({
+      referralCode,
+      referralLink,
+      title: "Share & Earn",
+      description: "Give your friends 5% discount and earn 20% recurring commission on every subscription.",
+      referralReward: "Instant 5% discount for your friends, 20% recurring commission for you.",
+      onShare: async () => {
+        try {
+          await Share.share({
+            title: "Try GetAiPilot with 5% Discount",
+            message:
+              "Hey! Try GetAiPilot — the all-in-one AI automation suite for WhatsApp, Telegram, Voice AI, CRM, and Social Marketing.\n\n" +
+              `Use my referral link for an instant 5% discount on your first plan:\n${referralLink}\n\n` +
+              `Referral Code: ${referralCode}`,
+          });
+        } catch (err) {
+          console.error("Share referral error:", err);
+        }
+      },
+    });
   };
 
   const formatDate = (date: string) => {
