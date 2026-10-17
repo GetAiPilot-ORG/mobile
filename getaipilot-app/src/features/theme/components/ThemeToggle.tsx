@@ -2,7 +2,8 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useTheme, getColors } from '@/theme';
+import { useTheme } from '../hooks/useTheme';
+import { getColors } from '../constants/colors';
 
 interface ThemeToggleProps {
   showLabel?: boolean;

@@ -119,6 +119,7 @@ function ReferralLinkListener() {
  */
 function AuthRouteGuard() {
   const authStatus = useAuthStore((s) => s.authStatus);
+  const onboardingCompleted = useAuthStore((s) => s.onboardingCompleted);
   const segments = useSegments();
   const router = useRouter();
 
@@ -129,6 +130,7 @@ function AuthRouteGuard() {
     // 2. Identify active route group
     const segment0 = segments[0] as string | undefined;
     const inAuthGroup = segment0 === "(auth)";
+    const inOnboarding = segment0 === "onboarding";
 
     const timer = setTimeout(() => {
       if (authStatus === "unauthenticated" && !inAuthGroup) {
@@ -138,29 +140,51 @@ function AuthRouteGuard() {
           );
         }
         router.replace("/(auth)/login" as any);
-      } else if (authStatus === "authenticated" && inAuthGroup) {
-        if (__DEV__) {
-          console.log(
-            "[AuthGuard] Authenticated user on auth route -> navigating to tabs",
-          );
+      } else if (authStatus === "authenticated") {
+        // Wait until onboarding check is resolved
+        if (onboardingCompleted === null) return;
+
+        if (!onboardingCompleted) {
+          if (!inOnboarding) {
+            if (__DEV__) {
+              console.log(
+                "[AuthGuard] Incomplete onboarding -> navigating to onboarding",
+              );
+            }
+            router.replace("/onboarding" as any);
+          }
+        } else {
+          if (inAuthGroup || inOnboarding) {
+            if (__DEV__) {
+              console.log(
+                "[AuthGuard] Authenticated & onboarded -> navigating to tabs",
+              );
+            }
+            router.replace("/(tabs)" as any);
+          }
         }
-        router.replace("/(tabs)" as any);
       }
     }, 1);
 
     return () => clearTimeout(timer);
-  }, [authStatus, segments]);
+  }, [authStatus, onboardingCompleted, segments]);
 
   return null;
 }
 
 function SplashOverlay() {
   const authStatus = useAuthStore((s) => s.authStatus);
+  const onboardingCompleted = useAuthStore((s) => s.onboardingCompleted);
   const { networkChecked } = useNetwork();
   const [splashFinished, setSplashFinished] = useState(false);
 
   // Keep splash visible during animation and session/network checks
-  if (splashFinished && networkChecked && authStatus !== "hydrating") {
+  if (
+    splashFinished &&
+    networkChecked &&
+    authStatus !== "hydrating" &&
+    (authStatus === "unauthenticated" || onboardingCompleted !== null)
+  ) {
     return null;
   }
 

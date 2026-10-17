@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Facebook01Icon, InstagramIcon, TelegramIcon, WhatsappIcon } from '@hugeicons/core-free-icons';
+import { Facebook01Icon, InstagramIcon, TelegramIcon, WhatsappIcon } from '@/constants/icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { InboxChannel } from '../types';
 

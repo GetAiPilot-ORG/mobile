@@ -9,7 +9,7 @@ import {
   Activity01Icon,
   ShieldCheckIcon,
   Mail01Icon,
-} from '@hugeicons/core-free-icons';
+} from '@/constants/icons';
 import * as Haptics from 'expo-haptics';
 import React from 'react';
 import {

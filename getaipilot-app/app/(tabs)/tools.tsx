@@ -18,7 +18,7 @@ import {
   SmartPhone01Icon,
   VoiceToTextIcon,
   WhatsappIcon,
-} from "@hugeicons/core-free-icons";
+} from "@/constants/icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { useTheme, getColors } from "../../src/theme";
 import { AppScreen } from "../../src/components/AppScreen";

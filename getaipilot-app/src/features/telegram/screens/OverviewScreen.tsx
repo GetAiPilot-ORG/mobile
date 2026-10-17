@@ -15,8 +15,7 @@ import {
   CheckmarkCircle01Icon,
   Megaphone01Icon,
   BotMessageSquareIcon,
-} from '@hugeicons/core-free-icons';
-import * as Haptics from 'expo-haptics';
+} from '@/constants/icons';
 import { ProductHeading, ProductMetrics, ProductRow, ProductSection, useProductPalette } from '@/components/ProductUI';
 import { usePlatformSubscription } from '@/hooks/usePlatformSubscription';
 import { FeaturePlanModal } from '@/components/FeaturePlanModal';

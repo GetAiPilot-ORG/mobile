@@ -21,7 +21,7 @@ import { isValidEmail } from '../../src/lib/validators';
 import { useAuthStore } from '../../src/core/store/authStore';
 import { useTheme, getColors } from '@/theme';
 
-const brandLogo = require('../../assets/images/logo.jpg');
+const brandLogo = require('../../assets/images/icon.png');
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -30,7 +30,6 @@ export default function SignupScreen() {
   const colors = getColors(isDark);
   const syncSession = useAuthStore((s) => s.syncSession);
 
-  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -46,21 +45,14 @@ export default function SignupScreen() {
   };
 
   const isFormValid =
-    fullName.trim().length > 0 &&
     email.trim().length > 0 &&
     password.length >= 6;
 
   const handleSignup = async () => {
     Keyboard.dismiss();
     setFeedback(null);
-    const cleanName = fullName.trim();
     const cleanEmail = email.trim();
 
-    if (!cleanName) {
-      triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
-      setFeedback({ type: 'error', message: 'Please enter your full name.' });
-      return;
-    }
     if (!cleanEmail || !isValidEmail(cleanEmail)) {
       triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
       setFeedback({ type: 'error', message: 'Please enter a valid email address.' });
@@ -79,11 +71,6 @@ export default function SignupScreen() {
       const { data, error } = await supabase.auth.signUp({
         email: cleanEmail,
         password: password,
-        options: {
-          data: {
-            full_name: cleanName,
-          },
-        },
       });
 
       if (error) throw error;
@@ -93,7 +80,7 @@ export default function SignupScreen() {
       if (data?.session) {
         setFeedback({
           type: 'success',
-          message: 'Account created successfully! Preparing your workspace...',
+          message: 'Account created successfully! Preparing your onboarding...',
         });
 
         await syncSession({
@@ -102,9 +89,11 @@ export default function SignupScreen() {
           user: data.session.user,
         });
 
+        useAuthStore.getState().setOnboardingCompleted(false);
+
         setTimeout(() => {
-          router.replace('/(tabs)');
-        }, 1000);
+          router.replace('/onboarding' as any);
+        }, 800);
       } else {
         setFeedback({
           type: 'success',
@@ -139,11 +128,11 @@ export default function SignupScreen() {
         >
           {/* Top Brand Logo Section */}
           <View style={styles.logoSection}>
-            <View style={[styles.logoWrapper, isDark && styles.logoWrapperDark]}>
+            <View style={styles.logoWrapper}>
               <Image
                 source={brandLogo}
                 style={styles.logoImage}
-                contentFit="cover"
+                contentFit="contain"
                 transition={200}
               />
             </View>
@@ -175,31 +164,7 @@ export default function SignupScreen() {
 
           {/* Grouped iOS Input Fields Card */}
           <View style={[styles.inputGroup, isDark && styles.inputGroupDark]}>
-            {/* Field 1: Full Name */}
-            <View style={styles.inputRow}>
-              <TextInput
-                style={[styles.nativeInput, isDark && styles.nativeInputDark]}
-                placeholder="Full Name"
-                placeholderTextColor={isDark ? '#636366' : '#8E8E93'}
-                value={fullName}
-                onChangeText={setFullName}
-                autoCapitalize="words"
-                returnKeyType="next"
-              />
-              {fullName.length > 0 && (
-                <Pressable
-                  onPress={() => setFullName('')}
-                  hitSlop={10}
-                  style={styles.clearBtn}
-                >
-                  <Text style={styles.clearBtnText}>✕</Text>
-                </Pressable>
-              )}
-            </View>
-
-            <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
-
-            {/* Field 2: Email Address */}
+            {/* Field 1: Email Address */}
             <View style={styles.inputRow}>
               <TextInput
                 style={[styles.nativeInput, isDark && styles.nativeInputDark]}
@@ -304,10 +269,10 @@ export default function SignupScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F3FB',
   },
   containerDark: {
-    backgroundColor: '#000000',
+    backgroundColor: '#14131B',
   },
   scrollContent: {
     flexGrow: 1,
@@ -320,29 +285,22 @@ const styles = StyleSheet.create({
   },
   logoSection: {
     alignItems: 'center',
-    marginBottom: 24,
+    justifyContent: 'center',
+    marginBottom: 20,
+    width: '100%',
   },
   logoWrapper: {
-    width: 92,
-    height: 92,
-    borderRadius: 46,
-    overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
   logoWrapperDark: {
-    backgroundColor: '#252230',
-    shadowColor: '#8B5CF6',
-    shadowOpacity: 0.4,
+    backgroundColor: 'transparent',
   },
   logoImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 46,
+    width: 80,
+    height: 80,
+    backgroundColor: 'transparent',
   },
   heading: {
     fontSize: 24,
