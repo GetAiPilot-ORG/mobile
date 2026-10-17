@@ -1,4 +1,5 @@
 import { crmSupabase } from './crmSupabase.js';
+import { HubAdapter } from '../../adapters/hub.adapter.js';
 import { JWTPayload } from '../../types/index.js';
 import {
   CRMActivity,
@@ -46,23 +47,91 @@ export class CRMRepository {
     try {
       // 1. Check crm_members by email
       if (email) {
-        const { data: member } = await crmSupabase
+        const { data: members } = await crmSupabase
           .from('crm_members')
           .select('id, org_id, role, is_active')
           .ilike('email', email)
-          .eq('is_deleted', false)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .eq('is_deleted', false);
 
-        if (member?.org_id) {
-          crmOrgId = member.org_id;
-          crmMemberId = member.id;
-          crmRole = member.role || 'sales';
+        if (members && members.length > 0) {
+          if (members.length === 1) {
+            crmOrgId = members[0].org_id;
+            crmMemberId = members[0].id;
+            crmRole = members[0].role || 'sales';
+          } else {
+            // Find the active membership with real CRM data (contacts > 0)
+            let chosenMember = members[0];
+            for (const m of members) {
+              const { count } = await crmSupabase
+                .from('crm_contacts')
+                .select('id', { count: 'exact', head: true })
+                .eq('org_id', m.org_id);
+              if (count && count > 0) {
+                chosenMember = m;
+                break;
+              }
+            }
+            crmOrgId = chosenMember.org_id;
+            crmMemberId = chosenMember.id;
+            crmRole = chosenMember.role || 'sales';
+          }
         }
       }
 
-      // 2. Check organizations table by hub_user_id or id if org not found
+      // 2. Query Hub Supabase organization_members by userId if not found
+      if (!crmOrgId && userId) {
+        try {
+          const { data: hubMember } = await HubAdapter.getAdminClient()
+            .from('organization_members')
+            .select('organization_id, role')
+            .eq('user_id', userId)
+            .limit(1)
+            .maybeSingle();
+
+          if (hubMember?.organization_id) {
+            const { data: orgInCrm } = await crmSupabase
+              .from('organizations')
+              .select('id')
+              .eq('id', hubMember.organization_id)
+              .maybeSingle();
+
+            if (orgInCrm?.id) {
+              crmOrgId = orgInCrm.id;
+              if (hubMember.role) crmRole = hubMember.role;
+            }
+          }
+        } catch (_) {}
+      }
+
+      // 3. Match organization by slug or name using username
+      if (!crmOrgId && email) {
+        const username = email.split('@')[0];
+        const { data: orgByName } = await crmSupabase
+          .from('organizations')
+          .select('id')
+          .or(`slug.ilike.${username}%,name.ilike.${username}%`)
+          .limit(1)
+          .maybeSingle();
+
+        if (orgByName?.id) {
+          crmOrgId = orgByName.id;
+        }
+      }
+
+      // 4. Check organizations table by direct ID
+      if (!crmOrgId && hubOrgId) {
+        const { data: orgById } = await crmSupabase
+          .from('organizations')
+          .select('id')
+          .eq('id', hubOrgId)
+          .maybeSingle();
+
+        if (orgById?.id) {
+          crmOrgId = orgById.id;
+        }
+      }
+
+      // 5. Check organizations by hub_user_id
       if (!crmOrgId && userId) {
         const { data: orgByHubUser } = await crmSupabase
           .from('organizations')
@@ -76,26 +145,15 @@ export class CRMRepository {
         }
       }
 
-      if (!crmOrgId && hubOrgId) {
-        const { data: orgById } = await crmSupabase
-          .from('organizations')
-          .select('id')
-          .eq('id', hubOrgId)
-          .maybeSingle();
-
-        if (orgById?.id) {
-          crmOrgId = orgById.id;
-        }
-      }
-
-      // Fallback
+      // 6. Fallback: select the primary organization that actually has CRM contacts and deals
       if (!crmOrgId) {
-        const { data: firstOrg } = await crmSupabase
-          .from('organizations')
-          .select('id')
+        const { data: orgWithContacts } = await crmSupabase
+          .from('crm_contacts')
+          .select('org_id')
           .limit(1)
           .maybeSingle();
-        crmOrgId = firstOrg?.id || hubOrgId || 'default_crm_org';
+
+        crmOrgId = orgWithContacts?.org_id || '7eb7dd38-00bc-49b8-a87f-96c27cac7866';
       }
 
       // 3. Load permissions from crm_roles

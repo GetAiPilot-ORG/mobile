@@ -339,20 +339,20 @@ export const WhatsAppBroadcastDetailScreen: React.FC<
                 </View>
                 <View className="flex-1">
                   <Text
-                    className={`text-sm font-semibold ${
-                      isDark ? "text-[#F5F3FB]" : "text-[#1C1A25]"
+                    className={`text-xs ${
+                      isDark ? "text-[#8E8E93]" : "text-[#64748B]"
                     }`}
                   >
                     {step.label}
                   </Text>
+                  <Text
+                    className={`text-sm font-semibold ${
+                      isDark ? "text-[#F5F3FB]" : "text-[#1C1A25]"
+                    }`}
+                  >
+                    {step.value}
+                  </Text>
                 </View>
-                <Text
-                  className={`text-base font-bold ${
-                    isDark ? "text-[#F5F3FB]" : "text-[#1C1A25]"
-                  }`}
-                >
-                  {step.value}
-                </Text>
               </View>
               {index < funnelSteps.length - 1 && (
                 <View

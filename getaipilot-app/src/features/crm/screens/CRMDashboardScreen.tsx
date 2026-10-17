@@ -243,12 +243,16 @@ export function CRMDashboardScreen({ onNavigateSection }: CRMDashboardScreenProp
                 style={s.viewFeatureBtn}
                 onPress={() => navigateTo("/crm/invoices")}
               >
-                <Text style={[s.viewFeatureText, { color: colors.success }]}>View →</Text>
+                <Text style={[s.viewFeatureText, { color: colors.success }]}>View</Text>
+                <Ionicons name="arrow-forward" size={11} color={colors.success} />
               </Pressable>
             ) : (
-              <Text style={[s.lockedText, { color: colors.warning }]}>
-                🔒 Upgrade to unlock
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Ionicons name="lock-closed" size={11} color={colors.warning} />
+                <Text style={[s.lockedText, { color: colors.warning }]}>
+                  Upgrade to unlock
+                </Text>
+              </View>
             )}
           </Pressable>
 
