@@ -13,6 +13,7 @@ import * as Haptics from 'expo-haptics';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
 import { useTheme, getColors } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
 
 interface FaqItem {
   category: 'general' | 'whatsapp' | 'telegram' | 'voice' | 'security';
@@ -151,7 +152,7 @@ export default function HelpCenterScreen() {
                   { backgroundColor: isDark ? '#10B98122' : '#D1FAE5' },
                 ]}
               >
-                <Text style={styles.contactIcon}>💬</Text>
+                <Ionicons name="logo-whatsapp" size={20} color="#10B981" />
               </View>
               <Text style={[styles.contactCardTitle, { color: isDark ? '#FFFFFF' : '#065F46' }]}>
                 WhatsApp Priority
@@ -177,7 +178,7 @@ export default function HelpCenterScreen() {
                   { backgroundColor: isDark ? '#38BDF822' : '#DBEAFE' },
                 ]}
               >
-                <Text style={styles.contactIcon}>✉️</Text>
+                <Ionicons name="mail-outline" size={20} color="#38BDF8" />
               </View>
               <Text style={[styles.contactCardTitle, { color: isDark ? '#FFFFFF' : '#1E40AF' }]}>
                 Email Support
@@ -204,7 +205,7 @@ export default function HelpCenterScreen() {
                 { backgroundColor: isDark ? '#8B5CF622' : '#EDE9FE' },
               ]}
             >
-              <Text style={styles.docsIcon}>📖</Text>
+              <Ionicons name="book-outline" size={20} color="#8B5CF6" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.docsTitle, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
@@ -214,7 +215,7 @@ export default function HelpCenterScreen() {
                 Explore guides, REST APIs, Webhook schemas and samples
               </Text>
             </View>
-            <Text style={styles.chevron}>→</Text>
+            <Ionicons name="chevron-forward" size={18} color={isDark ? '#777383' : '#64748B'} />
           </Pressable>
         </View>
 
@@ -444,13 +445,14 @@ export default function HelpCenterScreen() {
             />
 
             <Pressable
-              style={[styles.submitTicketBtn, isSubmitting && { opacity: 0.6 }]}
+              style={[styles.submitTicketBtn, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }, isSubmitting && { opacity: 0.6 }]}
               onPress={handleSubmitTicket}
               disabled={isSubmitting}
             >
               <Text style={styles.submitTicketBtnText}>
-                {isSubmitting ? 'Dispatching Ticket...' : 'Dispatch Ticket to Engineering →'}
+                {isSubmitting ? 'Dispatching Ticket...' : 'Dispatch Ticket to Engineering'}
               </Text>
+              {!isSubmitting && <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />}
             </Pressable>
           </View>
         </View>

@@ -136,11 +136,11 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
     setIsGeneratingCaption(true);
     setTimeout(() => {
       setGeneratedCaption(
-        `🚀 Stop scrolling! Here is the secret to scaling your brand with ${aiTopicInput.trim()}:\n\n` +
-        `1️⃣ Consistency beats intensity\n` +
-        `2️⃣ Automate the repetitive tasks with AI\n` +
-        `3️⃣ Engage with every single comment within 10 minutes\n\n` +
-        `Drop "SCALE" below and I'll send you our step-by-step breakdown directly to your DMs! 👇\n\n` +
+        `Here is the secret to scaling your brand with ${aiTopicInput.trim()}:\n\n` +
+        `1. Consistency beats intensity\n` +
+        `2. Automate repetitive tasks with AI\n` +
+        `3. Engage with comments within 10 minutes\n\n` +
+        `Drop "SCALE" below and I will send you our step-by-step breakdown directly to your DMs!\n\n` +
         `#SocialMediaGrowth #ContentCreator #AIAutomation #InstaTips #${aiTopicInput.replace(/\s+/g, '')}`
       );
       setIsGeneratingCaption(false);
@@ -249,10 +249,17 @@ export const ActivityInstapilotSubTab: React.FC<ActivityInstapilotSubTabProps> =
             <Text style={[styles.profileName, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
               {igAccount?.account_name || igAccount?.username || 'Instagram Business Sync'}
             </Text>
-            <Text style={styles.profileStatus}>
-              {igAccount?.connected ? '✅ Synced via Meta Graph API' : 'Not Connected'}
-              {igAccount?.followers != null ? ` • 👥 ${igAccount.followers} followers` : ''}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+              <Ionicons
+                name={igAccount?.connected ? 'checkmark-circle' : 'alert-circle-outline'}
+                size={13}
+                color={igAccount?.connected ? '#10B981' : '#6B7280'}
+              />
+              <Text style={styles.profileStatus}>
+                {igAccount?.connected ? 'Synced via Meta Graph API' : 'Not Connected'}
+                {igAccount?.followers != null ? ` • ${igAccount.followers} followers` : ''}
+              </Text>
+            </View>
           </View>
         </View>
       </View>

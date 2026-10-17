@@ -412,7 +412,10 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                         {item.duration ? ` • ${Math.round(item.duration)}s` : ''}
                       </Text>
                     </View>
-                    <Text style={styles.uploadStatusOk}>✓ Uploaded to CDN</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <Ionicons name="checkmark-circle" size={12} color="#10b981" />
+                      <Text style={styles.uploadStatusOk}>Uploaded to CDN</Text>
+                    </View>
                   </View>
                   <Text
                     style={[styles.mediaFileName, { color: isDark ? '#cbd5e1' : '#475569' }]}

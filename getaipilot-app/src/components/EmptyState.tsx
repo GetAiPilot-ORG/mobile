@@ -1,9 +1,11 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme, getColors } from '@/theme';
 
 interface EmptyStateProps {
   icon?: string;
+  ioniconsName?: keyof typeof Ionicons.glyphMap;
   title: string;
   description: string;
   actionText?: string;
@@ -11,7 +13,8 @@ interface EmptyStateProps {
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
-  icon = '📂',
+  icon,
+  ioniconsName = 'folder-open-outline',
   title,
   description,
   actionText,
@@ -19,6 +22,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+
+  const iconName = ioniconsName || (icon && icon.length > 2 ? (icon as keyof typeof Ionicons.glyphMap) : 'folder-open-outline');
 
   return (
     <View
@@ -29,7 +34,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         className="w-14 h-14 rounded-full justify-center items-center mb-4"
         style={{ backgroundColor: colors.muted }}
       >
-        <Text className="text-3xl">{icon}</Text>
+        <Ionicons name={iconName} size={26} color={colors.primary} />
       </View>
       <Text
         className="text-[17px] font-extrabold text-center mb-1.5"

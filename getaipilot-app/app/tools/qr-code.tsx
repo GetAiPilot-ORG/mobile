@@ -13,6 +13,7 @@ import {
 import QRCode from 'react-native-qrcode-svg';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
+import { Ionicons } from '@expo/vector-icons';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
 import { useTheme, getColors } from '@/theme';
@@ -33,13 +34,13 @@ const QR_COLORS: QRColorOption[] = [
   { name: 'Classic Dark', color: '#0F172A', dotColor: '#0F172A' },
 ];
 
-const CATEGORIES: { id: QRType; title: string; icon: string }[] = [
-  { id: 'url', title: 'Website', icon: '🔗' },
-  { id: 'whatsapp', title: 'WhatsApp', icon: '💬' },
-  { id: 'upi', title: 'UPI Pay', icon: '💳' },
-  { id: 'wifi', title: 'Wi-Fi', icon: '📶' },
-  { id: 'contact', title: 'Contact', icon: '👤' },
-  { id: 'text', title: 'Text Note', icon: '📝' },
+const CATEGORIES: { id: QRType; title: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { id: 'url', title: 'Website', icon: 'globe-outline' },
+  { id: 'whatsapp', title: 'WhatsApp', icon: 'logo-whatsapp' },
+  { id: 'upi', title: 'UPI Pay', icon: 'card-outline' },
+  { id: 'wifi', title: 'Wi-Fi', icon: 'wifi-outline' },
+  { id: 'contact', title: 'Contact', icon: 'person-outline' },
+  { id: 'text', title: 'Text Note', icon: 'document-text-outline' },
 ];
 
 export default function QRCodeGeneratorScreen() {
@@ -114,7 +115,7 @@ export default function QRCodeGeneratorScreen() {
     if (!payload) return;
     await Clipboard.setStringAsync(payload);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert('Copied! 📋', 'QR Code payload copied to clipboard.');
+    Alert.alert('Copied!', 'QR Code payload copied to clipboard.');
   };
 
   const handleShare = async () => {
@@ -122,7 +123,7 @@ export default function QRCodeGeneratorScreen() {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       await Share.share({
-        message: `📱 Scannable QR Code Data:\n\n${payload}\n\nGenerated with GetAiPilot Mobile.`,
+        message: `Scannable QR Code Data:\n\n${payload}\n\nGenerated with GetAiPilot Mobile.`,
       });
     } catch {}
   };
@@ -167,7 +168,11 @@ export default function QRCodeGeneratorScreen() {
                   setQrType(cat.id);
                 }}
               >
-                <Text style={{ fontSize: 20 }}>{cat.icon}</Text>
+                <Ionicons
+                  name={cat.icon}
+                  size={20}
+                  color={qrType === cat.id ? '#FFFFFF' : theme.text}
+                />
                 <Text
                   style={[
                     styles.categoryBtnText,
@@ -347,7 +352,7 @@ export default function QRCodeGeneratorScreen() {
                 }}
               >
                 {selectedColor.color === c.color && (
-                  <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 'bold' }}>✓</Text>
+                  <Ionicons name="checkmark" size={13} color="#FFFFFF" />
                 )}
               </Pressable>
             ))}
@@ -358,7 +363,7 @@ export default function QRCodeGeneratorScreen() {
         {payload ? (
           <View style={[styles.qrCanvasCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
             <Text style={[styles.cardTitle, { color: theme.text, textAlign: 'center', marginBottom: 4 }]}>
-              Scannable QR Code ✨
+              Scannable QR Code
             </Text>
             <Text style={[styles.cardSubtitle, { color: theme.mutedText, textAlign: 'center', marginBottom: 16 }]}>
               High-resolution vector SVG ready for instant mobile scanning and printing.
@@ -376,22 +381,47 @@ export default function QRCodeGeneratorScreen() {
 
             {/* 3-Action Button Bar */}
             <View style={styles.actionsRow}>
-              <Pressable style={[styles.actionBtn, { backgroundColor: theme.primary }]} onPress={handleShare}>
-                <Text style={styles.actionBtnText}>Share QR 📤</Text>
+              <Pressable
+                style={[
+                  styles.actionBtn,
+                  { backgroundColor: theme.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+                ]}
+                onPress={handleShare}
+              >
+                <Ionicons name="share-social-outline" size={15} color="#FFFFFF" style={{ marginRight: 4 }} />
+                <Text style={styles.actionBtnText}>Share QR</Text>
               </Pressable>
 
               <Pressable
-                style={[styles.actionBtn, { backgroundColor: isDark ? '#3A3549' : '#E9E6F2' }]}
+                style={[
+                  styles.actionBtn,
+                  {
+                    backgroundColor: isDark ? '#3A3549' : '#E9E6F2',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  },
+                ]}
                 onPress={handleCopyPayload}
               >
-                <Text style={[styles.actionBtnText, { color: theme.text }]}>Copy Link 📋</Text>
+                <Ionicons name="copy-outline" size={15} color={theme.text} style={{ marginRight: 4 }} />
+                <Text style={[styles.actionBtnText, { color: theme.text }]}>Copy Link</Text>
               </Pressable>
 
               <Pressable
-                style={[styles.actionBtn, { backgroundColor: colors.products.whatsapp }]}
+                style={[
+                  styles.actionBtn,
+                  {
+                    backgroundColor: colors.products.whatsapp,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  },
+                ]}
                 onPress={handleTestPayload}
               >
-                <Text style={styles.actionBtnText}>Test Link 🔗</Text>
+                <Ionicons name="open-outline" size={15} color="#FFFFFF" style={{ marginRight: 4 }} />
+                <Text style={styles.actionBtnText}>Test Link</Text>
               </Pressable>
             </View>
           </View>

@@ -293,7 +293,7 @@ export function ClientProfilesScreen({ onBack }: ClientProfilesScreenProps = {})
             if (Platform.OS !== 'web') {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
             }
-            Alert.alert('Profile Created 🎉', `${profile.legal_name || 'Billing profile'} was added.`);
+            Alert.alert('Profile Created', `${profile.legal_name || 'Billing profile'} was added.`);
           } catch (err: any) {
             Alert.alert('Error', err?.message || 'Failed to create billing profile');
             throw err;

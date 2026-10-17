@@ -11,6 +11,7 @@ import {
   Share,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
 import { useTheme, getColors } from '@/theme';
@@ -159,7 +160,7 @@ export default function WebsiteAuditScreen() {
     if (!results) return;
     try {
       await Share.share({
-        message: `📊 Website Audit Report for ${results.url}\n⭐ Overall Grade: ${results.grade} (${results.overallScore}/100)\n⚡ Performance: ${results.metrics.performance}/100\n🔍 SEO: ${results.metrics.seo}/100\n📱 Mobile: ${results.metrics.mobile}/100\n🛡️ Security: ${results.metrics.security}/100\n\nAudited with GetAiPilot Mobile.`,
+        message: `Website Audit Report for ${results.url}\nOverall Grade: ${results.grade} (${results.overallScore}/100)\nPerformance: ${results.metrics.performance}/100\nSEO: ${results.metrics.seo}/100\nMobile: ${results.metrics.mobile}/100\nSecurity: ${results.metrics.security}/100\n\nAudited with GetAiPilot Mobile.`,
       });
     } catch { }
   };
@@ -223,14 +224,18 @@ export default function WebsiteAuditScreen() {
                 <Text style={styles.auditBtnText}>Analyzing Telemetry...</Text>
               </View>
             ) : (
-              <Text style={styles.auditBtnText}>Run Technical Audit ⚡</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <Ionicons name="flash-outline" size={16} color="#FFFFFF" />
+                <Text style={styles.auditBtnText}>Run Technical Audit</Text>
+              </View>
             )}
           </Pressable>
 
           {/* Scanning Progress Telemetry */}
           {isAuditing && (
-            <View style={[styles.scanStepBox, { backgroundColor: isDark ? '#141416' : '#F9FAFB', borderColor: theme.cardBorder }]}>
-              <Text style={[styles.scanStepText, { color: theme.primary }]}>⚙️ {scanStep}</Text>
+            <View style={[styles.scanStepBox, { backgroundColor: isDark ? '#141416' : '#F9FAFB', borderColor: theme.cardBorder, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }]}>
+              <Ionicons name="settings-outline" size={14} color={theme.primary} />
+              <Text style={[styles.scanStepText, { color: theme.primary }]}>{scanStep}</Text>
             </View>
           )}
         </View>
@@ -265,7 +270,7 @@ export default function WebsiteAuditScreen() {
             <View style={styles.pillarsGrid}>
               {/* Performance */}
               <View style={[styles.pillarCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-                <Text style={styles.pillarIcon}>⚡</Text>
+                <Ionicons name="flash-outline" size={24} color="#F59E0B" />
                 <Text style={[styles.pillarValue, { color: getScoreColor(results.metrics.performance) }]}>
                   {results.metrics.performance}%
                 </Text>
@@ -274,7 +279,7 @@ export default function WebsiteAuditScreen() {
 
               {/* SEO */}
               <View style={[styles.pillarCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-                <Text style={styles.pillarIcon}>🔍</Text>
+                <Ionicons name="search-outline" size={24} color="#0084FF" />
                 <Text style={[styles.pillarValue, { color: getScoreColor(results.metrics.seo) }]}>
                   {results.metrics.seo}%
                 </Text>
@@ -283,7 +288,7 @@ export default function WebsiteAuditScreen() {
 
               {/* Mobile */}
               <View style={[styles.pillarCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-                <Text style={styles.pillarIcon}>📱</Text>
+                <Ionicons name="phone-portrait-outline" size={24} color="#8B5CF6" />
                 <Text style={[styles.pillarValue, { color: getScoreColor(results.metrics.mobile) }]}>
                   {results.metrics.mobile}%
                 </Text>
@@ -292,7 +297,7 @@ export default function WebsiteAuditScreen() {
 
               {/* Security */}
               <View style={[styles.pillarCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-                <Text style={styles.pillarIcon}>🛡️</Text>
+                <Ionicons name="shield-checkmark-outline" size={24} color="#10B981" />
                 <Text style={[styles.pillarValue, { color: getScoreColor(results.metrics.security) }]}>
                   {results.metrics.security}%
                 </Text>
@@ -344,9 +349,25 @@ export default function WebsiteAuditScreen() {
                       },
                     ]}
                   >
-                    <Text style={{ fontSize: 18, marginRight: 10 }}>
-                      {chk.status === 'pass' ? '✅' : chk.status === 'warn' ? '⚠️' : '❌'}
-                    </Text>
+                    <View style={{ marginRight: 10 }}>
+                      <Ionicons
+                        name={
+                          chk.status === 'pass'
+                            ? 'checkmark-circle'
+                            : chk.status === 'warn'
+                            ? 'alert-circle'
+                            : 'close-circle'
+                        }
+                        size={20}
+                        color={
+                          chk.status === 'pass'
+                            ? '#10B981'
+                            : chk.status === 'warn'
+                            ? '#F59E0B'
+                            : '#EF4444'
+                        }
+                      />
+                    </View>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.checkTitle, { color: theme.text }]}>{chk.title}</Text>
                       <Text style={[styles.checkDesc, { color: theme.mutedText }]}>{chk.desc}</Text>
@@ -356,8 +377,15 @@ export default function WebsiteAuditScreen() {
               </View>
 
               {/* Share Report CTA Button */}
-              <Pressable style={[styles.shareReportBtn, { backgroundColor: theme.primary }]} onPress={handleShareReport}>
-                <Text style={styles.shareReportText}>Share Audit Report 📤</Text>
+              <Pressable
+                style={[
+                  styles.shareReportBtn,
+                  { backgroundColor: theme.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+                ]}
+                onPress={handleShareReport}
+              >
+                <Ionicons name="share-social-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                <Text style={styles.shareReportText}>Share Audit Report</Text>
               </Pressable>
             </View>
           </View>

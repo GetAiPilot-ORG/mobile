@@ -28,10 +28,10 @@ import { useTheme, getColors } from '@/theme';
 
 
 const QUICK_REPLIES = [
-  'Thanks for reaching out! 🙌',
-  'Here is the link you requested: https://getaipilot.in 🔗',
-  'Let us know if you need help with setup! 🚀',
-  'Could you share your email or phone number? 📱',
+  'Thanks for reaching out! We are glad to help.',
+  'Here is the link you requested: https://getaipilot.in',
+  'Let us know if you need help with setup or onboarding.',
+  'Could you please share your email or direct phone number?',
 ];
 
 const formatMessageTime = (dateStr?: string | null) => {

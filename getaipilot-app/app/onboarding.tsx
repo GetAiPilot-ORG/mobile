@@ -351,7 +351,11 @@ export default function OnboardingScreen() {
                   onPress={() => handleSelectAccountType('business')}
                 >
                   <View style={[styles.optionIconBox, isDark && styles.optionIconBoxDark]}>
-                    <Text style={styles.optionIconEmoji}>🏢</Text>
+                    <Ionicons
+                      name="business-outline"
+                      size={22}
+                      color={accountType === 'business' ? '#0084FF' : (isDark ? '#9CA3AF' : '#6B7280')}
+                    />
                   </View>
                   <View style={styles.optionTextBox}>
                     <Text style={[styles.optionTitle, isDark && styles.optionTitleDark]}>
@@ -368,7 +372,7 @@ export default function OnboardingScreen() {
                       isDark && styles.radioCircleDark,
                     ]}
                   >
-                    {accountType === 'business' && <Text style={styles.radioCheckmark}>✓</Text>}
+                    {accountType === 'business' && <Ionicons name="checkmark" size={13} color="#FFFFFF" />}
                   </View>
                 </Pressable>
 
@@ -383,7 +387,11 @@ export default function OnboardingScreen() {
                   onPress={() => handleSelectAccountType('personal')}
                 >
                   <View style={[styles.optionIconBox, isDark && styles.optionIconBoxDark]}>
-                    <Text style={styles.optionIconEmoji}>👤</Text>
+                    <Ionicons
+                      name="person-outline"
+                      size={22}
+                      color={accountType === 'personal' ? '#0084FF' : (isDark ? '#9CA3AF' : '#6B7280')}
+                    />
                   </View>
                   <View style={styles.optionTextBox}>
                     <Text style={[styles.optionTitle, isDark && styles.optionTitleDark]}>
@@ -400,13 +408,14 @@ export default function OnboardingScreen() {
                       isDark && styles.radioCircleDark,
                     ]}
                   >
-                    {accountType === 'personal' && <Text style={styles.radioCheckmark}>✓</Text>}
+                    {accountType === 'personal' && <Ionicons name="checkmark" size={13} color="#FFFFFF" />}
                   </View>
                 </Pressable>
 
                 {/* Primary Action Button */}
-                <Pressable style={styles.primaryButton} onPress={handleContinueToStep2}>
-                  <Text style={styles.primaryButtonText}>Continue to Details →</Text>
+                <Pressable style={[styles.primaryButton, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }]} onPress={handleContinueToStep2}>
+                  <Text style={styles.primaryButtonText}>Continue to Details</Text>
+                  <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
                 </Pressable>
               </View>
             ) : step === 2 ? (
@@ -727,7 +736,7 @@ export default function OnboardingScreen() {
                   {loading ? (
                     <ActivityIndicator color="#FFFFFF" />
                   ) : (
-                    <Text style={styles.primaryButtonText}>Complete Setup & Enter Hub 🚀</Text>
+                    <Text style={styles.primaryButtonText}>Complete Setup & Enter Hub</Text>
                   )}
                 </Pressable>
 

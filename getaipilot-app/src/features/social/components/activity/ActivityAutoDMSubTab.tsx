@@ -294,7 +294,7 @@ export const ActivityAutoDMSubTab: React.FC<ActivityAutoDMSubTabProps> = ({
       name: newRuleName.trim() || `AutoDM for #${newRuleKeyword.trim().toUpperCase()}`,
       keyword: newRuleKeyword.trim().toUpperCase(),
       keywords: [newRuleKeyword.trim().toUpperCase()],
-      comment_reply_text: `Thanks! Sent the link to your DMs 🔥`,
+      comment_reply_text: `Thanks! Sent the link to your DMs`,
       reply_text: newRuleReply.trim(),
       channel: newRuleChannel,
       instagram_account_id: activeInstagramAccountId,
@@ -309,7 +309,7 @@ export const ActivityAutoDMSubTab: React.FC<ActivityAutoDMSubTabProps> = ({
     const hashtagMatch = media.caption?.match(/#(\w+)/);
     setNewRuleKeyword(hashtagMatch ? hashtagMatch[1].toUpperCase() : 'INFO');
     setNewRuleReply(
-      `Hey! Thanks for commenting on our ${isVideo ? 'reel' : 'post'}. Here is your access link: https://getaipilot.in 🔥`
+      `Hey! Thanks for commenting on our ${isVideo ? 'reel' : 'post'}. Here is your access link: https://getaipilot.in`
     );
     setSelectedMediaPost(null);
   };
@@ -580,12 +580,18 @@ export const ActivityAutoDMSubTab: React.FC<ActivityAutoDMSubTabProps> = ({
                 </View>
 
                 <View style={styles.accountCardStatsRow}>
-                  <Text style={[styles.accountCardStatText, { color: isDark ? '#777383' : '#64748b' }]}>
-                    👥 {followers} followers
-                  </Text>
-                  <Text style={[styles.accountCardStatText, { color: isDark ? '#777383' : '#64748b' }]}>
-                    📸 {posts} posts
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Ionicons name="people-outline" size={13} color={isDark ? '#777383' : '#64748b'} />
+                    <Text style={[styles.accountCardStatText, { color: isDark ? '#777383' : '#64748b' }]}>
+                      {followers} followers
+                    </Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Ionicons name="images-outline" size={13} color={isDark ? '#777383' : '#64748b'} />
+                    <Text style={[styles.accountCardStatText, { color: isDark ? '#777383' : '#64748b' }]}>
+                      {posts} posts
+                    </Text>
+                  </View>
                 </View>
 
                 <View style={styles.accountCardFooter}>

@@ -160,7 +160,7 @@ export function TeamScreen() {
       }, 2500);
 
       Alert.alert(
-        'Magic Link Copied 📋',
+        'Magic Link Copied',
         `Magic login link for ${member.name || 'member'} copied to clipboard:\n\n${link}`,
         [
           { text: 'OK', style: 'cancel' },

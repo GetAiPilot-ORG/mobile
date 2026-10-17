@@ -183,7 +183,7 @@ export const ContactsScreen: React.FC = () => {
         "This dedicated phone line has expired. Please renew your workspace line subscription on VoicePilot to resume inbound/outbound calls.",
         [
           {
-            text: "Renew on VoicePilot 🌐",
+            text: "Renew on VoicePilot",
             onPress: () => openVoicePhoneNumbersSSO(queryClient, isDark),
           },
           { text: "Dismiss", style: "cancel" },

@@ -282,9 +282,10 @@ export const AutoDMAutomationsView: React.FC<AutoDMAutomationsViewProps> = ({
                     </Text>
                   </View>
 
-                  <View style={[styles.autodmMetaPill, { backgroundColor: isDark ? '#252230' : '#F0EEF8' }]}>
+                  <View style={[styles.autodmMetaPill, { backgroundColor: isDark ? '#252230' : '#F0EEF8', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+                    <Ionicons name="person-outline" size={11} color={isDark ? '#777383' : '#64748b'} />
                     <Text style={[styles.autodmMetaPillText, { color: isDark ? '#777383' : '#64748b' }]}>
-                      {item.require_follow ? '👤 Must Follow' : '👤 No Follow Req'}
+                      {item.require_follow ? 'Must Follow' : 'No Follow Req'}
                     </Text>
                   </View>
                 </View>
