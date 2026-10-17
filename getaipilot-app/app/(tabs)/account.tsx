@@ -491,7 +491,7 @@ export default function AccountScreen() {
     try {
       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       await sendTestNotification(
-        'GetAiPilot Alert 🚀',
+        'GetAiPilot Alert',
         'Push notifications are configured and active in your ecosystem.'
       );
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -1266,7 +1266,7 @@ export default function AccountScreen() {
               >
                 <Ionicons name="gift-outline" size={15} color={isDark ? '#ffffff' : '#000000'} style={{ marginRight: 6 }} />
                 <Text style={[styles.secondaryButtonText, isDark && styles.secondaryButtonTextDark]}>
-                  Refer Friends for Discounts 🎁
+                  Refer Friends for Discounts
                 </Text>
               </Pressable>
             </View>

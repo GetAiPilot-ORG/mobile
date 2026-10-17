@@ -158,7 +158,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   // Trigger test notification locally across any channel & route
   const sendTestNotification = async (
-    title = 'GetAiPilot Push Notification 🚀',
+    title = 'GetAiPilot Push Notification',
     body = 'Your push notifications are configured and active in your ecosystem.',
     channelId = 'default',
     route = '/account/plans'

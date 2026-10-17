@@ -21,6 +21,7 @@ import {
 } from '../components';
 import { DashboardSkeleton } from '../../../components/skeletonScreen';
 import { useTheme, getColors } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
 
 export const DashboardScreen: React.FC = () => {
   const { isDark } = useTheme();
@@ -47,7 +48,7 @@ export const DashboardScreen: React.FC = () => {
   if (isError && !data) {
     return (
       <SafeAreaView style={[styles.stateContainer, { backgroundColor: isDark ? '#020617' : '#F5F3FB' }]}>
-        <Text style={styles.errorIcon}>⚠️</Text>
+        <Ionicons name="warning-outline" size={36} color="#EF4444" style={{ marginBottom: 10 }} />
         <Text style={[styles.stateTitle, { color: isDark ? '#F5F3FB' : '#0f172a' }]}>Connection Error</Text>
         <Text style={[styles.stateSubtitle, { color: isDark ? '#777383' : '#64748b' }]}>
           {(error as Error)?.message || 'Failed to communicate with GetAiPilot-BFF gateway.'}
@@ -91,14 +92,14 @@ export const DashboardScreen: React.FC = () => {
             title="WA Messages"
             value={(metrics?.whatsapp.messages_count || 3864).toLocaleString()}
             subtitle={`${(metrics?.whatsapp.active_conversations || 716).toLocaleString()} active chats`}
-            icon="💬"
+            icon="logo-whatsapp"
             accentColor="#22c55e"
           />
           <MetricGlassCard
             title="CRM Leads"
             value={metrics?.crm.leads_count || 4}
             subtitle={`₹${((metrics?.crm.pipeline_summary.total_value || 1050000) / 100000).toFixed(1)}L Pipeline`}
-            icon="👥"
+            icon="people-outline"
             accentColor="#3b82f6"
           />
         </View>
@@ -107,14 +108,14 @@ export const DashboardScreen: React.FC = () => {
             title="AI Voice Calls"
             value={metrics?.voice.calls_count || 48}
             subtitle={`₹${(metrics?.voice.wallet_balance || 4850).toLocaleString()} balance`}
-            icon="🎙️"
+            icon="mic-outline"
             accentColor="#a855f7"
           />
           <MetricGlassCard
             title="Telegram MRR"
             value={`₹${((metrics?.telegram.monthly_revenue || 92500) / 1000).toFixed(0)}k`}
             subtitle={`${metrics?.telegram.subscribers_count || 185} Telesub VIPs`}
-            icon="✈️"
+            icon="paper-plane-outline"
             accentColor="#0ea5e9"
           />
         </View>
@@ -148,7 +149,7 @@ export const DashboardScreen: React.FC = () => {
         <ProductActionCard
           title="GAP WhatsApp Business"
           description={`${(metrics?.whatsapp.contacts_count || 3003).toLocaleString()} contacts, ${(metrics?.whatsapp.messages_count || 3864).toLocaleString()} messages synced`}
-          icon="📱"
+          icon="logo-whatsapp"
           badge="Live Connected"
           route="/products/whatsapp"
           accentColor="#22c55e"
@@ -156,7 +157,7 @@ export const DashboardScreen: React.FC = () => {
         <ProductActionCard
           title="GAP CRM Engine"
           description={`${metrics?.crm.leads_count || 4} leads across ${metrics?.crm.pipeline_summary.qualified || 1} qualified stages`}
-          icon="📊"
+          icon="briefcase-outline"
           badge={`₹${((metrics?.crm.pipeline_summary.total_value || 1050000) / 100000).toFixed(1)}L Pipeline`}
           route="/products/crm"
           accentColor="#3b82f6"
@@ -164,7 +165,7 @@ export const DashboardScreen: React.FC = () => {
         <ProductActionCard
           title="GAP VoicePilot AI"
           description={`${metrics?.voice.active_agents || 3} active agents, ${(metrics?.voice.minutes_used || 215)} mins logged today`}
-          icon="🎙️"
+          icon="mic-outline"
           badge={`₹${(metrics?.voice.wallet_balance || 4850).toLocaleString()} Wallet`}
           route="/products/voice"
           accentColor="#a855f7"
@@ -172,7 +173,7 @@ export const DashboardScreen: React.FC = () => {
         <ProductActionCard
           title="GAP SocialPilot"
           description={`${metrics?.social.connected_accounts || 3} channels active, ${metrics?.social.scheduled_posts || 1} post queued`}
-          icon="🌐"
+          icon="globe-outline"
           badge="Sync Active"
           route="/products/social"
           accentColor="#ec4899"
@@ -180,7 +181,7 @@ export const DashboardScreen: React.FC = () => {
         <ProductActionCard
           title="GAP Telegram Suite"
           description={`${metrics?.telegram.active_sessions || 101} bot sessions, ₹${(metrics?.telegram.monthly_revenue || 92500).toLocaleString()} Telesub MRR`}
-          icon="✈️"
+          icon="paper-plane-outline"
           badge="Monetized"
           route="/products/telegram"
           accentColor="#0ea5e9"

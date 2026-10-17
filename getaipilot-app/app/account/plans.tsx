@@ -369,7 +369,7 @@ export default function OverallPricingScreen() {
           }
 
           Alert.alert(
-            'Subscription Activated! 🎉',
+            'Subscription Activated',
             `Your ${proPricing.option.label} subscription to ${planDisplayName} has been confirmed. Quotas are active in your workspace for ${proPricing.option.days} days.`,
             [{ text: 'Great!' }]
           );
@@ -418,7 +418,7 @@ export default function OverallPricingScreen() {
         }
 
         Alert.alert(
-          'Subscription Activated! 🎉',
+          'Subscription Activated',
           `Your subscription to ${planDisplayName} has been confirmed. Quotas are active in your workspace.`,
           [{ text: 'Great!' }]
         );

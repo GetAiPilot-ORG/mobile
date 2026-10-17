@@ -17,6 +17,7 @@ import { supabase } from '../../src/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 import { SalesLeadsSkeleton } from '../../src/components/skeletonScreen';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function SalesLeadsScreen() {
   const { isDark } = useTheme();
@@ -100,7 +101,7 @@ export default function SalesLeadsScreen() {
 
         {/* Search */}
         <View style={styles.searchBox}>
-          <Text style={styles.searchIcon}>🔍</Text>
+          <Ionicons name="search-outline" size={16} color={colors.mutedForeground} style={{ marginRight: 8 }} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search lead by name or email..."
@@ -124,7 +125,10 @@ export default function SalesLeadsScreen() {
                     </Text>
                     <Text style={styles.leadEmail}>{lead.email || 'No email'}</Text>
                     {lead.business_name ? (
-                      <Text style={styles.leadBiz}>🏢 {lead.business_name}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
+                        <Ionicons name="business-outline" size={13} color={colors.primary} />
+                        <Text style={styles.leadBiz}>{lead.business_name}</Text>
+                      </View>
                     ) : null}
                   </View>
                   <View style={styles.leadBadge}>

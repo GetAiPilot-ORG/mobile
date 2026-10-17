@@ -9,6 +9,7 @@ import {
   Alert,
   Share,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
 import { useTheme, getColors, AppColors } from '@/theme';
@@ -80,8 +81,9 @@ export default function LinkShortenerScreen() {
             autoCapitalize="none"
           />
 
-          <Pressable style={styles.shortenBtn} onPress={handleShorten}>
-            <Text style={styles.shortenBtnText}>Create Short Link ⚡</Text>
+          <Pressable style={[styles.shortenBtn, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }]} onPress={handleShorten}>
+            <Ionicons name="flash-outline" size={16} color="#FFFFFF" />
+            <Text style={styles.shortenBtnText}>Create Short Link</Text>
           </Pressable>
         </View>
 
@@ -97,8 +99,12 @@ export default function LinkShortenerScreen() {
               <Text style={styles.statsValue}>{clickCount}</Text>
             </View>
 
-            <Pressable style={styles.shareBtn} onPress={handleShare}>
-              <Text style={styles.shareBtnText}>Share Link 🔗</Text>
+            <Pressable
+              style={[styles.shareBtn, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }]}
+              onPress={handleShare}
+            >
+              <Ionicons name="share-social-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+              <Text style={styles.shareBtnText}>Share Link</Text>
             </Pressable>
           </View>
         ) : null}

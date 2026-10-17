@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
+import { Ionicons } from '@expo/vector-icons';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
 import { useTheme, getColors } from '@/theme';
@@ -111,7 +112,7 @@ export default function SpeechToTextScreen() {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       await Share.share({
-        message: `🎙️ AI Audio Transcript:\n\n${transcript}\n\nKey Takeaways:\n${summaryBullets
+        message: `AI Audio Transcript:\n\n${transcript}\n\nKey Takeaways:\n${summaryBullets
           .map((b) => `• ${b}`)
           .join('\n')}\n\nTranscribed with GetAiPilot Mobile.`,
       });
@@ -189,7 +190,7 @@ export default function SpeechToTextScreen() {
               onPress={handleToggleRecord}
               disabled={isProcessing}
             >
-              <Text style={{ fontSize: 36 }}>{isRecording ? '⏹' : '🎙️'}</Text>
+              <Ionicons name={isRecording ? 'stop' : 'mic'} size={34} color="#FFFFFF" />
             </Pressable>
 
             {/* Status & Live Timer */}
@@ -230,7 +231,7 @@ export default function SpeechToTextScreen() {
                       { color: activeTab === 'transcript' ? '#FFFFFF' : theme.mutedText },
                     ]}
                   >
-                    Full Text 📝
+                    Full Text
                   </Text>
                 </Pressable>
 
@@ -244,7 +245,7 @@ export default function SpeechToTextScreen() {
                       { color: activeTab === 'summary' ? '#FFFFFF' : theme.mutedText },
                     ]}
                   >
-                    AI Summary ⚡
+                    AI Summary
                   </Text>
                 </Pressable>
               </View>
@@ -269,19 +270,27 @@ export default function SpeechToTextScreen() {
             {/* Actions Bar */}
             <View style={styles.resultsActionRow}>
               <Pressable
-                style={[styles.actionBtn, { backgroundColor: isDark ? '#3A3549' : '#E9E6F2' }]}
+                style={[
+                  styles.actionBtn,
+                  { backgroundColor: isDark ? '#3A3549' : '#E9E6F2', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+                ]}
                 onPress={handleCopyText}
               >
+                <Ionicons name="copy-outline" size={15} color={theme.text} style={{ marginRight: 5 }} />
                 <Text style={[styles.actionBtnText, { color: theme.text }]}>
-                  {copied ? 'Copied to Clipboard ✅' : 'Copy Text 📋'}
+                  {copied ? 'Copied to Clipboard' : 'Copy Text'}
                 </Text>
               </Pressable>
 
               <Pressable
-                style={[styles.actionBtn, { backgroundColor: theme.primary }]}
+                style={[
+                  styles.actionBtn,
+                  { backgroundColor: theme.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+                ]}
                 onPress={handleShare}
               >
-                <Text style={[styles.actionBtnText, { color: '#FFFFFF' }]}>Share Transcript 📤</Text>
+                <Ionicons name="share-social-outline" size={15} color="#FFFFFF" style={{ marginRight: 5 }} />
+                <Text style={[styles.actionBtnText, { color: '#FFFFFF' }]}>Share Transcript</Text>
               </Pressable>
             </View>
           </View>

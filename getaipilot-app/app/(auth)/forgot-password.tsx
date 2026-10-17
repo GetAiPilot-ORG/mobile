@@ -1,4 +1,5 @@
 import { getColors, useTheme } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -153,7 +154,7 @@ export default function ForgotPasswordScreen() {
                   hitSlop={10}
                   style={styles.clearBtn}
                 >
-                  <Text style={styles.clearBtnText}>✕</Text>
+                  <Ionicons name="close-circle" size={16} color={isDark ? '#6B7280' : '#9CA3AF'} />
                 </Pressable>
               )}
             </View>

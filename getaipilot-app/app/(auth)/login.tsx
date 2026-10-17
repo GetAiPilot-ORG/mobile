@@ -3,6 +3,7 @@ import {
 } from "@/components/AppScreen";
 import { NetworkStatusScreen } from "@/components/StatusScreen";
 import { getColors, useTheme } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
@@ -273,7 +274,7 @@ export default function LoginScreen() {
                   hitSlop={10}
                   style={styles.clearBtn}
                 >
-                  <Text style={styles.clearBtnText}>✕</Text>
+                  <Ionicons name="close-circle" size={16} color={isDark ? '#6B7280' : '#9CA3AF'} />
                 </Pressable>
               )}
             </View>
@@ -339,7 +340,7 @@ export default function LoginScreen() {
                 isDark && !saveLoginInfo && styles.checkboxDark,
               ]}
             >
-              {saveLoginInfo && <Text style={styles.checkmarkIcon}>✓</Text>}
+              {saveLoginInfo && <Ionicons name="checkmark" size={13} color="#FFFFFF" />}
             </View>
             <Text
               style={[styles.saveLoginText, isDark && styles.saveLoginTextDark]}

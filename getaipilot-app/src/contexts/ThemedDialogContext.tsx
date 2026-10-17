@@ -230,8 +230,7 @@ export const ThemedAlert = {
       tLower.includes('copied') ||
       tLower.includes('saved') ||
       tLower.includes('created') ||
-      tLower.includes('added') ||
-      tLower.includes('🎉')
+      tLower.includes('added')
     ) {
       dialogType = 'success';
     } else if (

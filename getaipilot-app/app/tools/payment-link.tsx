@@ -10,6 +10,7 @@ import {
   Share,
   Linking,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
 import { useTheme, getColors, AppColors } from '@/theme';
@@ -112,8 +113,12 @@ export default function PaymentLinkGeneratorScreen() {
             onChangeText={setNote}
           />
 
-          <Pressable style={styles.generateBtn} onPress={handleGenerate}>
-            <Text style={styles.generateBtnText}>Generate Payment Link 💳</Text>
+          <Pressable
+            style={[styles.generateBtn, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }]}
+            onPress={handleGenerate}
+          >
+            <Ionicons name="card-outline" size={17} color="#FFFFFF" style={{ marginRight: 6 }} />
+            <Text style={styles.generateBtnText}>Generate Payment Link</Text>
           </Pressable>
         </View>
 
@@ -124,11 +129,19 @@ export default function PaymentLinkGeneratorScreen() {
             <Text style={styles.resultSub}>Payable to: {payeeName} ({upiId})</Text>
 
             <View style={styles.btnRow}>
-              <Pressable style={styles.actionBtnShare} onPress={handleShare}>
-                <Text style={styles.btnText}>Share Details 📤</Text>
+              <Pressable
+                style={[styles.actionBtnShare, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }]}
+                onPress={handleShare}
+              >
+                <Ionicons name="share-social-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                <Text style={styles.btnText}>Share Details</Text>
               </Pressable>
-              <Pressable style={styles.actionBtnPay} onPress={handleOpenUPI}>
-                <Text style={styles.btnText}>Launch UPI App ⚡</Text>
+              <Pressable
+                style={[styles.actionBtnPay, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }]}
+                onPress={handleOpenUPI}
+              >
+                <Ionicons name="flash-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                <Text style={styles.btnText}>Launch UPI App</Text>
               </Pressable>
             </View>
           </View>

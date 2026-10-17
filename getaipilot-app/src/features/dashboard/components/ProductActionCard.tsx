@@ -1,17 +1,13 @@
-import {
-  useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme, getColors } from '@/theme';
 
 interface ProductActionCardProps {
   title: string;
   description: string;
-  icon: string;
+  icon: keyof typeof Ionicons.glyphMap | string;
   badge?: string;
   route: string;
   accentColor?: string;
@@ -40,7 +36,7 @@ export const ProductActionCard: React.FC<ProductActionCardProps> = ({
     >
       <View style={styles.topRow}>
         <View style={[styles.iconBox, { backgroundColor: `${accentColor}20` }]}>
-          <Text style={[styles.icon, { color: accentColor }]}>{icon}</Text>
+          <Ionicons name={icon as any} size={20} color={accentColor} />
         </View>
         {badge ? (
           <View style={[styles.badge, { backgroundColor: `${accentColor}30` }]}>
