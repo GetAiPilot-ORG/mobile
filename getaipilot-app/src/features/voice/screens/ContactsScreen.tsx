@@ -1,5 +1,15 @@
+import {
+  ProductButton,
+  ProductEmpty,
+  ProductHeading,
+  ProductMetrics,
+  ProductRow,
+  ProductSection,
+} from "@/components/ProductUI";
+import { ArrowRight01Icon } from "@/constants/icons";
 import { getColors, useTheme } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
+import { HugeiconsIcon } from "@hugeicons/react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
@@ -227,14 +237,21 @@ export const ContactsScreen: React.FC = () => {
     border: themeColors.border,
     text: themeColors.text,
     textSecondary: themeColors.textMuted,
-    primary: themeColors.products.voice || "#5844E3",
-    primaryLight: themeColors.products.voiceSoft || (isDark ? "rgba(88, 68, 227, 0.15)" : "#EEF2FF"),
+    primary: themeColors.products?.voice || "#5B3AF5",
+    primaryLight:
+      themeColors.products?.voiceSoft ||
+      (isDark ? "rgba(91, 58, 245, 0.2)" : "#EDE9FE"),
     green: themeColors.success,
     greenLight: themeColors.successSoft,
     amber: themeColors.warning,
     amberLight: themeColors.warningSoft,
     red: themeColors.destructive,
     redLight: themeColors.destructiveSoft,
+    card: themeColors.card,
+    mint: isDark ? "#263D3D" : "#D8F0F0",
+    lavender: isDark ? "#39304A" : "#E7DEFA",
+    peach: isDark ? "#49372D" : "#F9E5D4",
+    pink: isDark ? "#46303C" : "#F7DFE9",
   };
 
   const filteredContacts = contacts.filter((cnt) => {
@@ -261,10 +278,9 @@ export const ContactsScreen: React.FC = () => {
       className="flex-1 w-full"
       style={{ backgroundColor: colors.background }}
       contentContainerStyle={{
-        paddingHorizontal: 16,
-        paddingTop: 10,
+        paddingHorizontal: 20,
+        paddingTop: 12,
         paddingBottom: 120,
-        gap: 12,
         width: "100%",
       }}
       refreshControl={
@@ -276,43 +292,54 @@ export const ContactsScreen: React.FC = () => {
       }
       showsVerticalScrollIndicator={false}
     >
-      {/* 1. TITLE SECTION */}
-      <View className="pt-0.5 gap-0.5 w-full">
-        <Text
-          className="text-2xl leading-7 font-semibold tracking-tight"
-          style={{ color: colors.text }}
-        >
-          {activeSubTab === "contacts"
+      {/* 1. HEADING */}
+      <ProductHeading
+        title={
+          activeSubTab === "contacts"
             ? "Contacts & Leads"
             : activeSubTab === "numbers"
-              ? "Dedicated Phone Lines"
-              : "AI Voice Assistants"}
-        </Text>
-        <Text
-          className="text-[12.5px] leading-[17px] font-medium"
-          style={{ color: colors.textSecondary }}
-        >
-          {activeSubTab === "contacts"
+              ? "Dedicated Lines"
+              : "Voice Agents"
+        }
+        description={
+          activeSubTab === "contacts"
             ? "Manage customer phone numbers and outbound lists."
             : activeSubTab === "numbers"
               ? "Virtual phone lines bound to AI Assistants for calling."
-              : "Your AI workforce and their assigned caller IDs."}
-        </Text>
-      </View>
+              : "Your AI workforce and their assigned caller IDs."
+        }
+      />
 
-      {/* EXPIRED PLAN BANNER */}
+      {/* PLAN EXPIRED BANNER */}
       {Boolean(overviewData?.isPlanExpired) && (
         <VoicePlanExpiredBanner overview={overviewData} />
       )}
 
-      {/* 2. 3-WAY SUB-TAB SWITCHER */}
+      {/* 2. SUB-TAB SWITCHER */}
       <View
-        className="flex-row items-center p-1 rounded-2xl w-full gap-1 mb-1 shadow-xs"
-        style={{ backgroundColor: colors.surface }}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          backgroundColor: colors.card,
+          borderRadius: 30,
+          padding: 4,
+          marginBottom: 16,
+          gap: 4,
+        }}
       >
         <Pressable
-          className="flex-1 flex-row items-center justify-center py-2 px-2 rounded-xl gap-1.5 active:opacity-80"
-          style={activeSubTab === "contacts" ? { backgroundColor: colors.primary } : undefined}
+          style={{
+            flex: 1,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            paddingVertical: 10,
+            paddingHorizontal: 8,
+            borderRadius: 24,
+            gap: 6,
+            backgroundColor:
+              activeSubTab === "contacts" ? colors.primary : "transparent",
+          }}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setActiveSubTab("contacts");
@@ -320,19 +347,17 @@ export const ContactsScreen: React.FC = () => {
         >
           <Ionicons
             name="people"
-            size={13}
+            size={14}
             color={
               activeSubTab === "contacts" ? "#FFFFFF" : colors.textSecondary
             }
           />
           <Text
-            className="text-xs tracking-tight"
             style={{
+              fontSize: 12.5,
+              fontWeight: activeSubTab === "contacts" ? "700" : "500",
               color:
-                activeSubTab === "contacts"
-                  ? "#FFFFFF"
-                  : colors.textSecondary,
-              fontWeight: activeSubTab === "contacts" ? "700" : "600",
+                activeSubTab === "contacts" ? "#FFFFFF" : colors.textSecondary,
             }}
           >
             Contacts ({totalContacts})
@@ -340,8 +365,18 @@ export const ContactsScreen: React.FC = () => {
         </Pressable>
 
         <Pressable
-          className="flex-1 flex-row items-center justify-center py-2 px-2 rounded-xl gap-1.5 active:opacity-80"
-          style={activeSubTab === "numbers" ? { backgroundColor: colors.primary } : undefined}
+          style={{
+            flex: 1,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            paddingVertical: 10,
+            paddingHorizontal: 8,
+            borderRadius: 24,
+            gap: 6,
+            backgroundColor:
+              activeSubTab === "numbers" ? colors.primary : "transparent",
+          }}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setActiveSubTab("numbers");
@@ -349,40 +384,38 @@ export const ContactsScreen: React.FC = () => {
         >
           <Ionicons
             name="phone-portrait"
-            size={13}
+            size={14}
             color={
               activeSubTab === "numbers" ? "#FFFFFF" : colors.textSecondary
             }
           />
           <Text
-            className="text-xs tracking-tight"
             style={{
+              fontSize: 12.5,
+              fontWeight: activeSubTab === "numbers" ? "700" : "500",
               color:
-                activeSubTab === "numbers"
-                  ? "#FFFFFF"
-                  : colors.textSecondary,
-              fontWeight: activeSubTab === "numbers" ? "700" : "600",
+                activeSubTab === "numbers" ? "#FFFFFF" : colors.textSecondary,
             }}
           >
             Lines ({totalNumbers})
           </Text>
           {expiredNumbersCount > 0 && (
             <View
-              className="px-1.5 py-0.5 rounded-full items-center justify-center"
               style={{
+                paddingHorizontal: 6,
+                paddingVertical: 2,
+                borderRadius: 10,
                 backgroundColor:
                   activeSubTab === "numbers"
                     ? "rgba(255, 255, 255, 0.25)"
-                    : isDark
-                      ? "rgba(245, 158, 11, 0.2)"
-                      : "#FEF3C7",
+                    : colors.amberLight,
               }}
             >
               <Text
-                className="text-[10px] font-bold"
                 style={{
-                  color:
-                    activeSubTab === "numbers" ? "#FFFFFF" : "#D97706",
+                  fontSize: 10,
+                  fontWeight: "700",
+                  color: activeSubTab === "numbers" ? "#FFFFFF" : colors.amber,
                 }}
               >
                 {expiredNumbersCount}
@@ -392,8 +425,18 @@ export const ContactsScreen: React.FC = () => {
         </Pressable>
 
         <Pressable
-          className="flex-1 flex-row items-center justify-center py-2 px-2 rounded-xl gap-1.5 active:opacity-80"
-          style={activeSubTab === "assistants" ? { backgroundColor: colors.primary } : undefined}
+          style={{
+            flex: 1,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            paddingVertical: 10,
+            paddingHorizontal: 8,
+            borderRadius: 24,
+            gap: 6,
+            backgroundColor:
+              activeSubTab === "assistants" ? colors.primary : "transparent",
+          }}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setActiveSubTab("assistants");
@@ -401,19 +444,17 @@ export const ContactsScreen: React.FC = () => {
         >
           <Ionicons
             name="mic"
-            size={13}
+            size={14}
             color={
               activeSubTab === "assistants" ? "#FFFFFF" : colors.textSecondary
             }
           />
           <Text
-            className="text-xs tracking-tight"
             style={{
+              fontSize: 12.5,
+              fontWeight: activeSubTab === "assistants" ? "700" : "500",
               color:
-                activeSubTab === "assistants"
-                  ? "#FFFFFF"
-                  : colors.textSecondary,
-              fontWeight: activeSubTab === "assistants" ? "700" : "600",
+                activeSubTab === "assistants" ? "#FFFFFF" : colors.textSecondary,
             }}
           >
             Agents ({assistants.length})
@@ -423,136 +464,70 @@ export const ContactsScreen: React.FC = () => {
 
       {/* 3. CONTACTS TAB VIEW */}
       {activeSubTab === "contacts" && (
-        <View className="gap-2.5">
-          <View className="flex-row gap-2 w-full">
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Import CSV"
-              onPress={handleImportCsv}
-              className="flex-1 h-[42px] rounded-xl flex-row items-center justify-center gap-1.5 active:opacity-80 shadow-xs"
-              style={{ backgroundColor: colors.surface }}
-            >
-              <Ionicons
-                name="cloud-upload-outline"
-                size={15}
-                color={colors.primary}
-              />
-              <Text
-                className="text-[13px] font-bold"
-                style={{ color: colors.primary }}
-              >
-                Import CSV
-              </Text>
-            </Pressable>
-
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Add Contact"
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                setIsCreateModalOpen(true);
-              }}
-              className="flex-1 h-[42px] rounded-xl flex-row items-center justify-center gap-1.5 active:opacity-85 shadow-xs"
-              style={{ backgroundColor: colors.primary }}
-            >
-              <Ionicons name="add" size={16} color="#FFFFFF" />
-              <Text className="text-white text-[13.5px] font-bold">Add Contact</Text>
-            </Pressable>
-          </View>
-
-          {/* 3-Metric Stats Row */}
-          <View className="flex-row gap-2 w-full">
-            <View
-              className="flex-1 p-2.5 rounded-xl min-h-[68px] justify-between shadow-xs min-w-0"
-              style={{ flexBasis: 0, backgroundColor: colors.surface }}
-            >
-              <View className="flex-row items-center gap-1">
-                <Ionicons
-                  name="people-outline"
-                  size={13}
-                  color={colors.primary}
-                />
-                <Text
-                  className="text-[11px] font-semibold flex-1 min-w-0"
-                  style={{ color: colors.textSecondary }}
-                  numberOfLines={1}
-                >
-                  Contacts
-                </Text>
-              </View>
-              <Text
-                className="text-[19px] font-semibold tracking-tight mt-0.5"
-                style={{ color: colors.text }}
-                adjustsFontSizeToFit
-                numberOfLines={1}
-              >
-                {totalContacts}
-              </Text>
-            </View>
-
-            <View
-              className="flex-1 p-2.5 rounded-xl min-h-[68px] justify-between shadow-xs min-w-0"
-              style={{ flexBasis: 0, backgroundColor: colors.surface }}
-            >
-              <View className="flex-row items-center gap-1">
-                <Ionicons
-                  name="shield-checkmark-outline"
-                  size={13}
-                  color={colors.green}
-                />
-                <Text
-                  className="text-[11px] font-semibold flex-1 min-w-0"
-                  style={{ color: colors.textSecondary }}
-                  numberOfLines={1}
-                >
-                  Reachability
-                </Text>
-              </View>
-              <Text
-                className="text-[19px] font-semibold tracking-tight mt-0.5"
-                style={{ color: colors.text }}
-                adjustsFontSizeToFit
-                numberOfLines={1}
-              >
-                {totalContacts > 0 ? "100%" : "0%"}
-              </Text>
-            </View>
-
-            <View
-              className="flex-1 p-2.5 rounded-xl min-h-[68px] justify-between shadow-xs min-w-0"
-              style={{ flexBasis: 0, backgroundColor: colors.surface }}
-            >
-              <View className="flex-row items-center gap-1">
-                <Ionicons name="star" size={13} color={colors.amber} />
-                <Text
-                  className="text-[11px] font-semibold flex-1 min-w-0"
-                  style={{ color: colors.textSecondary }}
-                  numberOfLines={1}
-                >
-                  Active Leads
-                </Text>
-              </View>
-              <Text
-                className="text-[19px] font-semibold tracking-tight mt-0.5"
-                style={{ color: colors.text }}
-                adjustsFontSizeToFit
-                numberOfLines={1}
-              >
-                {activeLeads}
-              </Text>
-            </View>
-          </View>
-
-          {/* Search Input */}
+        <>
+          {/* Side-by-Side Action Buttons */}
           <View
-            className="flex-row items-center h-10 rounded-xl px-2.5 gap-1.5 shadow-xs"
-            style={{ backgroundColor: colors.surface }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+              marginBottom: 16,
+              width: "100%",
+            }}
           >
-            <Ionicons name="search" size={15} color={colors.textSecondary} />
+            <View style={{ flex: 1 }}>
+              <ProductButton
+                label="Add Contact"
+                icon="add"
+                fullWidth
+                onPress={() => setIsCreateModalOpen(true)}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <ProductButton
+                label="Import CSV"
+                secondary
+                icon="cloud-upload-outline"
+                fullWidth
+                onPress={handleImportCsv}
+              />
+            </View>
+          </View>
+
+          <ProductMetrics
+            items={[
+              { label: "Contacts", value: totalContacts },
+              {
+                label: "Reachability",
+                value: totalContacts > 0 ? "100%" : "0%",
+              },
+              { label: "Active leads", value: activeLeads },
+            ]}
+          />
+
+          {/* Search input */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: colors.card,
+              borderRadius: 20,
+              paddingHorizontal: 16,
+              height: 48,
+              marginBottom: 16,
+              gap: 10,
+            }}
+          >
+            <Ionicons name="search" size={17} color={colors.textSecondary} />
             <TextInput
-              className="flex-1 text-[13px] font-medium py-0 h-full"
               style={[
-                { color: colors.text },
+                {
+                  flex: 1,
+                  fontSize: 13.5,
+                  color: colors.text,
+                  height: "100%",
+                  paddingVertical: 0,
+                },
                 Platform.OS === "web"
                   ? ({ outlineStyle: "none", outlineWidth: 0 } as any)
                   : null,
@@ -563,610 +538,284 @@ export const ContactsScreen: React.FC = () => {
               onChangeText={setSearchQuery}
             />
             {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery("")}>
+              <Pressable hitSlop={8} onPress={() => setSearchQuery("")}>
                 <Ionicons
                   name="close-circle"
-                  size={15}
+                  size={17}
                   color={colors.textSecondary}
                 />
               </Pressable>
             )}
           </View>
 
-          {/* Filter Dropdowns Row */}
-          <View className="flex-row gap-2">
-            <Pressable
-              className="flex-1 h-9 rounded-xl flex-row items-center justify-between px-2.5 active:opacity-80 shadow-xs"
-              style={{ backgroundColor: colors.surface }}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }}
-            >
-              <Text
-                className="text-xs font-semibold"
-                style={{ color: colors.text }}
-              >
-                {statusFilter}
-              </Text>
-              <Ionicons
-                name="chevron-down"
-                size={13}
-                color={colors.textSecondary}
+          <ProductSection title="All contacts">
+            {isContactsLoading ? (
+              <ActivityIndicator
+                color={colors.primary}
+                style={{ marginTop: 20 }}
               />
-            </Pressable>
-
-            <Pressable
-              className="flex-1 h-9 rounded-xl flex-row items-center justify-between px-2.5 active:opacity-80 shadow-xs"
-              style={{ backgroundColor: colors.surface }}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }}
-            >
-              <Text
-                className="text-xs font-semibold"
-                style={{ color: colors.text }}
-              >
-                {sourceFilter}
-              </Text>
-              <Ionicons
-                name="chevron-down"
-                size={13}
-                color={colors.textSecondary}
+            ) : filteredContacts.length === 0 ? (
+              <ProductEmpty
+                title="No contacts found"
+                description="Add contacts or import a CSV list to start reaching out."
+                action="Add contact"
+                onAction={() => setIsCreateModalOpen(true)}
               />
-            </Pressable>
-          </View>
-
-          {/* Contacts List */}
-          {isContactsLoading ? (
-            <ActivityIndicator
-              size="large"
-              color={colors.primary}
-              style={{ marginTop: 30 }}
-            />
-          ) : filteredContacts.length === 0 ? (
-            <View
-              className="rounded-2xl py-9 px-4 items-center justify-center gap-2 shadow-xs"
-              style={{ backgroundColor: colors.surface }}
-            >
-              <View
-                className="w-[60px] h-[60px] rounded-full items-center justify-center mb-0.5"
-                style={{ backgroundColor: colors.primaryLight }}
-              >
-                <Ionicons name="people" size={30} color={colors.primary} />
-              </View>
-              <Text
-                className="text-base font-semibold tracking-tight"
-                style={{ color: colors.text }}
-              >
-                No contacts found
-              </Text>
-              <Text
-                className="text-xs font-medium text-center max-w-[220px] leading-4"
-                style={{ color: colors.textSecondary }}
-              >
-                Add Contact or Import CSV to begin.
-              </Text>
-            </View>
-          ) : (
-            <View
-              className="rounded-2xl overflow-hidden shadow-xs"
-              style={{ backgroundColor: colors.surface }}
-            >
-              {filteredContacts.map((cnt, idx, arr) => {
-                const initials = getInitials(cnt.name);
+            ) : (
+              filteredContacts.map((cnt, idx) => {
                 const role =
                   cnt.company ||
                   ((cnt.calls_count || 0) > 0 ? "Customer" : "Lead");
 
                 return (
-                  <View key={cnt.id || idx}>
-                    <Pressable
-                      className="flex-row items-center py-2.5 px-3 gap-2.5 active:opacity-75"
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setSelectedContact(cnt);
-                      }}
-                    >
+                  <ProductRow
+                    key={cnt.id || idx}
+                    title={cnt.name}
+                    detail={[cnt.phone, role].filter(Boolean).join(" · ")}
+                    icon="person-outline"
+                    tone="lavender"
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setSelectedContact(cnt);
+                    }}
+                    trailing={
                       <View
-                        className="w-[34px] h-[34px] rounded-full items-center justify-center"
-                        style={{ backgroundColor: colors.primaryLight }}
-                      >
-                        <Text
-                          className="text-xs font-semibold"
-                          style={{ color: colors.primary }}
-                        >
-                          {initials}
-                        </Text>
-                      </View>
-
-                      <View className="flex-1 min-w-0 gap-0.5">
-                        <Text
-                          className="text-[13.5px] font-bold tracking-tight"
-                          style={{ color: colors.text }}
-                          numberOfLines={1}
-                        >
-                          {cnt.name}
-                        </Text>
-                        <Text
-                          className="text-[11.5px] font-medium"
-                          style={{ color: colors.textSecondary }}
-                          numberOfLines={1}
-                        >
-                          {cnt.phone} • {role}
-                        </Text>
-                      </View>
-
-                      <Pressable
-                        className="w-[30px] h-[30px] rounded-full items-center justify-center mr-0.5 active:opacity-70"
-                        style={{ backgroundColor: colors.primaryLight }}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          Haptics.impactAsync(
-                            Haptics.ImpactFeedbackStyle.Medium,
-                          );
-                          setCallTarget({ phone: cnt.phone, name: cnt.name });
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 10,
                         }}
                       >
-                        <Ionicons
-                          name="call"
-                          size={14}
-                          color={colors.primary}
+                        <Pressable
+                          hitSlop={8}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Call ${cnt.name}`}
+                          style={{
+                            width: 38,
+                            height: 38,
+                            borderRadius: 19,
+                            backgroundColor: colors.primaryLight,
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            Haptics.ImpactFeedbackStyle &&
+                              Haptics.impactAsync(
+                                Haptics.ImpactFeedbackStyle.Medium,
+                              );
+                            setCallTarget({ phone: cnt.phone, name: cnt.name });
+                          }}
+                        >
+                          <Ionicons
+                            name="call"
+                            size={15}
+                            color={colors.primary}
+                          />
+                        </Pressable>
+                        <HugeiconsIcon
+                          icon={ArrowRight01Icon}
+                          size={16}
+                          color={colors.textSecondary}
+                          strokeWidth={2}
                         />
-                      </Pressable>
-
-                      <Ionicons
-                        name="chevron-forward"
-                        size={14}
-                        color={colors.textSecondary}
-                      />
-                    </Pressable>
-
-                    {idx < arr.length - 1 && (
-                      <View
-                        className="h-[1px] ml-14"
-                        style={{ backgroundColor: colors.border }}
-                      />
-                    )}
-                  </View>
+                      </View>
+                    }
+                  />
                 );
-              })}
-            </View>
-          )}
-        </View>
+              })
+            )}
+          </ProductSection>
+        </>
       )}
 
       {/* 4. PHONE LINES TAB VIEW */}
       {activeSubTab === "numbers" && (
-        <View className="gap-2.5">
-          <View className="flex-row gap-2 w-full">
-            <View
-              className="flex-1 p-2.5 rounded-xl min-h-[68px] justify-between shadow-xs min-w-0"
-              style={{ flexBasis: 0, backgroundColor: colors.surface }}
-            >
-              <View className="flex-row items-center gap-1">
-                <Ionicons
-                  name="phone-portrait-outline"
-                  size={13}
-                  color={colors.primary}
-                />
-                <Text
-                  className="text-[11px] font-semibold flex-1 min-w-0"
-                  style={{ color: colors.textSecondary }}
-                  numberOfLines={1}
-                >
-                  Lines
-                </Text>
-              </View>
-              <Text
-                className="text-[19px] font-semibold tracking-tight mt-0.5"
-                style={{ color: colors.text }}
-                adjustsFontSizeToFit
-                numberOfLines={1}
-              >
-                {totalNumbers}
-              </Text>
-            </View>
-
-            <View
-              className="flex-1 p-2.5 rounded-xl min-h-[68px] justify-between shadow-xs min-w-0"
-              style={{
-                flexBasis: 0,
-                backgroundColor: colors.surface,
-              }}
-            >
-              <View className="flex-row items-center gap-1">
-                <Ionicons
-                  name="checkmark-circle-outline"
-                  size={13}
-                  color={colors.green}
-                />
-                <Text
-                  className="text-[11px] font-semibold flex-1 min-w-0"
-                  style={{ color: colors.green }}
-                  numberOfLines={1}
-                >
-                  Bound
-                </Text>
-              </View>
-              <Text
-                className="text-[19px] font-semibold tracking-tight mt-0.5"
-                style={{ color: colors.green }}
-                adjustsFontSizeToFit
-                numberOfLines={1}
-              >
-                {activeNumbersCount}
-              </Text>
-            </View>
-
-            <View
-              className="flex-1 p-2.5 rounded-xl min-h-[68px] justify-between shadow-xs min-w-0"
-              style={{
-                flexBasis: 0,
-                backgroundColor: colors.surface,
-              }}
-            >
-              <View className="flex-row items-center gap-1">
-                <Ionicons
-                  name="pause-circle-outline"
-                  size={13}
-                  color={colors.amber}
-                />
-                <Text
-                  className="text-[11px] font-semibold flex-1 min-w-0"
-                  style={{ color: colors.amber }}
-                  numberOfLines={1}
-                >
-                  Expired
-                </Text>
-              </View>
-              <Text
-                className="text-[19px] font-semibold tracking-tight mt-0.5"
-                style={{ color: colors.amber }}
-                adjustsFontSizeToFit
-                numberOfLines={1}
-              >
-                {expiredNumbersCount}
-              </Text>
-            </View>
+        <>
+          <View style={{ marginBottom: 16, width: "100%" }}>
+            <ProductButton
+              label="Get Dedicated Line"
+              icon="globe-outline"
+              fullWidth
+              onPress={() => openVoicePhoneNumbersSSO(queryClient, isDark)}
+            />
           </View>
 
-          {/* Web Billing Banner */}
+          <ProductMetrics
+            items={[
+              { label: "Phone lines", value: totalNumbers },
+              { label: "Active", value: activeNumbersCount },
+              { label: "Expired", value: expiredNumbersCount },
+            ]}
+          />
+
+          {/* Web Billing Link Card */}
           <Pressable
             onPress={() => openVoicePhoneNumbersSSO(queryClient, isDark)}
-            className="flex-row items-center p-2.5 rounded-xl gap-2.5 active:opacity-85 shadow-xs"
-            style={{
-              backgroundColor: isDark ? "#121320" : "#EEF2FF",
-            }}
+            style={({ pressed }) => ({
+              backgroundColor: colors.card,
+              borderRadius: 22,
+              padding: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 14,
+              marginBottom: 16,
+              opacity: pressed ? 0.8 : 1,
+            })}
           >
             <View
-              className="w-[30px] h-[30px] rounded-full items-center justify-center"
-              style={{ backgroundColor: isDark ? "#1E1B4B" : "#EEF2FF" }}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 16,
+                backgroundColor: colors.lavender,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
             >
               <Image
                 source={require("../../../../assets/images/logobag.png")}
-                style={{ width: 22, height: 22, borderRadius: 5 }}
+                style={{ width: 24, height: 24, borderRadius: 6 }}
                 resizeMode="contain"
               />
             </View>
-            <View className="flex-1 min-w-0 gap-0.5">
+            <View style={{ flex: 1, gap: 4 }}>
               <Text
-                className="text-[13px] font-bold tracking-tight"
-                style={{ color: isDark ? "#FFFFFF" : "#1E1B4B" }}
-                numberOfLines={1}
+                style={{ fontSize: 15, fontWeight: "600", color: colors.text }}
               >
                 Add Dedicated Phone Lines
               </Text>
-              <Text
-                className="text-[11px] font-medium"
-                style={{ color: isDark ? "#777383" : "#4338CA" }}
-                numberOfLines={1}
-              >
+              <Text style={{ fontSize: 12, color: colors.textSecondary }}>
                 Buy &amp; renew business numbers on VoicePilot Web
               </Text>
             </View>
-            <Ionicons
-              name="open-outline"
-              size={16}
-              color={isDark ? "#818CF8" : "#4F46E5"}
-            />
+            <Ionicons name="open-outline" size={18} color={colors.primary} />
           </Pressable>
 
-          {/* Phone Numbers List */}
-          {isNumbersLoading ? (
-            <ActivityIndicator
-              size="large"
-              color={colors.primary}
-              style={{ marginTop: 30 }}
-            />
-          ) : numbers.length === 0 ? (
-            <View
-              className="rounded-2xl py-9 px-4 items-center justify-center gap-2 shadow-xs"
-              style={{ backgroundColor: colors.surface }}
-            >
-              <View
-                className="w-[60px] h-[60px] rounded-full items-center justify-center mb-0.5"
-                style={{ backgroundColor: colors.primaryLight }}
-              >
-                <Ionicons
-                  name="phone-portrait-outline"
-                  size={30}
-                  color={colors.primary}
-                />
-              </View>
-              <Text
-                className="text-base font-semibold tracking-tight"
-                style={{ color: colors.text }}
-              >
-                No phone lines found
-              </Text>
-              <Text
-                className="text-xs font-medium text-center max-w-[220px] leading-4"
-                style={{ color: colors.textSecondary }}
-              >
-                Get a dedicated telecom line for your assistants on VoicePilot.
-              </Text>
-              <Pressable
-                onPress={() => openVoicePhoneNumbersSSO(queryClient, isDark)}
-                className="mt-2.5 flex-row items-center justify-center bg-[#4F46E5] py-2 px-3.5 rounded-lg gap-1.5 active:opacity-85 shadow-xs"
-              >
-                <Ionicons name="globe-outline" size={14} color="#FFFFFF" />
-                <Text className="text-white text-xs font-bold">
-                  Get Dedicated Line · ₹1,499/mo
-                </Text>
-              </Pressable>
-            </View>
-          ) : (
-            <View
-              className="rounded-2xl overflow-hidden shadow-xs"
-              style={{ backgroundColor: colors.surface }}
-            >
-              {numbers.map((num, idx, arr) => {
+          <ProductSection title="Dedicated phone lines">
+            {isNumbersLoading ? (
+              <ActivityIndicator
+                color={colors.primary}
+                style={{ marginTop: 20 }}
+              />
+            ) : numbers.length === 0 ? (
+              <ProductEmpty
+                title="No phone lines found"
+                description="Get a dedicated telecom line for your assistants on VoicePilot."
+                action="Get dedicated line"
+                onAction={() => openVoicePhoneNumbersSSO(queryClient, isDark)}
+              />
+            ) : (
+              numbers.map((num, idx) => {
                 const isExpired = num.isExpired || num.status === "expired";
                 const isAssigned = Boolean(num.assigned_assistant_id);
 
                 return (
-                  <View key={num.id || idx}>
-                    <Pressable
-                      className="flex-row items-center py-2.5 px-3 gap-2.5 active:opacity-75"
-                      onPress={() => handleAssignBot(num)}
-                    >
+                  <ProductRow
+                    key={num.id || idx}
+                    title={num.phone_number}
+                    detail={
+                      num.assistants?.name
+                        ? `Bound to: ${num.assistants.name}`
+                        : isAssigned
+                          ? "Bound to Voice Assistant"
+                          : "Available (Tap to bind)"
+                    }
+                    icon="phone-portrait-outline"
+                    tone={isExpired ? "pink" : isAssigned ? "mint" : "lavender"}
+                    onPress={() => handleAssignBot(num)}
+                    trailing={
                       <View
-                        className="w-[34px] h-[34px] rounded-full items-center justify-center"
                         style={{
-                          backgroundColor: isExpired
-                            ? colors.amberLight
-                            : isAssigned
-                              ? colors.greenLight
-                              : colors.primaryLight,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 10,
                         }}
                       >
-                        <Ionicons
-                          name="phone-portrait"
-                          size={16}
-                          color={
-                            isExpired
-                              ? colors.amber
+                        <View
+                          style={{
+                            paddingHorizontal: 10,
+                            paddingVertical: 5,
+                            borderRadius: 14,
+                            backgroundColor: isExpired
+                              ? colors.amberLight
                               : isAssigned
-                                ? colors.green
-                                : colors.primary
-                          }
-                        />
-                      </View>
-
-                      <View className="flex-1 min-w-0 gap-0.5">
-                        <View className="flex-row items-center justify-between gap-1.5">
+                                ? colors.greenLight
+                                : colors.primaryLight,
+                          }}
+                        >
                           <Text
-                            className="text-sm font-semibold tracking-tight"
-                            style={{ color: colors.text }}
-                            numberOfLines={1}
-                          >
-                            {num.phone_number}
-                          </Text>
-                          <View
-                            className="px-1.5 py-0.5 rounded"
                             style={{
-                              backgroundColor: isExpired
-                                ? colors.amberLight
+                              fontSize: 11,
+                              fontWeight: "700",
+                              color: isExpired
+                                ? colors.amber
                                 : isAssigned
-                                  ? colors.greenLight
-                                  : colors.primaryLight,
+                                  ? colors.green
+                                  : colors.primary,
                             }}
                           >
-                            <Text
-                              className="text-[10px] font-bold"
-                              style={{
-                                color: isExpired
-                                  ? "#D97706"
-                                  : isAssigned
-                                    ? colors.green
-                                    : colors.primary,
-                              }}
-                            >
-                              {isExpired
-                                ? "Plan Expired"
-                                : isAssigned
-                                  ? "Active / Bound"
-                                  : "Unassigned"}
-                            </Text>
-                          </View>
+                            {isExpired
+                              ? "Expired"
+                              : isAssigned
+                                ? "Active"
+                                : "Unbound"}
+                          </Text>
                         </View>
-
-                        <Text
-                          className="text-[11.5px] font-medium"
-                          style={{ color: colors.textSecondary }}
-                          numberOfLines={1}
-                        >
-                          {num.assistants?.name
-                            ? `Bound to: ${num.assistants.name}`
-                            : isAssigned
-                              ? "Bound to Voice Assistant"
-                              : "Available (Tap to Bind)"}
-                        </Text>
+                        <HugeiconsIcon
+                          icon={ArrowRight01Icon}
+                          size={16}
+                          color={colors.textSecondary}
+                          strokeWidth={2}
+                        />
                       </View>
-
-                      <Ionicons
-                        name="swap-horizontal"
-                        size={15}
-                        color={colors.textSecondary}
-                      />
-                    </Pressable>
-
-                    {idx < arr.length - 1 && (
-                      <View
-                        className="h-[1px] ml-14"
-                        style={{ backgroundColor: colors.border }}
-                      />
-                    )}
-                  </View>
+                    }
+                  />
                 );
-              })}
-            </View>
-          )}
-        </View>
+              })
+            )}
+          </ProductSection>
+        </>
       )}
 
       {/* 5. AI ASSISTANTS TAB VIEW */}
       {activeSubTab === "assistants" && (
-        <View className="gap-2.5">
-          <View className="flex-row gap-2 w-full">
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Create Voice Agent"
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                setIsCreateAgentOpen(true);
-              }}
-              className="flex-1 h-[42px] rounded-xl flex-row items-center justify-center gap-1.5 active:opacity-85 shadow-xs"
-              style={{ backgroundColor: colors.primary }}
-            >
-              <Ionicons name="add" size={16} color="#FFFFFF" />
-              <Text className="text-white text-[13.5px] font-bold">Create Voice Agent</Text>
-            </Pressable>
-          </View>
-
-          {/* Stats Row */}
-          <View className="flex-row gap-2 w-full">
-            <View
-              className="flex-1 p-2.5 rounded-xl min-h-[68px] justify-between shadow-xs min-w-0"
-              style={{ flexBasis: 0, backgroundColor: colors.surface }}
-            >
-              <View className="flex-row items-center gap-1">
-                <Ionicons name="mic-outline" size={13} color={colors.primary} />
-                <Text
-                  className="text-[11px] font-semibold flex-1 min-w-0"
-                  style={{ color: colors.textSecondary }}
-                  numberOfLines={1}
-                >
-                  Agents
-                </Text>
-              </View>
-              <Text
-                className="text-[19px] font-semibold tracking-tight mt-0.5"
-                style={{ color: colors.text }}
-                adjustsFontSizeToFit
-                numberOfLines={1}
-              >
-                {assistants.length}
-              </Text>
-            </View>
-
-            <View
-              className="flex-1 p-2.5 rounded-xl min-h-[68px] justify-between shadow-xs min-w-0"
-              style={{
-                flexBasis: 0,
-                backgroundColor: colors.surface,
-              }}
-            >
-              <View className="flex-row items-center gap-1">
-                <Ionicons
-                  name="phone-portrait-outline"
-                  size={13}
-                  color={colors.green}
-                />
-                <Text
-                  className="text-[11px] font-semibold flex-1 min-w-0"
-                  style={{ color: colors.green }}
-                  numberOfLines={1}
-                >
-                  Bound Lines
-                </Text>
-              </View>
-              <Text
-                className="text-[19px] font-semibold tracking-tight mt-0.5"
-                style={{ color: colors.green }}
-                adjustsFontSizeToFit
-                numberOfLines={1}
-              >
-                {boundAssistantsCount}
-              </Text>
-            </View>
-
-            <View
-              className="flex-1 p-2.5 rounded-xl min-h-[68px] justify-between shadow-xs min-w-0"
-              style={{
-                flexBasis: 0,
-                backgroundColor: colors.surface,
-              }}
-            >
-              <View className="flex-row items-center gap-1">
-                <Ionicons
-                  name="alert-circle-outline"
-                  size={13}
-                  color={colors.amber}
-                />
-                <Text
-                  className="text-[11px] font-semibold flex-1 min-w-0"
-                  style={{ color: colors.amber }}
-                  numberOfLines={1}
-                >
-                  Unassigned
-                </Text>
-              </View>
-              <Text
-                className="text-[19px] font-semibold tracking-tight mt-0.5"
-                style={{ color: colors.amber }}
-                adjustsFontSizeToFit
-                numberOfLines={1}
-              >
-                {Math.max(0, assistants.length - boundAssistantsCount)}
-              </Text>
-            </View>
-          </View>
-
-          {/* Assistants List */}
-          {isAssistantsLoading ? (
-            <ActivityIndicator
-              size="large"
-              color={colors.primary}
-              style={{ marginTop: 30 }}
+        <>
+          <View style={{ marginBottom: 16, width: "100%" }}>
+            <ProductButton
+              label="Create Voice Agent"
+              icon="add"
+              fullWidth
+              onPress={() => setIsCreateAgentOpen(true)}
             />
-          ) : assistants.length === 0 ? (
-            <View
-              className="rounded-2xl py-9 px-4 items-center justify-center gap-2 shadow-xs"
-              style={{ backgroundColor: colors.surface }}
-            >
-              <View
-                className="w-[60px] h-[60px] rounded-full items-center justify-center mb-0.5"
-                style={{ backgroundColor: colors.primaryLight }}
-              >
-                <Ionicons name="mic-outline" size={30} color={colors.primary} />
-              </View>
-              <Text
-                className="text-base font-semibold tracking-tight"
-                style={{ color: colors.text }}
-              >
-                No Voice Agents Found
-              </Text>
-              <Text
-                className="text-xs font-medium text-center max-w-[220px] leading-4"
-                style={{ color: colors.textSecondary }}
-              >
-                Create your first AI voice assistant to begin calling prospects.
-              </Text>
-            </View>
-          ) : (
-            <View className="gap-2.5">
-              {assistants.map((ast) => {
+          </View>
+
+          <ProductMetrics
+            items={[
+              { label: "Voice agents", value: assistants.length },
+              { label: "Bound lines", value: boundAssistantsCount },
+              {
+                label: "Unassigned",
+                value: Math.max(0, assistants.length - boundAssistantsCount),
+              },
+            ]}
+          />
+
+          <ProductSection title="All voice agents">
+            {isAssistantsLoading ? (
+              <ActivityIndicator
+                color={colors.primary}
+                style={{ marginTop: 20 }}
+              />
+            ) : assistants.length === 0 ? (
+              <ProductEmpty
+                title="No voice agents found"
+                description="Create your first AI voice assistant to begin calling prospects."
+                action="Create agent"
+                onAction={() => setIsCreateAgentOpen(true)}
+              />
+            ) : (
+              assistants.map((ast) => {
                 const boundLine = numbers.find(
                   (n) =>
                     n.assigned_assistant_id === ast.id &&
@@ -1176,170 +825,81 @@ export const ContactsScreen: React.FC = () => {
                 const isAssigned = Boolean(boundLine?.phone_number);
 
                 return (
-                  <View
+                  <ProductRow
                     key={ast.id}
-                    className="rounded-[24px] p-3 gap-2.5 "
-                    style={{
-                      backgroundColor: colors.surface,
+                    title={ast.name}
+                    detail={
+                      isAssigned
+                        ? `Bound: ${boundLine?.phone_number}`
+                        : `No line assigned · ${ast.config_snapshot?.voice?.name || "Neural AI Audio"}`
+                    }
+                    icon="mic-outline"
+                    tone={isAssigned ? "mint" : "peach"}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      if (boundLine) {
+                        setSelectedNumberToAssign(boundLine);
+                      } else if (numbers.length > 0) {
+                        setSelectedNumberToAssign(numbers[0]);
+                      } else {
+                        setActiveSubTab("numbers");
+                      }
                     }}
-                  >
-                    <View className="flex-row items-center gap-2.5">
+                    trailing={
                       <View
-                        className="w-[34px] h-[34px] rounded-xl items-center justify-center"
                         style={{
-                          backgroundColor: isAssigned
-                            ? colors.greenLight
-                            : colors.primaryLight,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 10,
                         }}
                       >
-                        <Ionicons
-                          name="mic"
-                          size={16}
-                          color={isAssigned ? colors.green : colors.primary}
-                        />
-                      </View>
-                      <View className="flex-1 min-w-0 gap-0.5">
-                        <View className="flex-row items-center justify-between gap-1.5">
+                        <Pressable
+                          hitSlop={8}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Test call ${ast.name}`}
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 5,
+                            backgroundColor: colors.primary,
+                            paddingHorizontal: 12,
+                            paddingVertical: 7,
+                            borderRadius: 18,
+                          }}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            Haptics.ImpactFeedbackStyle &&
+                              Haptics.impactAsync(
+                                Haptics.ImpactFeedbackStyle.Medium,
+                              );
+                            setCallTarget({ assistantId: ast.id });
+                          }}
+                        >
+                          <Ionicons name="call" size={12} color="#FFFFFF" />
                           <Text
-                            className="text-sm font-bold tracking-tight"
-                            style={{ color: colors.text }}
-                            numberOfLines={1}
-                          >
-                            {ast.name}
-                          </Text>
-                          <View
-                            className="px-1.5 py-0.5 rounded"
                             style={{
-                              backgroundColor: isAssigned
-                                ? colors.greenLight
-                                : colors.primaryLight,
+                              fontSize: 12,
+                              fontWeight: "600",
+                              color: "#FFFFFF",
                             }}
                           >
-                            <Text
-                              className="text-[9.5px] font-bold capitalize"
-                              style={{
-                                color: isAssigned
-                                  ? colors.green
-                                  : colors.primary,
-                              }}
-                            >
-                              {ast.status || "active"}
-                            </Text>
-                          </View>
-                        </View>
-                        <Text
-                          className="text-[11px] font-medium"
-                          style={{ color: colors.textSecondary }}
-                          numberOfLines={1}
-                        >
-                          Voice: {" "}
-                          {ast.config_snapshot?.voice?.name || "Neural AI Audio"}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View
-                      className="flex-row items-center justify-between px-2.5 py-1.5 rounded-lg"
-                      style={{
-                        backgroundColor: colors.surfaceAlt,
-                      }}
-                    >
-                      <View className="flex-row items-center gap-1.5 flex-1 min-w-0">
-                        <View
-                          className="w-1.5 h-1.5 rounded-full"
-                          style={{
-                            backgroundColor: isAssigned
-                              ? colors.green
-                              : colors.textSecondary,
-                          }}
+                            Test Call
+                          </Text>
+                        </Pressable>
+                        <HugeiconsIcon
+                          icon={ArrowRight01Icon}
+                          size={16}
+                          color={colors.textSecondary}
+                          strokeWidth={2}
                         />
-                        <Ionicons
-                          name="phone-portrait"
-                          size={12}
-                          color={isAssigned ? colors.green : colors.textSecondary}
-                        />
-                        <Text
-                          className={`text-[11.5px] ${isAssigned ? 'font-bold' : 'font-medium'}`}
-                          style={{
-                            color: isAssigned
-                              ? colors.text
-                              : colors.textSecondary,
-                          }}
-                          numberOfLines={1}
-                        >
-                          {isAssigned
-                            ? `Caller ID: ${boundLine?.phone_number}`
-                            : "No Dedicated Line Assigned"}
-                        </Text>
                       </View>
-
-                      <View
-                        className="px-1.5 py-0.5 rounded ml-2"
-                        style={{
-                          backgroundColor: isAssigned
-                            ? colors.greenLight
-                            : colors.amberLight,
-                        }}
-                      >
-                        <Text
-                          className="text-[9.5px] font-bold"
-                          style={{
-                            color: isAssigned ? colors.green : colors.amber,
-                          }}
-                        >
-                          {isAssigned ? "Active" : "Unbound"}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View className="flex-row items-center gap-2">
-                      <Pressable
-                        className="flex-1 flex-row items-center justify-center gap-1.5 h-9 rounded-lg active:opacity-85 shadow-xs"
-                        style={{ backgroundColor: colors.primary }}
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                          setCallTarget({ assistantId: ast.id });
-                        }}
-                      >
-                        <Ionicons name="call" size={13} color="#FFFFFF" />
-                        <Text className="text-white text-xs font-bold">Test Call</Text>
-                      </Pressable>
-
-                      <Pressable
-                        className="flex-1 flex-row items-center justify-center gap-1.5 h-9 rounded-lg active:opacity-80"
-                        style={{
-                          backgroundColor: colors.surfaceAlt,
-                        }}
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          if (boundLine) {
-                            setSelectedNumberToAssign(boundLine);
-                          } else if (numbers.length > 0) {
-                            setSelectedNumberToAssign(numbers[0]);
-                          } else {
-                            setActiveSubTab("numbers");
-                          }
-                        }}
-                      >
-                        <Ionicons
-                          name="link-outline"
-                          size={13}
-                          color={colors.text}
-                        />
-                        <Text
-                          className="text-xs font-semibold"
-                          style={{ color: colors.text }}
-                        >
-                          {isAssigned ? "Manage Line" : "Assign Line"}
-                        </Text>
-                      </Pressable>
-                    </View>
-                  </View>
+                    }
+                  />
                 );
-              })}
-            </View>
-          )}
-        </View>
+              })
+            )}
+          </ProductSection>
+        </>
       )}
 
       {/* Modals */}

@@ -160,9 +160,13 @@ export const CampaignsScreen: React.FC = () => {
       }
       showsVerticalScrollIndicator={false}
     >
-      <ProductHeading title="Your campaigns" action="New campaign" onAction={() => setIsCreateModalOpen(true)} />
+      <ProductHeading title="Your campaigns">
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <ProductButton label="New campaign" onPress={() => setIsCreateModalOpen(true)} />
+          <ProductButton label="CSV template" secondary icon="document-text-outline" onPress={handleDownloadCsvTemplate} />
+        </View>
+      </ProductHeading>
       {Boolean(overviewData?.isPlanExpired) && <VoicePlanExpiredBanner overview={overviewData} />}
-      <View style={{ marginBottom: 10 }}><ProductButton label="CSV template" secondary icon="document-text-outline" onPress={handleDownloadCsvTemplate} /></View>
       <ProductMetrics items={[{ label: "Campaigns", value: totalDispatchJobs }, { label: "Completed", value: completedCampaigns }, { label: "Running", value: inProgressCampaigns }]} />
       <ProductSection title="All campaigns">
         {isLoading ? <ActivityIndicator color={colors.accent} /> : campaigns.length === 0 ? <ProductEmpty title="Reach your next audience" description="Add contacts and an assistant to start a calling campaign." action="Create campaign" onAction={() => setIsCreateModalOpen(true)} /> :

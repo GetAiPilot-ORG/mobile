@@ -20,10 +20,10 @@ import {
   View,
 } from 'react-native';
 
-import { useTheme } from '../../../contexts/ThemeContext';
+import { getColors, useTheme } from '@/theme';
 import { supabase } from '../../../lib/supabase';
 import { telegramSupabase } from '../api/telegramSupabase';
-import { ProductHeading } from "@/components/ProductUI";
+import { ProductHeading, ProductMetrics } from "@/components/ProductUI";
 import { ReportBotBrandProfile, TelegramToolKey } from '../types';
 
 interface Props { summary?: any; onOpenModal: (key: TelegramToolKey) => void; }
@@ -58,7 +58,8 @@ const LOGO_PRESETS = [
 ];
 
 export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
-  const { isDark, colors } = useTheme();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<ReportBotTab>('profile');
@@ -337,70 +338,33 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
       {/* 1. Cyber Animated Hero Banner */}
       <ProductHeading title="Research reports" />
 
-      {/* 2. Responsive KPI Command Cards */}
-      <View className="flex-row flex-wrap gap-2.5 w-full">
-        {reportKpis.map((kpi, idx) => (
-          <View
-            key={idx}
-            className="p-3.5 rounded-2xl flex-col justify-between"
-            style={{
-              backgroundColor: colors.card,
-              width: cardWidthPercent,
-              minHeight: 88,
-            }}
-          >
-            <View className="flex-row items-center justify-between mb-1">
-              <Text
-                className="text-[10px] font-bold uppercase "
-                style={{ color: isDark ? '#94A3B8' : '#64748B' }}
-                numberOfLines={1}
-              >
-                {kpi.title}
-              </Text>
-              <View
-                className="w-6 h-6 rounded-lg items-center justify-center"
-                style={{ backgroundColor: `${kpi.color}15` }}
-              >
-                <Ionicons name={kpi.icon} size={13} color={kpi.color} />
-              </View>
-            </View>
-
-            <Text
-              className="text-sm font-medium"
-              style={{ color: colors.text }}
-              numberOfLines={1}
-            >
-              {kpi.value}
-            </Text>
-
-            <Text
-              className="text-[10px] font-medium mt-0.5"
-              style={{ color: isDark ? '#64748B' : '#94A3B8' }}
-              numberOfLines={1}
-            >
-              {kpi.subtext}
-            </Text>
-          </View>
-        ))}
-      </View>
+      {/* 2. KPI Metrics */}
+      <ProductMetrics
+        items={[
+          { label: 'Brand entity', value: advisoryFirm ? advisoryFirm.slice(0, 16) : 'Unassigned' },
+          { label: 'Channels', value: String(dashboard?.channelsCount ?? 0) },
+          { label: 'Reports', value: String(dashboard?.reportsCount ?? 0) },
+        ]}
+      />
 
       {/* 3. Action Toolbar & Controls */}
       <View
-        className="w-full flex-row items-center justify-between p-3.5 rounded-2xl"
-        style={{ backgroundColor: colors.card }}
+        className="w-full flex-row items-center justify-between p-3.5 rounded-2xl mb-1"
+        style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.cardBorder }}
       >
         <View className="flex-1 pr-3">
           <Text className="text-xs font-bold" style={{ color: colors.text }}>
             SEBI Research Daemon
           </Text>
-          <Text className="text-[11px]" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
+          <Text className="text-[11px]" style={{ color: colors.textSecondary }}>
             Auto converts calls to branded PDFs
           </Text>
         </View>
 
         <View className="flex-row items-center gap-2">
           <Pressable
-            className="flex-row items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0284C7] active:opacity-90 shadow-sm"
+            className="flex-row items-center gap-1.5 px-3 py-2 rounded-xl active:opacity-90 shadow-sm"
+            style={{ backgroundColor: colors.primary }}
             onPress={handleStartBot}
           >
             <Ionicons name="paper-plane" size={13} color="#FFFFFF" />
@@ -409,7 +373,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
 
           <Pressable
             className="w-8 h-8 rounded-xl items-center justify-center active:opacity-80"
-            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F0EEF8' }}
+            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : colors.backgroundSecondary }}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               refetch();
@@ -421,96 +385,75 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
         </View>
       </View>
 
-      {/* 4. Category Filter Pill Bar */}
-      <View
-        className="w-full flex-row items-center p-1.5 rounded-2xl gap-2"
-        style={{ backgroundColor: colors.card }}
+      {/* 4. Category Filter Tabs */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: 8, paddingBottom: 16 }}
       >
-        <Pressable
-          className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl ${activeTab === 'profile' ? 'bg-[#0284C7]' : ''
-            }`}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setActiveTab('profile');
-          }}
-        >
-          <Ionicons
-            name="shield-checkmark-outline"
-            size={13}
-            color={activeTab === 'profile' ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
-          />
-          <Text
-            className={`text-xs font-bold ${activeTab === 'profile' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
-              }`}
-          >
-            Brand Profile
-          </Text>
-        </Pressable>
-
-        <Pressable
-          className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl ${activeTab === 'channels' ? 'bg-[#0284C7]' : ''
-            }`}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setActiveTab('channels');
-          }}
-        >
-          <Ionicons
-            name="paper-plane-outline"
-            size={13}
-            color={activeTab === 'channels' ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
-          />
-          <Text
-            className={`text-xs font-bold ${activeTab === 'channels' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
-              }`}
-          >
-            Channels
-          </Text>
-          <View
-            className={`px-1.5 py-0.2 rounded-full ${activeTab === 'channels' ? 'bg-white/20' : 'bg-black/10'
-              }`}
-          >
-            <Text
-              className={`text-[9px] font-medium ${activeTab === 'channels' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
-                }`}
+        {[
+          { key: 'profile' as const, label: 'Brand Profile', icon: 'shield-checkmark-outline' as const },
+          { key: 'channels' as const, label: 'Channels', icon: 'paper-plane-outline' as const, count: dashboard?.channelsCount ?? 0 },
+          { key: 'archive' as const, label: 'Archive', icon: 'archive-outline' as const, count: dashboard?.reportsCount ?? 0 },
+        ].map((tab) => {
+          const isSelected = activeTab === tab.key;
+          return (
+            <Pressable
+              key={tab.key}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setActiveTab(tab.key);
+              }}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                borderRadius: 9999,
+                backgroundColor: isSelected ? colors.primary : colors.card,
+                borderWidth: 1,
+                borderColor: isSelected ? colors.primary : colors.cardBorder,
+              }}
             >
-              {dashboard?.channelsCount ?? 0}
-            </Text>
-          </View>
-        </Pressable>
-
-        <Pressable
-          className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl ${activeTab === 'archive' ? 'bg-[#0284C7]' : ''
-            }`}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setActiveTab('archive');
-          }}
-        >
-          <Ionicons
-            name="archive-outline"
-            size={13}
-            color={activeTab === 'archive' ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
-          />
-          <Text
-            className={`text-xs font-bold ${activeTab === 'archive' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
-              }`}
-          >
-            Archive
-          </Text>
-          <View
-            className={`px-1.5 py-0.2 rounded-full ${activeTab === 'archive' ? 'bg-white/20' : 'bg-black/10'
-              }`}
-          >
-            <Text
-              className={`text-[9px] font-medium ${activeTab === 'archive' ? 'text-white' : isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'
-                }`}
-            >
-              {dashboard?.reportsCount ?? 0}
-            </Text>
-          </View>
-        </Pressable>
-      </View>
+              <Ionicons
+                name={tab.icon}
+                size={14}
+                color={isSelected ? '#FFFFFF' : colors.textSecondary}
+              />
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: '600',
+                  color: isSelected ? '#FFFFFF' : colors.text,
+                }}
+              >
+                {tab.label}
+              </Text>
+              {tab.count !== undefined && tab.count !== null && (
+                <View
+                  style={{
+                    paddingHorizontal: 6,
+                    paddingVertical: 1,
+                    borderRadius: 9999,
+                    backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : colors.backgroundSecondary,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      fontWeight: '700',
+                      color: isSelected ? '#FFFFFF' : colors.textSecondary,
+                    }}
+                  >
+                    {tab.count}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+          );
+        })}
+      </ScrollView>
 
       <View style={styles.bodyContent}>
         {isLoading && !activeData ? (
@@ -552,87 +495,87 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
 
                   <View style={styles.row}>
                     <View style={[styles.field, { flex: 1, marginRight: 6 }]}>
-                      <Text style={styles.label}>ADVISORY FIRM *</Text>
+                      <Text style={[styles.label, { color: colors.textSecondary }]}>ADVISORY FIRM *</Text>
                       <TextInput
-                        style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                        style={[styles.input, { backgroundColor: colors.backgroundSecondary, borderColor: colors.cardBorder, color: colors.text }]}
                         value={advisoryFirm}
                         onChangeText={setAdvisoryFirm}
                         placeholder="No Brand"
-                        placeholderTextColor="#94A3B8"
+                        placeholderTextColor={colors.textSecondary}
                       />
                     </View>
                     <View style={[styles.field, { flex: 1, marginLeft: 6 }]}>
-                      <Text style={styles.label}>RESEARCH ANALYST *</Text>
+                      <Text style={[styles.label, { color: colors.textSecondary }]}>RESEARCH ANALYST *</Text>
                       <TextInput
-                        style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                        style={[styles.input, { backgroundColor: colors.backgroundSecondary, borderColor: colors.cardBorder, color: colors.text }]}
                         value={researchAnalyst}
                         onChangeText={setResearchAnalyst}
                         placeholder="SEBI"
-                        placeholderTextColor="#94A3B8"
+                        placeholderTextColor={colors.textSecondary}
                       />
                     </View>
                   </View>
 
                   <View style={styles.row}>
                     <View style={[styles.field, { flex: 1, marginRight: 6 }]}>
-                      <Text style={styles.label}>SEBI REGISTRATION *</Text>
+                      <Text style={[styles.label, { color: colors.textSecondary }]}>SEBI REGISTRATION *</Text>
                       <TextInput
-                        style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                        style={[styles.input, { backgroundColor: colors.backgroundSecondary, borderColor: colors.cardBorder, color: colors.text }]}
                         value={sebiRegistration}
                         onChangeText={setSebiRegistration}
                         placeholder="INH010600090"
-                        placeholderTextColor="#94A3B8"
+                        placeholderTextColor={colors.textSecondary}
                       />
                     </View>
                     <View style={[styles.field, { flex: 1, marginLeft: 6 }]}>
-                      <Text style={styles.label}>WEBSITE</Text>
+                      <Text style={[styles.label, { color: colors.textSecondary }]}>WEBSITE</Text>
                       <TextInput
-                        style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                        style={[styles.input, { backgroundColor: colors.backgroundSecondary, borderColor: colors.cardBorder, color: colors.text }]}
                         value={website}
                         onChangeText={setWebsite}
                         placeholder="getaipilot.com"
-                        placeholderTextColor="#94A3B8"
+                        placeholderTextColor={colors.textSecondary}
                       />
                     </View>
                   </View>
 
                   {/* SECTION 2: CONTACT (OPTIONAL) */}
-                  <Text style={[styles.groupHeading, { marginTop: 14 }]}>Contact</Text>
-                  <Text style={styles.groupDesc}>Optional details that can appear in footer and compliance pages.</Text>
+                  <Text style={[styles.groupHeading, { color: colors.text, marginTop: 14 }]}>Contact</Text>
+                  <Text style={[styles.groupDesc, { color: colors.textSecondary }]}>Optional details that can appear in footer and compliance pages.</Text>
 
                   <View style={styles.field}>
-                    <Text style={styles.label}>EMAIL</Text>
+                    <Text style={[styles.label, { color: colors.textSecondary }]}>EMAIL</Text>
                     <TextInput
-                      style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                      style={[styles.input, { backgroundColor: colors.backgroundSecondary, borderColor: colors.cardBorder, color: colors.text }]}
                       value={email}
                       onChangeText={setEmail}
                       placeholder="research@example.com"
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor={colors.textSecondary}
                       keyboardType="email-address"
                     />
                   </View>
 
                   <View style={styles.field}>
-                    <Text style={styles.label}>LOCATION / OFFICE ADDRESS (OPTIONAL)</Text>
+                    <Text style={[styles.label, { color: colors.textSecondary }]}>LOCATION / OFFICE ADDRESS (OPTIONAL)</Text>
                     <TextInput
-                      style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                      style={[styles.input, { backgroundColor: colors.backgroundSecondary, borderColor: colors.cardBorder, color: colors.text }]}
                       value={officeAddress}
                       onChangeText={setOfficeAddress}
                       placeholder="e.g. Kallam, Latur, Maharashtra"
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor={colors.textSecondary}
                     />
                   </View>
 
                   {/* SECTION 3: REPORT ASSETS & CLICKABLE LOGO UPLOAD */}
-                  <Text style={[styles.groupHeading, { marginTop: 14 }]}>Report Assets</Text>
-                  <Text style={styles.groupDesc}>Logo and first-page risk language are used in every generated PDF.</Text>
+                  <Text style={[styles.groupHeading, { color: colors.text, marginTop: 14 }]}>Report Assets</Text>
+                  <Text style={[styles.groupDesc, { color: colors.textSecondary }]}>Logo and first-page risk language are used in every generated PDF.</Text>
 
                   <View style={styles.row}>
                     {/* Interactive Pressable Logo Box */}
                     <Pressable cssInterop={false}
                       style={({ pressed }) => [
                         styles.logoUploadBox,
-                        { borderColor: colors.border, backgroundColor: colors.card },
+                        { borderColor: colors.cardBorder, backgroundColor: colors.backgroundSecondary },
                         logoUrl ? styles.logoUploadBoxActive : null,
                         pressed && { opacity: 0.8 },
                       ]}
@@ -644,73 +587,73 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                       {logoUrl ? (
                         <View style={styles.logoPreviewWrapper}>
                           <Image source={{ uri: logoUrl }} style={styles.logoImagePreview} resizeMode="contain" />
-                          <View style={styles.changeBadge}>
+                          <View style={[styles.changeBadge, { backgroundColor: colors.primary }]}>
                             <Ionicons name="create-outline" size={10} color="#FFFFFF" />
                             <Text style={styles.changeBadgeText}>Change</Text>
                           </View>
                         </View>
                       ) : (
                         <>
-                          <Ionicons name="image-outline" size={26} color="#0284C7" />
-                          <Text style={styles.logoUploadLabel}>Brand Logo</Text>
-                          <View style={styles.uploadBtnMini}>
-                            <Ionicons name="cloud-upload-outline" size={12} color="#0284C7" />
-                            <Text style={styles.uploadBtnMiniText}>Upload Logo</Text>
+                          <Ionicons name="image-outline" size={26} color={colors.primary} />
+                          <Text style={[styles.logoUploadLabel, { color: colors.textSecondary }]}>Brand Logo</Text>
+                          <View style={[styles.uploadBtnMini, { backgroundColor: `${colors.primary}15` }]}>
+                            <Ionicons name="cloud-upload-outline" size={12} color={colors.primary} />
+                            <Text style={[styles.uploadBtnMiniText, { color: colors.primary }]}>Upload Logo</Text>
                           </View>
                         </>
                       )}
                     </Pressable>
 
                     <View style={{ flex: 1, marginLeft: 10 }}>
-                      <Text style={styles.label}>PAGE 1 RISK DISCLAIMER</Text>
+                      <Text style={[styles.label, { color: colors.textSecondary }]}>PAGE 1 RISK DISCLAIMER</Text>
                       <TextInput
-                        style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, height: 95, textAlignVertical: 'top' }]}
+                        style={[styles.input, { backgroundColor: colors.backgroundSecondary, borderColor: colors.cardBorder, color: colors.text, height: 95, textAlignVertical: 'top' }]}
                         multiline
                         value={page1Disclaimer}
                         onChangeText={setPage1Disclaimer}
                         placeholder="Add short SEBI/risk disclaimer for the first page..."
-                        placeholderTextColor="#94A3B8"
+                        placeholderTextColor={colors.textSecondary}
                       />
                     </View>
                   </View>
 
                   {/* SECTION 4: OPTIONAL PAGES */}
-                  <Text style={[styles.groupHeading, { marginTop: 14 }]}>Optional Pages</Text>
-                  <Text style={styles.groupDesc}>Add only the disclosure pages you want appended after the recommendation page.</Text>
+                  <Text style={[styles.groupHeading, { color: colors.text, marginTop: 14 }]}>Optional Pages</Text>
+                  <Text style={[styles.groupDesc, { color: colors.textSecondary }]}>Add only the disclosure pages you want appended after the recommendation page.</Text>
 
                   <View style={styles.field}>
-                    <Text style={styles.label}>PAGE 2 DISCLOSURE</Text>
+                    <Text style={[styles.label, { color: colors.textSecondary }]}>PAGE 2 DISCLOSURE</Text>
                     <TextInput
-                      style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, height: 60, textAlignVertical: 'top' }]}
+                      style={[styles.input, { backgroundColor: colors.backgroundSecondary, borderColor: colors.cardBorder, color: colors.text, height: 60, textAlignVertical: 'top' }]}
                       multiline
                       value={page2Disclosure}
                       onChangeText={setPage2Disclosure}
                       placeholder="Optional disclosure content."
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor={colors.textSecondary}
                     />
                   </View>
 
                   <View style={styles.field}>
-                    <Text style={styles.label}>PAGE 3 CONFLICTS</Text>
+                    <Text style={[styles.label, { color: colors.textSecondary }]}>PAGE 3 CONFLICTS</Text>
                     <TextInput
-                      style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, height: 60, textAlignVertical: 'top' }]}
+                      style={[styles.input, { backgroundColor: colors.backgroundSecondary, borderColor: colors.cardBorder, color: colors.text, height: 60, textAlignVertical: 'top' }]}
                       multiline
                       value={page3Conflicts}
                       onChangeText={setPage3Conflicts}
                       placeholder="Optional conflict of interest content."
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor={colors.textSecondary}
                     />
                   </View>
 
                   <View style={styles.field}>
-                    <Text style={styles.label}>PAGE 4 POLICY</Text>
+                    <Text style={[styles.label, { color: colors.textSecondary }]}>PAGE 4 POLICY</Text>
                     <TextInput
-                      style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, height: 60, textAlignVertical: 'top' }]}
+                      style={[styles.input, { backgroundColor: colors.backgroundSecondary, borderColor: colors.cardBorder, color: colors.text, height: 60, textAlignVertical: 'top' }]}
                       multiline
                       value={page4Policy}
                       onChangeText={setPage4Policy}
                       placeholder="Optional risk and policy content."
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor={colors.textSecondary}
                     />
                   </View>
                 </View>
@@ -1307,43 +1250,46 @@ const styles = StyleSheet.create({
   // Form Card
   formCard: {
     padding: 16,
-    borderRadius: 24,
-    borderWidth: 0,
-    marginBottom: 16, shadowOpacity: 0 },
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
   formHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 16,
   },
-  sectionTitle: { fontSize: 18, fontWeight: '500', lineHeight: 24 },
-  sectionSubtitle: { color: '#716B7C', fontSize: 13, marginTop: 2 },
+  sectionTitle: { fontSize: 17, fontWeight: '700', lineHeight: 22 },
+  sectionSubtitle: { color: '#716B7C', fontSize: 12, marginTop: 1 },
   saveBtn: {
-    backgroundColor: '#17171C',
+    backgroundColor: '#0284C7',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingVertical: 7,
-    borderRadius: 28, minHeight: 44 , shadowOpacity: 0 },
-  saveBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
+    borderRadius: 9999,
+  },
+  saveBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
   groupHeading: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
-    color: '#0284C7',
     marginBottom: 2,
     letterSpacing: -0.1,
   },
-  groupDesc: { color: '#64748B', fontSize: 11, marginBottom: 10 },
+  groupDesc: { fontSize: 11, marginBottom: 10 },
   row: { flexDirection: 'row' },
   field: { marginBottom: 12 },
-  label: { color: '#64748B', fontSize: 10, fontWeight: '800', marginBottom: 5, letterSpacing: 0.5 },
+  label: { fontSize: 10.5, fontWeight: '700', marginBottom: 5, letterSpacing: 0.3 },
   input: {
-    borderWidth: 0,
-    borderRadius: 22,
+    borderWidth: 1,
+    borderRadius: 12,
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 13, minHeight: 48 },
+    paddingVertical: 9,
+    fontSize: 13,
+    minHeight: 44,
+  },
   inputLight: { backgroundColor: '#F5F3FB', borderColor: '#E9E6F2', color: '#1C1A25' },
   inputDark: { backgroundColor: '#252230', borderColor: '#3A3549', color: '#F7FAFC' },
 

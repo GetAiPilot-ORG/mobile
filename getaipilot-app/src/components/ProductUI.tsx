@@ -22,8 +22,8 @@ export function useProductPalette() {
   };
 }
 
-export function ProductHeading({ title, description, action, onAction, isLocked = false }: {
-  title: string; description?: string; action?: string; onAction?: () => void; isLocked?: boolean;
+export function ProductHeading({ title, description, action, onAction, isLocked = false, children }: {
+  title: string; description?: string; action?: string; onAction?: () => void; isLocked?: boolean; children?: React.ReactNode;
 }) {
   const colors = useProductPalette();
   return (
@@ -31,12 +31,13 @@ export function ProductHeading({ title, description, action, onAction, isLocked 
       <Text style={{ fontSize: 30, lineHeight: 36, letterSpacing: -0.75, fontWeight: '600', color: colors.text }}>{title}</Text>
       {Boolean(description) ? <Text style={{ fontSize: 14, lineHeight: 21, color: colors.textSecondary }}>{description}</Text> : null}
       {Boolean(action && onAction) ? <ProductButton label={action!} onPress={onAction!} isLocked={isLocked} /> : null}
+      {children}
     </View>
   );
 }
 
-export function ProductButton({ label, onPress, icon, secondary = false, disabled = false, isLocked = false }: {
-  label: string; onPress: () => void; icon?: IconName; secondary?: boolean; disabled?: boolean; isLocked?: boolean;
+export function ProductButton({ label, onPress, icon, secondary = false, disabled = false, isLocked = false, fullWidth = false }: {
+  label: string; onPress: () => void; icon?: IconName; secondary?: boolean; disabled?: boolean; isLocked?: boolean; fullWidth?: boolean;
 }) {
   const colors = useProductPalette();
   const ink = secondary ? colors.text : colors.buttonPrimaryForeground;
@@ -51,15 +52,28 @@ export function ProductButton({ label, onPress, icon, secondary = false, disable
     Animated.timing(scale, { toValue: pressed ? 0.98 : 1, duration: pressed ? 100 : 140, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
   };
   return (
-    <Animated.View style={{ alignSelf: 'flex-start', transform: [{ scale }] }}>
+    <Animated.View style={{ alignSelf: fullWidth ? 'stretch' : 'flex-start', width: fullWidth ? '100%' : undefined, transform: [{ scale }] }}>
     <Pressable cssInterop={false} onPressIn={() => feedback(true)} onPressOut={() => feedback(false)} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled }} disabled={disabled} onPress={(event) => { event.stopPropagation(); onPress(); }}
-      style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 30, backgroundColor: secondary ? colors.card : colors.buttonPrimary, opacity: disabled ? 0.45 : pressed ? 0.75 : 1 })}>
+      style={({ pressed }) => ({
+        alignSelf: fullWidth ? 'stretch' : 'flex-start',
+        width: fullWidth ? '100%' : undefined,
+        minHeight: 46,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingHorizontal: fullWidth ? 12 : 20,
+        paddingVertical: 12,
+        borderRadius: 30,
+        backgroundColor: secondary ? colors.card : colors.buttonPrimary,
+        opacity: disabled ? 0.45 : pressed ? 0.75 : 1
+      })}>
       {isLocked ? (
         <Ionicons name="lock-closed" size={15} color={ink} />
       ) : icon ? (
         <Ionicons name={icon} size={17} color={ink} />
       ) : null}
-      <Text style={{ color: ink, fontSize: 13, fontWeight: '500' }}>{label}</Text>
+      <Text style={{ color: ink, fontSize: 13, fontWeight: '500' }} numberOfLines={1}>{label}</Text>
     </Pressable>
     </Animated.View>
   );
@@ -83,12 +97,12 @@ export function ProductSection({ title, action = 'View all', onAction, children 
 export function ProductMetrics({ items }: { items: { label: string; value: React.ReactNode; onPress?: () => void }[] }) {
   const colors = useProductPalette();
   return (
-    <View style={{ backgroundColor: colors.card, borderRadius: 24, padding: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 18, marginBottom: 26 }}>
+    <View style={{ backgroundColor: colors.card, borderRadius: 24, paddingVertical: 18, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', marginBottom: 26 }}>
       {items.map((item) => (
         <Pressable key={item.label} disabled={!item.onPress} onPress={item.onPress} accessibilityRole={item.onPress ? 'button' : undefined} accessibilityLabel={`${item.label}: ${item.value}`}
-          style={{ width: items.length > 3 ? '46%' : undefined, flex: items.length <= 3 ? 1 : undefined, minWidth: 0, gap: 7 }}>
-          <Text style={{ fontSize: String(item.value).length > 10 ? 15 : String(item.value).length > 6 ? 18 : 25, fontWeight: '500', color: colors.text }} numberOfLines={1} adjustsFontSizeToFit>{item.value}</Text>
-          <Text style={{ fontSize: 12, color: colors.textSecondary }}>{item.label}</Text>
+          style={{ width: items.length > 3 ? '46%' : undefined, flex: items.length <= 3 ? 1 : undefined, minWidth: 0, gap: 6, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: String(item.value).length > 10 ? 15 : String(item.value).length > 6 ? 18 : 25, fontWeight: '600', color: colors.text, textAlign: 'center' }} numberOfLines={1} adjustsFontSizeToFit>{item.value}</Text>
+          <Text style={{ fontSize: 12, fontWeight: '500', color: colors.textSecondary, textAlign: 'center' }} numberOfLines={1}>{item.label}</Text>
         </Pressable>
       ))}
     </View>

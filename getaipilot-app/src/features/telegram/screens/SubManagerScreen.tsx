@@ -15,8 +15,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { StatCard } from '../components/ui/StatCard';
-import { ProductHeading } from "@/components/ProductUI";
+import { ProductHeading, ProductMetrics } from "@/components/ProductUI";
 import { TelegramToolKey } from '../types';
 
 type SubSection = 'pages' | 'revenue' | 'channels';
@@ -97,57 +96,23 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
     { key: 'channels', label: 'Monetized Channels', icon: 'megaphone-outline', count: (stats.monetizedChannels || []).length },
   ];
 
-  const kpiItems = [
-    { label: 'TOTAL REVENUE', value: `₹${(stats.totalRevenue ?? 0).toLocaleString()}`, color: '#6366F1', icon: 'trending-up', bg: 'rgba(99,102,241,0.12)', tab: 'revenue', sub: 'Net earnings', isRevenue: true },
-    { label: 'SUBSCRIBERS', value: String(stats.activeSubscribers ?? 0), color: '#10B981', icon: 'pulse', bg: 'rgba(16,185,129,0.12)', tab: 'channels', sub: 'Active members' },
-    { label: 'PAYMENT PAGES', value: String(stats.subscriptionPages ?? stats.pages?.length ?? 0), color: '#0284C7', icon: 'globe', bg: 'rgba(2,132,199,0.12)', tab: 'pages', sub: 'Hosted checkouts' },
-    { label: 'GROSS SALES', value: `₹${(stats.grossSales ?? 0).toLocaleString()}`, color: '#F59E0B', icon: 'cash', bg: 'rgba(245,158,11,0.12)', tab: 'revenue', sub: 'Total sales', isRevenue: true },
-    { label: 'WITHDRAWABLE', value: `₹${(stats.availableToWithdraw ?? 0).toLocaleString()}`, color: '#10B981', icon: 'wallet', bg: 'rgba(16,185,129,0.12)', tab: 'revenue', sub: 'Ready to payout', isRevenue: true },
-    { label: 'INVITE ACCESS', value: stats.botAutomatedAccess || 'Active', color: '#8B5CF6', icon: 'shield-checkmark', bg: 'rgba(139,92,246,0.12)', tab: 'pages', sub: 'Single-use links' },
-  ];
-
-  const itemsPerRow = isTablet ? 3 : 2;
-  const kpiRows: (typeof kpiItems)[] = [];
-  for (let i = 0; i < kpiItems.length; i += itemsPerRow) {
-    kpiRows.push(kpiItems.slice(i, i + itemsPerRow));
-  }
-
   return (
     <>
-      {/* HERO: Command Center (Responsive Header with Telegram Animated Graphic) */}
+      {/* HERO: Command Center */}
       <ProductHeading title="Your subscriptions" action="New page" onAction={() => onOpenModal('sub_manager')} />
 
-      {/* 6 KPI Cards in Responsive Rows */}
-      <View
-        className="w-full pt-3 mt-1 gap-2 self-stretch mb-3.5"
-        style={{ borderTopColor: isDark ? '#27272A' : '#E9E6F2' }}
-      >
-        {kpiRows.map((row, rowIndex) => (
-          <View key={rowIndex} className="flex-row w-full gap-2.5 self-stretch mb-2.5">
-            {row.map((m, colIndex) => (
-              <View key={colIndex} className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
-                <StatCard
-                  label={m.label}
-                  value={m.value}
-                  icon={m.icon}
-                  color={m.color}
-                  bg={m.bg}
-                  sub={m.sub}
-                  onPress={() => {
-                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setSubSection(m.tab as SubSection);
-                  }}
-                  isRevenue={m.isRevenue}
-                />
-              </View>
-            ))}
-          </View>
-        ))}
-      </View>
+      {/* KPI Metrics */}
+      <ProductMetrics
+        items={[
+          { label: 'Gross revenue', value: `₹${(stats.grossSales ?? stats.totalRevenue ?? 0).toLocaleString()}` },
+          { label: 'Subscribers', value: String(stats.activeSubscribers ?? 0) },
+          { label: 'Active pages', value: String(stats.subscriptionPages ?? stats.pages?.length ?? 0) },
+        ]}
+      />
 
       {/* Launch Readiness Banner */}
       <Pressable
-        style={[styles.launchBanner, { backgroundColor: colors.backgroundSecondary }]}
+        style={[styles.launchBanner, { backgroundColor: colors.backgroundSecondary, marginBottom: 16 }]}
         onPress={() => {
           if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           setLaunchExpanded(!launchExpanded);
@@ -165,7 +130,7 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
         <Ionicons name={launchExpanded ? 'chevron-up' : 'chevron-down'} size={16} color="#64748B" />
       </Pressable>
       {launchExpanded && (
-        <View style={[styles.launchExpanded, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+        <View style={[styles.launchExpanded, { backgroundColor: colors.card, borderColor: colors.cardBorder, marginBottom: 16 }]}>
           {[
             { label: 'Bot Connected', icon: 'checkmark-circle', color: '#10B981' },
             { label: 'Bank Account Verified', icon: 'checkmark-circle', color: '#10B981' },
@@ -180,110 +145,213 @@ export const SubManagerScreen: React.FC<SubManagerScreenProps> = ({ stats, onOpe
         </View>
       )}
 
-      {/* Category Filter Tabs (Overview / Tracker Screen Style) */}
-      <View className="mb-3.5 p-2.5 rounded-xl" style={{ backgroundColor: colors.backgroundSecondary }}>
-        <Text className="text-[15px] font-medium mb-2.5" style={{ color: colors.text }}>
-          Monetization Modules ({SUB_CATEGORIES.length})
-        </Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 8, paddingBottom: 4 }}
-        >
-          {SUB_CATEGORIES.map((cat) => {
-            const isSelected = subSection === cat.key;
-            return (
-              <Pressable
-                key={cat.key}
-                className={`flex-row items-center gap-1.5 px-3 py-[7px] rounded-full border ${isSelected
-                  ? 'bg-[#E7DEFA] border-transparent'
-                  : isDark
-                    ? 'bg-[#121212] border-[#27272A]'
-                    : 'bg-[#F5F3FB] border-[#E9E6F2]'
-                  }`}
-                onPress={() => {
-                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSubSection(cat.key);
+      {/* Category Filter Tabs */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: 8, paddingBottom: 16 }}
+      >
+        {SUB_CATEGORIES.map((tab) => {
+          const isSelected = subSection === tab.key;
+          return (
+            <Pressable
+              key={tab.key}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setSubSection(tab.key);
+              }}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                borderRadius: 9999,
+                backgroundColor: isSelected ? colors.primary : colors.card,
+                borderWidth: 1,
+                borderColor: isSelected ? colors.primary : colors.cardBorder,
+              }}
+            >
+              <Ionicons
+                name={tab.icon}
+                size={14}
+                color={isSelected ? '#FFFFFF' : colors.textSecondary}
+              />
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: '600',
+                  color: isSelected ? '#FFFFFF' : colors.text,
                 }}
               >
-                <Ionicons
-                  name={cat.icon}
-                  size={13}
-                  color={isSelected ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
-                />
-                <Text
-                  className={`text-xs ${isSelected ? 'text-[#6C55C5] font-medium' : 'font-semibold'}`}
-                  style={isSelected ? undefined : { color: colors.text }}
+                {tab.label}
+              </Text>
+              {tab.count !== undefined && tab.count !== null && (
+                <View
+                  style={{
+                    paddingHorizontal: 6,
+                    paddingVertical: 1,
+                    borderRadius: 9999,
+                    backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : colors.backgroundSecondary,
+                  }}
                 >
-                  {cat.label}
-                </Text>
-                {cat.count !== undefined && cat.count !== null && (
-                  <View
-                    className={`px-1.5 py-0.5 rounded-full ${isSelected ? 'bg-white/20' : isDark ? 'bg-white/10' : 'bg-slate-200'}`}
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      fontWeight: '700',
+                      color: isSelected ? '#FFFFFF' : colors.textSecondary,
+                    }}
                   >
-                    <Text
-                      className={`text-[10px] font-black ${isSelected ? 'text-white' : isDark ? 'text-slate-300' : 'text-slate-600'}`}
-                    >
-                      {cat.count}
-                    </Text>
-                  </View>
-                )}
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
+                    {tab.count}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+          );
+        })}
+      </ScrollView>
 
       {/* PAGES */}
       {subSection === 'pages' && (
-        <View style={{ gap: 10 }}>
+        <View style={{ gap: 12 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={[styles.searchBar, card]}>
-              <Ionicons name="search" size={15} color="#94A3B8" />
-              <TextInput style={[styles.searchInput, txt]} placeholder="Search pages..." placeholderTextColor="#94A3B8" value={pageSearch} onChangeText={setPageSearch} />
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 8,
+                borderRadius: 14,
+                paddingHorizontal: 12,
+                backgroundColor: colors.card,
+                borderWidth: 1,
+                borderColor: colors.cardBorder,
+                flex: 1,
+                minHeight: 44,
+              }}
+            >
+              <Ionicons name="search" size={15} color={colors.textSecondary} />
+              <TextInput
+                style={[{ flex: 1, fontSize: 13, color: colors.text, paddingVertical: 10 }]}
+                placeholder="Search pages..."
+                placeholderTextColor={colors.textSecondary}
+                value={pageSearch}
+                onChangeText={setPageSearch}
+              />
             </View>
-            <Pressable style={[styles.viewToggle, card]} onPress={() => setPageView(pageView === 'grid' ? 'list' : 'grid')}>
-              <Ionicons name={pageView === 'grid' ? 'list-outline' : 'grid-outline'} size={16} color="#0284C7" />
-            </Pressable>
           </View>
+
           <FlatList
             data={filteredPages}
             keyExtractor={(page) => String(page.id)}
             scrollEnabled={false}
             renderItem={({ item: page }) => (
-              <View key={page.id} style={[pageView === 'grid' ? styles.pageCardGrid : styles.pageCardList, { backgroundColor: colors.backgroundSecondary, marginBottom: 10 }]}>
-                <View style={styles.pageCardHeader}>
-                  <View style={[styles.pageIconCircle, { backgroundColor: page.isActive ? 'rgba(16,185,129,0.12)' : 'rgba(148,163,184,0.12)' }]}>
-                    <Ionicons name="globe-outline" size={15} color={page.isActive ? '#10B981' : '#94A3B8'} />
+              <View
+                key={page.id}
+                style={{
+                  width: '100%',
+                  backgroundColor: colors.card,
+                  borderWidth: 1,
+                  borderColor: colors.cardBorder,
+                  borderRadius: 18,
+                  padding: 16,
+                  marginBottom: 12,
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+                    <View
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 10,
+                        backgroundColor: page.isActive ? 'rgba(16,185,129,0.12)' : 'rgba(148,163,184,0.12)',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Ionicons name="globe-outline" size={17} color={page.isActive ? '#10B981' : '#94A3B8'} />
+                    </View>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }} numberOfLines={1}>
+                        {page.title}
+                      </Text>
+                      <Text style={{ fontSize: 12, color: colors.primary, marginTop: 2 }} numberOfLines={1}>
+                        {page.displayUrl || page.url}
+                      </Text>
+                    </View>
                   </View>
-                  <View style={[styles.pageStatusBadge, page.isActive ? styles.pageStatusActive : styles.pageStatusInactive]}>
-                    <View style={[styles.dotStatus, { backgroundColor: page.isActive ? '#10B981' : '#94A3B8' }]} />
-                    <Text style={[styles.pageStatusText, { color: page.isActive ? '#10B981' : '#94A3B8' }]} numberOfLines={1}>
-                      {pageView === 'grid' ? (page.isActive ? 'Active' : 'Paused') : page.statusText}
+
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 5,
+                      paddingHorizontal: 8,
+                      paddingVertical: 3,
+                      borderRadius: 9999,
+                      backgroundColor: page.isActive ? 'rgba(16,185,129,0.12)' : 'rgba(148,163,184,0.12)',
+                    }}
+                  >
+                    <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: page.isActive ? '#10B981' : '#94A3B8' }} />
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: page.isActive ? '#10B981' : '#94A3B8' }}>
+                      {page.isActive ? 'Active' : 'Paused'}
                     </Text>
                   </View>
                 </View>
-                <Text style={[styles.pageTitle, txt]} numberOfLines={1}>{page.title}</Text>
-                <Text style={styles.pageUrl} numberOfLines={1}>{page.displayUrl}</Text>
-                <View style={styles.pageActionRow}>
-                  <Pressable style={[styles.pageActionBtn, { flex: 1, justifyContent: 'center' }]} onPress={() => handleCopyLink(page.url, page.id)}>
-                    <Ionicons name={copiedId === page.id ? 'checkmark' : 'copy-outline'} size={12} color="#0284C7" />
-                    <Text style={styles.pageActionBtnText}>{copiedId === page.id ? 'Copied' : 'Copy'}</Text>
+
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <Pressable
+                    style={{
+                      flex: 1,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      backgroundColor: colors.backgroundSecondary,
+                      paddingVertical: 9,
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: colors.cardBorder,
+                    }}
+                    onPress={() => handleCopyLink(page.url, page.id)}
+                  >
+                    <Ionicons name={copiedId === page.id ? 'checkmark' : 'copy-outline'} size={14} color={colors.text} />
+                    <Text style={{ fontSize: 12, fontWeight: '600', color: colors.text }}>
+                      {copiedId === page.id ? 'Copied' : 'Copy'}
+                    </Text>
                   </Pressable>
-                  <Pressable style={[styles.pageActionBtn, { flex: 1, justifyContent: 'center' }]} onPress={() => onOpenModal('sub_manager')}>
-                    <Ionicons name="create-outline" size={12} color="#0284C7" />
-                    <Text style={styles.pageActionBtnText}>Edit</Text>
+
+                  <Pressable
+                    style={{
+                      flex: 1,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      backgroundColor: colors.backgroundSecondary,
+                      paddingVertical: 9,
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: colors.cardBorder,
+                    }}
+                    onPress={() => onOpenModal('sub_manager')}
+                  >
+                    <Ionicons name="create-outline" size={14} color={colors.text} />
+                    <Text style={{ fontSize: 12, fontWeight: '600', color: colors.text }}>Edit</Text>
                   </Pressable>
                 </View>
               </View>
             )}
             ListEmptyComponent={
               <View style={{ padding: 20, alignItems: 'center' }}>
-                <Text style={{ color: '#64748B', fontSize: 12 }}>No pages found</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>No pages found</Text>
               </View>
             }
           />
-          <Pressable style={styles.primaryBtn} onPress={() => onOpenModal('sub_manager')}>
+          <Pressable
+            style={[styles.primaryBtn, { backgroundColor: colors.primary, borderRadius: 14 }]}
+            onPress={() => onOpenModal('sub_manager')}
+          >
             <Ionicons name="add" size={15} color="#FFFFFF" />
             <Text style={styles.primaryBtnText}>Create New Subscription Page</Text>
           </Pressable>
