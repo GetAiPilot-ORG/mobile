@@ -1,17 +1,26 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import type { Notification, NotificationResponse, EventSubscription } from 'expo-notifications';
-// Conditional import of expo-notifications to avoid errors in Expo Go (web/managed) environment
-let Notifications: typeof import('expo-notifications') | undefined;
-if (require('expo-constants').default.appOwnership !== 'expo') {
-  // Only import when not running in Expo Go
-  Notifications = require('expo-notifications');
-}
+import type {
+  Notification,
+  EventSubscription,
+  NotificationResponse,
+} from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { Platform } from 'react-native';
 import { NotificationService } from '../services/notificationService';
 import { useAuth } from './AuthContext';
+
+type NotificationsModule = typeof import('expo-notifications');
+
+let Notifications: NotificationsModule | null = null;
+try {
+  if (Constants.appOwnership !== 'expo') {
+    Notifications = require('expo-notifications');
+  }
+} catch {
+  Notifications = null;
+}
 
 export interface NotificationContextType {
   expoPushToken: string | null;
@@ -79,9 +88,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     if (type === 'lead') return '/crm/contacts';
     if (type === 'deal') return '/crm/deals';
     if (type === 'task') return '/crm/tasks';
-    if (type === 'message' || type === 'chat' || data.conversationId) {
+    if (type === 'message' || type === 'chat' || type === 'handover' || data.conversationId) {
       return data.conversationId ? `/inbox/${data.conversationId}` : '/inbox';
     }
+    if (type === 'team' || type === 'team_member') return '/crm';
+    if (type === 'social' || type === 'social_connected') return '/tools';
+    if (type === 'whatsapp' || type === 'whatsapp_connected') return '/(tabs)';
+    if (type === 'template' || type === 'template_verified') return '/(tabs)';
     if (type === 'billing' || type === 'quota') return '/account/plans';
     if (type === 'campaign') return '/fleet';
     if (type === 'call') return '/(tabs)/activity';
@@ -124,23 +137,33 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   // Request permissions and register token
   const requestPermissions = async (): Promise<string | null> => {
-    if (!Notifications) return null;
+    if (!Notifications) {
+      console.log('ℹ️ [NotificationContext] Notifications module not available (e.g. Expo Go)');
+      return null;
+    }
     setIsRegistering(true);
     try {
+      console.log('🔄 [NotificationContext] Requesting push permissions & token for user:', user?.id || 'anonymous');
       const result = await NotificationService.registerForPushNotificationsAsync();
       const granted = result.status === 'granted';
       setPermissionGranted(granted);
 
       if (result.token) {
+        console.log('==============================================');
+        console.log('🔥 [PUSH TOKEN ACQUIRED]:', result.token);
+        console.log('==============================================');
         setExpoPushToken(result.token);
         if (user?.id) {
+          console.log('📡 [NotificationContext] Syncing token to backend for user:', user.id);
           await NotificationService.syncPushTokenWithBackend(result.token, user.id);
         }
         return result.token;
+      } else {
+        console.warn('⚠️ [PUSH TOKEN NULL]:', result.error || `Status: ${result.status}`);
       }
       return null;
     } catch (err) {
-      console.warn('[NotificationContext] Registration error:', err);
+      console.warn('❌ [NotificationContext] Registration error:', err);
       return null;
     } finally {
       setIsRegistering(false);

@@ -40,6 +40,9 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   authStatus: AuthStatus;
+  onboardingCompleted: boolean | null;
+  setOnboardingCompleted: (completed: boolean) => void;
+  checkOnboardingStatus: (userId?: string) => Promise<boolean>;
   login: (email: string, password?: string) => Promise<void>;
   syncSession: (session: {
     access_token: string;
@@ -61,6 +64,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
       isAuthenticated: false,
       isLoading: false,
       authStatus: "unauthenticated",
+      onboardingCompleted: null,
     });
   });
 
@@ -70,6 +74,40 @@ export const useAuthStore = create<AuthState>((set, get) => {
     isAuthenticated: false,
     isLoading: true,
     authStatus: "hydrating",
+    onboardingCompleted: null,
+
+    setOnboardingCompleted: (completed: boolean) => {
+      set({ onboardingCompleted: completed });
+    },
+
+    checkOnboardingStatus: async (userId?: string) => {
+      const uid = userId || get().user?.id;
+      if (!uid) {
+        set({ onboardingCompleted: true });
+        return true;
+      }
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("onboarding_completed")
+          .eq("id", uid)
+          .maybeSingle();
+
+        if (error) {
+          console.warn("[AuthStore] Error checking onboarding status:", error);
+          set({ onboardingCompleted: true });
+          return true;
+        }
+
+        const isComplete = Boolean(data?.onboarding_completed);
+        set({ onboardingCompleted: isComplete });
+        return isComplete;
+      } catch (err) {
+        console.warn("[AuthStore] Failed to check onboarding status:", err);
+        set({ onboardingCompleted: true });
+        return true;
+      }
+    },
 
     login: async (email: string, password?: string) => {
       set({ isLoading: true });
@@ -129,15 +167,18 @@ export const useAuthStore = create<AuthState>((set, get) => {
           () => {},
         );
 
+        const isOnboarded = await get().checkOnboardingStatus(userObj.id);
+
         set({
           user: userObj,
           tenantMapping: bffData?.tenantMapping || null,
           isAuthenticated: true,
           isLoading: false,
           authStatus: "authenticated",
+          onboardingCompleted: isOnboarded,
         });
       } catch (e) {
-        set({ isLoading: false, authStatus: "unauthenticated" });
+        set({ isLoading: false, authStatus: "unauthenticated", onboardingCompleted: null });
         throw e;
       }
     },
@@ -194,12 +235,15 @@ export const useAuthStore = create<AuthState>((set, get) => {
           () => {},
         );
 
+        const isOnboarded = await get().checkOnboardingStatus(userObj.id);
+
         set({
           user: userObj,
           tenantMapping: meData?.tenantMapping || null,
           isAuthenticated: true,
           isLoading: false,
           authStatus: "authenticated",
+          onboardingCompleted: isOnboarded,
         });
       } catch (e) {
         set({ isLoading: false });
@@ -220,6 +264,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
           isAuthenticated: false,
           isLoading: false,
           authStatus: "unauthenticated",
+          onboardingCompleted: null,
         });
       }
     },
@@ -244,6 +289,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
             isAuthenticated: false,
             isLoading: false,
             authStatus: "unauthenticated",
+            onboardingCompleted: null,
           });
           return;
         }
@@ -261,12 +307,14 @@ export const useAuthStore = create<AuthState>((set, get) => {
           AsyncStorage.setItem(CACHED_USER_KEY, JSON.stringify(userObj)).catch(
             () => {},
           );
+          const isOnboarded = await get().checkOnboardingStatus(userObj.id);
           set({
             user: userObj,
             tenantMapping: me.tenantMapping,
             isAuthenticated: true,
             isLoading: false,
             authStatus: "authenticated",
+            onboardingCompleted: isOnboarded,
           });
           return;
         } catch (apiErr: any) {
@@ -287,6 +335,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
               isAuthenticated: false,
               isLoading: false,
               authStatus: "unauthenticated",
+              onboardingCompleted: null,
             });
             return;
           }
@@ -298,12 +347,14 @@ export const useAuthStore = create<AuthState>((set, get) => {
           if (cachedUserStr) {
             try {
               const cachedUser = JSON.parse(cachedUserStr);
+              const isOnboarded = await get().checkOnboardingStatus(cachedUser.id);
               set({
                 user: cachedUser,
                 tenantMapping: null,
                 isAuthenticated: true,
                 isLoading: false,
                 authStatus: "authenticated",
+                onboardingCompleted: isOnboarded,
               });
               return;
             } catch {}
@@ -325,12 +376,14 @@ export const useAuthStore = create<AuthState>((set, get) => {
               permissions: ["*"],
               user_metadata: u.user_metadata,
             };
+            const isOnboarded = await get().checkOnboardingStatus(restoredUser.id);
             set({
               user: restoredUser,
               tenantMapping: null,
               isAuthenticated: true,
               isLoading: false,
               authStatus: "authenticated",
+              onboardingCompleted: isOnboarded,
             });
             return;
           }
@@ -342,6 +395,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
             isAuthenticated: false,
             isLoading: false,
             authStatus: "unauthenticated",
+            onboardingCompleted: null,
           });
         }
       } catch (e) {
@@ -351,6 +405,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
           isAuthenticated: false,
           isLoading: false,
           authStatus: "unauthenticated",
+          onboardingCompleted: null,
         });
       }
     },

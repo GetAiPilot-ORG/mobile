@@ -97,6 +97,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [user]);
 
+  const onboardingCompleted = useAuthStore((s) => s.onboardingCompleted);
+
   const profile: UserProfile | null = useMemo(() => {
     if (!userWithMeta) return null;
     return {
@@ -105,10 +107,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       full_name: userWithMeta.name,
       role: userWithMeta.role,
       is_admin: Boolean(userWithMeta.role?.toLowerCase() === 'admin' || (userWithMeta as any).is_admin === true),
-      onboarding_completed: true,
+      onboarding_completed: onboardingCompleted ?? true,
       account_status: 'active',
     };
-  }, [userWithMeta]);
+  }, [userWithMeta, onboardingCompleted]);
 
   const session = useMemo(() => {
     if (!isAuthenticated || !userWithMeta) return null;
@@ -122,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userWithMeta?.role?.toLowerCase() === 'admin' ||
     (userWithMeta as any)?.is_admin === true
   );
-  const onboardingComplete = true;
+  const onboardingComplete = onboardingCompleted ?? true;
   const accountStatus: 'active' | 'suspended' | 'banned' = 'active';
 
   const contextValue = useMemo(
@@ -142,7 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await loadSession();
       },
     }),
-    [session, userWithMeta, profile, isAdmin, isLoading, authStatus, logout, loadSession]
+    [session, userWithMeta, profile, isAdmin, isLoading, authStatus, onboardingComplete, logout, loadSession]
   );
 
   return (

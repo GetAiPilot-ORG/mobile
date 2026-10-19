@@ -1,7 +1,7 @@
 import { useTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { ArrowLeft01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons';
+import { ArrowLeft01Icon, ArrowRight01Icon } from '@/constants/icons';
 import React, { useEffect, useState } from 'react';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Animated, Easing, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
@@ -22,21 +22,21 @@ export function useProductPalette() {
   };
 }
 
-export function ProductHeading({ title, description, action, onAction }: {
-  title: string; description?: string; action?: string; onAction?: () => void;
+export function ProductHeading({ title, description, action, onAction, isLocked = false }: {
+  title: string; description?: string; action?: string; onAction?: () => void; isLocked?: boolean;
 }) {
   const colors = useProductPalette();
   return (
     <View style={{ gap: description ? 8 : 14, marginBottom: 26 }}>
       <Text style={{ fontSize: 30, lineHeight: 36, letterSpacing: -0.75, fontWeight: '600', color: colors.text }}>{title}</Text>
       {Boolean(description) ? <Text style={{ fontSize: 14, lineHeight: 21, color: colors.textSecondary }}>{description}</Text> : null}
-      {Boolean(action && onAction) ? <ProductButton label={action!} onPress={onAction!} /> : null}
+      {Boolean(action && onAction) ? <ProductButton label={action!} onPress={onAction!} isLocked={isLocked} /> : null}
     </View>
   );
 }
 
-export function ProductButton({ label, onPress, icon, secondary = false, disabled = false }: {
-  label: string; onPress: () => void; icon?: IconName; secondary?: boolean; disabled?: boolean;
+export function ProductButton({ label, onPress, icon, secondary = false, disabled = false, isLocked = false }: {
+  label: string; onPress: () => void; icon?: IconName; secondary?: boolean; disabled?: boolean; isLocked?: boolean;
 }) {
   const colors = useProductPalette();
   const ink = secondary ? colors.text : colors.buttonPrimaryForeground;
@@ -54,7 +54,11 @@ export function ProductButton({ label, onPress, icon, secondary = false, disable
     <Animated.View style={{ alignSelf: 'flex-start', transform: [{ scale }] }}>
     <Pressable cssInterop={false} onPressIn={() => feedback(true)} onPressOut={() => feedback(false)} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled }} disabled={disabled} onPress={(event) => { event.stopPropagation(); onPress(); }}
       style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 30, backgroundColor: secondary ? colors.card : colors.buttonPrimary, opacity: disabled ? 0.45 : pressed ? 0.75 : 1 })}>
-      {icon ? <Ionicons name={icon} size={17} color={ink} /> : null}
+      {isLocked ? (
+        <Ionicons name="lock-closed" size={15} color={ink} />
+      ) : icon ? (
+        <Ionicons name={icon} size={17} color={ink} />
+      ) : null}
       <Text style={{ color: ink, fontSize: 13, fontWeight: '500' }}>{label}</Text>
     </Pressable>
     </Animated.View>
@@ -91,7 +95,7 @@ export function ProductMetrics({ items }: { items: { label: string; value: React
   );
 }
 
-export function ProductActions({ items }: { items: { title: string; icon: any; tone?: ProductTone; onPress: () => void }[] }) {
+export function ProductActions({ items }: { items: { title: string; icon: any; tone?: ProductTone; onPress: () => void; isLocked?: boolean }[] }) {
   const colors = useProductPalette();
   const { width, fontScale } = useWindowDimensions();
   const compact = items.length <= 3 && width >= 360 && fontScale <= 1.2;
@@ -105,8 +109,15 @@ export function ProductActions({ items }: { items: { title: string; icon: any; t
   };
   const children = items.map((item) => <Pressable cssInterop={false} key={item.title} onPress={item.onPress} accessibilityRole="button" accessibilityLabel={item.title}
     style={({ pressed }) => ({ backgroundColor: colors[item.tone || 'lavender'], flex: compact ? 1 : undefined, width: compact ? undefined : 136, minWidth: 0, minHeight: 120, borderRadius: 22, padding: 15, gap: 16, justifyContent: 'space-between', opacity: pressed ? 0.72 : 1, transform: [{ scale: pressed ? 0.985 : 1 }] })}>
-    <View style={{ width: 38, height: 38, borderRadius: 13, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' }}>
-      {renderItemIcon(item.icon)}
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+      <View style={{ width: 38, height: 38, borderRadius: 13, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' }}>
+        {renderItemIcon(item.icon)}
+      </View>
+      {item.isLocked && (
+        <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(245, 158, 11, 0.25)', alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="lock-closed" size={11} color="#D97706" />
+        </View>
+      )}
     </View>
     <Text style={{ fontSize: 13, lineHeight: 18, color: colors.text, fontWeight: '600' }}>{item.title}</Text>
   </Pressable>);
@@ -114,8 +125,8 @@ export function ProductActions({ items }: { items: { title: string; icon: any; t
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 4 }}>{children}</ScrollView>;
 }
 
-export function ProductRow({ title, detail, icon, trailing, onPress, tone = 'mint' }: {
-  title: string; detail?: string; icon?: any; trailing?: React.ReactNode; onPress?: () => void; tone?: ProductTone;
+export function ProductRow({ title, detail, icon, trailing, onPress, tone = 'mint', isLocked }: {
+  title: string; detail?: string; icon?: any; trailing?: React.ReactNode; onPress?: () => void; tone?: ProductTone; isLocked?: boolean;
 }) {
   const colors = useProductPalette();
   const renderRowIcon = () => {
@@ -135,7 +146,12 @@ export function ProductRow({ title, detail, icon, trailing, onPress, tone = 'min
         <Text numberOfLines={2} style={{ fontSize: 15, lineHeight: 21, fontWeight: '500', color: colors.text }}>{title}</Text>
         {Boolean(detail) ? <Text numberOfLines={2} style={{ fontSize: 12, lineHeight: 18, color: colors.textSecondary }}>{detail}</Text> : null}
       </View>
-      {trailing != null ? trailing : (onPress ? <HugeiconsIcon icon={ArrowRight01Icon} size={17} color={colors.iconSecondary} strokeWidth={2} /> : null)}
+      {trailing != null ? trailing : isLocked ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(245, 158, 11, 0.12)', paddingHorizontal: 8, paddingVertical: 4.5, borderRadius: 12 }}>
+          <Ionicons name="lock-closed" size={12} color="#D97706" />
+          <Text style={{ fontSize: 10.5, fontWeight: '800', color: '#D97706', letterSpacing: 0.3 }}>PLAN</Text>
+        </View>
+      ) : (onPress ? <HugeiconsIcon icon={ArrowRight01Icon} size={17} color={colors.iconSecondary} strokeWidth={2} /> : null)}
     </Pressable>
   );
 }

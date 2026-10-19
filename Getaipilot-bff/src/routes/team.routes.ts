@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { authenticateToken } from "../middleware/auth.middleware.js";
 import { CRMRepository } from "../services/crm/crm.repository.js";
+import { WebSocketService } from "../services/websocket.service.js";
 import { JWTPayload } from "../types/index.js";
 
 export async function teamRoutes(fastify: FastifyInstance) {
@@ -61,6 +62,7 @@ export async function teamRoutes(fastify: FastifyInstance) {
           orgId,
           request.body as any,
         );
+        WebSocketService.broadcastToOrg(orgId, 'team.member.created', member);
         return reply.status(201).send(member);
       } catch (err: any) {
         return reply

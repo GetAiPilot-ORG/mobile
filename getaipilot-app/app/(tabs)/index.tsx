@@ -11,7 +11,7 @@ import {
   Link01Icon,
   ShieldCheckIcon,
   GiftIcon,
-} from "@hugeicons/core-free-icons";
+} from "@/constants/icons";
 import { useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";

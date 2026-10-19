@@ -106,13 +106,21 @@ export function usePlatformSubscription() {
     queryClient.invalidateQueries({ queryKey: ["platform-subscription"] });
   };
 
-  const plans = isActive && subData?.plan_id ? [subData.plan_id] : [];
+  const planText = `${subData?.plan_id || ''} ${subData?.plan_label || ''}`.toLowerCase();
+  const isAllInOne = isAdmin || (isActive && (
+    planText.includes("bundle") ||
+    planText.includes("all_in_one") ||
+    planText.includes("gap_pro") ||
+    planText.includes("gap_max") ||
+    planText.includes("enterprise") ||
+    planText.includes("platinum")
+  ));
 
-  const hasWhatsApp = isActive && plans.some(p => p.toLowerCase().includes("whatsapp") || p.toLowerCase().startsWith("wa_") || p.toLowerCase().includes("bundle") || p.toLowerCase().includes("all_in_one"));
-  const hasTelegram = isActive && plans.some(p => p.toLowerCase().includes("telegram") || p.toLowerCase().startsWith("tg_") || p.toLowerCase().includes("bundle") || p.toLowerCase().includes("all_in_one"));
-  const hasCRM = isActive && plans.some(p => p.toLowerCase().includes("crm") || p.toLowerCase().includes("bundle") || p.toLowerCase().includes("all_in_one"));
-  const hasSocial = isActive && plans.some(p => p.toLowerCase().includes("social") || p.toLowerCase().includes("bundle") || p.toLowerCase().includes("all_in_one"));
-  const hasVoice = isActive && plans.some(p => p.toLowerCase().includes("voice") || p.toLowerCase().includes("calling") || p.toLowerCase().includes("bundle") || p.toLowerCase().includes("all_in_one"));
+  const hasWhatsApp = isAllInOne || (isActive && (planText.includes("whatsapp") || planText.startsWith("wa_")));
+  const hasTelegram = isAllInOne || (isActive && (planText.includes("telegram") || planText.includes("tg_")));
+  const hasCRM = isAllInOne || (isActive && planText.includes("crm"));
+  const hasSocial = isAllInOne || (isActive && (planText.includes("social") || planText.includes("spstarter") || planText.includes("spgrowth") || planText.includes("slite")));
+  const hasVoice = isAllInOne || (isActive && (planText.includes("voice") || planText.includes("calling") || planText.includes("call_")));
 
   return {
     isActive,

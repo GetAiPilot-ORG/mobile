@@ -5,7 +5,7 @@ import {
   UserIcon,
   ArrowRight01Icon,
   BotMessageSquareIcon,
-} from '@hugeicons/core-free-icons';
+} from '@/constants/icons';
 import { NormalizedConversation } from '../types';
 import { ChannelBadge } from './ChannelBadge';
 import { useTheme, getColors } from '@/theme';
