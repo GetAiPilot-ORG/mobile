@@ -38,43 +38,48 @@ function normalizePath(path: string): string {
     return search ? `${target}?${search}` : target;
   }
 
-  // 3. Templates and Tools Deep Links
+  // 3. Referral query param (?ref=CODE) -> redirect to signup
+  const refCode = url.searchParams.get("ref") || url.searchParams.get("referral");
+  if (refCode) {
+    return `/(auth)/signup?ref=${encodeURIComponent(refCode)}`;
+  }
+
+  // 4. Templates Deep Links (/free-tools/landing-templates/:id)
   const landingBuilderMatch = url.pathname.match(
     /^\/free-tools\/landing-templates\/([^/]+)\/?$/,
   );
 
-  if (!landingBuilderMatch) {
-    // If the URL has referral query param (?ref=CODE), redirect to signup with param
-    const refCode = url.searchParams.get("ref") || url.searchParams.get("referral");
-    if (refCode) {
-      return `/(auth)/signup?ref=${encodeURIComponent(refCode)}`;
+  if (landingBuilderMatch) {
+    const templateId =
+      url.searchParams.get("template_id") ??
+      decodeURIComponent(landingBuilderMatch[1]);
+    const authCode = url.searchParams.get("auth_code");
+    const params = new URLSearchParams();
+
+    if (templateId) {
+      params.set("template_id", templateId);
     }
-    return "/(tabs)/tools";
+
+    if (authCode) {
+      params.set("auth_code", authCode);
+    }
+
+    const query = params.toString();
+    const targetRoute = "/tools/landing-templates";
+    return query ? `${targetRoute}?${query}` : targetRoute;
   }
 
-  const templateId =
-    url.searchParams.get("template_id") ??
-    decodeURIComponent(landingBuilderMatch[1]);
-  const authCode = url.searchParams.get("auth_code");
-  const params = new URLSearchParams();
-
-  if (templateId) {
-    params.set("template_id", templateId);
+  // 5. Default fallback: Keep original route or default to Home tabs
+  if (cleanPath === "/" || cleanPath === "") {
+    return "/(tabs)";
   }
-
-  if (authCode) {
-    params.set("auth_code", authCode);
-  }
-
-  const query = params.toString();
-  const targetRoute = "/tools/landing-templates";
-  return query ? `${targetRoute}?${query}` : targetRoute;
+  return cleanPath;
 }
 
 export function redirectSystemPath({ path }: { path: string }) {
   try {
     return normalizePath(path);
   } catch {
-    return "/(tabs)/tools";
+    return "/(tabs)";
   }
 }

@@ -21,6 +21,18 @@ try {
   Notifications = null;
 }
 
+export interface AppNotification {
+  id: string;
+  title: string;
+  body: string;
+  data?: Record<string, any>;
+  createdAt: string;
+  isRead: boolean;
+  type?: 'lead' | 'message' | 'billing' | 'system' | 'general';
+}
+
+export const NOTIFICATIONS_STORAGE_KEY = '@getaipilot_notifications_history';
+
 export interface NotificationContextType {
   expoPushToken: string | null;
   notification: Notification | null;
@@ -35,6 +47,14 @@ export interface NotificationContextType {
     channelId?: string,
     route?: string
   ) => Promise<void>;
+  notificationsList: AppNotification[];
+  unreadCount: number;
+  markAsRead: (id: string) => Promise<void>;
+  toggleReadStatus: (id: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
+  deleteNotification: (id: string) => Promise<void>;
+  clearAllNotifications: () => Promise<void>;
+  addNotification: (item: Omit<AppNotification, 'id' | 'createdAt' | 'isRead'> & { id?: string }) => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -52,6 +72,14 @@ const NOOP_CONTEXT: NotificationContextType = {
   isRegistering: false,
   requestPermissions: async () => null,
   sendTestNotification: async () => { },
+  notificationsList: [],
+  unreadCount: 0,
+  markAsRead: async () => { },
+  toggleReadStatus: async () => { },
+  markAllAsRead: async () => { },
+  deleteNotification: async () => { },
+  clearAllNotifications: async () => { },
+  addNotification: async () => { },
 };
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
@@ -65,6 +93,106 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const [notification, setNotification] = useState<Notification | null>(null);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [notificationsList, setNotificationsList] = useState<AppNotification[]>([]);
+
+  // Load notifications from AsyncStorage on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const stored = await AsyncStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            setNotificationsList(parsed);
+            return;
+          }
+        }
+        // Initial friendly starter notifications if empty
+        const initialSeed: AppNotification[] = [
+          {
+            id: 'seed-1',
+            title: '🎉 Push Notifications Active',
+            body: 'Real-time alerts aur lead notifications GetAiPilot me active ho chuke hain.',
+            createdAt: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
+            isRead: false,
+            type: 'system',
+            data: { route: '/account/plans' },
+          },
+          {
+            id: 'seed-2',
+            title: '💼 New CRM Prospect Alert',
+            body: 'Naya prospect contact form se aaya hai. Tap karke details dekhein.',
+            createdAt: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
+            isRead: false,
+            type: 'lead',
+            data: { route: '/crm/contacts' },
+          },
+          {
+            id: 'seed-3',
+            title: '💬 AI Bot Summary',
+            body: 'Aapke AI Assistants ne aaj 18 queries successfully resolve ki.',
+            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 18).toISOString(),
+            isRead: true,
+            type: 'message',
+            data: { route: '/(tabs)/products' },
+          },
+        ];
+        setNotificationsList(initialSeed);
+        await AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(initialSeed));
+      } catch (e) {
+        console.warn('Failed to load notifications history:', e);
+      }
+    })();
+  }, []);
+
+  const saveNotifications = async (items: AppNotification[]) => {
+    setNotificationsList(items);
+    try {
+      await AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(items));
+    } catch (e) {
+      console.warn('Failed to save notifications history:', e);
+    }
+  };
+
+  const addNotification = async (item: Omit<AppNotification, 'id' | 'createdAt' | 'isRead'> & { id?: string }) => {
+    const newItem: AppNotification = {
+      id: item.id || Date.now().toString() + Math.random().toString(36).substring(2, 6),
+      title: item.title,
+      body: item.body,
+      data: item.data,
+      createdAt: new Date().toISOString(),
+      isRead: false,
+      type: item.type || 'general',
+    };
+    const updated = [newItem, ...notificationsList.filter((n) => n.id !== newItem.id)];
+    await saveNotifications(updated);
+  };
+
+  const markAsRead = async (id: string) => {
+    const updated = notificationsList.map((n) => (n.id === id ? { ...n, isRead: true } : n));
+    await saveNotifications(updated);
+  };
+
+  const toggleReadStatus = async (id: string) => {
+    const updated = notificationsList.map((n) => (n.id === id ? { ...n, isRead: !n.isRead } : n));
+    await saveNotifications(updated);
+  };
+
+  const markAllAsRead = async () => {
+    const updated = notificationsList.map((n) => ({ ...n, isRead: true }));
+    await saveNotifications(updated);
+  };
+
+  const deleteNotification = async (id: string) => {
+    const updated = notificationsList.filter((n) => n.id !== id);
+    await saveNotifications(updated);
+  };
+
+  const clearAllNotifications = async () => {
+    await saveNotifications([]);
+  };
+
+  const unreadCount = notificationsList.filter((n) => !n.isRead).length;
 
   const notificationListener = useRef<EventSubscription | null>(null);
   const responseListener = useRef<EventSubscription | null>(null);
@@ -256,6 +384,24 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     // 2. FOREGROUND MODE: Notification received while the user is actively inside the app
     notificationListener.current = Notifications.addNotificationReceivedListener((incoming) => {
       setNotification(incoming);
+      const content = incoming?.request?.content;
+      if (content) {
+        const type = (content.data?.type as any) || (content.data?.category as any) || 'general';
+        const newItem: AppNotification = {
+          id: incoming?.request?.identifier || Date.now().toString(),
+          title: content.title || 'New Alert',
+          body: content.body || '',
+          data: content.data as Record<string, any>,
+          createdAt: new Date().toISOString(),
+          isRead: false,
+          type,
+        };
+        setNotificationsList((prev) => {
+          const next = [newItem, ...prev.filter((p) => p.id !== newItem.id)];
+          AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(next)).catch(() => {});
+          return next;
+        });
+      }
     });
 
     // 3. BACKGROUND & FOREGROUND TAP: User taps a notification banner while app is in background or foreground
@@ -294,6 +440,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         isRegistering,
         requestPermissions,
         sendTestNotification,
+        notificationsList,
+        unreadCount,
+        markAsRead,
+        toggleReadStatus,
+        markAllAsRead,
+        deleteNotification,
+        clearAllNotifications,
+        addNotification,
       }}
     >
       {children}

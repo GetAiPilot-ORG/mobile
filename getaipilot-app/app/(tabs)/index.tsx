@@ -32,7 +32,6 @@ import { useNetwork } from "../../src/contexts/NetworkContext";
 import { apiClient } from "../../src/core/api/client";
 import { usePlatformSubscription } from "../../src/hooks/usePlatformSubscription";
 import { supabase } from "../../src/lib/supabase";
-import { TestNotificationButton } from "@/components/TestNotification";
 import { useNotifications } from "@/contexts/NotificationContext";
 
 
@@ -341,7 +340,6 @@ export default function HomeScreen() {
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={color.accent} />}
         showsVerticalScrollIndicator={false}
       >
-        <TestNotificationButton />
         <View>
           <Text style={{ maxWidth: 310, fontSize: 32, lineHeight: 38, fontWeight: "600", letterSpacing: -0.85, color: color.text }}>Your work,{"\n"}made effortless.</Text>
           <View style={{ flexDirection: "row", gap: 8, marginTop: 22 }}>

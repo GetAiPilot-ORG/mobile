@@ -2,6 +2,9 @@ import { Tabs } from "expo-router";
 import { FloatingTabBar } from "../../src/components/FloatingTabBar";
 import { useTheme, getColors } from "@/theme";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+export const unstable_settings = {
+  initialRouteName: "index",
+};
 
 export default function TabLayout() {
   const { isDark } = useTheme();

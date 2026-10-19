@@ -10,6 +10,7 @@ import React, { useEffect } from 'react';
 import { BackHandler, Platform, Pressable, StatusBar, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePlatformSubscription } from '../hooks/usePlatformSubscription';
+import { useNotifications } from '../contexts/NotificationContext';
 
 export interface AppTopBarProps {
   title?: string;
@@ -20,6 +21,7 @@ export interface AppTopBarProps {
   onBackPress?: () => void;
   parentRoute?: string;
   showPlanBadge?: boolean;
+  showNotificationIcon?: boolean;
 }
 
 /**
@@ -115,6 +117,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
   onBackPress,
   parentRoute,
   showPlanBadge,
+  showNotificationIcon,
 }) => {
   const router = useRouter();
   const pathname = usePathname();
@@ -122,12 +125,16 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const user = useAuthStore((s) => s.user);
+  const { unreadCount } = useNotifications();
 
   // Auto-detect: Show back button on all sub-pages with title unless explicitly disabled
   const shouldShowBack = showBack !== undefined ? showBack : !!title;
 
   const { planLabel, isActive } = usePlatformSubscription();
   const displayPlanBadge = !!showPlanBadge;
+  const displayNotificationIcon = showNotificationIcon !== undefined 
+    ? showNotificationIcon 
+    : (!title && pathname !== '/notifications');
 
   const handlePlanBadgePress = () => {
     if (Platform.OS !== "web") {
@@ -272,10 +279,10 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
         </View>
       </View>
 
-      {rightElement ? (
-        <View className="flex-row items-center shrink-0">{rightElement}</View>
-      ) : displayPlanBadge ? (
-        <View className="flex-row items-center shrink-0">
+      <View className="flex-row items-center shrink-0" style={{ gap: 8 }}>
+        {rightElement}
+
+        {displayPlanBadge && (
           <Pressable cssInterop={false}
             onPress={handlePlanBadgePress}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -318,10 +325,64 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
               />
             </View>
           </Pressable>
-        </View>
-      ) : (
-        <View className="w-0 h-0" />
-      )}
+        )}
+
+        {displayNotificationIcon && (
+          <Pressable cssInterop={false}
+            onPress={() => {
+              if (Platform.OS !== "web") {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
+              router.push('/notifications' as any);
+            }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={`Notifications. ${unreadCount} unread`}
+            style={({ pressed }) => [{ opacity: pressed ? 0.75 : 1, transform: [{ scale: pressed ? 0.94 : 1 }] }]}
+          >
+            <View
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 19,
+                backgroundColor: colors.card,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: 1,
+                borderColor: isDark ? '#2D283E' : '#E8E4F3',
+              }}
+            >
+              <Ionicons
+                name={unreadCount > 0 ? "notifications" : "notifications-outline"}
+                size={20}
+                color={unreadCount > 0 ? colors.accent : colors.foreground}
+              />
+              {unreadCount > 0 && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: 4,
+                    right: 4,
+                    minWidth: 16,
+                    height: 16,
+                    borderRadius: 8,
+                    backgroundColor: '#EF4444',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingHorizontal: 3,
+                    borderWidth: 1.5,
+                    borderColor: colors.background,
+                  }}
+                >
+                  <Text style={{ color: '#FFFFFF', fontSize: 9, fontWeight: '700' }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </Pressable>
+        )}
+      </View>
     </View>
   );
 };

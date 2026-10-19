@@ -121,12 +121,7 @@ export default function LoginScreen() {
 
       try {
         await login(cleanIdentifier, password);
-        const isOnboarded = useAuthStore.getState().onboardingCompleted;
-        if (isOnboarded === false) {
-          router.replace("/onboarding" as any);
-        } else {
-          router.replace("/(tabs)");
-        }
+        router.replace("/(tabs)");
       } catch (err: any) {
         triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
         setFeedback({
