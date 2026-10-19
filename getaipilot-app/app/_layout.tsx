@@ -167,7 +167,7 @@ function SplashOverlay() {
   return (
     <View style={[StyleSheet.absoluteFill, styles.splashContainer]}>
       <AnimatedSplashScreen
-        minDurationMs={180}
+        minDurationMs={2200}
         onAnimationComplete={() => {
           setSplashFinished(true);
         }}

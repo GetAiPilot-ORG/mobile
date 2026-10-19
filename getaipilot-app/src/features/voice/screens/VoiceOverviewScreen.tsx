@@ -1,12 +1,22 @@
-import { ProductActions,ProductButton,ProductEmpty,ProductHeading,ProductMetrics,ProductRow,ProductSection,useProductPalette } from "@/components/ProductUI";
-import { useTheme } from "@/theme";
-import { useQuery,useQueryClient } from "@tanstack/react-query";
+import { ProductActions, ProductButton, ProductEmpty, ProductHeading, ProductMetrics, ProductRow, ProductSection, useProductPalette } from "@/components/ProductUI";
+import { Ionicons } from "@expo/vector-icons";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { Bot, Database, Megaphone, Phone, PhoneCall } from "lucide-react-native";
-import React from "react";
 import {
+  Bot,
+  Database,
+  Megaphone,
+  Phone,
+  PhoneCall,
+  Sparkles,
+  Zap,
+} from "lucide-react-native";
+import React, { useEffect, useRef } from "react";
+import {
+  Animated,
+  Easing,
   Platform,
   Pressable,
   RefreshControl,
@@ -14,7 +24,8 @@ import {
   Text,
   View,
 } from "react-native";
-import { VoiceOverview,voiceApi } from "../api/voiceApi";
+import { useTheme, getColors } from "@/theme";
+import { VoiceOverview, voiceApi } from "../api/voiceApi";
 import { VoicePlanExpiredBanner } from "../components";
 import { openVoiceWebBilling } from "../utils/voiceBilling";
 

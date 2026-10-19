@@ -233,50 +233,59 @@ export const WhatsAppContactsScreen: React.FC<WhatsAppContactsScreenProps> = ({
           </View>
         </View>
 
-        {/* Tag Filters */}
-        <View className="py-1.5 mb-1.5">
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{
-              paddingHorizontal: 16,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            {tags.map((item) => {
-              const isSelected =
-                item === "All" ? !selectedTag : selectedTag === item;
-              return (
-                <Pressable
-                  key={item}
-                  className={`px-4 py-1.5 rounded-full border items-center justify-center active:opacity-80 ${
-                    isSelected
-                      ? isDark
-                        ? "bg-white border-white"
-                        : "bg-black border-black"
-                      : isDark
-                      ? "bg-[#252230] border-[#3A3549]"
-                      : "bg-[#F0EEF8] border-[#E9E6F2]"
-                  }`}
-                  onPress={() => {
-                    if (Platform.OS !== "web") {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }
-                    setSelectedTag(item === "All" ? undefined : item);
-                  }}
-                >
-                  <Text
-                    className={`text-xs font-semibold tracking-tight ${
-                      isSelected
-                        ? isDark
-                          ? "text-black font-bold"
-                          : "text-white font-bold"
-                        : isDark
-                        ? "text-[#8E8E93]"
-                        : "text-[#6B7280]"
-                    }`}
+        {/* Folder-Style Status Filter Tab Bar (WhatsApp Green from color.ts) */}
+        <View className="px-4 pt-1 mb-2">
+          <View style={{ position: "relative" }}>
+            {/* Continuous baseline across full width in WhatsApp Green */}
+            <View
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 1.5,
+                backgroundColor: color.products.whatsapp,
+              }}
+            />
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 2 }}
+            >
+              {allTabs.map((tab) => {
+                const isActive = activeFilter === tab.id;
+                const activeColor = isDark
+                  ? color.products.whatsapp
+                  : (color.products.whatsappDark || "#075E54");
+
+                return (
+                  <Pressable
+                    key={tab.id}
+                    onPress={() => {
+                      if (Platform.OS !== "web") {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }
+                      setActiveFilter(tab.id);
+                    }}
+                    style={{
+                      height: 40,
+                      paddingHorizontal: 13,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderTopLeftRadius: isActive ? 10 : 0,
+                      borderTopRightRadius: isActive ? 10 : 0,
+                      borderTopWidth: 1.5,
+                      borderLeftWidth: 1.5,
+                      borderRightWidth: 1.5,
+                      borderBottomWidth: 1.5,
+                      borderTopColor: isActive ? color.products.whatsapp : "transparent",
+                      borderLeftColor: isActive ? color.products.whatsapp : "transparent",
+                      borderRightColor: isActive ? color.products.whatsapp : "transparent",
+                      borderBottomColor: isActive ? color.background : "transparent",
+                      backgroundColor: isActive ? color.background : "transparent",
+                      zIndex: isActive ? 2 : 1,
+                    }}
                   >
                     <Text
                       numberOfLines={1}

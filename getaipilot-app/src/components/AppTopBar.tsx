@@ -182,12 +182,28 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
   const statusBarHeight = Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0;
   const topPadding = Math.max(insets.top, statusBarHeight) + (Platform.OS === 'android' ? 14 : 8);
 
+  const compactPlan = React.useMemo(() => {
+    if (!planLabel) return 'Free';
+    const clean = planLabel
+      .replace(/GetAiPilot\s*-\s*/gi, '')
+      .replace(/\(Yearly\)|\(Monthly\)|\(Quarterly\)/gi, '')
+      .trim();
+
+    if (clean.toLowerCase().includes('core')) return 'Core';
+    if (clean.toLowerCase().includes('pro')) return 'Pro';
+    if (clean.toLowerCase().includes('growth')) return 'Growth';
+    if (clean.toLowerCase().includes('starter')) return 'Starter';
+    if (clean.toLowerCase().includes('free')) return 'Free';
+    if (clean.toLowerCase().includes('bundle')) return 'Bundle';
+    return clean.slice(0, 10);
+  }, [planLabel]);
+
   return (
     <View
       className="flex-row items-center justify-between w-full px-4 pb-3.5 shrink-0"
       style={{ paddingTop: topPadding, backgroundColor: colors.background }}
     >
-      <View className="flex-row items-center flex-1 mr-2.5 min-w-0">
+      <View className="flex-row items-center flex-1 mr-2 min-w-0">
         {shouldShowBack ? (
           <Pressable cssInterop={false}
             onPress={handleBack}
@@ -211,7 +227,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
         ) : leftElement ? (
           leftElement
         ) : !title ? (
-          /* Profile Avatar Button on the Left for Home */
+          /* Profile Avatar with Luxury Border & Presence Ring */
           <Pressable cssInterop={false}
             onPress={handleProfilePress}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -220,22 +236,61 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
             style={({ pressed }) => [{ opacity: pressed ? 0.75 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] }]}
           >
             <View
-              className={`w-[42px] h-[42px] rounded-full justify-center items-center mr-2.5 border-[1.5px] shrink-0 ${isDark ? 'border-[#3A3549]' : 'border-[#E9E6F2]'
-                }`}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: 10,
+                position: 'relative',
+                borderWidth: 1.5,
+                borderColor: isDark ? '#8B5CF6' : '#A855F7',
+                padding: 1.5,
+              }}
             >
               {avatarUrl ? (
                 <Image
                   source={{ uri: avatarUrl }}
-                  style={{ width: 42, height: 42, borderRadius: 21, borderWidth: 0, borderColor: isDark ? '#3A3549' : '#E7DEFA' }}
+                  style={{ width: '100%', height: '100%', borderRadius: 18 }}
                   contentFit='cover'
                 />
               ) : (
-                <View className="w-[42px] h-[42px] rounded-full bg-[#E7DEFA] items-center justify-center shrink-0">
-                  <Text className="text-[#41444B] text-lg font-bold">
+                <View
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: 18,
+                    backgroundColor: isDark ? '#382052' : '#EDE4FB',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: isDark ? '#E9D5FF' : '#5B21B6',
+                      fontSize: 16,
+                      fontWeight: '800',
+                    }}
+                  >
                     {avatarInitial}
                   </Text>
                 </View>
               )}
+              {/* Active Green Presence Dot */}
+              <View
+                style={{
+                  position: 'absolute',
+                  bottom: -1,
+                  right: -1,
+                  width: 9,
+                  height: 9,
+                  borderRadius: 4.5,
+                  backgroundColor: '#22C55E',
+                  borderWidth: 1.5,
+                  borderColor: colors.background,
+                }}
+              />
             </View>
           </Pressable>
         ) : null}
@@ -251,13 +306,29 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
               {title}
             </Text>
           ) : (
-            <Text
-              className={`text-[18px] font-extrabold tracking-tight ${isDark ? 'text-[#F7FAFC]' : 'text-[#1E293B]'
-                }`}
-              numberOfLines={1}
-            >
-              GetAiPilot
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <Text
+                style={{
+                  fontSize: 19,
+                  lineHeight: 24,
+                  fontWeight: '800',
+                  letterSpacing: -0.5,
+                  color: isDark ? '#FFFFFF' : '#0F172A',
+                }}
+                numberOfLines={1}
+              >
+                GetAi<Text style={{ color: isDark ? '#C084FC' : '#7C3AED' }}>Pilot</Text>
+              </Text>
+              <View
+                style={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: 2.5,
+                  backgroundColor: isDark ? '#C084FC' : '#7C3AED',
+                  marginTop: -2,
+                }}
+              />
+            </View>
           )}
           {title && subtitle ? (
             <Text
@@ -275,46 +346,58 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
       {rightElement ? (
         <View className="flex-row items-center shrink-0">{rightElement}</View>
       ) : displayPlanBadge ? (
+        /* Super Compact & Chic Luxury Plan Badge */
         <View className="flex-row items-center shrink-0">
           <Pressable cssInterop={false}
             onPress={handlePlanBadgePress}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
-            accessibilityLabel={`Current workspace plan: ${planLabel || 'Free'}. Tap to view and upgrade plans`}
+            accessibilityLabel={`Current workspace plan: ${compactPlan}. Tap to view and upgrade plans`}
             style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] }]}
           >
             <View
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                gap: 6,
-                height: 36,
-                paddingHorizontal: 12,
-                borderRadius: 18,
-                borderWidth: 0,
-                borderColor: isDark ? 'rgba(47, 140, 255, 0.4)' : 'rgba(10, 132, 255, 0.25)',
-                backgroundColor: colors.accentSoft,
+                gap: 5,
+                height: 28,
+                paddingHorizontal: 9,
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: isDark ? 'rgba(168, 85, 247, 0.35)' : 'rgba(147, 51, 234, 0.22)',
+                backgroundColor: isDark ? 'rgba(168, 85, 247, 0.16)' : '#F3E8FF',
                 alignSelf: 'center',
+                shadowColor: '#8B5CF6',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: isDark ? 0.2 : 0.06,
+                shadowRadius: 3,
+                elevation: 1,
               }}
             >
               <View
-                className="w-[7px] h-[7px] rounded-full shrink-0"
-                style={{ backgroundColor: isActive ? '#30D158' : '#F59E0B' }}
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: isActive ? '#22C55E' : '#F59E0B',
+                }}
               />
               <Text
-                className="text-[13px] font-medium shrink-0"
-                style={{ color: colors.accent }}
+                style={{
+                  fontSize: 11.5,
+                  fontWeight: '700',
+                  color: isDark ? '#E9D5FF' : '#6D28D9',
+                  letterSpacing: -0.1,
+                }}
                 numberOfLines={1}
-                ellipsizeMode="tail"
               >
-                {planLabel || 'Free Plan'}
+                {compactPlan}
               </Text>
               <HugeiconsIcon
                 icon={ArrowRight01Icon}
-                size={13}
-                color={colors.accent}
-                strokeWidth={2}
-                className="ml-0.5 shrink-0"
+                size={10}
+                color={isDark ? '#C084FC' : '#7C3AED'}
+                strokeWidth={2.4}
               />
             </View>
           </Pressable>

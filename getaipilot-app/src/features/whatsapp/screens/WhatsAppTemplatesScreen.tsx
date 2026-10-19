@@ -397,21 +397,14 @@ export const WhatsAppTemplatesScreen: React.FC<
 
             {/* Sync Meta Templates Button */}
             <Pressable
-              className={`flex-row items-center px-2.5 py-1 rounded-full active:opacity-75 ${
-                activeStatus === "ALL"
-                  ? isDark
-                    ? "bg-white/20"
-                    : "bg-black/10"
-                  : isDark
-                  ? "bg-white/[0.06]"
-                  : "bg-black/[0.04]"
-              }`}
+              className="flex-row items-center gap-1 px-2 py-1 rounded-md bg-emerald-500/10 active:opacity-75"
               onPress={() => {
                 if (Platform.OS !== "web") {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }
-                setActiveStatus("ALL");
+                refetch();
               }}
+              disabled={isRefetching}
             >
               <Ionicons
                 name="refresh-outline"
@@ -423,90 +416,7 @@ export const WhatsAppTemplatesScreen: React.FC<
                 {isRefetching ? "Refreshing…" : "Refresh"}
               </Text>
             </Pressable>
-
-            {/* Approved */}
-            <Pressable
-              className={`flex-row items-center gap-1 px-2.5 py-1 rounded-full active:opacity-75 ${
-                activeStatus === "APPROVED"
-                  ? "bg-emerald-500/25"
-                  : "bg-emerald-500/10"
-              }`}
-              onPress={() => {
-                if (Platform.OS !== "web") {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-                setActiveStatus(
-                  activeStatus === "APPROVED" ? "ALL" : "APPROVED",
-                );
-              }}
-            >
-              <Ionicons name="checkmark-circle" size={11} color="#25D366" />
-              <Text className="text-[11px] font-bold text-emerald-500">
-                Approved ({stats.approved})
-              </Text>
-            </Pressable>
-
-            {/* In Review / Pending */}
-            <Pressable
-              className={`flex-row items-center gap-1 px-2.5 py-1 rounded-full active:opacity-75 ${
-                activeStatus === "PENDING"
-                  ? "bg-amber-500/25"
-                  : "bg-amber-500/10"
-              }`}
-              onPress={() => {
-                if (Platform.OS !== "web") {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-                setActiveStatus(
-                  activeStatus === "PENDING" ? "ALL" : "PENDING",
-                );
-              }}
-            >
-              <Ionicons name="time" size={11} color="#F59E0B" />
-              <Text className="text-[11px] font-bold text-amber-500">
-                In Review ({stats.pending})
-              </Text>
-            </Pressable>
-
-            {/* Rejected */}
-            <Pressable
-              className={`flex-row items-center gap-1 px-2.5 py-1 rounded-full active:opacity-75 ${
-                activeStatus === "REJECTED"
-                  ? "bg-rose-500/25"
-                  : "bg-rose-500/10"
-              }`}
-              onPress={() => {
-                if (Platform.OS !== "web") {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-                setActiveStatus(
-                  activeStatus === "REJECTED" ? "ALL" : "REJECTED",
-                );
-              }}
-            >
-              <Ionicons name="alert-circle" size={11} color="#EF4444" />
-              <Text className="text-[11px] font-bold text-rose-500">
-                Rejected ({stats.rejected})
-              </Text>
-            </Pressable>
-          </ScrollView>
-
-          {/* Sync Meta Button */}
-          <Pressable
-            className="flex-row items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 active:opacity-75 ml-2"
-            onPress={() => {
-              if (Platform.OS !== "web") {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              refetch();
-            }}
-            disabled={isRefetching}
-          >
-            <Ionicons name="refresh" size={12} color="#25D366" />
-            <Text className="text-[11px] font-bold text-emerald-500">
-              {isRefetching ? "Syncing..." : "Sync Meta"}
-            </Text>
-          </Pressable>
+          </View>
         </View>
 
         {/* Templates FlatList */}

@@ -58,7 +58,7 @@
         "expo-navigation-bar",
         {
           "enforceContrast": false,
-          "barStyle": "dark"
+          "style": "dark"
         }
       ],
       "expo-router",
