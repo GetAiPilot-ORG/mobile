@@ -273,8 +273,16 @@ export default function FreeToolsScreen() {
           </ScrollView>
         </View>
 
-        {/* Tools Grid */}
-        <View className="mt-1 ">
+        {/* Tools 2-Column Grid */}
+        <View
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            justifyContent: "space-between",
+            rowGap: 12,
+            marginTop: 4,
+          }}
+        >
           {filteredTools.map((tool) => (
             <ToolCard
               key={tool.id}
@@ -284,6 +292,10 @@ export default function FreeToolsScreen() {
               icon={tool.icon}
               iconBg={tool.iconBg}
               badge={tool.badge}
+              style={{
+                width: "48.2%",
+                minHeight: 180,
+              }}
               onPress={() => void handleToolPress(tool)}
             />
           ))}
