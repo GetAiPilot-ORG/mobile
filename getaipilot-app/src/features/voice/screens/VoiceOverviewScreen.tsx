@@ -1,5 +1,5 @@
 import { FeaturePlanModal } from "@/components/FeaturePlanModal";
-import { ProductActions, ProductButton, ProductEmpty, ProductHeading, ProductMetrics, ProductRow, ProductSection, useProductPalette } from "@/components/ProductUI";
+import { ProductActions, ProductButton, ProductEmpty, ProductMetrics, ProductRow, ProductSection, useProductPalette } from "@/components/ProductUI";
 import { usePlatformSubscription } from "@/hooks/usePlatformSubscription";
 import { useTheme } from "@/theme";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -104,19 +104,6 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
         }
         showsVerticalScrollIndicator={false}
       >
-        <ProductHeading
-          title={"A better way\nto call."}
-          action="Make a call"
-          isLocked={!hasVoice}
-          onAction={() => {
-            if (!hasVoice) {
-              openLockModal("AI Voice Calls");
-              return;
-            }
-            onOpenTriggerCall?.();
-          }}
-        />
-
         {data?.isPlanExpired && (
           <VoicePlanExpiredBanner
             overview={data}
@@ -126,28 +113,97 @@ export const VoiceOverviewScreen: React.FC<Props> = ({
 
         <View
           style={{
-            backgroundColor: palette.lavender,
-            borderRadius: 26,
-            padding: 22,
+            flexDirection: "row",
+            gap: 12,
             marginBottom: 26,
-            gap: 18,
           }}
         >
-          <Text style={{ fontSize: 13, color: palette.textSecondary }}>Your calling balance</Text>
-          <Text style={{ fontSize: 34, fontWeight: "500", color: palette.text }}>
-            {rawMinutes.toLocaleString()} <Text style={{ fontSize: 16 }}>AI mins</Text>
-          </Text>
-          <ProductButton
-            label="Add minutes"
-            isLocked={!hasVoice}
-            onPress={() => {
-              if (!hasVoice) {
-                openLockModal("AI Calling Minutes");
-                return;
-              }
-              openVoiceWebBilling(queryClient, isDark);
+          {/* Left: A better way to call */}
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: palette.card,
+              borderRadius: 24,
+              padding: 18,
+              justifyContent: "space-between",
+              gap: 16,
+              minHeight: 185,
             }}
-          />
+          >
+            <View style={{ gap: 6 }}>
+              <Text
+                style={{
+                  fontSize: 22,
+                  lineHeight: 27,
+                  letterSpacing: -0.5,
+                  fontWeight: "600",
+                  color: palette.text,
+                }}
+              >
+                {"A better way\nto call."}
+              </Text>
+            </View>
+
+            <ProductButton
+              label="Make a call"
+              fullWidth
+              isLocked={!hasVoice}
+              onPress={() => {
+                if (!hasVoice) {
+                  openLockModal("AI Voice Calls");
+                  return;
+                }
+                onOpenTriggerCall?.();
+              }}
+            />
+          </View>
+
+          {/* Right: Your calling balance */}
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: palette.lavender,
+              borderRadius: 24,
+              padding: 18,
+              justifyContent: "space-between",
+              gap: 16,
+              minHeight: 185,
+            }}
+          >
+            <View style={{ gap: 6 }}>
+              <Text style={{ fontSize: 13, color: palette.textSecondary, fontWeight: "500" }}>
+                Your calling balance
+              </Text>
+              <Text
+                style={{
+                  fontSize: 28,
+                  fontWeight: "600",
+                  color: palette.text,
+                  letterSpacing: -0.5,
+                }}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
+                {rawMinutes.toLocaleString()}{" "}
+                <Text style={{ fontSize: 14, fontWeight: "500", color: palette.textSecondary }}>
+                  AI mins
+                </Text>
+              </Text>
+            </View>
+
+            <ProductButton
+              label="Add minutes"
+              fullWidth
+              isLocked={!hasVoice}
+              onPress={() => {
+                if (!hasVoice) {
+                  openLockModal("AI Calling Minutes");
+                  return;
+                }
+                openVoiceWebBilling(queryClient, isDark);
+              }}
+            />
+          </View>
         </View>
 
         <ProductMetrics
