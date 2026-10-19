@@ -1,9 +1,7 @@
-// Conditional import of expo-notifications to avoid errors in Expo Go
+// Import of expo-notifications
 let Notifications: typeof import('expo-notifications') | undefined;
 try {
-  if (require('expo-constants').default.appOwnership !== 'expo') {
-    Notifications = require('expo-notifications');
-  }
+  Notifications = require('expo-notifications');
 } catch {
   Notifications = undefined;
 }
@@ -125,6 +123,16 @@ export class NotificationService {
           enableVibrate: true,
           showBadge: true,
         });
+
+        // 9. Page clicks, views, and visitor analytics
+        await Notifications.setNotificationChannelAsync('analytics', {
+          name: 'Page Clicks & Views Alerts',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 200, 150, 200],
+          lightColor: '#06B6D4',
+          enableVibrate: true,
+          showBadge: true,
+        });
       } catch (err) {
         console.warn('[NotificationService] Error setting up Android channels:', err);
       }
@@ -169,17 +177,38 @@ export class NotificationService {
         return { token: null, status: finalStatus };
       }
 
-      // 3. Obtain Expo Push Token using EAS project ID
+      // 3. Obtain Expo Push Token using EAS project ID (with retry for network/Google Play Services initialization)
       const projectId =
         Constants?.expoConfig?.extra?.eas?.projectId ??
         Constants?.easConfig?.projectId ??
         'b20e09aa-b2a4-483d-ba57-6b1b70f6d988';
 
-      const tokenData = await Notifications.getExpoPushTokenAsync({
-        projectId,
-      });
+      let token: string | null = null;
+      let lastFetchError: any = null;
 
-      const token = tokenData.data;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          if (attempt > 1) {
+            console.log(`🔄 [NotificationService] Retrying push token fetch (attempt ${attempt}/3)...`);
+            await new Promise((res) => setTimeout(res, 2000 * attempt));
+          }
+          const tokenData = await Notifications.getExpoPushTokenAsync({
+            projectId,
+          });
+          if (tokenData?.data) {
+            token = tokenData.data;
+            break;
+          }
+        } catch (fetchErr: any) {
+          lastFetchError = fetchErr;
+          console.warn(`⚠️ [NotificationService] Token fetch attempt ${attempt} notice:`, fetchErr?.message || fetchErr);
+        }
+      }
+
+      if (!token && lastFetchError) {
+        throw lastFetchError;
+      }
+
       if (token) {
         console.log('==============================================');
         console.log('🔥 [NotificationService] EXPO PUSH TOKEN:');
@@ -190,7 +219,7 @@ export class NotificationService {
 
       return {
         token,
-        status: 'granted',
+        status: token ? 'granted' : 'denied',
       };
     } catch (error: any) {
       console.warn('❌ [NotificationService] Failed to obtain Expo push token:', error?.message || error);
@@ -210,14 +239,6 @@ export class NotificationService {
     console.log(`📡 [NotificationService] Syncing push token for user ${userId}...`);
 
     try {
-      const lastSyncedUser = await AsyncStorage.getItem(LAST_SYNCED_USER_KEY);
-      const lastToken = await AsyncStorage.getItem(PUSH_TOKEN_STORAGE_KEY);
-
-      // Skip redundant sync if already synced for this user with identical token
-      if (lastSyncedUser === userId && lastToken === token) {
-        return true;
-      }
-
       const payload = {
         push_token: token,
         platform: Platform.OS,
@@ -231,12 +252,13 @@ export class NotificationService {
       try {
         await apiClient.post('/mobile/v1/user/push-token', payload);
         bffSuccess = true;
+        console.log('✅ [NotificationService] Successfully synced push token to BFF for user:', userId);
       } catch (bffErr) {
-        // BFF might be offline or route being established
-        console.warn('[NotificationService] BFF push token sync notice, trying Supabase direct:', bffErr);
+        console.log('[NotificationService] BFF offline or unreachable, using Supabase direct sync...');
       }
 
-      // 2. Fallback / Direct sync to Supabase profiles metadata
+      // 2. Direct sync to Supabase profiles table
+      let supabaseSuccess = false;
       try {
         const { error: profileError } = await supabase
           .from('profiles')
@@ -247,18 +269,21 @@ export class NotificationService {
           .eq('id', userId);
 
         if (profileError) {
-          // If profiles table doesn't have a push_token column, log quietly without breaking
           console.warn('⚠️ [NotificationService] Supabase profile push_token update notice:', profileError.message);
         } else {
+          supabaseSuccess = true;
           console.log('✅ [NotificationService] Successfully updated push_token in profiles table for user:', userId);
         }
       } catch (sbErr) {
-        console.warn('[NotificationService] Supabase fallback error:', sbErr);
+        console.warn('[NotificationService] Supabase sync error:', sbErr);
       }
 
-      await AsyncStorage.setItem(LAST_SYNCED_USER_KEY, userId);
-      await AsyncStorage.setItem(PUSH_TOKEN_STORAGE_KEY, token);
-      return bffSuccess;
+      if (bffSuccess || supabaseSuccess) {
+        await AsyncStorage.setItem(LAST_SYNCED_USER_KEY, userId);
+        await AsyncStorage.setItem(PUSH_TOKEN_STORAGE_KEY, token);
+        return true;
+      }
+      return false;
     } catch (err) {
       console.warn('[NotificationService] Sync token error:', err);
       return false;
