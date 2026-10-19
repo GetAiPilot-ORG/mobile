@@ -15,7 +15,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { X, Send, Maximize2, Minimize2 } from 'lucide-react-native';
-import { LiveOrb } from './LiveOrb';
+
+import { ChatBotLogo } from './ChatBotLogo';
 import { useChatbot } from './useChatbot';
 import { useTheme, getColors } from '@/theme';
 
@@ -177,7 +178,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               ]}
             >
               <View style={styles.headerTitleWrap}>
-                <LiveOrb size={32} variant="black" interactive />
+                <ChatBotLogo size={32} withSparkleBadge={true} />
                 <View style={styles.headerTextWrap}>
                   <Text
                     style={[
@@ -286,7 +287,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 >
                   {msg.role === 'assistant' && (
                     <View style={styles.avatarWrap}>
-                      <LiveOrb size={28} variant="black" />
+                      <ChatBotLogo size={26} isAnimated={false} />
                     </View>
                   )}
 
@@ -462,7 +463,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               {isLoading && (
                 <View style={styles.typingRow}>
                   <View style={styles.avatarWrap}>
-                    <LiveOrb size={28} variant="black" />
+                    <ChatBotLogo size={26} isAnimated={true} />
                   </View>
                   <View
                     style={[

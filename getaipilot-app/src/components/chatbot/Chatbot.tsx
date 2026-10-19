@@ -13,7 +13,8 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
-import { LiveOrb } from './LiveOrb';
+
+import { ChatBotLogo } from './ChatBotLogo';
 import { ChatWindow } from './ChatWindow';
 import { useTheme } from '@/theme';
 
@@ -77,8 +78,8 @@ export const Chatbot: React.FC = () => {
             style={styles.touchableArea}
             hitSlop={{ top: 10, bottom: 10, left: 14, right: 0 }}
           >
-            {/* Pulsing Live Orb */}
-            <LiveOrb size={22} variant="black" />
+            {/* AI Bot Logo with Sparkles */}
+            <ChatBotLogo size={25} />
 
             {/* Vertical Chatbot Text */}
             <View style={styles.verticalTextWrap}>
