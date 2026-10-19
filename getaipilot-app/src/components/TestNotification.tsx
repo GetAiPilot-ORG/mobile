@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { Pressable, Text, View, Alert, Platform } from 'react-native';
 import Constants from 'expo-constants';
@@ -9,6 +9,16 @@ export function TestNotificationButton() {
   const { sendTestNotification, expoPushToken, requestPermissions } = useNotifications();
   const [tokenText, setTokenText] = useState<string | null>(expoPushToken);
   const isExpoGo = Constants.appOwnership === 'expo';
+
+  useEffect(() => {
+    if (expoPushToken) {
+      setTokenText(expoPushToken);
+      console.log('====================================================');
+      console.log('🔥 [TestNotification] Push Token Ready:');
+      console.log(expoPushToken);
+      console.log('====================================================');
+    }
+  }, [expoPushToken]);
 
   const handleConsoleToken = async () => {
     let token = expoPushToken;

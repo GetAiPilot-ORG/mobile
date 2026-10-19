@@ -8,8 +8,9 @@ import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { Platform } from 'react-native';
-import { NotificationService } from '../services/notificationService';
+import { NotificationService, PUSH_TOKEN_STORAGE_KEY } from '../services/notificationService';
 import { useAuth } from './AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type NotificationsModule = typeof import('expo-notifications');
 
@@ -184,7 +185,24 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     });
   };
 
-  // Automatically register & sync when user session is available
+  // 1. Restore cached push token on mount and log to console immediately
+  useEffect(() => {
+    (async () => {
+      try {
+        const cached = await AsyncStorage.getItem(PUSH_TOKEN_STORAGE_KEY);
+        if (cached) {
+          setExpoPushToken(cached);
+          console.log('==============================================');
+          console.log('📲 [PUSH TOKEN CACHED]:', cached);
+          console.log('==============================================');
+        }
+      } catch (err) {
+        // ignore
+      }
+    })();
+  }, []);
+
+  // 2. Automatically request permissions & fetch push token on app mount
   useEffect(() => {
     if (!canUseNotifications) return;
     if (!Notifications) return;
@@ -197,12 +215,21 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       })
       .catch(() => { });
 
-    if (user?.id) {
-      requestPermissions().catch((e) => {
-        console.warn('[NotificationContext] Auto-register notice:', e);
+    // Always fetch push token on mount so it prints to console immediately
+    requestPermissions().catch((e) => {
+      console.warn('[NotificationContext] Auto-register notice:', e);
+    });
+  }, [canUseNotifications]);
+
+  // 3. Whenever user session becomes available and token exists, sync to backend
+  useEffect(() => {
+    if (user?.id && expoPushToken) {
+      console.log('📡 [NotificationContext] Syncing token to backend for user:', user.id);
+      NotificationService.syncPushTokenWithBackend(expoPushToken, user.id).catch((e) => {
+        console.warn('[NotificationContext] Sync token error:', e);
       });
     }
-  }, [user?.id, canUseNotifications]);
+  }, [user?.id, expoPushToken]);
 
   // Set up notification received & response listeners for Foreground, Background, and Kill modes
   useEffect(() => {

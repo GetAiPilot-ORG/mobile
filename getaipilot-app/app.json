@@ -10,7 +10,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.unreala9.mobile",
+      "bundleIdentifier": "com.getaipilot",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Allow GetAIPilot to use Face ID for fast and secure authentication.",
         "ITSAppUsesNonExemptEncryption": false,
@@ -20,6 +20,7 @@
       }
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "androidNavigationBar": {
         "barStyle": "dark-content",
         "backgroundColor": "#00000000"
@@ -31,7 +32,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.unreala9.mobile",
+      "package": "com.getaipilot",
       "permissions": [
         "USE_BIOMETRIC",
         "USE_FINGERPRINT",

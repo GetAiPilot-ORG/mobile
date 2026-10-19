@@ -33,6 +33,7 @@ import { apiClient } from "../../src/core/api/client";
 import { usePlatformSubscription } from "../../src/hooks/usePlatformSubscription";
 import { supabase } from "../../src/lib/supabase";
 import { TestNotificationButton } from "@/components/TestNotification";
+import { useNotifications } from "@/contexts/NotificationContext";
 
 
 interface LoginDevice {
@@ -67,6 +68,17 @@ export default function HomeScreen() {
   } = usePlatformSubscription();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { isOnline, networkChecked, refresh, isChecking } = useNetwork();
+  const { expoPushToken, requestPermissions } = useNotifications();
+
+  useEffect(() => {
+    (async () => {
+      const token = expoPushToken || (await requestPermissions());
+      console.log('==============================================');
+      console.log('📲 [HomeScreen] CONSOLE PUSH TOKEN:');
+      console.log(token || '⚠️ No push token generated (check permissions or physical device)');
+      console.log('==============================================');
+    })();
+  }, [expoPushToken]);
 
   // Real Workspace Telemetry from Supabase
   const { data: telemetry, refetch: refetchTelemetry } = useQuery({
