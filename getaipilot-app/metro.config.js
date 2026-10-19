@@ -48,7 +48,11 @@ const defaultBlockList = Array.isArray(config.resolver.blockList)
 
 config.resolver.blockList = [
   ...defaultBlockList,
+  /.*[/\\]\.git[/\\].*/,
   /.*[/\\]Getaipilot-bff[/\\].*/,
+  /.*[/\\]android[/\\].*/,
+  /.*[/\\]state[/\\].*/,
 ];
 
 module.exports = withNativeWind(config, { input: './src/global.css' });
+

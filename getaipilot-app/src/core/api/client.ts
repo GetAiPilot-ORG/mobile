@@ -188,7 +188,7 @@ class ApiClient {
         }
       }
 
-      if (__DEV__ && !error?.message?.includes('Not authenticated') && !endpoint.includes('heartbeat')) {
+      if (__DEV__ && !error?.message?.includes('Not authenticated') && !endpoint.includes('heartbeat') && !endpoint.includes('device-sessions')) {
         console.warn(`[ApiClient] Request to ${endpoint} failed:`, error?.message);
       }
       throw error;
