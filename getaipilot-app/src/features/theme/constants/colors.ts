@@ -253,7 +253,7 @@ export const getColors = (isDark: boolean = false) => ({
 
     voice: "#A855F7",
     voiceDark: "#7E22CE",
-    voiceHeader: isDark ? "#1C162E" : "#4C1D95",
+    voiceHeader: isDark ? "#1C162E" : "#6D28D9",
     voiceBanner: isDark ? "#151022" : "#3B0764",
     voiceCard: isDark ? "#1C152C" : "#FFFFFF",
     voiceSoft: isDark

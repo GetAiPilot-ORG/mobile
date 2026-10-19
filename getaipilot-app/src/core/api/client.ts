@@ -88,6 +88,7 @@ class ApiClient {
 
     const headers: Record<string, string> = {
       Accept: 'application/json',
+      'ngrok-skip-browser-warning': 'true',
       ...(restOptions.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
       ...(customHeaders as Record<string, string>),
     };
@@ -187,7 +188,7 @@ class ApiClient {
         }
       }
 
-      if (__DEV__ && !error?.message?.includes('Not authenticated') && !endpoint.includes('heartbeat')) {
+      if (__DEV__ && !error?.message?.includes('Not authenticated') && !endpoint.includes('heartbeat') && !endpoint.includes('device-sessions')) {
         console.warn(`[ApiClient] Request to ${endpoint} failed:`, error?.message);
       }
       throw error;

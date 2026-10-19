@@ -3,7 +3,12 @@ import { AccessibilityInfo, Animated, Easing, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useTheme } from '@/theme';
 
-interface Props { minDurationMs?: number; onAnimationComplete?: () => void; }
+export interface Props {
+  minDurationMs?: number;
+  onAnimationComplete?: () => void;
+}
+
+export type AnimatedSplashScreenProps = Props;
 
 const brandLogo = require('../../../assets/images/icon.png');
 
@@ -11,11 +16,14 @@ export function AnimatedSplashScreen({ minDurationMs = 180, onAnimationComplete 
   const { colors, isDark } = useTheme();
   const [opacity] = useState(() => new Animated.Value(1));
   const complete = useRef(onAnimationComplete);
-  useEffect(() => { complete.current = onAnimationComplete; }, [onAnimationComplete]);
+  useEffect(() => {
+    complete.current = onAnimationComplete;
+  }, [onAnimationComplete]);
 
   useEffect(() => {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
+
     const start = (reduced: boolean) => {
       if (cancelled) return;
       if (!reduced) {
@@ -31,7 +39,11 @@ export function AnimatedSplashScreen({ minDurationMs = 180, onAnimationComplete 
         if (!cancelled) complete.current?.();
       }, reduced ? 0 : Math.min(minDurationMs, 250));
     };
-    AccessibilityInfo.isReduceMotionEnabled().then(start).catch(() => start(true));
+
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then(start)
+      .catch(() => start(true));
+
     return () => {
       cancelled = true;
       if (timer) clearTimeout(timer);
@@ -79,4 +91,3 @@ export function AnimatedSplashScreen({ minDurationMs = 180, onAnimationComplete 
     </View>
   );
 }
-

@@ -194,6 +194,13 @@ export class VoiceAdapter {
       env.SUPABASE_ANON_KEY,
   );
 
+  public static getVomyraConfig() {
+    return {
+      apiKey: env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx",
+      baseUrl: env.VOMYRA_BASE_URL || "https://api.vomyra.com",
+    };
+  }
+
   /**
    * Resolves the true canonical VoicePilot identity and workspace context
    * for the authenticated GetAiPilot Hub user.
@@ -383,7 +390,7 @@ export class VoiceAdapter {
           .select("id", { count: "exact", head: true })
           .in("workspace_id", workspaceIds),
         this.voiceSupabase
-          .from("call_logs")
+          .from("calls")
           .select("duration_seconds", { count: "exact" })
           .in("workspace_id", workspaceIds),
         Promise.all(
@@ -587,8 +594,7 @@ export class VoiceAdapter {
     );
 
     // 2. Fetch Live Real Call Logs from Vomyra API
-    const vomyraApiKey = env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx";
-    const vomyraBaseUrl = env.VOICE_SERVICE_URL || env.VOMYRA_BASE_URL || "https://app.getaipilot.com";
+    const { apiKey: vomyraApiKey, baseUrl: vomyraBaseUrl } = this.getVomyraConfig();
 
     let rawCalls: any[] = [];
     try {
@@ -604,6 +610,19 @@ export class VoiceAdapter {
       }
     } catch (err: any) {
       console.warn("[VOICE ADAPTER] Vomyra calls API fetch error:", err.message);
+    }
+
+    // Also fetch locally queued or logged calls from Supabase calls table
+    let dbCalls: any[] = [];
+    try {
+      const { data: dbC } = await this.voiceSupabase
+        .from("calls")
+        .select("*, assistants(id, name)")
+        .in("workspace_id", workspaceIds)
+        .order("created_at", { ascending: false });
+      dbCalls = dbC || [];
+    } catch (e) {
+      console.warn("[VOICE ADAPTER] Error fetching DB calls:", e);
     }
 
     // 3. Filter calls belonging STRICTLY to this user's assistants
@@ -732,6 +751,52 @@ export class VoiceAdapter {
       };
     });
 
+    const seenIds = new Set(formattedCalls.map((c: any) => c.id));
+
+    dbCalls.forEach((dc: any) => {
+      const matchId = dc.provider_resource_id || dc.id;
+      if (seenIds.has(matchId) || seenIds.has(dc.id)) return;
+
+      const durSec = Number(dc.duration_seconds || 0);
+      const m = Math.floor(durSec / 60);
+      const s = durSec % 60;
+      const durationStr = m > 0 ? `${m}m ${s}s` : `${s}s`;
+
+      formattedCalls.unshift({
+        id: dc.id,
+        assistant: dc.assistants?.name || "Voice Assistant",
+        assistantId: dc.assistant_id || "",
+        customerNumber: dc.customer_number || "Unknown",
+        callerName: dc.notes || "",
+        assignedNumber: "Direct Voice Line",
+        duration: durationStr,
+        durationSeconds: durSec,
+        status: dc.status || "queued",
+        direction: "Outbound",
+        callType: "phone",
+        cost: `$${(Math.max(1, Math.ceil(durSec / 60)) * 0.045).toFixed(2)}`,
+        time: dc.created_at
+          ? new Date(dc.created_at).toLocaleDateString("en-US", {
+              month: "short",
+              day: "2-digit",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            })
+          : "Recent",
+        createdAt: dc.created_at || new Date().toISOString(),
+        recordingUrl: dc.recording_url || null,
+        summary: dc.whatsapp_summary || dc.notes || "Call logged.",
+        notes: dc.notes || "",
+        transcript: dc.transcript || "",
+        transcriptMessages: dc.transcript ? [{ role: "assistant", content: dc.transcript }] : [],
+        campaign: "",
+        campaignId: dc.campaign_id || "",
+      });
+      seenIds.add(dc.id);
+    });
+
     if (filters?.status) {
       return formattedCalls.filter((c) => c.status === filters.status);
     }
@@ -752,8 +817,7 @@ export class VoiceAdapter {
   }
 
   public static async getCallDetails(user: JWTPayload, callId: string) {
-    const vomyraApiKey = env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx";
-    const vomyraBaseUrl = env.VOICE_SERVICE_URL || env.VOMYRA_BASE_URL || "https://app.getaipilot.com";
+    const { apiKey: vomyraApiKey, baseUrl: vomyraBaseUrl } = this.getVomyraConfig();
 
     try {
       const res = await fetch(`${vomyraBaseUrl}/v1/calls/${callId}`, {
@@ -818,8 +882,7 @@ export class VoiceAdapter {
   }
 
   public static async getCallTranscript(user: JWTPayload, callId: string) {
-    const vomyraApiKey = env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx";
-    const vomyraBaseUrl = env.VOICE_SERVICE_URL || env.VOMYRA_BASE_URL || "https://app.getaipilot.com";
+    const { apiKey: vomyraApiKey, baseUrl: vomyraBaseUrl } = this.getVomyraConfig();
 
     try {
       const res = await fetch(`${vomyraBaseUrl}/v1/calls/${callId}/transcript`, {
@@ -836,8 +899,7 @@ export class VoiceAdapter {
   }
 
   public static async getCallRecording(user: JWTPayload, callId: string) {
-    const vomyraApiKey = env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx";
-    const vomyraBaseUrl = env.VOICE_SERVICE_URL || env.VOMYRA_BASE_URL || "https://app.getaipilot.com";
+    const { apiKey: vomyraApiKey, baseUrl: vomyraBaseUrl } = this.getVomyraConfig();
 
     try {
       const res = await fetch(`${vomyraBaseUrl}/v1/calls/${callId}/recording`, {
@@ -989,9 +1051,38 @@ export class VoiceAdapter {
       }
     }
 
+    const { apiKey: vomyraApiKey, baseUrl: vomyraBaseUrl } = this.getVomyraConfig();
+
+    // If still no number resolved, check Vomyra's live numbers for an assignment to this assistant
+    if (!verifiedAssignedNumber && realVomyraAssistantId) {
+      try {
+        const vNumRes = await fetch(`${vomyraBaseUrl}/v1/numbers`, {
+          headers: { "x-api-key": vomyraApiKey },
+        });
+        if (vNumRes.ok) {
+          const vNumData: any = await vNumRes.json();
+          const list = vNumData?.data || [];
+          const match = list.find(
+            (n: any) => n.assigned_to?.assistant_id === realVomyraAssistantId
+          );
+          if (match?.phone_number) {
+            verifiedAssignedNumber = match.phone_number.trim();
+          }
+        }
+      } catch (err: any) {
+        console.warn("[VOICE ADAPTER] Error checking Vomyra live numbers:", err?.message);
+      }
+    }
+
     const idempotencyKey = `call_${workspaceId}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
     // Prepare Vomyra call input
+    // NOTE: Vomyra API requires either assigned_number OR assistant_id (never both).
+    // If assigned_number is passed, Vomyra initiates the outbound call directly from that carrier route
+    // and binds the agent assigned to that number.
+    // If assistant_id is passed without an internal Vomyra carrier link, Vomyra throws
+    // "No phone number is assigned to this assistant".
+    // Therefore, always prioritize assigned_number when available!
     const callInput: any = {
       customer_number: targetCustomerNumber,
       customer_name: targetCustomerName,
@@ -1015,37 +1106,99 @@ export class VoiceAdapter {
       JSON.stringify(callInput),
     );
 
-    const vomyraApiKey = env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx";
-    const vomyraBaseUrl = env.VOICE_SERVICE_URL || env.VOMYRA_BASE_URL || "https://app.getaipilot.com";
+    const dispatchCall = async (body: any) => {
+      const resp = await fetch(`${vomyraBaseUrl}/v1/calls`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": vomyraApiKey,
+        },
+        body: JSON.stringify(body),
+      });
+      const txt = await resp.text();
+      let parsed: any = {};
+      try {
+        parsed = JSON.parse(txt);
+      } catch {
+        parsed = { error: txt };
+      }
+      return { ok: resp.ok, status: resp.status, data: parsed };
+    };
 
-    const res = await fetch(`${vomyraBaseUrl}/v1/calls`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": vomyraApiKey,
-      },
-      body: JSON.stringify(callInput),
-    });
+    let callAttempt = await dispatchCall(callInput);
 
-    const responseText = await res.text();
-    let data: any = {};
-    try {
-      data = JSON.parse(responseText);
-    } catch {
-      data = { error: responseText };
+    // If Vomyra rejects with "No phone number is assigned", fallback to resolving the live number from Vomyra numbers
+    if (!callAttempt.ok && callInput.assistant_id) {
+      const errMsg = JSON.stringify(callAttempt.data);
+      if (
+        errMsg.toLowerCase().includes("no phone number is assigned") ||
+        errMsg.toLowerCase().includes("assign one of your purchased numbers")
+      ) {
+        console.warn(
+          "[VOICE ADAPTER] Assistant missing line in Vomyra cache. Querying live numbers to auto-fallback...",
+        );
+        try {
+          const vNumRes = await fetch(`${vomyraBaseUrl}/v1/numbers`, {
+            headers: { "x-api-key": vomyraApiKey },
+          });
+          if (vNumRes.ok) {
+            const vNumData: any = await vNumRes.json();
+            const list = vNumData?.data || [];
+            const match =
+              list.find(
+                (n: any) => n.assigned_to?.assistant_id === realVomyraAssistantId
+              ) || list[0];
+
+            if (match?.phone_number) {
+              const retryInput = { ...callInput };
+              delete retryInput.assistant_id;
+              retryInput.assigned_number = match.phone_number.trim();
+              console.log(
+                "[VOICE ADAPTER] Auto-retrying call with assigned_number:",
+                retryInput.assigned_number,
+              );
+              const retryAttempt = await dispatchCall(retryInput);
+              if (retryAttempt.ok) {
+                callAttempt = retryAttempt;
+              }
+            }
+          }
+        } catch (retryErr: any) {
+          console.warn("[VOICE ADAPTER] Auto-retry failed:", retryErr?.message);
+        }
+      }
     }
 
-    if (!res.ok) {
-      const rawErr = data.error || data.message;
+    if (!callAttempt.ok) {
+      const rawErr = callAttempt.data.error || callAttempt.data.message;
       let errorMsg =
         typeof rawErr === "object"
           ? rawErr.message || JSON.stringify(rawErr)
-          : rawErr || `Telephony server returned ${res.status}`;
+          : rawErr || `Telephony server returned ${callAttempt.status}`;
       errorMsg = String(errorMsg).replace(/Vomyra/gi, "VoicePilot Engine");
       throw new Error(errorMsg);
     }
 
-    return data.data || data;
+    const callResult = callAttempt.data.data || callAttempt.data;
+
+    // Record call in Supabase calls table for instant UI visibility
+    try {
+      await this.voiceSupabase.from("calls").insert({
+        workspace_id: workspaceId,
+        assistant_id: payload.assistantId || null,
+        customer_number: targetCustomerNumber,
+        provider: "vomyra",
+        provider_resource_id: callResult.id || callResult.call_id || null,
+        status: callResult.status || "queued",
+        idempotency_key: idempotencyKey,
+        notes: payload.customerName || "Outbound Mobile Call",
+        created_at: new Date().toISOString(),
+      });
+    } catch (insertErr: any) {
+      console.warn("[VOICE ADAPTER] Error saving call to Supabase:", insertErr?.message);
+    }
+
+    return callResult;
   }
 
   // --- 3. Assistants / Agents ---
@@ -1096,8 +1249,7 @@ export class VoiceAdapter {
   ) {
     const ctx = await this.resolveVoiceContext(user);
     const workspaceId = ctx.voiceWorkspaceId;
-    const vomyraApiKey = env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx";
-    const vomyraBaseUrl = env.VOICE_SERVICE_URL || env.VOMYRA_BASE_URL || "https://app.getaipilot.com";
+    const { apiKey: vomyraApiKey, baseUrl: vomyraBaseUrl } = this.getVomyraConfig();
 
     // 1. Create on Vomyra Provider
     let realVomyraId: string | null = null;
@@ -1175,8 +1327,7 @@ export class VoiceAdapter {
       !existing.provider_resource_id.startsWith("ast_")
     ) {
       try {
-        const vomyraApiKey = env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx";
-        const vomyraBaseUrl = env.VOICE_SERVICE_URL || env.VOMYRA_BASE_URL || "https://app.getaipilot.com";
+        const { apiKey: vomyraApiKey, baseUrl: vomyraBaseUrl } = this.getVomyraConfig();
         await fetch(
           `${vomyraBaseUrl}/v1/assistants/${existing.provider_resource_id}`,
           {
@@ -1563,8 +1714,7 @@ export class VoiceAdapter {
     }
 
     // 6. Immediately trigger live outbound calls to Vomyra
-    const vomyraApiKey = env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx";
-    const vomyraBaseUrl = env.VOICE_SERVICE_URL || env.VOMYRA_BASE_URL || "https://app.getaipilot.com";
+    const { apiKey: vomyraApiKey, baseUrl: vomyraBaseUrl } = this.getVomyraConfig();
 
     let dispatchedCount = 0;
     let failedCount = 0;
@@ -1738,8 +1888,7 @@ export class VoiceAdapter {
   }
 
   public static async getAvailableNumbers(user: JWTPayload) {
-    const vomyraApiKey = env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx";
-    const vomyraBaseUrl = env.VOICE_SERVICE_URL || env.VOMYRA_BASE_URL || "https://app.getaipilot.com";
+    const { apiKey: vomyraApiKey, baseUrl: vomyraBaseUrl } = this.getVomyraConfig();
 
     try {
       const vRes = await fetch(`${vomyraBaseUrl}/v1/numbers`, {
@@ -1865,8 +2014,7 @@ export class VoiceAdapter {
     // 3. Sync assignment with Vomyra Telephony API
     if (astData?.provider_resource_id) {
       try {
-        const vomyraApiKey = env.VOMYRA_API_KEY || "0KBY8fRk1ptydIq20Q8tkoBRGXn2KYhx";
-        const vomyraBaseUrl = env.VOICE_SERVICE_URL || env.VOMYRA_BASE_URL || "https://app.getaipilot.com";
+        const { apiKey: vomyraApiKey, baseUrl: vomyraBaseUrl } = this.getVomyraConfig();
 
         await fetch(`${vomyraBaseUrl}/v1/numbers/assignment`, {
           method: "PUT",
