@@ -140,6 +140,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       console.log('ℹ️ [NotificationContext] Notifications module not available (e.g. Expo Go)');
       return null;
     }
+    if (isRegistering) {
+      console.log('⏳ [NotificationContext] Already requesting token, waiting...');
+      return expoPushToken;
+    }
     setIsRegistering(true);
     try {
       console.log('🔄 [NotificationContext] Requesting push permissions & token for user:', user?.id || 'anonymous');

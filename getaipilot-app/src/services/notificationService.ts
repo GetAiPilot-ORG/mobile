@@ -167,17 +167,38 @@ export class NotificationService {
         return { token: null, status: finalStatus };
       }
 
-      // 3. Obtain Expo Push Token using EAS project ID
+      // 3. Obtain Expo Push Token using EAS project ID (with retry for network/Google Play Services initialization)
       const projectId =
         Constants?.expoConfig?.extra?.eas?.projectId ??
         Constants?.easConfig?.projectId ??
         'b20e09aa-b2a4-483d-ba57-6b1b70f6d988';
 
-      const tokenData = await Notifications.getExpoPushTokenAsync({
-        projectId,
-      });
+      let token: string | null = null;
+      let lastFetchError: any = null;
 
-      const token = tokenData.data;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          if (attempt > 1) {
+            console.log(`🔄 [NotificationService] Retrying push token fetch (attempt ${attempt}/3)...`);
+            await new Promise((res) => setTimeout(res, 2000 * attempt));
+          }
+          const tokenData = await Notifications.getExpoPushTokenAsync({
+            projectId,
+          });
+          if (tokenData?.data) {
+            token = tokenData.data;
+            break;
+          }
+        } catch (fetchErr: any) {
+          lastFetchError = fetchErr;
+          console.warn(`⚠️ [NotificationService] Token fetch attempt ${attempt} notice:`, fetchErr?.message || fetchErr);
+        }
+      }
+
+      if (!token && lastFetchError) {
+        throw lastFetchError;
+      }
+
       if (token) {
         console.log('==============================================');
         console.log('🔥 [NotificationService] EXPO PUSH TOKEN:');
@@ -188,7 +209,7 @@ export class NotificationService {
 
       return {
         token,
-        status: 'granted',
+        status: token ? 'granted' : 'denied',
       };
     } catch (error: any) {
       console.warn('❌ [NotificationService] Failed to obtain Expo push token:', error?.message || error);
