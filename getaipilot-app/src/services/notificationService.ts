@@ -239,14 +239,6 @@ export class NotificationService {
     console.log(`📡 [NotificationService] Syncing push token for user ${userId}...`);
 
     try {
-      const lastSyncedUser = await AsyncStorage.getItem(LAST_SYNCED_USER_KEY);
-      const lastToken = await AsyncStorage.getItem(PUSH_TOKEN_STORAGE_KEY);
-
-      // Skip redundant sync if already synced for this user with identical token
-      if (lastSyncedUser === userId && lastToken === token) {
-        return true;
-      }
-
       const payload = {
         push_token: token,
         platform: Platform.OS,
@@ -260,12 +252,13 @@ export class NotificationService {
       try {
         await apiClient.post('/mobile/v1/user/push-token', payload);
         bffSuccess = true;
+        console.log('✅ [NotificationService] Successfully synced push token to BFF for user:', userId);
       } catch (bffErr) {
-        // BFF might be offline or route being established
-        console.warn('[NotificationService] BFF push token sync notice, trying Supabase direct:', bffErr);
+        console.log('[NotificationService] BFF offline or unreachable, using Supabase direct sync...');
       }
 
-      // 2. Fallback / Direct sync to Supabase profiles metadata
+      // 2. Direct sync to Supabase profiles table
+      let supabaseSuccess = false;
       try {
         const { error: profileError } = await supabase
           .from('profiles')
@@ -276,18 +269,21 @@ export class NotificationService {
           .eq('id', userId);
 
         if (profileError) {
-          // If profiles table doesn't have a push_token column, log quietly without breaking
           console.warn('⚠️ [NotificationService] Supabase profile push_token update notice:', profileError.message);
         } else {
+          supabaseSuccess = true;
           console.log('✅ [NotificationService] Successfully updated push_token in profiles table for user:', userId);
         }
       } catch (sbErr) {
-        console.warn('[NotificationService] Supabase fallback error:', sbErr);
+        console.warn('[NotificationService] Supabase sync error:', sbErr);
       }
 
-      await AsyncStorage.setItem(LAST_SYNCED_USER_KEY, userId);
-      await AsyncStorage.setItem(PUSH_TOKEN_STORAGE_KEY, token);
-      return bffSuccess;
+      if (bffSuccess || supabaseSuccess) {
+        await AsyncStorage.setItem(LAST_SYNCED_USER_KEY, userId);
+        await AsyncStorage.setItem(PUSH_TOKEN_STORAGE_KEY, token);
+        return true;
+      }
+      return false;
     } catch (err) {
       console.warn('[NotificationService] Sync token error:', err);
       return false;
