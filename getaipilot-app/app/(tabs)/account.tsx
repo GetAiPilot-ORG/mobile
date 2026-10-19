@@ -115,10 +115,8 @@ export default function AccountScreen() {
     expoPushToken,
     permissionGranted,
     requestPermissions,
-    sendTestNotification,
     isDevice,
   } = useNotifications();
-  const [isSendingTestPush, setIsSendingTestPush] = useState(false);
   const queryClient = useQueryClient();
   const { confirmLogout, confirm: confirmDialog, showAlert } = useThemedDialog();
 
@@ -481,23 +479,6 @@ export default function AccountScreen() {
     } else {
       setPushEnabled(false);
       await AsyncStorage.setItem('@pref_push', 'false');
-    }
-  };
-
-  const handleSendTestPush = async () => {
-    if (isSendingTestPush) return;
-    setIsSendingTestPush(true);
-    try {
-      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      await sendTestNotification(
-        'GetAiPilot Alert',
-        'Push notifications are configured and active in your ecosystem.'
-      );
-      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (err: any) {
-      Alert.alert('Notice', err?.message || 'Could not trigger test notification.');
-    } finally {
-      setIsSendingTestPush(false);
     }
   };
 

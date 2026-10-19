@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Animated,
   PanResponder,
+  RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,7 +20,7 @@ import { AppTopBar } from '../src/components/AppTopBar';
 import { useNotifications, AppNotification } from '../src/contexts/NotificationContext';
 import { useTheme, getColors } from '@/theme';
 
-type FilterTab = 'all' | 'unread' | 'lead' | 'system';
+type FilterTab = 'all' | 'unread' | 'lead' | 'broadcast' | 'system';
 
 interface SwipeableCardProps {
   item: AppNotification;
@@ -76,6 +77,15 @@ function SwipeableNotificationCard({
           color: '#6366F1',
           bg: isDark ? 'rgba(99, 102, 241, 0.2)' : '#EEF2FF',
           label: 'System',
+        };
+      case 'info':
+      case 'broadcast':
+      case 'announcement':
+        return {
+          icon: 'megaphone' as const,
+          color: '#0EA5E9',
+          bg: isDark ? 'rgba(14, 165, 233, 0.2)' : '#E0F2FE',
+          label: 'Admin Broadcast',
         };
       default:
         return {
@@ -423,6 +433,8 @@ export default function NotificationsScreen() {
     deleteNotification,
     clearAllNotifications,
     addNotification,
+    refreshNotifications,
+    isRefreshing,
   } = useNotifications();
 
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
@@ -431,6 +443,8 @@ export default function NotificationsScreen() {
   const filteredNotifications = notificationsList.filter((item) => {
     if (activeTab === 'unread') return !item.isRead;
     if (activeTab === 'lead') return item.type === 'lead';
+    if (activeTab === 'broadcast')
+      return item.type === 'info' || item.type === 'broadcast' || item.type === 'announcement';
     if (activeTab === 'system') return item.type === 'system';
     return true;
   });
@@ -495,34 +509,6 @@ export default function NotificationsScreen() {
     await markAllAsRead();
   };
 
-  const handleSendSampleAlert = async () => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    const samples = [
-      {
-        title: '💼 Fresh CRM Lead Assigned',
-        body: 'Pooja Sharma submitted inquiry for Smart CRM & AI Voice.',
-        type: 'lead' as const,
-        data: { route: '/crm/contacts' },
-      },
-      {
-        title: '⚡ Fleet Automation Active',
-        body: 'WhatsApp automation broadcast delivered 48 customer messages.',
-        type: 'message' as const,
-        data: { route: '/(tabs)/products' },
-      },
-      {
-        title: '🛡️ Security Verification Alert',
-        body: 'New login session authorized from Android Device.',
-        type: 'system' as const,
-        data: { route: '/account/plans' },
-      },
-    ];
-    const picked = samples[Math.floor(Math.random() * samples.length)];
-    await addNotification(picked);
-  };
-
   return (
     <AppScreen safeArea={false}>
       {/* Top Header */}
@@ -532,6 +518,7 @@ export default function NotificationsScreen() {
         showNotificationIcon={false}
         rightElement={
           <View style={styles.headerRightActions}>
+
             {unreadCount > 0 && (
               <Pressable
                 onPress={handleMarkAllRead}
@@ -579,6 +566,13 @@ export default function NotificationsScreen() {
               id: 'lead',
               label: 'Leads',
               count: notificationsList.filter((n) => n.type === 'lead').length,
+            },
+            {
+              id: 'broadcast',
+              label: 'Broadcasts',
+              count: notificationsList.filter(
+                (n) => n.type === 'info' || n.type === 'broadcast' || n.type === 'announcement'
+              ).length,
             },
             {
               id: 'system',
@@ -651,6 +645,14 @@ export default function NotificationsScreen() {
       <FlatList
         data={filteredNotifications}
         keyExtractor={(item) => item.id}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={refreshNotifications}
+            tintColor={colors.accent || '#6366F1'}
+            colors={[colors.accent || '#6366F1']}
+          />
+        }
         renderItem={({ item }) => (
           <SwipeableNotificationCard
             item={item}
@@ -696,29 +698,6 @@ export default function NotificationsScreen() {
             >
               Jab bhi aapko lead, CRM activity ya bot alerts aayenge, woh yahan real-time me dikhenge.
             </Text>
-
-            {/* Quick Test Alert Action */}
-            <Pressable
-              onPress={handleSendSampleAlert}
-              style={({ pressed }) => [
-                styles.testAlertButton,
-                {
-                  backgroundColor: colors.accentSoft || '#E9E3FA',
-                  opacity: pressed ? 0.75 : 1,
-                  transform: [{ scale: pressed ? 0.96 : 1 }],
-                },
-              ]}
-            >
-              <Ionicons name="sparkles" size={16} color={colors.accent || '#6366F1'} />
-              <Text
-                style={[
-                  styles.testAlertButtonText,
-                  { color: colors.accent || '#6366F1' },
-                ]}
-              >
-                Simulate Sample Notification
-              </Text>
-            </Pressable>
           </View>
         }
       />
@@ -959,17 +938,5 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     textAlign: 'center',
     marginBottom: 24,
-  },
-  testAlertButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  testAlertButtonText: {
-    fontSize: 13,
-    fontWeight: '600',
   },
 });
