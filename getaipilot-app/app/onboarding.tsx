@@ -282,7 +282,7 @@ export default function OnboardingScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {/* Top Bar with Sign Out */}
+            {/* Top Bar with Sign Out & Skip to Home */}
             <View style={styles.topBar}>
               <Pressable
                 onPress={async () => {
@@ -294,6 +294,18 @@ export default function OnboardingScreen() {
                 style={styles.signOutBtn}
               >
                 <Text style={[styles.signOutText, isDark && styles.signOutTextDark]}>Sign out</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => {
+                  triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
+                  useAuthStore.getState().setOnboardingCompleted(true);
+                  router.replace('/(tabs)' as any);
+                }}
+                hitSlop={8}
+                style={styles.skipBtn}
+              >
+                <Text style={[styles.skipText, isDark && styles.skipTextDark]}>Skip to Home →</Text>
               </Pressable>
             </View>
 
@@ -780,7 +792,8 @@ const styles = StyleSheet.create({
   },
   topBar: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
     width: '100%',
   },
@@ -796,6 +809,19 @@ const styles = StyleSheet.create({
   },
   signOutTextDark: {
     color: '#9CA3AF',
+  },
+  skipBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+  },
+  skipText: {
+    fontSize: 13,
+    color: '#2563EB',
+    fontWeight: '600',
+  },
+  skipTextDark: {
+    color: '#60A5FA',
   },
   logoSection: {
     alignItems: 'center',
