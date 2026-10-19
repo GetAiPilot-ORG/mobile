@@ -21,3 +21,4 @@ export * from './TabMotion';
 export * from './ThemedDialog';
 export * from '../contexts/ThemedDialogContext';
 export * from './FeaturePlanModal';
+export * from './chatbot';

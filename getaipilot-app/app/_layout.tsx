@@ -20,9 +20,14 @@ import { ThemeProvider, useTheme, getColors } from "@/theme";
 import { useAuthStore } from "../src/core/store/authStore";
 import { captureReferralParam, handlePendingReferral } from "../src/services/referralService";
 import { ThemedDialogProvider } from "../src/contexts/ThemedDialogContext";
+import { Chatbot } from "../src/components/chatbot";
 
 // Suppress all warning popups and known deprecation noise
 LogBox.ignoreAllLogs(true);
+
+export const unstable_settings = {
+  initialRouteName: "(tabs)",
+};
 LogBox.ignoreLogs([
   '"shadow*" style props are deprecated. Use "boxShadow".',
   "props.pointerEvents is deprecated. Use style.pointerEvents",
@@ -119,7 +124,6 @@ function ReferralLinkListener() {
  */
 function AuthRouteGuard() {
   const authStatus = useAuthStore((s) => s.authStatus);
-  const onboardingCompleted = useAuthStore((s) => s.onboardingCompleted);
   const segments = useSegments();
   const router = useRouter();
 
@@ -130,7 +134,6 @@ function AuthRouteGuard() {
     // 2. Identify active route group
     const segment0 = segments[0] as string | undefined;
     const inAuthGroup = segment0 === "(auth)";
-    const inOnboarding = segment0 === "onboarding";
 
     const timer = setTimeout(() => {
       if (authStatus === "unauthenticated" && !inAuthGroup) {
@@ -141,40 +144,25 @@ function AuthRouteGuard() {
         }
         router.replace("/(auth)/login" as any);
       } else if (authStatus === "authenticated") {
-        // Wait until onboarding check is resolved
-        if (onboardingCompleted === null) return;
-
-        if (!onboardingCompleted) {
-          if (!inOnboarding) {
-            if (__DEV__) {
-              console.log(
-                "[AuthGuard] Incomplete onboarding -> navigating to onboarding",
-              );
-            }
-            router.replace("/onboarding" as any);
+        if (inAuthGroup) {
+          if (__DEV__) {
+            console.log(
+              "[AuthGuard] Authenticated user on auth route -> navigating to tabs (Home)",
+            );
           }
-        } else {
-          if (inAuthGroup || inOnboarding) {
-            if (__DEV__) {
-              console.log(
-                "[AuthGuard] Authenticated & onboarded -> navigating to tabs",
-              );
-            }
-            router.replace("/(tabs)" as any);
-          }
+          router.replace("/(tabs)" as any);
         }
       }
     }, 1);
 
     return () => clearTimeout(timer);
-  }, [authStatus, onboardingCompleted, segments]);
+  }, [authStatus, segments]);
 
   return null;
 }
 
 function SplashOverlay() {
   const authStatus = useAuthStore((s) => s.authStatus);
-  const onboardingCompleted = useAuthStore((s) => s.onboardingCompleted);
   const { networkChecked } = useNetwork();
   const [splashFinished, setSplashFinished] = useState(false);
 
@@ -182,8 +170,7 @@ function SplashOverlay() {
   if (
     splashFinished &&
     networkChecked &&
-    authStatus !== "hydrating" &&
-    (authStatus === "unauthenticated" || onboardingCompleted !== null)
+    authStatus !== "hydrating"
   ) {
     return null;
   }
@@ -283,6 +270,13 @@ function ThemedNavigationStack() {
         }}
       />
       <Stack.Screen
+        name="notifications"
+        options={{
+          headerShown: false,
+          gestureEnabled: true,
+        }}
+      />
+      <Stack.Screen
         name="+not-found"
         options={{
           headerShown: false,
@@ -310,6 +304,7 @@ export default function RootLayout() {
                           <ReferralLinkListener />
                           <AuthRouteGuard />
                           <ThemedNavigationStack />
+                          <Chatbot />
                           <OfflineNotice />
                           <SplashOverlay />
                         </ThemedDialogProvider>

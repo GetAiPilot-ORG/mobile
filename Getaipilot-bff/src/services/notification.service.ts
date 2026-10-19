@@ -18,6 +18,14 @@ export class NotificationService {
     env.SUPABASE_URL,
     env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY
   );
+  private static recentSentKeys = new Set<string>();
+
+  private static isDuplicateBffSend(key: string): boolean {
+    if (this.recentSentKeys.has(key)) return true;
+    this.recentSentKeys.add(key);
+    setTimeout(() => this.recentSentKeys.delete(key), 12000);
+    return false;
+  }
 
   /**
    * Save / register device push token for a user
@@ -814,6 +822,15 @@ export class NotificationService {
               route = row.link || '/crm';
             } else if (rawType === 'system') {
               channelId = 'system';
+            } else if (rawType.includes('click') || rawType.includes('view') || rawType === 'analytics') {
+              channelId = 'analytics';
+              route = row.link || '/tools/my-designs';
+            }
+
+            const dedupeKey = `${row.user_id || row.org_id}_${title}_${body}`;
+            if (this.isDuplicateBffSend(dedupeKey)) {
+              console.log(`[NotificationService] Skipping duplicate BFF push for: "${title}"`);
+              return;
             }
 
             console.log(`[NotificationService] Realtime DB notification bridged: "${title}" (Type: ${row.type}, Channel: ${channelId})`);
@@ -851,5 +868,142 @@ export class NotificationService {
     } catch (err: any) {
       console.warn('[NotificationService] Failed to initialize DB notifications bridge:', err?.message || err);
     }
+  }
+
+  /**
+   * Monitor user landing pages and bio pages for click count & view updates.
+   * Periodically checks landing_template_submissions and free_template_submissions.
+   * When clicks or views increment, generates a notification record and sends push notification
+   * directly to that page owner's device.
+   */
+  static initPageClickMonitor(intervalMs = 30000) {
+    let lastMetrics: Record<string, { clicks: number; views: number }> = {};
+    let initialized = false;
+
+    const checkMetrics = async () => {
+      try {
+        const [bioRes, landingRes, tgRes] = await Promise.all([
+          this.adminSupabase
+            .from('free_template_submissions')
+            .select('id, user_id, page_title, slug, page_views, button_clicks'),
+          this.adminSupabase
+            .from('landing_template_submissions')
+            .select('id, user_id, page_title, slug, page_views, button_clicks'),
+          this.adminSupabase
+            .from('tg_landing_pages')
+            .select('id, user_id, title, slug, view_count'),
+        ]);
+
+        const currentMetrics: Record<string, { clicks: number; views: number; userId: string; title: string; type: 'bio' | 'landing' }> = {};
+
+        if (Array.isArray(bioRes.data)) {
+          for (const item of bioRes.data) {
+            if (!item.user_id) continue;
+            currentMetrics[`bio_${item.id}`] = {
+              clicks: Number(item.button_clicks || 0),
+              views: Number(item.page_views || 0),
+              userId: item.user_id,
+              title: item.page_title || item.slug || 'Bio Page',
+              type: 'bio',
+            };
+          }
+        }
+
+        if (Array.isArray(landingRes.data)) {
+          for (const item of landingRes.data) {
+            if (!item.user_id) continue;
+            currentMetrics[`landing_${item.id}`] = {
+              clicks: Number(item.button_clicks || 0),
+              views: Number(item.page_views || 0),
+              userId: item.user_id,
+              title: item.page_title || item.slug || 'Landing Page',
+              type: 'landing',
+            };
+          }
+        }
+
+        if (Array.isArray(tgRes.data)) {
+          for (const item of tgRes.data) {
+            if (!item.user_id) continue;
+            currentMetrics[`tg_${item.id}`] = {
+              clicks: 0,
+              views: Number(item.view_count || 0),
+              userId: item.user_id,
+              title: item.title || item.slug || 'TG Landing Page',
+              type: 'landing',
+            };
+          }
+        }
+
+        if (!initialized) {
+          lastMetrics = {};
+          for (const [k, v] of Object.entries(currentMetrics)) {
+            lastMetrics[k] = { clicks: v.clicks, views: v.views };
+          }
+          initialized = true;
+          return;
+        }
+
+        for (const [key, curr] of Object.entries(currentMetrics)) {
+          const prev = lastMetrics[key];
+          if (!prev) {
+            lastMetrics[key] = { clicks: curr.clicks, views: curr.views };
+            continue;
+          }
+
+          const prevClicks = prev.clicks || 0;
+          const currClicks = curr.clicks || 0;
+          const prevMilestone = Math.floor(prevClicks / 50) * 50;
+          const currMilestone = Math.floor(currClicks / 50) * 50;
+
+          // Milestone reached at 50, 100, 150, 200, 250, ...
+          if (currMilestone >= 50 && currMilestone > prevMilestone) {
+            const pageTypeLabel = curr.type === 'bio' ? 'Bio' : 'Landing';
+            const title = `🏆 ${currMilestone} Clicks Milestone on ${pageTypeLabel} Page!`;
+            const description = `Congratulations! Your ${pageTypeLabel.toLowerCase()} page "${curr.title}" just crossed ${currMilestone} clicks! Total clicks: ${currClicks} 🎉`;
+
+            console.log(`[NotificationService] ${currMilestone} clicks milestone achieved for user ${curr.userId}: ${curr.title}`);
+
+            // Insert into notifications table (initRealtimeDbListener automatically sends push notification once)
+            await this.adminSupabase.from('notifications').insert({
+              user_id: curr.userId,
+              title,
+              description,
+              type: 'page_click',
+              is_read: false,
+            });
+          }
+
+          // Views milestone reached at 100, 200, 300, ...
+          const prevViews = prev.views || 0;
+          const currViews = curr.views || 0;
+          const prevViewMilestone = Math.floor(prevViews / 100) * 100;
+          const currViewMilestone = Math.floor(currViews / 100) * 100;
+
+          if (currViewMilestone >= 100 && currViewMilestone > prevViewMilestone) {
+            const pageTypeLabel = curr.type === 'bio' ? 'Bio' : 'Landing';
+            const title = `👀 ${currViewMilestone} Views Milestone on ${pageTypeLabel} Page!`;
+            const description = `Awesome! Your ${pageTypeLabel.toLowerCase()} page "${curr.title}" just crossed ${currViewMilestone} views! Total views: ${currViews} 🚀`;
+
+            console.log(`[NotificationService] ${currViewMilestone} views milestone detected for user ${curr.userId}: ${curr.title}`);
+
+            await this.adminSupabase.from('notifications').insert({
+              user_id: curr.userId,
+              title,
+              description,
+              type: 'page_view',
+              is_read: false,
+            });
+          }
+
+          lastMetrics[key] = { clicks: curr.clicks, views: curr.views };
+        }
+      } catch (err: any) {
+        console.warn('[NotificationService] Page click monitor error:', err?.message || err);
+      }
+    };
+
+    setInterval(checkMetrics, intervalMs);
+    setTimeout(checkMetrics, 5000);
   }
 }
