@@ -123,6 +123,16 @@ export class NotificationService {
           enableVibrate: true,
           showBadge: true,
         });
+
+        // 9. Page clicks, views, and visitor analytics
+        await Notifications.setNotificationChannelAsync('analytics', {
+          name: 'Page Clicks & Views Alerts',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 200, 150, 200],
+          lightColor: '#06B6D4',
+          enableVibrate: true,
+          showBadge: true,
+        });
       } catch (err) {
         console.warn('[NotificationService] Error setting up Android channels:', err);
       }

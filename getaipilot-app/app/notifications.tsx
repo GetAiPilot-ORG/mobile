@@ -20,7 +20,7 @@ import { AppTopBar } from '../src/components/AppTopBar';
 import { useNotifications, AppNotification } from '../src/contexts/NotificationContext';
 import { useTheme, getColors } from '@/theme';
 
-type FilterTab = 'all' | 'unread' | 'lead' | 'broadcast' | 'system';
+type FilterTab = 'all' | 'unread' | 'clicks' | 'lead' | 'broadcast' | 'system';
 
 interface SwipeableCardProps {
   item: AppNotification;
@@ -86,6 +86,27 @@ function SwipeableNotificationCard({
           color: '#0EA5E9',
           bg: isDark ? 'rgba(14, 165, 233, 0.2)' : '#E0F2FE',
           label: 'Admin Broadcast',
+        };
+      case 'page_click':
+        return {
+          icon: 'trophy' as const,
+          color: '#F59E0B',
+          bg: isDark ? 'rgba(245, 158, 11, 0.2)' : '#FEF3C7',
+          label: 'Milestone',
+        };
+      case 'page_view':
+        return {
+          icon: 'eye' as const,
+          color: '#8B5CF6',
+          bg: isDark ? 'rgba(139, 92, 246, 0.2)' : '#F5F3FF',
+          label: 'Page View',
+        };
+      case 'analytics':
+        return {
+          icon: 'stats-chart' as const,
+          color: '#3B82F6',
+          bg: isDark ? 'rgba(59, 130, 246, 0.2)' : '#EFF6FF',
+          label: 'Analytics',
         };
       default:
         return {
@@ -210,22 +231,22 @@ function SwipeableNotificationCard({
     })
   ).current;
 
-  // Distinct Card Colors for Read vs Unread
+  // Distinct Solid Card Colors for Read vs Unread (100% opaque, zero bleed-through)
   const cardBg = isUnread
     ? isDark
-      ? '#221E36' // Elevated rich purple-slate for Unread
+      ? '#221D38' // Elevated rich purple-slate for Unread
       : '#FFFFFF' // Clean high-contrast white on light canvas
     : isDark
-    ? '#15131E' // Muted recessed dark background for Read
-    : '#EDE9F6'; // Muted soft mist for Read
+    ? '#161322' // Solid opaque dark surface for Read
+    : '#F6F3FA'; // Solid opaque soft surface for Read
 
   const cardBorderColor = isUnread
     ? isDark
       ? 'rgba(167, 139, 250, 0.45)' // Glowing border for Unread
       : '#DDD6FE'
     : isDark
-    ? 'rgba(255, 255, 255, 0.05)' // Subtle dimmed border for Read
-    : 'rgba(0, 0, 0, 0.06)';
+    ? '#272338' // Solid subtle border for Read
+    : '#E8E3F2';
 
   const titleColor = isUnread
     ? isDark
@@ -248,39 +269,56 @@ function SwipeableNotificationCard({
   // Slide Right Action = Mark Read Emerald (#10B981) OR Mark Unread Blue (#6366F1)
   const readActionBg = isUnread ? '#10B981' : '#6366F1';
 
+  // Interpolate action button opacities: hidden at rest (0), fade in on swipe
+  const leftActionOpacity = pan.interpolate({
+    inputRange: [0, 25, 75],
+    outputRange: [0, 0.5, 1],
+    extrapolate: 'clamp',
+  });
+
+  const rightActionOpacity = pan.interpolate({
+    inputRange: [-75, -25, 0],
+    outputRange: [1, 0.5, 0],
+    extrapolate: 'clamp',
+  });
+
   return (
     <View style={styles.cardOuterWrapper}>
-      {/* BACKGROUND ACTIONS LAYER */}
+      {/* BACKGROUND ACTIONS LAYER (Only visible when swiping) */}
       <View style={styles.actionsBackgroundLayer}>
         {/* Left Action (Revealed on Swipe Right): Mark Read / Unread */}
-        <Pressable
-          style={[styles.underActionLeft, { backgroundColor: readActionBg }]}
-          onPress={() => {
-            resetPosition();
-            onToggleRead(item);
-          }}
-        >
-          <Ionicons
-            name={isUnread ? 'checkmark-circle' : 'mail-unread'}
-            size={22}
-            color="#FFFFFF"
-          />
-          <Text style={styles.underActionText}>
-            {isUnread ? 'Mark Read' : 'Unread'}
-          </Text>
-        </Pressable>
+        <Animated.View style={[styles.underActionWrapper, { opacity: leftActionOpacity }]}>
+          <Pressable
+            style={[styles.underActionLeft, { backgroundColor: readActionBg }]}
+            onPress={() => {
+              resetPosition();
+              onToggleRead(item);
+            }}
+          >
+            <Ionicons
+              name={isUnread ? 'checkmark-circle' : 'mail-unread'}
+              size={22}
+              color="#FFFFFF"
+            />
+            <Text style={styles.underActionText}>
+              {isUnread ? 'Mark Read' : 'Unread'}
+            </Text>
+          </Pressable>
+        </Animated.View>
 
         {/* Right Action (Revealed on Swipe Left): Delete */}
-        <Pressable
-          style={[styles.underActionRight, { backgroundColor: '#EF4444' }]}
-          onPress={() => {
-            resetPosition();
-            onDelete(item);
-          }}
-        >
-          <Ionicons name="trash" size={22} color="#FFFFFF" />
-          <Text style={styles.underActionText}>Delete</Text>
-        </Pressable>
+        <Animated.View style={[styles.underActionWrapper, { opacity: rightActionOpacity }]}>
+          <Pressable
+            style={[styles.underActionRight, { backgroundColor: '#EF4444' }]}
+            onPress={() => {
+              resetPosition();
+              onDelete(item);
+            }}
+          >
+            <Ionicons name="trash" size={22} color="#FFFFFF" />
+            <Text style={styles.underActionText}>Delete</Text>
+          </Pressable>
+        </Animated.View>
       </View>
 
       {/* FOREGROUND SWIPEABLE CARD */}
@@ -292,7 +330,7 @@ function SwipeableNotificationCard({
             borderColor: cardBorderColor,
             borderLeftWidth: isUnread ? 4 : 1,
             borderLeftColor: isUnread ? meta.color : cardBorderColor,
-            opacity: isUnread ? 1 : 0.85,
+            opacity: 1, // Always 100% solid opacity so actions underneath never bleed through
             transform: [{ translateX: pan }],
           },
         ]}
@@ -442,6 +480,8 @@ export default function NotificationsScreen() {
   // Filtered notifications
   const filteredNotifications = notificationsList.filter((item) => {
     if (activeTab === 'unread') return !item.isRead;
+    if (activeTab === 'clicks')
+      return item.type === 'page_click' || item.type === 'page_view' || item.type === 'analytics';
     if (activeTab === 'lead') return item.type === 'lead';
     if (activeTab === 'broadcast')
       return item.type === 'info' || item.type === 'broadcast' || item.type === 'announcement';
@@ -456,7 +496,12 @@ export default function NotificationsScreen() {
     if (!item.isRead) {
       await markAsRead(item.id);
     }
-    const route = item.data?.route || item.data?.url;
+    const route =
+      item.data?.route ||
+      item.data?.url ||
+      (item.type === 'page_click' || item.type === 'page_view' || item.type === 'analytics'
+        ? '/tools/my-designs'
+        : undefined);
     if (route && typeof route === 'string') {
       try {
         router.push(route as any);
@@ -556,89 +601,109 @@ export default function NotificationsScreen() {
         }
       />
 
-      {/* Filter Tabs */}
-      <View style={[styles.filterBar, { borderBottomColor: isDark ? '#252136' : '#ECE8F5' }]}>
-        {(
-          [
-            { id: 'all', label: 'All', count: notificationsList.length },
-            { id: 'unread', label: 'Unread', count: unreadCount },
+      {/* Scrollable Category Filter Tabs FlatList */}
+      <View style={[styles.filterBarContainer, { borderBottomColor: isDark ? '#252136' : '#ECE8F5' }]}>
+        <FlatList
+          data={[
+            { id: 'all' as const, label: 'All', count: notificationsList.length },
+            { id: 'unread' as const, label: 'Unread', count: unreadCount },
             {
-              id: 'lead',
+              id: 'clicks' as const,
+              label: 'Milestones',
+              count: notificationsList.filter(
+                (n) => n.type === 'page_click' || n.type === 'page_view' || n.type === 'analytics'
+              ).length,
+            },
+            {
+              id: 'lead' as const,
               label: 'Leads',
               count: notificationsList.filter((n) => n.type === 'lead').length,
             },
             {
-              id: 'broadcast',
+              id: 'broadcast' as const,
               label: 'Broadcasts',
               count: notificationsList.filter(
                 (n) => n.type === 'info' || n.type === 'broadcast' || n.type === 'announcement'
               ).length,
             },
             {
-              id: 'system',
+              id: 'system' as const,
               label: 'System',
               count: notificationsList.filter((n) => n.type === 'system').length,
             },
-          ] as const
-        ).map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <Pressable
-              key={tab.id}
-              onPress={() => {
-                if (Platform.OS !== 'web') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-                setActiveTab(tab.id);
-              }}
-              style={[
-                styles.tabButton,
-                isActive && {
-                  backgroundColor: isDark ? '#2C2740' : '#E9E3FA',
-                },
-              ]}
-            >
-              <Text
+          ]}
+          keyExtractor={(tab) => tab.id}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterScrollContent}
+          renderItem={({ item: tab }) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <Pressable
+                key={tab.id}
+                onPress={() => {
+                  if (Platform.OS !== 'web') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  setActiveTab(tab.id);
+                }}
                 style={[
-                  styles.tabLabel,
-                  {
-                    color: isActive
-                      ? colors.accent || '#6366F1'
-                      : isDark
-                      ? '#8E87A1'
-                      : '#6B667A',
-                    fontWeight: isActive ? '700' : '500',
-                  },
+                  styles.tabButton,
+                  isActive
+                    ? {
+                        backgroundColor: isDark ? '#2C2740' : '#E9E3FA',
+                        borderColor: colors.accent || '#6366F1',
+                        borderWidth: 1,
+                      }
+                    : {
+                        backgroundColor: isDark ? '#1B1728' : '#F6F2FC',
+                        borderColor: isDark ? '#28233A' : '#EAE4F4',
+                        borderWidth: 1,
+                      },
                 ]}
               >
-                {tab.label}
-              </Text>
-              {tab.count > 0 && (
-                <View
+                <Text
                   style={[
-                    styles.tabBadge,
+                    styles.tabLabel,
                     {
-                      backgroundColor: isActive
+                      color: isActive
                         ? colors.accent || '#6366F1'
                         : isDark
-                        ? '#352F4C'
-                        : '#DDD7EC',
+                        ? '#8E87A1'
+                        : '#6B667A',
+                      fontWeight: isActive ? '700' : '500',
                     },
                   ]}
                 >
-                  <Text
+                  {tab.label}
+                </Text>
+                {tab.count > 0 && (
+                  <View
                     style={[
-                      styles.tabBadgeText,
-                      { color: isActive ? '#FFFFFF' : isDark ? '#B3ABD0' : '#575168' },
+                      styles.tabBadge,
+                      {
+                        backgroundColor: isActive
+                          ? colors.accent || '#6366F1'
+                          : isDark
+                          ? '#352F4C'
+                          : '#DDD7EC',
+                      },
                     ]}
                   >
-                    {tab.count}
-                  </Text>
-                </View>
-              )}
-            </Pressable>
-          );
-        })}
+                    <Text
+                      style={[
+                        styles.tabBadgeText,
+                        { color: isActive ? '#FFFFFF' : isDark ? '#B3ABD0' : '#575168' },
+                      ]}
+                    >
+                      {tab.count}
+                    </Text>
+                  </View>
+                )}
+              </Pressable>
+            );
+          }}
+        />
       </View>
 
       {/* Notifications List / Empty State */}
@@ -718,19 +783,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filterBar: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 8,
+  filterBarContainer: {
     borderBottomWidth: 1,
+    paddingVertical: 10,
+  },
+  filterScrollContent: {
+    paddingHorizontal: 16,
+    gap: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   tabButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
     borderRadius: 20,
   },
   tabLabel: {
@@ -774,6 +842,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderRadius: 20,
+    backgroundColor: 'transparent',
+  },
+  underActionWrapper: {
+    height: '100%',
   },
   underActionLeft: {
     height: '100%',

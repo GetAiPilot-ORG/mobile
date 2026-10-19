@@ -29,7 +29,18 @@ export interface AppNotification {
   data?: Record<string, any>;
   createdAt: string;
   isRead: boolean;
-  type?: 'lead' | 'message' | 'billing' | 'system' | 'general' | 'info' | 'broadcast' | 'announcement';
+  type?:
+    | 'lead'
+    | 'message'
+    | 'billing'
+    | 'system'
+    | 'general'
+    | 'info'
+    | 'broadcast'
+    | 'announcement'
+    | 'page_click'
+    | 'page_view'
+    | 'analytics';
 }
 
 export const NOTIFICATIONS_STORAGE_KEY = '@getaipilot_notifications_history';
@@ -57,6 +68,7 @@ export interface NotificationContextType {
   clearAllNotifications: () => Promise<void>;
   addNotification: (item: Omit<AppNotification, 'id' | 'createdAt' | 'isRead'> & { id?: string }) => Promise<void>;
   refreshNotifications: () => Promise<void>;
+  syncPageClickNotifications: () => Promise<void>;
   isRefreshing: boolean;
 }
 
@@ -84,6 +96,7 @@ const NOOP_CONTEXT: NotificationContextType = {
   clearAllNotifications: async () => { },
   addNotification: async () => { },
   refreshNotifications: async () => { },
+  syncPageClickNotifications: async () => { },
   isRefreshing: false,
 };
 
@@ -127,6 +140,62 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       console.warn('Failed to save notifications history:', e);
     }
   };
+
+  // Deduplication tracker to prevent duplicate notifications from firing within 12s
+  const processedNotificationKeys = useRef<Set<string>>(new Set());
+
+  const isDuplicateNotification = useCallback((key: string): boolean => {
+    if (processedNotificationKeys.current.has(key)) return true;
+    processedNotificationKeys.current.add(key);
+    setTimeout(() => {
+      processedNotificationKeys.current.delete(key);
+    }, 12000);
+    return false;
+  }, []);
+
+  /**
+   * Helper to map notification data payload to an app route
+   */
+  const resolveRoute = useCallback((data?: Record<string, any>): string | null => {
+    if (!data) return null;
+    if (data.route && typeof data.route === 'string') return data.route;
+    if (data.url && typeof data.url === 'string') return data.url;
+
+    // By event/type fallback
+    const type = data.type || data.category;
+    if (type === 'lead') return '/crm/contacts';
+    if (type === 'deal') return '/crm/deals';
+    if (type === 'task') return '/crm/tasks';
+    if (type === 'message' || type === 'chat' || type === 'handover' || data.conversationId) {
+      return data.conversationId ? `/inbox/${data.conversationId}` : '/inbox';
+    }
+    if (type === 'team' || type === 'team_member') return '/crm';
+    if (type === 'social' || type === 'social_connected') return '/tools';
+    if (type === 'whatsapp' || type === 'whatsapp_connected') return '/(tabs)';
+    if (type === 'template' || type === 'template_verified') return '/(tabs)';
+    if (type === 'billing' || type === 'quota') return '/account/plans';
+    if (type === 'campaign') return '/fleet';
+    if (type === 'call') return '/(tabs)/activity';
+
+    // Admin & system broadcast updates for regular mobile users
+    if (type === 'broadcast' || type === 'announcement') return '/(tabs)';
+    if (type === 'maintenance') return '/(tabs)';
+    if (type === 'feature' || type === 'tools') return '/tools';
+    if (type === 'offer' || type === 'pricing') return '/pricing';
+
+    // Landing & Bio Page Clicks & Views
+    if (
+      type === 'page_click' ||
+      type === 'page_view' ||
+      type === 'analytics' ||
+      type === 'landing' ||
+      type === 'bio'
+    ) {
+      return '/tools/my-designs';
+    }
+
+    return null;
+  }, []);
 
   /**
    * Fetch user notifications from Supabase `notifications` table
@@ -174,25 +243,253 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     } catch (fetchErr) {
       console.warn('[NotificationContext] Error fetching remote notifications:', fetchErr);
     }
+  }, [user?.id, resolveRoute]);
+
+  /**
+   * Monitor user's landing pages and bio pages for click count and view updates.
+   * Scoped strictly to pages where user_id === user.id.
+   * Sends real-time notification to the user when their page receives new clicks.
+   */
+  const syncPageClickNotifications = useCallback(async (userId?: string) => {
+    const uid = userId || user?.id;
+    if (!uid) return;
+
+    try {
+      // 1. Fetch current landing and bio page stats for this specific user
+      const [bioRes, landingRes, tgRes] = await Promise.all([
+        supabase
+          .from('free_template_submissions')
+          .select('id, page_title, slug, page_views, button_clicks')
+          .eq('user_id', uid),
+        supabase
+          .from('landing_template_submissions')
+          .select('id, page_title, slug, page_views, button_clicks')
+          .eq('user_id', uid),
+        supabase
+          .from('tg_landing_pages')
+          .select('id, title, slug, view_count')
+          .eq('user_id', uid),
+      ]);
+
+      const currentPages: Record<string, { clicks: number; views: number; title: string; type: 'landing' | 'bio' }> = {};
+
+      if (Array.isArray(bioRes.data)) {
+        for (const item of bioRes.data) {
+          currentPages[`bio_${item.id}`] = {
+            clicks: Number(item.button_clicks || 0),
+            views: Number(item.page_views || 0),
+            title: item.page_title || item.slug || 'Bio Page',
+            type: 'bio',
+          };
+        }
+      }
+
+      if (Array.isArray(landingRes.data)) {
+        for (const item of landingRes.data) {
+          currentPages[`landing_${item.id}`] = {
+            clicks: Number(item.button_clicks || 0),
+            views: Number(item.page_views || 0),
+            title: item.page_title || item.slug || 'Landing Page',
+            type: 'landing',
+          };
+        }
+      }
+
+      if (Array.isArray(tgRes.data)) {
+        for (const item of tgRes.data) {
+          currentPages[`tg_${item.id}`] = {
+            clicks: 0,
+            views: Number(item.view_count || 0),
+            title: item.title || item.slug || 'TG Landing Page',
+            type: 'landing',
+          };
+        }
+      }
+
+      const cacheKey = `@getaipilot_page_metrics_${uid}`;
+      const storedCache = await AsyncStorage.getItem(cacheKey);
+
+      if (!storedCache) {
+        // First initialization for this user: store baseline without triggering historic alerts
+        await AsyncStorage.setItem(
+          cacheKey,
+          JSON.stringify({ pages: currentPages, updatedAt: new Date().toISOString() })
+        );
+        return;
+      }
+
+      let parsedCache: { pages: Record<string, { clicks: number; views: number; title: string; type: 'landing' | 'bio' }> };
+      try {
+        parsedCache = JSON.parse(storedCache);
+      } catch {
+        parsedCache = { pages: {} };
+      }
+
+      const cachedPages = parsedCache?.pages || {};
+
+      for (const [key, current] of Object.entries(currentPages)) {
+        const cached = cachedPages[key];
+        if (!cached) continue; // Newly created page, establish baseline on next save
+
+        const prevClicks = cached.clicks || 0;
+        const currClicks = current.clicks || 0;
+        const prevMilestone = Math.floor(prevClicks / 50) * 50;
+        const currMilestone = Math.floor(currClicks / 50) * 50;
+
+        // 1. Detect 50-Click Achievement Milestones (50, 100, 150, 200, 250, ...)
+        if (currMilestone >= 50 && currMilestone > prevMilestone) {
+          const pageTypeLabel = current.type === 'bio' ? 'Bio' : 'Landing';
+          const title = `🏆 ${currMilestone} Clicks Milestone on ${pageTypeLabel} Page!`;
+          const description = `Congratulations! Your ${pageTypeLabel.toLowerCase()} page "${current.title}" just crossed ${currMilestone} clicks! Total clicks: ${currClicks} 🎉`;
+
+          const dedupeKey = `${uid}_click_milestone_${currMilestone}_${current.title}`;
+          if (!isDuplicateNotification(dedupeKey)) {
+            // Persist to user's remote notifications table.
+            // The Supabase Realtime channel will receive this single INSERT and trigger the push notification once.
+            let dbSuccess = false;
+            try {
+              const { error: insErr } = await supabase.from('notifications').insert({
+                user_id: uid,
+                title,
+                description,
+                type: 'page_click',
+                is_read: false,
+              });
+              if (!insErr) dbSuccess = true;
+            } catch (dbErr) {
+              console.warn('[NotificationContext] Failed to insert click notification to Supabase:', dbErr);
+            }
+
+            // Only fallback to local alert if offline or DB insert failed
+            if (!dbSuccess && Notifications) {
+              try {
+                await NotificationService.scheduleLocalNotification({
+                  title,
+                  body: description,
+                  channelId: 'analytics',
+                  data: {
+                    route: '/tools/my-designs',
+                    type: 'page_click',
+                    milestone: currMilestone,
+                  },
+                });
+
+                const newItem: AppNotification = {
+                  id: `milestone_${currMilestone}_${Date.now()}`,
+                  title,
+                  body: description,
+                  createdAt: new Date().toISOString(),
+                  isRead: false,
+                  type: 'page_click',
+                  data: { route: '/tools/my-designs', type: 'page_click', milestone: currMilestone },
+                };
+
+                setNotificationsList((prev) => {
+                  const next = [newItem, ...prev.filter((p) => p.id !== newItem.id)];
+                  AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(next)).catch(() => {});
+                  return next;
+                });
+              } catch (pushErr) {
+                console.warn('[NotificationContext] Local push alert error:', pushErr);
+              }
+            }
+          }
+        }
+
+        // 2. Detect 100-View Achievement Milestones (100, 200, 300, ...)
+        const prevViews = cached.views || 0;
+        const currViews = current.views || 0;
+        const prevViewMilestone = Math.floor(prevViews / 100) * 100;
+        const currViewMilestone = Math.floor(currViews / 100) * 100;
+
+        if (currViewMilestone >= 100 && currViewMilestone > prevViewMilestone) {
+          const pageTypeLabel = current.type === 'bio' ? 'Bio' : 'Landing';
+          const title = `👀 ${currViewMilestone} Views Milestone on ${pageTypeLabel} Page!`;
+          const description = `Awesome! Your ${pageTypeLabel.toLowerCase()} page "${current.title}" just crossed ${currViewMilestone} views! Total views: ${currViews} 🚀`;
+
+          const dedupeKey = `${uid}_view_milestone_${currViewMilestone}_${current.title}`;
+          if (!isDuplicateNotification(dedupeKey)) {
+            let dbSuccess = false;
+            try {
+              const { error: insErr } = await supabase.from('notifications').insert({
+                user_id: uid,
+                title,
+                description,
+                type: 'page_view',
+                is_read: false,
+              });
+              if (!insErr) dbSuccess = true;
+            } catch (dbErr) {
+              console.warn('[NotificationContext] Failed to insert view notification to Supabase:', dbErr);
+            }
+
+            if (!dbSuccess && Notifications) {
+              try {
+                await NotificationService.scheduleLocalNotification({
+                  title,
+                  body: description,
+                  channelId: 'analytics',
+                  data: {
+                    route: '/tools/my-designs',
+                    type: 'page_view',
+                    milestone: currViewMilestone,
+                  },
+                });
+
+                const newItem: AppNotification = {
+                  id: `view_milestone_${currViewMilestone}_${Date.now()}`,
+                  title,
+                  body: description,
+                  createdAt: new Date().toISOString(),
+                  isRead: false,
+                  type: 'page_view',
+                  data: { route: '/tools/my-designs', type: 'page_view', milestone: currViewMilestone },
+                };
+
+                setNotificationsList((prev) => {
+                  const next = [newItem, ...prev.filter((p) => p.id !== newItem.id)];
+                  AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(next)).catch(() => {});
+                  return next;
+                });
+              } catch (pushErr) {
+                console.warn('[NotificationContext] Local push alert error:', pushErr);
+              }
+            }
+          }
+        }
+      }
+
+      // Always update cache to latest state
+      await AsyncStorage.setItem(
+        cacheKey,
+        JSON.stringify({ pages: currentPages, updatedAt: new Date().toISOString() })
+      );
+    } catch (err) {
+      console.warn('[NotificationContext] Error in syncPageClickNotifications:', err);
+    }
   }, [user?.id]);
 
   const refreshNotifications = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      await fetchSupabaseNotifications();
+      await Promise.all([
+        fetchSupabaseNotifications(),
+        syncPageClickNotifications(),
+      ]);
     } finally {
       setIsRefreshing(false);
     }
-  }, [fetchSupabaseNotifications]);
+  }, [fetchSupabaseNotifications, syncPageClickNotifications]);
 
   // Fetch from Supabase whenever user ID changes or logs in
   useEffect(() => {
     if (user?.id) {
       fetchSupabaseNotifications(user.id);
+      syncPageClickNotifications(user.id);
     }
-  }, [user?.id, fetchSupabaseNotifications]);
+  }, [user?.id, fetchSupabaseNotifications, syncPageClickNotifications]);
 
-  // Listen for Supabase Realtime INSERTs from admin `broadcast_notification`
+  // Listen for Supabase Realtime INSERTs from admin `broadcast_notification` & page clicks
   useEffect(() => {
     if (!user?.id) return;
 
@@ -213,7 +510,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           // Process only if addressed to this user or is a broadcast
           if (newRow.user_id && newRow.user_id !== user.id) return;
 
-          console.log('🔔 [Admin Broadcast Notification Received in Realtime]:', newRow.title);
+          const dedupeKey = `${newRow.user_id}_${newRow.title}_${newRow.description}`;
+          if (isDuplicateNotification(dedupeKey)) {
+            console.log('🛑 [NotificationContext] Realtime skipping duplicate push:', dedupeKey);
+            return;
+          }
+
+          console.log('🔔 [Realtime Notification Received]:', newRow.title);
 
           // 1. Immediately trigger native push notification banner on the device
           if (Notifications) {
@@ -221,6 +524,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
               await NotificationService.scheduleLocalNotification({
                 title: newRow.title || 'GetAiPilot Notification',
                 body: newRow.description || '',
+                channelId: newRow.type === 'page_click' || newRow.type === 'page_view' ? 'analytics' : 'default',
                 data: {
                   id: newRow.id,
                   type: newRow.type,
@@ -297,19 +601,60 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           });
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'landing_template_submissions',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          console.log('📊 [Realtime] Landing page metrics changed, checking click counts...');
+          syncPageClickNotifications(user.id);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'free_template_submissions',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          console.log('📊 [Realtime] Bio page metrics changed, checking click counts...');
+          syncPageClickNotifications(user.id);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tg_landing_pages',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          console.log('📊 [Realtime] TG landing page metrics changed, checking click counts...');
+          syncPageClickNotifications(user.id);
+        }
+      )
       .subscribe((status) => {
         console.log(`📡 [Notification Realtime Channel Status]:`, status);
       });
 
-    // Also poll every 30 seconds as background fallback while active
+    // Poll every 30 seconds as background fallback while active
     const pollInterval = setInterval(() => {
       fetchSupabaseNotifications(user.id);
+      syncPageClickNotifications(user.id);
     }, 30000);
 
     // Refresh when app comes to foreground from background
     const appStateSub = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'active') {
         fetchSupabaseNotifications(user.id);
+        syncPageClickNotifications(user.id);
       }
     });
 
@@ -318,7 +663,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       clearInterval(pollInterval);
       appStateSub.remove();
     };
-  }, [user?.id, fetchSupabaseNotifications]);
+  }, [user?.id, fetchSupabaseNotifications, syncPageClickNotifications, resolveRoute]);
 
   const addNotification = async (item: Omit<AppNotification, 'id' | 'createdAt' | 'isRead'> & { id?: string }) => {
     const newItem: AppNotification = {
@@ -403,39 +748,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   const clearNotification = () => {
     setNotification(null);
-  };
-
-  /**
-   * Helper to map notification data payload to an app route
-   */
-  const resolveRoute = (data?: Record<string, any>): string | null => {
-    if (!data) return null;
-    if (data.route && typeof data.route === 'string') return data.route;
-    if (data.url && typeof data.url === 'string') return data.url;
-
-    // By event/type fallback
-    const type = data.type || data.category;
-    if (type === 'lead') return '/crm/contacts';
-    if (type === 'deal') return '/crm/deals';
-    if (type === 'task') return '/crm/tasks';
-    if (type === 'message' || type === 'chat' || type === 'handover' || data.conversationId) {
-      return data.conversationId ? `/inbox/${data.conversationId}` : '/inbox';
-    }
-    if (type === 'team' || type === 'team_member') return '/crm';
-    if (type === 'social' || type === 'social_connected') return '/tools';
-    if (type === 'whatsapp' || type === 'whatsapp_connected') return '/(tabs)';
-    if (type === 'template' || type === 'template_verified') return '/(tabs)';
-    if (type === 'billing' || type === 'quota') return '/account/plans';
-    if (type === 'campaign') return '/fleet';
-    if (type === 'call') return '/(tabs)/activity';
-
-    // Admin & system broadcast updates for regular mobile users
-    if (type === 'broadcast' || type === 'announcement') return '/(tabs)';
-    if (type === 'maintenance') return '/(tabs)';
-    if (type === 'feature' || type === 'tools') return '/tools';
-    if (type === 'offer' || type === 'pricing') return '/pricing';
-
-    return null;
   };
 
   /**
@@ -589,18 +901,29 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       setNotification(incoming);
       const content = incoming?.request?.content;
       if (content) {
+        const notifId = incoming?.request?.identifier;
+        const title = content.title || 'New Alert';
+        const body = content.body || '';
+        const dedupeKey = `foreground_${title}_${body}`;
+        if (isDuplicateNotification(dedupeKey)) {
+          return;
+        }
+
         const type = (content.data?.type as any) || (content.data?.category as any) || 'general';
         const newItem: AppNotification = {
-          id: incoming?.request?.identifier || Date.now().toString(),
-          title: content.title || 'New Alert',
-          body: content.body || '',
+          id: notifId || Date.now().toString(),
+          title,
+          body,
           data: content.data as Record<string, any>,
           createdAt: new Date().toISOString(),
           isRead: false,
           type,
         };
         setNotificationsList((prev) => {
-          const next = [newItem, ...prev.filter((p) => p.id !== newItem.id)];
+          if (prev.some((p) => p.id === newItem.id || (p.title === newItem.title && p.body === newItem.body))) {
+            return prev;
+          }
+          const next = [newItem, ...prev];
           AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(next)).catch(() => {});
           return next;
         });
@@ -652,6 +975,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         clearAllNotifications,
         addNotification,
         refreshNotifications,
+        syncPageClickNotifications,
         isRefreshing,
       }}
     >
