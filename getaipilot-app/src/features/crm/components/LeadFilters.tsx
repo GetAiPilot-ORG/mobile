@@ -18,7 +18,7 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
   const statuses = [
     { id: 'all', label: 'All Deals' },
     { id: 'active', label: 'Active Pipeline' },
-    { id: 'won', label: 'Closed Won 🏆' },
+    { id: 'won', label: 'Closed Won' },
     { id: 'lost', label: 'Closed Lost' },
   ];
 

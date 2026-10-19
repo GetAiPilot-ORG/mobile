@@ -196,7 +196,7 @@ export const VoiceScreen: React.FC = () => {
               <Ionicons
                 name="chevron-back"
                 size={20}
-                color="#FFFFFF"
+                color={colors.text}
               />
             </Pressable>
 

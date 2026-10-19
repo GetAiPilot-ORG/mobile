@@ -149,7 +149,7 @@ export default function LandingTemplatesScreen() {
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Share Link 🔗",
+          text: "Share Link",
           onPress: () => {
             Share.share({
               message: `Check out our landing page template: https://getaipilot.in/lp/${item.id}`,
@@ -157,7 +157,7 @@ export default function LandingTemplatesScreen() {
           },
         },
         {
-          text: "Open in Canvas 🚀",
+          text: "Open in Canvas",
           onPress: () => {
             void handleOpenCanvas(item);
           },

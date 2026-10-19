@@ -259,8 +259,11 @@ export const ActivityYouTubeSubTab: React.FC<ActivityYouTubeSubTabProps> = ({
                 (activeYtAccount?.connected ? 'Connected YouTube Channel' : 'No Channel Connected')}
             </Text>
             <View style={styles.ytChannelSubtitleRow}>
+              {activeYtAccount?.connected && (
+                <Ionicons name="checkmark-circle" size={13} color="#10B981" style={{ marginRight: 4 }} />
+              )}
               <Text style={styles.profileStatus}>
-                {activeYtAccount?.connected ? '✅ Verified Partner Channel' : 'Ready to link channel'}
+                {activeYtAccount?.connected ? 'Verified Partner Channel' : 'Ready to link channel'}
               </Text>
               <View style={styles.ytReadyBadge}>
                 <Text style={styles.ytReadyBadgeText}>Ready</Text>

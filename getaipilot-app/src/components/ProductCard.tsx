@@ -1,8 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
+
 import React from 'react';
 import { View, Text, Pressable, Image, Platform, StyleSheet } from 'react-native';
 import { ArrowRight01Icon } from '@/constants/icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme, getColors } from '@/theme';
 
@@ -74,7 +75,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <View
             style={[styles.logoSurface]}
           >
-            <Text style={styles.fallbackIcon}>{icon || '⚡'}</Text>
+            <Ionicons name="flash-outline" size={20} color={themeColor || colors.primary} />
           </View>
         )}
         <View style={[styles.status, { backgroundColor: statusBackground }]}>

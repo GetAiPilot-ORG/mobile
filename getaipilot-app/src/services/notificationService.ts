@@ -52,7 +52,6 @@ export class NotificationService {
           importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 250, 250, 250],
           lightColor: '#10B981',
-          sound: 'default',
           enableVibrate: true,
           showBadge: true,
         });
@@ -63,7 +62,6 @@ export class NotificationService {
           importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 250, 250, 250],
           lightColor: '#10B981',
-          sound: 'default',
           enableVibrate: true,
           showBadge: true,
         });
@@ -74,7 +72,6 @@ export class NotificationService {
           importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 200, 150, 200],
           lightColor: '#3B82F6',
-          sound: 'default',
           enableVibrate: true,
           showBadge: true,
         });
@@ -85,7 +82,6 @@ export class NotificationService {
           importance: Notifications.AndroidImportance.HIGH,
           vibrationPattern: [0, 150, 150, 150],
           lightColor: '#8B5CF6',
-          sound: 'default',
           enableVibrate: true,
           showBadge: true,
         });
@@ -96,7 +92,6 @@ export class NotificationService {
           importance: Notifications.AndroidImportance.HIGH,
           vibrationPattern: [0, 200, 200, 200],
           lightColor: '#F59E0B',
-          sound: 'default',
           enableVibrate: true,
           showBadge: true,
         });
@@ -107,7 +102,6 @@ export class NotificationService {
           importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 300, 200, 300],
           lightColor: '#EC4899',
-          sound: 'default',
           enableVibrate: true,
           showBadge: true,
         });
@@ -118,7 +112,6 @@ export class NotificationService {
           importance: Notifications.AndroidImportance.HIGH,
           vibrationPattern: [0, 150, 150, 150],
           lightColor: '#6366F1',
-          sound: 'default',
           enableVibrate: true,
           showBadge: true,
         });
@@ -129,7 +122,6 @@ export class NotificationService {
           importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 250, 150, 250],
           lightColor: '#EF4444',
-          sound: 'default',
           enableVibrate: true,
           showBadge: true,
         });

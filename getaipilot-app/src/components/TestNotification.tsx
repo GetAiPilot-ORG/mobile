@@ -9,7 +9,7 @@ export function TestNotificationButton() {
             onPress={async () => {
                 console.log("Current Push Token:", expoPushToken);
                 await sendTestNotification(
-                    "Test Lead Alert! 🚀",
+                    "Test Lead Alert",
                     "Naya prospect GetAiPilot par aaya hai. Click karke dekhein.",
                     "leads",
                     "/crm/contacts"

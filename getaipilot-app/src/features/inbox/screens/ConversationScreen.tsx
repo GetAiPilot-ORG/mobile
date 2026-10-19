@@ -891,21 +891,30 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
 
               <ScrollView style={{ maxHeight: 340 }} showsVerticalScrollIndicator={false}>
                 <View style={[styles.guideCard, isDark ? styles.guideCardDark : styles.guideCardLight]}>
-                  <Text style={styles.guideCardTitle}>⏱️ How the 24h Window Works</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <Ionicons name="time-outline" size={16} color="#34C759" />
+                    <Text style={styles.guideCardTitle}>How the 24h Window Works</Text>
+                  </View>
                   <Text style={[styles.guideCardBody, { color: isDark ? '#8E8E93' : '#3C3C43' }]}>
                     Meta WhatsApp allows businesses to send freeform messages to customers only within 24 hours of their last incoming message.
                   </Text>
                 </View>
 
                 <View style={[styles.guideCard, isDark ? styles.guideCardDark : styles.guideCardLight]}>
-                  <Text style={styles.guideCardTitle}>🔒 When the Window Closes</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <Ionicons name="lock-closed-outline" size={16} color="#F59E0B" />
+                    <Text style={styles.guideCardTitle}>When the Window Closes</Text>
+                  </View>
                   <Text style={[styles.guideCardBody, { color: isDark ? '#8E8E93' : '#3C3C43' }]}>
                     After 24 hours with no customer reply, free-form text is locked by Meta. You must send an approved template to restart the conversation.
                   </Text>
                 </View>
 
                 <View style={[styles.guideCard, isDark ? styles.guideCardDark : styles.guideCardLight]}>
-                  <Text style={styles.guideCardTitle}>💡 Internal Team Notes</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <Ionicons name="bulb-outline" size={16} color="#3B82F6" />
+                    <Text style={styles.guideCardTitle}>Internal Team Notes</Text>
+                  </View>
                   <Text style={[styles.guideCardBody, { color: isDark ? '#8E8E93' : '#3C3C43' }]}>
                     Team notes can be added anytime. They are 100% private to your organization and never sent to WhatsApp.
                   </Text>

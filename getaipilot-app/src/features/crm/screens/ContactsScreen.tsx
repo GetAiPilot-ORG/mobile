@@ -128,7 +128,7 @@ export const ContactsScreen: React.FC<ContactsScreenProps> = ({ onSelectContact,
             if (Platform.OS !== 'web') {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             }
-            Alert.alert('Contact Created 🎉', `${c.first_name || 'Contact'} was added to your CRM directory.`);
+            Alert.alert('Contact Created', `${c.first_name || 'Contact'} was added to your CRM directory.`);
           } catch (err: any) {
             Alert.alert('Error', err?.message || 'Failed to create contact');
             throw err;
@@ -186,12 +186,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    borderRadius: 22,
+    borderRadius: 20,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 6,
     marginHorizontal: 16,
-    marginBottom: 12,
-    borderWidth: 0, minHeight: 48 },
+    marginBottom: 8,
+    borderWidth: 0,
+    minHeight: 40,
+  },
   searchInput: {
     flex: 1,
     fontSize: 14,

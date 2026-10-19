@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
+import { Ionicons } from '@expo/vector-icons';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
 import { useTheme, getColors } from '@/theme';
@@ -19,7 +20,7 @@ import { useTheme, getColors } from '@/theme';
 interface EventTemplate {
   title: string;
   category: string;
-  icon: string;
+  icon: keyof typeof Ionicons.glyphMap;
   defaultDate: string;
   defaultTime: string;
   platform: 'Google Meet' | 'Zoom' | 'YouTube Live' | 'In-Person';
@@ -30,7 +31,7 @@ const EVENT_TEMPLATES: EventTemplate[] = [
   {
     title: 'AI Automation Masterclass 2026',
     category: 'Webinar',
-    icon: '🚀',
+    icon: 'rocket-outline',
     defaultDate: 'Tomorrow',
     defaultTime: '6:00 PM - 7:30 PM IST',
     platform: 'Google Meet',
@@ -39,7 +40,7 @@ const EVENT_TEMPLATES: EventTemplate[] = [
   {
     title: '1-on-1 Growth Strategy Discovery',
     category: 'Consultation',
-    icon: '🤝',
+    icon: 'people-outline',
     defaultDate: 'Next Monday',
     defaultTime: '3:00 PM - 3:45 PM IST',
     platform: 'Zoom',
@@ -48,7 +49,7 @@ const EVENT_TEMPLATES: EventTemplate[] = [
   {
     title: 'Live Product Launch & Q&A',
     category: 'Live Stream',
-    icon: '🎤',
+    icon: 'videocam-outline',
     defaultDate: 'This Friday',
     defaultTime: '8:00 PM IST',
     platform: 'YouTube Live',
@@ -91,7 +92,7 @@ export default function EventLinksScreen() {
     setEventTime(tmpl.defaultTime);
     setSelectedPlatform(tmpl.platform);
     setDescription(tmpl.description);
-    Alert.alert('Template Loaded! ✨', `"${tmpl.title}" is ready.`);
+    Alert.alert('Template Loaded', `"${tmpl.title}" is ready.`);
   };
 
   // Build Real 1-Click Google Calendar URL
@@ -115,13 +116,13 @@ export default function EventLinksScreen() {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       await Share.share({
-        message: `📅 You're Invited: "${eventName}"\n🕒 When: ${eventDate} at ${eventTime}\n📍 Platform: ${selectedPlatform}\n🔗 Meeting Link: ${meetingUrl}\n\n✨ Add to Google Calendar:\n${getGoogleCalendarUrl()}\n\nPowered by GetAiPilot Event Studio.`,
+        message: `You're Invited: "${eventName}"\nWhen: ${eventDate} at ${eventTime}\nPlatform: ${selectedPlatform}\nMeeting Link: ${meetingUrl}\n\nAdd to Google Calendar:\n${getGoogleCalendarUrl()}\n\nPowered by GetAiPilot Event Studio.`,
       });
     } catch {}
   };
 
   const handleCopyInviteText = async () => {
-    const inviteText = `📅 Event: ${eventName}\n🕒 Date: ${eventDate} • ${eventTime}\n📍 Platform: ${selectedPlatform}\n🔗 Join URL: ${meetingUrl}`;
+    const inviteText = `Event: ${eventName}\nDate: ${eventDate} • ${eventTime}\nPlatform: ${selectedPlatform}\nJoin URL: ${meetingUrl}`;
     await Clipboard.setStringAsync(inviteText);
     setCopied(true);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -152,14 +153,25 @@ export default function EventLinksScreen() {
                 ]}
                 onPress={() => handleApplyTemplate(tmpl)}
               >
-                <Text style={{ fontSize: 24 }}>{tmpl.icon}</Text>
-                <View style={{ flex: 1, marginLeft: 10 }}>
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 10,
+                    backgroundColor: isDark ? '#252230' : '#E9E6F2',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Ionicons name={tmpl.icon} size={22} color={theme.primary} />
+                </View>
+                <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={[styles.templateTitle, { color: theme.text }]}>{tmpl.title}</Text>
                   <Text style={[styles.templateMeta, { color: theme.mutedText }]}>
                     {tmpl.category} • {tmpl.platform}
                   </Text>
                 </View>
-                <Text style={{ color: theme.primary, fontSize: 12, fontWeight: '700' }}>Use ➔</Text>
+                <Ionicons name="arrow-forward" size={16} color={theme.primary} />
               </Pressable>
             ))}
           </View>
@@ -258,7 +270,8 @@ export default function EventLinksScreen() {
         <View style={[styles.ticketCard, { backgroundColor: isDark ? '#000000' : '#FFFFFF', borderColor: theme.primary }]}>
           <View style={styles.ticketHeader}>
             <View style={styles.ticketBadge}>
-              <Text style={styles.ticketBadgeText}>OFFICIAL EVENT PASS 🎟️</Text>
+              <Ionicons name="ticket-outline" size={13} color="#FFFFFF" style={{ marginRight: 4 }} />
+              <Text style={styles.ticketBadgeText}>OFFICIAL EVENT PASS</Text>
             </View>
             <Text style={[styles.platformPill, { color: theme.primary }]}>{selectedPlatform}</Text>
           </View>
@@ -287,25 +300,28 @@ export default function EventLinksScreen() {
 
           {/* 1-Click Action Buttons */}
           <View style={{ gap: 8, marginTop: 14 }}>
-            <Pressable style={[styles.gCalBtn, { backgroundColor: theme.primary }]} onPress={handleOpenGoogleCalendar}>
-              <Text style={styles.gCalBtnText}>📅 Add to Google Calendar (1-Click)</Text>
+            <Pressable style={[styles.gCalBtn, { backgroundColor: theme.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }]} onPress={handleOpenGoogleCalendar}>
+              <Ionicons name="calendar-outline" size={16} color="#FFFFFF" />
+              <Text style={styles.gCalBtnText}>Add to Google Calendar (1-Click)</Text>
             </Pressable>
 
             <View style={styles.actionRow}>
               <Pressable
-                style={[styles.subBtn, { backgroundColor: isDark ? '#252230' : '#E9E6F2' }]}
+                style={[styles.subBtn, { backgroundColor: isDark ? '#252230' : '#E9E6F2', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }]}
                 onPress={handleCopyInviteText}
               >
+                <Ionicons name={copied ? 'checkmark-circle-outline' : 'copy-outline'} size={15} color={theme.text} />
                 <Text style={[styles.subBtnText, { color: theme.text }]}>
-                  {copied ? 'Copied! ✅' : 'Copy Invite 📋'}
+                  {copied ? 'Copied!' : 'Copy Invite'}
                 </Text>
               </Pressable>
 
               <Pressable
-                style={[styles.subBtn, { backgroundColor: colors.products.whatsapp }]}
+                style={[styles.subBtn, { backgroundColor: colors.products.whatsapp, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }]}
                 onPress={handleShareInvite}
               >
-                <Text style={[styles.subBtnText, { color: '#FFFFFF' }]}>Share Pass 📤</Text>
+                <Ionicons name="share-social-outline" size={15} color="#FFFFFF" />
+                <Text style={[styles.subBtnText, { color: '#FFFFFF' }]}>Share Pass</Text>
               </Pressable>
             </View>
           </View>

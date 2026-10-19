@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import {
+  Platform,
   Pressable,
   ScrollView,
   Text,
   View
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 
 import {
   SmileIcon,

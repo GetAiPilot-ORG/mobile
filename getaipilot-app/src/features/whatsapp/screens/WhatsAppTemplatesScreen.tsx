@@ -397,7 +397,9 @@ export const WhatsAppTemplatesScreen: React.FC<
 
             {/* Sync Meta Templates Button */}
             <Pressable
-              className="flex-row items-center gap-1 px-2 py-1 rounded-md bg-emerald-500/10 active:opacity-75"
+              className={`flex-row items-center px-2.5 py-1 rounded-full active:opacity-75 ${
+                isDark ? "bg-white/[0.06]" : "bg-black/[0.04]"
+              }`}
               onPress={() => {
                 if (Platform.OS !== "web") {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

@@ -89,18 +89,26 @@ export class CRMAdapter {
 
       // 2. Check crm_members table in CRM Supabase by user email
       if (email) {
-        const { data: member } = await crmSupabase
+        const { data: members } = await crmSupabase
           .from('crm_members')
           .select('org_id')
           .ilike('email', email)
-          .eq('is_active', true)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .eq('is_active', true);
 
-        if (member?.org_id) {
-          this.tenantCache.set(cacheKey, { crmOrgId: member.org_id, fetchedAt: Date.now() });
-          return member.org_id;
+        if (members && members.length > 0) {
+          let chosenOrgId = members[0].org_id;
+          for (const m of members) {
+            const { count } = await crmSupabase
+              .from('crm_contacts')
+              .select('id', { count: 'exact', head: true })
+              .eq('org_id', m.org_id);
+            if (count && count > 0) {
+              chosenOrgId = m.org_id;
+              break;
+            }
+          }
+          this.tenantCache.set(cacheKey, { crmOrgId: chosenOrgId, fetchedAt: Date.now() });
+          return chosenOrgId;
         }
       }
 

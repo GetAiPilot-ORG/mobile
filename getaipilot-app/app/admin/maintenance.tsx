@@ -147,7 +147,7 @@ export default function AdminMaintenanceScreen() {
       // Dispatch real-time push notification to all platform admins
       apiClient.post('/mobile/v1/admin/notify-activity', {
         action: 'maintenance_toggle',
-        title: enabled ? '🛡️ Global Maintenance Enabled' : '✅ Global Maintenance Disabled',
+        title: enabled ? 'Global Maintenance Enabled' : 'Global Maintenance Disabled',
         message: enabled
           ? 'Platform-wide maintenance mode has been activated.'
           : 'Platform-wide maintenance has been turned off. Services restored.',

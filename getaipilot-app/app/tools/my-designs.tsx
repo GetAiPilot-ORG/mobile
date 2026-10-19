@@ -26,6 +26,7 @@ import {
   Delete02Icon,
   Edit02Icon,
   Leaf01Icon,
+  PaintBrush01Icon,
   Rocket01Icon,
 } from "@/constants/icons";
 
@@ -190,7 +191,7 @@ export default function MyDesignScreen() {
     await Clipboard.setStringAsync(url);
     setCopiedId(item.id);
     setTimeout(() => setCopiedId(null), 2500);
-    Alert.alert("Link Copied! 📋", `${url}\n\nCopied to clipboard.`);
+    Alert.alert("Link Copied!", `${url}\n\nCopied to clipboard.`);
   };
 
   const handleViewLive = (item: UnifiedDesignItem) => {
@@ -554,7 +555,9 @@ export default function MyDesignScreen() {
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyIconText}>🎨</Text>
+              <View style={{ marginBottom: 12 }}>
+                <HugeiconsIcon icon={PaintBrush01Icon} size={42} color={colors.primary} />
+              </View>
               <Text style={styles.emptyTitle}>
                 {activeTab === "bio"
                   ? "No Bio Pages Yet"
