@@ -36,7 +36,7 @@ try {
           if ((err.code === 'EMFILE' || err.code === 'ENFILE') && attempts < 50) {
             attempts++;
             const end = Date.now() + Math.min(100, 10 * attempts);
-            while (Date.now() < end) {}
+            while (Date.now() < end) { }
             continue;
           }
           throw err;

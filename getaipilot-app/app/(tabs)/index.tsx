@@ -1,11 +1,9 @@
 import { HomeSkeleton } from "@/components/skeletonScreen/HomeSkeletonScreen";
 import { NetworkStatusScreen } from "@/components/StatusScreen";
 import { getColors, useTheme } from "@/theme";
-import { Ionicons } from "@expo/vector-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
   ArrowRight01Icon,
-  BrowserIcon,
   Layout01Icon,
   File01Icon,
   Link01Icon,
@@ -43,7 +41,7 @@ import { useNetwork } from "../../src/contexts/NetworkContext";
 import { apiClient } from "../../src/core/api/client";
 import { usePlatformSubscription } from "../../src/hooks/usePlatformSubscription";
 import { supabase } from "../../src/lib/supabase";
-import { useNotifications } from "@/contexts/NotificationContext";
+import { TestNotificationButton } from "@/components/TestNotification";
 
 
 interface LoginDevice {
@@ -79,7 +77,7 @@ export default function HomeScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [engineCycleTick, setEngineCycleTick] = useState(0);
   const { isOnline, networkChecked, refresh, isChecking } = useNetwork();
-  const { expoPushToken, requestPermissions } = useNotifications();
+  const [engineCycleTick, setEngineCycleTick] = useState(0);
 
   useEffect(() => {
     // Staggered wave animation cycle for engine icons every 8 seconds
@@ -292,6 +290,7 @@ export default function HomeScreen() {
   return (
     <AppScreen safeArea={false}>
       <AppTopBar showPlanBadge />
+      {/* <TestNotificationButton /> */}
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 128, gap: 26 }}
