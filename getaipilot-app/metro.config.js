@@ -36,7 +36,7 @@ try {
           if ((err.code === 'EMFILE' || err.code === 'ENFILE') && attempts < 50) {
             attempts++;
             const end = Date.now() + Math.min(100, 10 * attempts);
-            while (Date.now() < end) {}
+            while (Date.now() < end) { }
             continue;
           }
           throw err;
@@ -76,12 +76,15 @@ const defaultBlockList = Array.isArray(config.resolver.blockList)
     ? [config.resolver.blockList]
     : [];
 
+const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const projectRoot = escapeRegExp(__dirname);
+
 config.resolver.blockList = [
   ...defaultBlockList,
-  /.*[/\\]dist[/\\].*/,
-  /.*[/\\]android[/\\].*/,
-  /.*[/\\]docs[/\\].*/,
-  /.*[/\\]Getaipilot-bff[/\\].*/,
+  new RegExp(`^${projectRoot}[/\\\\]dist[/\\\\].*`),
+  new RegExp(`^${projectRoot}[/\\\\]android[/\\\\].*`),
+  new RegExp(`^${projectRoot}[/\\\\]docs[/\\\\].*`),
+  new RegExp(`^${projectRoot}[/\\\\]Getaipilot-bff[/\\\\].*`),
 ];
 
 module.exports = withNativeWind(config, { input: './src/global.css' });

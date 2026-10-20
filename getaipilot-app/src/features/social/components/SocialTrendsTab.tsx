@@ -2,13 +2,14 @@ import { ProductHeading } from "@/components/ProductUI";
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   ActivityIndicator,
+  FlatList,
   Image,
   Linking,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -263,6 +264,255 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
 
   const isInitialLoading = trendsLoading && liveTrends.length === 0;
 
+  const renderTrendCard = (trend: TrendItem, idx: number) => {
+    const platform = getPlatformMeta(
+      trend.source_platform || trend.platform
+    );
+    const views = trend.metrics?.views;
+    const likes = trend.metrics?.likes;
+    const comments = trend.metrics?.comments;
+    const searchVolume = trend.metrics?.searchVolume;
+    const duration = trend.metrics?.duration || (trend.duration ? `${trend.duration}s` : null);
+    const quality = trend.metrics?.quality;
+    const sourceName = trend.metrics?.source || trend.creator;
+    const engagement = trend.engagement_score;
+    const mediaUrl = trend.thumbnail_url || trend.full_image_url;
+
+    return (
+      <View
+        key={trend.id || `trend_${idx}`}
+        style={[
+          styles.trendCard,
+          {
+            backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+            borderColor: isDark ? '#252230' : '#E9E6F2',
+          },
+        ]}
+      >
+        {/* Header: Platform Badge + Rank Badge */}
+        <View style={styles.trendHeader}>
+          <View
+            style={[
+              styles.sourceBadge,
+              { backgroundColor: platform.bg },
+            ]}
+          >
+            <Ionicons
+              name={platform.icon}
+              size={11}
+              color={platform.color}
+            />
+            <Text
+              style={[
+                styles.trendSource,
+                { color: platform.color },
+              ]}
+              numberOfLines={1}
+            >
+              {platform.label}
+            </Text>
+          </View>
+
+          <View style={styles.headerRightBadges}>
+            {engagement != null && engagement > 0 && (
+              <View style={styles.engagementBadge}>
+                <Ionicons name="flame" size={10} color="#f59e0b" />
+                <Text style={styles.engagementText}>
+                  {formatCompact(engagement)}
+                </Text>
+              </View>
+            )}
+            <View style={styles.rankBadge}>
+              <Text style={styles.rankText}>#{idx + 1}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Creator Attribution */}
+        {Boolean(sourceName) && (
+          <View style={styles.creatorRow}>
+            <Text
+              style={[
+                styles.creatorText,
+                { color: isDark ? '#777383' : '#64748b' },
+              ]}
+              numberOfLines={1}
+            >
+              by{' '}
+              <Text
+                style={[
+                  styles.creatorHighlight,
+                  { color: isDark ? '#F0EEF8' : '#252230' },
+                ]}
+              >
+                {sourceName}
+              </Text>
+              {quality ? ` • ${quality.toUpperCase()}` : null}
+              {duration ? ` • ${duration}` : null}
+            </Text>
+          </View>
+        )}
+
+        {/* Title */}
+        <Text
+          style={[
+            styles.trendTitle,
+            { color: isDark ? '#F5F3FB' : '#1C1A25' },
+          ]}
+          numberOfLines={3}
+        >
+          {trend.title || trend.caption || 'Trending viral topic'}
+        </Text>
+
+        {/* Media Preview Image */}
+        {Boolean(mediaUrl) && (
+          <View style={styles.imageContainer}>
+            <Image
+              source={{ uri: mediaUrl }}
+              style={styles.trendImage}
+              resizeMode="cover"
+            />
+            {Boolean(duration) && (
+              <View style={styles.videoDurationBadge}>
+                <Ionicons name="play" size={9} color="#ffffff" />
+                <Text style={styles.videoDurationText}>{duration}</Text>
+              </View>
+            )}
+            {Boolean(trend.color) && (
+              <View
+                style={[
+                  styles.colorDot,
+                  { backgroundColor: trend.color },
+                ]}
+              />
+            )}
+          </View>
+        )}
+
+        {/* Metrics Row */}
+        <View style={styles.metricsRow}>
+          {views != null && (
+            <View style={styles.metricBadge}>
+              <Ionicons
+                name="eye-outline"
+                size={11}
+                color="#ec4899"
+              />
+              <Text style={styles.metricBadgeText}>
+                {formatCompact(Number(views))}
+              </Text>
+            </View>
+          )}
+          {likes != null && (
+            <View style={styles.metricBadge}>
+              <Ionicons
+                name="heart-outline"
+                size={11}
+                color="#ec4899"
+              />
+              <Text style={styles.metricBadgeText}>
+                {formatCompact(Number(likes))}
+              </Text>
+            </View>
+          )}
+          {comments != null && (
+            <View style={styles.metricBadge}>
+              <Ionicons
+                name="chatbubble-outline"
+                size={11}
+                color="#ec4899"
+              />
+              <Text style={styles.metricBadgeText}>
+                {formatCompact(Number(comments))}
+              </Text>
+            </View>
+          )}
+          {searchVolume != null && (
+            <View style={styles.metricBadge}>
+              <Ionicons
+                name="search-outline"
+                size={11}
+                color="#8b5cf6"
+              />
+              <Text
+                style={[styles.metricBadgeText, { color: '#8b5cf6' }]}
+              >
+                {formatCompact(Number(searchVolume))}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Niche Tags Pills */}
+        {Array.isArray(trend.niche_tags) && trend.niche_tags.length > 0 && (
+          <View style={styles.tagsRow}>
+            {trend.niche_tags.slice(0, 2).map((tag, tagIdx) => (
+              <View
+                key={`${trend.id}_tag_${tagIdx}`}
+                style={[
+                  styles.tagPill,
+                  {
+                    backgroundColor: isDark ? '#252230' : '#F0EEF8',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.tagPillText,
+                    { color: isDark ? '#777383' : '#64748b' },
+                  ]}
+                  numberOfLines={1}
+                >
+                  #{tag}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Action Buttons Row */}
+        <View style={styles.cardActionsRow}>
+          {Boolean(trend.source_url) && (
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                if (trend.source_url) {
+                  Linking.openURL(trend.source_url);
+                }
+              }}
+              style={[
+                styles.sourceLinkBtn,
+                {
+                  backgroundColor: isDark ? '#252230' : '#F5F3FB',
+                  borderColor: isDark ? '#334155' : '#E9E6F2',
+                },
+              ]}
+            >
+              <Ionicons
+                name="open-outline"
+                size={13}
+                color={isDark ? '#777383' : '#64748b'}
+              />
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              onUseTrendInPost(trend);
+            }}
+            style={styles.useTopicBtn}
+          >
+            <Ionicons name="sparkles" size={12} color="#ec4899" />
+            <Text style={styles.useTopicBtnText}>Use Idea</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <ProductHeading title="Find your next idea" />
@@ -290,13 +540,13 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
             style={[styles.searchInput, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}
           />
           {Boolean(searchQuery) && (
-            <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+            <TouchableOpacity activeOpacity={0.7} onPress={() => setSearchQuery('')} hitSlop={8}>
               <Ionicons
                 name="close-circle"
                 size={16}
                 color={isDark ? '#777383' : '#64748b'}
               />
-            </Pressable>
+            </TouchableOpacity>
           )}
         </View>
 
@@ -305,8 +555,9 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
           {REGIONS.map((r) => {
             const isRegActive = selectedRegion === r.id;
             return (
-              <Pressable
+              <TouchableOpacity
                 key={r.id}
+                activeOpacity={0.7}
                 onPress={() => handleSelectRegion(r.id)}
                 style={[
                   styles.regionChip,
@@ -341,7 +592,7 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
                 >
                   {r.label}
                 </Text>
-              </Pressable>
+              </TouchableOpacity>
             );
           })}
         </View>
@@ -356,8 +607,9 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
         {CATEGORIES.map((cat) => {
           const isActive = selectedCategory.id === cat.id;
           return (
-            <Pressable
+            <TouchableOpacity
               key={cat.id}
+              activeOpacity={0.7}
               onPress={() => handleSelectCategory(cat)}
               style={[
                 styles.categoryChip,
@@ -389,7 +641,7 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
               >
                 {cat.label}
               </Text>
-            </Pressable>
+            </TouchableOpacity>
           );
         })}
       </ScrollView>
@@ -418,7 +670,8 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
               ? `No matching items found for "${searchQuery}". Try clearing search.`
               : 'Try selecting another category or region to discover real-time viral media.'}
           </Text>
-          <Pressable
+          <TouchableOpacity
+            activeOpacity={0.8}
             onPress={() => {
               setSearchQuery('');
               handleSelectCategory(CATEGORIES[0]);
@@ -428,265 +681,27 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
           >
             <Ionicons name="reload" size={14} color="#ffffff" />
             <Text style={styles.refreshEmptyBtnText}>Reset to All Trends</Text>
-          </Pressable>
+          </TouchableOpacity>
         </View>
       ) : (
-        <View style={styles.trendsGrid}>
-          {displayList.map((trend: TrendItem, idx: number) => {
-            const platform = getPlatformMeta(
-              trend.source_platform || trend.platform
-            );
-            const views = trend.metrics?.views;
-            const likes = trend.metrics?.likes;
-            const comments = trend.metrics?.comments;
-            const searchVolume = trend.metrics?.searchVolume;
-            const duration = trend.metrics?.duration || (trend.duration ? `${trend.duration}s` : null);
-            const quality = trend.metrics?.quality;
-            const sourceName = trend.metrics?.source || trend.creator;
-            const engagement = trend.engagement_score;
-            const mediaUrl = trend.thumbnail_url || trend.full_image_url;
-
-            return (
-              <View
-                key={trend.id || `trend_${idx}`}
-                style={[
-                  styles.trendCard,
-                  {
-                    backgroundColor: isDark ? '#1C1A25' : '#ffffff',
-                    borderColor: isDark ? '#252230' : '#E9E6F2',
-                  },
-                ]}
-              >
-                {/* Header: Platform Badge + Rank Badge */}
-                <View style={styles.trendHeader}>
-                  <View
-                    style={[
-                      styles.sourceBadge,
-                      { backgroundColor: platform.bg },
-                    ]}
-                  >
-                    <Ionicons
-                      name={platform.icon}
-                      size={14}
-                      color={platform.color}
-                    />
-                    <Text
-                      style={[
-                        styles.trendSource,
-                        { color: platform.color },
-                      ]}
-                    >
-                      {platform.label}
-                    </Text>
-                  </View>
-
-                  <View style={styles.headerRightBadges}>
-                    {engagement != null && engagement > 0 && (
-                      <View style={styles.engagementBadge}>
-                        <Ionicons name="flame" size={12} color="#f59e0b" />
-                        <Text style={styles.engagementText}>
-                          {formatCompact(engagement)}
-                        </Text>
-                      </View>
-                    )}
-                    <View style={styles.rankBadge}>
-                      <Text style={styles.rankText}>#{idx + 1} Trending</Text>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Creator Attribution */}
-                {Boolean(sourceName) && (
-                  <View style={styles.creatorRow}>
-                    <Text
-                      style={[
-                        styles.creatorText,
-                        { color: isDark ? '#777383' : '#64748b' },
-                      ]}
-                    >
-                      by{' '}
-                      <Text
-                        style={[
-                          styles.creatorHighlight,
-                          { color: isDark ? '#F0EEF8' : '#252230' },
-                        ]}
-                      >
-                        {sourceName}
-                      </Text>
-                      {quality ? ` • ${quality.toUpperCase()}` : null}
-                      {duration ? ` • ${duration}` : null}
-                    </Text>
-                  </View>
-                )}
-
-                {/* Title */}
-                <Text
-                  style={[
-                    styles.trendTitle,
-                    { color: isDark ? '#F5F3FB' : '#1C1A25' },
-                  ]}
-                  numberOfLines={3}
-                >
-                  {trend.title || trend.caption || 'Trending viral topic'}
-                </Text>
-
-                {/* Media Preview Image */}
-                {Boolean(mediaUrl) && (
-                  <View style={styles.imageContainer}>
-                    <Image
-                      source={{ uri: mediaUrl }}
-                      style={styles.trendImage}
-                      resizeMode="cover"
-                    />
-                    {Boolean(duration) && (
-                      <View style={styles.videoDurationBadge}>
-                        <Ionicons name="play" size={10} color="#ffffff" />
-                        <Text style={styles.videoDurationText}>{duration}</Text>
-                      </View>
-                    )}
-                    {Boolean(trend.color) && (
-                      <View
-                        style={[
-                          styles.colorDot,
-                          { backgroundColor: trend.color },
-                        ]}
-                      />
-                    )}
-                  </View>
-                )}
-
-                {/* Metrics Row */}
-                <View style={styles.metricsRow}>
-                  {views != null && (
-                    <View style={styles.metricBadge}>
-                      <Ionicons
-                        name="eye-outline"
-                        size={13}
-                        color="#ec4899"
-                      />
-                      <Text style={styles.metricBadgeText}>
-                        {formatCompact(Number(views))} views
-                      </Text>
-                    </View>
-                  )}
-                  {likes != null && (
-                    <View style={styles.metricBadge}>
-                      <Ionicons
-                        name="heart-outline"
-                        size={13}
-                        color="#ec4899"
-                      />
-                      <Text style={styles.metricBadgeText}>
-                        {formatCompact(Number(likes))}
-                      </Text>
-                    </View>
-                  )}
-                  {comments != null && (
-                    <View style={styles.metricBadge}>
-                      <Ionicons
-                        name="chatbubble-outline"
-                        size={12}
-                        color="#ec4899"
-                      />
-                      <Text style={styles.metricBadgeText}>
-                        {formatCompact(Number(comments))}
-                      </Text>
-                    </View>
-                  )}
-                  {searchVolume != null && (
-                    <View style={styles.metricBadge}>
-                      <Ionicons
-                        name="search-outline"
-                        size={12}
-                        color="#8b5cf6"
-                      />
-                      <Text
-                        style={[styles.metricBadgeText, { color: '#8b5cf6' }]}
-                      >
-                        {formatCompact(Number(searchVolume))} searches
-                      </Text>
-                    </View>
-                  )}
-                </View>
-
-                {/* Niche Tags Pills */}
-                {Array.isArray(trend.niche_tags) && trend.niche_tags.length > 0 && (
-                  <View style={styles.tagsRow}>
-                    {trend.niche_tags.slice(0, 4).map((tag, tagIdx) => (
-                      <View
-                        key={`${trend.id}_tag_${tagIdx}`}
-                        style={[
-                          styles.tagPill,
-                          {
-                            backgroundColor: isDark ? '#252230' : '#F0EEF8',
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.tagPillText,
-                            { color: isDark ? '#777383' : '#64748b' },
-                          ]}
-                        >
-                          #{tag}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-
-                {/* Action Buttons Row */}
-                <View style={styles.cardActionsRow}>
-                  {Boolean(trend.source_url) && (
-                    <Pressable
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        if (trend.source_url) {
-                          Linking.openURL(trend.source_url);
-                        }
-                      }}
-                      style={[
-                        styles.sourceLinkBtn,
-                        {
-                          backgroundColor: isDark ? '#252230' : '#F5F3FB',
-                          borderColor: isDark ? '#334155' : '#E9E6F2',
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name="open-outline"
-                        size={14}
-                        color={isDark ? '#777383' : '#64748b'}
-                      />
-                      <Text
-                        style={[
-                          styles.sourceLinkText,
-                          { color: isDark ? '#cbd5e1' : '#475569' },
-                        ]}
-                      >
-                        Source
-                      </Text>
-                    </Pressable>
-                  )}
-
-                  <Pressable
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                      onUseTrendInPost(trend);
-                    }}
-                    style={styles.useTopicBtn}
-                  >
-                    <Ionicons name="sparkles" size={14} color="#ec4899" />
-                    <Text style={styles.useTopicBtnText}>Use as Post Idea</Text>
-                  </Pressable>
-                </View>
-              </View>
-            );
-          })}
+        <View style={styles.feedWrapper}>
+          <View style={styles.masonryContainer}>
+            <View style={styles.masonryColumn}>
+              {displayList
+                .filter((_, idx) => idx % 2 === 0)
+                .map((trend, colIdx) => renderTrendCard(trend, colIdx * 2))}
+            </View>
+            <View style={styles.masonryColumn}>
+              {displayList
+                .filter((_, idx) => idx % 2 === 1)
+                .map((trend, colIdx) => renderTrendCard(trend, colIdx * 2 + 1))}
+            </View>
+          </View>
 
           {/* Load More Button */}
-          <Pressable
+          <TouchableOpacity
             disabled={isLoadingMore}
+            activeOpacity={0.8}
             onPress={handleLoadMore}
             style={[
               styles.loadMoreBtn,
@@ -711,7 +726,7 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
                 </Text>
               </>
             )}
-          </Pressable>
+          </TouchableOpacity>
         </View>
       )}
     </View>
@@ -780,17 +795,27 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 2,
   },
-  trendsGrid: {
-    gap: 14,
+  feedWrapper: {
+    gap: 12,
+  },
+  masonryContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'flex-start',
+  },
+  masonryColumn: {
+    flex: 1,
+    gap: 10,
   },
   trendCard: {
-    borderRadius: 24,
-    padding: 16,
+    width: '100%',
+    borderRadius: 18,
+    padding: 12,
     borderWidth: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0,
-    shadowRadius: 2,
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
     elevation: 1,
   },
   trendHeader: {
@@ -802,144 +827,146 @@ const styles = StyleSheet.create({
   sourceBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    maxWidth: '65%',
   },
   trendSource: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '700',
   },
   headerRightBadges: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
   engagementBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    gap: 2,
     backgroundColor: 'rgba(245, 158, 11, 0.15)',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 5,
   },
   engagementText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '800',
     color: '#d97706',
   },
   rankBadge: {
     backgroundColor: 'rgba(148, 163, 184, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 5,
   },
   rankText: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '700',
     color: '#64748b',
   },
   creatorRow: {
-    marginBottom: 6,
+    marginBottom: 4,
   },
   creatorText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '500',
   },
   creatorHighlight: {
     fontWeight: '700',
   },
   trendTitle: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '700',
-    lineHeight: 22,
-    marginBottom: 10,
+    lineHeight: 18,
+    marginBottom: 8,
   },
   imageContainer: {
     position: 'relative',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   trendImage: {
     width: '100%',
-    height: 190,
-    borderRadius: 12,
+    height: 120,
+    borderRadius: 10,
     backgroundColor: '#cbd5e1',
   },
   videoDurationBadge: {
     position: 'absolute',
-    bottom: 8,
-    right: 8,
+    bottom: 6,
+    right: 6,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
     backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 5,
   },
   videoDurationText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
     color: '#ffffff',
   },
   colorDot: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    top: 6,
+    right: 6,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     borderWidth: 1.5,
     borderColor: '#ffffff',
   },
   metricsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 10,
+    gap: 6,
+    marginBottom: 8,
   },
   metricBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
   },
   metricBadgeText: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '600',
     color: '#777383',
   },
   tagsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 14,
+    gap: 4,
+    marginBottom: 10,
   },
   tagPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2.5,
+    borderRadius: 5,
   },
   tagPillText: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '600',
   },
   cardActionsRow: {
     flexDirection: 'row',
-    gap: 8, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
+  },
   sourceLinkBtn: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
     borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderRadius: 8,
+    width: 32,
+    height: 32,
   },
   sourceLinkText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
   useTopicBtn: {
@@ -947,15 +974,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 4,
     borderWidth: 1,
     borderColor: '#ec4899',
-    borderRadius: 10,
-    paddingVertical: 10,
+    borderRadius: 8,
+    height: 32,
     backgroundColor: 'rgba(236, 72, 153, 0.08)',
   },
   useTopicBtnText: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '700',
     color: '#ec4899',
   },

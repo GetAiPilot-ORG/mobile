@@ -21,10 +21,6 @@
     },
     "android": {
       "googleServicesFile": "./google-services.json",
-      "androidNavigationBar": {
-        "barStyle": "dark-content",
-        "backgroundColor": "#00000000"
-      },
       "adaptiveIcon": {
         "backgroundColor": "#00000000",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
