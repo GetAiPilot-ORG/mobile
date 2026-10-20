@@ -62,6 +62,13 @@ export async function socialRoutes(fastify: FastifyInstance) {
   fastify.post('/social/accounts/disconnect', { preHandler: [authenticateToken, requirePermission('social.read')] }, handleDisconnect);
   fastify.delete('/social/accounts/disconnect', { preHandler: [authenticateToken, requirePermission('social.read')] }, handleDisconnect);
 
+  // 2.5 Pinterest Boards
+  fastify.get('/social/pinterest/boards', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const result = await SocialAdapter.getPinterestBoards(user);
+    return reply.send(result);
+  });
+
   // 3. Posts History & Queue
   fastify.get('/social/posts', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
     const user = request.user as JWTPayload;

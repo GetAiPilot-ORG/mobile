@@ -70,6 +70,12 @@ const config = getDefaultConfig(__dirname);
 // Limit concurrent workers on Windows to avoid bursting file handles
 config.maxWorkers = 2;
 
+// Set Metro server port to 8082
+config.server = {
+  ...config.server,
+  port: Number(process.env.RCT_METRO_PORT || 8082),
+};
+
 const defaultBlockList = Array.isArray(config.resolver.blockList)
   ? config.resolver.blockList
   : config.resolver.blockList

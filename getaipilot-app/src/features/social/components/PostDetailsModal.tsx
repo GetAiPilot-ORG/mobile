@@ -57,7 +57,72 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
     }
   };
 
-  const statusColor = getStatusColor(post.status);
+  const getChannelInfo = (ch: string) => {
+    const lower = String(ch).toLowerCase();
+    if (lower.startsWith('pinterest')) {
+      return { name: 'Pinterest', icon: 'logo-pinterest', color: '#e60023' };
+    }
+    if (lower.startsWith('instagram')) {
+      return { name: 'Instagram', icon: 'logo-instagram', color: '#e1306c' };
+    }
+    if (lower.startsWith('youtube')) {
+      return { name: 'YouTube', icon: 'logo-youtube', color: '#ff0000' };
+    }
+    if (lower.startsWith('facebook')) {
+      return { name: 'Facebook', icon: 'logo-facebook', color: '#1877f2' };
+    }
+    if (lower.startsWith('x') || lower.startsWith('twitter')) {
+      return { name: 'X', icon: 'logo-twitter', color: '#38bdf8' };
+    }
+    if (lower.startsWith('linkedin')) {
+      return { name: 'LinkedIn', icon: 'logo-linkedin', color: '#0077b5' };
+    }
+    if (lower.startsWith('threads')) {
+      return { name: 'Threads', icon: 'at-outline', color: '#9333ea' };
+    }
+    if (lower.startsWith('bluesky')) {
+      return { name: 'Bluesky', icon: 'cloud-outline', color: '#0285FF' };
+    }
+    const parts = String(ch).split(':');
+    const provider = parts[0] || 'Social';
+    return {
+      name: provider.charAt(0).toUpperCase() + provider.slice(1),
+      icon: 'share-social',
+      color: '#ec4899',
+    };
+  };
+
+  const hasPinterestSuccess = Boolean(
+    post.pinterest_success ||
+    post.pinterest_url ||
+    post.platform_data?.channelResults?.[
+      Object.keys(post.platform_data?.channelResults || {}).find((k) => k.startsWith('pinterest')) || ''
+    ]?.success
+  );
+
+  const pinterestPinUrl =
+    post.pinterest_url ||
+    post.platform_data?.channelResults?.[
+      Object.keys(post.platform_data?.channelResults || {}).find((k) => k.startsWith('pinterest')) || ''
+    ]?.url;
+
+  const pinterestError =
+    post.pinterest_error ||
+    post.platform_data?.channelResults?.[
+      Object.keys(post.platform_data?.channelResults || {}).find((k) => k.startsWith('pinterest')) || ''
+    ]?.error;
+
+  const hasAnySuccess = Boolean(
+    hasPinterestSuccess ||
+    post.instagram_success ||
+    post.youtube_success ||
+    post.facebook_success ||
+    post.x_success ||
+    post.threads_success
+  );
+  const isPartialSuccess = post.status === 'failed' && hasAnySuccess;
+
+  const statusColor = isPartialSuccess ? '#f59e0b' : getStatusColor(post.status);
   const channels = Array.isArray(post.selected_channels)
     ? post.selected_channels
     : Array.isArray(post.channels)
@@ -106,7 +171,11 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
               <View style={[styles.statusBadge, { backgroundColor: `${statusColor}20` }]}>
                 <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
                 <Text style={[styles.statusText, { color: statusColor }]}>
-                  {post.status ? post.status.charAt(0).toUpperCase() + post.status.slice(1).toLowerCase() : 'Draft'}
+                  {isPartialSuccess
+                    ? 'Partially Published'
+                    : post.status
+                    ? post.status.charAt(0).toUpperCase() + post.status.slice(1).toLowerCase()
+                    : 'Draft'}
                 </Text>
               </View>
               <Text style={[styles.headerDate, { color: isDark ? '#777383' : '#64748b' }]}>
@@ -121,17 +190,20 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
           <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false}>
             {/* Target Channels */}
             <View style={styles.channelsRow}>
-              {channels.map((ch: string, index: number) => (
-                <View
-                  key={index}
-                  style={[styles.channelBadge, { backgroundColor: isDark ? '#252230' : '#F0EEF8' }]}
-                >
-                  <Ionicons name="share-social" size={12} color="#ec4899" />
-                  <Text style={[styles.channelText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
-                    {ch.replace(/^.+:/, '')}
-                  </Text>
-                </View>
-              ))}
+              {channels.map((ch: string, index: number) => {
+                const info = getChannelInfo(ch);
+                return (
+                  <View
+                    key={index}
+                    style={[styles.channelBadge, { backgroundColor: isDark ? '#252230' : '#F0EEF8' }]}
+                  >
+                    <Ionicons name={info.icon as any} size={13} color={info.color} />
+                    <Text style={[styles.channelText, { color: isDark ? '#cbd5e1' : '#475569' }]}>
+                      {info.name}
+                    </Text>
+                  </View>
+                );
+              })}
             </View>
 
             {/* Media Preview if present */}
@@ -191,14 +263,55 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
               post.instagram_url ||
               post.facebook_url ||
               post.x_url ||
+              post.pinterest_url ||
+              post.pinterest_pin_id ||
+              hasPinterestSuccess ||
               post.youtube_error ||
               post.instagram_error ||
               post.facebook_error ||
-              post.x_error) && (
+              post.x_error ||
+              post.pinterest_error) && (
               <View style={styles.deliverySection}>
                 <Text style={[styles.captionTitle, { color: isDark ? '#cbd5e1' : '#334155', marginBottom: 8 }]}>
                   Platform Delivery Outcomes
                 </Text>
+
+                {/* Pinterest */}
+                {(post.pinterest_url || post.pinterest_pin_id || hasPinterestSuccess || post.pinterest_error || pinterestPinUrl) && (
+                  <View style={[styles.deliveryTile, { backgroundColor: isDark ? '#252230' : '#F5F3FB' }]}>
+                    <View style={styles.deliveryHeader}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Ionicons name="logo-pinterest" size={16} color="#e60023" />
+                        <Text style={[styles.deliveryTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>Pinterest</Text>
+                      </View>
+                      {hasPinterestSuccess || pinterestPinUrl ? (
+                        <View style={[styles.deliveryBadge, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
+                          <Ionicons name="checkmark-circle" size={12} color="#22c55e" />
+                          <Text style={[styles.deliveryBadgeText, { color: '#22c55e' }]}>Published</Text>
+                        </View>
+                      ) : pinterestError ? (
+                        <View style={[styles.deliveryBadge, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
+                          <Ionicons name="alert-circle" size={12} color="#ef4444" />
+                          <Text style={[styles.deliveryBadgeText, { color: '#ef4444' }]}>Failed</Text>
+                        </View>
+                      ) : null}
+                    </View>
+
+                    {pinterestError && (
+                      <Text style={styles.deliveryErrorText}>{pinterestError}</Text>
+                    )}
+
+                    {pinterestPinUrl && (
+                      <Pressable
+                        onPress={() => Linking.openURL(pinterestPinUrl)}
+                        style={styles.openPlatformBtn}
+                      >
+                        <Ionicons name="open-outline" size={15} color="#e60023" />
+                        <Text style={[styles.openPlatformText, { color: '#e60023' }]}>View on Pinterest</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                )}
 
                 {/* YouTube */}
                 {(post.youtube_url || post.youtube_shorts_url || post.youtube_video_id || post.youtube_error) && (
@@ -384,11 +497,35 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
 
             {/* Failure reason if failed */}
             {post.status === 'failed' && (
-              <View style={styles.errorBanner}>
-                <Ionicons name="alert-circle" size={18} color="#ef4444" />
+              <View
+                style={[
+                  styles.errorBanner,
+                  isPartialSuccess && {
+                    backgroundColor: isDark ? 'rgba(245, 158, 11, 0.12)' : '#FEF3C7',
+                    borderColor: isDark ? 'rgba(245, 158, 11, 0.3)' : '#FDE68A',
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={isPartialSuccess ? 'warning' : 'alert-circle'}
+                  size={18}
+                  color={isPartialSuccess ? '#f59e0b' : '#ef4444'}
+                />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.errorTitle}>Publishing Failed</Text>
-                  <Text style={styles.errorDesc}>
+                  <Text
+                    style={[
+                      styles.errorTitle,
+                      isPartialSuccess && { color: isDark ? '#fbbf24' : '#b45309' },
+                    ]}
+                  >
+                    {isPartialSuccess ? 'Partial Delivery' : 'Publishing Failed'}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.errorDesc,
+                      isPartialSuccess && { color: isDark ? '#fef3c7' : '#92400e' },
+                    ]}
+                  >
                     {failureError || 'Provider rejected request.'}
                   </Text>
                 </View>

@@ -25,6 +25,7 @@ const app = Fastify({
   logger: {
     level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
   },
+  bodyLimit: 50 * 1024 * 1024, // 50MB for media upload payloads
 });
 
 async function main() {

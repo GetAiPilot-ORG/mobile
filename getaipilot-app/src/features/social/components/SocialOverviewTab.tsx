@@ -3,6 +3,7 @@ import { Alert, Image, Linking, Pressable, ScrollView, Text, View } from 'react-
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { ProductHeading, ProductMetrics, ProductSection, ProductActions, ProductRow, ProductButton, ProductEmpty, useProductPalette } from '@/components/ProductUI';
+import { useTheme } from '@/theme';
 import { SocialScreenSkeleton } from '@/components/skeletonScreen';
 import { openSocialHandoff } from '../utils/socialHandoff';
 
@@ -29,6 +30,7 @@ interface SocialOverviewTabProps {
   onOpenAccountsModal: () => void;
   onOpenConnectModal: () => void;
   onNavigateToTab: (tab: 'overview' | 'trends' | 'inbox' | 'activity') => void;
+  onSelectPost?: (post: any) => void;
   isLocked?: boolean;
 }
 
@@ -37,8 +39,9 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
   overviewLoading, overviewError, onRetryOverview, overviewData, entitlementsData,
   connectedList, postsList, queueList, totalSentCount, totalScheduledCount,
   computedSuccessRate, selectedRange, onChangeRange, onOpenCreateModal,
-  onOpenAccountsModal, onNavigateToTab, isLocked = false,
+  onOpenAccountsModal, onNavigateToTab, onSelectPost, isLocked = false,
 }) => {
+  const { isDark } = useTheme();
   const colors = useProductPalette();
   const router = useRouter();
   const plan = entitlementsData?.plan?.name || 'Free';
@@ -103,8 +106,208 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
       {instagram.map((account) => <ProductRow key={account.id} title={account.username || account.name || 'Instagram'} detail={(account.followers ?? growth?.summary?.totalFollowers ?? 0).toLocaleString() + ' followers'} icon="logo-instagram" tone="pink" onPress={onOpenAccountsModal} />)}
       {(growth?.accounts || []).flatMap((account: any) => account.topMedia || []).slice(0, 3).map((media: any, index: number) => <ProductRow key={media.id || index} title={media.caption || 'Instagram post'} detail={(media.likes ?? 0) + ' likes · ' + (media.comments ?? 0) + ' comments'} icon="image-outline" tone="pink" onPress={media.permalink ? () => Linking.openURL(media.permalink) : undefined} />)}
     </ProductSection>}
-    <ProductSection title="Recent activity" onAction={() => onNavigateToTab('activity')}>
-      {activity.length ? activity.map((post: any, index: number) => <ProductRow key={post.id || index} title={post.title || post.caption || post.content || 'Social post'} detail={post.status || 'View details'} icon="document-text-outline" onPress={() => onNavigateToTab('activity')} />) : <ProductEmpty title="A fresh page" description="Your published posts will appear here." />}
+    {/* SECTION: Recent Activity (Redesigned with Minimal Pastel Palette & Rich Post Cards) */}
+    <ProductSection title="Recent activity" action="See all" onAction={() => onNavigateToTab('activity')}>
+      {!activity.length ? (
+        <ProductEmpty
+          title="A fresh page"
+          description="Your published posts and queued broadcasts will appear here."
+          action="Create first post"
+          onAction={onOpenCreateModal}
+        />
+      ) : (
+        <View style={{ gap: 10 }}>
+          {activity.map((post: any, index: number) => {
+            const rawStatus = (post.status || 'published').toLowerCase();
+            const isFailed = rawStatus === 'failed';
+            const isScheduled = rawStatus === 'scheduled' || rawStatus === 'queued' || rawStatus === 'pending';
+            const isSuccess = rawStatus === 'sent' || rawStatus === 'published' || rawStatus === 'completed' || rawStatus === 'success';
+
+            // Minimal pastel tone for the card & badge
+            const statusLabel = isSuccess ? 'Published' : isScheduled ? 'Scheduled' : isFailed ? 'Failed' : 'Pending';
+            const statusBg = isSuccess
+              ? colors.mint
+              : isScheduled
+              ? colors.lavender
+              : isFailed
+              ? '#FDE8E8'
+              : colors.peach;
+            const statusTextColor = isSuccess
+              ? '#0F766E'
+              : isScheduled
+              ? colors.accent
+              : isFailed
+              ? '#DC2626'
+              : '#B45309';
+
+            const channels: string[] = post.selected_channels?.length
+              ? post.selected_channels
+              : post.channels?.length
+              ? post.channels
+              : post.platform
+              ? [post.platform]
+              : [];
+
+            const mediaThumb =
+              post.thumbnail_url ||
+              post.thumbnailUrl ||
+              post.media_urls?.[0] ||
+              post.mediaUrls?.[0] ||
+              (post.media_type === 'image' ? post.media_url : null) ||
+              post.media_url ||
+              post.mediaUrl;
+
+            const timeStr = post.scheduled_for || post.scheduledAt || post.posted_at || post.postedAt || post.created_at || post.createdAt;
+            const formattedTime = timeStr
+              ? new Date(timeStr).toLocaleString([], {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : null;
+
+            return (
+              <Pressable
+                key={post.id || index}
+                onPress={() => {
+                  if (onSelectPost) {
+                    onSelectPost(post);
+                  } else {
+                    onNavigateToTab('activity');
+                  }
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={post.caption || post.title || 'Social post'}
+                style={({ pressed }) => ({
+                  backgroundColor: colors.card,
+                  borderRadius: 22,
+                  padding: 16,
+                  gap: 12,
+                  borderWidth: 1,
+                  borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                  opacity: pressed ? 0.8 : 1,
+                  transform: [{ scale: pressed ? 0.99 : 1 }],
+                })}
+              >
+                {/* Header: Platform Icons on Left, Status Pill on Right */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    {channels.length > 0 ? (
+                      channels.slice(0, 3).map((ch, chIdx) => {
+                        const cleanCh = (ch || '').replace(/^.+:/, '').toLowerCase();
+                        return (
+                          <View
+                            key={chIdx}
+                            style={{
+                              width: 28,
+                              height: 28,
+                              borderRadius: 14,
+                              backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Ionicons name={iconFor(cleanCh)} size={15} color={colors.text} />
+                          </View>
+                        );
+                      })
+                    ) : (
+                      <View
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: 14,
+                          backgroundColor: colors.lavender,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Ionicons name="share-social-outline" size={15} color={colors.accent} />
+                      </View>
+                    )}
+                    {channels.length > 3 && (
+                      <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textSecondary }}>
+                        +{channels.length - 3}
+                      </Text>
+                    )}
+                  </View>
+
+                  {/* Status Pill */}
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 4,
+                      backgroundColor: statusBg,
+                      paddingHorizontal: 9,
+                      paddingVertical: 4,
+                      borderRadius: 12,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 5,
+                        height: 5,
+                        borderRadius: 2.5,
+                        backgroundColor: statusTextColor,
+                      }}
+                    />
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        fontWeight: '700',
+                        color: statusTextColor,
+                        textTransform: 'capitalize',
+                      }}
+                    >
+                      {statusLabel}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Body: Caption + Media Preview */}
+                <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                  {mediaThumb ? (
+                    <Image
+                      source={{ uri: mediaThumb }}
+                      style={{
+                        width: 52,
+                        height: 52,
+                        borderRadius: 14,
+                        backgroundColor: isDark ? '#201E2B' : '#F1EFF8',
+                      }}
+                      resizeMode="cover"
+                    />
+                  ) : null}
+                  <View style={{ flex: 1, gap: 4 }}>
+                    <Text
+                      numberOfLines={2}
+                      style={{
+                        fontSize: 14,
+                        lineHeight: 20,
+                        fontWeight: '500',
+                        color: colors.text,
+                      }}
+                    >
+                      {post.caption || post.title || post.content || 'Untitled broadcast'}
+                    </Text>
+                    {formattedTime && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Ionicons name="time-outline" size={12} color={colors.textSecondary} />
+                        <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                          {formattedTime}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={colors.iconSecondary} />
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
     </ProductSection>
     <View style={{ backgroundColor: colors.pink, borderRadius: 26, padding: 22, gap: 16, marginBottom: 26 }}>
       <Text style={{ color: colors.text, fontSize: 21, fontWeight: '500' }}>{plan} workspace</Text>
