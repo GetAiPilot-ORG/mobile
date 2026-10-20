@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, StyleProp, ViewStyle } from 'react-native';
 import { ArrowRight01Icon } from '@/constants/icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useTheme, getColors } from '@/theme';
@@ -12,6 +12,7 @@ interface ToolCardProps {
   iconBg?: string;
   badge?: string;
   onPress: () => void;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const ToolCard: React.FC<ToolCardProps> = ({
@@ -21,52 +22,64 @@ export const ToolCard: React.FC<ToolCardProps> = ({
   iconBg,
   badge,
   onPress,
+  style,
 }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
 
   return (
     <Pressable
-      className="p-4 rounded-[20px] mb-3.5 justify-between active:opacity-85"
-      style={
+      style={[
         {
+          padding: 13,
+          borderRadius: 18,
+          justifyContent: 'space-between',
           backgroundColor: colors.card,
           shadowColor: colors.primary,
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: isDark ? 0.25 : 0.04,
           shadowRadius: 8,
-        }
-      }
+          elevation: 2,
+        },
+        style,
+      ]}
       onPress={onPress}
     >
       {/* Card Header: Icon + Badge */}
-      <View className="flex-row items-center justify-between mb-3">
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 10,
+        }}
+      >
         <View
           style={{
-            width: 44,
-            height: 44,
-            borderRadius: 14,
-            justifyContent: "center",
-            alignItems: "center",
+            width: 40,
+            height: 40,
+            borderRadius: 12,
+            justifyContent: 'center',
+            alignItems: 'center',
             backgroundColor: iconBg || colors.accentSoft,
           }}
         >
-          <HugeiconsIcon icon={icon} size={21} color={'#000000'} strokeWidth={1.8} />
+          <HugeiconsIcon icon={icon} size={20} color={'#000000'} strokeWidth={1.8} />
         </View>
         {badge ? (
           <View
             style={{
-              paddingHorizontal: 8,
-              paddingVertical: 3,
-              borderRadius: 8,
+              paddingHorizontal: 7,
+              paddingVertical: 2.5,
+              borderRadius: 6,
               backgroundColor: colors.accentSoft,
             }}
           >
             <Text
               style={{
-                fontSize: 9.5,
-                fontWeight: "600",
-                letterSpacing: 0.8,
+                fontSize: 9,
+                fontWeight: '700',
+                letterSpacing: 0.6,
                 color: colors.accent,
               }}
             >
@@ -76,13 +89,13 @@ export const ToolCard: React.FC<ToolCardProps> = ({
         ) : null}
       </View>
 
-      {/* Card Body: Category, Title & Description */}
-      <View style={{ gap: 3, marginBottom: 10 }}>
+      {/* Card Body: Title & Description */}
+      <View style={{ gap: 3, flex: 1, marginBottom: 12 }}>
         <Text
           style={{
-            fontSize: 15,
-            fontWeight: "600",
-            letterSpacing: -0.3,
+            fontSize: 14,
+            fontWeight: '600',
+            letterSpacing: -0.2,
             color: colors.text,
           }}
           numberOfLines={1}
@@ -91,8 +104,8 @@ export const ToolCard: React.FC<ToolCardProps> = ({
         </Text>
         <Text
           style={{
-            fontSize: 13,
-            lineHeight: 19,
+            fontSize: 11.5,
+            lineHeight: 16,
             color: colors.textSecondary,
           }}
           numberOfLines={2}
@@ -104,32 +117,32 @@ export const ToolCard: React.FC<ToolCardProps> = ({
       {/* Card Footer: Launch CTA */}
       <View
         style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingTop: 11,
-          borderTopWidth: 0,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingTop: 8,
+          borderTopWidth: 1,
           borderTopColor: isDark
-            ? "rgba(255,255,255,0.06)"
-            : "rgba(0,0,0,0.05)",
+            ? 'rgba(255,255,255,0.06)'
+            : 'rgba(0,0,0,0.04)',
         }}
       >
         <Text
-          style={{ fontSize: 13, fontWeight: "700", color: colors.primary }}
+          style={{ fontSize: 12, fontWeight: '700', color: colors.primary }}
         >
-          Launch Tool
+          Launch
         </Text>
         <View
           style={{
-            width: 22,
-            height: 22,
-            borderRadius: 11,
-            alignItems: "center",
-            justifyContent: "center",
+            width: 20,
+            height: 20,
+            borderRadius: 10,
+            alignItems: 'center',
+            justifyContent: 'center',
             backgroundColor: colors.primaryMuted,
           }}
         >
-          <HugeiconsIcon icon={ArrowRight01Icon} size={12} color={colors.primary} strokeWidth={2} />
+          <HugeiconsIcon icon={ArrowRight01Icon} size={11} color={colors.primary} strokeWidth={2} />
         </View>
       </View>
     </Pressable>

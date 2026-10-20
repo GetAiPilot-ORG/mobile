@@ -1,4 +1,4 @@
-package com.unreala9.mobile
+package com.getaipilot
 
 import android.app.Application
 import android.content.res.Configuration

@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.unreala9.mobile'
+    namespace 'com.getaipilot'
     defaultConfig {
-        applicationId 'com.unreala9.mobile'
+        applicationId 'com.getaipilot'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -195,4 +195,6 @@ tasks.named("clean") {
         delete "${projectDir}/.cxx"
     }
 }
+
+apply plugin: 'com.google.gms.google-services'
 

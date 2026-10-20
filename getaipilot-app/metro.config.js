@@ -1,7 +1,7 @@
 const fs = require('fs');
 const os = require('os');
 
-// Windows file-handle safeguard: Graceful FS and Promise retry to prevent EMFILE crashes
+// Windows file-handle safeguard: Graceful FS and Promise/Sync retry to prevent EMFILE crashes
 try {
   const gracefulFs = require('graceful-fs');
   gracefulFs.gracefulify(fs);
@@ -13,9 +13,30 @@ try {
         try {
           return await fn.apply(this, args);
         } catch (err) {
-          if ((err.code === 'EMFILE' || err.code === 'ENFILE') && attempts < 10) {
+          if ((err.code === 'EMFILE' || err.code === 'ENFILE') && attempts < 50) {
             attempts++;
-            await new Promise((resolve) => setTimeout(resolve, attempts * 50));
+            await new Promise((resolve) =>
+              setTimeout(resolve, Math.min(200, 20 * attempts) + Math.random() * 20)
+            );
+            continue;
+          }
+          throw err;
+        }
+      }
+    };
+  };
+
+  const wrapSync = (fn) => {
+    return function (...args) {
+      let attempts = 0;
+      while (true) {
+        try {
+          return fn.apply(this, args);
+        } catch (err) {
+          if ((err.code === 'EMFILE' || err.code === 'ENFILE') && attempts < 50) {
+            attempts++;
+            const end = Date.now() + Math.min(100, 10 * attempts);
+            while (Date.now() < end) {}
             continue;
           }
           throw err;
@@ -25,9 +46,18 @@ try {
   };
 
   if (fs.promises) {
-    if (fs.promises.open) fs.promises.open = wrapPromise(fs.promises.open);
-    if (fs.promises.readFile) fs.promises.readFile = wrapPromise(fs.promises.readFile);
+    ['open', 'readFile', 'writeFile', 'stat', 'readdir', 'access'].forEach((m) => {
+      if (typeof fs.promises[m] === 'function') {
+        fs.promises[m] = wrapPromise(fs.promises[m]);
+      }
+    });
   }
+
+  ['openSync', 'readFileSync', 'writeFileSync', 'statSync', 'readdirSync', 'accessSync'].forEach((m) => {
+    if (typeof fs[m] === 'function') {
+      fs[m] = wrapSync(fs[m]);
+    }
+  });
 } catch {
   // safe fallback
 }
@@ -38,21 +68,20 @@ const { withNativeWind } = require('nativewind/metro');
 const config = getDefaultConfig(__dirname);
 
 // Limit concurrent workers on Windows to avoid bursting file handles
-config.maxWorkers = Math.max(1, Math.min(4, os.cpus().length - 1));
+config.maxWorkers = 2;
 
 const defaultBlockList = Array.isArray(config.resolver.blockList)
   ? config.resolver.blockList
   : config.resolver.blockList
-  ? [config.resolver.blockList]
-  : [];
+    ? [config.resolver.blockList]
+    : [];
 
 config.resolver.blockList = [
   ...defaultBlockList,
-  /.*[/\\]\.git[/\\].*/,
-  /.*[/\\]Getaipilot-bff[/\\].*/,
+  /.*[/\\]dist[/\\].*/,
   /.*[/\\]android[/\\].*/,
-  /.*[/\\]state[/\\].*/,
+  /.*[/\\]docs[/\\].*/,
+  /.*[/\\]Getaipilot-bff[/\\].*/,
 ];
 
 module.exports = withNativeWind(config, { input: './src/global.css' });
-
