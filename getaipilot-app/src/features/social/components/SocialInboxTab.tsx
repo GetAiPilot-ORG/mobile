@@ -11,6 +11,9 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -50,14 +53,22 @@ const formatMessageTime = (dateStr?: string | null) => {
   }
 };
 
-export const SocialInboxTab = () => {
+export interface SocialInboxTabProps {
+  defaultPlatform?: 'all' | 'instagram' | 'facebook';
+  hidePlatformFilter?: boolean;
+}
+
+export const SocialInboxTab: React.FC<SocialInboxTabProps> = ({
+  defaultPlatform = 'all',
+  hidePlatformFilter = false,
+}) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const queryClient = useQueryClient();
   const messagesScrollRef = useRef<ScrollView>(null);
 
   // Filter & Search states
-  const [selectedPlatform, setSelectedPlatform] = useState<'all' | 'instagram' | 'facebook'>('all');
+  const [selectedPlatform, setSelectedPlatform] = useState<'all' | 'instagram' | 'facebook'>(defaultPlatform);
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'UNREAD' | 'REPLIED'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -329,88 +340,90 @@ export const SocialInboxTab = () => {
       </View>
 
       {/* 2. Platform Filter Chips */}
-      <View style={styles.filterRow}>
-        <Pressable
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setSelectedPlatform('all');
-          }}
-          style={[
-            styles.channelChip,
-            selectedPlatform === 'all'
-              ? [styles.channelChipActive, { backgroundColor: '#e1306c' }]
-              : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
-          ]}
-        >
-          <Ionicons
-            name="chatbubbles"
-            size={14}
-            color={selectedPlatform === 'all' ? '#ffffff' : isDark ? '#777383' : '#64748b'}
-          />
-          <Text
+      {!hidePlatformFilter && (
+        <View style={styles.filterRow}>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSelectedPlatform('all');
+            }}
             style={[
-              styles.channelChipText,
-              { color: selectedPlatform === 'all' ? '#ffffff' : isDark ? '#F5F3FB' : '#1C1A25' },
+              styles.channelChip,
+              selectedPlatform === 'all'
+                ? [styles.channelChipActive, { backgroundColor: '#e1306c' }]
+                : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
             ]}
           >
-            All Platforms
-          </Text>
-        </Pressable>
+            <Ionicons
+              name="chatbubbles"
+              size={14}
+              color={selectedPlatform === 'all' ? '#ffffff' : isDark ? '#777383' : '#64748b'}
+            />
+            <Text
+              style={[
+                styles.channelChipText,
+                { color: selectedPlatform === 'all' ? '#ffffff' : isDark ? '#F5F3FB' : '#1C1A25' },
+              ]}
+            >
+              All Platforms
+            </Text>
+          </Pressable>
 
-        <Pressable
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setSelectedPlatform('instagram');
-          }}
-          style={[
-            styles.channelChip,
-            selectedPlatform === 'instagram'
-              ? [styles.channelChipActive, { backgroundColor: '#e1306c' }]
-              : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
-          ]}
-        >
-          <Ionicons
-            name="logo-instagram"
-            size={14}
-            color={selectedPlatform === 'instagram' ? '#ffffff' : '#e1306c'}
-          />
-          <Text
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSelectedPlatform('instagram');
+            }}
             style={[
-              styles.channelChipText,
-              { color: selectedPlatform === 'instagram' ? '#ffffff' : isDark ? '#F5F3FB' : '#1C1A25' },
+              styles.channelChip,
+              selectedPlatform === 'instagram'
+                ? [styles.channelChipActive, { backgroundColor: '#e1306c' }]
+                : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
             ]}
           >
-            Instagram
-          </Text>
-        </Pressable>
+            <Ionicons
+              name="logo-instagram"
+              size={14}
+              color={selectedPlatform === 'instagram' ? '#ffffff' : '#e1306c'}
+            />
+            <Text
+              style={[
+                styles.channelChipText,
+                { color: selectedPlatform === 'instagram' ? '#ffffff' : isDark ? '#F5F3FB' : '#1C1A25' },
+              ]}
+            >
+              Instagram
+            </Text>
+          </Pressable>
 
-        <Pressable
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setSelectedPlatform('facebook');
-          }}
-          style={[
-            styles.channelChip,
-            selectedPlatform === 'facebook'
-              ? [styles.channelChipActive, { backgroundColor: '#1877f2' }]
-              : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
-          ]}
-        >
-          <Ionicons
-            name="logo-facebook"
-            size={14}
-            color={selectedPlatform === 'facebook' ? '#ffffff' : '#1877f2'}
-          />
-          <Text
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSelectedPlatform('facebook');
+            }}
             style={[
-              styles.channelChipText,
-              { color: selectedPlatform === 'facebook' ? '#ffffff' : isDark ? '#F5F3FB' : '#1C1A25' },
+              styles.channelChip,
+              selectedPlatform === 'facebook'
+                ? [styles.channelChipActive, { backgroundColor: '#1877f2' }]
+                : { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
             ]}
           >
-            Facebook
-          </Text>
-        </Pressable>
-      </View>
+            <Ionicons
+              name="logo-facebook"
+              size={14}
+              color={selectedPlatform === 'facebook' ? '#ffffff' : '#1877f2'}
+            />
+            <Text
+              style={[
+                styles.channelChipText,
+                { color: selectedPlatform === 'facebook' ? '#ffffff' : isDark ? '#F5F3FB' : '#1C1A25' },
+              ]}
+            >
+              Facebook
+            </Text>
+          </Pressable>
+        </View>
+      )}
 
       {/* 3. Search and Status Row */}
       <View
@@ -522,8 +535,12 @@ export const SocialInboxTab = () => {
         <View style={styles.conversationsList}>
           {filteredConversations.map((conv) => {
             const isInstagram = (conv.platform || '').toLowerCase().includes('instagram');
-            const author = conv.authorName || conv.authorHandle?.replace(/^@/, '') || 'Social Contact';
-            const handle = conv.authorHandle || `@${conv.authorName || 'user'}`;
+            const isGenericAuthor = !conv.authorName || conv.authorName.toLowerCase().startsWith('instagram user') || conv.authorName.toLowerCase().startsWith('facebook user');
+            const hasValidHandle = conv.authorHandle && !conv.authorHandle.toLowerCase().startsWith('@instagram user') && !conv.authorHandle.toLowerCase().startsWith('@facebook user');
+            
+            // If authorName is generic "Instagram user 12345", but handle is available, use handle as author
+            let author = !isGenericAuthor ? conv.authorName! : (hasValidHandle ? conv.authorHandle!.replace(/^@/, '') : (isInstagram ? 'Instagram Contact' : 'Facebook Contact'));
+            let handle = hasValidHandle ? conv.authorHandle! : `@${author.replace(/\s+/g, '_').toLowerCase()}`;
             const timeFormatted = formatMessageTime(conv.createdAt);
 
             return (
@@ -658,6 +675,281 @@ export const SocialInboxTab = () => {
           })}
         </View>
       )}
+      {/* Conversation Thread / Direct Chat Modal */}
+      <Modal
+        visible={Boolean(selectedConversation)}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setSelectedConversation(null)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={[styles.modalContainer, { backgroundColor: isDark ? '#0f172a' : '#f8fafc' }]}
+        >
+          {/* Modal Header */}
+          <View
+            style={[
+              styles.modalHeader,
+              {
+                backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+                borderBottomColor: isDark ? '#252230' : '#E9E6F2',
+              },
+            ]}
+          >
+            <View style={styles.modalHeaderInfo}>
+              {selectedConversation?.authorAvatar ? (
+                <Image
+                  source={{ uri: selectedConversation.authorAvatar }}
+                  style={styles.modalAvatarImg}
+                />
+              ) : (
+                <View
+                  style={[
+                    styles.avatarFallback,
+                    {
+                      width: 38,
+                      height: 38,
+                      borderRadius: 19,
+                      backgroundColor:
+                        (selectedConversation?.platform || '').toLowerCase() === 'instagram'
+                          ? 'rgba(225, 48, 108, 0.16)'
+                          : 'rgba(24, 119, 242, 0.16)',
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.avatarInitial,
+                      {
+                        fontSize: 14,
+                        color:
+                          (selectedConversation?.platform || '').toLowerCase() === 'instagram'
+                            ? '#e1306c'
+                            : '#1877f2',
+                      },
+                    ]}
+                  >
+                    {(selectedConversation?.authorName || 'U').charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[styles.modalTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}
+                  numberOfLines={1}
+                >
+                  {selectedConversation?.authorName || 'Social Contact'}
+                </Text>
+                <Text
+                  style={[styles.modalSub, { color: isDark ? '#777383' : '#64748b' }]}
+                  numberOfLines={1}
+                >
+                  {selectedConversation?.authorHandle ||
+                    (selectedConversation?.platform === 'instagram' ? '@instagram' : '@facebook')}
+                  {selectedConversation?.accountName ? ` • via ${selectedConversation.accountName}` : ''}
+                </Text>
+              </View>
+            </View>
+
+            <Pressable
+              onPress={() => setSelectedConversation(null)}
+              style={[
+                styles.modalHeaderBtn,
+                { backgroundColor: isDark ? '#252230' : '#F0EEF8' },
+              ]}
+            >
+              <Ionicons name="close" size={18} color={isDark ? '#F5F3FB' : '#1C1A25'} />
+            </Pressable>
+          </View>
+
+          {/* Delivery Error Notice if any */}
+          {Boolean(sendErrorBanner) && (
+            <View style={styles.errorBannerBox}>
+              <Ionicons name="alert-circle" size={16} color="#f43f5e" />
+              <Text style={styles.errorBannerText}>{sendErrorBanner}</Text>
+            </View>
+          )}
+
+          {/* Messages Scroll Feed */}
+          <ScrollView
+            ref={messagesScrollRef}
+            contentContainerStyle={styles.messagesContainer}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.threadMetaPill}>
+              <Ionicons
+                name={
+                  (selectedConversation?.platform || '').toLowerCase() === 'instagram'
+                    ? 'logo-instagram'
+                    : 'logo-facebook'
+                }
+                size={13}
+                color={
+                  (selectedConversation?.platform || '').toLowerCase() === 'instagram'
+                    ? '#e1306c'
+                    : '#1877f2'
+                }
+              />
+              <Text style={styles.threadMetaText}>
+                Encrypted social thread •{' '}
+                {selectedConversation?.platform === 'instagram' ? 'Instagram Direct' : 'Facebook Messenger'}
+              </Text>
+            </View>
+
+            {messagesLoading && messages.length === 0 ? (
+              <View style={{ paddingVertical: 40, alignItems: 'center', gap: 10 }}>
+                <ActivityIndicator size="small" color="#e1306c" />
+                <Text style={{ fontSize: 13, color: isDark ? '#777383' : '#64748b' }}>
+                  Loading message history...
+                </Text>
+              </View>
+            ) : messages.length === 0 ? (
+              /* Fallback initial message if thread messages array is empty */
+              <View style={styles.sampleChatBubbleWrap}>
+                <View
+                  style={[
+                    styles.inboundBubble,
+                    {
+                      backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+                      borderColor: isDark ? '#252230' : '#E9E6F2',
+                    },
+                  ]}
+                >
+                  <Text style={[styles.bubbleText, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
+                    {selectedConversation?.text || 'Hello! Wanted to connect with you regarding your social post.'}
+                  </Text>
+                  <Text style={[styles.bubbleTime, { color: isDark ? '#777383' : '#94a3b8' }]}>
+                    {formatMessageTime(selectedConversation?.createdAt)}
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              messages.map((msg, index) => {
+                const isOutbound = msg.isSelf || msg.status === 'sent';
+                return (
+                  <View
+                    key={msg.id || `msg_${index}`}
+                    style={[
+                      styles.bubbleWrap,
+                      isOutbound ? styles.outboundWrap : styles.inboundWrap,
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.chatBubble,
+                        isOutbound
+                          ? styles.outboundBubble
+                          : [
+                              styles.inboundBubble,
+                              {
+                                backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+                                borderColor: isDark ? '#252230' : '#E9E6F2',
+                              },
+                            ],
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.bubbleText,
+                          { color: isOutbound ? '#ffffff' : isDark ? '#F5F3FB' : '#1C1A25' },
+                        ]}
+                      >
+                        {msg.text || (isOutbound ? 'Outbound reply' : 'Inbound message')}
+                      </Text>
+                      <View style={styles.bubbleFooterRow}>
+                        <Text
+                          style={[
+                            styles.bubbleTime,
+                            { color: isOutbound ? 'rgba(255, 255, 255, 0.75)' : isDark ? '#777383' : '#94a3b8' },
+                          ]}
+                        >
+                          {formatMessageTime(msg.createdAt)}
+                        </Text>
+                        {isOutbound && (
+                          <Ionicons name="checkmark-done" size={12} color="rgba(255, 255, 255, 0.85)" />
+                        )}
+                      </View>
+                    </View>
+                  </View>
+                );
+              })
+            )}
+          </ScrollView>
+
+          {/* Quick Suggestions Chips */}
+          <View style={styles.quickRepliesWrap}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickRepliesScroll}>
+              {QUICK_REPLIES.map((reply, i) => (
+                <Pressable
+                  key={i}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setReplyText(reply);
+                  }}
+                  style={[
+                    styles.quickReplyChip,
+                    {
+                      backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+                      borderColor: isDark ? '#252230' : '#E9E6F2',
+                    },
+                  ]}
+                >
+                  <Text style={[styles.quickReplyText, { color: isDark ? '#F5F3FB' : '#475569' }]}>
+                    {reply}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Reply Bar */}
+          <View
+            style={[
+              styles.replyBar,
+              {
+                backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+                borderTopColor: isDark ? '#252230' : '#E9E6F2',
+              },
+            ]}
+          >
+            <TextInput
+              style={[
+                styles.replyInput,
+                {
+                  backgroundColor: isDark ? '#252230' : '#F5F3FB',
+                  color: isDark ? '#F5F3FB' : '#1C1A25',
+                  borderColor: isDark ? '#334155' : '#E9E6F2',
+                },
+              ]}
+              placeholder={`Reply to ${selectedConversation?.authorHandle || 'contact'}...`}
+              placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
+              value={replyText}
+              onChangeText={setReplyText}
+              multiline
+              maxLength={1000}
+            />
+
+            <Pressable
+              onPress={handleSendReply}
+              disabled={sendReplyMutation.isPending || !replyText.trim()}
+              style={[
+                styles.sendBtn,
+                {
+                  opacity: !replyText.trim() || sendReplyMutation.isPending ? 0.5 : 1,
+                  backgroundColor: '#e1306c',
+                },
+              ]}
+            >
+              {sendReplyMutation.isPending ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Ionicons name="send" size={16} color="#ffffff" />
+              )}
+            </Pressable>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 };
@@ -969,6 +1261,43 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 6,
     backgroundColor: 'rgba(234, 179, 8, 0.14)',
+  },
+  modalContainer: {
+    flex: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  modalHeaderInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  modalAvatarImg: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+  },
+  modalTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  modalSub: {
+    fontSize: 11,
+    marginTop: 1,
+  },
+  modalHeaderBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   errorBannerBox: {
     flexDirection: 'row',

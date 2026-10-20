@@ -76,17 +76,8 @@ export default function HomeScreen() {
   } = usePlatformSubscription();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { isOnline, networkChecked, refresh, isChecking } = useNetwork();
-  const [engineCycleTick, setEngineCycleTick] = useState(0);
-
   // Engine micro-animation cycle tick
   const [engineCycleTick, setEngineCycleTick] = useState(0);
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setEngineCycleTick((prev) => prev + 1);
-    }, 4000);
-    return () => clearInterval(timer);
-  }, []);
-
   useEffect(() => {
     const initialTimer = setTimeout(() => {
       setEngineCycleTick((t) => t + 1);
@@ -94,7 +85,7 @@ export default function HomeScreen() {
 
     const intervalTimer = setInterval(() => {
       setEngineCycleTick((t) => t + 1);
-    }, 9000);
+    }, 4000);
 
     return () => {
       clearTimeout(initialTimer);
