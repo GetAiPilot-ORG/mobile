@@ -8,6 +8,9 @@ import {
   Add01Icon,
   BubbleChatAddIcon,
   BubbleChatIcon,
+  WhatsappIcon,
+  TelegramIcon,
+  InstagramIcon,
 } from "@/constants/icons";
 import { useProductPalette } from "@/components/ProductUI";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -40,6 +43,13 @@ import { useInboxWebSocket } from "../hooks/useInboxWebSocket";
 import { ContactItem, NormalizedConversation } from "../types";
 import { ConversationScreen } from "./ConversationScreen";
 
+const CHANNEL_FILTERS = [
+  { id: "all", label: "All", icon: null, activeColor: "#6366f1" },
+  { id: "whatsapp", label: "WhatsApp", icon: WhatsappIcon, activeColor: "#16a34a" },
+  { id: "telegram", label: "Telegram", icon: TelegramIcon, activeColor: "#0284c7" },
+  { id: "instagram", label: "InstaPilot", icon: InstagramIcon, activeColor: "#db2777" },
+] as const;
+
 const INBOX_TABS = [
   { id: "ALL", label: "All" },
   { id: "UNREAD", label: "Unread" },
@@ -54,6 +64,9 @@ export const InboxScreen: React.FC = () => {
   const color = getColors(isDark);
   const palette = useProductPalette();
 
+  const [selectedChannel, setSelectedChannel] = useState<
+    "all" | "whatsapp" | "telegram" | "instagram"
+  >("all");
   const [activeTab, setActiveTab] = useState<
     "ALL" | "UNREAD" | "UNASSIGNED" | "MINE" | "BOT_ACTIVE"
   >("ALL");
@@ -89,9 +102,22 @@ export const InboxScreen: React.FC = () => {
 
   const convList = conversations || [];
 
-  // Filter conversations according to selected tab
+  const channelCounts = useMemo(() => {
+    const counts = { all: convList.length, whatsapp: 0, telegram: 0, instagram: 0 };
+    convList.forEach((c) => {
+      if (c.channel === "whatsapp") counts.whatsapp++;
+      else if (c.channel === "telegram") counts.telegram++;
+      else if (c.channel === "instagram") counts.instagram++;
+    });
+    return counts;
+  }, [convList]);
+
+  // Filter conversations according to selected channel and status tab
   const filteredConversations = useMemo(() => {
     return convList.filter((conv) => {
+      if (selectedChannel !== "all" && conv.channel !== selectedChannel) {
+        return false;
+      }
       if (activeTab === "UNASSIGNED") {
         return !conv.assigned_to && !conv.assigned_agent_name;
       }
@@ -112,7 +138,7 @@ export const InboxScreen: React.FC = () => {
       }
       return true;
     });
-  }, [convList, activeTab, user]);
+  }, [convList, selectedChannel, activeTab, user]);
 
   const filteredContacts = useMemo(() => {
     return (contacts || []).filter((cnt) => {
@@ -227,7 +253,7 @@ export const InboxScreen: React.FC = () => {
         }
       />
 
-      <View style={{ flex: 1, paddingHorizontal: 20 }}>
+      <View style={{ flex: 1, paddingHorizontal: 14 }}>
         {/* Search Bar */}
         <View
           style={{
@@ -266,8 +292,99 @@ export const InboxScreen: React.FC = () => {
           ) : null}
         </View>
 
+        {/* Channel Filter Chips (All, WhatsApp, Telegram, InstaPilot) */}
+        <View style={{ marginBottom: 10 }}>
+          <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={CHANNEL_FILTERS}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ paddingRight: 8 }}
+            renderItem={({ item: ch }) => {
+              const isSelected = selectedChannel === ch.id;
+              const count = channelCounts[ch.id as keyof typeof channelCounts] || 0;
+              const activeBg =
+                ch.id === "whatsapp"
+                  ? "rgba(34, 197, 94, 0.12)"
+                  : ch.id === "telegram"
+                  ? "rgba(14, 165, 233, 0.12)"
+                  : ch.id === "instagram"
+                  ? "rgba(236, 72, 153, 0.12)"
+                  : color.accentSoft;
+              const activeTextColor =
+                ch.id === "all" ? color.accent : ch.activeColor;
+
+              return (
+                <Pressable
+                  onPress={() => setSelectedChannel(ch.id as any)}
+                  style={{
+                    height: 34,
+                    paddingHorizontal: 12,
+                    marginRight: 8,
+                    borderRadius: 17,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    backgroundColor: isSelected ? activeBg : color.card,
+                    borderWidth: isSelected ? 1 : 0.5,
+                    borderColor: isSelected
+                      ? activeTextColor
+                      : isDark
+                      ? "rgba(255, 255, 255, 0.08)"
+                      : "rgba(0, 0, 0, 0.06)",
+                  }}
+                >
+                  {ch.icon ? (
+                    <HugeiconsIcon
+                      icon={ch.icon}
+                      size={14}
+                      color={isSelected ? activeTextColor : color.textSecondary}
+                      strokeWidth={2}
+                      style={{ marginRight: 6 }}
+                    />
+                  ) : null}
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: isSelected ? "700" : "500",
+                      color: isSelected ? activeTextColor : color.textSecondary,
+                      marginRight: 6,
+                    }}
+                  >
+                    {ch.label}
+                  </Text>
+                  <View
+                    style={{
+                      minWidth: 18,
+                      height: 18,
+                      borderRadius: 9,
+                      paddingHorizontal: 5,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: isSelected
+                        ? activeTextColor
+                        : isDark
+                        ? "rgba(255, 255, 255, 0.08)"
+                        : "rgba(0, 0, 0, 0.06)",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        fontWeight: "700",
+                        color: isSelected ? "#ffffff" : color.textSecondary,
+                      }}
+                    >
+                      {count}
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            }}
+          />
+        </View>
+
         {/* Folder-Style Status Tab Bar */}
-        <View style={{ position: "relative", marginBottom: 16 }}>
+        <View style={{ position: "relative", marginBottom: 14 }}>
 
 
           <FlatList
@@ -350,9 +467,9 @@ export const InboxScreen: React.FC = () => {
                   className="text-[12.5px] text-center leading-[18px]"
                   style={{ color: color.textSecondary }}
                 >
-                  {activeTab !== "ALL"
-                    ? `No conversations match the '${activeTab}' filter.`
-                    : "Incoming messages from WhatsApp customers will appear here in real time."}
+                  {activeTab !== "ALL" || selectedChannel !== "all"
+                    ? `No conversations match the current filter.`
+                    : "Incoming messages from WhatsApp, Telegram, and InstaPilot will appear here in real time."}
                 </Text>
                 <Pressable
                   className="flex-row items-center px-3.5 py-2 rounded-xl mt-3.5 active:opacity-85"
