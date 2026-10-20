@@ -312,6 +312,19 @@ async function resolveSocialSsoUrl(email: string, redirectPath: string): Promise
       return directFallback;
     }
 
+    const normalizeSocialLaunchUrl = (urlStr: string) => {
+      try {
+        const u = new URL(urlStr);
+        u.protocol = "https:";
+        u.host = "social.getaipilot.in";
+        const returnPath = cleanRedirect.replace(SOCIAL_WEB_APP_URL, "") || "/dashboard";
+        u.searchParams.set("returnTo", returnPath);
+        return u.toString();
+      } catch {
+        return urlStr;
+      }
+    };
+
     const ssoEdgeData: any = await ssoEdgeRes.json();
     if (!ssoEdgeData?.launch_url) {
       return directFallback;
@@ -320,7 +333,7 @@ async function resolveSocialSsoUrl(email: string, redirectPath: string): Promise
     const launchUrl = new URL(ssoEdgeData.launch_url);
     const ssoJwt = launchUrl.searchParams.get("token");
     if (!ssoJwt) {
-      return ssoEdgeData.launch_url;
+      return normalizeSocialLaunchUrl(ssoEdgeData.launch_url);
     }
 
     // 3. Exchange with api.getaipilot.in/api/auth/sso
@@ -331,12 +344,12 @@ async function resolveSocialSsoUrl(email: string, redirectPath: string): Promise
     });
 
     if (!exchangeRes.ok) {
-      return ssoEdgeData.launch_url;
+      return normalizeSocialLaunchUrl(ssoEdgeData.launch_url);
     }
 
     const exchangeData: any = await exchangeRes.json();
     if (!exchangeData?.magic_link_url) {
-      return ssoEdgeData.launch_url;
+      return normalizeSocialLaunchUrl(ssoEdgeData.launch_url);
     }
 
     // 4. Customize redirect_to on the magic_link_url to target the exact requested screen!
@@ -428,6 +441,23 @@ async function createHandoff(
   const webAppBaseUrl = sanitizeWebAppUrl(body.webAppUrl);
 
   const redirectPath = buildRedirectPath(targetTool, templateId, quickFormId);
+
+  // Directly resolve SocialPilot SSO URL if the destination is a social tool
+  if (isSocialTarget(targetTool, redirectPath)) {
+    const socialSsoUrl = await resolveSocialSsoUrl(user.email, redirectPath);
+    console.log("[web-handoff] Direct SocialPilot SSO URL resolved:", {
+      email: user.email,
+      targetTool,
+      socialSsoUrl,
+    });
+    return jsonResponse({
+      targetUrl: socialSsoUrl,
+      redirectPath,
+      webAppBaseUrl: SOCIAL_WEB_APP_URL,
+      socialSsoUrl,
+      launchUrl: socialSsoUrl,
+    });
+  }
 
   /*
    * Generate a random one-time code for DB storage.

@@ -75,10 +75,9 @@ export default function HomeScreen() {
     refresh: refreshSub,
   } = usePlatformSubscription();
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [engineCycleTick, setEngineCycleTick] = useState(0);
   const { isOnline, networkChecked, refresh, isChecking } = useNetwork();
+  // Engine micro-animation cycle tick
   const [engineCycleTick, setEngineCycleTick] = useState(0);
-
   useEffect(() => {
     // Staggered wave animation cycle for engine icons every 8 seconds
     const timer = setInterval(() => {
@@ -87,15 +86,6 @@ export default function HomeScreen() {
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    (async () => {
-      const token = expoPushToken || (await requestPermissions());
-      console.log('==============================================');
-      console.log('📲 [HomeScreen] CONSOLE PUSH TOKEN:');
-      console.log(token || '⚠️ No push token generated (check permissions or physical device)');
-      console.log('==============================================');
-    })();
-  }, [expoPushToken]);
 
   // Real Workspace Telemetry from Supabase
   const { data: telemetry, refetch: refetchTelemetry } = useQuery({
