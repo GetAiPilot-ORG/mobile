@@ -77,8 +77,17 @@ export default function HomeScreen() {
     refresh: refreshSub,
   } = usePlatformSubscription();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [engineCycleTick, setEngineCycleTick] = useState(0);
   const { isOnline, networkChecked, refresh, isChecking } = useNetwork();
   const { expoPushToken, requestPermissions } = useNotifications();
+
+  useEffect(() => {
+    // Staggered wave animation cycle for engine icons every 8 seconds
+    const timer = setInterval(() => {
+      setEngineCycleTick((prev) => prev + 1);
+    }, 8000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     (async () => {
