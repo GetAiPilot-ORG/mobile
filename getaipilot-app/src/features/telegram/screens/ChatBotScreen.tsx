@@ -9,7 +9,6 @@ import {
   FlatList,
   Linking,
   Modal,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -294,9 +293,10 @@ export const ChatBotScreen: React.FC<Props> = () => {
           </Text>
         </View>
 
-        <Pressable
-          className="flex-row items-center gap-1.5 px-3 py-2 rounded-xl active:opacity-90 shadow-sm"
+        <TouchableOpacity
+          className="flex-row items-center gap-1.5 px-3 py-2 rounded-xl shadow-sm"
           style={{ backgroundColor: colors.primary }}
+          activeOpacity={0.8}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             if (!hasTelegram) {
@@ -312,7 +312,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
         >
           <Ionicons name={hasTelegram ? "add" : "lock-closed"} size={13} color="#FFFFFF" />
           <Text className="text-white text-xs font-bold">Connect Bot</Text>
-        </Pressable>
+        </TouchableOpacity>
       </View>
 
       {/* Bot Cards list from Supabase */}
@@ -404,11 +404,11 @@ export const ChatBotScreen: React.FC<Props> = () => {
 
               {/* 3. Primary Action Buttons */}
               <View style={styles.mainActionsRow}>
-                <Pressable
-                  style={({ pressed }) => [
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={[
                     styles.primaryActionBtn,
                     styles.chatsBtn,
-                    pressed && { opacity: 0.8 },
                   ]}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -419,13 +419,13 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 >
                   <Ionicons name="chatbubbles" size={15} color="#0284C7" />
                   <Text style={styles.chatsBtnText}>Live Chats</Text>
-                </Pressable>
+                </TouchableOpacity>
 
-                <Pressable
-                  style={({ pressed }) => [
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={[
                     styles.primaryActionBtn,
                     styles.openLinkBtn,
-                    pressed && { opacity: 0.8 },
                   ]}
                   onPress={() => {
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -435,17 +435,14 @@ export const ChatBotScreen: React.FC<Props> = () => {
                   <Ionicons name="paper-plane-outline" size={14} color="#0284C7" />
                   <Text style={styles.openLinkText}>Open Bot</Text>
                   <Ionicons name="open-outline" size={12} color="#0284C7" />
-                </Pressable>
+                </TouchableOpacity>
               </View>
 
               {/* 4. Utility Footer Row */}
               <View style={styles.cardFooterRow}>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.footerBtn,
-                    { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF', borderColor: colors.border },
-                    pressed && { opacity: 0.7 },
-                  ]}
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  style={[styles.footerBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF', borderColor: colors.border }]}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setSupportBotName(bot.support_name || '');
@@ -457,13 +454,13 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 >
                   <Ionicons name="create-outline" size={13} color={isDark ? '#94A3B8' : '#64748B'} />
                   <Text style={[styles.footerBtnText, txt]}>Edit</Text>
-                </Pressable>
+                </TouchableOpacity>
 
-                <Pressable
-                  style={({ pressed }) => [
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  style={[
                     styles.footerBtn,
                     { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF', borderColor: colors.border },
-                    pressed && { opacity: 0.7 },
                   ]}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -476,13 +473,13 @@ export const ChatBotScreen: React.FC<Props> = () => {
                     color={isActive ? '#F59E0B' : '#10B981'}
                   />
                   <Text style={[styles.footerBtnText, txt]}>{isActive ? 'Pause' : 'Resume'}</Text>
-                </Pressable>
+                </TouchableOpacity>
 
-                <Pressable
-                  style={({ pressed }) => [
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  style={[
                     styles.footerBtn,
                     { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF', borderColor: colors.border },
-                    pressed && { opacity: 0.7 },
                   ]}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -501,13 +498,13 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 >
                   <Ionicons name="refresh-outline" size={13} color={isDark ? '#94A3B8' : '#64748B'} />
                   <Text style={[styles.footerBtnText, txt]}>Reset</Text>
-                </Pressable>
+                </TouchableOpacity>
 
-                <Pressable
-                  style={({ pressed }) => [
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  style={[
                     styles.footerBtn,
                     { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.08)' : '#FEF2F2', borderColor: isDark ? 'rgba(239,68,68,0.2)' : '#FECACA' },
-                    pressed && { opacity: 0.7 },
                   ]}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -519,7 +516,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 >
                   <Ionicons name="trash-outline" size={13} color="#EF4444" />
                   <Text style={[styles.footerBtnText, { color: '#EF4444' }]}>Delete</Text>
-                </Pressable>
+                </TouchableOpacity>
               </View>
             </View>
           );
@@ -547,9 +544,9 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 <Text style={styles.modalHeaderSub}>Review live chats to refine and train your bot</Text>
               </View>
             </View>
-            <Pressable style={styles.closeBtn} onPress={() => setIsChatsDrawerOpen(false)}>
+            <TouchableOpacity activeOpacity={0.7} style={styles.closeBtn} onPress={() => setIsChatsDrawerOpen(false)}>
               <Ionicons name="close" size={20} color={colors.text} />
-            </Pressable>
+            </TouchableOpacity>
           </View>
 
           {/* Active Users Horizontal Switcher */}
@@ -565,7 +562,8 @@ export const ChatBotScreen: React.FC<Props> = () => {
               renderItem={({ item: u }) => {
                 const isSelected = activeUser?.telegramUserId === u.telegramUserId;
                 return (
-                  <Pressable
+                  <TouchableOpacity
+                    activeOpacity={0.7}
                     style={[
                       styles.userPill,
                       { backgroundColor: colors.card, borderColor: colors.border },
@@ -583,7 +581,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
                       <Text style={[styles.userPillName, txt, isSelected && { color: '#0284C7' }]}>{u.name || 'User'}</Text>
                       <Text style={styles.userPillId}>ID: {u.telegramUserId}</Text>
                     </View>
-                  </Pressable>
+                  </TouchableOpacity>
                 );
               }}
             />
@@ -596,14 +594,14 @@ export const ChatBotScreen: React.FC<Props> = () => {
               <Text style={styles.chatTargetId}>User ID: {activeUser?.telegramUserId || '---'}</Text>
             </View>
             <View style={{ flexDirection: 'row', gap: 8 }}>
-              <Pressable style={styles.chatActionBtn} onPress={handleCopyChat}>
+              <TouchableOpacity activeOpacity={0.7} style={styles.chatActionBtn} onPress={handleCopyChat}>
                 <Ionicons name="copy-outline" size={14} color={colors.text} />
                 <Text style={[styles.chatActionText, txt]}>Copy Chat</Text>
-              </Pressable>
-              <Pressable style={styles.chatActionBtnDanger} onPress={handleResetChat}>
+              </TouchableOpacity>
+              <TouchableOpacity activeOpacity={0.7} style={styles.chatActionBtnDanger} onPress={handleResetChat}>
                 <Ionicons name="trash-outline" size={14} color="#EF4444" />
                 <Text style={styles.chatActionDangerText}>Reset Chat</Text>
-              </Pressable>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -685,7 +683,8 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 Refine and train this bot based on this user's queries by editing Knowledge Base or Prompts!
               </Text>
             </View>
-            <Pressable
+            <TouchableOpacity
+              activeOpacity={0.8}
               style={styles.goToPromptBtn}
               onPress={() => {
                 setIsChatsDrawerOpen(false);
@@ -693,7 +692,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
               }}
             >
               <Text style={styles.goToPromptText}>Go to Prompt</Text>
-            </Pressable>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -722,9 +721,9 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 <Text style={styles.connectedBadgeText}>CONNECTED</Text>
               </View>
             </View>
-            <Pressable style={styles.closeBtn} onPress={() => setIsConfigModalOpen(false)}>
+            <TouchableOpacity activeOpacity={0.7} style={styles.closeBtn} onPress={() => setIsConfigModalOpen(false)}>
               <Ionicons name="close" size={20} color={colors.text} />
-            </Pressable>
+            </TouchableOpacity>
           </View>
 
           <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 18, gap: 18 }}>
@@ -767,16 +766,16 @@ export const ChatBotScreen: React.FC<Props> = () => {
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                 <Text style={[styles.fieldLabel, txt, { marginBottom: 0 }]}>KNOWLEDGE BASE</Text>
                 <View style={{ flexDirection: 'row', gap: 12 }}>
-                  <Pressable onPress={() => setKnowledgeTab('text')}>
+                  <TouchableOpacity activeOpacity={0.7} onPress={() => setKnowledgeTab('text')}>
                     <Text style={[styles.tabLink, knowledgeTab === 'text' && styles.tabLinkActive]}>
                       ✦ BOT KNOWLEDGE
                     </Text>
-                  </Pressable>
-                  <Pressable onPress={() => setKnowledgeTab('images')}>
+                  </TouchableOpacity>
+                  <TouchableOpacity activeOpacity={0.7} onPress={() => setKnowledgeTab('images')}>
                     <Text style={[styles.tabLink, knowledgeTab === 'images' && styles.tabLinkActive]}>
                       MULTIMEDIA KNOWLEDGE (IMAGES)
                     </Text>
-                  </Pressable>
+                  </TouchableOpacity>
                 </View>
               </View>
 
@@ -799,13 +798,14 @@ export const ChatBotScreen: React.FC<Props> = () => {
                   </View>
                 </>
               ) : (
-                <Pressable
+                <TouchableOpacity
+                  activeOpacity={0.7}
                   style={[styles.imageRagBox, { backgroundColor: colors.card, borderColor: colors.border }]}
                   onPress={() => Alert.alert('Upload Image', 'Upload screenshot or product flyer to RAG vector database')}
                 >
                   <Ionicons name="cloud-upload-outline" size={26} color="#64748B" />
                   <Text style={styles.imageRagText}>Add Image to RAG</Text>
-                </Pressable>
+                </TouchableOpacity>
               )}
             </View>
 
@@ -814,15 +814,14 @@ export const ChatBotScreen: React.FC<Props> = () => {
               <Text style={[styles.fieldLabel, txt]}>
                 PDF KNOWLEDGE DOCUMENTS ({pdfDocuments.length} UPLOADED)
               </Text>
-              <Pressable
-                style={
-                  styles.pdfUploadBox
-                }
+              <TouchableOpacity
+                activeOpacity={0.7}
+                style={styles.pdfUploadBox}
                 onPress={handlePickPdf}
               >
                 <Ionicons name="cloud-upload-outline" size={24} color="#64748B" />
                 <Text style={styles.pdfUploadText}>Click to add PDF documents</Text>
-              </Pressable>
+              </TouchableOpacity>
 
               <FlatList
                 data={pdfDocuments}
@@ -839,14 +838,15 @@ export const ChatBotScreen: React.FC<Props> = () => {
                       <View style={styles.trainedBadge}>
                         <Text style={styles.trainedBadgeText}>{doc.status}</Text>
                       </View>
-                      <Pressable
+                      <TouchableOpacity
+                        activeOpacity={0.7}
                         onPress={() => {
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                           setPdfDocuments((prev) => prev.filter((d) => d.id !== doc.id));
                         }}
                       >
                         <Ionicons name="trash-outline" size={16} color="#94A3B8" />
-                      </Pressable>
+                      </TouchableOpacity>
                     </View>
                   </View>
                 )}
@@ -866,9 +866,9 @@ export const ChatBotScreen: React.FC<Props> = () => {
                   placeholder="sk-proj-..."
                   placeholderTextColor="#94A3B8"
                 />
-                <Pressable onPress={() => setIsApiKeyVisible((v) => !v)}>
+                <TouchableOpacity activeOpacity={0.7} onPress={() => setIsApiKeyVisible((v) => !v)}>
                   <Ionicons name={isApiKeyVisible ? 'eye-off-outline' : 'eye-outline'} size={18} color="#94A3B8" />
-                </Pressable>
+                </TouchableOpacity>
               </View>
               <View style={styles.validKeyBadge}>
                 <Ionicons name="checkmark-circle" size={14} color="#0284C7" />
@@ -877,9 +877,9 @@ export const ChatBotScreen: React.FC<Props> = () => {
             </View>
 
             {/* Save Button */}
-            <Pressable style={styles.saveSettingsBtn} onPress={handleSaveConfig}>
+            <TouchableOpacity activeOpacity={0.8} style={styles.saveSettingsBtn} onPress={handleSaveConfig}>
               <Text style={styles.saveSettingsBtnText}>Save Bot Configuration</Text>
-            </Pressable>
+            </TouchableOpacity>
           </ScrollView>
         </View>
       </Modal>
