@@ -38,6 +38,7 @@ import { AnimatedCreateSection } from "../../src/components/home/AnimatedCreateS
 // import { AnimatedReferralCard } from "../../src/components/home/AnimatedReferralCard";
 import { useAuth } from "../../src/contexts/AuthContext";
 import { useNetwork } from "../../src/contexts/NetworkContext";
+import { useNotifications } from "../../src/contexts/NotificationContext";
 import { apiClient } from "../../src/core/api/client";
 import { usePlatformSubscription } from "../../src/hooks/usePlatformSubscription";
 import { supabase } from "../../src/lib/supabase";
@@ -78,6 +79,8 @@ export default function HomeScreen() {
   const { isOnline, networkChecked, refresh, isChecking } = useNetwork();
   // Engine micro-animation cycle tick
   const [engineCycleTick, setEngineCycleTick] = useState(0);
+  const { expoPushToken, requestPermissions } = useNotifications();
+
   useEffect(() => {
     // Staggered wave animation cycle for engine icons every 8 seconds
     const timer = setInterval(() => {
@@ -86,6 +89,23 @@ export default function HomeScreen() {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const token =
+          expoPushToken || (requestPermissions ? await requestPermissions() : null);
+        console.log('==============================================');
+        console.log('📲 [HomeScreen] CONSOLE PUSH TOKEN:');
+        console.log(
+          token ||
+            '⚠️ No push token generated (check permissions, physical device, or development build)'
+        );
+        console.log('==============================================');
+      } catch (err) {
+        console.log('ℹ️ [HomeScreen] Push token notice:', err);
+      }
+    })();
+  }, [expoPushToken, requestPermissions]);
 
   // Real Workspace Telemetry from Supabase
   const { data: telemetry, refetch: refetchTelemetry } = useQuery({
