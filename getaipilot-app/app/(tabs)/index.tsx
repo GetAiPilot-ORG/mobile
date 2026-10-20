@@ -77,8 +77,8 @@ export default function HomeScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [engineCycleTick, setEngineCycleTick] = useState(0);
   const { isOnline, networkChecked, refresh, isChecking } = useNetwork();
+  // Engine micro-animation cycle tick
   const [engineCycleTick, setEngineCycleTick] = useState(0);
-
   useEffect(() => {
     // Staggered wave animation cycle for engine icons every 8 seconds
     const timer = setInterval(() => {

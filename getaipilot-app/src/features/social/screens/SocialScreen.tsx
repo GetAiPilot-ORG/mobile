@@ -517,7 +517,7 @@ export const SocialScreen: React.FC = () => {
             }}
             onOpenAccountsModal={() => setShowAccountsModal(true)}
             onOpenConnectModal={() => setShowConnectModal(true)}
-            // onSelectPost={setSelectedPost}
+            onSelectPost={setSelectedPost}
             onNavigateToTab={setActiveTab}
           />
         )}
@@ -584,12 +584,13 @@ export const SocialScreen: React.FC = () => {
       <CreatePostModal
         key={showCreateModal ? (initialCaptionForCreate || 'modal_open') : 'modal_closed'}
         visible={showCreateModal}
-        connectedAccounts={accountsData || []}
+        connectedAccounts={connectedList}
         initialCaption={initialCaptionForCreate}
         onClose={() => {
           setShowCreateModal(false);
           setInitialCaptionForCreate(undefined);
         }}
+        onOpenConnectModal={() => setShowConnectModal(true)}
         onSubmit={async (payload) => {
           await createPostMutation.mutateAsync(payload);
         }}

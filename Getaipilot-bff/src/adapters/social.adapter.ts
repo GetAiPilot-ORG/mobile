@@ -19,6 +19,8 @@ export interface CreateBroadcastPayload {
   postType?: string;
   platformData?: Record<string, any>;
   platformPresets?: Record<string, any>;
+  selectedAspectRatio?: string;
+  selectedPostSizePreset?: string;
 }
 
 function createInternalBffToken(payload: { user_id: string; email?: string; organization_id?: string }, secret: string): string {
@@ -433,7 +435,14 @@ export class SocialAdapter {
     }
 
     try {
-      const email = user.email;
+      let email = user.email || (user as any).user_metadata?.email;
+      if (!email && (user.user_id || (user as any).id)) {
+        try {
+          const { data: uData } = await this.hubAdmin.auth.admin.getUserById(user.user_id || (user as any).id);
+          email = uData?.user?.email || '';
+        } catch {}
+      }
+
       if (email) {
         const { data: hubLinkData, error: hubLinkErr } = await this.hubAdmin.auth.admin.generateLink({
           type: 'magiclink',
@@ -502,7 +511,17 @@ export class SocialAdapter {
                   } catch (exErr) {
                     console.warn('[SOCIAL ADAPTER] Magic link customization error:', exErr);
                   }
-                  return ssoEdgeData.launch_url;
+
+                  // Fallback: Ensure launch_url points to social.getaipilot.in and includes returnTo
+                  try {
+                    const edgeUrl = new URL(ssoEdgeData.launch_url);
+                    edgeUrl.protocol = 'https:';
+                    edgeUrl.host = 'social.getaipilot.in';
+                    edgeUrl.searchParams.set('returnTo', path);
+                    return edgeUrl.toString();
+                  } catch {
+                    return ssoEdgeData.launch_url;
+                  }
                 }
               }
             }
@@ -586,8 +605,9 @@ export class SocialAdapter {
       hasUserContext: Boolean(userId),
     });
 
+    const isMediaUpload = Boolean(formData) || endpoint === '/api/broadcast';
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), isMediaUpload ? 60000 : 15000);
 
     try {
       const headers: Record<string, string> = {
@@ -803,6 +823,18 @@ export class SocialAdapter {
     return res.stats || res.data || res;
   }
 
+  // --- 4.4 Pinterest Boards ---
+  public static async getPinterestBoards(user: JWTPayload | { user_id?: string; organization_id?: string } | string) {
+    const userObj = typeof user === 'string' ? { organization_id: user, user_id: user } : user;
+    try {
+      const res: any = await this.requestUpstream('/api/auth/pinterest/boards', { user: userObj });
+      return res;
+    } catch (e: any) {
+      console.warn('[SOCIAL ADAPTER] Failed to fetch Pinterest boards from upstream:', e.message);
+      return { success: false, boards: [], error: e.message };
+    }
+  }
+
   // --- 4.5 InstaPilot Inbox & Sync ---
   public static async syncInstapilotInbox(user: JWTPayload | { user_id?: string; organization_id?: string } | string) {
     const userObj = typeof user === 'string' ? { organization_id: user, user_id: user } : user;
@@ -954,20 +986,26 @@ export class SocialAdapter {
     if (payload.scheduledAt) {
       formData.append('scheduledAt', new Date(payload.scheduledAt).toISOString());
     }
-    formData.append('selectedAspectRatio', '1:1');
-    formData.append('selectedPostSizePreset', '');
+    formData.append('selectedAspectRatio', payload.selectedAspectRatio || '1:1');
+    formData.append('selectedPostSizePreset', payload.selectedPostSizePreset || '');
 
     const mediaUrls = payload.mediaUrls || [];
+    // Ensure mediaUrls are also sent directly in body for fallback download
+    formData.append('mediaUrls', JSON.stringify(mediaUrls));
+
     for (let i = 0; i < mediaUrls.length; i++) {
       const url = mediaUrls[i];
       if (url) {
         try {
           const res = await fetch(url);
           if (res.ok) {
-            const blob = await res.blob();
-            const contentType = blob.type || 'image/png';
-            const ext = contentType.split('/')[1]?.replace('jpeg', 'jpg') || 'png';
-            formData.append('media', blob, `media_${Date.now()}_${i}.${ext}`);
+            const arrayBuffer = await res.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const contentType = res.headers.get('content-type') || 'image/jpeg';
+            const ext = contentType.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
+            const fileName = `media_${Date.now()}_${i}.${ext}`;
+            const file = new File([buffer], fileName, { type: contentType });
+            formData.append('media', file);
           }
         } catch (fetchErr: any) {
           console.warn('[SOCIAL ADAPTER] Error fetching mediaUrl for broadcast upload:', url, fetchErr?.message);
@@ -1015,15 +1053,19 @@ export class SocialAdapter {
     user: JWTPayload,
     payload: { fileData: string; fileName?: string; contentType?: string }
   ) {
-    let base64 = payload.fileData;
+    let base64 = payload.fileData || '';
     let mimeType = payload.contentType || 'image/jpeg';
 
-    // Parse data URL prefix if present
+    // Parse data URL prefix if present (safely handle multiline or varied formatting)
     if (base64.startsWith('data:')) {
-      const match = base64.match(/^data:([^;]+);base64,(.+)$/);
-      if (match) {
-        mimeType = match[1];
-        base64 = match[2];
+      const commaIdx = base64.indexOf(',');
+      if (commaIdx !== -1) {
+        const header = base64.slice(0, commaIdx);
+        const mimeMatch = header.match(/data:([^;]+)/);
+        if (mimeMatch && mimeMatch[1]) {
+          mimeType = mimeMatch[1];
+        }
+        base64 = base64.slice(commaIdx + 1);
       }
     }
 

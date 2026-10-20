@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  BackHandler,
   Easing,
   Modal,
   Platform,
@@ -133,7 +134,7 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
   icon,
   showIcon = true,
   dismissable = true,
-  showCloseButton = false,
+  showCloseButton = true,
   buttonLayout = 'auto',
   buttonAlign = 'stretch',
   alignRight = false,
@@ -243,6 +244,22 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
     Haptics.selectionAsync().catch(() => { });
     onClose();
   };
+
+  // Listen for hardware back press on Android when dialog is visible
+  useEffect(() => {
+    if (!visible) return;
+
+    const onBackPress = () => {
+      if (dismissable) {
+        handleDismiss();
+        return true;
+      }
+      return true;
+    };
+
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, [visible, dismissable]);
 
   const handleCopyCode = async () => {
     if (!referralCode) return;
@@ -963,14 +980,14 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
-    top: 14,
-    right: 14,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    top: 12,
+    right: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10,
+    zIndex: 20,
   },
   iconBadge: {
     width: 56,

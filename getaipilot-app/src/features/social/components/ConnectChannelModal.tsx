@@ -76,6 +76,27 @@ const PLATFORMS: PlatformOption[] = [
     tone: 'lavender',
   },
 
+  {
+    id: 'pinterest',
+    name: 'Pinterest',
+    subtitle: 'Pins & Idea Boards',
+    icon: 'logo-pinterest',
+    tone: 'pink',
+  },
+  {
+    id: 'bluesky',
+    name: 'Bluesky',
+    subtitle: 'Open Social Network',
+    icon: 'cloudy',
+    tone: 'mint',
+  },
+  {
+    id: 'mastodon',
+    name: 'Mastodon',
+    subtitle: 'Decentralized Social Feed',
+    icon: 'logo-mastodon',
+    tone: 'lavender',
+  },
   // --- Coming Soon ---
   {
     id: 'x',
@@ -94,35 +115,11 @@ const PLATFORMS: PlatformOption[] = [
     comingSoon: true,
   },
   {
-    id: 'pinterest',
-    name: 'Pinterest',
-    subtitle: 'Pins & Idea Boards',
-    icon: 'logo-pinterest',
-    tone: 'pink',
-    comingSoon: true,
-  },
-  {
     id: 'googleBusiness',
     name: 'Google Business',
     subtitle: 'Local Business Profiles',
     icon: 'business-outline',
     tone: 'peach',
-    comingSoon: true,
-  },
-  {
-    id: 'bluesky',
-    name: 'Bluesky',
-    subtitle: 'Open Social Network',
-    icon: 'cloudy',
-    tone: 'mint',
-    comingSoon: true,
-  },
-  {
-    id: 'mastodon',
-    name: 'Mastodon',
-    subtitle: 'Decentralized Social Feed',
-    icon: 'logo-mastodon',
-    tone: 'lavender',
     comingSoon: true,
   },
 ];
