@@ -78,6 +78,15 @@ export default function HomeScreen() {
   const { isOnline, networkChecked, refresh, isChecking } = useNetwork();
   const [engineCycleTick, setEngineCycleTick] = useState(0);
 
+  // Engine micro-animation cycle tick
+  const [engineCycleTick, setEngineCycleTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setEngineCycleTick((prev) => prev + 1);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
   useEffect(() => {
     const initialTimer = setTimeout(() => {
       setEngineCycleTick((t) => t + 1);

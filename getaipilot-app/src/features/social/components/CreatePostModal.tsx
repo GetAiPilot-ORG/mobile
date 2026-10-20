@@ -36,6 +36,8 @@ interface CreatePostModalProps {
     postType?: string;
     platformData?: Record<string, any>;
     platformPresets?: Record<string, any>;
+    selectedAspectRatio?: string;
+    selectedPostSizePreset?: string;
   }) => Promise<void>;
   isLoading: boolean;
   entitlementsData?: any;
@@ -89,8 +91,78 @@ const SUGGESTED_HASHTAGS = [
   '#digitalmarketing',
   '#branding',
   '#socialmedia',
-  '#buildinpublic',
 ];
+
+const QUICKPOST_ASPECT_RATIOS = [
+  { id: '1:1', label: 'Square', desc: '1:1', ratioValue: 1 },
+  { id: '4:5', label: 'Portrait', desc: '4:5', ratioValue: 0.8 },
+  { id: '9:16', label: 'Vertical', desc: '9:16', ratioValue: 9 / 16 },
+  { id: '16:9', label: 'Landscape', desc: '16:9', ratioValue: 16 / 9 },
+  { id: '2:3', label: 'Pin Standard', desc: '2:3', ratioValue: 2 / 3 },
+  { id: '1.91:1', label: 'Wide', desc: '1.91:1', ratioValue: 1.91 },
+];
+
+const PLATFORM_SUPPORTED_RATIOS: Record<string, string[]> = {
+  instagram: ['1:1', '4:5', '9:16', '16:9'],
+  facebook: ['1:1', '9:16', '16:9'],
+  x: ['1:1', '16:9'],
+  linkedin: ['1:1', '1.91:1'],
+  youtube: ['16:9', '9:16'],
+  threads: ['1:1', '9:16'],
+  pinterest: ['2:3', '1:1', '9:16'],
+  bluesky: ['1:1', '16:9'],
+  mastodon: ['1:1', '16:9'],
+  reddit: ['1:1', '16:9'],
+};
+
+const PLATFORM_LAYOUT_PRESETS: Record<string, Array<{ id: string; ratio: string; title: string; subtitle: string }>> = {
+  instagram: [
+    { id: 'ig-post-square', ratio: '1:1', title: 'Post Square', subtitle: '1080×1080' },
+    { id: 'ig-portrait', ratio: '4:5', title: 'Portrait', subtitle: '1080×1350' },
+    { id: 'ig-reel', ratio: '9:16', title: 'Reel', subtitle: '1080×1920' },
+    { id: 'ig-story', ratio: '9:16', title: 'Story', subtitle: '1080×1920' },
+    { id: 'ig-landscape', ratio: '16:9', title: 'Landscape', subtitle: '1920×1080' },
+  ],
+  youtube: [
+    { id: 'yt-video', ratio: '16:9', title: 'Video', subtitle: '1920×1080' },
+    { id: 'yt-shorts', ratio: '9:16', title: 'Shorts', subtitle: '1080×1920' },
+    { id: 'yt-community', ratio: '1:1', title: 'Community', subtitle: '1080×1080' },
+  ],
+  pinterest: [
+    { id: 'pin-standard', ratio: '2:3', title: 'Standard Pin', subtitle: '1000×1500' },
+    { id: 'pin-idea', ratio: '9:16', title: 'Idea Pin', subtitle: '1080×1920' },
+    { id: 'pin-square', ratio: '1:1', title: 'Square Pin', subtitle: '1000×1000' },
+  ],
+  facebook: [
+    { id: 'fb-image', ratio: '1:1', title: 'Image', subtitle: '1200×1200' },
+    { id: 'fb-reel', ratio: '9:16', title: 'Reel', subtitle: '1080×1920' },
+    { id: 'fb-story', ratio: '9:16', title: 'Story', subtitle: '1080×1920' },
+  ],
+  linkedin: [
+    { id: 'li-image', ratio: '1.91:1', title: 'Feed Image', subtitle: '1200×627' },
+    { id: 'li-square', ratio: '1:1', title: 'Square', subtitle: '1080×1080' },
+  ],
+  threads: [
+    { id: 'threads-post', ratio: '1:1', title: 'Post', subtitle: '1080×1080' },
+    { id: 'threads-vertical', ratio: '9:16', title: 'Vertical', subtitle: '1080×1920' },
+  ],
+  bluesky: [
+    { id: 'bsky-image', ratio: '16:9', title: 'Image', subtitle: '1200×675' },
+    { id: 'bsky-square', ratio: '1:1', title: 'Square', subtitle: '1080×1080' },
+  ],
+  mastodon: [
+    { id: 'masto-image', ratio: '16:9', title: 'Image', subtitle: '1200×675' },
+    { id: 'masto-square', ratio: '1:1', title: 'Square', subtitle: '1080×1080' },
+  ],
+  x: [
+    { id: 'x-image', ratio: '16:9', title: 'Wide Tweet', subtitle: '1200×675' },
+    { id: 'x-square', ratio: '1:1', title: 'Square', subtitle: '1080×1080' },
+  ],
+  reddit: [
+    { id: 'reddit-image', ratio: '16:9', title: 'Image', subtitle: '1200×675' },
+    { id: 'reddit-square', ratio: '1:1', title: 'Square', subtitle: '1080×1080' },
+  ],
+};
 
 export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   visible,
@@ -130,6 +202,21 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [pinterestBoards, setPinterestBoards] = useState<Array<{ id: string; name: string }>>([]);
   const [isLoadingBoards, setIsLoadingBoards] = useState(false);
   const [customBoardMode, setCustomBoardMode] = useState(false);
+
+  // QuickPost Smart Size & Aspect Ratio Presets
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>('1:1');
+  const [platformPresets, setPlatformPresets] = useState<Record<string, string>>({
+    instagram: 'ig-post-square',
+    youtube: 'yt-video',
+    pinterest: 'pin-standard',
+    facebook: 'fb-image',
+    linkedin: 'li-square',
+    threads: 'threads-post',
+    bluesky: 'bsky-image',
+    mastodon: 'masto-image',
+    x: 'x-image',
+    reddit: 'reddit-image',
+  });
 
   // In-modal dialog state (ensures cut/close button, backdrop tap, and action buttons work 100% reliably inside this Modal)
   const [activeDialog, setActiveDialog] = useState<{
@@ -218,6 +305,68 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const hasYouTube = selectedChannels.some((c) => c === 'youtube' || c.startsWith('youtube:'));
   const hasBluesky = selectedChannels.some((c) => c === 'bluesky' || c.startsWith('bluesky:'));
   const hasX = selectedChannels.some((c) => c === 'x' || c.startsWith('x:'));
+  const hasFacebook = selectedChannels.some((c) => c === 'facebook' || c.startsWith('facebook:'));
+  const hasLinkedIn = selectedChannels.some((c) => c === 'linkedin' || c.startsWith('linkedin:'));
+  const hasThreads = selectedChannels.some((c) => c === 'threads' || c.startsWith('threads:'));
+
+  // Base platform list from selected channels
+  const selectedBasePlatforms = useMemo(() => {
+    const set = new Set<string>();
+    selectedChannels.forEach((ch) => {
+      const base = String(ch || '').split(':')[0].toLowerCase();
+      if (base) set.add(base);
+    });
+    return Array.from(set);
+  }, [selectedChannels]);
+
+  // Compute Smart Sizes across all selected platforms (QuickPost SmartSizeEngine)
+  const smartRatios = useMemo(() => {
+    if (selectedBasePlatforms.length === 0) {
+      return QUICKPOST_ASPECT_RATIOS.map((r) => ({
+        ...r,
+        status: 'best' as const,
+        supportedCount: 0,
+        unsupportedPlatforms: [] as string[],
+      }));
+    }
+
+    return QUICKPOST_ASPECT_RATIOS.map((r) => {
+      const supported = selectedBasePlatforms.filter((p) =>
+        (PLATFORM_SUPPORTED_RATIOS[p] || []).includes(r.id)
+      );
+      const unsupported = selectedBasePlatforms.filter(
+        (p) => !(PLATFORM_SUPPORTED_RATIOS[p] || []).includes(r.id)
+      );
+
+      let status: 'best' | 'partial' | 'incompatible' = 'best';
+      if (supported.length === selectedBasePlatforms.length) {
+        status = 'best';
+      } else if (supported.length > 0) {
+        status = 'partial';
+      } else {
+        status = 'incompatible';
+      }
+
+      return {
+        ...r,
+        status,
+        supportedCount: supported.length,
+        unsupportedPlatforms: unsupported,
+      };
+    });
+  }, [selectedBasePlatforms]);
+
+  // Auto-align selected aspect ratio if current becomes incompatible with selected platforms
+  useEffect(() => {
+    if (selectedBasePlatforms.length === 0) return;
+    const currentRatioInfo = smartRatios.find((r) => r.id === selectedAspectRatio);
+    if (!currentRatioInfo || currentRatioInfo.status === 'incompatible') {
+      const best = smartRatios.find((r) => r.status === 'best') || smartRatios.find((r) => r.status === 'partial');
+      if (best && best.id !== selectedAspectRatio) {
+        setSelectedAspectRatio(best.id);
+      }
+    }
+  }, [selectedBasePlatforms, smartRatios, selectedAspectRatio]);
 
   // Live Pinterest Board Fetcher (Direct from QuickPost / BFF API + fallback to connected accounts cache)
   const fetchPinterestBoards = useCallback(async () => {
@@ -578,6 +727,17 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
       return;
     }
 
+    // Build platform presets map (aligned with QuickPost format)
+    const effectivePlatformPresets: Record<string, string> = {
+      ...platformPresets,
+      ...(hasInstagram && instagramPostType !== 'post'
+        ? { instagram: instagramPostType === 'reel' ? 'ig-reel' : 'ig-story' }
+        : {}),
+    };
+
+    const primaryPlatform = selectedBasePlatforms[0] || 'instagram';
+    const selectedPostSizePreset = effectivePlatformPresets[primaryPlatform] || '';
+
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       await onSubmit({
@@ -588,6 +748,9 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
         scheduledAt: postMode === 'schedule' ? scheduledDate.trim() : undefined,
         postType: instagramPostType,
         platformData,
+        platformPresets: effectivePlatformPresets,
+        selectedAspectRatio,
+        selectedPostSizePreset,
       });
       setCaption('');
       setAttachedMedia([]);
@@ -1011,7 +1174,17 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
                     {/* Mockup Attached Media */}
                     {attachedMedia.length > 0 && (
-                      <View style={styles.previewMediaWrap}>
+                      <View
+                        style={[
+                          styles.previewMediaWrap,
+                          selectedAspectRatio === '1:1' && { aspectRatio: 1, height: undefined },
+                          selectedAspectRatio === '4:5' && { aspectRatio: 4 / 5, height: undefined },
+                          selectedAspectRatio === '9:16' && { aspectRatio: 9 / 16, height: undefined, maxHeight: 320 },
+                          selectedAspectRatio === '16:9' && { aspectRatio: 16 / 9, height: undefined },
+                          selectedAspectRatio === '2:3' && { aspectRatio: 2 / 3, height: undefined, maxHeight: 300 },
+                          selectedAspectRatio === '1.91:1' && { aspectRatio: 1.91, height: undefined },
+                        ]}
+                      >
                         <Image
                           source={{ uri: attachedMedia[0].localUri || attachedMedia[0].publicUrl }}
                           style={styles.previewImageCover}
@@ -1549,6 +1722,129 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                       </View>
                     </View>
                   )}
+
+                  {/* SECTION: QuickPost Smart Format & Aspect Ratio Selector */}
+                  <View style={styles.sectionContainer}>
+                    <View style={styles.sectionHeader}>
+                      <View style={styles.sectionHeaderLeft}>
+                        <Ionicons name="crop-outline" size={14} color={palette.accent} />
+                        <Text style={[styles.sectionLabel, { color: palette.textSecondary }]}>
+                          SMART FORMAT & ASPECT RATIO
+                        </Text>
+                      </View>
+                      <Text style={[styles.fieldHintText, { color: palette.textSecondary }]}>
+                        {smartRatios.find((r) => r.id === selectedAspectRatio)?.label || selectedAspectRatio}
+                      </Text>
+                    </View>
+
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.aspectRatioScroll}
+                    >
+                      {smartRatios.map((item) => {
+                        const isSelected = selectedAspectRatio === item.id;
+                        const isBest = item.status === 'best';
+                        const isPartial = item.status === 'partial';
+                        const isIncompatible = item.status === 'incompatible';
+
+                        return (
+                          <Pressable
+                            key={item.id}
+                            onPress={() => {
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                              setSelectedAspectRatio(item.id);
+
+                              // Sync platform presets to match chosen ratio
+                              const updatedPresets = { ...platformPresets };
+                              selectedBasePlatforms.forEach((p) => {
+                                const presets = PLATFORM_LAYOUT_PRESETS[p] || [];
+                                const match = presets.find((pr) => pr.ratio === item.id);
+                                if (match) {
+                                  updatedPresets[p] = match.id;
+                                }
+                              });
+                              setPlatformPresets(updatedPresets);
+
+                              // Automatically sync Instagram post type if 9:16 is chosen
+                              if (item.id === '9:16' && instagramPostType === 'post') {
+                                setInstagramPostType('reel');
+                              } else if (item.id === '1:1' && (instagramPostType === 'reel' || instagramPostType === 'story')) {
+                                setInstagramPostType('post');
+                              }
+                            }}
+                            style={[
+                              styles.aspectRatioCard,
+                              {
+                                backgroundColor: isSelected
+                                  ? isDark
+                                    ? palette.lavender
+                                    : '#E7DEFA'
+                                  : isDark
+                                  ? palette.surfaceSecondary
+                                  : '#FAF8FC',
+                                borderColor: isSelected
+                                  ? isDark
+                                    ? palette.primary
+                                    : '#6C55C5'
+                                  : isDark
+                                  ? 'rgba(255,255,255,0.06)'
+                                  : palette.cardBorder,
+                                opacity: isIncompatible ? 0.45 : 1,
+                              },
+                            ]}
+                          >
+                            <View style={styles.aspectRatioHeader}>
+                              <Text
+                                style={[
+                                  styles.aspectRatioTitle,
+                                  {
+                                    color: isSelected
+                                      ? isDark
+                                        ? palette.primary
+                                        : '#4B369D'
+                                      : palette.text,
+                                    fontWeight: isSelected ? '700' : '600',
+                                  },
+                                ]}
+                              >
+                                {item.id}
+                              </Text>
+                              {isBest && selectedBasePlatforms.length > 0 && (
+                                <View style={[styles.ratioBadge, { backgroundColor: '#10B981' }]}>
+                                  <Text style={styles.ratioBadgeText}>BEST</Text>
+                                </View>
+                              )}
+                              {isPartial && selectedBasePlatforms.length > 0 && (
+                                <View style={[styles.ratioBadge, { backgroundColor: '#F59E0B' }]}>
+                                  <Text style={styles.ratioBadgeText}>PARTIAL</Text>
+                                </View>
+                              )}
+                            </View>
+                            <Text
+                              style={[
+                                styles.aspectRatioLabel,
+                                {
+                                  color: isSelected
+                                    ? isDark
+                                      ? palette.primary
+                                      : '#55419F'
+                                    : palette.textSecondary,
+                                },
+                              ]}
+                            >
+                              {item.label}
+                            </Text>
+                            {isIncompatible && item.unsupportedPlatforms.length > 0 && (
+                              <Text style={styles.aspectRatioWarn}>
+                                Rejects: {item.unsupportedPlatforms.join(', ')}
+                              </Text>
+                            )}
+                          </Pressable>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
 
                   {/* SECTION: Publish Timing */}
                   <View style={styles.sectionContainer}>
@@ -2368,6 +2664,48 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 14,
     marginTop: 10,
+  },
+  aspectRatioScroll: {
+    paddingHorizontal: 2,
+    gap: 8,
+    paddingVertical: 4,
+  },
+  aspectRatioCard: {
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 16,
+    borderWidth: 1,
+    minWidth: 90,
+  },
+  aspectRatioHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+  },
+  aspectRatioTitle: {
+    fontSize: 13,
+  },
+  ratioBadge: {
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 6,
+  },
+  ratioBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 8,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  aspectRatioLabel: {
+    fontSize: 10,
+    fontWeight: '500',
+  },
+  aspectRatioWarn: {
+    fontSize: 9,
+    color: '#EF4444',
+    marginTop: 3,
+    fontWeight: '500',
   },
   scheduleSubtitle: {
     fontSize: 11,

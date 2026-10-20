@@ -19,6 +19,8 @@ export interface CreateBroadcastPayload {
   postType?: string;
   platformData?: Record<string, any>;
   platformPresets?: Record<string, any>;
+  selectedAspectRatio?: string;
+  selectedPostSizePreset?: string;
 }
 
 function createInternalBffToken(payload: { user_id: string; email?: string; organization_id?: string }, secret: string): string {
@@ -984,8 +986,8 @@ export class SocialAdapter {
     if (payload.scheduledAt) {
       formData.append('scheduledAt', new Date(payload.scheduledAt).toISOString());
     }
-    formData.append('selectedAspectRatio', '1:1');
-    formData.append('selectedPostSizePreset', '');
+    formData.append('selectedAspectRatio', payload.selectedAspectRatio || '1:1');
+    formData.append('selectedPostSizePreset', payload.selectedPostSizePreset || '');
 
     const mediaUrls = payload.mediaUrls || [];
     // Ensure mediaUrls are also sent directly in body for fallback download

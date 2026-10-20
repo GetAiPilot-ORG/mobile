@@ -156,6 +156,8 @@ export async function socialRoutes(fastify: FastifyInstance) {
     postType: z.string().optional(),
     platformData: z.record(z.any()).optional(),
     platformPresets: z.record(z.any()).optional(),
+    selectedAspectRatio: z.string().optional(),
+    selectedPostSizePreset: z.string().optional(),
   });
 
   fastify.post('/social/posts', { preHandler: [authenticateToken, requirePermission('social.post')] }, async (request, reply) => {
