@@ -450,43 +450,71 @@ export default function SpeechToTextScreen() {
     try {
       console.log('🎙️ [Speech-to-Text] Uploading audio for transcription:', { fileName, mimeType });
 
-      const formData = new FormData();
-
-      if (typeof fileUriOrBlob === 'string') {
-        formData.append('file', {
-          uri: Platform.OS === 'android' ? fileUriOrBlob : fileUriOrBlob.replace('file://', ''),
-          name: fileName,
-          type: mimeType || 'audio/webm',
-        } as any);
-      } else {
-        formData.append('file', fileUriOrBlob, fileName);
-      }
-
-      if (selectedLanguage && selectedLanguage !== 'auto') {
-        formData.append('language', selectedLanguage);
-      }
-      formData.append('response_format', 'text');
-
       const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://uklxlappjcuvdqjvecfh.supabase.co';
       const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+      let cleanTranscript = '';
 
-      const response = await fetch(`${supabaseUrl}/functions/v1/transcribe-audio`, {
-        method: 'POST',
-        headers: {
-          apikey: anonKey,
-          Authorization: `Bearer ${anonKey}`,
-        },
-        body: formData,
-      });
+      if (Platform.OS !== 'web' && typeof fileUriOrBlob === 'string') {
+        // Native Mobile (Android & iOS): Use native FileSystem.uploadAsync for high-performance multipart streaming
+        const uploadResult = await FileSystem.uploadAsync(
+          `${supabaseUrl}/functions/v1/transcribe-audio`,
+          fileUriOrBlob,
+          {
+            uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+            fieldName: 'file',
+            mimeType: mimeType || 'audio/webm',
+            httpMethod: 'POST',
+            headers: {
+              apikey: anonKey,
+              Authorization: `Bearer ${anonKey}`,
+            },
+            parameters: {
+              response_format: 'text',
+              ...(selectedLanguage && selectedLanguage !== 'auto' ? { language: selectedLanguage } : {}),
+            },
+          }
+        );
 
-      if (!response.ok) {
-        const errText = await response.text();
-        console.error('❌ [Speech-to-Text] Whisper response error:', response.status, errText);
-        throw new Error(errText || `Server responded with status ${response.status}`);
+        if (uploadResult.status < 200 || uploadResult.status >= 300) {
+          console.error('❌ [Speech-to-Text] Whisper response error:', uploadResult.status, uploadResult.body);
+          throw new Error(uploadResult.body || `Server responded with status ${uploadResult.status}`);
+        }
+
+        cleanTranscript = (uploadResult.body || '').trim();
+      } else {
+        // Web Platform: Standard Browser FormData & fetch
+        const formData = new FormData();
+        if (typeof fileUriOrBlob === 'string') {
+          const res = await fetch(fileUriOrBlob);
+          const blob = await res.blob();
+          formData.append('file', blob, fileName);
+        } else {
+          formData.append('file', fileUriOrBlob, fileName);
+        }
+
+        if (selectedLanguage && selectedLanguage !== 'auto') {
+          formData.append('language', selectedLanguage);
+        }
+        formData.append('response_format', 'text');
+
+        const response = await fetch(`${supabaseUrl}/functions/v1/transcribe-audio`, {
+          method: 'POST',
+          headers: {
+            apikey: anonKey,
+            Authorization: `Bearer ${anonKey}`,
+          },
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          console.error('❌ [Speech-to-Text] Whisper response error:', response.status, errText);
+          throw new Error(errText || `Server responded with status ${response.status}`);
+        }
+
+        const resultText = await response.text();
+        cleanTranscript = (resultText || '').trim();
       }
-
-      const resultText = await response.text();
-      const cleanTranscript = (resultText || '').trim();
 
       if (!cleanTranscript) {
         throw new Error('No intelligible speech detected. Please speak louder and closer to the microphone.');
