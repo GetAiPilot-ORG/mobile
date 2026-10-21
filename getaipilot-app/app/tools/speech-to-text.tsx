@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,24 +8,321 @@ import {
   ActivityIndicator,
   Alert,
   Share,
+  Platform,
+  Linking,
+  PermissionsAndroid,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
+import * as FileSystem from 'expo-file-system/legacy';
+import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
+import { useThemedDialog } from '@/components';
 import { useTheme, getColors } from '@/theme';
 
 const LANGUAGES = [
+  { code: 'auto', label: 'Auto Detect 🌐' },
   { code: 'en', label: 'English (US/UK)' },
   { code: 'hi', label: 'Hindi (हिन्दी)' },
   { code: 'es', label: 'Spanish (Español)' },
   { code: 'fr', label: 'French (Français)' },
 ];
 
+/**
+ * Embedded HTML Audio Recording Engine for Android & iOS WebView
+ * Uses standard W3C MediaRecorder & getUserMedia with zero external native dependencies!
+ * Directly handles user touch gesture and relaxes DSP echoCancellation to avoid HAL audio driver crash on Xiaomi/MIUI.
+ */
+const getWebViewRecorderHtml = (primaryColor: string) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .mic-circle-btn {
+      width: 86px;
+      height: 86px;
+      border-radius: 43px;
+      border: none;
+      outline: none;
+      background-color: ${primaryColor || '#6C55C5'};
+      box-shadow: 0 6px 14px rgba(108, 85, 197, 0.4);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: background-color 0.25s ease, transform 0.12s ease, box-shadow 0.25s ease;
+    }
+    .mic-circle-btn:active {
+      transform: scale(0.92);
+    }
+    .mic-circle-btn.recording {
+      background-color: #EF4444 !important;
+      box-shadow: 0 6px 16px rgba(239, 68, 68, 0.5) !important;
+      animation: pulse 1.5s infinite;
+    }
+    .mic-circle-btn.disabled {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+      70% { box-shadow: 0 0 0 14px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    .icon-svg {
+      width: 38px;
+      height: 38px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <button id="recBtn" class="mic-circle-btn" type="button" onclick="window.toggleRecording()">
+    <svg id="micIcon" class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+      <line x1="12" y1="19" x2="12" y2="22"></line>
+    </svg>
+    <svg id="stopIcon" class="icon-svg" viewBox="0 0 24 24" fill="#FFFFFF" style="display: none;">
+      <rect x="6" y="6" width="12" height="12" rx="2.5"></rect>
+    </svg>
+  </button>
+
+  <script>
+    var mediaRecorder = null;
+    var recordedChunks = [];
+    var mediaStream = null;
+    var isRecording = false;
+    var isStarting = false;
+    var isProcessing = false;
+    var primaryThemeColor = '${primaryColor || '#6C55C5'}';
+
+    function post(type, payload) {
+      try {
+        if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+          window.ReactNativeWebView.postMessage(JSON.stringify(Object.assign({ type: type }, payload || {})));
+        }
+      } catch (e) {}
+    }
+
+    function setBtnUi(recording) {
+      var btn = document.getElementById('recBtn');
+      var mic = document.getElementById('micIcon');
+      var stop = document.getElementById('stopIcon');
+      if (!btn) return;
+      if (recording) {
+        btn.classList.add('recording');
+        if (mic) mic.style.display = 'none';
+        if (stop) stop.style.display = 'block';
+      } else {
+        btn.classList.remove('recording');
+        btn.style.backgroundColor = primaryThemeColor;
+        if (mic) mic.style.display = 'block';
+        if (stop) stop.style.display = 'none';
+      }
+    }
+
+    function stopActiveStream() {
+      if (mediaStream) {
+        try {
+          mediaStream.getTracks().forEach(function(t) {
+            try { t.stop(); } catch(_) {}
+          });
+        } catch (_) {}
+        mediaStream = null;
+      }
+    }
+
+    async function getAudioStream() {
+      stopActiveStream();
+
+      // Candidate 1: Relaxed audio parameters without hardware DSP filters (echoCancellation: false)
+      // This is crucial on Xiaomi / MIUI / HyperOS and Samsung devices to prevent HAL driver crash (NotReadableError)
+      var candidates = [
+        {
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false
+          }
+        },
+        { audio: true },
+        { audio: { channelCount: 1 } },
+        { audio: { echoCancellation: { ideal: false } } }
+      ];
+
+      for (var i = 0; i < candidates.length; i++) {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          try {
+            var s = await navigator.mediaDevices.getUserMedia(candidates[i]);
+            post('DEBUG', { step: 'candidate_success', candidateIndex: i });
+            return s;
+          } catch (e) {
+            post('DEBUG', { step: 'candidate_fail', candidateIndex: i, name: e && e.name, message: e && e.message });
+          }
+        }
+      }
+
+      // Legacy fallback
+      var legacy = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+      if (legacy) {
+        try {
+          var sLegacy = await new Promise(function(resolve, reject) {
+            legacy.call(navigator, { audio: true }, resolve, reject);
+          });
+          return sLegacy;
+        } catch (e2) {
+          post('DEBUG', { step: 'legacy_fail', error: String(e2) });
+        }
+      }
+
+      throw new Error('Microphone audio source could not be opened. Please verify microphone permission in settings and ensure no other recording app is active.');
+    }
+
+    window.startRecording = async function() {
+      if (isRecording || isStarting || isProcessing) return;
+      isStarting = true;
+      try {
+        recordedChunks = [];
+        mediaStream = await getAudioStream();
+
+        var mimeType = '';
+        if (typeof MediaRecorder !== 'undefined') {
+          if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+            mimeType = 'audio/webm;codecs=opus';
+          } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+            mimeType = 'audio/webm';
+          } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+            mimeType = 'audio/mp4';
+          } else if (MediaRecorder.isTypeSupported('audio/aac')) {
+            mimeType = 'audio/aac';
+          }
+        }
+
+        mediaRecorder = mimeType ? new MediaRecorder(mediaStream, { mimeType: mimeType }) : new MediaRecorder(mediaStream);
+
+        mediaRecorder.ondataavailable = function(e) {
+          if (e.data && e.data.size > 0) {
+            recordedChunks.push(e.data);
+          }
+        };
+
+        mediaRecorder.onstop = function() {
+          try {
+            var blob = new Blob(recordedChunks, { type: mimeType || 'audio/webm' });
+            var reader = new FileReader();
+            reader.onloadend = function() {
+              var result = reader.result;
+              var base64 = result.indexOf(',') !== -1 ? result.split(',')[1] : result;
+              post('RECORDING_DATA', {
+                base64: base64,
+                mimeType: mimeType || 'audio/webm',
+                size: blob.size
+              });
+            };
+            reader.readAsDataURL(blob);
+          } catch(err) {
+            post('ERROR', { code: 'ENCODE_ERROR', error: 'Failed to encode recorded audio: ' + err.message });
+          } finally {
+            stopActiveStream();
+          }
+        };
+
+        mediaRecorder.start(200);
+        isRecording = true;
+        setBtnUi(true);
+        post('RECORDING_STARTED');
+      } catch (err) {
+        isRecording = false;
+        setBtnUi(false);
+        stopActiveStream();
+        var isPerm = err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError' || (err.message && err.message.toLowerCase().indexOf('permission') !== -1);
+        post('ERROR', {
+          code: isPerm ? 'PERMISSION_DENIED' : 'RECORD_FAILED',
+          error: (err.name ? (err.name + ': ') : '') + (err.message || 'Microphone recording failed.')
+        });
+      } finally {
+        isStarting = false;
+      }
+    };
+
+    window.stopRecording = function() {
+      if (!isRecording) return;
+      isRecording = false;
+      setBtnUi(false);
+      post('RECORDING_STOPPED');
+      try {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+        } else {
+          stopActiveStream();
+        }
+      } catch (err) {
+        stopActiveStream();
+        post('ERROR', { code: 'STOP_ERROR', error: err.message });
+      }
+    };
+
+    window.toggleRecording = function() {
+      if (isRecording) {
+        window.stopRecording();
+      } else {
+        window.startRecording();
+      }
+    };
+
+    window.setThemeColor = function(color) {
+      primaryThemeColor = color;
+      var btn = document.getElementById('recBtn');
+      if (btn && !isRecording) {
+        btn.style.backgroundColor = color;
+      }
+    };
+
+    window.setProcessing = function(processing) {
+      isProcessing = !!processing;
+      var btn = document.getElementById('recBtn');
+      if (!btn) return;
+      if (isProcessing) {
+        btn.classList.add('disabled');
+      } else {
+        btn.classList.remove('disabled');
+      }
+    };
+
+    window.setBtnUi = setBtnUi;
+
+    post('READY');
+  </script>
+</body>
+</html>
+`;
+
 export default function SpeechToTextScreen() {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+  const { confirm: showCustomConfirm, showAlert: showCustomAlert } = useThemedDialog();
 
   const [isRecording, setIsRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
@@ -36,6 +333,30 @@ export default function SpeechToTextScreen() {
   const [transcript, setTranscript] = useState('');
   const [summaryBullets, setSummaryBullets] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
+
+  // Proactively check/request microphone permission on screen mount for Android
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO)
+        .then((hasPerm) => {
+          if (!hasPerm) {
+            PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO, {
+              title: 'Microphone Permission',
+              message: 'GetAIPilot requires microphone access to record audio and convert speech to text.',
+              buttonPositive: 'Allow',
+              buttonNegative: 'Deny',
+            }).catch(() => {});
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
+
+  const webViewRef = useRef<WebView>(null);
+  const isWebViewReady = useRef(false);
+  const webMediaRecorderRef = useRef<any>(null);
+  const webAudioChunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<any>(null);
 
   // Dynamic Theme Mapping
   const theme = {
@@ -51,15 +372,38 @@ export default function SpeechToTextScreen() {
 
   // Recording Timer
   useEffect(() => {
-    let timer: any;
     if (isRecording) {
-      timer = setInterval(() => {
+      timerRef.current = setInterval(() => {
         setRecordSeconds((s) => s + 1);
       }, 1000);
     } else {
+      if (timerRef.current) clearInterval(timerRef.current);
       setRecordSeconds(0);
     }
-    return () => clearInterval(timer);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isRecording]);
+
+  // Synchronize dynamic primary theme color to WebView
+  useEffect(() => {
+    if (Platform.OS !== 'web' && webViewRef.current) {
+      webViewRef.current.injectJavaScript(`if (window.setThemeColor) window.setThemeColor('${theme.primary}'); true;`);
+    }
+  }, [theme.primary]);
+
+  // Synchronize processing state to disable button inside WebView
+  useEffect(() => {
+    if (Platform.OS !== 'web' && webViewRef.current) {
+      webViewRef.current.injectJavaScript(`if (window.setProcessing) window.setProcessing(${isProcessing}); true;`);
+    }
+  }, [isProcessing]);
+
+  // Synchronize recording state UI to button inside WebView
+  useEffect(() => {
+    if (Platform.OS !== 'web' && webViewRef.current) {
+      webViewRef.current.injectJavaScript(`if (window.setBtnUi) window.setBtnUi(${isRecording}); true;`);
+    }
   }, [isRecording]);
 
   const formatTimer = (totalSeconds: number) => {
@@ -68,33 +412,293 @@ export default function SpeechToTextScreen() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleToggleRecord = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    if (isRecording) {
-      // Stop Recording & Trigger Whisper AI Transcriber
-      setIsRecording(false);
-      setIsProcessing(true);
+  const generateSummaryBullets = (text: string) => {
+    if (!text || text.length < 10) {
+      setSummaryBullets(['Voice note transcribed successfully.']);
+      return;
+    }
 
-      setTimeout(() => {
-        setIsProcessing(false);
-        if (!transcript) {
-          setTranscript('Audio recorded successfully. Tap below to edit, copy, or save your transcript.');
-          setSummaryBullets([
-            'Audio capture completed.',
-            'Ready for AI analysis and export.',
-          ]);
-        }
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }, 1000);
+    const sentences = text
+      .split(/(?<=[.!?।\n])\s+/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 8);
+
+    if (sentences.length <= 3) {
+      setSummaryBullets(sentences.length > 0 ? sentences : [text]);
     } else {
-      // Start Recording
-      setTranscript('');
-      setSummaryBullets([]);
-      setCopied(false);
-      setIsRecording(true);
+      const bullets = [
+        sentences[0],
+        sentences[Math.floor(sentences.length / 2)],
+        sentences[sentences.length - 1],
+      ].filter(Boolean);
+      setSummaryBullets(bullets);
     }
   };
 
+  /**
+   * Upload recorded audio file to OpenAI Whisper API via Supabase Edge Function
+   */
+  const processAndTranscribeAudio = async (
+    fileUriOrBlob: string | Blob,
+    fileName: string,
+    mimeType: string
+  ) => {
+    setIsProcessing(true);
+    setTranscript('');
+    setSummaryBullets([]);
+
+    try {
+      console.log('🎙️ [Speech-to-Text] Uploading audio for transcription:', { fileName, mimeType });
+
+      const formData = new FormData();
+
+      if (typeof fileUriOrBlob === 'string') {
+        formData.append('file', {
+          uri: Platform.OS === 'android' ? fileUriOrBlob : fileUriOrBlob.replace('file://', ''),
+          name: fileName,
+          type: mimeType || 'audio/webm',
+        } as any);
+      } else {
+        formData.append('file', fileUriOrBlob, fileName);
+      }
+
+      if (selectedLanguage && selectedLanguage !== 'auto') {
+        formData.append('language', selectedLanguage);
+      }
+      formData.append('response_format', 'text');
+
+      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://uklxlappjcuvdqjvecfh.supabase.co';
+      const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/transcribe-audio`, {
+        method: 'POST',
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error('❌ [Speech-to-Text] Whisper response error:', response.status, errText);
+        throw new Error(errText || `Server responded with status ${response.status}`);
+      }
+
+      const resultText = await response.text();
+      const cleanTranscript = (resultText || '').trim();
+
+      if (!cleanTranscript) {
+        throw new Error('No intelligible speech detected. Please speak louder and closer to the microphone.');
+      }
+
+      console.log('✅ [Speech-to-Text] Transcription success:', cleanTranscript.slice(0, 80));
+      setTranscript(cleanTranscript);
+      generateSummaryBullets(cleanTranscript);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (err: any) {
+      console.error('❌ [Speech-to-Text] Transcription failure:', err);
+      showCustomAlert({
+        title: 'Transcription Error',
+        message: err.message || 'Could not transcribe speech. Please try speaking again.',
+        type: 'warning',
+        buttonText: 'Try Again',
+        buttonBgColor: colors.accent,
+        buttonTextColor: colors.text,
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  /**
+   * Handle audio recorded by native WebView bridge
+   */
+  const handleWebViewMessage = async (event: any) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+
+      if (data.type === 'READY') {
+        isWebViewReady.current = true;
+      } else if (data.type === 'DEBUG') {
+        console.log('🐞 [Speech-to-Text Debug]:', data);
+      } else if (data.type === 'RECORDING_STARTED') {
+        setIsRecording(true);
+        setTranscript('');
+        setSummaryBullets([]);
+        setCopied(false);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      } else if (data.type === 'RECORDING_STOPPED') {
+        setIsRecording(false);
+      } else if (data.type === 'RECORDING_DATA') {
+        setIsRecording(false);
+        const { base64, mimeType } = data;
+
+        if (!base64) {
+          showCustomAlert({
+            title: 'Recording Failed',
+            message: 'No audio data was captured. Please speak closer to the microphone.',
+            type: 'warning',
+            buttonText: 'OK',
+            buttonBgColor: colors.accent,
+            buttonTextColor: colors.text,
+          });
+          return;
+        }
+
+        // Save base64 audio to temporary cache file
+        const ext = mimeType?.includes('mp4') ? 'mp4' : mimeType?.includes('aac') ? 'aac' : 'webm';
+        const tempUri = `${FileSystem.cacheDirectory}recording_${Date.now()}.${ext}`;
+
+        await FileSystem.writeAsStringAsync(tempUri, base64, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        await processAndTranscribeAudio(tempUri, `speech_recording.${ext}`, mimeType);
+
+        // Cleanup temporary audio cache
+        FileSystem.deleteAsync(tempUri, { idempotent: true }).catch(() => { });
+      } else if (data.type === 'ERROR') {
+        setIsRecording(false);
+        console.warn('🎙️ [Speech-to-Text] WebView recorder event:', data);
+
+        let isActualPermissionMissing = false;
+        if (Platform.OS === 'android') {
+          try {
+            const hasPerm = await PermissionsAndroid.check(
+              PermissionsAndroid.PERMISSIONS.RECORD_AUDIO
+            );
+            if (!hasPerm) {
+              isActualPermissionMissing = true;
+            }
+          } catch (_) { }
+        } else if (data.code === 'PERMISSION_DENIED') {
+          isActualPermissionMissing = true;
+        }
+
+        if (isActualPermissionMissing) {
+          showMicrophonePermissionAlert();
+        } else {
+          showCustomAlert({
+            title: 'Recording Notice',
+            message:
+              data.error?.includes('NotReadableError')
+                ? 'Could not access device microphone. Please close other apps using audio (calls, voice notes) and try again.'
+                : data.error ||
+                  'Microphone recorder could not start. Please tap the microphone button again.',
+            type: 'warning',
+            buttonText: 'Try Again',
+            buttonBgColor: colors.accent,
+            buttonTextColor: colors.text,
+          });
+        }
+      }
+    } catch (err) {
+      console.error('[Speech-to-Text] WebView message parse error:', err);
+      setIsRecording(false);
+    }
+  };
+
+  /**
+   * Show custom themed alert dialog prompting user to enable microphone permissions
+   */
+  const showMicrophonePermissionAlert = (customMessage?: string) => {
+    showCustomConfirm({
+      title: 'Enable Microphone Access',
+      message:
+        customMessage ||
+        'Microphone permission is required to record voice and convert speech to text. Please enable it in your device settings.',
+      type: 'warning',
+      confirmText: 'Open Settings',
+      cancelText: 'Cancel',
+      confirmBgColor: colors.accent,
+      confirmTextColor: colors.text,
+      cancelBgColor: colors.primary,
+      cancelTextColor: colors.text,
+      onConfirm: () => {
+        Linking.openSettings().catch(() => { });
+      },
+    });
+  };
+
+  /**
+   * Tap Mic to Start / Stop Recording
+   */
+  const handleToggleRecord = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+
+    // 1. Web Platform (Browser)
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && navigator.mediaDevices) {
+      if (isRecording) {
+        setIsRecording(false);
+        if (webMediaRecorderRef.current && webMediaRecorderRef.current.state !== 'inactive') {
+          webMediaRecorderRef.current.stop();
+        }
+      } else {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          webAudioChunksRef.current = [];
+          const recorder = new (window as any).MediaRecorder(stream);
+          webMediaRecorderRef.current = recorder;
+
+          recorder.ondataavailable = (e: any) => {
+            if (e.data && e.data.size > 0) {
+              webAudioChunksRef.current.push(e.data);
+            }
+          };
+
+          recorder.onstop = async () => {
+            stream.getTracks().forEach((track) => track.stop());
+            const audioBlob = new Blob(webAudioChunksRef.current, { type: 'audio/webm' });
+            await processAndTranscribeAudio(audioBlob, 'web_recording.webm', 'audio/webm');
+          };
+
+          recorder.start(200);
+          setIsRecording(true);
+        } catch (err: any) {
+          showMicrophonePermissionAlert(
+            'Microphone access is blocked in your browser. Please allow microphone permissions to record audio.'
+          );
+        }
+      }
+      return;
+    }
+
+    // 2. Native Mobile (Android & iOS) via Embedded Audio Recorder Engine
+    if (isRecording) {
+      webViewRef.current?.injectJavaScript('window.stopRecording(); true;');
+    } else {
+      if (Platform.OS === 'android') {
+        try {
+          const hasPermission = await PermissionsAndroid.check(
+            PermissionsAndroid.PERMISSIONS.RECORD_AUDIO
+          );
+          if (!hasPermission) {
+            const granted = await PermissionsAndroid.request(
+              PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+              {
+                title: 'Microphone Permission',
+                message: 'GetAIPilot requires microphone access to record audio and convert speech to text.',
+                buttonPositive: 'Allow',
+                buttonNegative: 'Deny',
+              }
+            );
+            if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+              showMicrophonePermissionAlert();
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn('[Speech-to-Text] Error checking Android permission:', err);
+        }
+      }
+
+      setTranscript('');
+      setSummaryBullets([]);
+      setCopied(false);
+      webViewRef.current?.injectJavaScript('window.startRecording(); true;');
+    }
+  };
 
   const handleCopyText = async () => {
     const textToCopy =
@@ -114,27 +718,27 @@ export default function SpeechToTextScreen() {
       await Share.share({
         message: `AI Audio Transcript:\n\n${transcript}\n\nKey Takeaways:\n${summaryBullets
           .map((b) => `• ${b}`)
-          .join('\n')}\n\nTranscribed with GetAiPilot Mobile.`,
+          .join('\n')}\n\nTranscribed with GetAiPilot AI.`,
       });
-    } catch {}
+    } catch { }
   };
 
   return (
     <AppScreen safeArea={false} backgroundColor={theme.bg}>
-      <AppTopBar title="AI Speech-to-Text" 
-      // subtitle="Voice Notes & Audio Transcriber" 
-      showBack={true} />
+      <AppTopBar title="AI Speech-to-Text" showBack={true} />
+
+
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Main Recording Studio Card */}
         <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-          <Text style={[styles.cardTitle, { color: theme.text }]}>Voice Note Transcriber</Text>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>Voice Speech Transcriber</Text>
           <Text style={[styles.cardSubtitle, { color: theme.mutedText }]}>
-            Record speech in real-time or select an audio sample to generate clean text and AI executive summaries.
+            Tap the microphone, speak into your device, and stop to convert your voice to clean text using OpenAI Whisper.
           </Text>
 
           {/* Language Selector Pills */}
-          <Text style={[styles.inputLabel, { color: theme.mutedText }]}>Recognition Language:</Text>
+          <Text style={[styles.inputLabel, { color: theme.mutedText }]}>Spoken Language:</Text>
           <View style={styles.langRow}>
             {LANGUAGES.map((lang) => (
               <Pressable
@@ -142,7 +746,7 @@ export default function SpeechToTextScreen() {
                 style={[
                   styles.langPill,
                   {
-                    backgroundColor: selectedLanguage === lang.code ? theme.primary : isDark ? '#141416' : '#F3F4F6',
+                    backgroundColor: selectedLanguage === lang.code ? theme.primary : colors.background,
                     borderColor: selectedLanguage === lang.code ? theme.primary : theme.cardBorder,
                   },
                 ]}
@@ -165,33 +769,60 @@ export default function SpeechToTextScreen() {
 
           {/* Big Recording Button Chassis */}
           <View style={styles.recorderContainer}>
-            {/* Animated Waveform Visualizer simulation */}
+            {/* Animated Waveform Visualizer */}
             {isRecording && (
               <View style={styles.waveformContainer}>
-                <View style={[styles.waveBar, { height: 28, backgroundColor: '#EF4444' }]} />
-                <View style={[styles.waveBar, { height: 44, backgroundColor: '#EF4444' }]} />
-                <View style={[styles.waveBar, { height: 18, backgroundColor: '#EF4444' }]} />
-                <View style={[styles.waveBar, { height: 52, backgroundColor: '#EF4444' }]} />
-                <View style={[styles.waveBar, { height: 35, backgroundColor: '#EF4444' }]} />
+                <View style={[styles.waveBar, { height: 26, backgroundColor: '#EF4444' }]} />
+                <View style={[styles.waveBar, { height: 46, backgroundColor: '#EF4444' }]} />
+                <View style={[styles.waveBar, { height: 20, backgroundColor: '#EF4444' }]} />
+                <View style={[styles.waveBar, { height: 54, backgroundColor: '#EF4444' }]} />
+                <View style={[styles.waveBar, { height: 36, backgroundColor: '#EF4444' }]} />
                 <View style={[styles.waveBar, { height: 22, backgroundColor: '#EF4444' }]} />
                 <View style={[styles.waveBar, { height: 48, backgroundColor: '#EF4444' }]} />
               </View>
             )}
 
-            {/* Pulsing Mic Button */}
-            <Pressable
-              style={[
-                styles.micCircleBtn,
-                {
-                  backgroundColor: isRecording ? '#EF4444' : theme.primary,
-                  shadowColor: isRecording ? '#EF4444' : theme.primary,
-                },
-              ]}
-              onPress={handleToggleRecord}
-              disabled={isProcessing}
-            >
-              <Ionicons name={isRecording ? 'stop' : 'mic'} size={34} color="#FFFFFF" />
-            </Pressable>
+            {/* Pulsing Mic / Stop Button */}
+            {Platform.OS === 'web' ? (
+              <Pressable
+                style={[
+                  styles.micCircleBtn,
+                  {
+                    backgroundColor: isRecording ? '#EF4444' : theme.primary,
+                    shadowColor: isRecording ? '#EF4444' : theme.primary,
+                  },
+                ]}
+                onPress={handleToggleRecord}
+                disabled={isProcessing}
+              >
+                <Ionicons name={isRecording ? 'stop' : 'mic'} size={38} color="#FFFFFF" />
+              </Pressable>
+            ) : (
+              <View style={styles.micWebViewContainer}>
+                <WebView
+                  ref={webViewRef}
+                  source={{
+                    html: getWebViewRecorderHtml(theme.primary),
+                    baseUrl: 'https://localhost',
+                  }}
+                  originWhitelist={['*']}
+                  javaScriptEnabled={true}
+                  domStorageEnabled={true}
+                  allowsInlineMediaPlayback={true}
+                  mediaPlaybackRequiresUserAction={false}
+                  mediaCapturePermissionGrantType="grant"
+                  androidLayerType="hardware"
+                  mixedContentMode="compatibility"
+                  onMessage={handleWebViewMessage}
+                  style={styles.micWebView}
+                  scrollEnabled={false}
+                  bounces={false}
+                  overScrollMode="never"
+                  showsHorizontalScrollIndicator={false}
+                  showsVerticalScrollIndicator={false}
+                />
+              </View>
+            )}
 
             {/* Status & Live Timer */}
             <Text style={[styles.recordingTimerText, { color: isRecording ? '#EF4444' : theme.text }]}>
@@ -200,27 +831,33 @@ export default function SpeechToTextScreen() {
 
             <Text style={[styles.recorderStatusHint, { color: theme.mutedText }]}>
               {isRecording
-                ? 'Recording in Progress... Tap to Stop & Transcribe'
+                ? 'Recording your voice... Tap the red button to finish'
                 : isProcessing
-                ? 'Whisper AI is Transcribing & Summarizing...'
-                : 'Tap microphone to start recording'}
+                  ? 'Whisper AI is transcribing your speech...'
+                  : 'Tap microphone to speak'}
             </Text>
 
             {isProcessing && (
-              <ActivityIndicator size="large" color={theme.primary} style={{ marginTop: 14 }} />
+              <View style={{ alignItems: 'center', marginTop: 14 }}>
+                <ActivityIndicator size="large" color={theme.primary} />
+                <Text style={{ fontSize: 12, color: theme.mutedText, marginTop: 6, fontWeight: '600' }}>
+                  Converting speech to text with Whisper AI...
+                </Text>
+              </View>
             )}
           </View>
         </View>
-
 
         {/* ── TRANSCRIPTION & AI SUMMARY RESULTS CARD ──────────────── */}
         {transcript ? (
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <Text style={[styles.cardHeading, { color: theme.text }]}>AI Output</Text>
+              <View>
+                <Text style={[styles.cardHeading, { color: theme.text }]}>Transcribed Output</Text>
+              </View>
 
               {/* Segmented Switcher (Full Text vs Summary) */}
-              <View style={[styles.outputTabs, { backgroundColor: isDark ? '#141416' : '#E9E6F2' }]}>
+              <View style={[styles.outputTabs, { backgroundColor: colors.background }]}>
                 <Pressable
                   style={[styles.outputTabBtn, activeTab === 'transcript' && { backgroundColor: theme.primary }]}
                   onPress={() => setActiveTab('transcript')}
@@ -245,7 +882,7 @@ export default function SpeechToTextScreen() {
                       { color: activeTab === 'summary' ? '#FFFFFF' : theme.mutedText },
                     ]}
                   >
-                    AI Summary
+                    Key Points
                   </Text>
                 </Pressable>
               </View>
@@ -253,15 +890,19 @@ export default function SpeechToTextScreen() {
 
             {/* Display Body */}
             {activeTab === 'transcript' ? (
-              <View style={[styles.transcriptBox, { backgroundColor: isDark ? '#141416' : '#F9FAFB', borderColor: theme.cardBorder }]}>
-                <Text style={[styles.transcriptBodyText, { color: theme.text }]}>{transcript}</Text>
+              <View style={[styles.transcriptBox, { backgroundColor: colors.background, borderColor: theme.cardBorder }]}>
+                <Text style={[styles.transcriptBodyText, { color: theme.text }]} selectable>
+                  {transcript}
+                </Text>
               </View>
             ) : (
-              <View style={[styles.transcriptBox, { backgroundColor: isDark ? '#141416' : '#F9FAFB', borderColor: theme.cardBorder }]}>
+              <View style={[styles.transcriptBox, { backgroundColor: colors.background, borderColor: theme.cardBorder }]}>
                 {summaryBullets.map((bullet, idx) => (
                   <View key={idx} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 }}>
                     <Text style={{ color: theme.primary, marginRight: 8, fontSize: 14 }}>•</Text>
-                    <Text style={[styles.bulletText, { color: theme.text }]}>{bullet}</Text>
+                    <Text style={[styles.bulletText, { color: theme.text }]} selectable>
+                      {bullet}
+                    </Text>
                   </View>
                 ))}
               </View>
@@ -272,7 +913,7 @@ export default function SpeechToTextScreen() {
               <Pressable
                 style={[
                   styles.actionBtn,
-                  { backgroundColor: isDark ? '#3A3549' : '#E9E6F2', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+                  { backgroundColor: colors.background, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
                 ]}
                 onPress={handleCopyText}
               >
@@ -301,6 +942,20 @@ export default function SpeechToTextScreen() {
 }
 
 const styles = StyleSheet.create({
+  micWebViewContainer: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    marginBottom: 12,
+  },
+  micWebView: {
+    width: 96,
+    height: 96,
+    backgroundColor: 'transparent',
+  },
   scrollContent: {
     padding: 16,
     paddingBottom: 50,
@@ -349,39 +1004,39 @@ const styles = StyleSheet.create({
   },
   recorderContainer: {
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: 18,
   },
   waveformContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     height: 60,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   waveBar: {
     width: 6,
     borderRadius: 3,
   },
   micCircleBtn: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     justifyContent: 'center',
     alignItems: 'center',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
-    shadowRadius: 12,
+    shadowRadius: 14,
     elevation: 8,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   recordingTimerText: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '900',
     fontFamily: 'monospace',
     marginBottom: 4,
   },
   recorderStatusHint: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '600',
     textAlign: 'center',
   },

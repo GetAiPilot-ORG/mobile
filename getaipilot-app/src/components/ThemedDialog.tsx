@@ -571,13 +571,13 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
       btnTextColor = colors.mutedText;
     } else {
       // Standard Primary task
-      btnBg = isDark ? '#B9A8FF' : '#17171C';
+      btnBg = isDark ? '#B9A8FF' : '#6C55C5';
       btnTextColor = isDark ? '#17171C' : '#FFFFFF';
       btnShadow = Platform.select({
         ios: {
-          shadowColor: isDark ? '#B9A8FF' : '#000000',
+          shadowColor: isDark ? '#B9A8FF' : '#6C55C5',
           shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: isDark ? 0.25 : 0.15,
+          shadowOpacity: isDark ? 0.25 : 0.2,
           shadowRadius: 4,
         },
         android: { elevation: 2 },
