@@ -179,18 +179,6 @@ export function useChatbot() {
           // Table name might differ in schemas, ignore quietly
         }
 
-        // 2. Also register notification / admin activity
-        try {
-          await supabase.from('notifications').insert({
-            user_id: user?.id || null,
-            title: '🚀 New Chatbot Demo Request',
-            description: `${name} (${email}, ${phone || 'No phone'}) requested a demo via AI Chatbot.`,
-            type: 'lead',
-            is_read: false,
-          });
-        } catch {
-          // ignore
-        }
 
         setIsCapturingLead(false);
 

@@ -344,24 +344,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
           const dedupeKey = `${uid}_click_milestone_${currMilestone}_${current.title}`;
           if (!isDuplicateNotification(dedupeKey)) {
-            // Persist to user's remote notifications table.
-            // The Supabase Realtime channel will receive this single INSERT and trigger the push notification once.
-            let dbSuccess = false;
-            try {
-              const { error: insErr } = await supabase.from('notifications').insert({
-                user_id: uid,
-                title,
-                description,
-                type: 'page_click',
-                is_read: false,
-              });
-              if (!insErr) dbSuccess = true;
-            } catch (dbErr) {
-              console.warn('[NotificationContext] Failed to insert click notification to Supabase:', dbErr);
-            }
-
-            // Only fallback to local alert if offline or DB insert failed
-            if (!dbSuccess && Notifications) {
+            if (Notifications) {
               try {
                 await NotificationService.scheduleLocalNotification({
                   title,
@@ -409,21 +392,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
           const dedupeKey = `${uid}_view_milestone_${currViewMilestone}_${current.title}`;
           if (!isDuplicateNotification(dedupeKey)) {
-            let dbSuccess = false;
-            try {
-              const { error: insErr } = await supabase.from('notifications').insert({
-                user_id: uid,
-                title,
-                description,
-                type: 'page_view',
-                is_read: false,
-              });
-              if (!insErr) dbSuccess = true;
-            } catch (dbErr) {
-              console.warn('[NotificationContext] Failed to insert view notification to Supabase:', dbErr);
-            }
-
-            if (!dbSuccess && Notifications) {
+            if (Notifications) {
               try {
                 await NotificationService.scheduleLocalNotification({
                   title,
