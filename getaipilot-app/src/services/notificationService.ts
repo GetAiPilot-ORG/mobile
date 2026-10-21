@@ -52,6 +52,9 @@ export class NotificationService {
           lightColor: '#10B981',
           enableVibrate: true,
           showBadge: true,
+          sound: 'default',
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          bypassDnd: true,
         });
 
         // 2. New incoming leads & CRM prospects
@@ -62,6 +65,9 @@ export class NotificationService {
           lightColor: '#10B981',
           enableVibrate: true,
           showBadge: true,
+          sound: 'default',
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          bypassDnd: true,
         });
 
         // 3. Customer messages & chats (WhatsApp / Telegram / Web)
@@ -72,26 +78,35 @@ export class NotificationService {
           lightColor: '#3B82F6',
           enableVibrate: true,
           showBadge: true,
+          sound: 'default',
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          bypassDnd: true,
         });
 
         // 4. Urgent billing, credit depletion & subscription events
         await Notifications.setNotificationChannelAsync('billing', {
           name: 'Billing & Plan Quotas',
-          importance: Notifications.AndroidImportance.HIGH,
+          importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 150, 150, 150],
           lightColor: '#8B5CF6',
           enableVibrate: true,
           showBadge: true,
+          sound: 'default',
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          bypassDnd: true,
         });
 
         // 5. Marketing broadcasts & campaigns completion
         await Notifications.setNotificationChannelAsync('campaigns', {
           name: 'Campaigns & Broadcasts',
-          importance: Notifications.AndroidImportance.HIGH,
+          importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 200, 200, 200],
           lightColor: '#F59E0B',
           enableVibrate: true,
           showBadge: true,
+          sound: 'default',
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          bypassDnd: true,
         });
 
         // 6. Voice AI Agent & phone calls
@@ -102,16 +117,22 @@ export class NotificationService {
           lightColor: '#EC4899',
           enableVibrate: true,
           showBadge: true,
+          sound: 'default',
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          bypassDnd: true,
         });
 
         // 7. System status & Bot infrastructure updates
         await Notifications.setNotificationChannelAsync('system', {
           name: 'System & Bot Updates',
-          importance: Notifications.AndroidImportance.HIGH,
+          importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 150, 150, 150],
           lightColor: '#6366F1',
           enableVibrate: true,
           showBadge: true,
+          sound: 'default',
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          bypassDnd: true,
         });
 
         // 8. Admin console alerts & security activities
@@ -122,6 +143,9 @@ export class NotificationService {
           lightColor: '#EF4444',
           enableVibrate: true,
           showBadge: true,
+          sound: 'default',
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          bypassDnd: true,
         });
 
         // 9. Page clicks, views, and visitor analytics
@@ -132,6 +156,9 @@ export class NotificationService {
           lightColor: '#06B6D4',
           enableVibrate: true,
           showBadge: true,
+          sound: 'default',
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          bypassDnd: true,
         });
       } catch (err) {
         console.warn('[NotificationService] Error setting up Android channels:', err);
@@ -300,7 +327,7 @@ export class NotificationService {
     channelId?: string;
   }): Promise<string> {
     if (!Notifications) return '';
-    await this.setupChannels();
+    const trigger = Platform.OS === 'android' ? { channelId: options.channelId || 'default' } : null;
 
     return await Notifications.scheduleNotificationAsync({
       content: {
@@ -311,7 +338,7 @@ export class NotificationService {
         priority: Notifications.AndroidNotificationPriority.HIGH,
         color: '#10B981',
       },
-      trigger: null, // Send immediately
+      trigger: trigger as any,
     });
   }
 

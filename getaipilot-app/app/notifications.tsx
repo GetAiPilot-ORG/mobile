@@ -328,8 +328,6 @@ function SwipeableNotificationCard({
           {
             backgroundColor: cardBg,
             borderColor: cardBorderColor,
-            borderLeftWidth: isUnread ? 4 : 1,
-            borderLeftColor: isUnread ? meta.color : cardBorderColor,
             opacity: 1, // Always 100% solid opacity so actions underneath never bleed through
             transform: [{ translateX: pan }],
           },
