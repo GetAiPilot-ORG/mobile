@@ -650,7 +650,7 @@ export const TelegramScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, width: '100%' },
   content: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 14,
     paddingTop: 16,
     paddingBottom: 120,
     width: "100%",
