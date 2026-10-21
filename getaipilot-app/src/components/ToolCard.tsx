@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleProp, ViewStyle } from 'react-native';
+import { View, Text, Pressable, StyleProp, StyleSheet, ViewStyle } from 'react-native';
 import { ArrowRight01Icon } from '@/constants/icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useTheme, getColors } from '@/theme';
@@ -35,11 +35,15 @@ export const ToolCard: React.FC<ToolCardProps> = ({
           borderRadius: 18,
           justifyContent: 'space-between',
           backgroundColor: colors.card,
-          shadowColor: colors.primary,
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: isDark ? 0.25 : 0.04,
-          shadowRadius: 8,
-          elevation: 2,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: isDark
+            ? 'rgba(255, 255, 255, 0.08)'
+            : colors.cardBorder,
+          shadowColor: 'transparent',
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0,
+          shadowRadius: 0,
+          elevation: 0,
         },
         style,
       ]}

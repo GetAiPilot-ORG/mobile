@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '@/theme';
 
 interface MetricCardProps {
   label: string;

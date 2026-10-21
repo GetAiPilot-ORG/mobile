@@ -9,6 +9,7 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
+  StyleSheet,
   Text,
   View
 } from "react-native";
@@ -226,7 +227,7 @@ export default function ConnectedPlatformsPage() {
     PLATFORMS.find((p) => p.key === activePlatform) || PLATFORMS[0];
 
   return (
-    <AppScreen safeArea={false}>
+    <AppScreen safeArea={false} backgroundColor={color.background}>
       <AppTopBar
         title="Activity"
         showBack={false}
@@ -308,15 +309,15 @@ export default function ConnectedPlatformsPage() {
             className="rounded-[20px] p-4 mb-5"
             style={{
               backgroundColor: color.card,
-              borderWidth: 1,
+              borderWidth: StyleSheet.hairlineWidth,
               borderColor: isDark
-                ? "rgba(255, 255, 255, 0.07)"
+                ? "rgba(255, 255, 255, 0.08)"
                 : color.cardBorder,
-              shadowColor: color.primary,
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: isDark ? 0.25 : 0.04,
-              shadowRadius: 8,
-              elevation: 2,
+              shadowColor: "transparent",
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0,
+              shadowRadius: 0,
+              elevation: 0,
             }}
           >
             {/* Card Header: Squircle Icon + Info + Live Pill */}
@@ -675,15 +676,15 @@ export default function ConnectedPlatformsPage() {
             className="rounded-[20px] overflow-hidden"
             style={{
               backgroundColor: color.card,
-              borderWidth: 1,
+              borderWidth: StyleSheet.hairlineWidth,
               borderColor: isDark
-                ? "rgba(255, 255, 255, 0.07)"
+                ? "rgba(255, 255, 255, 0.08)"
                 : color.cardBorder,
-              shadowColor: color.primary,
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: isDark ? 0.25 : 0.04,
-              shadowRadius: 8,
-              elevation: 2,
+              shadowColor: "transparent",
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0,
+              shadowRadius: 0,
+              elevation: 0,
             }}
           >
             {[

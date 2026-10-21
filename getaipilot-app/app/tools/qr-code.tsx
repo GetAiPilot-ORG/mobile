@@ -52,7 +52,7 @@ export default function QRCodeGeneratorScreen() {
 
   // Form Fields
   const [url, setUrl] = useState('https://getaipilot.in');
-  
+
   // WhatsApp
   const [waPhone, setWaPhone] = useState('919876543210');
   const [waMessage, setWaMessage] = useState('Hi! I want to learn more about GetAiPilot.');
@@ -125,7 +125,7 @@ export default function QRCodeGeneratorScreen() {
       await Share.share({
         message: `Scannable QR Code Data:\n\n${payload}\n\nGenerated with GetAiPilot Mobile.`,
       });
-    } catch {}
+    } catch { }
   };
 
   const handleTestPayload = () => {
@@ -140,9 +140,9 @@ export default function QRCodeGeneratorScreen() {
 
   return (
     <AppScreen safeArea={false} backgroundColor={theme.bg}>
-      <AppTopBar title="QR Code Studio" 
-      // subtitle="High-Resolution Custom QR Generator" 
-      showBack={true} />
+      <AppTopBar title="QR Code Studio"
+        // subtitle="High-Resolution Custom QR Generator" 
+        showBack={true} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Category Selector Grid */}
