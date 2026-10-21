@@ -182,6 +182,7 @@ export const ThemedAlert = {
       buttonAlign?: DialogButtonAlign;
       alignRight?: boolean;
       textAlign?: 'left' | 'center' | 'right';
+      showCloseButton?: boolean;
     }
   ) {
     if (!themedAlertManager.isReady()) {
@@ -312,6 +313,7 @@ export const ThemedAlert = {
       alignRight: options?.alignRight,
       textAlign: options?.textAlign,
       dismissable: options?.cancelable ?? true,
+      showCloseButton: options?.showCloseButton ?? true,
       buttonLayout: dialogButtons.length === 2 ? 'row' : 'auto',
       onClose: () => {
         options?.onDismiss?.();

@@ -62,6 +62,7 @@ try {
   // safe fallback
 }
 
+const path = require('path');
 const { getDefaultConfig } = require('expo/metro-config');
 const { withNativeWind } = require('nativewind/metro');
 
@@ -70,21 +71,27 @@ const config = getDefaultConfig(__dirname);
 // Limit concurrent workers on Windows to avoid bursting file handles
 config.maxWorkers = 2;
 
+// Set Metro server port to 8081
+config.server = {
+  ...config.server,
+  port: Number(process.env.RCT_METRO_PORT || 8081),
+};
+
 const defaultBlockList = Array.isArray(config.resolver.blockList)
   ? config.resolver.blockList
   : config.resolver.blockList
     ? [config.resolver.blockList]
     : [];
 
-const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const projectRoot = escapeRegExp(__dirname);
+const escapeRegex = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+// Block root project directories without blocking subdirectories (like /dist/) inside node_modules
 config.resolver.blockList = [
   ...defaultBlockList,
-  new RegExp(`^${projectRoot}[/\\\\]dist[/\\\\].*`),
-  new RegExp(`^${projectRoot}[/\\\\]android[/\\\\].*`),
-  new RegExp(`^${projectRoot}[/\\\\]docs[/\\\\].*`),
-  new RegExp(`^${projectRoot}[/\\\\]Getaipilot-bff[/\\\\].*`),
+  new RegExp(`^${escapeRegex(path.resolve(__dirname, 'dist'))}([\\\\/].*)?$`),
+  new RegExp(`^${escapeRegex(path.resolve(__dirname, 'android'))}([\\\\/].*)?$`),
+  new RegExp(`^${escapeRegex(path.resolve(__dirname, 'docs'))}([\\\\/].*)?$`),
+  new RegExp(`^${escapeRegex(path.resolve(__dirname, 'Getaipilot-bff'))}([\\\\/].*)?$`),
 ];
 
 module.exports = withNativeWind(config, { input: './src/global.css' });

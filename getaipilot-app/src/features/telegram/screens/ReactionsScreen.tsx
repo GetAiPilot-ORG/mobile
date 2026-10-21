@@ -23,7 +23,7 @@ import {
 import { getColors, useTheme } from '@/theme';
 import { telegramApi } from '../api/telegramApi';
 import { telegramSupabase } from '../api/telegramSupabase';
-import { ProductHeading, ProductMetrics } from "@/components/ProductUI";
+import { ProductButton, ProductHeading, ProductMetrics } from "@/components/ProductUI";
 import { ReactionAutopilotRule, ReactionOrder, TelegramToolKey } from '../types';
 
 interface Props {
@@ -281,20 +281,72 @@ export const ReactionsScreen: React.FC<Props> = ({ chats, onOpenModal }) => {
 
   return (
     <View className="py-2.5 w-full flex-col gap-3.5">
-      {/* 1. Cyber Animated Hero Banner */}
-      <ProductHeading
-        title="Your reactions"
-        action="Top Up"
-        onAction={() => {
-          if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          setIsTopUpOpen(true);
-        }}
-      />
+      {/* 1. Cyber Animated Hero Banner with Total Balance & Top Up side-by-side */}
+      <ProductHeading title="Your reactions">
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginTop: 2,
+            gap: 12,
+          }}
+        >
+          <View style={{ gap: 2 }}>
+            <Text style={{ fontSize: 13, fontWeight: '500', color: colors.textSecondary }}>
+              Total balance
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text
+                style={{
+                  fontSize: 28,
+                  lineHeight: 34,
+                  fontWeight: '700',
+                  color: colors.text,
+                  letterSpacing: -0.5,
+                }}
+              >
+                ₹{walletBalance.toFixed(2)}
+              </Text>
+              <Pressable
+                onPress={() => {
+                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  refetch();
+                }}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Refresh balance"
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                }}
+              >
+                {isRefetching ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <Ionicons name="refresh" size={14} color={colors.textSecondary} />
+                )}
+              </Pressable>
+            </View>
+          </View>
+
+          <ProductButton
+            label="Top Up"
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setIsTopUpOpen(true);
+            }}
+          />
+        </View>
+      </ProductHeading>
 
       {/* 2. KPI Metrics */}
       <ProductMetrics
         items={[
-          { label: 'Wallet balance', value: `₹${walletBalance.toFixed(2)}` },
           { label: 'Autopilot', value: `${autopilotCount} Channels` },
           { label: 'Total orders', value: String(ordersCount) },
         ]}

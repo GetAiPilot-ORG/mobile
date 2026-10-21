@@ -6,7 +6,7 @@ import { authStorage } from '../storage/authStorage';
  * Returns the local development BFF URL based on the current platform/host.
  */
 export function getLocalDevBffUrl(): string {
-  // Physical Android device or iOS on same Wi-Fi LAN via Metro Host IP
+  // Physical Android device, Waydroid, or iOS on same Wi-Fi LAN via Metro Host IP
   const hostUri = Constants.expoConfig?.hostUri || (Constants as any).manifest?.debuggerHost;
   if (hostUri) {
     const ip = hostUri.split(':')[0];
@@ -15,9 +15,9 @@ export function getLocalDevBffUrl(): string {
     }
   }
 
-  // Android emulator loopback alias
+  // Waydroid or Android emulator loopback alias
   if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:4000';
+    return 'http://192.168.240.1:4000';
   }
 
   return 'http://localhost:4000';
@@ -33,6 +33,12 @@ export function resolveBffBaseUrl(): string {
     if (host === 'localhost' || host === '127.0.0.1') {
       return 'http://localhost:4000';
     }
+  }
+
+  // During local development, route to local BFF server so local changes and fixes take effect immediately
+  if (__DEV__) {
+    const devUrl = getLocalDevBffUrl();
+    return devUrl;
   }
 
   const customUrl = process.env.EXPO_PUBLIC_BFF_URL;

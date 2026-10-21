@@ -208,8 +208,8 @@ export const getColors = (isDark: boolean = false) => ({
   modalTitle: isDark ? "#F0EEF8" : "#202027",
   modalDescription: isDark ? "#ACA6BB" : "#696575",
 
-  skeleton: isDark ? "#1C1C1E" : "#E5E0F1",
-  skeletonHighlight: isDark ? "#2C2C2E" : "#F0EEF8",
+  skeleton: isDark ? "#262432" : "#E2E8F0",
+  skeletonHighlight: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.85)",
 
   // ICONS
   iconPrimary: isDark ? "#F0EEF8" : "#202027",

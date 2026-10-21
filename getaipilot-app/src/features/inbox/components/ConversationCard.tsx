@@ -55,8 +55,12 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation
     || (conversation.assigned_to ? 'Assigned' : null);
   const isBotActive = conversation.bot_enabled !== false && !conversation.bot_paused;
 
-  // Signature pastel avatar matching WhatsApp contacts theme (tone="mint" / pastel)
-  const avatarTone = conversation.channel === 'whatsapp' ? 'mint' : 'lavender';
+  // Signature pastel avatar matching channel themes
+  const avatarTone = conversation.channel === 'whatsapp'
+    ? 'mint'
+    : conversation.channel === 'telegram'
+    ? 'lavender'
+    : 'pink';
   const avatarBg = palette[avatarTone];
 
   return (

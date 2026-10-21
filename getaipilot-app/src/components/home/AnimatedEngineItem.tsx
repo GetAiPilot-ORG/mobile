@@ -23,7 +23,7 @@ interface AnimatedEngineItemProps {
   bgColor: string;
   textColor: string;
   onPress: () => void;
-  cycleTick: number;
+  cycleTick?: number;
 }
 
 export function AnimatedEngineItem({
@@ -32,7 +32,7 @@ export function AnimatedEngineItem({
   bgColor,
   textColor,
   onPress,
-  cycleTick,
+  cycleTick = 0,
 }: AnimatedEngineItemProps) {
   // Main icon transforms (subtle, calm & elegant)
   const translateX = useRef(new Animated.Value(0)).current;
