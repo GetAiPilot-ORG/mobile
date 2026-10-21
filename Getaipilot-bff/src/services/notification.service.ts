@@ -11,6 +11,7 @@ export interface ExpoPushMessage {
   priority?: 'default' | 'normal' | 'high';
   channelId?: string;
   badge?: number;
+  _displayInForeground?: boolean;
 }
 
 export class NotificationService {
@@ -135,6 +136,8 @@ export class NotificationService {
         sound: 'default',
         channelId: notification.channelId || 'default',
         priority: 'high',
+        badge: 1,
+        _displayInForeground: true,
       });
     } catch (err: any) {
       console.error(`[NotificationService] Error sending notification to user ${userId}:`, err);
@@ -274,6 +277,8 @@ export class NotificationService {
           sound: 'default',
           channelId: notification.channelId || 'default',
           priority: 'high',
+          badge: 1,
+          _displayInForeground: true,
         }));
 
         const res = await this.sendExpoPushNotification(messages);
@@ -827,7 +832,7 @@ export class NotificationService {
               route = row.link || '/tools/my-designs';
             }
 
-            const dedupeKey = `${row.user_id || row.org_id}_${title}_${body}`;
+            const dedupeKey = `${row.user_id || row.org_id || 'broadcast'}_${title}_${body}`;
             if (this.isDuplicateBffSend(dedupeKey)) {
               console.log(`[NotificationService] Skipping duplicate BFF push for: "${title}"`);
               return;
@@ -844,6 +849,7 @@ export class NotificationService {
                   route,
                   type: row.type || 'system',
                   id: row.id,
+                  userId: row.user_id,
                   metadata: row.metadata,
                 },
               });
@@ -855,6 +861,19 @@ export class NotificationService {
                 data: {
                   route,
                   type: row.type || 'system',
+                  id: row.id,
+                  metadata: row.metadata,
+                },
+              });
+            } else {
+              // Platform-wide Broadcast (user_id is null): Deliver to ALL active mobile users
+              await this.sendToAllUsers({
+                title,
+                body,
+                channelId,
+                data: {
+                  route,
+                  type: row.type || 'broadcast',
                   id: row.id,
                   metadata: row.metadata,
                 },

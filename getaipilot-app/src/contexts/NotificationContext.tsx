@@ -114,28 +114,36 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const [notificationsList, setNotificationsList] = useState<AppNotification[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Load notifications from AsyncStorage on mount
+  const getStorageKey = useCallback((uid?: string) => {
+    return uid ? `@getaipilot_notifications_${uid}_v2` : '@getaipilot_notifications_guest_v2';
+  }, []);
+
+  // Load notifications from AsyncStorage whenever user changes or on mount
   useEffect(() => {
     (async () => {
       try {
-        const stored = await AsyncStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+        const key = getStorageKey(user?.id);
+        const stored = await AsyncStorage.getItem(key);
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) {
+          if (Array.isArray(parsed)) {
             setNotificationsList(parsed);
             return;
           }
+        } else {
+          setNotificationsList([]);
         }
       } catch (e) {
         console.warn('Failed to load notifications history:', e);
       }
     })();
-  }, []);
+  }, [user?.id, getStorageKey]);
 
   const saveNotifications = async (items: AppNotification[]) => {
     setNotificationsList(items);
     try {
-      await AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(items));
+      const key = getStorageKey(user?.id);
+      await AsyncStorage.setItem(key, JSON.stringify(items));
     } catch (e) {
       console.warn('Failed to save notifications history:', e);
     }
@@ -209,7 +217,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', uid)
+        .or(`user_id.eq.${uid},user_id.is.null`)
         .order('created_at', { ascending: false })
         .limit(60);
 
@@ -223,20 +231,26 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           id: row.id,
           title: row.title || 'Notification',
           body: row.description || '',
-          data: { type: row.type, route: resolveRoute({ type: row.type }) },
+          data: { type: row.type, userId: row.user_id, route: resolveRoute({ type: row.type }) },
           createdAt: row.created_at || new Date().toISOString(),
           isRead: Boolean(row.is_read),
           type: (row.type as any) || 'general',
         }));
 
         setNotificationsList((prev) => {
-          // Merge remote items, preserving any local items not yet in remote
+          // Merge remote items, preserving any local items not yet in remote,
+          // but strictly ensure notifications targeted for other users are filtered out
           const remoteIds = new Set(remoteItems.map((r) => r.id));
-          const localOnly = prev.filter((p) => !remoteIds.has(p.id));
+          const localOnly = prev.filter((p) => {
+            if (remoteIds.has(p.id)) return false;
+            const targetUid = p.data?.userId || p.data?.user_id;
+            if (targetUid && targetUid !== uid) return false;
+            return true;
+          });
           const merged = [...remoteItems, ...localOnly].sort(
             (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           );
-          AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(merged)).catch(() => {});
+          AsyncStorage.setItem(getStorageKey(uid), JSON.stringify(merged)).catch(() => {});
           return merged;
         });
       }
@@ -369,7 +383,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
                 setNotificationsList((prev) => {
                   const next = [newItem, ...prev.filter((p) => p.id !== newItem.id)];
-                  AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(next)).catch(() => {});
+                  AsyncStorage.setItem(getStorageKey(uid), JSON.stringify(next)).catch(() => {});
                   return next;
                 });
               } catch (pushErr) {
@@ -417,7 +431,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
                 setNotificationsList((prev) => {
                   const next = [newItem, ...prev.filter((p) => p.id !== newItem.id)];
-                  AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(next)).catch(() => {});
+                  AsyncStorage.setItem(getStorageKey(uid), JSON.stringify(next)).catch(() => {});
                   return next;
                 });
               } catch (pushErr) {
@@ -453,6 +467,18 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   // Fetch from Supabase whenever user ID changes or logs in
   useEffect(() => {
     if (user?.id) {
+      // Purge any stale cached notifications that were meant for a different user
+      setNotificationsList((prev) => {
+        const cleaned = prev.filter((p) => {
+          const targetUid = p.data?.userId || p.data?.user_id;
+          return !targetUid || targetUid === user.id;
+        });
+        if (cleaned.length !== prev.length) {
+          AsyncStorage.setItem(getStorageKey(user.id), JSON.stringify(cleaned)).catch(() => {});
+        }
+        return cleaned;
+      });
+
       fetchSupabaseNotifications(user.id);
       syncPageClickNotifications(user.id);
     }
@@ -479,7 +505,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           // Process only if addressed to this user or is a broadcast
           if (newRow.user_id && newRow.user_id !== user.id) return;
 
-          const dedupeKey = `${newRow.user_id}_${newRow.title}_${newRow.description}`;
+          const dedupeKey = `realtime_${newRow.id || (newRow.title + '_' + Date.now())}`;
           if (isDuplicateNotification(dedupeKey)) {
             console.log('🛑 [NotificationContext] Realtime skipping duplicate push:', dedupeKey);
             return;
@@ -510,7 +536,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             id: newRow.id,
             title: newRow.title || 'Notification',
             body: newRow.description || '',
-            data: { type: newRow.type, route: resolveRoute({ type: newRow.type }) },
+            data: { type: newRow.type, userId: newRow.user_id, route: resolveRoute({ type: newRow.type }) },
             createdAt: newRow.created_at || new Date().toISOString(),
             isRead: Boolean(newRow.is_read),
             type: (newRow.type as any) || 'general',
@@ -519,7 +545,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           setNotificationsList((prev) => {
             const filtered = prev.filter((p) => p.id !== newItem.id);
             const next = [newItem, ...filtered];
-            AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(next)).catch(() => {});
+            AsyncStorage.setItem(getStorageKey(user.id), JSON.stringify(next)).catch(() => {});
             return next;
           });
         }
@@ -547,7 +573,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
                   }
                 : n
             );
-            AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(next)).catch(() => {});
+            AsyncStorage.setItem(getStorageKey(user.id), JSON.stringify(next)).catch(() => {});
             return next;
           });
         }
@@ -565,7 +591,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
           setNotificationsList((prev) => {
             const next = prev.filter((n) => n.id !== oldRow.id);
-            AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(next)).catch(() => {});
+            AsyncStorage.setItem(getStorageKey(user.id), JSON.stringify(next)).catch(() => {});
             return next;
           });
         }
@@ -732,6 +758,12 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     }
 
     const data = response?.notification?.request?.content?.data as Record<string, any> | undefined;
+    const targetUserId = data?.userId || data?.user_id;
+    if (targetUserId && user?.id && targetUserId !== user.id) {
+      console.log('🛑 [NotificationContext] Ignored tap: notification targeted for another user:', targetUserId);
+      return;
+    }
+
     const targetRoute = resolveRoute(data);
 
     if (targetRoute) {
@@ -818,11 +850,16 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     })();
   }, []);
 
-  // 2. Automatically request permissions & fetch push token on app mount
+  // 2. Automatically setup channels, request permissions & fetch push token on app mount
   useEffect(() => {
     if (!canUseNotifications) return;
     if (!Notifications) return;
     if (Platform.OS === 'web') return;
+
+    // Immediately setup Android channels so background/kill mode notifications have channels ready
+    NotificationService.setupChannels().catch((err) => {
+      console.warn('[NotificationContext] Channel setup error:', err);
+    });
 
     // Check existing permissions on mount
     Notifications.getPermissionsAsync()
@@ -867,23 +904,33 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     // 2. FOREGROUND MODE: Notification received while the user is actively inside the app
     notificationListener.current = Notifications.addNotificationReceivedListener((incoming) => {
-      setNotification(incoming);
       const content = incoming?.request?.content;
       if (content) {
         const notifId = incoming?.request?.identifier;
+        const data = (content.data || {}) as Record<string, any>;
+        const targetUserId = data.userId || data.user_id;
+
+        // If explicitly addressed to a specific user, ensure it matches current user
+        if (targetUserId && user?.id && targetUserId !== user.id) {
+          console.log('🛑 [NotificationContext] Discarding push notification intended for another user:', targetUserId);
+          return;
+        }
+
+        setNotification(incoming);
+
         const title = content.title || 'New Alert';
         const body = content.body || '';
-        const dedupeKey = `foreground_${title}_${body}`;
+        const dedupeKey = `foreground_${notifId || (title + '_' + Date.now())}`;
         if (isDuplicateNotification(dedupeKey)) {
           return;
         }
 
-        const type = (content.data?.type as any) || (content.data?.category as any) || 'general';
+        const type = (data.type as any) || (data.category as any) || 'general';
         const newItem: AppNotification = {
           id: notifId || Date.now().toString(),
           title,
           body,
-          data: content.data as Record<string, any>,
+          data,
           createdAt: new Date().toISOString(),
           isRead: false,
           type,
@@ -893,7 +940,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             return prev;
           }
           const next = [newItem, ...prev];
-          AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(next)).catch(() => {});
+          AsyncStorage.setItem(getStorageKey(user?.id), JSON.stringify(next)).catch(() => {});
           return next;
         });
       }
