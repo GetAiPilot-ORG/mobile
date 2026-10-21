@@ -20,10 +20,12 @@ export const BroadcastScreen: React.FC<Props> = () => {
   const colors = useProductPalette();
   const user = useAuthStore((s) => s.user);
 
-  const telegramUserId =
+  const rawTgId =
     (user as any)?.telegram_user_id ||
     (user as any)?.user_metadata?.telegram_user_id ||
     null;
+  const telegramUserId =
+    rawTgId && /^\d{5,16}$/.test(String(rawTgId).trim()) ? String(rawTgId).trim() : null;
 
   const handleOpenBot = async () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

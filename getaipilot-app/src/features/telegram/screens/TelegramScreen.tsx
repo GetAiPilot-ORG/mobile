@@ -27,6 +27,7 @@ import {
   ProductFloatingBottomBar,
   ProductTabItem,
 } from "../../../components/ProductFloatingBottomBar";
+import { supabase } from "../../../lib/supabase";
 import { telegramApi } from "../api/telegramApi";
 import { telegramSupabase } from "../api/telegramSupabase";
 import {
@@ -38,6 +39,7 @@ import {
   ReportBotModal,
   SubManagerModal,
   TelegramLoginModal,
+  TelegramConnectModal,
   TrackerModal,
 } from "../components";
 import { TelegramToolKey } from "../types";
@@ -187,6 +189,22 @@ export const TelegramScreen: React.FC = () => {
   } = useQuery({
     queryKey: ["telegram_all_data"],
     queryFn: telegramSupabase.getSummary,
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+  });
+
+  const {
+    data: sessionStatus,
+    refetch: refetchSession,
+  } = useQuery({
+    queryKey: ["telegram_session_status"],
+    queryFn: async () => {
+      try {
+        return await telegramApi.getSessionStatus();
+      } catch {
+        return null;
+      }
+    },
     staleTime: 60 * 1000,
     gcTime: 5 * 60 * 1000,
   });
@@ -376,16 +394,32 @@ export const TelegramScreen: React.FC = () => {
       isOnline: true,
       verifiedChannels: chats.length,
     },
-    linkedTelegram: { phone: "", isLinked: !!summary.telegramUserId },
+    linkedTelegram: { phone: summary?.telegramPhone || sessionStatus?.phone || "", isLinked: Boolean((sessionStatus?.connected && (sessionStatus?.user_id || sessionStatus?.phone)) || (typeof summary?.telegramUserId === "number" && summary.telegramUserId > 0) || Boolean(summary?.telegramPhone)) },
     monetizedChannels: chats,
     discoveredChannels: chats,
     transactions: loadedPurchases,
     pages: subManagerPages,
   };
 
+  const isActuallyConnected = Boolean(
+    (sessionStatus?.connected && (sessionStatus?.user_id || sessionStatus?.phone)) ||
+    (typeof summary?.telegramUserId === "number" && summary.telegramUserId > 0) ||
+    Boolean(summary?.telegramPhone)
+  );
+
+  const displayTelegramPhone =
+    summary?.telegramPhone ||
+    sessionStatus?.phone ||
+    null;
+
+  const displayTelegramUsername =
+    sessionStatus?.username ||
+    summary?.telegramUsername ||
+    (displayTelegramPhone ? displayTelegramPhone : null);
+
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleRefreshAll = async () => {
-    await refetch();
+    await Promise.all([refetch(), refetchSession()]);
   };
 
   const handleTabChange = (key: string) => {
@@ -416,7 +450,7 @@ export const TelegramScreen: React.FC = () => {
               setIsLoginModalOpen(true);
             }}
             accessibilityRole="button"
-            accessibilityLabel={summary?.telegramUserId ? "Telegram Connected" : "Connect Telegram"}
+            accessibilityLabel={isActuallyConnected ? "Telegram Connected" : "Connect Telegram"}
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -424,25 +458,25 @@ export const TelegramScreen: React.FC = () => {
               paddingVertical: 6,
               paddingHorizontal: 12,
               borderRadius: 20,
-              backgroundColor: summary?.telegramUserId
+              backgroundColor: isActuallyConnected
                 ? (isDark ? "rgba(16,185,129,0.15)" : "rgba(16,185,129,0.1)")
                 : (isDark ? "rgba(2,132,199,0.15)" : "rgba(2,132,199,0.1)"),
             }}
           >
             <Ionicons
-              name={summary?.telegramUserId ? "checkmark-circle" : "paper-plane-outline"}
+              name={isActuallyConnected ? "checkmark-circle" : "paper-plane-outline"}
               size={14}
-              color={summary?.telegramUserId ? "#10B981" : "#0284C7"}
+              color={isActuallyConnected ? "#10B981" : "#0284C7"}
             />
             <Text
               style={{
                 fontSize: 12,
                 fontWeight: "600",
-                color: summary?.telegramUserId ? "#10B981" : "#0284C7",
+                color: isActuallyConnected ? "#10B981" : "#0284C7",
               }}
             >
-              {summary?.telegramUserId
-                ? (summary.telegramUsername ? `@${summary.telegramUsername}` : "Connected")
+              {isActuallyConnected
+                ? (displayTelegramUsername ? `@${String(displayTelegramUsername).replace(/^@/, '')}` : "Connected")
                 : "Connect"}
             </Text>
           </Pressable>
@@ -631,14 +665,24 @@ export const TelegramScreen: React.FC = () => {
         />
       )}
       {isLoginModalOpen && (
-        <TelegramLoginModal
+        <TelegramConnectModal
           visible={true}
           onClose={() => setIsLoginModalOpen(false)}
+          isConnected={isActuallyConnected}
+          connectedPhone={displayTelegramPhone}
           onStartLogin={async (phone: string) => telegramApi.startLogin(phone)}
-          onVerifyOtp={async (payload) => telegramApi.verifyOtp(payload)}
-          onSubmitPassword={async (password: string) => telegramApi.submitPassword(password)}
-          onSuccess={() => {
+          onVerifyOtp={async (otp: string) => telegramApi.verifyOtp({ phone: displayTelegramPhone || '', otp })}
+          onVerifyPassword={async (password: string, phone?: string) => telegramApi.submitPassword(password)}
+          onLogout={async () => {
+            try {
+              const { data } = await supabase.auth.getUser();
+              if (data?.user?.id) {
+                await supabase.from("tg_accounts").update({ is_active: false }).eq("user_id", data.user.id);
+                await supabase.from("profiles").update({ telegram_user_id: null }).eq("id", data.user.id);
+              }
+            } catch {}
             queryClient.invalidateQueries({ queryKey: ["telegram_all_data"] });
+            queryClient.invalidateQueries({ queryKey: ["telegram_session_status"] });
             setIsLoginModalOpen(false);
           }}
         />

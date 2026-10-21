@@ -322,8 +322,8 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
           {/* Live Status Indicators */}
           <View style={styles.statusPillsRow}>
             <View style={styles.statusIndicator}>
-              <View style={styles.dotGreen} />
-              <Text style={styles.statusText}>DM Connected</Text>
+              <View style={[styles.dotGreen, { backgroundColor: dashboard?.dmConnected ? '#10B981' : '#94A3B8' }]} />
+              <Text style={styles.statusText}>{dashboard?.dmConnected ? 'DM Connected' : 'DM Disconnected'}</Text>
             </View>
             <View style={styles.statusIndicator}>
               <View style={styles.dotGreen} />
