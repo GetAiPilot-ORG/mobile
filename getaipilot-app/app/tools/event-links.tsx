@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,18 +9,30 @@ import {
   Alert,
   Share,
   Linking,
+  Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
-import { Ionicons } from '@expo/vector-icons';
+import QRCode from 'react-native-qrcode-svg';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import {
+  Calendar01Icon,
+  Calendar03Icon,
+  Rocket01Icon,
+  Share01Icon,
+  Copy01Icon,
+  ArrowUpRight01Icon,
+  CheckmarkCircle01Icon,
+  Link01Icon,
+  UserIcon,
+} from '@/constants/icons';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
-import { useTheme, getColors } from '@/theme';
+import { useTheme, getColors, AppColors } from '@/theme';
 
 interface EventTemplate {
   title: string;
   category: string;
-  icon: keyof typeof Ionicons.glyphMap;
   defaultDate: string;
   defaultTime: string;
   platform: 'Google Meet' | 'Zoom' | 'YouTube Live' | 'In-Person';
@@ -31,7 +43,6 @@ const EVENT_TEMPLATES: EventTemplate[] = [
   {
     title: 'AI Automation Masterclass 2026',
     category: 'Webinar',
-    icon: 'rocket-outline',
     defaultDate: 'Tomorrow',
     defaultTime: '6:00 PM - 7:30 PM IST',
     platform: 'Google Meet',
@@ -40,7 +51,6 @@ const EVENT_TEMPLATES: EventTemplate[] = [
   {
     title: '1-on-1 Growth Strategy Discovery',
     category: 'Consultation',
-    icon: 'people-outline',
     defaultDate: 'Next Monday',
     defaultTime: '3:00 PM - 3:45 PM IST',
     platform: 'Zoom',
@@ -49,7 +59,6 @@ const EVENT_TEMPLATES: EventTemplate[] = [
   {
     title: 'Live Product Launch & Q&A',
     category: 'Live Stream',
-    icon: 'videocam-outline',
     defaultDate: 'This Friday',
     defaultTime: '8:00 PM IST',
     platform: 'YouTube Live',
@@ -62,6 +71,7 @@ const PLATFORMS = ['Google Meet', 'Zoom', 'YouTube Live', 'In-Person'] as const;
 export default function EventLinksScreen() {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   const [eventName, setEventName] = useState('AI Automation Masterclass 2026');
   const [eventDate, setEventDate] = useState('Sept 15, 2026');
@@ -69,21 +79,7 @@ export default function EventLinksScreen() {
   const [meetingUrl, setMeetingUrl] = useState('https://meet.google.com/gap-demo-live');
   const [selectedPlatform, setSelectedPlatform] = useState<typeof PLATFORMS[number]>('Google Meet');
   const [description, setDescription] = useState('Join our live session to master Telegram, WhatsApp & Voice AI automation.');
-
   const [copied, setCopied] = useState(false);
-
-  // Dynamic Theme Mapping
-  const theme = {
-    bg: colors.background,
-    card: colors.card,
-    cardBorder: colors.border,
-    text: colors.foreground,
-    mutedText: colors.mutedForeground,
-    inputBg: isDark ? '#141416' : '#FFFFFF',
-    inputBorder: colors.border,
-    primary: colors.primary,
-    primarySoft: colors.accentSoft,
-  };
 
   const handleApplyTemplate = (tmpl: EventTemplate) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -92,10 +88,8 @@ export default function EventLinksScreen() {
     setEventTime(tmpl.defaultTime);
     setSelectedPlatform(tmpl.platform);
     setDescription(tmpl.description);
-    Alert.alert('Template Loaded', `"${tmpl.title}" is ready.`);
   };
 
-  // Build Real 1-Click Google Calendar URL
   const getGoogleCalendarUrl = (): string => {
     const title = encodeURIComponent(eventName.trim());
     const details = encodeURIComponent(`${description}\n\nJoin Live: ${meetingUrl}`);
@@ -116,214 +110,237 @@ export default function EventLinksScreen() {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       await Share.share({
-        message: `You're Invited: "${eventName}"\nWhen: ${eventDate} at ${eventTime}\nPlatform: ${selectedPlatform}\nMeeting Link: ${meetingUrl}\n\nAdd to Google Calendar:\n${getGoogleCalendarUrl()}\n\nPowered by GetAiPilot Event Studio.`,
+        message: `You're Invited: "${eventName}"\n📅 When: ${eventDate} at ${eventTime}\n📍 Platform: ${selectedPlatform}\n🔗 Meeting Link: ${meetingUrl}\n\nAdd to Google Calendar:\n${getGoogleCalendarUrl()}`,
+        title: 'Event Invitation',
       });
     } catch {}
   };
 
   const handleCopyInviteText = async () => {
-    const inviteText = `Event: ${eventName}\nDate: ${eventDate} • ${eventTime}\nPlatform: ${selectedPlatform}\nJoin URL: ${meetingUrl}`;
+    const inviteText = `Event: ${eventName}\nWhen: ${eventDate} • ${eventTime}\nPlatform: ${selectedPlatform}\nJoin: ${meetingUrl}\n\nCalendar Link: ${getGoogleCalendarUrl()}`;
     await Clipboard.setStringAsync(inviteText);
     setCopied(true);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const calUrl = getGoogleCalendarUrl();
+
   return (
-    <AppScreen safeArea={false} backgroundColor={theme.bg}>
-      <AppTopBar title="Event Links Studio" 
-      // subtitle="1-Click Calendar & RSVP Invitations" 
-      showBack={true} />
+    <AppScreen safeArea={false} backgroundColor={colors.background}>
+      <AppTopBar title="Event Links Studio" showBack={true} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* 1-Tap Starter Templates */}
-        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-          <Text style={[styles.cardTitle, { color: theme.text }]}>1-Tap Event Starters</Text>
-          <Text style={[styles.cardSubtitle, { color: theme.mutedText }]}>
-            Pick a pre-configured template to build your calendar invitation in seconds.
-          </Text>
+        {/* Creator Card */}
+        <View style={styles.card}>
+          <View style={styles.cardHeaderRow}>
+            <View style={styles.headerIconBubble}>
+              <HugeiconsIcon icon={Calendar03Icon} size={19} color={colors.accent} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cardTitle}>1-Click Calendar Links</Text>
+              <Text style={styles.cardSubtitle}>
+                Generate smart RSVP links for Google Calendar, Apple iCal, & Zoom
+              </Text>
+            </View>
+          </View>
 
-          <View style={{ gap: 8 }}>
-            {EVENT_TEMPLATES.map((tmpl, idx) => (
+          {/* Quick Starter Templates */}
+          <Text style={styles.inputLabel}>Event Templates</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.templateScroll}
+          >
+            {EVENT_TEMPLATES.map((tmpl) => (
               <Pressable
-                key={idx}
-                style={[
-                  styles.templateCard,
-                  { backgroundColor: isDark ? '#141416' : '#F9FAFB', borderColor: theme.cardBorder },
-                ]}
+                key={tmpl.title}
+                style={styles.templateChip}
                 onPress={() => handleApplyTemplate(tmpl)}
               >
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 10,
-                    backgroundColor: isDark ? '#252230' : '#E9E6F2',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Ionicons name={tmpl.icon} size={22} color={theme.primary} />
-                </View>
-                <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={[styles.templateTitle, { color: theme.text }]}>{tmpl.title}</Text>
-                  <Text style={[styles.templateMeta, { color: theme.mutedText }]}>
-                    {tmpl.category} • {tmpl.platform}
-                  </Text>
-                </View>
-                <Ionicons name="arrow-forward" size={16} color={theme.primary} />
+                <HugeiconsIcon icon={Rocket01Icon} size={14} color={colors.accent} />
+                <Text style={styles.templateChipText}>{tmpl.category}: {tmpl.title.split(' ')[0]}</Text>
               </Pressable>
             ))}
-          </View>
-        </View>
+          </ScrollView>
 
-        {/* Event Configuration Form */}
-        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-          <Text style={[styles.cardTitle, { color: theme.text }]}>Event Details</Text>
-
-          <Text style={[styles.inputLabel, { color: theme.mutedText }]}>Event / Webinar Title *</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-            value={eventName}
-            onChangeText={setEventName}
-            placeholder="e.g. Masterclass 2026"
-            placeholderTextColor={theme.mutedText}
-          />
-
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.inputLabel, { color: theme.mutedText }]}>Date</Text>
+          {/* Event Title */}
+          <View style={[styles.inputGroup, { marginTop: 12 }]}>
+            <Text style={styles.inputLabel}>Event Title</Text>
+            <View style={styles.inputBox}>
               <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-                value={eventDate}
-                onChangeText={setEventDate}
-                placeholder="Sept 15, 2026"
-                placeholderTextColor={theme.mutedText}
-              />
-            </View>
-
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.inputLabel, { color: theme.mutedText }]}>Time / Duration</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-                value={eventTime}
-                onChangeText={setEventTime}
-                placeholder="6:00 PM IST"
-                placeholderTextColor={theme.mutedText}
+                style={styles.textInput}
+                placeholder="Product Launch Webinar"
+                placeholderTextColor={colors.mutedForeground}
+                value={eventName}
+                onChangeText={setEventName}
               />
             </View>
           </View>
 
-          {/* Platform Selector Chips */}
-          <Text style={[styles.inputLabel, { color: theme.mutedText, marginTop: 4 }]}>Event Platform:</Text>
-          <View style={styles.platformRow}>
-            {PLATFORMS.map((plat) => (
-              <Pressable
-                key={plat}
-                style={[
-                  styles.platformChip,
-                  {
-                    backgroundColor: selectedPlatform === plat ? theme.primary : isDark ? '#141416' : '#F3F4F6',
-                    borderColor: selectedPlatform === plat ? theme.primary : theme.cardBorder,
-                  },
-                ]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSelectedPlatform(plat);
-                }}
-              >
-                <Text
-                  style={[
-                    styles.platformChipText,
-                    { color: selectedPlatform === plat ? '#FFFFFF' : theme.text },
-                  ]}
-                >
-                  {plat}
-                </Text>
-              </Pressable>
-            ))}
+          {/* Date & Time Row */}
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+            <View style={[styles.inputGroup, { flex: 1 }]}>
+              <Text style={styles.inputLabel}>Date</Text>
+              <View style={styles.inputBox}>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Oct 24, 2026"
+                  placeholderTextColor={colors.mutedForeground}
+                  value={eventDate}
+                  onChangeText={setEventDate}
+                />
+              </View>
+            </View>
+            <View style={[styles.inputGroup, { flex: 1 }]}>
+              <Text style={styles.inputLabel}>Time</Text>
+              <View style={styles.inputBox}>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="6:00 PM IST"
+                  placeholderTextColor={colors.mutedForeground}
+                  value={eventTime}
+                  onChangeText={setEventTime}
+                />
+              </View>
+            </View>
           </View>
 
-          <Text style={[styles.inputLabel, { color: theme.mutedText, marginTop: 12 }]}>Meeting / Stream Link</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-            value={meetingUrl}
-            onChangeText={setMeetingUrl}
-            placeholder="https://meet.google.com/xyz"
-            placeholderTextColor={theme.mutedText}
-            autoCapitalize="none"
-            keyboardType="url"
-          />
+          {/* Platform Selector */}
+          <View style={[styles.inputGroup, { marginTop: 12 }]}>
+            <Text style={styles.inputLabel}>Meeting Platform</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 8, paddingVertical: 4 }}
+            >
+              {PLATFORMS.map((plat) => {
+                const active = selectedPlatform === plat;
+                return (
+                  <Pressable
+                    key={plat}
+                    style={[
+                      styles.platformChip,
+                      active && styles.platformChipActive,
+                    ]}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setSelectedPlatform(plat);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.platformChipText,
+                        active && styles.platformChipTextActive,
+                      ]}
+                    >
+                      {plat}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
 
-          <Text style={[styles.inputLabel, { color: theme.mutedText }]}>Short Description / Agenda</Text>
-          <TextInput
-            style={[styles.input, { height: 60, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder="Key talking points..."
-            placeholderTextColor={theme.mutedText}
-            multiline
-          />
+          {/* Meeting URL */}
+          <View style={[styles.inputGroup, { marginTop: 10 }]}>
+            <Text style={styles.inputLabel}>Join Link / Meeting URL</Text>
+            <View style={styles.inputBox}>
+              <HugeiconsIcon icon={Link01Icon} size={17} color={colors.mutedForeground} />
+              <TextInput
+                style={styles.textInput}
+                placeholder="https://meet.google.com/abc-defg-hij"
+                placeholderTextColor={colors.mutedForeground}
+                value={meetingUrl}
+                onChangeText={setMeetingUrl}
+                autoCapitalize="none"
+              />
+            </View>
+          </View>
         </View>
 
-        {/* ── LIVE VIP EVENT TICKET PASS PREVIEW ────────────────────────── */}
-        <View style={[styles.ticketCard, { backgroundColor: isDark ? '#000000' : '#FFFFFF', borderColor: theme.primary }]}>
+        {/* Digital Event Pass Ticket Preview */}
+        <View style={styles.ticketCard}>
           <View style={styles.ticketHeader}>
             <View style={styles.ticketBadge}>
-              <Ionicons name="ticket-outline" size={13} color="#FFFFFF" style={{ marginRight: 4 }} />
-              <Text style={styles.ticketBadgeText}>OFFICIAL EVENT PASS</Text>
+              <HugeiconsIcon icon={Calendar01Icon} size={14} color={colors.accent} />
+              <Text style={styles.ticketBadgeText}>CONFIRMED INVITE</Text>
             </View>
-            <Text style={[styles.platformPill, { color: theme.primary }]}>{selectedPlatform}</Text>
-          </View>
-
-          <Text style={[styles.ticketTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>{eventName || 'Untitled Event'}</Text>
-          <Text style={[styles.ticketDesc, { color: theme.mutedText }]} numberOfLines={2}>
-            {description}
-          </Text>
-
-          {/* Meta Grid */}
-          <View style={[styles.ticketMetaBox, { backgroundColor: isDark ? '#141416' : '#F5F3FB' }]}>
-            <View style={styles.metaItem}>
-              <Text style={[styles.metaLabel, { color: theme.mutedText }]}>DATE & TIME</Text>
-              <Text style={[styles.metaValue, { color: isDark ? '#FFFFFF' : '#000000' }]}>
-                {eventDate} • {eventTime}
-              </Text>
-            </View>
-
-            <View style={styles.metaItem}>
-              <Text style={[styles.metaLabel, { color: theme.mutedText }]}>ACCESS LINK</Text>
-              <Text style={[styles.metaValue, { color: theme.primary }]} numberOfLines={1}>
-                {meetingUrl || 'Link will be provided'}
-              </Text>
+            <View style={styles.platformBadge}>
+              <Text style={styles.platformBadgeText}>{selectedPlatform}</Text>
             </View>
           </View>
 
-          {/* 1-Click Action Buttons */}
-          <View style={{ gap: 8, marginTop: 14 }}>
-            <Pressable style={[styles.gCalBtn, { backgroundColor: theme.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }]} onPress={handleOpenGoogleCalendar}>
-              <Ionicons name="calendar-outline" size={16} color="#FFFFFF" />
-              <Text style={styles.gCalBtnText}>Add to Google Calendar (1-Click)</Text>
+          <Text style={styles.ticketTitle}>{eventName || 'Live Event'}</Text>
+
+          <View style={styles.ticketScheduleRow}>
+            <View style={styles.scheduleItem}>
+              <Text style={styles.scheduleLabel}>DATE</Text>
+              <Text style={styles.scheduleValue}>{eventDate || 'TBD'}</Text>
+            </View>
+            <View style={styles.scheduleDivider} />
+            <View style={styles.scheduleItem}>
+              <Text style={styles.scheduleLabel}>TIME</Text>
+              <Text style={styles.scheduleValue}>{eventTime || 'TBD'}</Text>
+            </View>
+          </View>
+
+          {description ? (
+            <Text style={styles.ticketDesc} numberOfLines={2}>
+              {description}
+            </Text>
+          ) : null}
+
+          {/* QR Code to Add to Calendar */}
+          <View style={styles.qrChassis}>
+            <QRCode value={calUrl} size={140} color="#18181B" backgroundColor="#FFFFFF" />
+            <Text style={styles.qrHint}>Scan to add to smartphone calendar</Text>
+          </View>
+
+          {/* Actions Dock */}
+          <View style={styles.actionsRow}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.actionBtnPrimary,
+                { opacity: pressed ? 0.88 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
+              ]}
+              onPress={handleOpenGoogleCalendar}
+            >
+              <HugeiconsIcon
+                icon={Calendar01Icon}
+                size={16}
+                color={colors.buttonPrimaryForeground}
+              />
+              <Text style={styles.actionBtnPrimaryText}>Add to G-Cal</Text>
             </Pressable>
 
-            <View style={styles.actionRow}>
-              <Pressable
-                style={[styles.subBtn, { backgroundColor: isDark ? '#252230' : '#E9E6F2', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }]}
-                onPress={handleCopyInviteText}
-              >
-                <Ionicons name={copied ? 'checkmark-circle-outline' : 'copy-outline'} size={15} color={theme.text} />
-                <Text style={[styles.subBtnText, { color: theme.text }]}>
-                  {copied ? 'Copied!' : 'Copy Invite'}
-                </Text>
-              </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.actionBtnSecondary,
+                { opacity: pressed ? 0.88 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
+              ]}
+              onPress={handleCopyInviteText}
+            >
+              <HugeiconsIcon
+                icon={copied ? CheckmarkCircle01Icon : Copy01Icon}
+                size={16}
+                color={copied ? '#10B981' : colors.text}
+              />
+              <Text style={styles.actionBtnSecondaryText}>
+                {copied ? 'Copied!' : 'Copy Invite'}
+              </Text>
+            </Pressable>
 
-              <Pressable
-                style={[styles.subBtn, { backgroundColor: colors.products.whatsapp, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }]}
-                onPress={handleShareInvite}
-              >
-                <Ionicons name="share-social-outline" size={15} color="#FFFFFF" />
-                <Text style={[styles.subBtnText, { color: '#FFFFFF' }]}>Share Pass</Text>
-              </Pressable>
-            </View>
+            <Pressable
+              style={({ pressed }) => [
+                styles.actionBtnOutline,
+                { opacity: pressed ? 0.88 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
+              ]}
+              onPress={handleShareInvite}
+            >
+              <HugeiconsIcon icon={Share01Icon} size={16} color={colors.text} />
+              <Text style={styles.actionBtnOutlineText}>Share</Text>
+            </Pressable>
           </View>
         </View>
       </ScrollView>
@@ -331,154 +348,259 @@ export default function EventLinksScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 50,
-  },
-  card: {
-    borderRadius: 24,
-    padding: 18,
-    marginBottom: 16,
-    borderWidth: 0,
-  },
-  cardTitle: {
-    fontSize: 16.5,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  cardSubtitle: {
-    fontSize: 12.5,
-    lineHeight: 18,
-    marginBottom: 14,
-  },
-  templateCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 24,
-    borderWidth: 0,
-  },
-  templateTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    marginBottom: 2,
-  },
-  templateMeta: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  inputLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginBottom: 6,
-    marginTop: 6,
-  },
-  input: {
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 13.5,
-    borderWidth: 1,
-    marginBottom: 10,
-  },
-  platformRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 4,
-  },
-  platformChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  platformChipText: {
-    fontSize: 11.5,
-    fontWeight: '700',
-  },
-  ticketCard: {
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 2,
-    marginBottom: 16,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 6,
-  },
-  ticketHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  ticketBadge: {
-    backgroundColor: 'rgba(0, 132, 255, 0.12)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  ticketBadgeText: {
-    color: '#0084FF',
-    fontSize: 10.5,
-    fontWeight: '800',
-  },
-  platformPill: {
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  ticketTitle: {
-    fontSize: 18,
-    fontWeight: '900',
-    marginBottom: 4,
-  },
-  ticketDesc: {
-    fontSize: 12.5,
-    lineHeight: 17,
-    marginBottom: 14,
-  },
-  ticketMetaBox: {
-    padding: 12,
-    borderRadius: 12,
-    gap: 8,
-  },
-  metaItem: {
-    gap: 2,
-  },
-  metaLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-  },
-  metaValue: {
-    fontSize: 12.5,
-    fontWeight: '700',
-  },
-  gCalBtn: {
-    paddingVertical: 13,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  gCalBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '800',
-    fontSize: 13.5,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  subBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  subBtnText: {
-    fontSize: 12.5,
-    fontWeight: '800',
-  },
-});
+const createStyles = (colors: AppColors, isDark: boolean) =>
+  StyleSheet.create({
+    scrollContent: {
+      padding: 16,
+      paddingBottom: 40,
+    },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      padding: 18,
+      marginBottom: 14,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : colors.cardBorder,
+    },
+    cardHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      marginBottom: 16,
+    },
+    headerIconBubble: {
+      width: 40,
+      height: 40,
+      borderRadius: 13,
+      backgroundColor: colors.accentSoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cardTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.foreground,
+    },
+    cardSubtitle: {
+      fontSize: 12,
+      color: colors.mutedForeground,
+      marginTop: 2,
+    },
+    inputLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.foreground,
+      marginBottom: 6,
+    },
+    templateScroll: {
+      gap: 8,
+      paddingVertical: 4,
+    },
+    templateChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : colors.surfaceSecondary,
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderRadius: 10,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : colors.border,
+    },
+    templateChipText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    inputGroup: {
+      gap: 6,
+    },
+    inputBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#FFFFFF',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : colors.cardBorder,
+      borderRadius: 14,
+      paddingHorizontal: 12,
+      paddingVertical: Platform.OS === 'ios' ? 12 : 9,
+    },
+    textInput: {
+      flex: 1,
+      fontSize: 14,
+      color: colors.foreground,
+      padding: 0,
+    },
+    platformChip: {
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderRadius: 10,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : colors.surfaceSecondary,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : colors.border,
+    },
+    platformChipActive: {
+      backgroundColor: colors.buttonPrimary,
+      borderColor: colors.buttonPrimary,
+    },
+    platformChipText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    platformChipTextActive: {
+      color: colors.buttonPrimaryForeground,
+      fontWeight: '700',
+    },
+    ticketCard: {
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      padding: 20,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : colors.cardBorder,
+    },
+    ticketHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 12,
+    },
+    ticketBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      backgroundColor: colors.accentSoft,
+      paddingHorizontal: 9,
+      paddingVertical: 4,
+      borderRadius: 999,
+    },
+    ticketBadgeText: {
+      fontSize: 10,
+      fontWeight: '800',
+      letterSpacing: 0.7,
+      color: colors.accent,
+    },
+    platformBadge: {
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : colors.surfaceSecondary,
+      paddingHorizontal: 8,
+      paddingVertical: 3.5,
+      borderRadius: 8,
+    },
+    platformBadgeText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.textSecondary,
+    },
+    ticketTitle: {
+      fontSize: 18,
+      fontWeight: '800',
+      color: colors.foreground,
+      marginBottom: 12,
+    },
+    ticketScheduleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : colors.surfaceSecondary,
+      padding: 12,
+      borderRadius: 14,
+      marginBottom: 12,
+    },
+    scheduleItem: {
+      flex: 1,
+    },
+    scheduleLabel: {
+      fontSize: 10,
+      fontWeight: '700',
+      color: colors.mutedForeground,
+      letterSpacing: 0.5,
+      marginBottom: 2,
+    },
+    scheduleValue: {
+      fontSize: 13.5,
+      fontWeight: '700',
+      color: colors.foreground,
+    },
+    scheduleDivider: {
+      width: 1,
+      height: 24,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : colors.border,
+      marginHorizontal: 12,
+    },
+    ticketDesc: {
+      fontSize: 12.5,
+      lineHeight: 18,
+      color: colors.mutedForeground,
+      marginBottom: 14,
+    },
+    qrChassis: {
+      backgroundColor: '#FFFFFF',
+      padding: 14,
+      borderRadius: 18,
+      alignItems: 'center',
+      alignSelf: 'center',
+      shadowColor: '#29213E',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 3,
+      marginBottom: 16,
+    },
+    qrHint: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: '#6B7280',
+      marginTop: 8,
+    },
+    actionsRow: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    actionBtnPrimary: {
+      flex: 1.2,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      backgroundColor: colors.buttonPrimary,
+      paddingVertical: 12,
+      borderRadius: 14,
+    },
+    actionBtnPrimaryText: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.buttonPrimaryForeground,
+    },
+    actionBtnSecondary: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      backgroundColor: colors.accentSoft,
+      paddingVertical: 12,
+      borderRadius: 14,
+    },
+    actionBtnSecondaryText: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    actionBtnOutline: {
+      flex: 0.8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 4,
+      backgroundColor: 'transparent',
+      borderWidth: 1.2,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : colors.cardBorder,
+      paddingVertical: 12,
+      borderRadius: 14,
+    },
+    actionBtnOutlineText: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.text,
+    },
+  });

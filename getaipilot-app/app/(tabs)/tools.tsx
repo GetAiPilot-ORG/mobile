@@ -208,7 +208,7 @@ export default function FreeToolsScreen() {
   });
 
   return (
-    <AppScreen safeArea={false}>
+    <AppScreen safeArea={false} backgroundColor={colors.background}>
       <AppTopBar
         title="Tools"
         showBack={false}
@@ -216,6 +216,7 @@ export default function FreeToolsScreen() {
       />
 
       <ScrollView
+        style={{ flex: 1, backgroundColor: colors.background }}
         contentContainerStyle={{ padding: 16, paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >

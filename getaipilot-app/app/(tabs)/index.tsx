@@ -12,8 +12,8 @@ import {
 } from "@/constants/icons";
 import { useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
-import { useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Image,
   Platform,
@@ -111,36 +111,82 @@ export default function HomeScreen() {
   const { data: telemetry, refetch: refetchTelemetry } = useQuery({
     queryKey: ["workspace-telemetry-ios", user?.id],
     queryFn: async () => {
-      if (!user?.id)
+      let currentUserId = user?.id;
+      if (!currentUserId) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        currentUserId = sessionData?.session?.user?.id;
+      }
+
+      if (!currentUserId)
         return {
+          pagesCount: 0,
           landingPagesCount: 0,
           quickFormsCount: 0,
           shortLinksCount: 0,
           botsCount: 0,
         };
+
       try {
-        const [pagesRes, formsRes, linksRes] = await Promise.all([
+        const [
+          bioRes,
+          landingTemplateRes,
+          landingPagesRes,
+          tgLandingRes,
+          formsRes,
+          linksRes,
+        ] = await Promise.allSettled([
+          supabase
+            .from("free_template_submissions")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", currentUserId)
+            .neq("niche", "earn_storefront"),
+          supabase
+            .from("landing_template_submissions")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", currentUserId),
           supabase
             .from("landing_pages")
             .select("id", { count: "exact", head: true })
-            .eq("user_id", user.id),
+            .eq("user_id", currentUserId),
+          supabase
+            .from("tg_landing_pages")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", currentUserId),
           supabase
             .from("quick_forms")
             .select("id", { count: "exact", head: true })
-            .eq("user_id", user.id),
+            .eq("user_id", currentUserId),
           supabase
             .from("short_links")
             .select("id", { count: "exact", head: true })
-            .eq("user_id", user.id),
+            .eq("user_id", currentUserId),
         ]);
+
+        const getCount = (settled: PromiseSettledResult<any>) =>
+          settled.status === "fulfilled" && !settled.value?.error
+            ? settled.value?.count || 0
+            : 0;
+
+        const bioCount = getCount(bioRes);
+        const landingTemplateCount = getCount(landingTemplateRes);
+        const legacyLandingCount = getCount(landingPagesRes);
+        const tgLandingCount = getCount(tgLandingRes);
+
+        const totalPages =
+          bioCount + landingTemplateCount + legacyLandingCount + tgLandingCount;
+        const formsCount = getCount(formsRes);
+        const linksCount = getCount(linksRes);
+
         return {
-          landingPagesCount: pagesRes.count || 0,
-          quickFormsCount: formsRes.count || 0,
-          shortLinksCount: linksRes.count || 0,
+          pagesCount: totalPages,
+          landingPagesCount: totalPages,
+          quickFormsCount: formsCount,
+          shortLinksCount: linksCount,
           botsCount: 5,
         };
       } catch {
         return {
+          pagesCount: 0,
           landingPagesCount: 0,
           quickFormsCount: 0,
           shortLinksCount: 0,
@@ -207,6 +253,12 @@ export default function HomeScreen() {
     }
     prevOnlineRef.current = isOnline;
   }, [isOnline, refetchDeviceSessions, refetchTelemetry]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchTelemetry();
+    }, [refetchTelemetry])
+  );
 
   const triggerHaptic = () => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -298,11 +350,11 @@ export default function HomeScreen() {
   );
 
   return (
-    <AppScreen safeArea={false}>
+    <AppScreen safeArea={false} backgroundColor={color.background}>
       <AppTopBar showPlanBadge />
       {/* <TestNotificationButton /> */}
       <ScrollView
-        style={{ flex: 1 }}
+        style={{ flex: 1, backgroundColor: color.background }}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 128, gap: 26 }}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={color.accent} />}
         showsVerticalScrollIndicator={false}
@@ -339,7 +391,12 @@ export default function HomeScreen() {
           {section("Your workspace", "/(tabs)/products")}
           <View style={{ backgroundColor: color.card, borderRadius: 24, padding: 20, flexDirection: "row", gap: 10 }}>
             {[
-              { label: "Pages", value: telemetry?.landingPagesCount ?? 0, route: "/tools/landing-templates", icon: Layout01Icon },
+              {
+                label: "Pages",
+                value: telemetry?.pagesCount ?? telemetry?.landingPagesCount ?? 0,
+                route: "/tools/my-designs",
+                icon: Layout01Icon,
+              },
               { label: "Forms", value: telemetry?.quickFormsCount ?? 0, route: "/tools/quick-forms", icon: File01Icon },
               { label: "Links", value: telemetry?.shortLinksCount ?? 0, route: "/tools/link-shortener", icon: Link01Icon },
             ].map((item, index) => (

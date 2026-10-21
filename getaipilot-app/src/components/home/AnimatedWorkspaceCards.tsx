@@ -14,6 +14,7 @@ interface AnimatedWorkspaceCardsProps {
   color: any;
   telemetry: {
     landingPagesCount?: number;
+    pagesCount?: number;
     quickFormsCount?: number;
     shortLinksCount?: number;
   } | undefined;
@@ -29,8 +30,8 @@ export const AnimatedWorkspaceCards: React.FC<AnimatedWorkspaceCardsProps> = ({
   const items = [
     {
       label: 'Pages',
-      value: telemetry?.landingPagesCount ?? 0,
-      route: '/tools/landing-templates',
+      value: telemetry?.pagesCount ?? telemetry?.landingPagesCount ?? 0,
+      route: '/tools/my-designs',
       icon: Layout01Icon,
       gradientLight: ['#F5EFFF', '#E7D8FD'] as const,
       gradientDark: ['#2C1A48', '#1B0F2E'] as const,

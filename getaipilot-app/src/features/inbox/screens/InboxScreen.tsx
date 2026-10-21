@@ -223,7 +223,7 @@ export const InboxScreen: React.FC = () => {
   };
 
   return (
-    <AppScreen safeArea={false}>
+    <AppScreen safeArea={false} backgroundColor={color.background}>
       <AppTopBar
         title="Inbox"
         showBack={false}

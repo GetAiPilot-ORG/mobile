@@ -17,7 +17,7 @@ import {
   View,
   ViewStyle,
 } from "react-native";
-import { useTheme } from "../contexts/ThemeContext";
+import { useTheme, getColors } from "@/theme";
 
 export interface SkeletonProps {
   width?: DimensionValue;
@@ -73,9 +73,9 @@ export default function Skeleton({
       : 9999
     : borderRadius;
 
-  // Dark: deep navy surface (#1C1A25), Light: standard light gray (#E9E6F2)
-  const skeletonBg = isDark ? "#1C1A25" : "#E9E6F2";
-  const shimmerColor = isDark ? "rgba(75, 163, 255, 0.07)" : "rgba(255,255,255,0.65)";
+  const colors = getColors(isDark);
+  const skeletonBg = colors.skeleton;
+  const shimmerColor = colors.skeletonHighlight;
 
   return (
     <Animated.View
@@ -158,15 +158,14 @@ export function SkeletonCard({
   style?: StyleProp<ViewStyle>;
 }) {
   const { isDark } = useTheme();
+  const colors = getColors(isDark);
   return (
     <View
       style={[
         styles.card,
         {
-          // Dark: premium navy card (#1C1A25), border (#3A3549)
-          // Light: white card, gray border
-          backgroundColor: isDark ? "#1C1A25" : "#FFFFFF",
-          borderColor: isDark ? "#3A3549" : "#E9E6F2",
+          backgroundColor: colors.card,
+          borderColor: colors.cardBorder,
         },
         style,
       ]}
@@ -201,6 +200,11 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: StyleSheet.hairlineWidth,
     marginBottom: 12,
+    shadowColor: "transparent",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   },
   row: {
     flexDirection: "row",
