@@ -90,25 +90,38 @@ export const telegramSupabase = {
       };
     }
 
-    // 2. Fetch User Profiles & Telegram Subscriptions for telegram_user_id
+    const isNumericTelegramId = (val: any): boolean => {
+      if (!val) return false;
+      const str = String(val).trim();
+      return /^\d{5,16}$/.test(str);
+    };
+
+    // 2. Fetch User Profiles & Telegram Accounts for telegram_user_id & phone
     const storeTenant = useAuthStore.getState().tenantMapping;
-    const [profileRes, subRes] = await Promise.all([
-      supabase.from("profiles").select("telegram_user_id").eq("id", currentUserId).maybeSingle(),
-      supabase.from("app_user_subscriptions").select("telegram_user_id").eq("user_id", currentUserId).maybeSingle(),
+    const [profileRes, tgAccountRes, subRes] = await Promise.all([
+      supabase.from("profiles").select("telegram_user_id, username, phone, mobile_number").eq("id", currentUserId).maybeSingle(),
+      supabase.from("tg_accounts").select("phone, is_active").eq("user_id", currentUserId).maybeSingle(),
+      /^\d+$/.test(String(currentUserId))
+        ? supabase.from("app_user_subscriptions").select("telegram_user_id").eq("user_id", Number(currentUserId)).maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
     ]);
 
-    let rawTgUserId =
-      profileRes.data?.telegram_user_id ||
-      subRes.data?.telegram_user_id ||
-      storeTenant?.telegram_user_id ||
-      currentUserMetadata?.telegram_user_id ||
-      currentUserMetadata?.telegram_id;
+    const tgPhone = tgAccountRes.data?.phone || profileRes.data?.mobile_number || profileRes.data?.phone || null;
+    const isTgAccountActive = tgAccountRes.data?.is_active !== false && Boolean(tgAccountRes.data?.phone);
 
     let numericTgUserId: number | null = null;
-    if (rawTgUserId !== undefined && rawTgUserId !== null && rawTgUserId !== '') {
-      const parsed = Number(rawTgUserId);
-      if (!isNaN(parsed) && parsed !== 0) {
-        numericTgUserId = parsed;
+    const candidates = [
+      profileRes.data?.telegram_user_id,
+      subRes.data?.telegram_user_id,
+      storeTenant?.telegram_user_id,
+      currentUserMetadata?.telegram_user_id,
+      currentUserMetadata?.telegram_id,
+    ];
+
+    for (const cand of candidates) {
+      if (isNumericTelegramId(cand)) {
+        numericTgUserId = Number(cand);
+        break;
       }
     }
 
@@ -355,7 +368,10 @@ export const telegramSupabase = {
       loadedFilters,
       loadedBlacklist,
       loadedForwardSettings,
-      telegramUserId: rawTgUserId,
+      telegramUserId: numericTgUserId,
+      telegramPhone: tgPhone,
+      telegramUsername: (profileRes.data as any)?.username || currentUserMetadata?.telegram_username || null,
+      isTelegramConnected: Boolean(numericTgUserId || isTgAccountActive),
     };
   }
 };

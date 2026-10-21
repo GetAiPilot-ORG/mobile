@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { useTheme, getColors } from '@/theme';
+import { filterAndNormalizeChannels, formatUserFriendlyError, getChannelMeta } from './activity/socialActivityHelpers';
 
 interface PostDetailsModalProps {
   visible: boolean;
@@ -58,38 +59,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
   };
 
   const getChannelInfo = (ch: string) => {
-    const lower = String(ch).toLowerCase();
-    if (lower.startsWith('pinterest')) {
-      return { name: 'Pinterest', icon: 'logo-pinterest', color: '#e60023' };
-    }
-    if (lower.startsWith('instagram')) {
-      return { name: 'Instagram', icon: 'logo-instagram', color: '#e1306c' };
-    }
-    if (lower.startsWith('youtube')) {
-      return { name: 'YouTube', icon: 'logo-youtube', color: '#ff0000' };
-    }
-    if (lower.startsWith('facebook')) {
-      return { name: 'Facebook', icon: 'logo-facebook', color: '#1877f2' };
-    }
-    if (lower.startsWith('x') || lower.startsWith('twitter')) {
-      return { name: 'X', icon: 'logo-twitter', color: '#38bdf8' };
-    }
-    if (lower.startsWith('linkedin')) {
-      return { name: 'LinkedIn', icon: 'logo-linkedin', color: '#0077b5' };
-    }
-    if (lower.startsWith('threads')) {
-      return { name: 'Threads', icon: 'at-outline', color: '#9333ea' };
-    }
-    if (lower.startsWith('bluesky')) {
-      return { name: 'Bluesky', icon: 'cloud-outline', color: '#0285FF' };
-    }
-    const parts = String(ch).split(':');
-    const provider = parts[0] || 'Social';
-    return {
-      name: provider.charAt(0).toUpperCase() + provider.slice(1),
-      icon: 'share-social',
-      color: '#ec4899',
-    };
+    return getChannelMeta(ch);
   };
 
   const hasPinterestSuccess = Boolean(
@@ -106,11 +76,12 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
       Object.keys(post.platform_data?.channelResults || {}).find((k) => k.startsWith('pinterest')) || ''
     ]?.url;
 
-  const pinterestError =
+  const rawPinterestError =
     post.pinterest_error ||
     post.platform_data?.channelResults?.[
       Object.keys(post.platform_data?.channelResults || {}).find((k) => k.startsWith('pinterest')) || ''
     ]?.error;
+  const pinterestError = formatUserFriendlyError(rawPinterestError, 'pinterest');
 
   const hasAnySuccess = Boolean(
     hasPinterestSuccess ||
@@ -123,11 +94,9 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
   const isPartialSuccess = post.status === 'failed' && hasAnySuccess;
 
   const statusColor = isPartialSuccess ? '#f59e0b' : getStatusColor(post.status);
-  const channels = Array.isArray(post.selected_channels)
-    ? post.selected_channels
-    : Array.isArray(post.channels)
-    ? post.channels
-    : ['social'];
+  const channels = filterAndNormalizeChannels(
+    post.selected_channels || post.channels || post.platform
+  );
 
   const displayDate = post.scheduled_for
     ? `Scheduled for: ${new Date(post.scheduled_for).toLocaleString([], {
@@ -152,7 +121,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
       })}`
     : 'Draft';
 
-  const failureError =
+  const rawFailureError =
     post.last_error ||
     post.youtube_error ||
     post.instagram_error ||
@@ -160,6 +129,8 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
     post.x_error ||
     post.error_message ||
     post.failure_reason;
+
+  const failureError = formatUserFriendlyError(rawFailureError);
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -335,7 +306,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
                     </View>
 
                     {post.youtube_error && (
-                      <Text style={styles.deliveryErrorText}>{post.youtube_error}</Text>
+                      <Text style={styles.deliveryErrorText}>{formatUserFriendlyError(post.youtube_error, 'youtube')}</Text>
                     )}
 
                     {(post.youtube_url || post.youtube_shorts_url) && (
@@ -372,7 +343,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
                     </View>
 
                     {post.instagram_error && (
-                      <Text style={styles.deliveryErrorText}>{post.instagram_error}</Text>
+                      <Text style={styles.deliveryErrorText}>{formatUserFriendlyError(post.instagram_error, 'instagram')}</Text>
                     )}
 
                     {post.instagram_url && (
@@ -409,7 +380,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
                     </View>
 
                     {post.facebook_error && (
-                      <Text style={styles.deliveryErrorText}>{post.facebook_error}</Text>
+                      <Text style={styles.deliveryErrorText}>{formatUserFriendlyError(post.facebook_error, 'facebook')}</Text>
                     )}
 
                     {post.facebook_url && (
@@ -446,7 +417,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
                     </View>
 
                     {post.x_error && (
-                      <Text style={styles.deliveryErrorText}>{post.x_error}</Text>
+                      <Text style={styles.deliveryErrorText}>{formatUserFriendlyError(post.x_error, 'x')}</Text>
                     )}
 
                     {post.x_url && (
