@@ -42,6 +42,7 @@ import {
   ReferralEarnings,
   ReferralMilestone,
 } from "../src/services/referralService";
+import { AnimatedReferralCard } from "../src/components/home/AnimatedReferralCard";
 
 type ReferralStatus = "pending" | "completed" | "rewarded" | "cancelled";
 
@@ -312,66 +313,19 @@ export default function ReferralScreen() {
               </View>
             </View>
 
-            {/* Referral Code Card */}
-            <View
-              style={[
-                styles.codeCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
-            >
-              <View style={styles.codeHeader}>
-                <View style={[styles.smallIcon, { backgroundColor: colors.primaryMuted }]}>
-                  <LinkIcon size={18} color={colors.primary} />
-                </View>
-
-                <View style={styles.codeHeaderText}>
-                  <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>
-                    YOUR REFERRAL CODE
-                  </Text>
-                  <Text style={[styles.code, { color: colors.text }]}>{referralCode || "---"}</Text>
-                </View>
-
-                <Pressable
-                  onPress={copyReferralCode}
-                  hitSlop={10}
-                  style={[styles.copyButton, { backgroundColor: colors.primaryMuted }]}
-                >
-                  <Copy size={18} color={colors.primary} />
-                </Pressable>
-              </View>
-
-              <Text style={[styles.codeDescription, { color: colors.textSecondary }]}>
-                Share your code with colleagues or friends. When they register with your referral, they receive an instant 5% discount on their GAP Pro plan purchase, and you earn milestone perks!
-              </Text>
-
-              <View style={styles.actionButtonsRow}>
-                <Pressable cssInterop={false}
-                  onPress={shareReferral}
-                  style={({ pressed }) => [
-                    styles.shareButton,
-                    { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
-                  ]}
-                >
-                  <Share2 size={18} color={colors.primaryForeground} />
-                  <Text style={[styles.shareButtonText, { color: colors.primaryForeground }]}>
-                    Share Referral Link
-                  </Text>
-                </Pressable>
-
-                <Pressable cssInterop={false}
-                  onPress={copyReferralLink}
-                  style={({ pressed }) => [
-                    styles.copyLinkBtn,
-                    {
-                      backgroundColor: colors.primaryMuted,
-                      borderColor: colors.border,
-                      opacity: pressed ? 0.8 : 1,
-                    },
-                  ]}
-                >
-                  <LinkIcon size={17} color={colors.primary} />
-                </Pressable>
-              </View>
+            {/* Consolidated Minimal Referral Hero Card */}
+            <View style={{ marginBottom: 16 }}>
+              <AnimatedReferralCard
+                isDark={isDark}
+                referralCode={referralCode}
+                onCopyCode={copyReferralCode}
+                onCopyLink={copyReferralLink}
+                onShare={shareReferral}
+                headline="Invite Friends & Earn Rewards"
+                badgeText="5% Off For Friends · 20% For You"
+                subtitle="Share your referral code or link. Friends get 5% off GAP Pro and you unlock recurring milestone perks!"
+                buttonText="Share Referral Link"
+              />
             </View>
 
             {/* Milestone Progression Card */}

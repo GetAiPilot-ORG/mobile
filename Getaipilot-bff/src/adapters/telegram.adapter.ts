@@ -628,6 +628,7 @@ export class TelegramAdapter {
     userId: string,
     context?: TelegramUserSessionContext
   ): Promise<TelegramSessionStatus> {
+    const effectiveUserId = context?.userId || userId;
     if (context) {
       const upstream = await this.executeUpstreamRequest<any>('/telegram/status', {
         method: 'GET',
@@ -647,10 +648,16 @@ export class TelegramAdapter {
     }
 
     try {
-      const { data: session } = await this.supabase
+      let sessionQuery = this.supabase
         .from('tg_user_sessions')
         .select('*')
-        .eq('is_active', true)
+        .eq('is_active', true);
+
+      if (effectiveUserId) {
+        sessionQuery = sessionQuery.eq('user_id', effectiveUserId);
+      }
+
+      const { data: session } = await sessionQuery
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();

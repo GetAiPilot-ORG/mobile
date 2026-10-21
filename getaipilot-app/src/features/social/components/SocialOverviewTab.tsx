@@ -6,6 +6,7 @@ import { ProductHeading, ProductMetrics, ProductSection, ProductActions, Product
 import { useTheme } from '@/theme';
 import { SocialScreenSkeleton } from '@/components/skeletonScreen';
 import { openSocialHandoff } from '../utils/socialHandoff';
+import { filterAndNormalizeChannels } from './activity/socialActivityHelpers';
 
 interface SocialOverviewTabProps {
   overviewLoading: boolean;
@@ -140,13 +141,15 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
               ? '#DC2626'
               : '#B45309';
 
-            const channels: string[] = post.selected_channels?.length
-              ? post.selected_channels
-              : post.channels?.length
-              ? post.channels
-              : post.platform
-              ? [post.platform]
-              : [];
+            const channels: string[] = filterAndNormalizeChannels(
+              post.selected_channels?.length
+                ? post.selected_channels
+                : post.channels?.length
+                ? post.channels
+                : post.platform
+                ? [post.platform]
+                : []
+            );
 
             const mediaThumb =
               post.thumbnail_url ||
@@ -195,7 +198,7 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     {channels.length > 0 ? (
                       channels.slice(0, 3).map((ch, chIdx) => {
-                        const cleanCh = (ch || '').replace(/^.+:/, '').toLowerCase();
+                        const cleanCh = (ch || '').toLowerCase();
                         return (
                           <View
                             key={chIdx}
