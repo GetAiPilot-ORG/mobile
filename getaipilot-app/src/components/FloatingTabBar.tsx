@@ -134,41 +134,19 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
 
   return (
     <View style={styles.dockRoot} pointerEvents="box-none">
-      {/* 2. Rounded navigation dock */}
-      {/* 1. Full-bleed Bottom Frosted Backdrop that blurs all scrolled content behind it and fills the bottom screen area */}
-      <Pressable
-        style={[
-          styles.backdropWrapper,
-          {
-            height: 52 + bottomOffset,
-          },
-        ]}
-        disabled={true}
-      >
-        <View
-          style={[
-            StyleSheet.absoluteFill,
-            {
-              backgroundColor: isDark
-                ? 'rgba(17, 16, 15, 0.65)'
-                : 'rgba(247, 245, 242, 0.70)',
-              // borderTopWidth: StyleSheet.hairlineWidth,
-              borderTopColor: isDark
-                ? 'rgba(255, 255, 255, 0.08)'
-                : 'rgba(0, 0, 0, 0.06)',
-            },
-          ]}
-        />
-      </Pressable>
-
-      {/* 2. Floating Pill Tab Bar with rounded frosted glassmorphism */}
+      {/* Floating Pill Tab Bar with transparent / frosted glassmorphic background */}
       <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
         <View
           style={[
             styles.tabBarContainer,
             {
-              backgroundColor: colors.card,
-              borderWidth: 0,
+              backgroundColor: isDark
+                ? 'rgba(28, 26, 37, 0.82)'
+                : 'rgba(255, 255, 255, 0.85)',
+              borderWidth: StyleSheet.hairlineWidth,
+              borderColor: isDark
+                ? 'rgba(255, 255, 255, 0.12)'
+                : 'rgba(0, 0, 0, 0.08)',
               shadowColor: '#000000',
               shadowOffset: { width: 0, height: 6 },
               shadowOpacity: isDark ? 0.2 : 0.06,
@@ -177,16 +155,6 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
             },
           ]}
         >
-          <View
-            style={[
-              StyleSheet.absoluteFill,
-              {
-                backgroundColor: isDark
-                  ? 'rgba(25, 23, 21, 0.70)'
-                  : 'rgba(253, 252, 251, 0.75)',
-              },
-            ]}
-          />
 
           {visibleRoutes.map((route: { key: string; name: string }, index: number) => {
             const descriptor = descriptors[route.key];

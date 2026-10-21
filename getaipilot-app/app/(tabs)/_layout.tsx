@@ -17,11 +17,7 @@ export default function TabLayout() {
       tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        animation: reducedMotion ? "none" : "shift",
-        transitionSpec: {
-          animation: "timing",
-          config: { duration: 220 },
-        },
+        animation: "none",
         sceneStyle: { backgroundColor: colors.background },
         tabBarStyle: {
           position: "absolute",
