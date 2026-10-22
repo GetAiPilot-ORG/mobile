@@ -213,6 +213,18 @@ export class NotificationService {
       let token: string | null = null;
       let lastFetchError: any = null;
 
+      // On Android, ensure native FCM device token is active
+      if (Platform.OS === 'android') {
+        try {
+          const deviceToken = await Notifications.getDevicePushTokenAsync();
+          if (deviceToken?.data) {
+            console.log('📱 [NotificationService] Native FCM Device Token acquired:', typeof deviceToken.data === 'string' ? `${deviceToken.data.substring(0, 25)}...` : 'active');
+          }
+        } catch (dtErr: any) {
+          console.log('ℹ️ [NotificationService] Native device push token info:', dtErr?.message || dtErr);
+        }
+      }
+
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
           if (attempt > 1) {
@@ -255,6 +267,27 @@ export class NotificationService {
         status: 'denied',
         error: error?.message || 'Failed to fetch push token',
       };
+    }
+  }
+
+  /**
+   * Force refresh push token from scratch by clearing AsyncStorage cache and re-registering
+   */
+  static async forceRefreshToken(userId?: string): Promise<string | null> {
+    try {
+      console.log('🔄 [NotificationService] Forcing fresh push token acquisition...');
+      await AsyncStorage.removeItem(PUSH_TOKEN_STORAGE_KEY);
+      await AsyncStorage.removeItem(LAST_SYNCED_USER_KEY);
+
+      const result = await this.registerForPushNotificationsAsync();
+      if (result.token && userId) {
+        console.log('📡 [NotificationService] Syncing fresh token with backend for user:', userId);
+        await this.syncPushTokenWithBackend(result.token, userId);
+      }
+      return result.token;
+    } catch (err: any) {
+      console.warn('❌ [NotificationService] Error force refreshing token:', err?.message || err);
+      return null;
     }
   }
 
