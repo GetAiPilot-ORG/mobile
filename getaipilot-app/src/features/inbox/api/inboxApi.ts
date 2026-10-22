@@ -207,37 +207,69 @@ export const inboxApi = {
       ];
     }
 
-    // ── 3. Fetch InstaPilot (Instagram) Conversations ────────────────────────
+    // ── 3. Fetch Social / Instagram Conversations ────────────────────────
     let igList: NormalizedConversation[] = [];
     try {
-      const igData = await apiClient.get<any[]>('/mobile/v1/social/instapilot/conversations');
-      if (Array.isArray(igData) && igData.length > 0) {
-        igList = igData.map((c) => {
-          const lastMsg = Array.isArray(c.instagram_messages)
-            ? c.instagram_messages[c.instagram_messages.length - 1]
-            : null;
-          const uname = c.instagram_username || 'instagram_user';
+      const socialRes = await apiClient.get<any>('/mobile/v1/social/inbox/conversations', {
+        params: { limit: 50 },
+      });
+      const items = Array.isArray(socialRes) ? socialRes : (socialRes?.items || socialRes?.conversations || []);
+      if (Array.isArray(items) && items.length > 0) {
+        igList = items.map((c: any) => {
+          const uname = (c.authorHandle || c.contact_handle || c.authorName || 'user').replace(/^@/, '');
           return {
-            id: c.id ? (c.id.startsWith('ig_') ? c.id : `ig_conv_${c.id}`) : `ig_conv_${uname}`,
+            id: c.databaseId || c.id || `ig_conv_${uname}`,
             organization_id: orgId || '',
             contact: {
-              name: c.instagram_name || uname,
+              name: c.authorName || c.contact_name || uname,
               handle_or_phone: `@${uname}`,
-              avatar_url: c.profile_pic_url,
+              avatar_url: c.authorAvatar || c.contact_avatar_url,
             },
             channel: 'instagram' as const,
             last_message: {
-              content: lastMsg?.message_text || c.notes || 'Instagram DM active',
-              created_at: lastMsg?.created_at || c.last_message_at || c.created_at || new Date().toISOString(),
-              direction: (lastMsg?.direction === 'inbound') ? ('inbound' as const) : ('outbound' as const),
+              content: c.text || c.last_message_text || 'Instagram Message',
+              created_at: c.createdAt || c.last_message_at || new Date().toISOString(),
+              direction: c.replied ? ('outbound' as const) : ('inbound' as const),
             },
-            unread_count: c.unread_count || 0,
-            bot_enabled: c.status === 'bot_active' && !c.bot_paused,
+            unread_count: c.unreadCount || c.unread_count || 0,
+            bot_enabled: true,
             status: 'active' as const,
           };
         });
       }
     } catch (_) {}
+
+    if (igList.length === 0) {
+      try {
+        const igData = await apiClient.get<any[]>('/mobile/v1/social/instapilot/conversations');
+        if (Array.isArray(igData) && igData.length > 0) {
+          igList = igData.map((c) => {
+            const lastMsg = Array.isArray(c.instagram_messages)
+              ? c.instagram_messages[c.instagram_messages.length - 1]
+              : null;
+            const uname = c.instagram_username || 'instagram_user';
+            return {
+              id: c.id ? (c.id.startsWith('ig_') ? c.id : `ig_conv_${c.id}`) : `ig_conv_${uname}`,
+              organization_id: orgId || '',
+              contact: {
+                name: c.instagram_name || uname,
+                handle_or_phone: `@${uname}`,
+                avatar_url: c.profile_pic_url,
+              },
+              channel: 'instagram' as const,
+              last_message: {
+                content: lastMsg?.message_text || c.notes || 'Instagram DM active',
+                created_at: lastMsg?.created_at || c.last_message_at || c.created_at || new Date().toISOString(),
+                direction: (lastMsg?.direction === 'inbound') ? ('inbound' as const) : ('outbound' as const),
+              },
+              unread_count: c.unread_count || 0,
+              bot_enabled: c.status === 'bot_active' && !c.bot_paused,
+              status: 'active' as const,
+            };
+          });
+        }
+      } catch (_) {}
+    }
 
     if (igList.length === 0) {
       igList = [
