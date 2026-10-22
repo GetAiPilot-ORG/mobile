@@ -52,7 +52,6 @@ export class NotificationService {
           lightColor: '#10B981',
           enableVibrate: true,
           showBadge: true,
-          sound: 'default',
           lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
           bypassDnd: true,
         });
@@ -65,7 +64,6 @@ export class NotificationService {
           lightColor: '#10B981',
           enableVibrate: true,
           showBadge: true,
-          sound: 'default',
           lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
           bypassDnd: true,
         });
@@ -78,7 +76,6 @@ export class NotificationService {
           lightColor: '#3B82F6',
           enableVibrate: true,
           showBadge: true,
-          sound: 'default',
           lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
           bypassDnd: true,
         });
@@ -91,7 +88,6 @@ export class NotificationService {
           lightColor: '#8B5CF6',
           enableVibrate: true,
           showBadge: true,
-          sound: 'default',
           lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
           bypassDnd: true,
         });
@@ -104,7 +100,6 @@ export class NotificationService {
           lightColor: '#F59E0B',
           enableVibrate: true,
           showBadge: true,
-          sound: 'default',
           lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
           bypassDnd: true,
         });
@@ -117,7 +112,6 @@ export class NotificationService {
           lightColor: '#EC4899',
           enableVibrate: true,
           showBadge: true,
-          sound: 'default',
           lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
           bypassDnd: true,
         });
@@ -130,7 +124,6 @@ export class NotificationService {
           lightColor: '#6366F1',
           enableVibrate: true,
           showBadge: true,
-          sound: 'default',
           lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
           bypassDnd: true,
         });
@@ -143,7 +136,6 @@ export class NotificationService {
           lightColor: '#EF4444',
           enableVibrate: true,
           showBadge: true,
-          sound: 'default',
           lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
           bypassDnd: true,
         });
@@ -156,7 +148,6 @@ export class NotificationService {
           lightColor: '#06B6D4',
           enableVibrate: true,
           showBadge: true,
-          sound: 'default',
           lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
           bypassDnd: true,
         });

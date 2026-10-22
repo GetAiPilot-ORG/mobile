@@ -21,6 +21,12 @@ import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
 import { useThemedDialog } from '@/components';
 import { useTheme, getColors } from '@/theme';
+let Sharing: typeof import('expo-sharing') | null = null;
+try {
+  Sharing = require('expo-sharing');
+} catch {
+  Sharing = null;
+}
 
 const LANGUAGES = [
   { code: 'auto', label: 'Auto Detect 🌐' },
@@ -345,10 +351,10 @@ export default function SpeechToTextScreen() {
               message: 'GetAIPilot requires microphone access to record audio and convert speech to text.',
               buttonPositive: 'Allow',
               buttonNegative: 'Deny',
-            }).catch(() => {});
+            }).catch(() => { });
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, []);
 
@@ -613,7 +619,7 @@ export default function SpeechToTextScreen() {
               data.error?.includes('NotReadableError')
                 ? 'Could not access device microphone. Please close other apps using audio (calls, voice notes) and try again.'
                 : data.error ||
-                  'Microphone recorder could not start. Please tap the microphone button again.',
+                'Microphone recorder could not start. Please tap the microphone button again.',
             type: 'warning',
             buttonText: 'Try Again',
             buttonBgColor: colors.accent,
@@ -739,16 +745,108 @@ export default function SpeechToTextScreen() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // const handleShare = async () => {
+  //   if (!transcript) return;
+  //   try {
+  //     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  //     await Share.share({
+  //       message: `AI Audio Transcript:\n\n${transcript}\n\nKey Takeaways:\n${summaryBullets
+  //         .map((b) => `• ${b}`)
+  //         .join('\n')}\n\nTranscribed with GetAiPilot AI.`,
+  //     });
+  //   } catch { }
+  // };
+
+
   const handleShare = async () => {
     if (!transcript) return;
+
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      await Share.share({
-        message: `AI Audio Transcript:\n\n${transcript}\n\nKey Takeaways:\n${summaryBullets
-          .map((b) => `• ${b}`)
-          .join('\n')}\n\nTranscribed with GetAiPilot AI.`,
-      });
-    } catch { }
+
+      // Build the .txt file content
+      const fileContent = [
+        'AI Audio Transcript',
+        '===================',
+        '',
+        transcript,
+        '',
+        'Key Takeaways',
+        '-------------',
+        ...summaryBullets.map((b) => `• ${b}`),
+        '',
+        '---',
+        'Transcribed with GetAiPilot AI.',
+      ].join('\n');
+
+      // 1. WEB: Blob + download / Web Share API
+      if (Platform.OS === 'web') {
+        const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+        const fileName = `transcript_${Date.now()}.txt`;
+
+        const nav: any = typeof navigator !== 'undefined' ? navigator : undefined;
+        if (nav?.canShare && nav?.share) {
+          try {
+            const file = new File([blob], fileName, { type: 'text/plain' });
+            if (nav.canShare({ files: [file] })) {
+              await nav.share({
+                files: [file],
+                title: 'AI Audio Transcript',
+                text: 'Transcribed with GetAiPilot AI.',
+              });
+              return;
+            }
+          } catch {
+            // fallback to download
+          }
+        }
+
+        // Fallback: trigger a download
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        return;
+      }
+
+      // 2. NATIVE (Android & iOS): Write to cache file and share
+      let sharedAsFile = false;
+      const fileName = 'transcript_share.txt';
+      const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
+
+      try {
+        await FileSystem.writeAsStringAsync(fileUri, fileContent, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
+
+        const canShare = Sharing ? await Sharing.isAvailableAsync().catch(() => false) : false;
+        if (canShare && Sharing) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'text/plain',
+            dialogTitle: 'Share Transcript',
+            UTI: 'public.plain-text',
+          });
+          sharedAsFile = true;
+        }
+      } catch (fileErr) {
+        console.warn('[Speech-to-Text] File share notice, falling back to text share:', fileErr);
+      }
+
+      // 3. Fallback: Native text share sheet if file share failed or was unavailable
+      if (!sharedAsFile) {
+        await Share.share({
+          message: fileContent,
+          title: 'AI Audio Transcript',
+        });
+      }
+    } catch (err: any) {
+      console.warn('[Speech-to-Text] Share failed:', err);
+      Alert.alert('Share Error', err?.message || 'Could not open share sheet.');
+    }
   };
 
   return (
