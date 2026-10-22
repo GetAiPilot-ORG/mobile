@@ -76,6 +76,8 @@ export const InboxScreen: React.FC = () => {
   const [showNewChatModal, setShowNewChatModal] = useState<boolean>(false);
   const [contactSearchQuery, setContactSearchQuery] = useState<string>("");
 
+  const [selectedTelegramBot, setSelectedTelegramBot] = useState<string>("all");
+
   const user = useAuthStore((s) => s.user);
 
   // Realtime Global Inbox WebSocket Subscription
@@ -88,14 +90,14 @@ export const InboxScreen: React.FC = () => {
     refetch,
     isRefetching,
   } = useQuery({
-    queryKey: ["conversations", searchQuery],
+    queryKey: ["conversations", user?.id || "guest", searchQuery],
     queryFn: () => inboxApi.getConversations("all", "all", searchQuery),
     staleTime: 5000,
   });
 
   // Fetch contacts for New Chat
   const { data: contacts, isLoading: isLoadingContacts } = useQuery({
-    queryKey: ["inbox_contacts"],
+    queryKey: ["inbox_contacts", user?.id || "guest"],
     queryFn: () => inboxApi.getContacts(),
     staleTime: 30000,
   });
@@ -112,11 +114,30 @@ export const InboxScreen: React.FC = () => {
     return counts;
   }, [convList]);
 
-  // Filter conversations according to selected channel and status tab
+  // Extract distinct active Telegram chatbots and their chat counts
+  const telegramBots = useMemo(() => {
+    const botsMap = new Map<string, { id: string; name: string; count: number }>();
+    convList.forEach((c) => {
+      if (c.channel === "telegram" && c.bot_name) {
+        const key = c.bot_id || c.bot_name;
+        if (!botsMap.has(key)) {
+          botsMap.set(key, { id: key, name: c.bot_name, count: 0 });
+        }
+        botsMap.get(key)!.count++;
+      }
+    });
+    return Array.from(botsMap.values());
+  }, [convList]);
+
+  // Filter conversations according to selected channel, bot filter, and status tab
   const filteredConversations = useMemo(() => {
     return convList.filter((conv) => {
       if (selectedChannel !== "all" && conv.channel !== selectedChannel) {
         return false;
+      }
+      if (selectedChannel === "telegram" && selectedTelegramBot !== "all") {
+        const matchBot = conv.bot_id === selectedTelegramBot || conv.bot_name === selectedTelegramBot;
+        if (!matchBot) return false;
       }
       if (activeTab === "UNASSIGNED") {
         return !conv.assigned_to && !conv.assigned_agent_name;
@@ -138,7 +159,7 @@ export const InboxScreen: React.FC = () => {
       }
       return true;
     });
-  }, [convList, selectedChannel, activeTab, user]);
+  }, [convList, selectedChannel, selectedTelegramBot, activeTab, user]);
 
   const filteredContacts = useMemo(() => {
     return (contacts || []).filter((cnt) => {
@@ -382,6 +403,82 @@ export const InboxScreen: React.FC = () => {
             }}
           />
         </View>
+
+        {/* Telegram Chatbot Sub-filter Pills (e.g. Ads Bot, hello, testing) */}
+        {selectedChannel === "telegram" && telegramBots.length > 1 && (
+          <View style={{ marginBottom: 10 }}>
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              data={[{ id: "all", name: "All Bots", count: channelCounts.telegram }, ...telegramBots]}
+              keyExtractor={(b) => b.id}
+              contentContainerStyle={{ paddingRight: 8 }}
+              renderItem={({ item: bot }) => {
+                const isSelected = selectedTelegramBot === bot.id;
+                return (
+                  <Pressable
+                    onPress={() => setSelectedTelegramBot(bot.id)}
+                    style={{
+                      height: 28,
+                      paddingHorizontal: 10,
+                      marginRight: 6,
+                      borderRadius: 14,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      backgroundColor: isSelected
+                        ? isDark
+                          ? "rgba(2, 132, 199, 0.25)"
+                          : "#E0F2FE"
+                        : color.card,
+                      borderWidth: isSelected ? 1 : 0.5,
+                      borderColor: isSelected
+                        ? "#0284c7"
+                        : isDark
+                        ? "rgba(255, 255, 255, 0.08)"
+                        : "rgba(0, 0, 0, 0.06)",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        fontWeight: isSelected ? "700" : "500",
+                        color: isSelected ? "#0284c7" : color.textSecondary,
+                        marginRight: 5,
+                      }}
+                    >
+                      {bot.name}
+                    </Text>
+                    <View
+                      style={{
+                        minWidth: 16,
+                        height: 16,
+                        borderRadius: 8,
+                        paddingHorizontal: 4,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: isSelected
+                          ? "#0284c7"
+                          : isDark
+                          ? "rgba(255, 255, 255, 0.1)"
+                          : "rgba(0, 0, 0, 0.06)",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 9.5,
+                          fontWeight: "700",
+                          color: isSelected ? "#ffffff" : color.textSecondary,
+                        }}
+                      >
+                        {bot.count}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              }}
+            />
+          </View>
+        )}
 
         {/* Folder-Style Status Tab Bar */}
         <View style={{ position: "relative", marginBottom: 14 }}>

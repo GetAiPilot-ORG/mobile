@@ -140,10 +140,34 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({ conversation
             {conversation.last_message.content || 'Media message'}
           </Text>
         </View>
-
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, flex: 1 }}>
             <ChannelBadge channel={conversation.channel} />
+            {conversation.bot_name ? (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: isDark ? 'rgba(2, 132, 199, 0.15)' : '#E0F2FE',
+                  paddingHorizontal: 7,
+                  paddingVertical: 2,
+                  borderRadius: 6,
+                  borderWidth: 0.5,
+                  borderColor: isDark ? 'rgba(2, 132, 199, 0.3)' : '#BAE6FD',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 10,
+                    fontWeight: '700',
+                    color: isDark ? '#38BDF8' : '#0284C7',
+                  }}
+                  numberOfLines={1}
+                >
+                  {conversation.bot_name}
+                </Text>
+              </View>
+            ) : null}
             {assignedLabel ? (
               <Text style={{ fontSize: 10.5, color: colors.textSecondary, flex: 1 }} numberOfLines={1}>
                 {assignedLabel}
