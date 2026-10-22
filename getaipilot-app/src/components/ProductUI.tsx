@@ -15,6 +15,7 @@ export function useProductPalette() {
   const { colors, isDark } = useTheme();
   return {
     ...colors,
+    isDark,
     mint: isDark ? '#263D3D' : '#D8F0F0',
     lavender: isDark ? '#39304A' : '#E7DEFA',
     peach: isDark ? '#49372D' : '#F9E5D4',
@@ -66,6 +67,8 @@ export function ProductButton({ label, onPress, icon, secondary = false, disable
         paddingVertical: 12,
         borderRadius: 30,
         backgroundColor: secondary ? colors.card : colors.buttonPrimary,
+        borderWidth: secondary ? 1 : 0,
+        borderColor: colors.isDark ? 'rgba(255, 255, 255, 0.12)' : (colors.cardBorder || '#E9E6F2'),
         opacity: disabled ? 0.45 : pressed ? 0.75 : 1
       })}>
       {isLocked ? (

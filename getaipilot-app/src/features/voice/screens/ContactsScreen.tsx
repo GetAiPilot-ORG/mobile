@@ -321,12 +321,17 @@ export const ContactsScreen: React.FC = () => {
           flexDirection: "row",
           alignItems: "center",
           backgroundColor: colors.card,
-          borderRadius: 30,
+          borderRadius: 32,
           padding: 4,
           marginBottom: 16,
+          borderWidth: 1,
+          borderColor: isDark
+            ? "rgba(255, 255, 255, 0.08)"
+            : colors.cardBorder || "#E9E6F2",
           gap: 4,
         }}
       >
+        {/* Contacts Tab */}
         <Pressable
           style={{
             flex: 1,
@@ -334,11 +339,15 @@ export const ContactsScreen: React.FC = () => {
             alignItems: "center",
             justifyContent: "center",
             paddingVertical: 10,
-            paddingHorizontal: 8,
+            paddingHorizontal: 6,
             borderRadius: 24,
-            gap: 6,
+            gap: 5,
             backgroundColor:
-              activeSubTab === "contacts" ? colors.primary : "transparent",
+              activeSubTab === "contacts"
+                ? isDark
+                  ? "rgba(185, 168, 255, 0.18)"
+                  : colors.lavender
+                : "transparent",
           }}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -346,24 +355,67 @@ export const ContactsScreen: React.FC = () => {
           }}
         >
           <Ionicons
-            name="people"
-            size={14}
+            name={activeSubTab === "contacts" ? "people" : "people-outline"}
+            size={15}
             color={
-              activeSubTab === "contacts" ? "#FFFFFF" : colors.textSecondary
+              activeSubTab === "contacts"
+                ? isDark
+                  ? "#C4B5FD"
+                  : "#6D28D9"
+                : colors.textSecondary
             }
           />
           <Text
             style={{
               fontSize: 12.5,
-              fontWeight: activeSubTab === "contacts" ? "700" : "500",
+              fontWeight: activeSubTab === "contacts" ? "600" : "500",
               color:
-                activeSubTab === "contacts" ? "#FFFFFF" : colors.textSecondary,
+                activeSubTab === "contacts"
+                  ? isDark
+                    ? "#C4B5FD"
+                    : "#6D28D9"
+                  : colors.textSecondary,
+              letterSpacing: -0.2,
             }}
           >
-            Contacts ({totalContacts})
+            Contacts
           </Text>
+          <View
+            style={{
+              paddingHorizontal: 6,
+              paddingVertical: 1.5,
+              borderRadius: 10,
+              minWidth: 18,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor:
+                activeSubTab === "contacts"
+                  ? isDark
+                    ? "rgba(185, 168, 255, 0.28)"
+                    : "#FFFFFF"
+                  : isDark
+                    ? "rgba(255, 255, 255, 0.08)"
+                    : "rgba(0, 0, 0, 0.05)",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: "700",
+                color:
+                  activeSubTab === "contacts"
+                    ? isDark
+                      ? "#EDE9FE"
+                      : "#6D28D9"
+                    : colors.textSecondary,
+              }}
+            >
+              {totalContacts}
+            </Text>
+          </View>
         </Pressable>
 
+        {/* Lines Tab */}
         <Pressable
           style={{
             flex: 1,
@@ -371,11 +423,15 @@ export const ContactsScreen: React.FC = () => {
             alignItems: "center",
             justifyContent: "center",
             paddingVertical: 10,
-            paddingHorizontal: 8,
+            paddingHorizontal: 6,
             borderRadius: 24,
-            gap: 6,
+            gap: 5,
             backgroundColor:
-              activeSubTab === "numbers" ? colors.primary : "transparent",
+              activeSubTab === "numbers"
+                ? isDark
+                  ? "rgba(185, 168, 255, 0.18)"
+                  : colors.lavender
+                : "transparent",
           }}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -383,47 +439,91 @@ export const ContactsScreen: React.FC = () => {
           }}
         >
           <Ionicons
-            name="phone-portrait"
-            size={14}
+            name={
+              activeSubTab === "numbers"
+                ? "phone-portrait"
+                : "phone-portrait-outline"
+            }
+            size={15}
             color={
-              activeSubTab === "numbers" ? "#FFFFFF" : colors.textSecondary
+              activeSubTab === "numbers"
+                ? isDark
+                  ? "#C4B5FD"
+                  : "#6D28D9"
+                : colors.textSecondary
             }
           />
           <Text
             style={{
               fontSize: 12.5,
-              fontWeight: activeSubTab === "numbers" ? "700" : "500",
+              fontWeight: activeSubTab === "numbers" ? "600" : "500",
               color:
-                activeSubTab === "numbers" ? "#FFFFFF" : colors.textSecondary,
+                activeSubTab === "numbers"
+                  ? isDark
+                    ? "#C4B5FD"
+                    : "#6D28D9"
+                  : colors.textSecondary,
+              letterSpacing: -0.2,
             }}
           >
-            Lines ({totalNumbers})
+            Lines
           </Text>
+          <View
+            style={{
+              paddingHorizontal: 6,
+              paddingVertical: 1.5,
+              borderRadius: 10,
+              minWidth: 18,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor:
+                activeSubTab === "numbers"
+                  ? isDark
+                    ? "rgba(185, 168, 255, 0.28)"
+                    : "#FFFFFF"
+                  : isDark
+                    ? "rgba(255, 255, 255, 0.08)"
+                    : "rgba(0, 0, 0, 0.05)",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: "700",
+                color:
+                  activeSubTab === "numbers"
+                    ? isDark
+                      ? "#EDE9FE"
+                      : "#6D28D9"
+                    : colors.textSecondary,
+              }}
+            >
+              {totalNumbers}
+            </Text>
+          </View>
           {expiredNumbersCount > 0 && (
             <View
               style={{
-                paddingHorizontal: 6,
-                paddingVertical: 2,
+                paddingHorizontal: 5,
+                paddingVertical: 1.5,
                 borderRadius: 10,
-                backgroundColor:
-                  activeSubTab === "numbers"
-                    ? "rgba(255, 255, 255, 0.25)"
-                    : colors.amberLight,
+                backgroundColor: colors.amberLight,
               }}
             >
               <Text
                 style={{
                   fontSize: 10,
                   fontWeight: "700",
-                  color: activeSubTab === "numbers" ? "#FFFFFF" : colors.amber,
+                  color: colors.amber,
                 }}
               >
-                {expiredNumbersCount}
+                !{expiredNumbersCount}
               </Text>
             </View>
           )}
         </Pressable>
 
+        {/* Agents Tab */}
         <Pressable
           style={{
             flex: 1,
@@ -431,11 +531,15 @@ export const ContactsScreen: React.FC = () => {
             alignItems: "center",
             justifyContent: "center",
             paddingVertical: 10,
-            paddingHorizontal: 8,
+            paddingHorizontal: 6,
             borderRadius: 24,
-            gap: 6,
+            gap: 5,
             backgroundColor:
-              activeSubTab === "assistants" ? colors.primary : "transparent",
+              activeSubTab === "assistants"
+                ? isDark
+                  ? "rgba(185, 168, 255, 0.18)"
+                  : colors.lavender
+                : "transparent",
           }}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -443,22 +547,64 @@ export const ContactsScreen: React.FC = () => {
           }}
         >
           <Ionicons
-            name="mic"
-            size={14}
+            name={activeSubTab === "assistants" ? "mic" : "mic-outline"}
+            size={15}
             color={
-              activeSubTab === "assistants" ? "#FFFFFF" : colors.textSecondary
+              activeSubTab === "assistants"
+                ? isDark
+                  ? "#C4B5FD"
+                  : "#6D28D9"
+                : colors.textSecondary
             }
           />
           <Text
             style={{
               fontSize: 12.5,
-              fontWeight: activeSubTab === "assistants" ? "700" : "500",
+              fontWeight: activeSubTab === "assistants" ? "600" : "500",
               color:
-                activeSubTab === "assistants" ? "#FFFFFF" : colors.textSecondary,
+                activeSubTab === "assistants"
+                  ? isDark
+                    ? "#C4B5FD"
+                    : "#6D28D9"
+                  : colors.textSecondary,
+              letterSpacing: -0.2,
             }}
           >
-            Agents ({assistants.length})
+            Agents
           </Text>
+          <View
+            style={{
+              paddingHorizontal: 6,
+              paddingVertical: 1.5,
+              borderRadius: 10,
+              minWidth: 18,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor:
+                activeSubTab === "assistants"
+                  ? isDark
+                    ? "rgba(185, 168, 255, 0.28)"
+                    : "#FFFFFF"
+                  : isDark
+                    ? "rgba(255, 255, 255, 0.08)"
+                    : "rgba(0, 0, 0, 0.05)",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: "700",
+                color:
+                  activeSubTab === "assistants"
+                    ? isDark
+                      ? "#EDE9FE"
+                      : "#6D28D9"
+                    : colors.textSecondary,
+              }}
+            >
+              {assistants.length}
+            </Text>
+          </View>
         </Pressable>
       </View>
 
