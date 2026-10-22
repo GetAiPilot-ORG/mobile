@@ -86,7 +86,8 @@
           "icon": "./assets/images/logobag.png",
           "color": "#DEA5A4"
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,

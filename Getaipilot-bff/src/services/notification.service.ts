@@ -792,12 +792,94 @@ export class NotificationService {
 
   /**
    * Realtime Database Bridge:
+  /**
+   * Helper to process any notification record and send native Expo Push Notification
+   */
+  static async processNotificationRow(row: any) {
+    if (!row) return;
+
+    const title = row.title || 'GetAiPilot Alert';
+    const body = row.description || row.content || '';
+    let channelId = 'default';
+    let route = row.link || '/(tabs)/activity';
+
+    const rawType = (row.type || 'info').toLowerCase();
+    if (rawType.includes('whatsapp') || rawType === 'messages') {
+      channelId = 'messages';
+      route = row.link || '/(tabs)';
+    } else if (rawType.includes('handover') || rawType.includes('takeover') || rawType.includes('human')) {
+      channelId = 'messages';
+      route = row.link || '/inbox';
+    } else if (rawType.includes('social') || rawType.includes('template') || rawType.includes('campaign')) {
+      channelId = 'campaigns';
+      route = row.link || '/tools';
+    } else if (rawType.includes('team') || rawType.includes('member') || rawType === 'admin' || rawType === 'leave') {
+      channelId = 'admin';
+      route = row.link || '/crm';
+    } else if (rawType === 'system') {
+      channelId = 'system';
+    } else if (rawType.includes('click') || rawType.includes('view') || rawType === 'analytics') {
+      channelId = 'analytics';
+      route = row.link || '/tools/my-designs';
+    }
+
+    const dedupeKey = `${row.id || ''}_${row.user_id || row.org_id || 'broadcast'}_${title}_${body}`;
+    if (this.isDuplicateBffSend(dedupeKey)) {
+      return;
+    }
+
+    console.log(`[NotificationService] Processing DB notification: "${title}" (Type: ${row.type}, Channel: ${channelId})`);
+
+    if (row.user_id) {
+      await this.sendToUser(row.user_id, {
+        title,
+        body,
+        channelId,
+        data: {
+          route,
+          type: row.type || 'system',
+          id: row.id,
+          userId: row.user_id,
+          metadata: row.metadata,
+        },
+      });
+    } else if (row.org_id) {
+      await this.sendToOrg(row.org_id, {
+        title,
+        body,
+        channelId,
+        data: {
+          route,
+          type: row.type || 'system',
+          id: row.id,
+          metadata: row.metadata,
+        },
+      });
+    } else {
+      // Platform-wide Broadcast (user_id is null): Deliver to ALL active mobile users
+      await this.sendToAllUsers({
+        title,
+        body,
+        channelId,
+        data: {
+          route,
+          type: row.type || 'broadcast',
+          id: row.id,
+          metadata: row.metadata,
+        },
+      });
+    }
+  }
+
+  /**
    * Listens to table `notifications` inserts from bot-dashboard (Admin Broadcast,
    * Waitlist alerts, Attendance/Leave requests) and automatically forwards them
    * as Expo Push Notifications to mobile devices in Foreground, Background, and Kill mode.
+   * Includes both Supabase Realtime and high-speed DB polling fallback.
    */
   static initRealtimeDbListener() {
     try {
+      // 1. Supabase Realtime channel listener
       this.adminSupabase
         .channel('public:notifications-push-bridge')
         .on(
@@ -805,85 +887,37 @@ export class NotificationService {
           { event: 'INSERT', schema: 'public', table: 'notifications' },
           async (payload) => {
             const row = payload.new as any;
-            if (!row) return;
-
-            const title = row.title || 'GetAiPilot Alert';
-            const body = row.description || row.content || '';
-            let channelId = 'default';
-            let route = row.link || '/(tabs)/activity';
-
-            const rawType = (row.type || 'info').toLowerCase();
-            if (rawType.includes('whatsapp') || rawType === 'messages') {
-              channelId = 'messages';
-              route = row.link || '/(tabs)';
-            } else if (rawType.includes('handover') || rawType.includes('takeover') || rawType.includes('human')) {
-              channelId = 'messages';
-              route = row.link || '/inbox';
-            } else if (rawType.includes('social') || rawType.includes('template') || rawType.includes('campaign')) {
-              channelId = 'campaigns';
-              route = row.link || '/tools';
-            } else if (rawType.includes('team') || rawType.includes('member') || rawType === 'admin' || rawType === 'leave') {
-              channelId = 'admin';
-              route = row.link || '/crm';
-            } else if (rawType === 'system') {
-              channelId = 'system';
-            } else if (rawType.includes('click') || rawType.includes('view') || rawType === 'analytics') {
-              channelId = 'analytics';
-              route = row.link || '/tools/my-designs';
-            }
-
-            const dedupeKey = `${row.user_id || row.org_id || 'broadcast'}_${title}_${body}`;
-            if (this.isDuplicateBffSend(dedupeKey)) {
-              console.log(`[NotificationService] Skipping duplicate BFF push for: "${title}"`);
-              return;
-            }
-
-            console.log(`[NotificationService] Realtime DB notification bridged: "${title}" (Type: ${row.type}, Channel: ${channelId})`);
-
-            if (row.user_id) {
-              await this.sendToUser(row.user_id, {
-                title,
-                body,
-                channelId,
-                data: {
-                  route,
-                  type: row.type || 'system',
-                  id: row.id,
-                  userId: row.user_id,
-                  metadata: row.metadata,
-                },
-              });
-            } else if (row.org_id) {
-              await this.sendToOrg(row.org_id, {
-                title,
-                body,
-                channelId,
-                data: {
-                  route,
-                  type: row.type || 'system',
-                  id: row.id,
-                  metadata: row.metadata,
-                },
-              });
-            } else {
-              // Platform-wide Broadcast (user_id is null): Deliver to ALL active mobile users
-              await this.sendToAllUsers({
-                title,
-                body,
-                channelId,
-                data: {
-                  route,
-                  type: row.type || 'broadcast',
-                  id: row.id,
-                  metadata: row.metadata,
-                },
-              });
+            if (row) {
+              await this.processNotificationRow(row);
             }
           }
         )
         .subscribe((status) => {
           console.log(`[NotificationService] Bot-Dashboard DB Notifications Realtime Bridge: ${status}`);
         });
+
+      // 2. High-speed DB polling fallback every 4 seconds
+      // Guarantees push notification delivery even if the 'notifications' table is not in supabase_realtime publication
+      let lastCheckedTime = new Date().toISOString();
+      setInterval(async () => {
+        try {
+          const { data: newNotifications } = await this.adminSupabase
+            .from('notifications')
+            .select('*')
+            .gt('created_at', lastCheckedTime)
+            .order('created_at', { ascending: true })
+            .limit(20);
+
+          if (Array.isArray(newNotifications) && newNotifications.length > 0) {
+            lastCheckedTime = newNotifications[newNotifications.length - 1].created_at || new Date().toISOString();
+            for (const item of newNotifications) {
+              await this.processNotificationRow(item);
+            }
+          }
+        } catch {
+          // ignore transient poll error
+        }
+      }, 4000);
     } catch (err: any) {
       console.warn('[NotificationService] Failed to initialize DB notifications bridge:', err?.message || err);
     }

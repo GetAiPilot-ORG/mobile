@@ -21,6 +21,7 @@ import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
 import { useThemedDialog } from '@/components';
 import { useTheme, getColors } from '@/theme';
+// expo-sharing requires a new APK build to link native module — using RN built-in Share instead
 
 const LANGUAGES = [
   { code: 'auto', label: 'Auto Detect 🌐' },
@@ -345,10 +346,10 @@ export default function SpeechToTextScreen() {
               message: 'GetAIPilot requires microphone access to record audio and convert speech to text.',
               buttonPositive: 'Allow',
               buttonNegative: 'Deny',
-            }).catch(() => {});
+            }).catch(() => { });
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, []);
 
@@ -450,43 +451,71 @@ export default function SpeechToTextScreen() {
     try {
       console.log('🎙️ [Speech-to-Text] Uploading audio for transcription:', { fileName, mimeType });
 
-      const formData = new FormData();
-
-      if (typeof fileUriOrBlob === 'string') {
-        formData.append('file', {
-          uri: Platform.OS === 'android' ? fileUriOrBlob : fileUriOrBlob.replace('file://', ''),
-          name: fileName,
-          type: mimeType || 'audio/webm',
-        } as any);
-      } else {
-        formData.append('file', fileUriOrBlob, fileName);
-      }
-
-      if (selectedLanguage && selectedLanguage !== 'auto') {
-        formData.append('language', selectedLanguage);
-      }
-      formData.append('response_format', 'text');
-
       const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://uklxlappjcuvdqjvecfh.supabase.co';
       const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+      let cleanTranscript = '';
 
-      const response = await fetch(`${supabaseUrl}/functions/v1/transcribe-audio`, {
-        method: 'POST',
-        headers: {
-          apikey: anonKey,
-          Authorization: `Bearer ${anonKey}`,
-        },
-        body: formData,
-      });
+      if (Platform.OS !== 'web' && typeof fileUriOrBlob === 'string') {
+        // Native Mobile (Android & iOS): Use native FileSystem.uploadAsync for high-performance multipart streaming
+        const uploadResult = await FileSystem.uploadAsync(
+          `${supabaseUrl}/functions/v1/transcribe-audio`,
+          fileUriOrBlob,
+          {
+            uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+            fieldName: 'file',
+            mimeType: mimeType || 'audio/webm',
+            httpMethod: 'POST',
+            headers: {
+              apikey: anonKey,
+              Authorization: `Bearer ${anonKey}`,
+            },
+            parameters: {
+              response_format: 'text',
+              ...(selectedLanguage && selectedLanguage !== 'auto' ? { language: selectedLanguage } : {}),
+            },
+          }
+        );
 
-      if (!response.ok) {
-        const errText = await response.text();
-        console.error('❌ [Speech-to-Text] Whisper response error:', response.status, errText);
-        throw new Error(errText || `Server responded with status ${response.status}`);
+        if (uploadResult.status < 200 || uploadResult.status >= 300) {
+          console.error('❌ [Speech-to-Text] Whisper response error:', uploadResult.status, uploadResult.body);
+          throw new Error(uploadResult.body || `Server responded with status ${uploadResult.status}`);
+        }
+
+        cleanTranscript = (uploadResult.body || '').trim();
+      } else {
+        // Web Platform: Standard Browser FormData & fetch
+        const formData = new FormData();
+        if (typeof fileUriOrBlob === 'string') {
+          const res = await fetch(fileUriOrBlob);
+          const blob = await res.blob();
+          formData.append('file', blob, fileName);
+        } else {
+          formData.append('file', fileUriOrBlob, fileName);
+        }
+
+        if (selectedLanguage && selectedLanguage !== 'auto') {
+          formData.append('language', selectedLanguage);
+        }
+        formData.append('response_format', 'text');
+
+        const response = await fetch(`${supabaseUrl}/functions/v1/transcribe-audio`, {
+          method: 'POST',
+          headers: {
+            apikey: anonKey,
+            Authorization: `Bearer ${anonKey}`,
+          },
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          console.error('❌ [Speech-to-Text] Whisper response error:', response.status, errText);
+          throw new Error(errText || `Server responded with status ${response.status}`);
+        }
+
+        const resultText = await response.text();
+        cleanTranscript = (resultText || '').trim();
       }
-
-      const resultText = await response.text();
-      const cleanTranscript = (resultText || '').trim();
 
       if (!cleanTranscript) {
         throw new Error('No intelligible speech detected. Please speak louder and closer to the microphone.');
@@ -585,7 +614,7 @@ export default function SpeechToTextScreen() {
               data.error?.includes('NotReadableError')
                 ? 'Could not access device microphone. Please close other apps using audio (calls, voice notes) and try again.'
                 : data.error ||
-                  'Microphone recorder could not start. Please tap the microphone button again.',
+                'Microphone recorder could not start. Please tap the microphone button again.',
             type: 'warning',
             buttonText: 'Try Again',
             buttonBgColor: colors.accent,
@@ -712,23 +741,88 @@ export default function SpeechToTextScreen() {
   };
 
   const handleShare = async () => {
-    if (!transcript) return;
+    if (!transcript?.trim()) {
+      Alert.alert('No Transcript', 'Please record and transcribe audio first.');
+      return;
+    }
+
+    const fileName = `GetAiPilot_Transcript_${Date.now()}.txt`;
+    const fileContent = [
+      'GetAiPilot - AI Audio Transcript',
+      '================================',
+      '',
+      `Date: ${new Date().toLocaleString()}`,
+      '',
+      'Transcript:',
+      transcript.trim(),
+      '',
+      'Key Takeaways:',
+      '--------------',
+      ...(summaryBullets.length
+        ? summaryBullets.map((item) => `- ${item}`)
+        : ['No key takeaways available.']),
+      '',
+      'Generated by GetAiPilot AI.',
+    ].join('\n');
+
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      await Share.share({
-        message: `AI Audio Transcript:\n\n${transcript}\n\nKey Takeaways:\n${summaryBullets
-          .map((b) => `• ${b}`)
-          .join('\n')}\n\nTranscribed with GetAiPilot AI.`,
-      });
-    } catch { }
+      // ── Step 1: Try to save to Downloads via SAF (Android only) ──
+      if (Platform.OS === 'android') {
+        try {
+          const permissions =
+            await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+          if (permissions.granted) {
+            const uri = await FileSystem.StorageAccessFramework.createFileAsync(
+              permissions.directoryUri,
+              fileName,
+              'text/plain'
+            );
+            await FileSystem.writeAsStringAsync(uri, fileContent, {
+              encoding: FileSystem.EncodingType.UTF8,
+            });
+            Alert.alert(
+              'File Saved! 📄',
+              `Transcript saved to your selected folder:\n\n${fileName}\n\nYou can also share it below.`,
+              [
+                { text: 'Share Too', onPress: () => doShareText(fileContent) },
+                { text: 'Done', style: 'cancel' },
+              ]
+            );
+            return;
+          }
+        } catch (safErr: any) {
+          console.warn('[SAF] Could not save to Downloads:', safErr?.message);
+          // Fall through to plain text share
+        }
+      }
+
+      // ── Step 2: Fallback — share as plain text (works on all platforms, no APK rebuild needed) ──
+      await doShareText(fileContent);
+    } catch (error: any) {
+      console.error('[Share Error]', error);
+      Alert.alert('Share Failed', error?.message || 'Unable to share transcript.');
+    }
+  };
+
+  const doShareText = async (content: string) => {
+    try {
+      await Share.share(
+        {
+          title: 'GetAiPilot Transcript',
+          message: content,
+        },
+        { dialogTitle: 'Share GetAiPilot Transcript' }
+      );
+    } catch (err: any) {
+      if (err?.message !== 'User did not share') {
+        Alert.alert('Share Failed', err?.message || 'Could not open share sheet.');
+      }
+    }
   };
 
   return (
     <AppScreen safeArea={false} backgroundColor={theme.bg}>
       <AppTopBar title="AI Speech-to-Text" showBack={true} />
-
-
-
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Main Recording Studio Card */}
         <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
