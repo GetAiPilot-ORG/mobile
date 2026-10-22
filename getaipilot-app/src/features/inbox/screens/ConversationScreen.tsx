@@ -601,7 +601,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
                   numberOfLines={1}
                 >
                   {isTelegram
-                    ? `User ID: ${conversation?.contact?.handle_or_phone || '2093321330'}`
+                    ? `${conversation?.contact?.handle_or_phone || 'Telegram Contact'}${conversation?.bot_name ? ` • via ${conversation.bot_name}` : ''}`
                     : isInstagram
                     ? `${conversation?.contact?.handle_or_phone?.startsWith('@') ? conversation.contact.handle_or_phone : `@${conversation?.contact?.handle_or_phone || 'user'}`} • via getaipilot`
                     : conversation?.contact?.handle_or_phone?.startsWith('@')

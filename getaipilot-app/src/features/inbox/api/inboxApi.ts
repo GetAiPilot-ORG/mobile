@@ -43,17 +43,23 @@ export const inboxApi = {
     search?: string
   ): Promise<NormalizedConversation[]> => {
     let orgId: string | undefined;
+    let currentUserId: string | null = null;
     try {
-      orgId = (await import('../../../core/store/authStore')).useAuthStore.getState().user?.organizationId;
-      if (!orgId) {
+      const storeUser = (await import('../../../core/store/authStore')).useAuthStore.getState().user;
+      orgId = storeUser?.organizationId;
+      currentUserId = storeUser?.id || null;
+      if (!orgId || !currentUserId) {
         const { data: authData } = await supabase.auth.getUser();
         if (authData?.user?.id) {
-          const { data: member } = await supabase
-            .from('organization_members')
-            .select('organization_id')
-            .eq('user_id', authData.user.id)
-            .maybeSingle();
-          orgId = member?.organization_id;
+          if (!currentUserId) currentUserId = authData.user.id;
+          if (!orgId) {
+            const { data: member } = await supabase
+              .from('organization_members')
+              .select('organization_id')
+              .eq('user_id', authData.user.id)
+              .maybeSingle();
+            orgId = member?.organization_id;
+          }
         }
       }
     } catch (_) {}
@@ -139,86 +145,124 @@ export const inboxApi = {
 
     // ── 2. Fetch Telegram Conversations ──────────────────────────────────────
     let tgList: NormalizedConversation[] = [];
-    try {
-      const { data: tgMsgs } = await supabase
-        .from('tg_chat_messages')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(200);
+    if (currentUserId) {
+      try {
+        const userBotIds = new Set<string>();
+        const botNameMap = new Map<string, string>();
 
-      if (tgMsgs && tgMsgs.length > 0) {
-        const userGroups = new Map<string, any[]>();
-        tgMsgs.forEach((msg: any) => {
-          const uid = String(msg.telegram_user_id || 'unknown');
-          if (!userGroups.has(uid)) {
-            userGroups.set(uid, []);
+        // Find user's configured chatbots
+        const { data: userBots } = await supabase
+          .from('tg_chatbot_configs')
+          .select('id, bot_id, bot_name, bot_username, support_name, status')
+          .eq('user_id', currentUserId)
+          .eq('status', 'active');
+
+        (userBots || []).forEach((b: any) => {
+          const bId = String(b.bot_id || b.id);
+          const displayName = (b.support_name || b.bot_name || 'AI Assistant').trim();
+          userBotIds.add(bId);
+          botNameMap.set(bId, displayName);
+        });
+
+        // Check BFF chatbot configs if available
+        try {
+          const bffBots = await apiClient.get<any[]>('/mobile/v1/telegram/chatbots');
+          if (Array.isArray(bffBots)) {
+            bffBots.forEach((b: any) => {
+              if (b.status === 'active' && b.bot_id) {
+                const bId = String(b.bot_id);
+                userBotIds.add(bId);
+                if (!botNameMap.has(bId)) {
+                  botNameMap.set(bId, (b.support_name || b.bot_name || 'AI Assistant').trim());
+                }
+              }
+            });
           }
-          userGroups.get(uid)!.push(msg);
-        });
+        } catch (_) {}
 
-        userGroups.forEach((msgs, uid) => {
-          const latest = msgs[0];
-          const userName = latest.user_name || `Telegram User #${uid}`;
-          const isUser = (latest.role || latest.sender_type || '').toLowerCase() === 'user';
-          const content = latest.content || latest.message_text || latest.text || '/start';
+        // Query messages for all active AI customer chatbots
+        if (userBotIds.size > 0) {
+          const { data: tgMsgs } = await supabase
+            .from('tg_chat_messages')
+            .select('*')
+            .in('bot_id', Array.from(userBotIds))
+            .order('created_at', { ascending: false })
+            .limit(300);
 
-          tgList.push({
-            id: `tg_conv_${uid}`,
-            organization_id: orgId || '',
-            contact: {
-              name: userName,
-              handle_or_phone: `@${userName}`,
-            },
-            channel: 'telegram' as const,
-            last_message: {
-              content,
-              created_at: latest.created_at || new Date().toISOString(),
-              direction: isUser ? 'inbound' as const : 'outbound' as const,
-            },
-            unread_count: 0,
-            bot_enabled: true,
-            status: 'active' as const,
-          });
-        });
+          if (tgMsgs && tgMsgs.length > 0) {
+            const userGroups = new Map<string, any[]>();
+            tgMsgs.forEach((msg: any) => {
+              const uid = String(msg.telegram_user_id || 'unknown');
+              const botId = String(msg.bot_id || Array.from(userBotIds)[0]);
+              const key = `${uid}_bot_${botId}`;
+              if (!userGroups.has(key)) {
+                userGroups.set(key, []);
+              }
+              userGroups.get(key)!.push(msg);
+            });
+
+            userGroups.forEach((msgs, key) => {
+              const latest = msgs[0];
+              const uid = String(latest.telegram_user_id || 'unknown');
+              const botId = String(latest.bot_id || Array.from(userBotIds)[0]);
+              const botName = botNameMap.get(botId) || 'AI Bot';
+
+              const userName = latest.user_name || `Telegram User #${uid}`;
+              const isUser = (latest.role || latest.sender_type || '').toLowerCase() === 'user';
+              const content = latest.content || latest.message_text || latest.text || '/start';
+
+              tgList.push({
+                id: `tg_conv_${uid}_bot_${botId}`,
+                organization_id: orgId || '',
+                contact: {
+                  name: userName,
+                  handle_or_phone: `@${userName.replace(/\s+/g, '_')}`,
+                },
+                channel: 'telegram' as const,
+                bot_id: botId,
+                bot_name: botName,
+                last_message: {
+                  content,
+                  created_at: latest.created_at || new Date().toISOString(),
+                  direction: isUser ? ('inbound' as const) : ('outbound' as const),
+                },
+                unread_count: 0,
+                bot_enabled: true,
+                status: 'active' as const,
+              });
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('[inboxApi] tg_chat_messages fetch notice:', err);
       }
-    } catch (err) {
-      console.warn('[inboxApi] tg_chat_messages fetch notice:', err);
-    }
-
-    if (tgList.length === 0) {
-      tgList = [
-        {
-          id: 'tg_conv_shwet',
-          organization_id: orgId || '',
-          contact: {
-            name: 'Shwet (Telegram Pilot)',
-            handle_or_phone: '@shwet_gap',
-          },
-          channel: 'telegram' as const,
-          last_message: {
-            content: 'Telegram Autopilot is active and routing updates.',
-            created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-            direction: 'inbound' as const,
-          },
-          unread_count: 0,
-          bot_enabled: true,
-          status: 'active' as const,
-        },
-      ];
     }
 
     // ── 3. Fetch InstaPilot (Instagram) Conversations ────────────────────────
     let igList: NormalizedConversation[] = [];
     try {
-      const igData = await apiClient.get<any[]>('/mobile/v1/social/instapilot/conversations');
-      if (Array.isArray(igData) && igData.length > 0) {
-        igList = igData.map((c) => {
-          const lastMsg = Array.isArray(c.instagram_messages)
+      // Trigger background sync to ensure latest Instagram DMs are updated
+      apiClient.post('/mobile/v1/social/instapilot/sync', {}).catch(() => {});
+
+      const [instapilotRes, socialInboxRes] = await Promise.allSettled([
+        apiClient.get<any>('/mobile/v1/social/instapilot/conversations'),
+        apiClient.get<any>('/mobile/v1/social/inbox/conversations', { params: { limit: 50 } }),
+      ]);
+
+      const seenHandles = new Set<string>();
+
+      // 1. Map Instapilot automated lead/DM conversations
+      if (instapilotRes.status === 'fulfilled') {
+        const raw = instapilotRes.value;
+        const list = Array.isArray(raw) ? raw : (raw?.conversations || raw?.data || []);
+        list.forEach((c: any) => {
+          const lastMsg = Array.isArray(c.instagram_messages) && c.instagram_messages.length > 0
             ? c.instagram_messages[c.instagram_messages.length - 1]
             : null;
           const uname = c.instagram_username || 'instagram_user';
-          return {
-            id: c.id ? (c.id.startsWith('ig_') ? c.id : `ig_conv_${c.id}`) : `ig_conv_${uname}`,
+          seenHandles.add(uname.toLowerCase());
+          igList.push({
+            id: c.id ? (String(c.id).startsWith('ig_') ? String(c.id) : `ig_conv_${c.id}`) : `ig_conv_${uname}`,
             organization_id: orgId || '',
             contact: {
               name: c.instagram_name || uname,
@@ -234,49 +278,40 @@ export const inboxApi = {
             unread_count: c.unread_count || 0,
             bot_enabled: c.status === 'bot_active' && !c.bot_paused,
             status: 'active' as const,
-          };
+          });
+        });
+      }
+
+      // 2. Map Social Inbox Instagram conversations
+      if (socialInboxRes.status === 'fulfilled') {
+        const raw = socialInboxRes.value;
+        const items = Array.isArray(raw?.items) ? raw.items : (Array.isArray(raw) ? raw : []);
+        items.forEach((item: any) => {
+          if (item.platform && item.platform.toLowerCase() !== 'instagram') return;
+          const handle = (item.authorHandle || item.authorName || 'user').replace('@', '').toLowerCase();
+          if (seenHandles.has(handle)) return;
+          seenHandles.add(handle);
+          igList.push({
+            id: `ig_inbox_${item.databaseId || item.id}`,
+            organization_id: orgId || '',
+            contact: {
+              name: item.authorName || `@${handle}`,
+              handle_or_phone: `@${handle}`,
+              avatar_url: item.authorAvatar,
+            },
+            channel: 'instagram' as const,
+            last_message: {
+              content: item.text || 'Instagram message',
+              created_at: item.createdAt || new Date().toISOString(),
+              direction: item.replied ? ('outbound' as const) : ('inbound' as const),
+            },
+            unread_count: item.unread ? 1 : 0,
+            bot_enabled: false,
+            status: 'active' as const,
+          });
         });
       }
     } catch (_) {}
-
-    if (igList.length === 0) {
-      igList = [
-        {
-          id: 'ig_conv_poojasharma',
-          organization_id: orgId || '',
-          contact: {
-            name: 'Pooja Sharma',
-            handle_or_phone: '@poojasharma.style',
-          },
-          channel: 'instagram' as const,
-          last_message: {
-            content: 'Hi! Can you share pricing for the creator bundle?',
-            created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-            direction: 'inbound' as const,
-          },
-          unread_count: 1,
-          bot_enabled: true,
-          status: 'active' as const,
-        },
-        {
-          id: 'ig_conv_rahulvlogs',
-          organization_id: orgId || '',
-          contact: {
-            name: 'Rahul Verma',
-            handle_or_phone: '@rahul_vlogs',
-          },
-          channel: 'instagram' as const,
-          last_message: {
-            content: 'Auto-DM received from InstaPilot. Thanks!',
-            created_at: new Date(Date.now() - 3600000 * 20).toISOString(),
-            direction: 'inbound' as const,
-          },
-          unread_count: 0,
-          bot_enabled: true,
-          status: 'active' as const,
-        },
-      ];
-    }
 
     // ── 4. Combine & Sort Feed Chronologically ──────────────────────────────
     let allConversations: NormalizedConversation[] = [...waList, ...tgList, ...igList];
@@ -309,105 +344,252 @@ export const inboxApi = {
   ): Promise<{ conversation: NormalizedConversation | null; messages: NormalizedMessage[] }> => {
     // ── 1. Telegram Conversation ───────────────────────────────────────────
     if (id.startsWith('tg_conv_')) {
-      const tgUid = id.replace('tg_conv_', '');
+      let tgUid = id.replace('tg_conv_', '');
+      let botId: string | null = null;
+      if (tgUid.includes('_bot_')) {
+        const parts = tgUid.split('_bot_');
+        tgUid = parts[0];
+        botId = parts[1];
+      }
+
       try {
-        const { data: tgMsgs } = await supabase
+        let query = supabase
           .from('tg_chat_messages')
           .select('*')
           .eq('telegram_user_id', Number(tgUid) || tgUid)
           .order('created_at', { ascending: true })
           .limit(100);
 
-        const userName = tgMsgs?.[0]?.user_name || `Telegram User #${tgUid}`;
-        const lastMsg = tgMsgs && tgMsgs.length > 0 ? tgMsgs[tgMsgs.length - 1] : null;
+        if (botId) {
+          query = query.eq('bot_id', botId);
+        }
 
-        const conv: NormalizedConversation = {
-          id,
-          organization_id: '',
-          contact: {
-            name: userName,
-            handle_or_phone: `@${userName}`,
-          },
-          channel: 'telegram' as const,
-          last_message: {
-            content: lastMsg?.content || lastMsg?.message_text || '/start',
-            created_at: lastMsg?.created_at || new Date().toISOString(),
-            direction: (lastMsg?.role === 'user') ? ('inbound' as const) : ('outbound' as const),
-          },
-          unread_count: 0,
-          status: 'active' as const,
-          bot_enabled: true,
-        };
+        const { data: tgMsgs } = await query;
 
-        const msgs: NormalizedMessage[] = (tgMsgs || []).map((m: any) => {
-          const isUser = (m.role || m.sender_type || '').toLowerCase() === 'user';
-          return {
-            id: m.id || `tg_msg_${Math.random()}`,
-            conversation_id: id,
-            channel: 'telegram' as const,
-            direction: isUser ? ('inbound' as const) : ('outbound' as const),
-            content: m.content || m.message_text || m.text || '',
-            media: [],
-            sender: {
-              name: isUser ? (m.user_name || 'Contact') : 'Telegram Bot',
-              type: isUser ? ('contact' as const) : ('bot' as const),
+        if (tgMsgs && tgMsgs.length > 0) {
+          const userName = tgMsgs[0]?.user_name || `Telegram User #${tgUid}`;
+          const lastMsg = tgMsgs[tgMsgs.length - 1];
+
+          let resolvedBotName: string | undefined = undefined;
+          if (botId) {
+            try {
+              const { data: botCfg } = await supabase
+                .from('tg_chatbot_configs')
+                .select('support_name, bot_name')
+                .eq('bot_id', botId)
+                .maybeSingle();
+              if (botCfg) {
+                resolvedBotName = (botCfg.support_name || botCfg.bot_name || 'AI Assistant').trim();
+              }
+            } catch (_) {}
+          }
+
+          const conv: NormalizedConversation = {
+            id,
+            organization_id: '',
+            contact: {
+              name: userName,
+              handle_or_phone: `@${userName.replace(/\s+/g, '_')}`,
             },
-            created_at: m.created_at || new Date().toISOString(),
+            channel: 'telegram' as const,
+            bot_id: botId || undefined,
+            bot_name: resolvedBotName,
+            last_message: {
+              content: lastMsg?.content || lastMsg?.message_text || lastMsg?.text || '/start',
+              created_at: lastMsg?.created_at || new Date().toISOString(),
+              direction: (lastMsg?.role === 'user') ? ('inbound' as const) : ('outbound' as const),
+            },
+            unread_count: 0,
+            status: 'active' as const,
+            bot_enabled: true,
           };
-        });
 
-        return { conversation: conv, messages: msgs };
+          const msgs: NormalizedMessage[] = tgMsgs.map((m: any) => {
+            const isUser = (m.role || m.sender_type || '').toLowerCase() === 'user';
+            return {
+              id: String(m.id || `tg_msg_${Math.random()}`),
+              conversation_id: id,
+              channel: 'telegram' as const,
+              direction: isUser ? ('inbound' as const) : ('outbound' as const),
+              content: m.content || m.message_text || m.text || '',
+              media: [],
+              sender: {
+                name: isUser ? (m.user_name || 'Contact') : 'Telegram Bot',
+                type: isUser ? ('contact' as const) : ('bot' as const),
+              },
+              created_at: m.created_at || new Date().toISOString(),
+            };
+          });
+
+          return { conversation: conv, messages: msgs };
+        }
       } catch (err) {
         console.warn('[inboxApi] Telegram details error:', err);
       }
+
+      return {
+        conversation: {
+          id,
+          organization_id: '',
+          contact: {
+            name: `Telegram User #${tgUid}`,
+            handle_or_phone: `@user_${tgUid}`,
+          },
+          channel: 'telegram' as const,
+          last_message: {
+            content: 'No messages yet',
+            created_at: new Date().toISOString(),
+            direction: 'inbound',
+          },
+          unread_count: 0,
+          status: 'active',
+          bot_enabled: true,
+        },
+        messages: [],
+      };
     }
 
-    // ── 2. InstaPilot (Instagram) Conversation ─────────────────────────────
-    if (id.startsWith('ig_conv_')) {
-      const igKey = id.replace('ig_conv_', '');
-      const sampleMessages: NormalizedMessage[] = [
-        {
-          id: 'ig_msg_1',
-          conversation_id: id,
-          channel: 'instagram' as const,
-          direction: 'inbound' as const,
-          content: 'Hi! Can you share pricing for the creator bundle?',
-          media: [],
-          sender: { name: 'Pooja Sharma', type: 'contact' as const },
-          created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-        },
-        {
-          id: 'ig_msg_2',
-          conversation_id: id,
-          channel: 'instagram' as const,
-          direction: 'outbound' as const,
-          content: 'Hello! Our creator bundle includes Auto-DM, Story boost, and automated lead capture. Would you like a live demo?',
-          media: [],
-          sender: { name: 'InstaPilot Bot', type: 'bot' as const },
-          is_bot_reply: true,
-          created_at: new Date(Date.now() - 3600000 * 4.5).toISOString(),
-        },
-      ];
+    // ── 2. InstaPilot & Social Inbox (Instagram) Conversation ──────────────
+    if (id.startsWith('ig_conv_') || id.startsWith('ig_inbox_')) {
+      const isInboxType = id.startsWith('ig_inbox_');
+      const cleanKey = id.replace('ig_conv_', '').replace('ig_inbox_', '');
 
-      const conv: NormalizedConversation = {
-        id,
-        organization_id: '',
-        contact: {
-          name: igKey.includes('.') ? igKey.split('.')[0] : 'Pooja Sharma',
-          handle_or_phone: `@${igKey}`,
+      // 1. Try Instapilot conversations first
+      try {
+        const igData = await apiClient.get<any>('/mobile/v1/social/instapilot/conversations');
+        const list = Array.isArray(igData) ? igData : (igData?.conversations || igData?.data || []);
+        const found = list.find(
+          (c: any) =>
+            String(c.id) === cleanKey ||
+            c.instagram_username === cleanKey ||
+            `ig_conv_${c.id}` === id ||
+            `ig_conv_${c.instagram_username}` === id
+        );
+
+        if (found) {
+          const rawMsgs = Array.isArray(found.instagram_messages) ? found.instagram_messages : [];
+          const convName = found.instagram_name || found.instagram_username || 'Instagram User';
+          const convHandle = found.instagram_username ? `@${found.instagram_username}` : '';
+
+          const msgs: NormalizedMessage[] = rawMsgs.map((m: any, idx: number) => {
+            const isUser = m.direction === 'inbound';
+            return {
+              id: String(m.id || `ig_msg_${found.id || cleanKey}_${idx}`),
+              conversation_id: id,
+              channel: 'instagram' as const,
+              direction: isUser ? ('inbound' as const) : ('outbound' as const),
+              content: m.message_text || m.content || '',
+              media: [],
+              sender: {
+                name: isUser ? convName : 'InstaPilot Bot',
+                type: isUser ? ('contact' as const) : ('bot' as const),
+              },
+              is_bot_reply: !isUser,
+              created_at: m.created_at || new Date().toISOString(),
+            };
+          });
+
+          const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+
+          const conv: NormalizedConversation = {
+            id,
+            organization_id: '',
+            contact: {
+              name: convName,
+              handle_or_phone: convHandle,
+              avatar_url: found.profile_pic_url,
+            },
+            channel: 'instagram' as const,
+            last_message: {
+              content: lastMsg?.content || found.notes || 'Instagram DM active',
+              created_at: lastMsg?.created_at || found.last_message_at || found.created_at || new Date().toISOString(),
+              direction: lastMsg?.direction || 'inbound',
+            },
+            unread_count: found.unread_count || 0,
+            status: 'active' as const,
+            bot_enabled: found.status === 'bot_active' && !found.bot_paused,
+          };
+
+          return { conversation: conv, messages: msgs };
+        }
+      } catch (err) {
+        console.warn('[inboxApi] Instapilot details error:', err);
+      }
+
+      // 2. Try Social Inbox conversations & message history
+      try {
+        const inboxRes = await apiClient.get<any>('/mobile/v1/social/inbox/conversations', { params: { limit: 50 } });
+        const items = Array.isArray(inboxRes?.items) ? inboxRes.items : (Array.isArray(inboxRes) ? inboxRes : []);
+        const foundItem = items.find((it: any) => String(it.databaseId) === cleanKey || String(it.id) === cleanKey);
+
+        if (foundItem) {
+          const msgsRes = await apiClient.get<any>(`/mobile/v1/social/inbox/conversations/${foundItem.databaseId || cleanKey}/messages`, { params: { limit: 50 } });
+          const rawMsgs = Array.isArray(msgsRes?.messages) ? msgsRes.messages : (Array.isArray(msgsRes) ? msgsRes : []);
+
+          const author = foundItem.authorName || 'Instagram User';
+          const handle = (foundItem.authorHandle || foundItem.authorName || 'user').replace('@', '');
+
+          const msgs: NormalizedMessage[] = rawMsgs.map((m: any, idx: number) => ({
+            id: String(m.id || `ig_inbox_msg_${idx}`),
+            conversation_id: id,
+            channel: 'instagram' as const,
+            direction: m.isSelf ? ('outbound' as const) : ('inbound' as const),
+            content: m.text || '',
+            media: [],
+            sender: {
+              name: m.isSelf ? 'You' : author,
+              type: m.isSelf ? ('agent' as const) : ('contact' as const),
+            },
+            created_at: m.createdAt || new Date().toISOString(),
+          }));
+
+          const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+
+          const conv: NormalizedConversation = {
+            id,
+            organization_id: '',
+            contact: {
+              name: author,
+              handle_or_phone: `@${handle}`,
+              avatar_url: foundItem.authorAvatar,
+            },
+            channel: 'instagram' as const,
+            last_message: {
+              content: lastMsg?.content || foundItem.text || 'Instagram message',
+              created_at: lastMsg?.created_at || foundItem.createdAt || new Date().toISOString(),
+              direction: lastMsg?.direction || 'inbound',
+            },
+            unread_count: foundItem.unread ? 1 : 0,
+            status: 'active' as const,
+            bot_enabled: false,
+          };
+
+          return { conversation: conv, messages: msgs };
+        }
+      } catch (err) {
+        console.warn('[inboxApi] Social inbox details error:', err);
+      }
+
+      return {
+        conversation: {
+          id,
+          organization_id: '',
+          contact: {
+            name: cleanKey,
+            handle_or_phone: `@${cleanKey}`,
+          },
+          channel: 'instagram' as const,
+          last_message: {
+            content: 'No messages yet',
+            created_at: new Date().toISOString(),
+            direction: 'inbound',
+          },
+          unread_count: 0,
+          status: 'active',
+          bot_enabled: true,
         },
-        channel: 'instagram' as const,
-        last_message: {
-          content: sampleMessages[1].content,
-          created_at: sampleMessages[1].created_at,
-          direction: 'outbound' as const,
-        },
-        unread_count: 0,
-        status: 'active' as const,
-        bot_enabled: true,
+        messages: [],
       };
-
-      return { conversation: conv, messages: sampleMessages };
     }
 
     // ── 3. WhatsApp Conversation ───────────────────────────────────────────
@@ -555,17 +737,27 @@ export const inboxApi = {
   sendMessage: async (payload: SendMessagePayload): Promise<NormalizedMessage> => {
     // ── 1. Telegram Outbound Reply ──────────────────────────────────────────
     if (payload.conversation_id.startsWith('tg_conv_')) {
-      const tgUid = payload.conversation_id.replace('tg_conv_', '');
+      let tgUid = payload.conversation_id.replace('tg_conv_', '');
+      let botId: string | undefined = undefined;
+      if (tgUid.includes('_bot_')) {
+        const parts = tgUid.split('_bot_');
+        tgUid = parts[0];
+        botId = parts[1];
+      }
       const nowIso = new Date().toISOString();
       const newMsgId = `tg_out_${Date.now()}`;
       try {
-        await supabase.from('tg_chat_messages').insert({
+        const insertPayload: any = {
           telegram_user_id: Number(tgUid) || tgUid,
           role: 'assistant',
           content: payload.message,
           user_name: 'You',
           created_at: nowIso,
-        });
+        };
+        if (botId) {
+          insertPayload.bot_id = botId;
+        }
+        await supabase.from('tg_chat_messages').insert(insertPayload);
       } catch (err) {
         console.warn('[inboxApi] tg_chat_messages insert notice:', err);
       }
@@ -582,15 +774,19 @@ export const inboxApi = {
       };
     }
 
-    // ── 2. InstaPilot Outbound Reply ────────────────────────────────────────
-    if (payload.conversation_id.startsWith('ig_conv_')) {
+    // ── 2. InstaPilot & Social Inbox Outbound Reply ─────────────────────────
+    if (payload.conversation_id.startsWith('ig_conv_') || payload.conversation_id.startsWith('ig_inbox_')) {
       const nowIso = new Date().toISOString();
+      const realConvId = payload.conversation_id.replace('ig_conv_', '').replace('ig_inbox_', '');
       try {
-        await apiClient.post('/mobile/v1/social/instapilot/reply', {
-          conversation_id: payload.conversation_id,
-          message: payload.message,
+        await apiClient.post('/mobile/v1/social/inbox/reply', {
+          platform: 'instagram',
+          conversationDatabaseId: realConvId,
+          text: payload.message,
         });
-      } catch (_) {}
+      } catch (err) {
+        console.warn('[inboxApi] Social inbox reply notice:', err);
+      }
       return {
         id: `ig_out_${Date.now()}`,
         conversation_id: payload.conversation_id,
