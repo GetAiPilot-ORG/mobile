@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
+import { supabase } from "../../src/lib/supabase";
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Pressable,
   ScrollView,
   Share,
@@ -15,6 +17,7 @@ import * as Clipboard from "expo-clipboard";
 import * as DocumentPicker from "expo-document-picker";
 
 import {
+  Check,
   CheckCircle2,
   CloudUpload,
   Copy,
@@ -25,8 +28,10 @@ import {
   Image as ImageIcon,
   Link as LinkIcon,
   Music,
+  Plus,
   Share2,
   Sparkles,
+  Trash2,
   Upload,
   X,
 } from "lucide-react-native";
@@ -40,6 +45,15 @@ type SelectedFile = {
   uri: string;
   size?: number;
   mimeType?: string;
+};
+
+type GeneratedLink = {
+  id: string;
+  url: string;
+  fileName: string;
+  fileSize?: number;
+  mimeType?: string;
+  createdAt: string;
 };
 
 export default function FileLinkerScreen() {
@@ -57,21 +71,16 @@ export default function FileLinkerScreen() {
    * =========================================================
    */
 
-  const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
-
+  const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
   const [sourceUrl, setSourceUrl] = useState("");
-
-  const [generatedShareUrl, setGeneratedShareUrl] = useState("");
-
+  const [generatedLinks, setGeneratedLinks] = useState<GeneratedLink[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgressText, setUploadProgressText] = useState("");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   /*
    * =========================================================
    * THEME
-   *
-   * Main colors come from your centralized colors object.
-   * isDark is used for subtle UI differences such as
-   * shadows, overlays and upload-area appearance.
    * =========================================================
    */
 
@@ -87,35 +96,16 @@ export default function FileLinkerScreen() {
       primaryForeground: colors.primaryForeground,
 
       uploadBackground: isDark ? colors.surface : colors.surface,
-
       inputBackground: isDark ? colors.surface : colors.surface,
-
       iconBackground: isDark ? colors.surface : colors.card,
-
       softBackground: isDark ? colors.surface : colors.surface,
 
       shadowOpacity: isDark ? 0.22 : 0.06,
-
       shadowRadius: isDark ? 10 : 12,
-
       overlayBorder: isDark ? "rgba(255,255,255,0.10)" : colors.border,
     }),
     [isDark],
   );
-
-  /*
-   * =========================================================
-   * FILE EXTENSION
-   * =========================================================
-   */
-
-  const fileExtension = useMemo(() => {
-    if (!selectedFile?.name) {
-      return "";
-    }
-
-    return selectedFile.name.split(".").pop()?.toLowerCase() || "";
-  }, [selectedFile]);
 
   /*
    * =========================================================
@@ -149,27 +139,35 @@ export default function FileLinkerScreen() {
    * =========================================================
    */
 
-  const getFileIcon = () => {
-    const mimeType = selectedFile?.mimeType?.toLowerCase() || "";
+  const getFileIcon = (mime?: string, name?: string) => {
+    const mimeType = mime?.toLowerCase() || "";
+    const ext = name ? name.split(".").pop()?.toLowerCase() || "" : "";
 
-    if (mimeType.includes("image")) {
+    if (
+      mimeType.includes("image") ||
+      ["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp"].includes(ext)
+    ) {
       return ImageIcon;
     }
 
-    if (mimeType.includes("video")) {
+    if (
+      mimeType.includes("video") ||
+      ["mp4", "mov", "avi", "mkv", "webm", "m4v"].includes(ext)
+    ) {
       return Film;
     }
 
-    if (mimeType.includes("audio")) {
+    if (
+      mimeType.includes("audio") ||
+      ["mp3", "wav", "m4a", "aac", "ogg", "flac"].includes(ext)
+    ) {
       return Music;
     }
 
     if (
       mimeType.includes("pdf") ||
       mimeType.includes("document") ||
-      fileExtension === "pdf" ||
-      fileExtension === "doc" ||
-      fileExtension === "docx"
+      ["pdf", "doc", "docx", "txt", "rtf", "xls", "xlsx", "ppt", "pptx", "csv"].includes(ext)
     ) {
       return FileText;
     }
@@ -179,36 +177,42 @@ export default function FileLinkerScreen() {
 
   /*
    * =========================================================
-   * PICK FILE
+   * PICK FILES (Single or Multiple)
    * =========================================================
    */
 
-  const pickFile = async () => {
+  const pickFiles = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: "*/*",
         copyToCacheDirectory: true,
-        multiple: false,
+        multiple: true,
       });
 
-      if (result.canceled) {
+      if (result.canceled || !result.assets || result.assets.length === 0) {
         return;
       }
 
-      const file = result.assets[0];
-
-      setSelectedFile({
+      const newFiles: SelectedFile[] = result.assets.map((file) => ({
         name: file.name,
         uri: file.uri,
         size: file.size,
         mimeType: file.mimeType,
+      }));
+
+      setSelectedFiles((prev) => {
+        const existingKeys = new Set(
+          prev.map((f) => `${f.name}_${f.size || 0}`)
+        );
+        const unique = newFiles.filter(
+          (f) => !existingKeys.has(`${f.name}_${f.size || 0}`)
+        );
+        return [...prev, ...unique];
       });
 
       setSourceUrl("");
-      setGeneratedShareUrl("");
     } catch (error) {
       console.error("Document picker error:", error);
-
       Alert.alert(
         "Unable to select file",
         "Something went wrong while selecting the file.",
@@ -222,121 +226,163 @@ export default function FileLinkerScreen() {
    * =========================================================
    */
 
-  const removeFile = () => {
-    setSelectedFile(null);
-    setGeneratedShareUrl("");
+  const removeFile = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const clearSelectedFiles = () => {
+    setSelectedFiles([]);
   };
 
   /*
    * =========================================================
-   * GENERATE LINK
+   * GENERATE LINK(S)
    * =========================================================
    */
 
   const handleGenerateLink = async () => {
-    if (!selectedFile && !sourceUrl.trim()) {
+    if (selectedFiles.length === 0 && !sourceUrl.trim()) {
       Alert.alert(
         "File required",
-        "Please upload a file or provide a source URL.",
+        "Please select one or more files or provide a source URL.",
       );
-
       return;
     }
 
     setUploading(true);
 
     try {
-      /*
-       * =====================================================
-       * TODO:
-       * Replace this mock upload with your actual backend.
-       *
-       * Example:
-       *
-       * const formData = new FormData();
-       *
-       * formData.append('file', {
-       *   uri: selectedFile.uri,
-       *   name: selectedFile.name,
-       *   type:
-       *     selectedFile.mimeType ||
-       *     'application/octet-stream',
-       * } as any);
-       *
-       * const response = await fetch(
-       *   'YOUR_API_URL',
-       *   {
-       *     method: 'POST',
-       *     body: formData,
-       *   }
-       * );
-       * =====================================================
-       */
+      // ── Branch 1: Source URL provided ─────────────────────────────────
+      if (selectedFiles.length === 0 && sourceUrl.trim()) {
+        const trimmed = sourceUrl.trim();
+        if (!/^https?:\/\//i.test(trimmed)) {
+          Alert.alert(
+            "Invalid URL",
+            "Please enter a valid URL starting with http:// or https://"
+          );
+          setUploading(false);
+          return;
+        }
 
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+        const newLink: GeneratedLink = {
+          id: `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          url: trimmed,
+          fileName: trimmed.length > 35 ? `${trimmed.substring(0, 32)}...` : trimmed,
+          createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        };
 
-      const name =
-        selectedFile?.name ||
-        sourceUrl.trim().split("/").pop() ||
-        "shared-file";
+        setGeneratedLinks((prev) => [newLink, ...prev]);
+        setSourceUrl("");
+        Alert.alert("Link ready", "Your shareable link has been generated!");
+        return;
+      }
 
-      const slug = name
-        .replace(/\.[^/.]+$/, "")
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
+      // ── Branch 2: Local files selected → upload to Supabase Storage ────
+      const { data: authData } = await supabase.auth.getUser();
+      const userId = authData?.user?.id || "anonymous";
 
-      const randomId = Math.random().toString(36).substring(2, 8);
+      const newlyGenerated: GeneratedLink[] = [];
 
-      const link = `https://gap.to/f/${slug}-${randomId}`;
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        if (selectedFiles.length > 1) {
+          setUploadProgressText(`Uploading ${i + 1} of ${selectedFiles.length}...`);
+        } else {
+          setUploadProgressText("Creating link...");
+        }
 
-      setGeneratedShareUrl(link);
-    } catch (error) {
+        const randomPrefix = Math.random().toString(36).substring(2, 10);
+        const lastDot = file.name.lastIndexOf(".");
+        const baseName = lastDot > 0 ? file.name.slice(0, lastDot) : file.name;
+        const ext = lastDot > 0 ? file.name.slice(lastDot) : "";
+        const sanitisedBase = baseName.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+        const sanitisedName = `${sanitisedBase}${ext}`;
+        const storagePath = `${userId}/${randomPrefix}_${sanitisedName}`;
+
+        const fileResponse = await fetch(file.uri);
+        const blob = await fileResponse.blob();
+
+        const { error: uploadError } = await supabase.storage
+          .from("shared_files")
+          .upload(storagePath, blob, {
+            contentType: file.mimeType || "application/octet-stream",
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error(`[FileLinker] Upload failed for ${file.name}:`, uploadError);
+          throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`);
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from("shared_files")
+          .getPublicUrl(storagePath);
+
+        if (!publicUrlData?.publicUrl) {
+          throw new Error(`Could not retrieve public URL for ${file.name}`);
+        }
+
+        newlyGenerated.push({
+          id: `${Date.now()}_${i}_${randomPrefix}`,
+          url: publicUrlData.publicUrl,
+          fileName: file.name,
+          fileSize: file.size,
+          mimeType: file.mimeType,
+          createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        });
+      }
+
+      setGeneratedLinks((prev) => [...newlyGenerated, ...prev]);
+      setSelectedFiles([]);
+      Alert.alert(
+        "Links Generated",
+        `Successfully generated ${newlyGenerated.length} shareable link${newlyGenerated.length > 1 ? "s" : ""}!`
+      );
+    } catch (error: any) {
       console.error("Generate link error:", error);
-
       Alert.alert(
         "Upload failed",
-        "We could not create your file link. Please try again.",
+        error?.message || "We could not create your file link. Please try again.",
       );
     } finally {
       setUploading(false);
+      setUploadProgressText("");
     }
   };
 
   /*
    * =========================================================
-   * COPY
+   * COPY, SHARE, OPEN, DELETE
    * =========================================================
    */
 
-  const handleCopy = async () => {
-    if (!generatedShareUrl) {
-      return;
-    }
-
+  const handleCopyLink = async (url: string, id: string) => {
     try {
-      await Clipboard.setStringAsync(generatedShareUrl);
-
+      await Clipboard.setStringAsync(url);
+      setCopiedId(id);
+      setTimeout(() => {
+        setCopiedId((curr) => (curr === id ? null : curr));
+      }, 2000);
       Alert.alert("Copied", "File link copied to clipboard.");
     } catch (error) {
       console.error("Clipboard error:", error);
     }
   };
 
-  /*
-   * =========================================================
-   * SHARE
-   * =========================================================
-   */
+  const handleCopyAll = async () => {
+    if (generatedLinks.length === 0) return;
+    const allUrls = generatedLinks.map((item) => item.url).join("\n");
+    await Clipboard.setStringAsync(allUrls);
+    Alert.alert(
+      "Copied All",
+      `Copied ${generatedLinks.length} link${generatedLinks.length > 1 ? "s" : ""} to clipboard.`
+    );
+  };
 
-  const handleShare = async () => {
-    if (!generatedShareUrl) {
-      return;
-    }
-
+  const handleShareLink = async (item: GeneratedLink) => {
     try {
       await Share.share({
-        message: `Access "${selectedFile?.name || "this file"}":\n${generatedShareUrl}`,
+        message: `Access "${item.fileName}":\n${item.url}`,
         title: "Share File Link",
       });
     } catch (error) {
@@ -344,7 +390,37 @@ export default function FileLinkerScreen() {
     }
   };
 
-  const FileIcon = getFileIcon();
+  const handleOpenLink = async (url: string) => {
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert("Error", "Cannot open this URL on your device.");
+      }
+    } catch (error) {
+      console.error("Open URL error:", error);
+    }
+  };
+
+  const handleDeleteLink = (id: string) => {
+    setGeneratedLinks((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleClearAllLinks = () => {
+    Alert.alert(
+      "Clear all generated links?",
+      "Are you sure you want to clear all links from this list?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear All",
+          style: "destructive",
+          onPress: () => setGeneratedLinks([]),
+        },
+      ]
+    );
+  };
 
   /*
    * =========================================================
@@ -469,32 +545,11 @@ export default function FileLinkerScreen() {
                 Select a file from your device
               </Text>
             </View>
-
-            <View
-              style={[
-                styles.stepBadge,
-                {
-                  backgroundColor: theme.surface,
-                  borderColor: theme.border,
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.stepText,
-                  {
-                    color: theme.mutedForeground,
-                  },
-                ]}
-              >
-                01
-              </Text>
-            </View>
           </View>
 
-          {!selectedFile ? (
+          {selectedFiles.length === 0 ? (
             <Pressable cssInterop={false}
-              onPress={pickFile}
+              onPress={pickFiles}
               style={({ pressed }) => [
                 styles.uploadArea,
                 {
@@ -524,7 +579,7 @@ export default function FileLinkerScreen() {
                   },
                 ]}
               >
-                Choose a file
+                Choose files
               </Text>
 
               <Text
@@ -535,7 +590,7 @@ export default function FileLinkerScreen() {
                   },
                 ]}
               >
-                PDF, DOCX, PPTX, ZIP, images, videos and more
+                Select single or multiple files (PDF, DOCX, images, videos, etc.)
               </Text>
 
               <View
@@ -566,280 +621,138 @@ export default function FileLinkerScreen() {
                   },
                 ]}
               >
-                Your file will be securely processed
+                Your files will be securely processed
               </Text>
             </Pressable>
           ) : (
-            <View
-              style={[
-                styles.filePreview,
-                {
-                  backgroundColor: theme.softBackground,
-                  borderColor: theme.border,
-                },
-              ]}
-            >
-              <View
-                style={[
-                  styles.fileIconWrapper,
-                  {
-                    backgroundColor: theme.iconBackground,
-                    borderColor: theme.border,
-                  },
-                ]}
-              >
-                <FileIcon size={27} color={theme.primary} strokeWidth={2} />
-              </View>
-
-              <View style={styles.fileInfo}>
-                <Text
-                  style={[
-                    styles.fileName,
-                    {
-                      color: theme.foreground,
-                    },
-                  ]}
-                  numberOfLines={2}
-                >
-                  {selectedFile.name}
+            <View style={styles.selectedFilesContainer}>
+              <View style={styles.selectedFilesHeader}>
+                <Text style={[styles.selectedFilesCountText, { color: theme.foreground }]}>
+                  {selectedFiles.length} file{selectedFiles.length > 1 ? "s" : ""} selected
                 </Text>
-
-                <View style={styles.fileMeta}>
-                  <Text
+                <View style={styles.selectedFilesActions}>
+                  <Pressable
+                    onPress={pickFiles}
                     style={[
-                      styles.fileMetaText,
-                      {
-                        color: theme.mutedForeground,
-                      },
+                      styles.addMoreButton,
+                      { borderColor: theme.border, backgroundColor: theme.surface },
                     ]}
                   >
-                    {fileExtension ? fileExtension.toUpperCase() : "FILE"}
-                  </Text>
-
-                  <View
+                    <Plus size={13} color={theme.primary} />
+                    <Text style={[styles.addMoreButtonText, { color: theme.primary }]}>
+                      Add More
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={clearSelectedFiles}
                     style={[
-                      styles.metaDot,
-                      {
-                        backgroundColor: theme.mutedForeground,
-                      },
-                    ]}
-                  />
-
-                  <Text
-                    style={[
-                      styles.fileMetaText,
-                      {
-                        color: theme.mutedForeground,
-                      },
+                      styles.clearSelectedButton,
+                      { borderColor: theme.border, backgroundColor: theme.surface },
                     ]}
                   >
-                    {formatFileSize(selectedFile.size)}
-                  </Text>
-                </View>
-
-                <View style={styles.readyRow}>
-                  <CheckCircle2 size={14} color={theme.primary} />
-
-                  <Text
-                    style={[
-                      styles.readyText,
-                      {
-                        color: theme.primary,
-                      },
-                    ]}
-                  >
-                    File ready to upload
-                  </Text>
+                    <Text
+                      style={[styles.clearSelectedButtonText, { color: theme.mutedForeground }]}
+                    >
+                      Clear
+                    </Text>
+                  </Pressable>
                 </View>
               </View>
 
-              <Pressable
-                onPress={removeFile}
-                style={[
-                  styles.removeButton,
-                  {
-                    backgroundColor: theme.iconBackground,
-                    borderColor: theme.border,
-                  },
-                ]}
-              >
-                <X size={17} color={theme.mutedForeground} />
-              </Pressable>
+              {selectedFiles.map((file, index) => {
+                const ItemIcon = getFileIcon(file.mimeType, file.name);
+                const ext = file.name.split(".").pop()?.toUpperCase() || "FILE";
+                return (
+                  <View
+                    key={`${file.name}_${index}`}
+                    style={[
+                      styles.filePreview,
+                      {
+                        backgroundColor: theme.softBackground,
+                        borderColor: theme.border,
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.fileIconWrapper,
+                        {
+                          backgroundColor: theme.iconBackground,
+                          borderColor: theme.border,
+                        },
+                      ]}
+                    >
+                      <ItemIcon size={25} color={theme.primary} strokeWidth={2} />
+                    </View>
+
+                    <View style={styles.fileInfo}>
+                      <Text
+                        style={[
+                          styles.fileName,
+                          {
+                            color: theme.foreground,
+                          },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {file.name}
+                      </Text>
+
+                      <View style={styles.fileMeta}>
+                        <Text
+                          style={[
+                            styles.fileMetaText,
+                            {
+                              color: theme.mutedForeground,
+                            },
+                          ]}
+                        >
+                          {ext}
+                        </Text>
+
+                        <View
+                          style={[
+                            styles.metaDot,
+                            {
+                              backgroundColor: theme.mutedForeground,
+                            },
+                          ]}
+                        />
+
+                        <Text
+                          style={[
+                            styles.fileMetaText,
+                            {
+                              color: theme.mutedForeground,
+                            },
+                          ]}
+                        >
+                          {formatFileSize(file.size)}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <Pressable
+                      onPress={() => removeFile(index)}
+                      style={[
+                        styles.removeButton,
+                        {
+                          backgroundColor: theme.iconBackground,
+                          borderColor: theme.border,
+                        },
+                      ]}
+                    >
+                      <X size={16} color={theme.mutedForeground} />
+                    </Pressable>
+                  </View>
+                );
+              })}
             </View>
           )}
         </View>
 
         {/* ===================================================
-            OR
-        =================================================== */}
-
-        <View style={styles.orContainer}>
-          <View
-            style={[
-              styles.divider,
-              {
-                backgroundColor: theme.border,
-              },
-            ]}
-          />
-
-          <View
-            style={[
-              styles.orBadge,
-              {
-                backgroundColor: theme.surface,
-                borderColor: theme.border,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.orText,
-                {
-                  color: theme.mutedForeground,
-                },
-              ]}
-            >
-              OR
-            </Text>
-          </View>
-
-          <View
-            style={[
-              styles.divider,
-              {
-                backgroundColor: theme.border,
-              },
-            ]}
-          />
-        </View>
-
-        {/* ===================================================
-            SOURCE URL CARD
-        =================================================== */}
-
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: theme.card,
-              borderColor: theme.border,
-              shadowOpacity: theme.shadowOpacity,
-              shadowRadius: theme.shadowRadius,
-            },
-          ]}
-        >
-          <View style={styles.sectionHeader}>
-            <View style={styles.titleWithIcon}>
-              <View
-                style={[
-                  styles.smallIcon,
-                  {
-                    backgroundColor: theme.iconBackground,
-                    borderColor: theme.border,
-                  },
-                ]}
-              >
-                <LinkIcon size={17} color={theme.primary} />
-              </View>
-
-              <View>
-                <Text
-                  style={[
-                    styles.sectionTitle,
-                    {
-                      color: theme.foreground,
-                    },
-                  ]}
-                >
-                  Use existing file URL
-                </Text>
-
-                <Text
-                  style={[
-                    styles.sectionSubtitle,
-                    {
-                      color: theme.mutedForeground,
-                    },
-                  ]}
-                >
-                  Google Drive, Dropbox, S3, etc.
-                </Text>
-              </View>
-            </View>
-
-            <View
-              style={[
-                styles.stepBadge,
-                {
-                  backgroundColor: theme.surface,
-                  borderColor: theme.border,
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.stepText,
-                  {
-                    color: theme.mutedForeground,
-                  },
-                ]}
-              >
-                02
-              </Text>
-            </View>
-          </View>
-
-          <View
-            style={[
-              styles.urlInputWrapper,
-              {
-                backgroundColor: theme.inputBackground,
-                borderColor: theme.border,
-              },
-            ]}
-          >
-            <LinkIcon size={17} color={theme.mutedForeground} />
-
-            <TextInput
-              value={sourceUrl}
-              onChangeText={(text) => {
-                setSourceUrl(text);
-
-                if (text.trim()) {
-                  setSelectedFile(null);
-                  setGeneratedShareUrl("");
-                }
-              }}
-              placeholder="https://drive.google.com/..."
-              placeholderTextColor={theme.mutedForeground}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="url"
-              style={[
-                styles.urlInput,
-                {
-                  color: theme.foreground,
-                },
-              ]}
-            />
-          </View>
-
-          <Text
-            style={[
-              styles.urlHint,
-              {
-                color: theme.mutedForeground,
-              },
-            ]}
-          >
-            Paste a publicly accessible file URL if you don't want to upload a
-            file.
-          </Text>
-        </View>
-
-        {/* ===================================================
-            GENERATE SECTION
+            GENERATE BUTTON
         =================================================== */}
 
         <View style={styles.generateSection}>
@@ -905,7 +818,7 @@ export default function FileLinkerScreen() {
                     },
                   ]}
                 >
-                  Creating link...
+                  {uploadProgressText || "Creating links..."}
                 </Text>
               </>
             ) : (
@@ -920,7 +833,9 @@ export default function FileLinkerScreen() {
                     },
                   ]}
                 >
-                  Generate Shareable Link
+                  {selectedFiles.length > 1
+                    ? `Generate ${selectedFiles.length} Shareable Links`
+                    : "Generate Shareable Link"}
                 </Text>
               </>
             )}
@@ -928,261 +843,325 @@ export default function FileLinkerScreen() {
         </View>
 
         {/* ===================================================
-            SUCCESS CARD
+            GENERATED LINKS LIST
         =================================================== */}
 
-        {generatedShareUrl ? (
-          <View
-            style={[
-              styles.successCard,
-              {
-                backgroundColor: theme.card,
-                borderColor: theme.primary,
-                shadowOpacity: theme.shadowOpacity,
-                shadowRadius: theme.shadowRadius,
-              },
-            ]}
-          >
-            <View style={styles.successHeader}>
-              <View
-                style={[
-                  styles.successIcon,
-                  {
-                    backgroundColor: theme.surface,
-                    borderColor: theme.border,
-                  },
-                ]}
-              >
-                <CheckCircle2 size={22} color={theme.primary} />
-              </View>
-
-              <View style={styles.successContent}>
+        {generatedLinks.length > 0 ? (
+          <View style={styles.generatedSection}>
+            <View style={styles.generatedSectionHeader}>
+              <View style={styles.generatedTitleRow}>
+                <CheckCircle2 size={19} color={theme.primary} />
                 <Text
                   style={[
-                    styles.successTitle,
+                    styles.generatedSectionTitle,
                     {
                       color: theme.foreground,
                     },
                   ]}
                 >
-                  Your link is ready
+                  Generated Links
                 </Text>
-
-                <Text
+                <View
                   style={[
-                    styles.successSubtitle,
+                    styles.countBadge,
                     {
-                      color: theme.mutedForeground,
+                      backgroundColor: theme.primary,
                     },
                   ]}
                 >
-                  Anyone with this link can access the file.
-                </Text>
+                  <Text
+                    style={[
+                      styles.countBadgeText,
+                      {
+                        color: theme.primaryForeground,
+                      },
+                    ]}
+                  >
+                    {generatedLinks.length}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.generatedHeaderActions}>
+                {generatedLinks.length > 1 && (
+                  <Pressable
+                    onPress={handleCopyAll}
+                    style={[
+                      styles.miniHeaderButton,
+                      {
+                        backgroundColor: theme.card,
+                        borderColor: theme.border,
+                      },
+                    ]}
+                  >
+                    <Copy size={13} color={theme.primary} />
+                    <Text
+                      style={[
+                        styles.miniHeaderButtonText,
+                        {
+                          color: theme.primary,
+                        },
+                      ]}
+                    >
+                      Copy All
+                    </Text>
+                  </Pressable>
+                )}
+
+                <Pressable
+                  onPress={handleClearAllLinks}
+                  style={[
+                    styles.miniHeaderButton,
+                    {
+                      backgroundColor: theme.card,
+                      borderColor: theme.border,
+                    },
+                  ]}
+                >
+                  <Trash2 size={13} color={theme.mutedForeground} />
+                  <Text
+                    style={[
+                      styles.miniHeaderButtonText,
+                      {
+                        color: theme.mutedForeground,
+                      },
+                    ]}
+                  >
+                    Clear
+                  </Text>
+                </Pressable>
               </View>
             </View>
 
-            <View
-              style={[
-                styles.linkBox,
-                {
-                  backgroundColor: theme.surface,
-                  borderColor: theme.border,
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.linkText,
-                  {
-                    color: theme.primary,
-                  },
-                ]}
-                numberOfLines={2}
-              >
-                {generatedShareUrl}
-              </Text>
+            {generatedLinks.map((item) => {
+              const ItemIcon = getFileIcon(item.mimeType, item.fileName);
+              const isItemCopied = copiedId === item.id;
 
-              <Pressable
-                onPress={handleCopy}
-                style={[
-                  styles.copyButton,
-                  {
-                    backgroundColor: theme.card,
-                    borderColor: theme.border,
-                  },
-                ]}
-              >
-                <Copy size={17} color={theme.primary} />
-              </Pressable>
-            </View>
-
-            <View style={styles.actionRow}>
-              <Pressable
-                onPress={handleCopy}
-                style={[
-                  styles.secondaryAction,
-                  {
-                    backgroundColor: theme.surface,
-                    borderColor: theme.border,
-                  },
-                ]}
-              >
-                <Copy size={17} color={theme.foreground} />
-
-                <Text
+              return (
+                <View
+                  key={item.id}
                   style={[
-                    styles.secondaryActionText,
+                    styles.successCard,
                     {
-                      color: theme.foreground,
+                      backgroundColor: theme.card,
+                      borderColor: theme.border,
+                      shadowOpacity: theme.shadowOpacity,
+                      shadowRadius: theme.shadowRadius,
                     },
                   ]}
                 >
-                  Copy Link
-                </Text>
-              </Pressable>
+                  <View style={styles.successHeader}>
+                    <View
+                      style={[
+                        styles.successIcon,
+                        {
+                          backgroundColor: theme.surface,
+                          borderColor: theme.border,
+                        },
+                      ]}
+                    >
+                      <ItemIcon size={20} color={theme.primary} />
+                    </View>
 
-              <Pressable
-                onPress={handleShare}
-                style={[
-                  styles.primaryAction,
-                  {
-                    backgroundColor: theme.primary,
-                  },
-                ]}
-              >
-                <Share2 size={17} color={theme.primaryForeground} />
+                    <View style={styles.successContent}>
+                      <Text
+                        style={[
+                          styles.successTitle,
+                          {
+                            color: theme.foreground,
+                          },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {item.fileName}
+                      </Text>
 
-                <Text
-                  style={[
-                    styles.primaryActionText,
-                    {
-                      color: theme.primaryForeground,
-                    },
-                  ]}
-                >
-                  Share
-                </Text>
-              </Pressable>
-            </View>
+                      <View style={styles.generatedMetaRow}>
+                        {item.fileSize ? (
+                          <>
+                            <Text
+                              style={[
+                                styles.generatedMetaText,
+                                {
+                                  color: theme.mutedForeground,
+                                },
+                              ]}
+                            >
+                              {formatFileSize(item.fileSize)}
+                            </Text>
+                            <View
+                              style={[
+                                styles.metaDot,
+                                {
+                                  backgroundColor: theme.mutedForeground,
+                                },
+                              ]}
+                            />
+                          </>
+                        ) : null}
+                        <Text
+                          style={[
+                            styles.generatedMetaText,
+                            {
+                              color: theme.mutedForeground,
+                            },
+                          ]}
+                        >
+                          {item.createdAt}
+                        </Text>
+                      </View>
+                    </View>
 
-            <View style={styles.linkFooter}>
-              <ExternalLink size={13} color={theme.mutedForeground} />
+                    <Pressable
+                      onPress={() => handleDeleteLink(item.id)}
+                      style={[
+                        styles.deleteItemButton,
+                        {
+                          backgroundColor: theme.surface,
+                          borderColor: theme.border,
+                        },
+                      ]}
+                    >
+                      <X size={15} color={theme.mutedForeground} />
+                    </Pressable>
+                  </View>
 
-              <Text
-                style={[
-                  styles.linkFooterText,
-                  {
-                    color: theme.mutedForeground,
-                  },
-                ]}
-              >
-                Your branded gap.to link is ready to use
-              </Text>
-            </View>
+                  <View
+                    style={[
+                      styles.linkBox,
+                      {
+                        backgroundColor: theme.surface,
+                        borderColor: theme.border,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.linkText,
+                        {
+                          color: theme.primary,
+                        },
+                      ]}
+                      numberOfLines={1}
+                      ellipsizeMode="middle"
+                    >
+                      {item.url}
+                    </Text>
+
+                    <Pressable
+                      onPress={() => handleCopyLink(item.url, item.id)}
+                      style={[
+                        styles.copyButton,
+                        {
+                          backgroundColor: theme.card,
+                          borderColor: theme.border,
+                        },
+                      ]}
+                    >
+                      {isItemCopied ? (
+                        <Check size={16} color={theme.primary} />
+                      ) : (
+                        <Copy size={16} color={theme.primary} />
+                      )}
+                    </Pressable>
+                  </View>
+
+                  <View style={styles.actionRow}>
+                    <Pressable
+                      onPress={() => handleCopyLink(item.url, item.id)}
+                      style={[
+                        styles.secondaryAction,
+                        {
+                          backgroundColor: theme.surface,
+                          borderColor: theme.border,
+                        },
+                      ]}
+                    >
+                      {isItemCopied ? (
+                        <Check size={15} color={theme.foreground} />
+                      ) : (
+                        <Copy size={15} color={theme.foreground} />
+                      )}
+
+                      <Text
+                        style={[
+                          styles.secondaryActionText,
+                          {
+                            color: theme.foreground,
+                          },
+                        ]}
+                      >
+                        {isItemCopied ? "Copied!" : "Copy Link"}
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      onPress={() => handleShareLink(item)}
+                      style={[
+                        styles.primaryAction,
+                        {
+                          backgroundColor: theme.primary,
+                        },
+                      ]}
+                    >
+                      <Share2 size={15} color={theme.primaryForeground} />
+
+                      <Text
+                        style={[
+                          styles.primaryActionText,
+                          {
+                            color: theme.primaryForeground,
+                          },
+                        ]}
+                      >
+                        Share
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      onPress={() => handleOpenLink(item.url)}
+                      style={[
+                        styles.iconAction,
+                        {
+                          backgroundColor: theme.surface,
+                          borderColor: theme.border,
+                        },
+                      ]}
+                    >
+                      <ExternalLink size={16} color={theme.foreground} />
+                    </Pressable>
+                  </View>
+
+                  <View style={styles.linkFooter}>
+                    <ExternalLink size={13} color={theme.mutedForeground} />
+
+                    <Text
+                      style={[
+                        styles.linkFooterText,
+                        {
+                          color: theme.mutedForeground,
+                        },
+                      ]}
+                    >
+                      Direct Supabase Storage link ready to share
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
           </View>
         ) : null}
-
-        {/* ===================================================
-            FEATURES
-        =================================================== */}
-
-        <View style={styles.features}>
-          <View style={styles.featureItem}>
-            <View
-              style={[
-                styles.featureIcon,
-                {
-                  backgroundColor: theme.surface,
-                  borderColor: theme.border,
-                },
-              ]}
-            >
-              <LinkIcon size={16} color={theme.primary} />
-            </View>
-
-            <Text
-              style={[
-                styles.featureText,
-                {
-                  color: theme.mutedForeground,
-                },
-              ]}
-            >
-              Clean URLs
-            </Text>
-          </View>
-
-          <View style={styles.featureItem}>
-            <View
-              style={[
-                styles.featureIcon,
-                {
-                  backgroundColor: theme.surface,
-                  borderColor: theme.border,
-                },
-              ]}
-            >
-              <Share2 size={16} color={theme.primary} />
-            </View>
-
-            <Text
-              style={[
-                styles.featureText,
-                {
-                  color: theme.mutedForeground,
-                },
-              ]}
-            >
-              Easy sharing
-            </Text>
-          </View>
-
-          <View style={styles.featureItem}>
-            <View
-              style={[
-                styles.featureIcon,
-                {
-                  backgroundColor: theme.surface,
-                  borderColor: theme.border,
-                },
-              ]}
-            >
-              <CheckCircle2 size={16} color={theme.primary} />
-            </View>
-
-            <Text
-              style={[
-                styles.featureText,
-                {
-                  color: theme.mutedForeground,
-                },
-              ]}
-            >
-              Reliable access
-            </Text>
-          </View>
-        </View>
       </ScrollView>
     </AppScreen>
   );
 }
 
-/*
- * =============================================================
- * STYLES
- * =============================================================
- */
 
 const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingBottom: 45,
   },
-
-  /*
-   * HERO
-   */
-
   hero: {
     flexDirection: "row",
     alignItems: "center",
@@ -1350,6 +1329,56 @@ const styles = StyleSheet.create({
   /*
    * SELECTED FILE
    */
+
+  selectedFilesContainer: {
+    gap: 8,
+  },
+
+  selectedFilesHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 4,
+    paddingHorizontal: 2,
+  },
+
+  selectedFilesCountText: {
+    fontSize: 12,
+    fontWeight: "800",
+  },
+
+  selectedFilesActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+
+  addMoreButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+
+  addMoreButtonText: {
+    fontSize: 11,
+    fontWeight: "700",
+  },
+
+  clearSelectedButton: {
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+
+  clearSelectedButtonText: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
 
   filePreview: {
     flexDirection: "row",
@@ -1671,6 +1700,95 @@ const styles = StyleSheet.create({
 
   linkFooterText: {
     fontSize: 9.5,
+  },
+
+  /*
+   * GENERATED LINKS
+   */
+
+  generatedSection: {
+    marginBottom: 18,
+  },
+
+  generatedSectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+    paddingHorizontal: 2,
+  },
+
+  generatedTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+  },
+
+  generatedSectionTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+  },
+
+  countBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+
+  countBadgeText: {
+    fontSize: 11,
+    fontWeight: "900",
+  },
+
+  generatedHeaderActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+  },
+
+  miniHeaderButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+
+  miniHeaderButtonText: {
+    fontSize: 11,
+    fontWeight: "700",
+  },
+
+  generatedMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 2,
+  },
+
+  generatedMetaText: {
+    fontSize: 10.5,
+    fontWeight: "600",
+  },
+
+  deleteItemButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    marginLeft: 6,
+  },
+
+  iconAction: {
+    width: 45,
+    height: 45,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
   },
 
   /*

@@ -10,6 +10,7 @@ import {
   Share,
   Linking,
   Platform,
+  TouchableOpacity,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
@@ -113,7 +114,7 @@ export default function EventLinksScreen() {
         message: `You're Invited: "${eventName}"\n📅 When: ${eventDate} at ${eventTime}\n📍 Platform: ${selectedPlatform}\n🔗 Meeting Link: ${meetingUrl}\n\nAdd to Google Calendar:\n${getGoogleCalendarUrl()}`,
         title: 'Event Invitation',
       });
-    } catch {}
+    } catch { }
   };
 
   const handleCopyInviteText = async () => {
@@ -314,10 +315,9 @@ export default function EventLinksScreen() {
               <Text style={styles.actionBtnPrimaryText}>Add to G-Cal</Text>
             </Pressable>
 
-            <Pressable
-              style={({ pressed }) => [
+            <TouchableOpacity
+              style={[
                 styles.actionBtnSecondary,
-                { opacity: pressed ? 0.88 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
               ]}
               onPress={handleCopyInviteText}
             >
@@ -329,18 +329,17 @@ export default function EventLinksScreen() {
               <Text style={styles.actionBtnSecondaryText}>
                 {copied ? 'Copied!' : 'Copy Invite'}
               </Text>
-            </Pressable>
+            </TouchableOpacity>
 
-            <Pressable
-              style={({ pressed }) => [
+            <TouchableOpacity
+              style={[
                 styles.actionBtnOutline,
-                { opacity: pressed ? 0.88 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
               ]}
               onPress={handleShareInvite}
             >
               <HugeiconsIcon icon={Share01Icon} size={16} color={colors.text} />
               <Text style={styles.actionBtnOutlineText}>Share</Text>
-            </Pressable>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
