@@ -639,11 +639,11 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         console.log(`📡 [Notification Realtime Channel Status]:`, status);
       });
 
-    // Poll every 30 seconds as background fallback while active
+    // Poll every 5 minutes as gentle background fallback while active (Realtime handles instant events)
     const pollInterval = setInterval(() => {
       fetchSupabaseNotifications(user.id);
       syncPageClickNotifications(user.id);
-    }, 30000);
+    }, 300000);
 
     // Refresh when app comes to foreground from background
     const appStateSub = AppState.addEventListener('change', (nextState) => {

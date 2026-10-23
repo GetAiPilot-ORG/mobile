@@ -22,6 +22,8 @@ export interface NormalizedConversation {
   bot_paused?: boolean;
   latest_customer_message_at?: string;
   status: 'active' | 'resolved' | 'pending';
+  database_id?: string;
+  metadata?: Record<string, any>;
 }
 
 export type Conversation = NormalizedConversation;
@@ -60,6 +62,7 @@ export type Message = NormalizedMessage;
 export interface SendMessagePayload {
   conversation_id: string;
   message: string;
+  channel?: InboxChannel;
   is_internal_note?: boolean;
   attachments?: Array<{
     url: string;

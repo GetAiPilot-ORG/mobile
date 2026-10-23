@@ -239,7 +239,8 @@ export const SocialScreen: React.FC = () => {
   } = useQuery({
     queryKey: ['social', 'instapilot', 'conversations'],
     queryFn: async () => apiClient.get<InstapilotConversation[]>('/mobile/v1/social/instapilot/conversations'),
-    refetchInterval: activeTab === 'activity' ? 5000 : false,
+    staleTime: 30000,
+    refetchInterval: activeTab === 'activity' ? 30000 : false,
   });
 
   // 9. System Settings Query

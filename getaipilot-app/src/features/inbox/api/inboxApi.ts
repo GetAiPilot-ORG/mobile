@@ -217,8 +217,11 @@ export const inboxApi = {
       if (Array.isArray(items) && items.length > 0) {
         igList = items.map((c: any) => {
           const uname = (c.authorHandle || c.contact_handle || c.authorName || 'user').replace(/^@/, '');
+          const dbId = c.databaseId || c.id;
+          const convId = dbId ? (String(dbId).startsWith('ig_conv_') ? String(dbId) : `ig_conv_${dbId}`) : `ig_conv_${uname}`;
           return {
-            id: c.databaseId || c.id || `ig_conv_${uname}`,
+            id: convId,
+            database_id: dbId,
             organization_id: orgId || '',
             contact: {
               name: c.authorName || c.contact_name || uname,
@@ -234,6 +237,14 @@ export const inboxApi = {
             unread_count: c.unreadCount || c.unread_count || 0,
             bot_enabled: true,
             status: 'active' as const,
+            metadata: {
+              accountId: c.accountId,
+              commentId: c.commentId,
+              replyRecipientId: c.replyRecipientId,
+              postId: c.postId,
+              platform: c.platform || 'instagram',
+              databaseId: dbId,
+            },
           };
         });
       }
@@ -337,7 +348,8 @@ export const inboxApi = {
   },
 
   getConversationDetails: async (
-    id: string
+    id: string,
+    channel?: string
   ): Promise<{ conversation: NormalizedConversation | null; messages: NormalizedMessage[] }> => {
     // ── 1. Telegram Conversation ───────────────────────────────────────────
     if (id.startsWith('tg_conv_')) {
@@ -394,52 +406,135 @@ export const inboxApi = {
       }
     }
 
-    // ── 2. InstaPilot (Instagram) Conversation ─────────────────────────────
-    if (id.startsWith('ig_conv_')) {
-      const igKey = id.replace('ig_conv_', '');
-      const sampleMessages: NormalizedMessage[] = [
-        {
-          id: 'ig_msg_1',
+    // ── 2. InstaPilot (Instagram) / Social Conversation ─────────────────────
+    const isSocial =
+      id.startsWith('ig_conv_') ||
+      id.startsWith('social_conv_') ||
+      channel === 'instagram' ||
+      channel === 'facebook';
+
+    if (isSocial) {
+      const dbId = id.replace(/^(ig_conv_|social_conv_)/, '');
+      let conv: NormalizedConversation | null = null;
+      let msgs: NormalizedMessage[] = [];
+
+      try {
+        // Fetch message thread from Social Inbox endpoint
+        const res = await apiClient.get<{ success: boolean; messages: any[] }>(
+          `/mobile/v1/social/inbox/conversations/${dbId}/messages`,
+          { params: { limit: 50 } }
+        );
+        const rawMsgs = Array.isArray(res) ? res : (res?.messages || []);
+
+        if (Array.isArray(rawMsgs) && rawMsgs.length > 0) {
+          msgs = rawMsgs.map((m: any, idx: number) => {
+            const isOutbound = m.isSelf || m.status === 'sent' || m.direction === 'outbound';
+            return {
+              id: m.id || `ig_msg_${idx}_${Date.now()}`,
+              conversation_id: id,
+              channel: 'instagram' as const,
+              direction: isOutbound ? ('outbound' as const) : ('inbound' as const),
+              content: m.text || m.content || '',
+              media: [],
+              sender: {
+                name: isOutbound ? 'You' : 'Contact',
+                type: isOutbound ? ('agent' as const) : ('contact' as const),
+              },
+              status: (m.status as any) || 'delivered',
+              created_at: m.createdAt || m.created_at || new Date().toISOString(),
+            };
+          });
+        }
+      } catch (err) {
+        console.warn('[inboxApi] Failed to fetch social inbox messages for', dbId, err);
+      }
+
+      // Resolve parent conversation details from Social Inbox if available
+      try {
+        const socialRes = await apiClient.get<any>('/mobile/v1/social/inbox/conversations', {
+          params: { limit: 50 },
+        });
+        const items = Array.isArray(socialRes) ? socialRes : (socialRes?.items || socialRes?.conversations || []);
+        const matched = items.find(
+          (c: any) =>
+            c.databaseId === dbId ||
+            c.id === dbId ||
+            id === `ig_conv_${c.databaseId}` ||
+            id === `ig_conv_${c.id}` ||
+            id.includes(c.databaseId || '')
+        );
+
+        if (matched) {
+          const uname = (matched.authorHandle || matched.contact_handle || matched.authorName || 'user').replace(/^@/, '');
+          conv = {
+            id,
+            database_id: matched.databaseId || dbId,
+            organization_id: '',
+            contact: {
+              name: matched.authorName || matched.contact_name || uname,
+              handle_or_phone: `@${uname}`,
+              avatar_url: matched.authorAvatar || matched.contact_avatar_url,
+            },
+            channel: 'instagram' as const,
+            last_message: {
+              content: matched.text || matched.last_message_text || 'Instagram Message',
+              created_at: matched.createdAt || matched.last_message_at || new Date().toISOString(),
+              direction: matched.replied ? ('outbound' as const) : ('inbound' as const),
+            },
+            unread_count: matched.unreadCount || matched.unread_count || 0,
+            bot_enabled: true,
+            status: 'active' as const,
+            metadata: {
+              accountId: matched.accountId,
+              commentId: matched.commentId,
+              replyRecipientId: matched.replyRecipientId,
+              postId: matched.postId,
+              platform: matched.platform || 'instagram',
+              databaseId: matched.databaseId || dbId,
+            },
+          };
+
+          // If messages sub-endpoint returned 0 messages, fall back to initial incoming comment/DM
+          if (msgs.length === 0 && (matched.text || matched.last_message_text)) {
+            msgs.push({
+              id: `ig_initial_${matched.databaseId || dbId}`,
+              conversation_id: id,
+              channel: 'instagram' as const,
+              direction: matched.replied ? ('outbound' as const) : ('inbound' as const),
+              content: matched.text || matched.last_message_text || '',
+              media: [],
+              sender: {
+                name: matched.authorName || uname || 'Contact',
+                type: 'contact' as const,
+              },
+              status: 'delivered',
+              created_at: matched.createdAt || new Date().toISOString(),
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('[inboxApi] Failed to resolve social conversation item:', err);
+      }
+
+      // If messages are still empty, but sample fallback is needed if no data at all
+      if (msgs.length === 0 && conv?.last_message?.content) {
+        msgs.push({
+          id: `ig_msg_fallback_${Date.now()}`,
           conversation_id: id,
           channel: 'instagram' as const,
-          direction: 'inbound' as const,
-          content: 'Hi! Can you share pricing for the creator bundle?',
+          direction: conv.last_message.direction || 'inbound',
+          content: conv.last_message.content,
           media: [],
-          sender: { name: 'Pooja Sharma', type: 'contact' as const },
-          created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-        },
-        {
-          id: 'ig_msg_2',
-          conversation_id: id,
-          channel: 'instagram' as const,
-          direction: 'outbound' as const,
-          content: 'Hello! Our creator bundle includes Auto-DM, Story boost, and automated lead capture. Would you like a live demo?',
-          media: [],
-          sender: { name: 'InstaPilot Bot', type: 'bot' as const },
-          is_bot_reply: true,
-          created_at: new Date(Date.now() - 3600000 * 4.5).toISOString(),
-        },
-      ];
+          sender: {
+            name: conv.contact.name || 'Contact',
+            type: conv.last_message.direction === 'outbound' ? ('agent' as const) : ('contact' as const),
+          },
+          status: 'delivered',
+          created_at: conv.last_message.created_at || new Date().toISOString(),
+        });
+      }
 
-      const conv: NormalizedConversation = {
-        id,
-        organization_id: '',
-        contact: {
-          name: igKey.includes('.') ? igKey.split('.')[0] : 'Pooja Sharma',
-          handle_or_phone: `@${igKey}`,
-        },
-        channel: 'instagram' as const,
-        last_message: {
-          content: sampleMessages[1].content,
-          created_at: sampleMessages[1].created_at,
-          direction: 'outbound' as const,
-        },
-        unread_count: 0,
-        status: 'active' as const,
-        bot_enabled: true,
-      };
-
-      return { conversation: conv, messages: sampleMessages };
+      return { conversation: conv, messages: msgs };
     }
 
     // ── 3. WhatsApp Conversation ───────────────────────────────────────────
@@ -615,18 +710,27 @@ export const inboxApi = {
     }
 
     // ── 2. InstaPilot Outbound Reply ────────────────────────────────────────
-    if (payload.conversation_id.startsWith('ig_conv_')) {
+    if (
+      payload.conversation_id.startsWith('ig_conv_') ||
+      payload.conversation_id.startsWith('social_conv_') ||
+      payload.channel === 'instagram' ||
+      payload.channel === 'facebook'
+    ) {
+      const dbId = payload.conversation_id.replace(/^(ig_conv_|social_conv_)/, '');
       const nowIso = new Date().toISOString();
       try {
-        await apiClient.post('/mobile/v1/social/instapilot/reply', {
-          conversation_id: payload.conversation_id,
-          message: payload.message,
+        await apiClient.post('/mobile/v1/social/inbox/reply', {
+          platform: payload.channel || 'instagram',
+          conversationDatabaseId: dbId,
+          text: payload.message,
         });
-      } catch (_) {}
+      } catch (err) {
+        console.warn('[inboxApi] Failed to send social reply:', err);
+      }
       return {
         id: `ig_out_${Date.now()}`,
         conversation_id: payload.conversation_id,
-        channel: 'instagram' as const,
+        channel: (payload.channel || 'instagram') as any,
         direction: 'outbound' as const,
         content: payload.message,
         media: [],
@@ -954,6 +1058,16 @@ export const inboxApi = {
   },
 
   markAsRead: async (conversationId: string): Promise<{ success: boolean }> => {
+    if (conversationId.startsWith('ig_conv_') || conversationId.startsWith('social_conv_')) {
+      const dbId = conversationId.replace(/^(ig_conv_|social_conv_)/, '');
+      try {
+        await apiClient.post(`/mobile/v1/social/inbox/conversations/${dbId}/read`, {});
+        return { success: true };
+      } catch {
+        return { success: false };
+      }
+    }
+
     try {
       await apiClient.patch(`/mobile/v1/conversations/${conversationId}/read`, {});
       return { success: true };
