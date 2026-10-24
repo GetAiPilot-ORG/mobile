@@ -325,45 +325,6 @@ export const inboxApi = {
       }
     } catch (_) {}
 
-    if (igList.length === 0) {
-      igList = [
-        {
-          id: 'ig_conv_poojasharma',
-          organization_id: orgId || '',
-          contact: {
-            name: 'Pooja Sharma',
-            handle_or_phone: '@poojasharma.style',
-          },
-          channel: 'instagram' as const,
-          last_message: {
-            content: 'Hi! Can you share pricing for the creator bundle?',
-            created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-            direction: 'inbound' as const,
-          },
-          unread_count: 1,
-          bot_enabled: true,
-          status: 'active' as const,
-        },
-        {
-          id: 'ig_conv_rahulvlogs',
-          organization_id: orgId || '',
-          contact: {
-            name: 'Rahul Verma',
-            handle_or_phone: '@rahul_vlogs',
-          },
-          channel: 'instagram' as const,
-          last_message: {
-            content: 'Auto-DM received from InstaPilot. Thanks!',
-            created_at: new Date(Date.now() - 3600000 * 20).toISOString(),
-            direction: 'inbound' as const,
-          },
-          unread_count: 0,
-          bot_enabled: true,
-          status: 'active' as const,
-        },
-      ];
-    }
-
     // ── 4. Combine & Sort Feed Chronologically ──────────────────────────────
     let allConversations: NormalizedConversation[] = [...waList, ...tgList, ...igList];
     allConversations.sort((a, b) => {

@@ -445,7 +445,10 @@ export class TelegramAdapter {
   }
 
   public static async getBroadcastStatus(context?: TelegramUserSessionContext) {
-    const effectiveUserId = context?.userId || '9f77c84d-89bb-4406-8ca0-e412ebc33f7f';
+    const effectiveUserId = context?.userId || '';
+    if (!effectiveUserId) {
+      return { botName: 'GAPGrow Bot', botUsername: '@GapGrowBot', botUrl: 'https://t.me/GapGrowBot', telegramUserId: 0, isConnected: false };
+    }
 
     try {
       const { data: profile } = await this.supabase
@@ -474,7 +477,10 @@ export class TelegramAdapter {
   }
 
   public static async getAutoApproveStatus(context?: TelegramUserSessionContext) {
-    const effectiveUserId = context?.userId || '9f77c84d-89bb-4406-8ca0-e412ebc33f7f';
+    const effectiveUserId = context?.userId || '';
+    if (!effectiveUserId) {
+      return { botName: 'GAP Auto Approve', botUsername: '@Gapautoapprovebot', botUrl: 'https://t.me/Gapautoapprovebot?start=true', telegramUserId: 0, isConnected: false };
+    }
 
     try {
       const { data: profile } = await this.supabase
@@ -503,7 +509,10 @@ export class TelegramAdapter {
   }
 
   public static async getReportBotDashboard(context?: TelegramUserSessionContext) {
-    const effectiveUserId = context?.userId || '9f77c84d-89bb-4406-8ca0-e412ebc33f7f';
+    const effectiveUserId = context?.userId || '';
+    if (!effectiveUserId) {
+      return { tracker: null, profile: null, communities: [], reports: [] };
+    }
 
     try {
       const [botRes, profileRes, communitiesRes] = await Promise.all([
@@ -598,7 +607,8 @@ export class TelegramAdapter {
   }
 
   public static async saveReportBotSettings(payload: any, context?: TelegramUserSessionContext) {
-    const effectiveUserId = context?.userId || '9f77c84d-89bb-4406-8ca0-e412ebc33f7f';
+    const effectiveUserId = context?.userId || '';
+    if (!effectiveUserId) throw new Error('Unauthorized: User ID required');
     try {
       const updateData: any = {
         updated_at: new Date().toISOString(),
@@ -647,15 +657,16 @@ export class TelegramAdapter {
       }
     }
 
+    if (!effectiveUserId) {
+      return { connected: false, is_active: false };
+    }
+
     try {
       let sessionQuery = this.supabase
         .from('tg_user_sessions')
         .select('*')
-        .eq('is_active', true);
-
-      if (effectiveUserId) {
-        sessionQuery = sessionQuery.eq('user_id', effectiveUserId);
-      }
+        .eq('is_active', true)
+        .eq('user_id', effectiveUserId);
 
       const { data: session } = await sessionQuery
         .order('created_at', { ascending: false })
@@ -1152,8 +1163,9 @@ export class TelegramAdapter {
     },
     context?: TelegramUserSessionContext
   ): Promise<any> {
-    const effectiveUserId = context?.userId || '9f77c84d-89bb-4406-8ca0-e412ebc33f7f';
-    const orgId = context?.organizationId || 'ee54ef4c-8541-4271-ac2e-791a35ed8886';
+    const effectiveUserId = context?.userId || '';
+    const orgId = context?.organizationId || '';
+    if (!effectiveUserId) throw new Error('Unauthorized: User ID required');
 
     const safeSlug = payload.slug.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-');
 
@@ -1434,7 +1446,8 @@ export class TelegramAdapter {
   }
 
   public static async getReactionsDashboard(context?: TelegramUserSessionContext) {
-    const effectiveUserId = context?.userId || '9f77c84d-89bb-4406-8ca0-e412ebc33f7f';
+    const effectiveUserId = context?.userId || '';
+    if (!effectiveUserId) return [];
 
     try {
       // 1. Bot username from platform_settings
@@ -1549,7 +1562,8 @@ export class TelegramAdapter {
     isActive: boolean,
     context?: TelegramUserSessionContext
   ) {
-    const effectiveUserId = context?.userId || '9f77c84d-89bb-4406-8ca0-e412ebc33f7f';
+    const effectiveUserId = context?.userId || '';
+    if (!effectiveUserId) return [];
     const { data, error } = await this.supabase
       .from('tg_reactions_autopilot_settings')
       .update({ is_active: isActive, updated_at: new Date().toISOString() })
@@ -1574,7 +1588,8 @@ export class TelegramAdapter {
     },
     context?: TelegramUserSessionContext
   ) {
-    const effectiveUserId = context?.userId || '9f77c84d-89bb-4406-8ca0-e412ebc33f7f';
+    const effectiveUserId = context?.userId || '';
+    if (!effectiveUserId) return [];
     let formattedChannel = payload.channelUsername.trim();
     if (!formattedChannel.startsWith('@') && !formattedChannel.startsWith('https://t.me/')) {
       formattedChannel = `@${formattedChannel}`;
@@ -1606,7 +1621,8 @@ export class TelegramAdapter {
     ruleId: string,
     context?: TelegramUserSessionContext
   ) {
-    const effectiveUserId = context?.userId || '9f77c84d-89bb-4406-8ca0-e412ebc33f7f';
+    const effectiveUserId = context?.userId || '';
+    if (!effectiveUserId) return null;
     const { error } = await this.supabase
       .from('tg_reactions_autopilot_settings')
       .delete()
@@ -1628,7 +1644,8 @@ export class TelegramAdapter {
     },
     context?: TelegramUserSessionContext
   ) {
-    const effectiveUserId = context?.userId || '9f77c84d-89bb-4406-8ca0-e412ebc33f7f';
+    const effectiveUserId = context?.userId || '';
+    if (!effectiveUserId) return [];
     const ratePer1k = 14;
     const costCharged = Number(((payload.quantity / 1000) * ratePer1k).toFixed(2));
 
@@ -1697,7 +1714,8 @@ export class TelegramAdapter {
   }
 
   public static async getChatbots(context?: TelegramUserSessionContext) {
-    const effectiveUserId = context?.userId || '9f77c84d-89bb-4406-8ca0-e412ebc33f7f';
+    const effectiveUserId = context?.userId || '';
+    if (!effectiveUserId) return null;
 
     try {
       const { data: configs, error } = await this.supabase
@@ -1760,7 +1778,8 @@ export class TelegramAdapter {
     status: 'active' | 'paused',
     context?: TelegramUserSessionContext
   ) {
-    const effectiveUserId = context?.userId || '9f77c84d-89bb-4406-8ca0-e412ebc33f7f';
+    const effectiveUserId = context?.userId || '';
+    if (!effectiveUserId) return null;
     const { data, error } = await this.supabase
       .from('tg_chatbot_configs')
       .update({ status, updated_at: new Date().toISOString() })
@@ -1852,7 +1871,8 @@ export class TelegramAdapter {
     },
     context?: TelegramUserSessionContext
   ) {
-    const effectiveUserId = context?.userId || '9f77c84d-89bb-4406-8ca0-e412ebc33f7f';
+    const effectiveUserId = context?.userId || '';
+    if (!effectiveUserId) return [];
 
     // 1. Create bot record in tg_tracker
     const { data: newBot, error: botErr } = await this.supabase
@@ -1901,7 +1921,8 @@ export class TelegramAdapter {
     },
     context?: TelegramUserSessionContext
   ) {
-    const effectiveUserId = context?.userId || '9f77c84d-89bb-4406-8ca0-e412ebc33f7f';
+    const effectiveUserId = context?.userId || '';
+    if (!effectiveUserId) return [];
     const updates: any = { updated_at: new Date().toISOString() };
     if (payload.supportName !== undefined) updates.support_name = payload.supportName;
     if (payload.provider !== undefined) updates.provider = payload.provider;
@@ -1925,7 +1946,8 @@ export class TelegramAdapter {
     configId: string,
     context?: TelegramUserSessionContext
   ) {
-    const effectiveUserId = context?.userId || '9f77c84d-89bb-4406-8ca0-e412ebc33f7f';
+    const effectiveUserId = context?.userId || '';
+    if (!effectiveUserId) return null;
     const { error } = await this.supabase
       .from('tg_chatbot_configs')
       .delete()
@@ -2165,7 +2187,8 @@ export class TelegramAdapter {
     },
     context?: TelegramUserSessionContext
   ): Promise<{ success: boolean; bot: TelegramTrackerBot }> {
-    const effectiveUserId = context?.userId || '9f77c84d-89bb-4406-8ca0-e412ebc33f7f';
+    const effectiveUserId = context?.userId || '';
+    if (!effectiveUserId) throw new Error('Unauthorized: User ID required');
     try {
       const { data: newBot, error } = await this.supabase
         .from('tg_tracker')
