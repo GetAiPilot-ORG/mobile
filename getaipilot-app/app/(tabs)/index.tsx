@@ -42,7 +42,6 @@ import { useNotifications } from "../../src/contexts/NotificationContext";
 import { apiClient } from "../../src/core/api/client";
 import { usePlatformSubscription } from "../../src/hooks/usePlatformSubscription";
 import { supabase } from "../../src/lib/supabase";
-import { TestNotificationButton } from "@/components/TestNotification";
 
 
 interface LoginDevice {
@@ -98,7 +97,7 @@ export default function HomeScreen() {
         console.log('📲 [HomeScreen] CONSOLE PUSH TOKEN:');
         console.log(
           token ||
-            '⚠️ No push token generated (check permissions, physical device, or development build)'
+          '⚠️ No push token generated (check permissions, physical device, or development build)'
         );
         console.log('==============================================');
       } catch (err) {
@@ -352,7 +351,6 @@ export default function HomeScreen() {
   return (
     <AppScreen safeArea={false} backgroundColor={color.background}>
       <AppTopBar showPlanBadge />
-      {/* <TestNotificationButton /> */}
       <ScrollView
         style={{ flex: 1, backgroundColor: color.background }}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 128, gap: 26 }}

@@ -6,21 +6,25 @@ import { JWTPayload } from '../types/index.js';
 
 export async function billingRoutes(fastify: FastifyInstance) {
   // POST /mobile/v1/user/push-token - Register device Expo push token
-  fastify.post('/user/push-token', { preHandler: [authenticateToken] }, async (request: any, reply: any) => {
-    const user = request.user as JWTPayload;
+  fastify.post('/user/push-token', async (request: any, reply: any) => {
+    let userId: string | undefined = (request.user as JWTPayload)?.user_id;
     const body = request.body as {
+      user_id?: string;
+      userId?: string;
       push_token: string;
       platform?: string;
       device_name?: string;
       app_version?: string;
     };
 
-    if (!body?.push_token) {
-      return reply.status(400).send({ error: 'push_token is required' });
+    userId = userId || body?.user_id || body?.userId;
+
+    if (!userId || !body?.push_token) {
+      return reply.status(400).send({ error: 'user_id and push_token are required' });
     }
 
     try {
-      const result = await NotificationService.registerUserPushToken(user.user_id, body);
+      const result = await NotificationService.registerUserPushToken(userId, body);
       return reply.send(result);
     } catch (err: any) {
       return reply.status(500).send({ error: err.message || 'Failed to save push token' });
@@ -28,16 +32,35 @@ export async function billingRoutes(fastify: FastifyInstance) {
   });
 
   // POST /mobile/v1/user/test-push - Send a test push notification to user's device
-  fastify.post('/user/test-push', { preHandler: [authenticateToken] }, async (request: any, reply: any) => {
-    const user = request.user as JWTPayload;
+  fastify.post('/user/test-push', async (request: any, reply: any) => {
+    let userId: string | undefined = (request.user as JWTPayload)?.user_id;
     const body = (request.body as any) || {};
+    userId = userId || body.user_id || body.userId;
+    const directToken = body.push_token || body.pushToken;
 
-    const result = await NotificationService.sendToUser(user.user_id, {
+    if (!userId && !directToken) {
+      return reply.status(400).send({ error: 'userId or push_token is required' });
+    }
+
+    const imageUrl = body.imageUrl || body.image || 'https://uklxlappjcuvdqjvecfh.supabase.co/storage/v1/object/public/landing-page-logos/notification_large_icon.png';
+    const notificationPayload = {
       title: body.title || 'GetAiPilot Push Notification 🚀',
       body: body.body || 'Push notifications are fully working from your BFF service!',
       channelId: body.channelId || 'default',
-      data: body.data || { route: '/account/plans' },
-    });
+      imageUrl,
+      data: body.data || {
+        route: body.route || '/account/plans',
+        isTest: true,
+        ...(imageUrl ? { imageUrl } : {}),
+      },
+    };
+
+    let result;
+    if (directToken) {
+      result = await NotificationService.sendDirectPush(directToken, notificationPayload);
+    } else if (userId) {
+      result = await NotificationService.sendToUser(userId, notificationPayload);
+    }
 
     return reply.send(result);
   });

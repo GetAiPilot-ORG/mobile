@@ -15,19 +15,8 @@ import { supabase } from '../lib/supabase';
 export const PUSH_TOKEN_STORAGE_KEY = '@getaipilot_expo_push_token';
 export const LAST_SYNCED_USER_KEY = '@getaipilot_push_token_synced_user';
 
-// Configure how notifications appear when app is in foreground
-// Guarded so it does not crash when expo-notifications is unavailable (Expo Go)
-if (Notifications) {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
-  });
-}
+// Ensure backgroundNotificationHandler (setNotificationHandler & background task) is loaded
+import './backgroundNotificationHandler';
 
 export interface NotificationRegistrationResult {
   token: string | null;
@@ -205,10 +194,12 @@ export class NotificationService {
       let lastFetchError: any = null;
 
       // On Android, ensure native FCM device token is active
+      let nativeDeviceToken: any = undefined;
       if (Platform.OS === 'android') {
         try {
           const deviceToken = await Notifications.getDevicePushTokenAsync();
           if (deviceToken?.data) {
+            nativeDeviceToken = deviceToken;
             console.log('📱 [NotificationService] Native FCM Device Token acquired:', typeof deviceToken.data === 'string' ? `${deviceToken.data.substring(0, 25)}...` : 'active');
           }
         } catch (dtErr: any) {
@@ -224,6 +215,7 @@ export class NotificationService {
           }
           const tokenData = await Notifications.getExpoPushTokenAsync({
             projectId,
+            ...(nativeDeviceToken ? { devicePushToken: nativeDeviceToken } : {}),
           });
           if (tokenData?.data) {
             token = tokenData.data;
@@ -291,6 +283,7 @@ export class NotificationService {
 
     try {
       const payload = {
+        user_id: userId,
         push_token: token,
         platform: Platform.OS,
         device_name: Device.modelName || (Platform.OS === 'ios' ? 'iPhone' : 'Android Device'),
@@ -301,7 +294,7 @@ export class NotificationService {
       // 1. Try BFF endpoint
       let bffSuccess = false;
       try {
-        await apiClient.post('/mobile/v1/user/push-token', payload);
+        await apiClient.post('/mobile/v1/user/push-token', payload, { skipAuth: true });
         bffSuccess = true;
         console.log('✅ [NotificationService] Successfully synced push token to BFF for user:', userId);
       } catch (bffErr) {
@@ -342,27 +335,48 @@ export class NotificationService {
   }
 
   /**
-   * Trigger an instant local push notification for verification / preview
+   * Trigger an instant or delayed local push notification for verification / preview
    */
   static async scheduleLocalNotification(options: {
     title: string;
     body: string;
     data?: Record<string, any>;
     channelId?: string;
+    imageUrl?: string;
+    delaySeconds?: number;
   }): Promise<string> {
     if (!Notifications) return '';
-    const trigger = Platform.OS === 'android' ? { channelId: options.channelId || 'default' } : null;
+
+    const channelId = options.channelId || 'default';
+    const delay = options.delaySeconds && options.delaySeconds > 0 ? options.delaySeconds : null;
+
+    let trigger: any = null;
+    if (delay) {
+      trigger = {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: delay,
+        repeats: false,
+        channelId,
+      };
+    } else if (Platform.OS === 'android') {
+      trigger = { channelId };
+    }
+
+    const data = {
+      ...(options.data || {}),
+      ...(options.imageUrl ? { imageUrl: options.imageUrl } : {}),
+    };
 
     return await Notifications.scheduleNotificationAsync({
       content: {
         title: options.title,
         body: options.body,
-        data: options.data || {},
+        data,
         sound: true,
-        priority: Notifications.AndroidNotificationPriority.HIGH,
+        priority: Notifications.AndroidNotificationPriority.MAX,
         color: '#10B981',
       },
-      trigger: trigger as any,
+      trigger,
     });
   }
 

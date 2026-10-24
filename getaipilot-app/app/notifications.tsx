@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
+  Image,
   Pressable,
   FlatList,
   Alert,
@@ -20,7 +21,7 @@ import { AppTopBar } from '../src/components/AppTopBar';
 import { useNotifications, AppNotification } from '../src/contexts/NotificationContext';
 import { useTheme, getColors } from '@/theme';
 
-type FilterTab = 'all' | 'unread' | 'clicks' | 'lead' | 'broadcast' | 'system';
+type FilterTab = 'all' | 'unread' | 'clicks' | 'lead' | 'admin' | 'system';
 
 interface SwipeableCardProps {
   item: AppNotification;
@@ -46,6 +47,7 @@ function SwipeableNotificationCard({
   const pan = useRef(new Animated.Value(0)).current;
   const isUnread = !item.isRead;
   const isActionOpen = useRef(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Category Meta (Icon, Color, Label)
   const getCategoryMeta = (type?: string) => {
@@ -79,7 +81,7 @@ function SwipeableNotificationCard({
           label: 'System',
         };
       case 'info':
-      case 'broadcast':
+      case 'admin':
       case 'announcement':
         return {
           icon: 'megaphone' as const,
@@ -237,32 +239,32 @@ function SwipeableNotificationCard({
       ? '#221D38' // Elevated rich purple-slate for Unread
       : '#FFFFFF' // Clean high-contrast white on light canvas
     : isDark
-    ? '#161322' // Solid opaque dark surface for Read
-    : '#F6F3FA'; // Solid opaque soft surface for Read
+      ? '#161322' // Solid opaque dark surface for Read
+      : '#F6F3FA'; // Solid opaque soft surface for Read
 
   const cardBorderColor = isUnread
     ? isDark
       ? 'rgba(167, 139, 250, 0.45)' // Glowing border for Unread
       : '#DDD6FE'
     : isDark
-    ? '#272338' // Solid subtle border for Read
-    : '#E8E3F2';
+      ? '#272338' // Solid subtle border for Read
+      : '#E8E3F2';
 
   const titleColor = isUnread
     ? isDark
       ? '#FFFFFF'
       : '#111827'
     : isDark
-    ? '#8C869D'
-    : '#6B7280';
+      ? '#8C869D'
+      : '#6B7280';
 
   const bodyColor = isUnread
     ? isDark
       ? '#D1C9E2'
       : '#374151'
     : isDark
-    ? '#716B80'
-    : '#8F8A9E';
+      ? '#716B80'
+      : '#8F8A9E';
 
   // Distinct Color for Swipe Actions:
   // Slide Left Action = Delete Red (#EF4444)
@@ -411,16 +413,59 @@ function SwipeableNotificationCard({
             </View>
           </View>
 
-          {/* Notification Body */}
-          <Text
-            style={[
-              styles.notificationBody,
-              { color: bodyColor },
-            ]}
-            numberOfLines={3}
-          >
-            {item.body}
-          </Text>
+          {/* Notification Body & Right Hand Side Image */}
+          {(() => {
+            const notifImageUrl = item.imageUrl || item.data?.imageUrl || item.data?.image;
+            const isLongText = (item.body?.length || 0) > 75 || item.body?.includes('\n');
+
+            return (
+              <View style={styles.bodySection}>
+                <View style={styles.bodyWithImageRow}>
+                  <Text
+                    style={[
+                      styles.notificationBodyText,
+                      { color: bodyColor },
+                    ]}
+                    numberOfLines={isExpanded ? undefined : 3}
+                  >
+                    {item.body}
+                  </Text>
+                  {notifImageUrl ? (
+                    <View style={styles.notificationRightImageWrapper}>
+                      <Image
+                        source={{ uri: notifImageUrl }}
+                        style={styles.notificationRightImage}
+                        resizeMode="contain"
+                      />
+                    </View>
+                  ) : null}
+                </View>
+
+                {isLongText && (
+                  <Pressable
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      if (Platform.OS !== 'web') {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }
+                      setIsExpanded((prev) => !prev);
+                    }}
+                    hitSlop={8}
+                    style={styles.readMoreButton}
+                  >
+                    <Text style={[styles.readMoreText, { color: accentColor }]}>
+                      {isExpanded ? 'Show less' : 'Read more'}
+                    </Text>
+                    <Ionicons
+                      name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                      size={13}
+                      color={accentColor}
+                    />
+                  </Pressable>
+                )}
+              </View>
+            );
+          })()}
 
           {/* Hint row for gestures & navigation */}
           <View style={styles.cardFooter}>
@@ -475,17 +520,27 @@ export default function NotificationsScreen() {
 
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
 
-  // Filtered notifications
-  const filteredNotifications = notificationsList.filter((item) => {
-    if (activeTab === 'unread') return !item.isRead;
-    if (activeTab === 'clicks')
-      return item.type === 'page_click' || item.type === 'page_view' || item.type === 'analytics';
-    if (activeTab === 'lead') return item.type === 'lead';
-    if (activeTab === 'broadcast')
-      return item.type === 'info' || item.type === 'broadcast' || item.type === 'announcement';
-    if (activeTab === 'system') return item.type === 'system';
-    return true;
-  });
+  // Filtered and deduplicated notifications (guarantees zero duplicate cards render on screen)
+  const filteredNotifications = React.useMemo(() => {
+    const seen = new Set<string>();
+    return notificationsList
+      .filter((item) => {
+        if (activeTab === 'unread') return !item.isRead;
+        if (activeTab === 'clicks')
+          return item.type === 'page_click' || item.type === 'page_view' || item.type === 'analytics';
+        if (activeTab === 'lead') return item.type === 'lead';
+        if (activeTab === 'admin')
+          return item.type === 'info' || item.type === 'admin' || item.type === 'announcement';
+        if (activeTab === 'system') return item.type === 'system';
+        return true;
+      })
+      .filter((item) => {
+        const dedupeKey = `${(item.title || '').trim().toLowerCase()}:::${(item.body || '').trim().toLowerCase()}`;
+        if (seen.has(dedupeKey)) return false;
+        seen.add(dedupeKey);
+        return true;
+      });
+  }, [notificationsList, activeTab]);
 
   const handleCardPress = async (item: AppNotification) => {
     if (Platform.OS !== 'web') {
@@ -618,10 +673,10 @@ export default function NotificationsScreen() {
               count: notificationsList.filter((n) => n.type === 'lead').length,
             },
             {
-              id: 'broadcast' as const,
-              label: 'Broadcasts',
+              id: 'admin' as const,
+              label: 'Admin',
               count: notificationsList.filter(
-                (n) => n.type === 'info' || n.type === 'broadcast' || n.type === 'announcement'
+                (n) => n.type === 'info' || n.type === 'admin' || n.type === 'announcement'
               ).length,
             },
             {
@@ -649,15 +704,15 @@ export default function NotificationsScreen() {
                   styles.tabButton,
                   isActive
                     ? {
-                        backgroundColor: isDark ? '#2C2740' : '#E9E3FA',
-                        borderColor: colors.accent || '#6366F1',
-                        borderWidth: 1,
-                      }
+                      backgroundColor: isDark ? '#2C2740' : '#E9E3FA',
+                      borderColor: colors.accent || '#6366F1',
+                      borderWidth: 1,
+                    }
                     : {
-                        backgroundColor: isDark ? '#1B1728' : '#F6F2FC',
-                        borderColor: isDark ? '#28233A' : '#EAE4F4',
-                        borderWidth: 1,
-                      },
+                      backgroundColor: isDark ? '#1B1728' : '#F6F2FC',
+                      borderColor: isDark ? '#28233A' : '#EAE4F4',
+                      borderWidth: 1,
+                    },
                 ]}
               >
                 <Text
@@ -667,8 +722,8 @@ export default function NotificationsScreen() {
                       color: isActive
                         ? colors.accent || '#6366F1'
                         : isDark
-                        ? '#8E87A1'
-                        : '#6B667A',
+                          ? '#8E87A1'
+                          : '#6B667A',
                       fontWeight: isActive ? '700' : '500',
                     },
                   ]}
@@ -683,8 +738,8 @@ export default function NotificationsScreen() {
                         backgroundColor: isActive
                           ? colors.accent || '#6366F1'
                           : isDark
-                          ? '#352F4C'
-                          : '#DDD7EC',
+                            ? '#352F4C'
+                            : '#DDD7EC',
                       },
                     ]}
                   >
@@ -954,10 +1009,53 @@ const styles = StyleSheet.create({
     marginTop: 2,
     letterSpacing: -0.2,
   },
-  notificationBody: {
+  bodySection: {
+    paddingLeft: 50,
+    marginTop: 3,
+    marginBottom: 4,
+  },
+  bodyWithImageRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  readMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    marginTop: 6,
+    paddingVertical: 2,
+    paddingHorizontal: 2,
+  },
+  readMoreText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  notificationBodyText: {
+    flex: 1,
     fontSize: 13,
     lineHeight: 18,
-    paddingLeft: 50,
+  },
+  notificationRightImageWrapper: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  notificationRightImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
   },
   cardFooter: {
     flexDirection: 'row',
