@@ -100,7 +100,7 @@ export function TestNotificationButton() {
         });
 
         const json = await res.json();
-        const ticket = json?.data?.[0];
+        const ticket = Array.isArray(json?.data) ? json?.data?.[0] : json?.data;
         if (ticket?.status === 'ok') {
           const ticketId = ticket.id;
           // Verify with FCM delivery receipts
@@ -161,6 +161,48 @@ export function TestNotificationButton() {
   const handleSendBackgroundTestNotification = async () => {
     try {
       console.log('🔔 Scheduling background test notification in 5 seconds...');
+      let token = expoPushToken;
+      if (!token) {
+        token = await requestPermissions();
+      }
+
+      if (token) {
+        Alert.alert(
+          '⏳ 5s Background Timer Started!',
+          'Abhi agle 5 seconds me app ko MINIMIZE karein (Home button dabayein).\n\n5 seconds baad server FCM remote notification WITH LARGE IMAGE deliver karega!',
+          [{ text: 'OK' }]
+        );
+
+        setTimeout(async () => {
+          try {
+            await fetch('https://exp.host/--/api/v2/push/send', {
+              method: 'POST',
+              headers: {
+                Accept: 'application/json',
+                'Accept-encoding': 'gzip, deflate',
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                to: token,
+                title: '🚀 GetAiPilot Lead Alert',
+                body: 'Naya prospect assign hua hai! Tap karke lead details dekhein.',
+                sound: 'default',
+                priority: 'high',
+                channelId: 'leads',
+                badge: 1,
+                data: { route: '/crm/contacts', imageUrl: TEST_IMAGE_URL },
+                richContent: {
+                  image: TEST_IMAGE_URL,
+                },
+              }),
+            });
+          } catch (bgErr) {
+            console.warn('Delayed background push dispatch error:', bgErr);
+          }
+        }, 5000);
+        return;
+      }
+
       await sendTestNotification(
         '🚀 GetAiPilot Lead Alert',
         'Naya prospect assign hua hai! Tap karke lead details dekhein.',

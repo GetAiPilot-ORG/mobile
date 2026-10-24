@@ -11,13 +11,25 @@ try {
 if (Notifications?.setNotificationHandler) {
   try {
     Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-        shouldShowBanner: true,
-        shouldShowList: true,
-      }),
+      handleNotification: async (notification) => {
+        // For remote push notifications on Android, Google FCM already handles the system notification banner
+        // with the richContent large image. Firing shouldShowAlert here causes Android to show a duplicate banner without the image.
+        const trigger = notification?.request?.trigger as any;
+        const notifData = (notification?.request?.content?.data || {}) as Record<string, any>;
+        const isRemotePush =
+          trigger?.type === 'push' ||
+          Boolean(trigger?.remoteMessage) ||
+          Boolean(notifData?.tag) ||
+          Boolean(notifData?.imageUrl) ||
+          Boolean(notification?.request?.identifier?.startsWith('getai_'));
+        return {
+          shouldShowAlert: !isRemotePush,
+          shouldPlaySound: !isRemotePush,
+          shouldSetBadge: true,
+          shouldShowBanner: !isRemotePush,
+          shouldShowList: true,
+        };
+      },
     });
   } catch (handlerErr) {
     console.warn('[BackgroundNotificationHandler] setNotificationHandler error:', handlerErr);
