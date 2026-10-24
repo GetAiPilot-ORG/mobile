@@ -260,14 +260,22 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     }
   }, [user?.id, resolveRoute]);
 
+  const lastPageClickSyncTime = useRef<number>(0);
+
   /**
    * Monitor user's landing pages and bio pages for click count and view updates.
    * Scoped strictly to pages where user_id === user.id.
-   * Sends real-time notification to the user when their page receives new clicks.
+   * Throttled to minimum 15-minute intervals to avoid excessive Supabase REST queries.
    */
-  const syncPageClickNotifications = useCallback(async (userId?: string) => {
+  const syncPageClickNotifications = useCallback(async (userId?: string, force = false) => {
     const uid = userId || user?.id;
     if (!uid) return;
+
+    const now = Date.now();
+    if (!force && now - lastPageClickSyncTime.current < 15 * 60 * 1000) {
+      return;
+    }
+    lastPageClickSyncTime.current = now;
 
     try {
       // 1. Fetch current landing and bio page stats for this specific user
