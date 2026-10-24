@@ -11,9 +11,9 @@ function normalizeMetaTemplate(t: any): MetaTemplate {
 
   const label = t.name
     ? t.name
-        .split('_')
-        .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(' ')
+      .split('_')
+      .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ')
     : 'WhatsApp Template';
 
   return {
@@ -25,14 +25,14 @@ function normalizeMetaTemplate(t: any): MetaTemplate {
     footer: footerComp?.text || t.footer?.text || (typeof t.footer === 'string' ? t.footer : undefined),
     buttons: Array.isArray(buttonsComp?.buttons)
       ? buttonsComp.buttons.map((b: any) => ({
-          type: b.type === 'URL' ? 'URL' : b.type === 'PHONE_NUMBER' ? 'PHONE_NUMBER' : 'QUICK_REPLY',
-          text: b.text || 'Action',
-          url: b.url,
-          phone_number: b.phone_number,
-        }))
+        type: b.type === 'URL' ? 'URL' : b.type === 'PHONE_NUMBER' ? 'PHONE_NUMBER' : 'QUICK_REPLY',
+        text: b.text || 'Action',
+        url: b.url,
+        phone_number: b.phone_number,
+      }))
       : Array.isArray(t.buttons)
-      ? t.buttons
-      : undefined,
+        ? t.buttons
+        : undefined,
   };
 }
 
@@ -62,7 +62,7 @@ export const inboxApi = {
           }
         }
       }
-    } catch (_) {}
+    } catch (_) { }
 
     // ── 1. Fetch WhatsApp Conversations ──────────────────────────────────────
     let waList: NormalizedConversation[] = [];
@@ -77,7 +77,7 @@ export const inboxApi = {
       if (Array.isArray(data) && data.length > 0) {
         waList = data.map((c) => ({ ...c, channel: 'whatsapp' as const }));
       }
-    } catch (_) {}
+    } catch (_) { }
 
     if (waList.length === 0 && orgId) {
       try {
@@ -140,7 +140,7 @@ export const inboxApi = {
             };
           });
         }
-      } catch (_) {}
+      } catch (_) { }
     }
 
     // ── 2. Fetch Telegram Conversations ──────────────────────────────────────
@@ -178,7 +178,7 @@ export const inboxApi = {
               }
             });
           }
-        } catch (_) {}
+        } catch (_) { }
 
         // Query messages for all active AI customer chatbots
         if (userBotIds.size > 0) {
@@ -307,7 +307,7 @@ export const inboxApi = {
           });
         });
       }
-    } catch (_) {}
+    } catch (_) { }
 
     if (igList.length === 0) {
       igList = [
@@ -348,7 +348,6 @@ export const inboxApi = {
       ];
     }
 
->>>>>>> priyansh
     // ── 4. Combine & Sort Feed Chronologically ──────────────────────────────
     let allConversations: NormalizedConversation[] = [...waList, ...tgList, ...igList];
     allConversations.sort((a, b) => {
@@ -417,7 +416,7 @@ export const inboxApi = {
               if (botCfg) {
                 resolvedBotName = (botCfg.support_name || botCfg.bot_name || 'AI Assistant').trim();
               }
-            } catch (_) {}
+            } catch (_) { }
           }
 
           const conv: NormalizedConversation = {
@@ -637,7 +636,7 @@ export const inboxApi = {
       if (res && res.messages) {
         return res;
       }
-    } catch (_) {}
+    } catch (_) { }
 
     try {
       let realConvId = id;
@@ -732,10 +731,10 @@ export const inboxApi = {
         const senderType: 'contact' | 'agent' | 'bot' | 'system' = isNote
           ? 'agent'
           : m.direction === 'inbound'
-          ? 'contact'
-          : isBot
-          ? 'bot'
-          : 'agent';
+            ? 'contact'
+            : isBot
+              ? 'bot'
+              : 'agent';
 
         return {
           id: m.id,
@@ -748,10 +747,10 @@ export const inboxApi = {
             name: isNote
               ? (isMe ? 'You' : 'Agent Note')
               : m.direction === 'inbound'
-              ? 'Contact'
-              : isBot
-              ? 'AI Bot'
-              : (isMe ? 'You' : 'Agent'),
+                ? 'Contact'
+                : isBot
+                  ? 'AI Bot'
+                  : (isMe ? 'You' : 'Agent'),
             type: senderType,
           },
           sender_user_id: m.sender_user_id || undefined,
@@ -987,7 +986,7 @@ export const inboxApi = {
     try {
       const data = await apiClient.get<TeamMember[]>('/mobile/v1/team/members');
       if (Array.isArray(data) && data.length > 0) return data;
-    } catch (_) {}
+    } catch (_) { }
 
     try {
       let orgId = (await import('../../../core/store/authStore')).useAuthStore.getState().user?.organizationId;
@@ -1099,7 +1098,7 @@ export const inboxApi = {
       if (Array.isArray(data) && data.length > 0) {
         return data.map(normalizeMetaTemplate);
       }
-    } catch (_) {}
+    } catch (_) { }
 
     try {
       let orgId = (await import('../../../core/store/authStore')).useAuthStore.getState().user?.organizationId;
