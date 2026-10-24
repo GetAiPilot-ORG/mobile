@@ -1044,6 +1044,7 @@ export class NotificationService {
               user_id: curr.userId,
               title,
               description,
+              
               type: 'page_view',
               is_read: false,
             });
