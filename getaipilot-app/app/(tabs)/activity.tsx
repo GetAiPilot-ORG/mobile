@@ -18,6 +18,7 @@ import { AppTopBar } from "../../src/components/AppTopBar";
 import { ProductEmpty } from "../../src/components/ProductUI";
 import { ActivityScreenSkeleton } from "../../src/components/skeletonScreen";
 import { useAuth } from "../../src/contexts/AuthContext";
+import { useAuthStore } from "../../src/core/store/authStore";
 import { crmApi } from "../../src/features/crm/api/crm.api";
 import { voiceApi } from "../../src/features/voice/api/voiceApi";
 import { whatsappApi } from "../../src/features/whatsapp/api/whatsapp.api";
@@ -156,30 +157,144 @@ export default function ConnectedPlatformsPage() {
     refetch,
     isRefetching,
   } = useQuery({
-    queryKey: ["connected-platforms-telemetry-v3", user?.id || "guest"],
+    queryKey: [
+      "connected-platforms-telemetry-v4",
+      user?.id || "guest",
+      user?.email || "",
+      user?.organizationId || "",
+    ],
     queryFn: async () => {
       let currentUserId = user?.id;
-      let currentOrgId = user?.organizationId;
+      let currentUserEmail = user?.email;
+      let currentOrgId =
+        user?.organizationId || useAuthStore.getState().tenantMapping?.hub_org_id || null;
 
       if (!currentUserId) {
         try {
           const { data: authData } = await supabase.auth.getUser();
-          currentUserId = authData.user?.id;
+          if (authData?.user) {
+            currentUserId = authData.user.id;
+            currentUserEmail = authData.user.email || currentUserEmail;
+          }
         } catch {}
       }
 
-      if (currentUserId && !currentOrgId) {
+      if (!currentUserId) {
+        try {
+          const { data: sessData } = await supabase.auth.getSession();
+          if (sessData?.session?.user) {
+            currentUserId = sessData.session.user.id;
+            currentUserEmail = sessData.session.user.email || currentUserEmail;
+          }
+        } catch {}
+      }
+
+      // If no authenticated user, strictly return empty stats to prevent cross-account leakage
+      if (!currentUserId) {
+        return {
+          profile: {},
+          activities: [],
+          social: { connectedCount: 0, pagesCount: 0 },
+          whatsapp: {
+            wabaPhone: "Meta Cloud API",
+            walletBalancePaise: 0,
+            eventsCount: 0,
+            qualityRating: "Green",
+            statusText: "Not Connected",
+          },
+          telegram: {
+            joinLinksCount: 0,
+            trackerCount: 0,
+            forwardRulesCount: 0,
+            joinsCount: 0,
+          },
+          voice: {
+            totalCalls: 0,
+            totalAssistants: 0,
+            creditBalanceDisplay: "₹0.00",
+          },
+          crm: {
+            contactsCount: 0,
+            dealsCount: 0,
+            paymentsCount: 0,
+            activitiesCount: 0,
+            formsCount: 0,
+            shortLinksCount: 0,
+            totalClicks: 0,
+          },
+        };
+      }
+
+      // Check organization membership if currentOrgId not yet populated
+      if (!currentOrgId) {
         try {
           const { data: member } = await supabase
             .from("organization_members")
             .select("organization_id")
             .eq("user_id", currentUserId)
             .maybeSingle();
-          currentOrgId = member?.organization_id;
+          if (member?.organization_id) {
+            currentOrgId = member.organization_id;
+          }
         } catch {}
       }
 
-      // Parallel fetch across Main Supabase, CRM Supabase REST, and BFF APIs
+      // Resolve numeric Telegram user ID for forward mappings and tracking
+      let numericTgUserId: number | null = null;
+      const tgCandidates = [
+        user?.user_metadata?.telegram_user_id,
+        user?.user_metadata?.telegram_id,
+        useAuthStore.getState().tenantMapping?.telegram_user_id,
+      ];
+      for (const cand of tgCandidates) {
+        if (cand && /^\d{5,16}$/.test(String(cand).trim())) {
+          numericTgUserId = Number(cand);
+          break;
+        }
+      }
+
+      if (!numericTgUserId || !currentOrgId) {
+        try {
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("telegram_user_id, organization_id")
+            .eq("id", currentUserId)
+            .maybeSingle();
+          if (prof) {
+            if (!numericTgUserId && prof.telegram_user_id && /^\d{5,16}$/.test(String(prof.telegram_user_id).trim())) {
+              numericTgUserId = Number(prof.telegram_user_id);
+            }
+            if (!currentOrgId && prof.organization_id) {
+              currentOrgId = prof.organization_id;
+            }
+          }
+        } catch {}
+      }
+
+      // Resolve CRM organization ID specifically for this account
+      let crmOrgId: string | null = currentOrgId || null;
+      if (!crmOrgId && currentUserEmail) {
+        try {
+          const crmMembers = await fetchCrmRest(
+            "crm_members",
+            `select=org_id&email=ilike.${encodeURIComponent(currentUserEmail)}&is_deleted=eq.false&limit=1`
+          );
+          if (crmMembers && crmMembers[0]?.org_id) {
+            crmOrgId = crmMembers[0].org_id;
+          }
+        } catch {}
+      }
+
+      if (!crmOrgId) {
+        try {
+          const org = await crmApi.getOrganization();
+          if (org?.id) {
+            crmOrgId = org.id;
+          }
+        } catch {}
+      }
+
+      // Parallel fetch across Main Supabase, CRM Supabase REST, and BFF APIs strictly scoped to this account
       const [
         profileRes,
         socialTokensRes,
@@ -204,63 +319,74 @@ export default function ConnectedPlatformsPage() {
         waBroadcasts,
         waStatus,
       ] = await Promise.all([
-        currentUserId
-          ? supabase.from("profiles").select("*").eq("id", currentUserId).maybeSingle()
-          : Promise.resolve({ data: null, error: null }),
-        currentUserId
-          ? supabase.from("social_tokens").select("*").eq("user_id", currentUserId)
-          : Promise.resolve({ data: [], error: null }),
-        // Real Telegram Bot Joins
+        supabase.from("profiles").select("*").eq("id", currentUserId).maybeSingle(),
+        supabase.from("social_tokens").select("*").eq("user_id", currentUserId),
+        // Real Telegram Bot Joins scoped to this account
         supabase
           .from("tg_bot_join_users")
           .select("id, telegram_first_name, telegram_username, status, joined_channel, created_at")
+          .eq("user_id", currentUserId)
           .order("created_at", { ascending: false })
           .limit(30),
-        // Real Telegram Bot Trackers
+        // Real Telegram Bot Trackers scoped to this account
         supabase
           .from("tg_tracker")
           .select("id, bot_name, bot_username, status, created_at")
+          .eq("user_id", currentUserId)
           .order("created_at", { ascending: false })
           .limit(10),
-        // Real Telegram SEBI Research Reports
+        // Real Telegram SEBI Research Reports scoped to this account
         supabase
           .from("tg_trading_calls")
           .select("id, symbol, strike_price, direction, status, created_at")
+          .eq("user_id", currentUserId)
           .order("created_at", { ascending: false })
           .limit(10),
-        // Telegram Forward mappings
-        supabase.from("tg_forward_mappings").select("id, status, updated_at", { count: "exact" }),
-        // Telegram Invite Links
-        supabase.from("tg_bot_join_links").select("id, name, created_at", { count: "exact" }),
-        // Quick forms
-        supabase.from("quick_forms").select("id, title, created_at").order("created_at", { ascending: false }).limit(10),
-        // Short links
-        supabase.from("short_links").select("id, title, short_slug, clicks, created_at").order("created_at", { ascending: false }).limit(10),
-        // Bio templates
-        supabase.from("free_template_submissions").select("id, page_title, slug, page_views, button_clicks, created_at").order("created_at", { ascending: false }).limit(10),
-        // Landing templates
-        supabase.from("landing_template_submissions").select("id, page_title, slug, page_views, button_clicks, created_at").order("created_at", { ascending: false }).limit(10),
-        // WhatsApp Wallet
+        // Telegram Forward mappings scoped to user's telegram ID
+        numericTgUserId
+          ? supabase.from("tg_forward_mappings").select("id, status, updated_at", { count: "exact" }).eq("user_id", numericTgUserId)
+          : Promise.resolve({ data: [], count: 0, error: null }),
+        // Telegram Invite Links scoped to this account
+        supabase.from("tg_bot_join_links").select("id, name, created_at", { count: "exact" }).eq("user_id", currentUserId),
+        // Quick forms scoped to this account
+        supabase.from("quick_forms").select("id, title, created_at").eq("user_id", currentUserId).order("created_at", { ascending: false }).limit(10),
+        // Short links scoped to this account
+        supabase.from("short_links").select("id, title, short_slug, clicks, created_at").eq("user_id", currentUserId).order("created_at", { ascending: false }).limit(10),
+        // Bio templates scoped to this account
+        supabase.from("free_template_submissions").select("id, page_title, slug, page_views, button_clicks, created_at").eq("user_id", currentUserId).order("created_at", { ascending: false }).limit(10),
+        // Landing templates scoped to this account
+        supabase.from("landing_template_submissions").select("id, page_title, slug, page_views, button_clicks, created_at").eq("user_id", currentUserId).order("created_at", { ascending: false }).limit(10),
+        // WhatsApp Wallet scoped to this account's organization
         currentOrgId
           ? supabase.from("whatsapp_wallets").select("*").eq("organization_id", currentOrgId).maybeSingle()
-          : supabase.from("whatsapp_wallets").select("*").limit(1).maybeSingle(),
-        // WhatsApp Logs
-        supabase.from("whatsapp_message_usage_logs").select("*").order("created_at", { ascending: false }).limit(10),
-        // System Notifications
-        supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(10),
-        // CRM Activities from CRM Supabase REST
-        fetchCrmRest("crm_activities", "select=*&order=created_at.desc&limit=25"),
-        // CRM Contacts
-        fetchCrmRest("crm_contacts", "select=id,first_name,last_name,company,status,created_at&order=created_at.desc&limit=15"),
-        // CRM Deals
-        fetchCrmRest("crm_deals", "select=id,title,value,stage,created_at&order=created_at.desc&limit=15"),
-        // CRM Payments
-        fetchCrmRest("crm_payments", "select=id,amount,payment_method,status,payment_date,created_at&order=created_at.desc&limit=15"),
-        // Voice Calls from Voice BFF
+          : Promise.resolve({ data: null, error: null }),
+        // WhatsApp Logs scoped to this account's organization
+        currentOrgId
+          ? supabase.from("whatsapp_message_usage_logs").select("*").eq("organization_id", currentOrgId).order("created_at", { ascending: false }).limit(10)
+          : Promise.resolve({ data: [], error: null }),
+        // System Notifications scoped to this account
+        supabase.from("notifications").select("*").eq("user_id", currentUserId).order("created_at", { ascending: false }).limit(10),
+        // CRM Activities scoped to user's CRM organization
+        crmOrgId
+          ? fetchCrmRest("crm_activities", `select=*&org_id=eq.${crmOrgId}&order=created_at.desc&limit=25`)
+          : Promise.resolve([]),
+        // CRM Contacts scoped to user's CRM organization
+        crmOrgId
+          ? fetchCrmRest("crm_contacts", `select=id,first_name,last_name,company,status,created_at&org_id=eq.${crmOrgId}&order=created_at.desc&limit=15`)
+          : Promise.resolve([]),
+        // CRM Deals scoped to user's CRM organization
+        crmOrgId
+          ? fetchCrmRest("crm_deals", `select=id,title,value,stage,created_at&org_id=eq.${crmOrgId}&order=created_at.desc&limit=15`)
+          : Promise.resolve([]),
+        // CRM Payments scoped to user's CRM organization
+        crmOrgId
+          ? fetchCrmRest("crm_payments", `select=id,amount,payment_method,status,payment_date,created_at&org_id=eq.${crmOrgId}&order=created_at.desc&limit=15`)
+          : Promise.resolve([]),
+        // Voice Calls from Voice BFF (authenticated via session token)
         voiceApi.getCalls({ limit: 15 }).catch(() => []),
         // Voice Overview
         voiceApi.getOverview().catch(() => null),
-        // WhatsApp Broadcasts
+        // WhatsApp Broadcasts (authenticated via session token)
         whatsappApi.getBroadcasts({ limit: 15 }).catch(() => ({ broadcasts: [], total_count: 0 })),
         // WhatsApp Status
         whatsappApi.getStatus().catch(() => null),
@@ -274,7 +400,7 @@ export default function ConnectedPlatformsPage() {
       const walletPaise =
         waWalletRes?.data?.balance_paise !== undefined
           ? Number(waWalletRes.data.balance_paise)
-          : 10000;
+          : 0;
 
       // Build unified, real-time activity items
       const rawActivities: ActivityFeedItem[] = [];
