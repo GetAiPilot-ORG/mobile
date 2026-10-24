@@ -36,7 +36,7 @@ export interface AppNotification {
   | 'system'
   | 'general'
   | 'info'
-  | 'broadcast'
+  | 'admin'
   | 'announcement'
   | 'page_click'
   | 'page_view'
@@ -124,7 +124,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   // ------------------------------------------------------------------
-  // ONE canonical dedupe namespace, keyed by row id.
+  // ONE canonical dedupe namespace, keyed by row id or content.
   // ------------------------------------------------------------------
   const processedKeys = useRef<Set<string>>(new Set());
 
@@ -136,6 +136,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const notifKey = (id: string) => `notif:${id}`;
+  const contentKey = (title: string, body: string) =>
+    `content:${(title || '').trim().toLowerCase()}:${(body || '').trim().toLowerCase()}`;
 
   // ------------------------------------------------------------------
   // Persistence
@@ -217,18 +219,37 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   // ------------------------------------------------------------------
-  // Upsert into list, keyed by AppNotification.id.
+  // Upsert into list, keyed by AppNotification.id or content match.
   // ------------------------------------------------------------------
   const upsertNotification = useCallback(
     (item: AppNotification, uid?: string) => {
       setNotificationsList((prev) => {
-        const idx = prev.findIndex((p) => p.id === item.id);
+        const itemTime = new Date(item.createdAt).getTime();
+        // Match by exact id OR by matching title + body within 5 minutes to prevent dual card insertion
+        const idx = prev.findIndex((p) => {
+          if (p.id === item.id) return true;
+          if (
+            p.title.trim().toLowerCase() === item.title.trim().toLowerCase() &&
+            p.body.trim().toLowerCase() === item.body.trim().toLowerCase() &&
+            Math.abs(new Date(p.createdAt).getTime() - itemTime) < 5 * 60_000
+          ) {
+            return true;
+          }
+          return false;
+        });
+
         let next: AppNotification[];
         if (idx >= 0) {
           const existing = prev[idx];
+          const preferredId =
+            existing.id && !existing.id.includes(':') && existing.id.length > 8
+              ? existing.id
+              : item.id;
+
           const merged: AppNotification = {
             ...existing,
             ...item,
+            id: preferredId,
             isRead: existing.isRead || item.isRead,
           };
           next = [merged, ...prev.filter((_, i) => i !== idx)];
@@ -294,6 +315,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           for (const leftover of prevById.values()) {
             const targetUid = leftover.data?.userId || leftover.data?.user_id;
             if (targetUid && targetUid !== uid) continue;
+            // Purge any stored duplicate cards that match a remote notification by title + body
+            const isDup = remoteItems.some(
+              (r) =>
+                r.title.trim().toLowerCase() === leftover.title.trim().toLowerCase() &&
+                r.body.trim().toLowerCase() === leftover.body.trim().toLowerCase()
+            );
+            if (isDup) continue;
             merged.push(leftover);
           }
 
@@ -367,12 +395,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           if (newRow.user_id && newRow.user_id !== uid) return;
 
           const id = String(newRow.id);
-          if (isDuplicate(notifKey(id))) return;
+          const title = newRow.title || 'Notification';
+          const body = newRow.description || '';
+          if (isDuplicate(notifKey(id)) || isDuplicate(contentKey(title, body))) return;
 
           const item: AppNotification = {
             id,
-            title: newRow.title || 'Notification',
-            body: newRow.description || '',
+            title,
+            body,
             data: {
               type: newRow.type,
               userId: newRow.user_id,
@@ -460,10 +490,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       )
       .subscribe();
 
-    const pollInterval = setInterval(() => {
-      if (!appIsActiveRef.current) return;
-      fetchSupabaseNotifications(uid);
-    }, 30_000);
+
 
     const appStateSub = AppState.addEventListener('change', (nextState) => {
       appIsActiveRef.current = nextState === 'active';
@@ -477,7 +504,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     return () => {
       supabase.removeChannel(channel);
-      clearInterval(pollInterval);
       appStateSub.remove();
     };
   }, [
@@ -570,7 +596,17 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     }
   };
 
-  const unreadCount = notificationsList.filter((n) => !n.isRead).length;
+  const unreadCount = React.useMemo(() => {
+    const seen = new Set<string>();
+    return notificationsList
+      .filter((n) => !n.isRead)
+      .filter((n) => {
+        const key = `${(n.title || '').trim().toLowerCase()}:::${(n.body || '').trim().toLowerCase()}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }).length;
+  }, [notificationsList]);
 
   // ------------------------------------------------------------------
   // Foreground receive + tap response
@@ -733,7 +769,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
       // Canonical id = the DB row id. The Expo identifier is only a fallback.
       const canonicalId = String(data.id || incoming.request.identifier);
-      if (isDuplicate(notifKey(canonicalId))) return;
+      const title = content.title || 'New Alert';
+      const body = content.body || '';
+      if (isDuplicate(notifKey(canonicalId)) || isDuplicate(contentKey(title, body))) return;
 
       setNotification(incoming);
 
@@ -741,8 +779,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       const notifImageUrl = data.imageUrl || data.image || (content as any).imageUrl;
       const newItem: AppNotification = {
         id: canonicalId,
-        title: content.title || 'New Alert',
-        body: content.body || '',
+        title,
+        body,
         data,
         imageUrl: notifImageUrl,
         createdAt: new Date().toISOString(),

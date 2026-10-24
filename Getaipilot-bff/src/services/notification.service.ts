@@ -39,7 +39,6 @@ export class NotificationService {
   private static emittedMilestones = new Set<string>();
 
   private static realtimeChannel: any = null;
-  private static pollTimer: NodeJS.Timeout | null = null;
 
   /**
    * Save / register device push token for a user
@@ -941,14 +940,15 @@ export class NotificationService {
   static async processNotificationRow(row: any) {
     if (!row) return;
 
-    // Canonical server-side row dedupe
-    if (row.id) {
-      if (NotificationService.processedRowIds.has(row.id)) {
-        console.log(`🛑 [NotificationService] Row ${row.id} already processed. Skipping.`);
+    // Canonical server-side row dedupe (safely stringified to prevent number/string mismatch)
+    const rowIdKey = row.id != null ? String(row.id) : null;
+    if (rowIdKey) {
+      if (NotificationService.processedRowIds.has(rowIdKey)) {
+        console.log(`🛑 [NotificationService] Row ${rowIdKey} already processed. Skipping.`);
         return;
       }
-      NotificationService.processedRowIds.add(row.id);
-      setTimeout(() => NotificationService.processedRowIds.delete(row.id), 5 * 60_000);
+      NotificationService.processedRowIds.add(rowIdKey);
+      setTimeout(() => NotificationService.processedRowIds.delete(rowIdKey), 5 * 60_000);
     }
 
     const title = row.title || 'GetAiPilot Alert';
@@ -1024,10 +1024,6 @@ export class NotificationService {
           this.adminSupabase.removeChannel(NotificationService.realtimeChannel);
         } catch { }
         NotificationService.realtimeChannel = null;
-      }
-      if (NotificationService.pollTimer) {
-        clearInterval(NotificationService.pollTimer);
-        NotificationService.pollTimer = null;
       }
 
       NotificationService.realtimeChannel = this.adminSupabase
@@ -1154,7 +1150,7 @@ export class NotificationService {
                 `[NotificationService] ${currMilestone} clicks milestone for user ${curr.userId}: ${curr.title}`
               );
 
-              const { data: inserted, error: insErr } = await this.adminSupabase
+              const { error: insErr } = await this.adminSupabase
                 .from('notifications')
                 .insert({
                   user_id: curr.userId,
@@ -1162,16 +1158,12 @@ export class NotificationService {
                   description,
                   type: 'page_click',
                   is_read: false,
-                })
-                .select()
-                .maybeSingle();
+                });
 
               if (insErr) {
                 console.warn('[NotificationService] Milestone insert error:', insErr.message);
-              } else if (inserted) {
-                // Immediately forward (don't rely solely on realtime latency)
-                await this.processNotificationRow(inserted);
               }
+              // Row insert is automatically dispatched to exactly one push by initRealtimeDbListener
             }
           }
 
@@ -1199,7 +1191,7 @@ export class NotificationService {
                 `[NotificationService] ${currViewMilestone} views milestone for user ${curr.userId}: ${curr.title}`
               );
 
-              const { data: inserted, error: insErr } = await this.adminSupabase
+              const { error: insErr } = await this.adminSupabase
                 .from('notifications')
                 .insert({
                   user_id: curr.userId,
@@ -1207,15 +1199,12 @@ export class NotificationService {
                   description,
                   type: 'page_view',
                   is_read: false,
-                })
-                .select()
-                .maybeSingle();
+                });
 
               if (insErr) {
                 console.warn('[NotificationService] Milestone insert error:', insErr.message);
-              } else if (inserted) {
-                await this.processNotificationRow(inserted);
               }
+              // Row insert is automatically dispatched to exactly one push by initRealtimeDbListener
             }
           }
 
@@ -1226,7 +1215,6 @@ export class NotificationService {
       }
     };
 
-    NotificationService.pollTimer = setInterval(checkMetrics, intervalMs);
     setTimeout(checkMetrics, 5000);
   }
 }
