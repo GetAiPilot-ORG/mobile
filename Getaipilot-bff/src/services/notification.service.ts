@@ -11,22 +11,35 @@ export interface ExpoPushMessage {
   priority?: 'default' | 'normal' | 'high';
   channelId?: string;
   badge?: number;
+  collapseId?: string;
   _displayInForeground?: boolean;
+  richContent?: {
+    image?: string;
+  };
 }
+
+export const DEFAULT_NOTIFICATION_LARGE_ICON =
+  'https://uklxlappjcuvdqjvecfh.supabase.co/storage/v1/object/public/landing-page-logos/notification_large_icon.png';
 
 export class NotificationService {
   private static adminSupabase = createClient(
     env.SUPABASE_URL,
     env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY
   );
-  private static recentSentKeys = new Set<string>();
 
-  private static isDuplicateBffSend(key: string): boolean {
-    if (this.recentSentKeys.has(key)) return true;
-    this.recentSentKeys.add(key);
-    setTimeout(() => this.recentSentKeys.delete(key), 12000);
-    return false;
-  }
+  // Canonical send dedupe: key = `${rowId}:${token}` (60s window).
+  // Falls back to `${token}:${title}:${body}` (60s window) for ad-hoc sends.
+  private static recentDispatchedPayloads = new Map<string, number>();
+
+  // Canonical processed-row set (row.id) — 5 min window, both for
+  // realtime INSERTs and polling-inserted rows.
+  private static processedRowIds = new Set<string>();
+
+  // Milestone emitter guard so a slow poll can't re-emit the same milestone.
+  private static emittedMilestones = new Set<string>();
+
+  private static realtimeChannel: any = null;
+  private static pollTimer: NodeJS.Timeout | null = null;
 
   /**
    * Save / register device push token for a user
@@ -45,7 +58,6 @@ export class NotificationService {
     }
 
     try {
-      // 1. Update user profile push_token column
       const { error: profileError } = await this.adminSupabase
         .from('profiles')
         .update({
@@ -67,16 +79,20 @@ export class NotificationService {
   }
 
   /**
-   * Send Expo Push Notification via Expo HTTP API
-   * (https://exp.host/--/api/v2/push/send)
+   * Send Expo Push Notification via Expo HTTP API.
+   * Canonical dedupe key = `row:${data.id}:${token}` when data.id exists,
+   * otherwise `msg:${token}:${title}:${body}`. Window = 60s.
    */
   static async sendExpoPushNotification(messages: ExpoPushMessage | ExpoPushMessage[]): Promise<any> {
     const messageList = Array.isArray(messages) ? messages : [messages];
 
-    // Filter only valid Expo Push Tokens
     const validMessages = messageList.filter((m) => {
       const tokens = Array.isArray(m.to) ? m.to : [m.to];
-      return tokens.some((t) => typeof t === 'string' && (t.startsWith('ExponentPushToken[') || t.startsWith('ExpoPushToken[')));
+      return tokens.some(
+        (t) =>
+          typeof t === 'string' &&
+          (t.startsWith('ExponentPushToken[') || t.startsWith('ExpoPushToken['))
+      );
     });
 
     if (validMessages.length === 0) {
@@ -84,10 +100,41 @@ export class NotificationService {
       return { success: false, reason: 'No valid Expo push tokens' };
     }
 
+    const now = Date.now();
+    const DEDUPE_WINDOW_MS = 60_000;
+
+    const uniqueMessages = validMessages.filter((msg) => {
+      const targetToken = Array.isArray(msg.to) ? msg.to.join(',') : msg.to;
+      const rowId = msg.data?.id;
+      const dedupeKey = rowId
+        ? `row:${rowId}:${targetToken}`
+        : `msg:${targetToken}:${msg.title}:${msg.body}`;
+
+      const lastSent = NotificationService.recentDispatchedPayloads.get(dedupeKey);
+      if (lastSent && now - lastSent < DEDUPE_WINDOW_MS) {
+        console.warn(`🛑 [NotificationService] Suppressing duplicate push (${dedupeKey})`);
+        return false;
+      }
+      NotificationService.recentDispatchedPayloads.set(dedupeKey, now);
+
+      // Opportunistic cleanup of stale entries
+      if (NotificationService.recentDispatchedPayloads.size > 2000) {
+        for (const [k, t] of NotificationService.recentDispatchedPayloads) {
+          if (now - t > DEDUPE_WINDOW_MS) NotificationService.recentDispatchedPayloads.delete(k);
+        }
+      }
+      return true;
+    });
+
+    if (uniqueMessages.length === 0) {
+      console.log('ℹ️ [NotificationService] All identical duplicate notifications suppressed.');
+      return { success: true, reason: 'Duplicates suppressed' };
+    }
+
     try {
       const response = await axios.post(
         'https://exp.host/--/api/v2/push/send',
-        validMessages,
+        uniqueMessages,
         {
           headers: {
             Accept: 'application/json',
@@ -97,11 +144,112 @@ export class NotificationService {
         }
       );
 
+      const tickets = response.data?.data;
+      if (Array.isArray(tickets)) {
+        const ticketToTokenMap = new Map<string, string>();
+        for (let i = 0; i < tickets.length; i++) {
+          const ticket = tickets[i];
+          const msg = uniqueMessages[i];
+          const targetToken = Array.isArray(msg?.to) ? msg.to.join(',') : msg?.to;
+          if (ticket?.status === 'error') {
+            console.error(
+              `❌ [NotificationService] Delivery ticket error for ${targetToken}:`,
+              ticket.message,
+              ticket.details
+            );
+            if (ticket.details?.error === 'DeviceNotRegistered') {
+              console.warn(`🧹 [NotificationService] Removing expired FCM token from profiles: ${targetToken}`);
+              await this.adminSupabase.from('profiles').update({ push_token: null }).eq('push_token', targetToken);
+            }
+          } else if (ticket?.id && targetToken) {
+            ticketToTokenMap.set(ticket.id, targetToken);
+            console.log(`✅ [NotificationService] Push ticket dispatched: ${ticket.id} to ${targetToken}`);
+          }
+        }
+
+        if (ticketToTokenMap.size > 0) {
+          setTimeout(async () => {
+            try {
+              const receiptRes = await axios.post(
+                'https://exp.host/--/api/v2/push/getReceipts',
+                { ids: Array.from(ticketToTokenMap.keys()) },
+                { headers: { 'Content-Type': 'application/json' } }
+              );
+              const receipts = receiptRes.data?.data || {};
+              for (const [tId, tToken] of ticketToTokenMap.entries()) {
+                const r = receipts[tId];
+                if (r?.status === 'error') {
+                  console.error(`❌ [NotificationService] FCM Receipt failed for ${tToken}:`, r.message, r.details);
+                  if (r.details?.error === 'DeviceNotRegistered') {
+                    console.warn(`🧹 [NotificationService] Auto-cleaning invalid FCM token: ${tToken}`);
+                    await this.adminSupabase.from('profiles').update({ push_token: null }).eq('push_token', tToken);
+                  }
+                } else if (r?.status === 'ok') {
+                  console.log(`🎉 [NotificationService] FCM Confirmed Delivery for ${tToken}`);
+                }
+              }
+            } catch (rErr: any) {
+              console.warn('[NotificationService] Receipt check notice:', rErr?.message || rErr);
+            }
+          }, 2500);
+        }
+      }
+
       return { success: true, data: response.data };
     } catch (error: any) {
-      console.error('[NotificationService] Error sending Expo push notification:', error?.response?.data || error.message);
+      console.error(
+        '[NotificationService] Error sending Expo push notification:',
+        error?.response?.data || error.message
+      );
       return { success: false, error: error?.response?.data || error.message };
     }
+  }
+
+  /**
+   * Send push notification directly to an Expo push token
+   */
+  static async sendDirectPush(
+    pushToken: string,
+    notification: {
+      title: string;
+      body: string;
+      data?: Record<string, any>;
+      channelId?: string;
+      imageUrl?: string;
+    }
+  ) {
+    if (!pushToken || (!pushToken.startsWith('ExponentPushToken[') && !pushToken.startsWith('ExpoPushToken['))) {
+      return { success: false, reason: 'Invalid Expo push token' };
+    }
+
+    const rawImageUrl =
+      notification.imageUrl ||
+      notification.data?.imageUrl ||
+      notification.data?.image ||
+      DEFAULT_NOTIFICATION_LARGE_ICON;
+    const isValidHttpsUrl = typeof rawImageUrl === 'string' && rawImageUrl.trim().startsWith('https://');
+    const imageUrl = isValidHttpsUrl ? rawImageUrl.trim() : DEFAULT_NOTIFICATION_LARGE_ICON;
+
+    const rowId = notification.data?.id;
+    const notifTag = `getai_${rowId || 'direct'}_${Date.now()}`;
+    const payload: ExpoPushMessage = {
+      to: pushToken,
+      title: notification.title,
+      body: notification.body,
+      data: {
+        ...(notification.data || {}),
+        tag: notifTag,
+        imageUrl,
+      },
+      sound: 'default',
+      channelId: notification.channelId || 'default',
+      priority: 'high',
+      badge: 1,
+      collapseId: notifTag,
+      richContent: { image: imageUrl },
+    };
+
+    return await this.sendExpoPushNotification(payload);
   }
 
   /**
@@ -114,6 +262,7 @@ export class NotificationService {
       body: string;
       data?: Record<string, any>;
       channelId?: string;
+      imageUrl?: string;
     }
   ) {
     try {
@@ -128,17 +277,34 @@ export class NotificationService {
         return { success: false, reason: 'User has no registered push token' };
       }
 
-      return await this.sendExpoPushNotification({
+      const rawImageUrl =
+        notification.imageUrl ||
+        notification.data?.imageUrl ||
+        notification.data?.image ||
+        DEFAULT_NOTIFICATION_LARGE_ICON;
+      const isValidHttpsUrl = typeof rawImageUrl === 'string' && rawImageUrl.trim().startsWith('https://');
+      const imageUrl = isValidHttpsUrl ? rawImageUrl.trim() : DEFAULT_NOTIFICATION_LARGE_ICON;
+
+      const rowId = notification.data?.id;
+      const notifTag = `getai_${rowId || userId}`;
+      const payload: ExpoPushMessage = {
         to: pushToken,
         title: notification.title,
         body: notification.body,
-        data: notification.data || {},
+        data: {
+          ...(notification.data || {}),
+          tag: notifTag,
+          imageUrl,
+        },
         sound: 'default',
         channelId: notification.channelId || 'default',
         priority: 'high',
         badge: 1,
-        _displayInForeground: true,
-      });
+        collapseId: notifTag,
+        richContent: { image: imageUrl },
+      };
+
+      return await this.sendExpoPushNotification(payload);
     } catch (err: any) {
       console.error(`[NotificationService] Error sending notification to user ${userId}:`, err);
       return { success: false, error: err.message };
@@ -163,7 +329,6 @@ export class NotificationService {
     const targetUserIds = new Set<string>();
 
     try {
-      // 1. Fetch organization members
       const { data: members, error: memErr } = await this.adminSupabase
         .from('organization_members')
         .select('user_id')
@@ -181,7 +346,6 @@ export class NotificationService {
       console.warn('[NotificationService] Org members lookup notice:', e?.message || e);
     }
 
-    // 2. Also check if organizationId itself matches a user account (solo/direct workspace)
     if (organizationId && organizationId !== excludeUserId) {
       targetUserIds.add(organizationId);
     }
@@ -191,7 +355,6 @@ export class NotificationService {
     }
 
     try {
-      // 3. Retrieve registered push tokens for these users
       const { data: profiles, error: profErr } = await this.adminSupabase
         .from('profiles')
         .select('id, push_token')
@@ -204,20 +367,31 @@ export class NotificationService {
 
       const validTokens = profiles
         .map((p) => p.push_token)
-        .filter((t): t is string => Boolean(t && (t.startsWith('ExponentPushToken[') || t.startsWith('ExpoPushToken['))));
+        .filter(
+          (t): t is string =>
+            Boolean(t && (t.startsWith('ExponentPushToken[') || t.startsWith('ExpoPushToken[')))
+        );
 
-      if (validTokens.length === 0) {
+      const uniqueTokens = Array.from(new Set(validTokens));
+      if (uniqueTokens.length === 0) {
         return { success: false, reason: 'No registered push tokens found for organization users' };
       }
 
-      const messages: ExpoPushMessage[] = validTokens.map((token) => ({
+      const rowId = notification.data?.id;
+      const notifTag = `getai_org_${organizationId}_${rowId || Date.now()}`;
+      const messages: ExpoPushMessage[] = uniqueTokens.map((token) => ({
         to: token,
         title: notification.title,
         body: notification.body,
-        data: notification.data || {},
+        data: {
+          ...(notification.data || {}),
+          tag: notifTag,
+        },
         sound: 'default',
         channelId: notification.channelId || 'default',
         priority: 'high',
+        collapseId: notifTag,
+        richContent: { image: DEFAULT_NOTIFICATION_LARGE_ICON },
       }));
 
       return await this.sendExpoPushNotification(messages);
@@ -228,8 +402,7 @@ export class NotificationService {
   }
 
   /**
-   * Broadcast an Admin Update or Announcement to ALL regular mobile app users
-   * Delivers high-priority push notifications across Foreground, Background, and Kill mode.
+   * Broadcast to ALL regular mobile app users
    */
   static async sendToAllUsers(notification: {
     title: string;
@@ -238,7 +411,6 @@ export class NotificationService {
     channelId?: string;
   }) {
     try {
-      // 1. Fetch all profiles that have an active push token registered
       const { data: profiles, error } = await this.adminSupabase
         .from('profiles')
         .select('id, push_token')
@@ -251,21 +423,25 @@ export class NotificationService {
 
       const validTokens = profiles
         .map((p) => p.push_token)
-        .filter((t): t is string => Boolean(t && (t.startsWith('ExponentPushToken[') || t.startsWith('ExpoPushToken['))));
+        .filter(
+          (t): t is string =>
+            Boolean(t && (t.startsWith('ExponentPushToken[') || t.startsWith('ExpoPushToken[')))
+        );
 
-      // Deduplicate tokens
       const uniqueTokens = Array.from(new Set(validTokens));
-
       if (uniqueTokens.length === 0) {
         console.warn('[NotificationService] No registered user push tokens found for broadcast.');
         return { success: false, reason: 'No registered push tokens found for users' };
       }
 
-      console.log(`[NotificationService] Broadcasting admin update to ${uniqueTokens.length} active mobile user devices...`);
+      console.log(
+        `[NotificationService] Broadcasting admin update to ${uniqueTokens.length} active mobile user devices...`
+      );
 
-      // 2. Batch in chunks of 100 for Expo HTTP push service
       const chunkSize = 100;
       const results = [];
+      const rowId = notification.data?.id;
+      const notifTag = `getai_broadcast_${rowId || Date.now()}`;
 
       for (let i = 0; i < uniqueTokens.length; i += chunkSize) {
         const chunk = uniqueTokens.slice(i, i + chunkSize);
@@ -273,12 +449,16 @@ export class NotificationService {
           to: token,
           title: notification.title,
           body: notification.body,
-          data: notification.data || {},
+          data: {
+            ...(notification.data || {}),
+            tag: notifTag,
+          },
           sound: 'default',
           channelId: notification.channelId || 'default',
           priority: 'high',
           badge: 1,
-          _displayInForeground: true,
+          collapseId: notifTag,
+          richContent: { image: DEFAULT_NOTIFICATION_LARGE_ICON },
         }));
 
         const res = await this.sendExpoPushNotification(messages);
@@ -293,9 +473,7 @@ export class NotificationService {
   }
 
   /**
-   * Dedicated Admin Activity Dispatcher:
-   * Called whenever an Admin performs an action on the dashboard or backend,
-   * informing regular mobile users about the update!
+   * Admin Activity Dispatcher
    */
   static async broadcastAdminUpdateToUsers(update: {
     type: 'broadcast' | 'maintenance' | 'feature' | 'offer' | 'custom';
@@ -315,21 +493,18 @@ export class NotificationService {
         route = route || '/(tabs)';
         break;
       }
-
       case 'feature': {
         title = title || '🚀 New Platform Update Available';
         channelId = 'default';
         route = route || '/tools';
         break;
       }
-
       case 'offer': {
         title = title || '🎁 Special Announcement & Offers';
         channelId = 'billing';
         route = route || '/pricing';
         break;
       }
-
       case 'broadcast':
       default: {
         title = title || '📢 Announcement from GetAiPilot';
@@ -352,7 +527,7 @@ export class NotificationService {
   }
 
   /**
-   * Send push notification directly to all Administrators & Platform Owners
+   * Send push notification to all Administrators
    */
   static async sendToAdmins(notification: {
     title: string;
@@ -361,7 +536,6 @@ export class NotificationService {
     channelId?: string;
   }) {
     try {
-      // Find all profiles where is_admin is true OR role is 'admin' / 'Admin' / 'Owner'
       const { data: adminProfiles, error } = await this.adminSupabase
         .from('profiles')
         .select('id, push_token, is_admin, role')
@@ -374,13 +548,17 @@ export class NotificationService {
 
       const validTokens = adminProfiles
         .map((p) => p.push_token)
-        .filter((t): t is string => Boolean(t && (t.startsWith('ExponentPushToken[') || t.startsWith('ExpoPushToken['))));
+        .filter(
+          (t): t is string =>
+            Boolean(t && (t.startsWith('ExponentPushToken[') || t.startsWith('ExpoPushToken[')))
+        );
 
-      if (validTokens.length === 0) {
+      const uniqueTokens = Array.from(new Set(validTokens));
+      if (uniqueTokens.length === 0) {
         return { success: false, reason: 'No registered push tokens found for administrators' };
       }
 
-      const messages: ExpoPushMessage[] = validTokens.map((token) => ({
+      const messages: ExpoPushMessage[] = uniqueTokens.map((token) => ({
         to: token,
         title: notification.title,
         body: notification.body,
@@ -388,6 +566,7 @@ export class NotificationService {
         sound: 'default',
         channelId: notification.channelId || 'admin',
         priority: 'high',
+        richContent: { image: DEFAULT_NOTIFICATION_LARGE_ICON },
       }));
 
       return await this.sendExpoPushNotification(messages);
@@ -398,7 +577,7 @@ export class NotificationService {
   }
 
   /**
-   * Broadcast an Admin Activity notification to all administrators
+   * Broadcast an Admin Activity notification
    */
   static async notifyAdminActivity(activity: {
     action: string;
@@ -422,50 +601,59 @@ export class NotificationService {
       case 'maintenance_toggle': {
         const status = activity.details?.enabled ? 'Activated 🛑' : 'Deactivated ✅';
         title = title || `🛡️ Maintenance ${status}`;
-        body = body || `${activity.details?.productName || 'Platform'} maintenance was toggled by ${activity.actorName || 'Admin'}.`;
+        body =
+          body ||
+          `${activity.details?.productName || 'Platform'} maintenance was toggled by ${activity.actorName || 'Admin'
+          }.`;
         channelId = 'admin';
         targetRoute = '/admin/maintenance';
         extraData.type = 'admin_maintenance';
         break;
       }
-
       case 'payment_received': {
         title = title || `💰 Revenue Alert: ₹${activity.details?.amount || 0}`;
-        body = body || `Customer purchased ${activity.details?.planName || 'Plan'} (${activity.details?.userName || 'Customer'}).`;
+        body =
+          body ||
+          `Customer purchased ${activity.details?.planName || 'Plan'} (${activity.details?.userName || 'Customer'
+          }).`;
         channelId = 'billing';
         targetRoute = '/admin/monetize';
         extraData.type = 'admin_payment';
         break;
       }
-
       case 'new_signup':
       case 'sales_lead': {
         title = title || `🚀 New User / Lead Registered`;
-        body = body || `${activity.details?.name || activity.details?.email || 'New prospect'} registered on GetAiPilot.`;
+        body =
+          body ||
+          `${activity.details?.name || activity.details?.email || 'New prospect'} registered on GetAiPilot.`;
         channelId = 'leads';
         targetRoute = '/admin/sales-leads';
         extraData.type = 'admin_sales';
         break;
       }
-
       case 'product_updated': {
         title = title || `🏷️ Product Catalog Updated`;
-        body = body || `${activity.details?.productName || 'Product'} details were adjusted by ${activity.actorName || 'Admin'}.`;
+        body =
+          body ||
+          `${activity.details?.productName || 'Product'} details were adjusted by ${activity.actorName || 'Admin'
+          }.`;
         channelId = 'admin';
         targetRoute = '/admin/monetize';
         extraData.type = 'admin_monetize';
         break;
       }
-
       case 'team_updated': {
         title = title || `👥 Team Staff Role Updated`;
-        body = body || `${activity.details?.name || 'Staff member'} updated to ${activity.details?.role || 'Member'}.`;
+        body =
+          body ||
+          `${activity.details?.name || 'Staff member'} updated to ${activity.details?.role || 'Member'
+          }.`;
         channelId = 'admin';
         targetRoute = '/crm';
         extraData.type = 'team';
         break;
       }
-
       default: {
         title = title || `🛡️ Admin Activity: ${activity.action}`;
         body = body || activity.message || 'Administrative operation performed.';
@@ -487,12 +675,7 @@ export class NotificationService {
   }
 
   /**
-   * Universal Event Dispatcher:
-   * Maps any system/CRM/Inbox/Voice/Payment/Admin event to a high-priority push notification.
-   * Reaches devices in:
-   * - Foreground (heads-up banner + audio)
-   * - Background (system tray banner)
-   * - Kill mode (cold launch notification)
+   * Universal Event Dispatcher
    */
   static async dispatchOrgEventNotification(
     organizationId: string,
@@ -509,7 +692,6 @@ export class NotificationService {
     let extraData: Record<string, any> = {};
 
     switch (event) {
-      // 1. CRM & Leads
       case 'lead.created': {
         const leadName = data?.first_name || data?.name || data?.full_name || 'New Prospect';
         title = `🎯 New Lead: ${leadName}`;
@@ -521,7 +703,6 @@ export class NotificationService {
         extraData = { type: 'lead', leadId: data?.id };
         break;
       }
-
       case 'deal.created': {
         title = `💼 New Deal Created`;
         body = `${data?.title || 'Pipeline Deal'}${data?.value ? ` • $${data.value}` : ''}`;
@@ -530,7 +711,6 @@ export class NotificationService {
         extraData = { type: 'deal', dealId: data?.id };
         break;
       }
-
       case 'task.created': {
         title = `📌 New Task Assigned`;
         body = `${data?.title || 'CRM Task'}${data?.due_date ? ` • Due: ${data.due_date}` : ''}`;
@@ -539,19 +719,14 @@ export class NotificationService {
         extraData = { type: 'task', taskId: data?.id };
         break;
       }
-
-      // 2. Messaging & Inbox (WhatsApp / Telegram / Live Chat)
       case 'message.created': {
-        // Do not notify if this message was sent outbound by ourselves
-        if (data?.direction === 'outbound') {
-          return;
-        }
-
+        if (data?.direction === 'outbound') return;
         const sender = data?.sender_name || data?.contact_name || 'Customer';
         title = `💬 Message from ${sender}`;
-        body = typeof data?.content === 'string' && data.content.trim()
-          ? data.content.trim().slice(0, 100)
-          : 'Sent an attachment / media';
+        body =
+          typeof data?.content === 'string' && data.content.trim()
+            ? data.content.trim().slice(0, 100)
+            : 'Sent an attachment / media';
         channelId = 'messages';
         targetRoute = '/inbox';
         extraData = {
@@ -560,7 +735,6 @@ export class NotificationService {
         };
         break;
       }
-
       case 'conversation.assigned': {
         title = `👤 Conversation Assigned`;
         body = `A customer conversation was assigned to you.`;
@@ -572,13 +746,9 @@ export class NotificationService {
         };
         break;
       }
-
-      // Handover: AI to Real Human takeover (WhatsApp, Instagram, Social)
       case 'conversation.handover':
       case 'conversation.bot_toggled': {
-        if (event === 'conversation.bot_toggled' && data?.bot_enabled !== false) {
-          return; // Only notify when AI is disabled and real human takes over
-        }
+        if (event === 'conversation.bot_toggled' && data?.bot_enabled !== false) return;
         const channelName = data?.channel || 'chat';
         const contact = data?.contact_name || data?.sender_name || 'Customer';
         title = `👤 Human Takeover Requested`;
@@ -592,11 +762,13 @@ export class NotificationService {
         };
         break;
       }
-
-      // WhatsApp Number Connected
       case 'whatsapp.connected':
       case 'whatsapp.connection.updated': {
-        if (event === 'whatsapp.connection.updated' && data?.status !== 'connected' && data?.status !== 'active') {
+        if (
+          event === 'whatsapp.connection.updated' &&
+          data?.status !== 'connected' &&
+          data?.status !== 'active'
+        ) {
           return;
         }
         const phone = data?.phone_number || data?.phone || 'Account';
@@ -607,23 +779,24 @@ export class NotificationService {
         extraData = { type: 'whatsapp_connected', phone };
         break;
       }
-
-      // Social Media Account Connected (Social Pilot)
       case 'social.account.connected': {
         const platform = data?.provider || data?.platform || 'Social';
         const name = data?.name || data?.username || data?.account_name || '';
         title = `🔗 Social Account Connected`;
-        body = `${platform} account ${name ? `(${name}) ` : ''}has been successfully connected to Social Pilot.`;
+        body = `${platform} account ${name ? `(${name}) ` : ''
+          }has been successfully connected to Social Pilot.`;
         channelId = 'campaigns';
         targetRoute = '/tools';
         extraData = { type: 'social_connected', provider: platform };
         break;
       }
-
-      // WhatsApp Template Verified / Approved
       case 'whatsapp.template.approved':
       case 'whatsapp.template.updated': {
-        if (event === 'whatsapp.template.updated' && data?.status !== 'APPROVED' && data?.status !== 'approved') {
+        if (
+          event === 'whatsapp.template.updated' &&
+          data?.status !== 'APPROVED' &&
+          data?.status !== 'approved'
+        ) {
           return;
         }
         const templateName = data?.template_name || data?.name || 'Template';
@@ -634,8 +807,6 @@ export class NotificationService {
         extraData = { type: 'template_verified', templateName };
         break;
       }
-
-      // New Team Member Added
       case 'team.member.created': {
         const memberName = data?.name || data?.first_name || data?.email || 'New member';
         const role = data?.role || 'Member';
@@ -646,8 +817,6 @@ export class NotificationService {
         extraData = { type: 'team_member', memberId: data?.id };
         break;
       }
-
-      // 3. AI Voice Agent & Calls
       case 'call.started': {
         title = `📞 Voice AI Call In Progress`;
         body = `Active call with ${data?.lead_name || data?.phone || 'contact'}`;
@@ -656,7 +825,6 @@ export class NotificationService {
         extraData = { type: 'call' };
         break;
       }
-
       case 'call.completed': {
         title = `✅ Voice AI Call Finished`;
         body = `Call with ${data?.lead_name || data?.phone || 'contact'} completed`;
@@ -665,8 +833,6 @@ export class NotificationService {
         extraData = { type: 'call' };
         break;
       }
-
-      // 4. Marketing Broadcasts & Automations
       case 'whatsapp.broadcast.created': {
         title = `📢 Broadcast Launched`;
         body = `Campaign "${data?.name || 'Broadcast'}" is now delivering.`;
@@ -675,7 +841,6 @@ export class NotificationService {
         extraData = { type: 'broadcast', broadcastId: data?.id };
         break;
       }
-
       case 'whatsapp.broadcast.completed': {
         title = `🎉 Broadcast Delivered`;
         body = `Finished sending "${data?.name || 'Broadcast'}".`;
@@ -684,8 +849,6 @@ export class NotificationService {
         extraData = { type: 'broadcast', broadcastId: data?.id };
         break;
       }
-
-      // 5. Billing & Quotas
       case 'payment.failed': {
         title = `⚠️ Subscription Renewal Notice`;
         body = `Payment could not be processed. Update payment method.`;
@@ -694,7 +857,6 @@ export class NotificationService {
         extraData = { type: 'billing' };
         break;
       }
-
       case 'whatsapp.credits.updated': {
         if (typeof data?.credits === 'number' && data.credits < 20) {
           title = `💳 Low Messaging Balance`;
@@ -704,10 +866,8 @@ export class NotificationService {
           extraData = { type: 'billing' };
           break;
         }
-        return; // Don't spam on normal balance refreshes
+        return;
       }
-
-      // 6. Direct / Custom Notification
       case 'notification.created': {
         title = data?.title || 'GetAiPilot Alert';
         body = data?.body || data?.message || 'New update in your workspace';
@@ -716,8 +876,6 @@ export class NotificationService {
         extraData = data?.data || {};
         break;
       }
-
-      // 7. Admin & Security Console Activities
       case 'admin.maintenance': {
         await this.notifyAdminActivity({
           action: 'maintenance_toggle',
@@ -726,31 +884,18 @@ export class NotificationService {
         });
         return;
       }
-
       case 'admin.payment': {
-        await this.notifyAdminActivity({
-          action: 'payment_received',
-          details: data,
-        });
+        await this.notifyAdminActivity({ action: 'payment_received', details: data });
         return;
       }
-
       case 'admin.sales_lead': {
-        await this.notifyAdminActivity({
-          action: 'sales_lead',
-          details: data,
-        });
+        await this.notifyAdminActivity({ action: 'sales_lead', details: data });
         return;
       }
-
       case 'admin.product_updated': {
-        await this.notifyAdminActivity({
-          action: 'product_updated',
-          details: data,
-        });
+        await this.notifyAdminActivity({ action: 'product_updated', details: data });
         return;
       }
-
       case 'admin.activity': {
         await this.notifyAdminActivity({
           action: data?.action || 'admin_event',
@@ -760,9 +905,7 @@ export class NotificationService {
         });
         return;
       }
-
       default: {
-        // If data provides explicit title & body, forward it
         if (data?.title && (data?.body || data?.message)) {
           title = data.title;
           body = data.body || data.message;
@@ -770,7 +913,7 @@ export class NotificationService {
           targetRoute = data?.route || '/(tabs)/activity';
           extraData = data?.data || {};
         } else {
-          return; // Ignore internal telemetry events without user-facing text
+          return;
         }
       }
     }
@@ -791,12 +934,22 @@ export class NotificationService {
   }
 
   /**
-   * Realtime Database Bridge:
-  /**
-   * Helper to process any notification record and send native Expo Push Notification
+   * Process a single `notifications` row → exactly ONE Expo push.
+   * Canonical dedupe key = row.id (processedRowIds, 5 min window).
+   * sendExpoPushNotification additionally dedupes by `row:${rowId}:${token}`.
    */
   static async processNotificationRow(row: any) {
     if (!row) return;
+
+    // Canonical server-side row dedupe
+    if (row.id) {
+      if (NotificationService.processedRowIds.has(row.id)) {
+        console.log(`🛑 [NotificationService] Row ${row.id} already processed. Skipping.`);
+        return;
+      }
+      NotificationService.processedRowIds.add(row.id);
+      setTimeout(() => NotificationService.processedRowIds.delete(row.id), 5 * 60_000);
+    }
 
     const title = row.title || 'GetAiPilot Alert';
     const body = row.description || row.content || '';
@@ -807,129 +960,101 @@ export class NotificationService {
     if (rawType.includes('whatsapp') || rawType === 'messages') {
       channelId = 'messages';
       route = row.link || '/(tabs)';
-    } else if (rawType.includes('handover') || rawType.includes('takeover') || rawType.includes('human')) {
+    } else if (
+      rawType.includes('handover') ||
+      rawType.includes('takeover') ||
+      rawType.includes('human')
+    ) {
       channelId = 'messages';
       route = row.link || '/inbox';
-    } else if (rawType.includes('social') || rawType.includes('template') || rawType.includes('campaign')) {
+    } else if (
+      rawType.includes('social') ||
+      rawType.includes('template') ||
+      rawType.includes('campaign')
+    ) {
       channelId = 'campaigns';
       route = row.link || '/tools';
-    } else if (rawType.includes('team') || rawType.includes('member') || rawType === 'admin' || rawType === 'leave') {
+    } else if (
+      rawType.includes('team') ||
+      rawType.includes('member') ||
+      rawType === 'admin' ||
+      rawType === 'leave'
+    ) {
       channelId = 'admin';
       route = row.link || '/crm';
     } else if (rawType === 'system') {
       channelId = 'system';
-    } else if (rawType.includes('click') || rawType.includes('view') || rawType === 'analytics') {
+    } else if (
+      rawType.includes('click') ||
+      rawType.includes('view') ||
+      rawType === 'analytics'
+    ) {
       channelId = 'analytics';
       route = row.link || '/tools/my-designs';
     }
 
-    const dedupeKey = `${row.id || ''}_${row.user_id || row.org_id || 'broadcast'}_${title}_${body}`;
-    if (this.isDuplicateBffSend(dedupeKey)) {
-      return;
-    }
+    console.log(
+      `[NotificationService] Dispatching row "${title}" (type=${row.type}, channel=${channelId})`
+    );
 
-    console.log(`[NotificationService] Processing DB notification: "${title}" (Type: ${row.type}, Channel: ${channelId})`);
+    const payloadData = {
+      route,
+      type: row.type || 'system',
+      id: row.id,
+      userId: row.user_id,
+      metadata: row.metadata,
+    };
 
     if (row.user_id) {
-      await this.sendToUser(row.user_id, {
-        title,
-        body,
-        channelId,
-        data: {
-          route,
-          type: row.type || 'system',
-          id: row.id,
-          userId: row.user_id,
-          metadata: row.metadata,
-        },
-      });
+      await this.sendToUser(row.user_id, { title, body, channelId, data: payloadData });
     } else if (row.org_id) {
-      await this.sendToOrg(row.org_id, {
-        title,
-        body,
-        channelId,
-        data: {
-          route,
-          type: row.type || 'system',
-          id: row.id,
-          metadata: row.metadata,
-        },
-      });
+      await this.sendToOrg(row.org_id, { title, body, channelId, data: payloadData });
     } else {
-      // Platform-wide Broadcast (user_id is null): Deliver to ALL active mobile users
-      await this.sendToAllUsers({
-        title,
-        body,
-        channelId,
-        data: {
-          route,
-          type: row.type || 'broadcast',
-          id: row.id,
-          metadata: row.metadata,
-        },
-      });
+      await this.sendToAllUsers({ title, body, channelId, data: payloadData });
     }
   }
 
   /**
-   * Listens to table `notifications` inserts from bot-dashboard (Admin Broadcast,
-   * Waitlist alerts, Attendance/Leave requests) and automatically forwards them
-   * as Expo Push Notifications to mobile devices in Foreground, Background, and Kill mode.
-   * Includes both Supabase Realtime and high-speed DB polling fallback.
+   * Realtime listener → forwards every `notifications` INSERT to exactly one push.
    */
   static initRealtimeDbListener() {
     try {
-      // 1. Supabase Realtime channel listener
-      this.adminSupabase
+      if (NotificationService.realtimeChannel) {
+        try {
+          this.adminSupabase.removeChannel(NotificationService.realtimeChannel);
+        } catch { }
+        NotificationService.realtimeChannel = null;
+      }
+      if (NotificationService.pollTimer) {
+        clearInterval(NotificationService.pollTimer);
+        NotificationService.pollTimer = null;
+      }
+
+      NotificationService.realtimeChannel = this.adminSupabase
         .channel('public:notifications-push-bridge')
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'notifications' },
           async (payload) => {
             const row = payload.new as any;
-            if (row) {
-              await this.processNotificationRow(row);
-            }
+            if (row) await this.processNotificationRow(row);
           }
         )
         .subscribe((status) => {
-          console.log(`[NotificationService] Bot-Dashboard DB Notifications Realtime Bridge: ${status}`);
+          console.log(`[NotificationService] DB Notifications Realtime Bridge: ${status}`);
         });
-
-      // 2. High-speed DB polling fallback every 4 seconds
-      // Guarantees push notification delivery even if the 'notifications' table is not in supabase_realtime publication
-      let lastCheckedTime = new Date().toISOString();
-      setInterval(async () => {
-        try {
-          const { data: newNotifications } = await this.adminSupabase
-            .from('notifications')
-            .select('*')
-            .gt('created_at', lastCheckedTime)
-            .order('created_at', { ascending: true })
-            .limit(20);
-
-          if (Array.isArray(newNotifications) && newNotifications.length > 0) {
-            lastCheckedTime = newNotifications[newNotifications.length - 1].created_at || new Date().toISOString();
-            for (const item of newNotifications) {
-              await this.processNotificationRow(item);
-            }
-          }
-        } catch {
-          // ignore transient poll error
-        }
-      }, 4000);
     } catch (err: any) {
-      console.warn('[NotificationService] Failed to initialize DB notifications bridge:', err?.message || err);
+      console.warn('[NotificationService] Failed to init DB notifications bridge:', err?.message || err);
     }
   }
 
   /**
-   * Monitor user landing pages and bio pages for click count & view updates.
-   * Periodically checks landing_template_submissions and free_template_submissions.
-   * When clicks or views increment, generates a notification record and sends push notification
-   * directly to that page owner's device.
+   * Milestone monitor. Inserts a `notifications` row when a milestone is hit.
+   * The row itself is what drives push delivery via initRealtimeDbListener.
+   * `emittedMilestones` prevents the same milestone from being inserted twice
+   * if a slow poll overlaps with the previous commit.
    */
-  static initPageClickMonitor(intervalMs = 30000) {
+  static initPageClickMonitor(intervalMs = 30_000) {
     let lastMetrics: Record<string, { clicks: number; views: number }> = {};
     let initialized = false;
 
@@ -947,7 +1072,10 @@ export class NotificationService {
             .select('id, user_id, title, slug, view_count'),
         ]);
 
-        const currentMetrics: Record<string, { clicks: number; views: number; userId: string; title: string; type: 'bio' | 'landing' }> = {};
+        const currentMetrics: Record<
+          string,
+          { clicks: number; views: number; userId: string; title: string; type: 'bio' | 'landing' }
+        > = {};
 
         if (Array.isArray(bioRes.data)) {
           for (const item of bioRes.data) {
@@ -961,7 +1089,6 @@ export class NotificationService {
             };
           }
         }
-
         if (Array.isArray(landingRes.data)) {
           for (const item of landingRes.data) {
             if (!item.user_id) continue;
@@ -974,7 +1101,6 @@ export class NotificationService {
             };
           }
         }
-
         if (Array.isArray(tgRes.data)) {
           for (const item of tgRes.data) {
             if (!item.user_id) continue;
@@ -1004,49 +1130,93 @@ export class NotificationService {
             continue;
           }
 
+          // --- Click milestone (50, 100, 150, ...) ---
           const prevClicks = prev.clicks || 0;
           const currClicks = curr.clicks || 0;
           const prevMilestone = Math.floor(prevClicks / 50) * 50;
           const currMilestone = Math.floor(currClicks / 50) * 50;
 
-          // Milestone reached at 50, 100, 150, 200, 250, ...
           if (currMilestone >= 50 && currMilestone > prevMilestone) {
-            const pageTypeLabel = curr.type === 'bio' ? 'Bio' : 'Landing';
-            const title = `🏆 ${currMilestone} Clicks Milestone on ${pageTypeLabel} Page!`;
-            const description = `Congratulations! Your ${pageTypeLabel.toLowerCase()} page "${curr.title}" just crossed ${currMilestone} clicks! Total clicks: ${currClicks} 🎉`;
+            const milestoneKey = `click:${curr.userId}:${key}:${currMilestone}`;
+            if (!NotificationService.emittedMilestones.has(milestoneKey)) {
+              NotificationService.emittedMilestones.add(milestoneKey);
+              setTimeout(
+                () => NotificationService.emittedMilestones.delete(milestoneKey),
+                10 * 60_000
+              );
 
-            console.log(`[NotificationService] ${currMilestone} clicks milestone achieved for user ${curr.userId}: ${curr.title}`);
+              const pageTypeLabel = curr.type === 'bio' ? 'Bio' : 'Landing';
+              const title = `🏆 ${currMilestone} Clicks Milestone on ${pageTypeLabel} Page!`;
+              const description = `Congratulations! Your ${pageTypeLabel.toLowerCase()} page "${curr.title
+                }" just crossed ${currMilestone} clicks! Total clicks: ${currClicks} 🎉`;
 
-            // Insert into notifications table (initRealtimeDbListener automatically sends push notification once)
-            await this.adminSupabase.from('notifications').insert({
-              user_id: curr.userId,
-              title,
-              description,
-              type: 'page_click',
-              is_read: false,
-            });
+              console.log(
+                `[NotificationService] ${currMilestone} clicks milestone for user ${curr.userId}: ${curr.title}`
+              );
+
+              const { data: inserted, error: insErr } = await this.adminSupabase
+                .from('notifications')
+                .insert({
+                  user_id: curr.userId,
+                  title,
+                  description,
+                  type: 'page_click',
+                  is_read: false,
+                })
+                .select()
+                .maybeSingle();
+
+              if (insErr) {
+                console.warn('[NotificationService] Milestone insert error:', insErr.message);
+              } else if (inserted) {
+                // Immediately forward (don't rely solely on realtime latency)
+                await this.processNotificationRow(inserted);
+              }
+            }
           }
 
-          // Views milestone reached at 100, 200, 300, ...
+          // --- View milestone (100, 200, 300, ...) ---
           const prevViews = prev.views || 0;
           const currViews = curr.views || 0;
           const prevViewMilestone = Math.floor(prevViews / 100) * 100;
           const currViewMilestone = Math.floor(currViews / 100) * 100;
 
           if (currViewMilestone >= 100 && currViewMilestone > prevViewMilestone) {
-            const pageTypeLabel = curr.type === 'bio' ? 'Bio' : 'Landing';
-            const title = `👀 ${currViewMilestone} Views Milestone on ${pageTypeLabel} Page!`;
-            const description = `Awesome! Your ${pageTypeLabel.toLowerCase()} page "${curr.title}" just crossed ${currViewMilestone} views! Total views: ${currViews} 🚀`;
+            const milestoneKey = `view:${curr.userId}:${key}:${currViewMilestone}`;
+            if (!NotificationService.emittedMilestones.has(milestoneKey)) {
+              NotificationService.emittedMilestones.add(milestoneKey);
+              setTimeout(
+                () => NotificationService.emittedMilestones.delete(milestoneKey),
+                10 * 60_000
+              );
 
-            console.log(`[NotificationService] ${currViewMilestone} views milestone detected for user ${curr.userId}: ${curr.title}`);
+              const pageTypeLabel = curr.type === 'bio' ? 'Bio' : 'Landing';
+              const title = `👀 ${currViewMilestone} Views Milestone on ${pageTypeLabel} Page!`;
+              const description = `Awesome! Your ${pageTypeLabel.toLowerCase()} page "${curr.title
+                }" just crossed ${currViewMilestone} views! Total views: ${currViews} 🚀`;
 
-            await this.adminSupabase.from('notifications').insert({
-              user_id: curr.userId,
-              title,
-              description,
-              type: 'page_view',
-              is_read: false,
-            });
+              console.log(
+                `[NotificationService] ${currViewMilestone} views milestone for user ${curr.userId}: ${curr.title}`
+              );
+
+              const { data: inserted, error: insErr } = await this.adminSupabase
+                .from('notifications')
+                .insert({
+                  user_id: curr.userId,
+                  title,
+                  description,
+                  type: 'page_view',
+                  is_read: false,
+                })
+                .select()
+                .maybeSingle();
+
+              if (insErr) {
+                console.warn('[NotificationService] Milestone insert error:', insErr.message);
+              } else if (inserted) {
+                await this.processNotificationRow(inserted);
+              }
+            }
           }
 
           lastMetrics[key] = { clicks: curr.clicks, views: curr.views };
@@ -1056,7 +1226,7 @@ export class NotificationService {
       }
     };
 
-    setInterval(checkMetrics, intervalMs);
+    NotificationService.pollTimer = setInterval(checkMetrics, intervalMs);
     setTimeout(checkMetrics, 5000);
   }
 }

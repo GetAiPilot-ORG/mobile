@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
+  Image,
   Pressable,
   FlatList,
   Alert,
@@ -46,6 +47,7 @@ function SwipeableNotificationCard({
   const pan = useRef(new Animated.Value(0)).current;
   const isUnread = !item.isRead;
   const isActionOpen = useRef(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Category Meta (Icon, Color, Label)
   const getCategoryMeta = (type?: string) => {
@@ -411,16 +413,59 @@ function SwipeableNotificationCard({
             </View>
           </View>
 
-          {/* Notification Body */}
-          <Text
-            style={[
-              styles.notificationBody,
-              { color: bodyColor },
-            ]}
-            numberOfLines={3}
-          >
-            {item.body}
-          </Text>
+          {/* Notification Body & Right Hand Side Image */}
+          {(() => {
+            const notifImageUrl = item.imageUrl || item.data?.imageUrl || item.data?.image;
+            const isLongText = (item.body?.length || 0) > 75 || item.body?.includes('\n');
+
+            return (
+              <View style={styles.bodySection}>
+                <View style={styles.bodyWithImageRow}>
+                  <Text
+                    style={[
+                      styles.notificationBodyText,
+                      { color: bodyColor },
+                    ]}
+                    numberOfLines={isExpanded ? undefined : 3}
+                  >
+                    {item.body}
+                  </Text>
+                  {notifImageUrl ? (
+                    <View style={styles.notificationRightImageWrapper}>
+                      <Image
+                        source={{ uri: notifImageUrl }}
+                        style={styles.notificationRightImage}
+                        resizeMode="contain"
+                      />
+                    </View>
+                  ) : null}
+                </View>
+
+                {isLongText && (
+                  <Pressable
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      if (Platform.OS !== 'web') {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }
+                      setIsExpanded((prev) => !prev);
+                    }}
+                    hitSlop={8}
+                    style={styles.readMoreButton}
+                  >
+                    <Text style={[styles.readMoreText, { color: accentColor }]}>
+                      {isExpanded ? 'Show less' : 'Read more'}
+                    </Text>
+                    <Ionicons
+                      name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                      size={13}
+                      color={accentColor}
+                    />
+                  </Pressable>
+                )}
+              </View>
+            );
+          })()}
 
           {/* Hint row for gestures & navigation */}
           <View style={styles.cardFooter}>
@@ -954,10 +999,53 @@ const styles = StyleSheet.create({
     marginTop: 2,
     letterSpacing: -0.2,
   },
-  notificationBody: {
+  bodySection: {
+    paddingLeft: 50,
+    marginTop: 3,
+    marginBottom: 4,
+  },
+  bodyWithImageRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  readMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    marginTop: 6,
+    paddingVertical: 2,
+    paddingHorizontal: 2,
+  },
+  readMoreText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  notificationBodyText: {
+    flex: 1,
     fontSize: 13,
     lineHeight: 18,
-    paddingLeft: 50,
+  },
+  notificationRightImageWrapper: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  notificationRightImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
   },
   cardFooter: {
     flexDirection: 'row',

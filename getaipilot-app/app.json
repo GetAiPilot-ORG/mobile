@@ -84,7 +84,8 @@
         "expo-notifications",
         {
           "icon": "./assets/images/logobag.png",
-          "color": "#DEA5A4"
+          "color": "#DEA5A4",
+          "largeIcon": "./assets/images/logo-white-bg.png"
         }
       ],
       "expo-sharing"
