@@ -805,25 +805,32 @@ export const SocialInboxTab: React.FC<SocialInboxTabProps> = ({
                 </Text>
               </View>
             ) : messages.length === 0 ? (
-              /* Fallback initial message if thread messages array is empty */
-              <View style={styles.sampleChatBubbleWrap}>
-                <View
-                  style={[
-                    styles.inboundBubble,
-                    {
-                      backgroundColor: isDark ? '#1C1A25' : '#ffffff',
-                      borderColor: isDark ? '#252230' : '#E9E6F2',
-                    },
-                  ]}
-                >
-                  <Text style={[styles.bubbleText, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
-                    {selectedConversation?.text || 'Hello! Wanted to connect with you regarding your social post.'}
-                  </Text>
-                  <Text style={[styles.bubbleTime, { color: isDark ? '#777383' : '#94a3b8' }]}>
-                    {formatMessageTime(selectedConversation?.createdAt)}
+              selectedConversation?.text ? (
+                <View style={styles.sampleChatBubbleWrap}>
+                  <View
+                    style={[
+                      styles.inboundBubble,
+                      {
+                        backgroundColor: isDark ? '#1C1A25' : '#ffffff',
+                        borderColor: isDark ? '#252230' : '#E9E6F2',
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.bubbleText, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}>
+                      {selectedConversation.text}
+                    </Text>
+                    <Text style={[styles.bubbleTime, { color: isDark ? '#777383' : '#94a3b8' }]}>
+                      {formatMessageTime(selectedConversation?.createdAt)}
+                    </Text>
+                  </View>
+                </View>
+              ) : (
+                <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 13, color: isDark ? '#777383' : '#64748b' }}>
+                    No messages in this conversation yet
                   </Text>
                 </View>
-              </View>
+              )
             ) : (
               messages.map((msg, index) => {
                 const isOutbound = msg.isSelf || msg.status === 'sent';
