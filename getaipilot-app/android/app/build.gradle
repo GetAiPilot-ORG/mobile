@@ -155,7 +155,6 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
-    implementation project(':react-native-razorpay')
 
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
     def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";
@@ -182,19 +181,4 @@ dependencies {
     }
 }
 
-// Workaround for React Native New Architecture CMake clean issue:
-// Prevents externalNativeBuildClean from crashing when codegen JNI folders are missing
-tasks.whenTaskAdded { task ->
-    if (task.name.startsWith("externalNativeBuildClean")) {
-        task.enabled = false
-    }
-}
-
-tasks.named("clean") {
-    doFirst {
-        delete "${projectDir}/.cxx"
-    }
-}
-
 apply plugin: 'com.google.gms.google-services'
-
