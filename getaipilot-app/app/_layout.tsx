@@ -1,3 +1,6 @@
+// CRITICAL: Must be first import — registers background/kill-mode notification task
+// with expo-task-manager and setNotificationHandler before any React component mounts.
+import "../src/services/backgroundNotificationHandler";
 import "../src/global.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
@@ -104,7 +107,7 @@ function ReferralLinkListener() {
       }
     };
 
-    Linking.getInitialURL().then(processUrl).catch(() => {});
+    Linking.getInitialURL().then(processUrl).catch(() => { });
     const sub = Linking.addEventListener("url", (event) => {
       processUrl(event.url);
     });

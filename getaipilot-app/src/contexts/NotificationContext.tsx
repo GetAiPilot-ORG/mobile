@@ -26,6 +26,7 @@ export interface AppNotification {
   title: string;
   body: string;
   data?: Record<string, any>;
+  imageUrl?: string;
   createdAt: string;
   isRead: boolean;
   type?:
@@ -57,7 +58,9 @@ export interface NotificationContextType {
     title?: string,
     body?: string,
     channelId?: string,
-    route?: string
+    route?: string,
+    imageUrl?: string,
+    delaySeconds?: number
   ) => Promise<void>;
   notificationsList: AppNotification[];
   unreadCount: number;
@@ -672,6 +675,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       title: item.title,
       body: item.body,
       data: item.data,
+      imageUrl: item.imageUrl || item.data?.imageUrl || item.data?.image,
       createdAt: new Date().toISOString(),
       isRead: false,
       type: item.type || 'general',
@@ -765,7 +769,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     const data = response?.notification?.request?.content?.data as Record<string, any> | undefined;
     const targetUserId = data?.userId || data?.user_id;
-    if (targetUserId && user?.id && targetUserId !== user.id) {
+    if (targetUserId && user?.id && targetUserId !== user.id && !data?.isTest && data?.type !== 'test' && data?.type !== 'broadcast') {
       console.log('🛑 [NotificationContext] Ignored tap: notification targeted for another user:', targetUserId);
       return;
     }
@@ -773,14 +777,19 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     const targetRoute = resolveRoute(data);
 
     if (targetRoute) {
-      // Delay ensures the router and root stack are mounted, especially on cold boot (Kill mode)
-      setTimeout(() => {
+      // On kill/cold-boot mode the router stack takes longer to hydrate.
+      // Navigate at 800ms and retry once at 1.5s if router wasn't ready yet.
+      const navigate = (isRetry = false) => {
         try {
           router.push(targetRoute as any);
         } catch (routeErr) {
-          console.warn('[NotificationContext] Navigation error on notification response:', routeErr);
+          console.warn(`[NotificationContext] Navigation error on notification response (retry=${isRetry}):`, routeErr);
+          if (!isRetry) {
+            setTimeout(() => navigate(true), 1500);
+          }
         }
-      }, 350);
+      };
+      setTimeout(() => navigate(false), 800);
     }
   };
 
@@ -844,14 +853,18 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     title = 'GetAiPilot Push Notification',
     body = 'Your push notifications are configured and active in your ecosystem.',
     channelId = 'default',
-    route = '/account/plans'
+    route = '/account/plans',
+    imageUrl?: string,
+    delaySeconds?: number
   ) => {
     if (!Notifications) return;
     await NotificationService.scheduleLocalNotification({
       title,
       body,
       channelId,
-      data: { route },
+      imageUrl,
+      delaySeconds,
+      data: { route, ...(imageUrl ? { imageUrl } : {}) },
     });
   };
 
@@ -932,8 +945,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         const data = (content.data || {}) as Record<string, any>;
         const targetUserId = data.userId || data.user_id;
 
-        // If explicitly addressed to a specific user, ensure it matches current user
-        if (targetUserId && user?.id && targetUserId !== user.id) {
+        // If explicitly addressed to a specific user, ensure it matches current user (unless test or broadcast)
+        if (targetUserId && user?.id && targetUserId !== user.id && !data.isTest && data.type !== 'test' && data.type !== 'broadcast') {
           console.log('🛑 [NotificationContext] Discarding push notification intended for another user:', targetUserId);
           return;
         }
@@ -948,11 +961,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         }
 
         const type = (data.type as any) || (data.category as any) || 'general';
+        const notifImageUrl = data.imageUrl || data.image || (content as any).imageUrl;
         const newItem: AppNotification = {
           id: notifId || Date.now().toString(),
           title,
           body,
           data,
+          imageUrl: notifImageUrl,
           createdAt: new Date().toISOString(),
           isRead: false,
           type,

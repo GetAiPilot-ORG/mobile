@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
+  Image,
   Pressable,
   FlatList,
   Alert,
@@ -411,16 +412,32 @@ function SwipeableNotificationCard({
             </View>
           </View>
 
-          {/* Notification Body */}
-          <Text
-            style={[
-              styles.notificationBody,
-              { color: bodyColor },
-            ]}
-            numberOfLines={3}
-          >
-            {item.body}
-          </Text>
+          {/* Notification Body & Right Hand Side Image */}
+          {(() => {
+            const notifImageUrl = item.imageUrl || item.data?.imageUrl || item.data?.image;
+            return (
+              <View style={styles.bodyWithImageRow}>
+                <Text
+                  style={[
+                    styles.notificationBodyText,
+                    { color: bodyColor },
+                  ]}
+                  numberOfLines={3}
+                >
+                  {item.body}
+                </Text>
+                {notifImageUrl ? (
+                  <View style={styles.notificationRightImageWrapper}>
+                    <Image
+                      source={{ uri: notifImageUrl }}
+                      style={styles.notificationRightImage}
+                      resizeMode="contain"
+                    />
+                  </View>
+                ) : null}
+              </View>
+            );
+          })()}
 
           {/* Hint row for gestures & navigation */}
           <View style={styles.cardFooter}>
@@ -954,10 +971,36 @@ const styles = StyleSheet.create({
     marginTop: 2,
     letterSpacing: -0.2,
   },
-  notificationBody: {
+  bodyWithImageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingLeft: 50,
+    gap: 12,
+  },
+  notificationBodyText: {
+    flex: 1,
     fontSize: 13,
     lineHeight: 18,
-    paddingLeft: 50,
+  },
+  notificationRightImageWrapper: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  notificationRightImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
   },
   cardFooter: {
     flexDirection: 'row',

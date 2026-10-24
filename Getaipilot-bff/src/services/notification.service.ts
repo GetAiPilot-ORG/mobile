@@ -12,7 +12,13 @@ export interface ExpoPushMessage {
   channelId?: string;
   badge?: number;
   _displayInForeground?: boolean;
+  richContent?: {
+    image?: string
+  };
 }
+
+export const DEFAULT_NOTIFICATION_LARGE_ICON =
+  'https://uklxlappjcuvdqjvecfh.supabase.co/storage/v1/object/public/landing-page-logos/notification_large_icon.png';
 
 export class NotificationService {
   private static adminSupabase = createClient(
@@ -97,11 +103,101 @@ export class NotificationService {
         }
       );
 
+      const tickets = response.data?.data;
+      if (Array.isArray(tickets)) {
+        const ticketToTokenMap = new Map<string, string>();
+        for (let i = 0; i < tickets.length; i++) {
+          const ticket = tickets[i];
+          const msg = validMessages[i];
+          const targetToken = Array.isArray(msg?.to) ? msg.to.join(',') : msg?.to;
+          if (ticket?.status === 'error') {
+            console.error(`❌ [NotificationService] Delivery ticket error for ${targetToken}:`, ticket.message, ticket.details);
+            if (ticket.details?.error === 'DeviceNotRegistered') {
+              console.warn(`🧹 [NotificationService] Removing expired FCM token from profiles: ${targetToken}`);
+              await this.adminSupabase.from('profiles').update({ push_token: null }).eq('push_token', targetToken);
+            }
+          } else if (ticket?.id && targetToken) {
+            ticketToTokenMap.set(ticket.id, targetToken);
+            console.log(`✅ [NotificationService] Push ticket dispatched: ${ticket.id} to ${targetToken}`);
+          }
+        }
+
+        // Asynchronously check delivery receipts from Google FCM via Expo
+        if (ticketToTokenMap.size > 0) {
+          setTimeout(async () => {
+            try {
+              const receiptRes = await axios.post(
+                'https://exp.host/--/api/v2/push/getReceipts',
+                { ids: Array.from(ticketToTokenMap.keys()) },
+                { headers: { 'Content-Type': 'application/json' } }
+              );
+              const receipts = receiptRes.data?.data || {};
+              for (const [tId, tToken] of ticketToTokenMap.entries()) {
+                const r = receipts[tId];
+                if (r?.status === 'error') {
+                  console.error(`❌ [NotificationService] FCM Receipt delivery failed for ${tToken}:`, r.message, r.details);
+                  if (r.details?.error === 'DeviceNotRegistered') {
+                    console.warn(`🧹 [NotificationService] Auto-cleaning invalid FCM token from profiles: ${tToken}`);
+                    await this.adminSupabase.from('profiles').update({ push_token: null }).eq('push_token', tToken);
+                  }
+                } else if (r?.status === 'ok') {
+                  console.log(`🎉 [NotificationService] FCM Confirmed Delivery Receipt for ${tToken}: status=ok`);
+                }
+              }
+            } catch (rErr: any) {
+              console.warn('[NotificationService] Receipt check notice:', rErr?.message || rErr);
+            }
+          }, 2500);
+        }
+      }
+
       return { success: true, data: response.data };
     } catch (error: any) {
       console.error('[NotificationService] Error sending Expo push notification:', error?.response?.data || error.message);
       return { success: false, error: error?.response?.data || error.message };
     }
+  }
+
+  /**
+   * Send push notification directly to an Expo push token
+   */
+  static async sendDirectPush(
+    pushToken: string,
+    notification: {
+      title: string;
+      body: string;
+      data?: Record<string, any>;
+      channelId?: string;
+      imageUrl?: string;
+    }
+  ) {
+    if (!pushToken || (!pushToken.startsWith('ExponentPushToken[') && !pushToken.startsWith('ExpoPushToken['))) {
+      return { success: false, reason: 'Invalid Expo push token' };
+    }
+
+    const rawImageUrl = notification.imageUrl || notification.data?.imageUrl || notification.data?.image || DEFAULT_NOTIFICATION_LARGE_ICON;
+    const isValidHttpsUrl = typeof rawImageUrl === 'string' && rawImageUrl.trim().startsWith('https://');
+    const imageUrl = isValidHttpsUrl ? rawImageUrl.trim() : DEFAULT_NOTIFICATION_LARGE_ICON;
+
+    const payload: ExpoPushMessage = {
+      to: pushToken,
+      title: notification.title,
+      body: notification.body,
+      data: {
+        ...(notification.data || {}),
+        imageUrl,
+      },
+      sound: 'default',
+      channelId: notification.channelId || 'default',
+      priority: 'high',
+      badge: 1,
+      _displayInForeground: true,
+      richContent: {
+        image: imageUrl,
+      },
+    };
+
+    return await this.sendExpoPushNotification(payload);
   }
 
   /**
@@ -114,6 +210,7 @@ export class NotificationService {
       body: string;
       data?: Record<string, any>;
       channelId?: string;
+      imageUrl?: string;
     }
   ) {
     try {
@@ -128,17 +225,29 @@ export class NotificationService {
         return { success: false, reason: 'User has no registered push token' };
       }
 
-      return await this.sendExpoPushNotification({
+      const rawImageUrl = notification.imageUrl || notification.data?.imageUrl || notification.data?.image || DEFAULT_NOTIFICATION_LARGE_ICON;
+      const isValidHttpsUrl = typeof rawImageUrl === 'string' && rawImageUrl.trim().startsWith('https://');
+      const imageUrl = isValidHttpsUrl ? rawImageUrl.trim() : DEFAULT_NOTIFICATION_LARGE_ICON;
+
+      const payload: ExpoPushMessage = {
         to: pushToken,
         title: notification.title,
         body: notification.body,
-        data: notification.data || {},
+        data: {
+          ...(notification.data || {}),
+          imageUrl,
+        },
         sound: 'default',
         channelId: notification.channelId || 'default',
         priority: 'high',
         badge: 1,
         _displayInForeground: true,
-      });
+        richContent: {
+          image: imageUrl,
+        },
+      };
+
+      return await this.sendExpoPushNotification(payload);
     } catch (err: any) {
       console.error(`[NotificationService] Error sending notification to user ${userId}:`, err);
       return { success: false, error: err.message };
