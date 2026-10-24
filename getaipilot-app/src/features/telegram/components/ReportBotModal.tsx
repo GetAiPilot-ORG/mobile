@@ -63,17 +63,17 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
   const [activeTab, setActiveTab] = useState<ReportBotTab>('profile');
 
   // Form State
-  const [advisoryFirm, setAdvisoryFirm] = useState('No Brand');
-  const [researchAnalyst, setResearchAnalyst] = useState('SEBI');
-  const [sebiRegistration, setSebiRegistration] = useState('INH010600090');
-  const [website, setWebsite] = useState('getaipilot.com');
-  const [email, setEmail] = useState('research@example.com');
-  const [officeAddress, setOfficeAddress] = useState('e.g. Kallam, Latur, Maharashtra');
+  const [advisoryFirm, setAdvisoryFirm] = useState('');
+  const [researchAnalyst, setResearchAnalyst] = useState('');
+  const [sebiRegistration, setSebiRegistration] = useState('');
+  const [website, setWebsite] = useState('');
+  const [email, setEmail] = useState('');
+  const [officeAddress, setOfficeAddress] = useState('');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [page1Disclaimer, setPage1Disclaimer] = useState('Add short SEBI/risk disclaimer for the first page.');
-  const [page2Disclosure, setPage2Disclosure] = useState('Optional disclosure content.');
-  const [page3Conflicts, setPage3Conflicts] = useState('Optional conflict of interest content.');
-  const [page4Policy, setPage4Policy] = useState('Optional risk and policy content.');
+  const [page1Disclaimer, setPage1Disclaimer] = useState('');
+  const [page2Disclosure, setPage2Disclosure] = useState('');
+  const [page3Conflicts, setPage3Conflicts] = useState('');
+  const [page4Policy, setPage4Policy] = useState('');
 
   // Modal Dialog States
   const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
@@ -404,7 +404,7 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
                           style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                           value={sebiRegistration}
                           onChangeText={setSebiRegistration}
-                          placeholder="INH010600090"
+                          placeholder="e.g. INH000000000"
                           placeholderTextColor="#777383"
                         />
                       </View>
@@ -414,7 +414,7 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
                           style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                           value={website}
                           onChangeText={setWebsite}
-                          placeholder="getaipilot.com"
+                          placeholder="e.g. firm.com"
                           placeholderTextColor="#777383"
                         />
                       </View>
@@ -430,7 +430,7 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
                         style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
                         value={email}
                         onChangeText={setEmail}
-                        placeholder="research@example.com"
+                        placeholder="e.g. analyst@firm.com"
                         placeholderTextColor="#777383"
                         keyboardType="email-address"
                       />
@@ -570,7 +570,7 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
                             {advisoryFirm || 'No Brand'}
                           </Text>
                           <Text style={styles.pdfAnalystMeta}>
-                            {researchAnalyst || 'SEBI'} • Reg: {sebiRegistration || 'INH010600090'}
+                            {researchAnalyst || 'Analyst'} • Reg: {sebiRegistration || 'Not registered'}
                           </Text>
                         </View>
                       </View>

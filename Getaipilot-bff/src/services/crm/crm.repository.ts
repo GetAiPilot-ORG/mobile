@@ -145,15 +145,9 @@ export class CRMRepository {
         }
       }
 
-      // 6. Fallback: select the primary organization that actually has CRM contacts and deals
+      // 6. Fallback: scope to user's hub organization or user's own isolated ID
       if (!crmOrgId) {
-        const { data: orgWithContacts } = await crmSupabase
-          .from('crm_contacts')
-          .select('org_id')
-          .limit(1)
-          .maybeSingle();
-
-        crmOrgId = orgWithContacts?.org_id || '7eb7dd38-00bc-49b8-a87f-96c27cac7866';
+        crmOrgId = hubOrgId || userId;
       }
 
       // 3. Load permissions from crm_roles
@@ -765,11 +759,11 @@ export class CRMRepository {
   // ── Team Members ───────────────────────────────────────────────────────────
 
   public static async getMembers(orgId: string): Promise<CRMMember[]> {
-    const effectiveOrgId = orgId || '7eb7dd38-00bc-49b8-a87f-96c27cac7866';
+    if (!orgId) return [];
     const { data, error } = await crmSupabase
       .from('crm_members')
       .select('id, org_id, name, email, role, is_active, birthday, access_token, tracker_key, created_at')
-      .eq('org_id', effectiveOrgId)
+      .eq('org_id', orgId)
       .eq('is_deleted', false)
       .order('created_at', { ascending: false });
 
@@ -778,11 +772,11 @@ export class CRMRepository {
   }
 
   public static async getMembersFull(orgId: string): Promise<any[]> {
-    const effectiveOrgId = orgId || '7eb7dd38-00bc-49b8-a87f-96c27cac7866';
+    if (!orgId) return [];
     const { data, error } = await crmSupabase
       .from('crm_members')
       .select('*')
-      .eq('org_id', effectiveOrgId)
+      .eq('org_id', orgId)
       .eq('is_deleted', false)
       .order('created_at', { ascending: false });
 
