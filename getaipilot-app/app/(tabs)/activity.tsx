@@ -11,25 +11,52 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  View
+  View,
 } from "react-native";
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
+import { ProductEmpty } from "../../src/components/ProductUI";
 import { ActivityScreenSkeleton } from "../../src/components/skeletonScreen";
 import { useAuth } from "../../src/contexts/AuthContext";
+import { useAuthStore } from "../../src/core/store/authStore";
+import { crmApi } from "../../src/features/crm/api/crm.api";
+import { voiceApi } from "../../src/features/voice/api/voiceApi";
+import { whatsappApi } from "../../src/features/whatsapp/api/whatsapp.api";
 import { usePlatformSubscription } from "../../src/hooks/usePlatformSubscription";
 import { supabase } from "../../src/lib/supabase";
 
-type WorkspaceKey = "social" | "whatsapp" | "crm" | "voice" | "telegram";
+export type WorkspaceKey = "all" | "whatsapp" | "telegram" | "voice" | "crm" | "social";
+
+export interface ActivityFeedItem {
+  id: string;
+  platform: "whatsapp" | "telegram" | "voice" | "crm" | "social" | "system";
+  title: string;
+  sub: string;
+  createdAt: string;
+  timeAgo: string;
+  statusType: "success" | "info" | "warning" | "error";
+  statusText?: string;
+  logo: any;
+  color: string;
+  route: string;
+}
 
 const PLATFORMS: {
   key: WorkspaceKey;
   label: string;
-  icon: string;
+  icon: any;
   logoImage: any;
   route: string;
   color: string;
 }[] = [
+  {
+    key: "all",
+    label: "All Activity",
+    icon: "pulse",
+    logoImage: require("../../assets/images/network.png"),
+    route: "/products",
+    color: "#6366F1",
+  },
   {
     key: "whatsapp",
     label: "WhatsApp",
@@ -64,156 +91,632 @@ const PLATFORMS: {
   },
   {
     key: "social",
-    label: "Social",
+    label: "Social & Tools",
     icon: "share-social",
     logoImage: require("../../assets/images/products/social.png"),
-    route: "/products/social",
+    route: "/tools",
     color: "#E1306C",
   },
 ];
+
+const CRM_SUPABASE_URL = "https://hhieilvvechtdhhfjomn.supabase.co/rest/v1";
+const CRM_SUPABASE_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoaWVpbHZ2ZWNodGRoaGZqb21uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MDYzNzEsImV4cCI6MjA4OTk4MjM3MX0.jrDgt81FFK5owy3OPIp9RlaaYJddlaZ87Iz2Uz8rXTE";
+
+async function fetchCrmRest(table: string, query: string = ""): Promise<any[]> {
+  try {
+    const res = await fetch(`${CRM_SUPABASE_URL}/${table}?${query}`, {
+      headers: {
+        apikey: CRM_SUPABASE_KEY,
+        authorization: `Bearer ${CRM_SUPABASE_KEY}`,
+      },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+function formatTimeAgo(dateString?: string | null): string {
+  if (!dateString) return "Recently";
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  if (isNaN(diffMs)) return "Recently";
+  if (diffMs < 0) return "Just now";
+
+  const diffSecs = Math.floor(diffMs / 1000);
+  if (diffSecs < 60) return "Just now";
+
+  const diffMins = Math.floor(diffSecs / 60);
+  if (diffMins < 60) return `${diffMins}m ago`;
+
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays}d ago`;
+
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
 
 export default function ConnectedPlatformsPage() {
   const router = useRouter();
   const { isDark } = useTheme();
   const color = getColors(isDark);
   const { user } = useAuth();
-  const { hasWhatsApp, hasTelegram, hasVoice, hasCRM, hasSocial } =
-    usePlatformSubscription();
-  const [activePlatform, setActivePlatform] =
-    useState<WorkspaceKey>("whatsapp");
+  const { hasWhatsApp } = usePlatformSubscription();
+  const [activePlatform, setActivePlatform] = useState<WorkspaceKey>("all");
 
   const {
-    data: platformData,
+    data: telemetry,
     isLoading,
     refetch,
     isRefetching,
   } = useQuery({
-    queryKey: ["connected-platforms-telemetry-v2", user?.id || "guest"],
+    queryKey: [
+      "connected-platforms-telemetry-v4",
+      user?.id || "guest",
+      user?.email || "",
+      user?.organizationId || "",
+    ],
     queryFn: async () => {
       let currentUserId = user?.id;
-      let currentOrgId = user?.organizationId;
+      let currentUserEmail = user?.email;
+      let currentOrgId =
+        user?.organizationId || useAuthStore.getState().tenantMapping?.hub_org_id || null;
 
       if (!currentUserId) {
-        const { data: authData } = await supabase.auth.getUser();
-        currentUserId = authData.user?.id;
+        try {
+          const { data: authData } = await supabase.auth.getUser();
+          if (authData?.user) {
+            currentUserId = authData.user.id;
+            currentUserEmail = authData.user.email || currentUserEmail;
+          }
+        } catch {}
       }
 
-      if (currentUserId && !currentOrgId) {
-        const { data: member } = await supabase
-          .from("organization_members")
-          .select("organization_id")
-          .eq("user_id", currentUserId)
-          .maybeSingle();
-        currentOrgId = member?.organization_id;
+      if (!currentUserId) {
+        try {
+          const { data: sessData } = await supabase.auth.getSession();
+          if (sessData?.session?.user) {
+            currentUserId = sessData.session.user.id;
+            currentUserEmail = sessData.session.user.email || currentUserEmail;
+          }
+        } catch {}
       }
 
-      const waWalletPromise = currentOrgId
-        ? supabase
-            .from("whatsapp_wallets")
-            .select("*")
-            .eq("organization_id", currentOrgId)
-            .maybeSingle()
-        : supabase.from("whatsapp_wallets").select("*").limit(1).maybeSingle();
+      // If no authenticated user, strictly return empty stats to prevent cross-account leakage
+      if (!currentUserId) {
+        return {
+          profile: {},
+          activities: [],
+          social: { connectedCount: 0, pagesCount: 0 },
+          whatsapp: {
+            wabaPhone: "Meta Cloud API",
+            walletBalancePaise: 0,
+            eventsCount: 0,
+            qualityRating: "Green",
+            statusText: "Not Connected",
+          },
+          telegram: {
+            joinLinksCount: 0,
+            trackerCount: 0,
+            forwardRulesCount: 0,
+            joinsCount: 0,
+          },
+          voice: {
+            totalCalls: 0,
+            totalAssistants: 0,
+            creditBalanceDisplay: "₹0.00",
+          },
+          crm: {
+            contactsCount: 0,
+            dealsCount: 0,
+            paymentsCount: 0,
+            activitiesCount: 0,
+            formsCount: 0,
+            shortLinksCount: 0,
+            totalClicks: 0,
+          },
+        };
+      }
 
+      // Check organization membership if currentOrgId not yet populated
+      if (!currentOrgId) {
+        try {
+          const { data: member } = await supabase
+            .from("organization_members")
+            .select("organization_id")
+            .eq("user_id", currentUserId)
+            .maybeSingle();
+          if (member?.organization_id) {
+            currentOrgId = member.organization_id;
+          }
+        } catch {}
+      }
+
+      // Resolve numeric Telegram user ID for forward mappings and tracking
+      let numericTgUserId: number | null = null;
+      const tgCandidates = [
+        user?.user_metadata?.telegram_user_id,
+        user?.user_metadata?.telegram_id,
+        useAuthStore.getState().tenantMapping?.telegram_user_id,
+      ];
+      for (const cand of tgCandidates) {
+        if (cand && /^\d{5,16}$/.test(String(cand).trim())) {
+          numericTgUserId = Number(cand);
+          break;
+        }
+      }
+
+      if (!numericTgUserId || !currentOrgId) {
+        try {
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("telegram_user_id, organization_id")
+            .eq("id", currentUserId)
+            .maybeSingle();
+          if (prof) {
+            if (!numericTgUserId && prof.telegram_user_id && /^\d{5,16}$/.test(String(prof.telegram_user_id).trim())) {
+              numericTgUserId = Number(prof.telegram_user_id);
+            }
+            if (!currentOrgId && prof.organization_id) {
+              currentOrgId = prof.organization_id;
+            }
+          }
+        } catch {}
+      }
+
+      // Resolve CRM organization ID specifically for this account
+      let crmOrgId: string | null = currentOrgId || null;
+      if (!crmOrgId && currentUserEmail) {
+        try {
+          const crmMembers = await fetchCrmRest(
+            "crm_members",
+            `select=org_id&email=ilike.${encodeURIComponent(currentUserEmail)}&is_deleted=eq.false&limit=1`
+          );
+          if (crmMembers && crmMembers[0]?.org_id) {
+            crmOrgId = crmMembers[0].org_id;
+          }
+        } catch {}
+      }
+
+      if (!crmOrgId) {
+        try {
+          const org = await crmApi.getOrganization();
+          if (org?.id) {
+            crmOrgId = org.id;
+          }
+        } catch {}
+      }
+
+      // Parallel fetch across Main Supabase, CRM Supabase REST, and BFF APIs strictly scoped to this account
       const [
         profileRes,
         socialTokensRes,
         tgJoinRes,
         tgTrackRes,
+        tgTradingRes,
         tgForwardRes,
-        paymentsRes,
-        formsRes,
+        tgJoinLinksRes,
+        quickFormsRes,
         shortLinksRes,
+        bioTemplatesRes,
+        landingTemplatesRes,
         waWalletRes,
         waLogsRes,
+        notificationsRes,
+        crmActivities,
+        crmContacts,
+        crmDeals,
+        crmPayments,
+        voiceCalls,
+        voiceOverview,
+        waBroadcasts,
+        waStatus,
       ] = await Promise.all([
-        currentUserId
-          ? supabase
-              .from("profiles")
-              .select("*")
-              .eq("id", currentUserId)
-              .maybeSingle()
+        supabase.from("profiles").select("*").eq("id", currentUserId).maybeSingle(),
+        supabase.from("social_tokens").select("*").eq("user_id", currentUserId),
+        // Real Telegram Bot Joins scoped to this account
+        supabase
+          .from("tg_bot_join_users")
+          .select("id, telegram_first_name, telegram_username, status, joined_channel, created_at")
+          .eq("user_id", currentUserId)
+          .order("created_at", { ascending: false })
+          .limit(30),
+        // Real Telegram Bot Trackers scoped to this account
+        supabase
+          .from("tg_tracker")
+          .select("id, bot_name, bot_username, status, created_at")
+          .eq("user_id", currentUserId)
+          .order("created_at", { ascending: false })
+          .limit(10),
+        // Real Telegram SEBI Research Reports scoped to this account
+        supabase
+          .from("tg_trading_calls")
+          .select("id, symbol, strike_price, direction, status, created_at")
+          .eq("user_id", currentUserId)
+          .order("created_at", { ascending: false })
+          .limit(10),
+        // Telegram Forward mappings scoped to user's telegram ID
+        numericTgUserId
+          ? supabase.from("tg_forward_mappings").select("id, status, updated_at", { count: "exact" }).eq("user_id", numericTgUserId)
+          : Promise.resolve({ data: [], count: 0, error: null }),
+        // Telegram Invite Links scoped to this account
+        supabase.from("tg_bot_join_links").select("id, name, created_at", { count: "exact" }).eq("user_id", currentUserId),
+        // Quick forms scoped to this account
+        supabase.from("quick_forms").select("id, title, created_at").eq("user_id", currentUserId).order("created_at", { ascending: false }).limit(10),
+        // Short links scoped to this account
+        supabase.from("short_links").select("id, title, short_slug, clicks, created_at").eq("user_id", currentUserId).order("created_at", { ascending: false }).limit(10),
+        // Bio templates scoped to this account
+        supabase.from("free_template_submissions").select("id, page_title, slug, page_views, button_clicks, created_at").eq("user_id", currentUserId).order("created_at", { ascending: false }).limit(10),
+        // Landing templates scoped to this account
+        supabase.from("landing_template_submissions").select("id, page_title, slug, page_views, button_clicks, created_at").eq("user_id", currentUserId).order("created_at", { ascending: false }).limit(10),
+        // WhatsApp Wallet scoped to this account's organization
+        currentOrgId
+          ? supabase.from("whatsapp_wallets").select("*").eq("organization_id", currentOrgId).maybeSingle()
           : Promise.resolve({ data: null, error: null }),
-        currentUserId
-          ? supabase
-              .from("social_tokens")
-              .select("*")
-              .eq("user_id", currentUserId)
+        // WhatsApp Logs scoped to this account's organization
+        currentOrgId
+          ? supabase.from("whatsapp_message_usage_logs").select("*").eq("organization_id", currentOrgId).order("created_at", { ascending: false }).limit(10)
           : Promise.resolve({ data: [], error: null }),
-        currentUserId
-          ? supabase
-              .from("tg_bot_join_links")
-              .select("id", { count: "exact" })
-              .eq("user_id", currentUserId)
-          : Promise.resolve({ count: 0, error: null }),
-        currentUserId
-          ? supabase
-              .from("tg_tracker")
-              .select("id", { count: "exact" })
-              .eq("user_id", currentUserId)
-          : Promise.resolve({ count: 0, error: null }),
-        supabase.from("tg_forward_mappings").select("id", { count: "exact" }),
-        supabase
-          .from("payments")
-          .select("id, amount, status, created_at")
-          .order("created_at", { ascending: false })
-          .limit(6),
-        currentUserId
-          ? supabase
-              .from("quick_forms")
-              .select("id", { count: "exact" })
-              .eq("user_id", currentUserId)
-          : Promise.resolve({ count: 0, error: null }),
-        currentUserId
-          ? supabase
-              .from("short_links")
-              .select("*")
-              .eq("user_id", currentUserId)
-          : Promise.resolve({ data: [], error: null }),
-        waWalletPromise,
-        supabase
-          .from("whatsapp_message_usage_logs")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(6),
+        // System Notifications scoped to this account
+        supabase.from("notifications").select("*").eq("user_id", currentUserId).order("created_at", { ascending: false }).limit(10),
+        // CRM Activities scoped to user's CRM organization
+        crmOrgId
+          ? fetchCrmRest("crm_activities", `select=*&org_id=eq.${crmOrgId}&order=created_at.desc&limit=25`)
+          : Promise.resolve([]),
+        // CRM Contacts scoped to user's CRM organization
+        crmOrgId
+          ? fetchCrmRest("crm_contacts", `select=id,first_name,last_name,company,status,created_at&org_id=eq.${crmOrgId}&order=created_at.desc&limit=15`)
+          : Promise.resolve([]),
+        // CRM Deals scoped to user's CRM organization
+        crmOrgId
+          ? fetchCrmRest("crm_deals", `select=id,title,value,stage,created_at&org_id=eq.${crmOrgId}&order=created_at.desc&limit=15`)
+          : Promise.resolve([]),
+        // CRM Payments scoped to user's CRM organization
+        crmOrgId
+          ? fetchCrmRest("crm_payments", `select=id,amount,payment_method,status,payment_date,created_at&org_id=eq.${crmOrgId}&order=created_at.desc&limit=15`)
+          : Promise.resolve([]),
+        // Voice Calls from Voice BFF (authenticated via session token)
+        voiceApi.getCalls({ limit: 15 }).catch(() => []),
+        // Voice Overview
+        voiceApi.getOverview().catch(() => null),
+        // WhatsApp Broadcasts (authenticated via session token)
+        whatsappApi.getBroadcasts({ limit: 15 }).catch(() => ({ broadcasts: [], total_count: 0 })),
+        // WhatsApp Status
+        whatsappApi.getStatus().catch(() => null),
       ]);
 
       const profile = profileRes?.data || {};
       const socialTokens = socialTokensRes?.data || [];
       const shortLinks = shortLinksRes?.data || [];
-      const totalClicks = shortLinks.reduce(
-        (sum: number, l: any) => sum + (l.clicks || 0),
-        0,
-      );
+      const totalClicks = shortLinks.reduce((sum: number, l: any) => sum + (l.clicks || 0), 0);
 
       const walletPaise =
         waWalletRes?.data?.balance_paise !== undefined
           ? Number(waWalletRes.data.balance_paise)
-          : 10000;
+          : 0;
+
+      // Build unified, real-time activity items
+      const rawActivities: ActivityFeedItem[] = [];
+
+      // 1. Real Telegram Bot Joins
+      (tgJoinRes?.data || []).forEach((item: any) => {
+        const name = item.telegram_first_name || item.telegram_username || "Subscriber";
+        const handle = item.telegram_username ? `@${item.telegram_username}` : "New Member";
+        rawActivities.push({
+          id: `tg_join_${item.id}`,
+          platform: "telegram",
+          title: `${name} joined via Bot Link`,
+          sub: `${handle} • Channel access verified`,
+          createdAt: item.created_at || new Date().toISOString(),
+          timeAgo: formatTimeAgo(item.created_at),
+          statusType: item.status === "active" ? "success" : "info",
+          statusText: item.status === "active" ? "Joined" : "Verified",
+          logo: require("../../assets/images/products/telegram.png"),
+          color: "#0088CC",
+          route: "/products/telegram",
+        });
+      });
+
+      // 2. Real Telegram SEBI Research Trading Calls
+      (tgTradingRes?.data || []).forEach((item: any) => {
+        rawActivities.push({
+          id: `tg_trade_${item.id}`,
+          platform: "telegram",
+          title: `Research Report: ${item.symbol || "Market Call"} (${item.direction || "BUY"})`,
+          sub: `Strike: ${item.strike_price || "Spot"} • SEBI PDF generated`,
+          createdAt: item.created_at || new Date().toISOString(),
+          timeAgo: formatTimeAgo(item.created_at),
+          statusType: "info",
+          statusText: "Report",
+          logo: require("../../assets/images/products/telegram.png"),
+          color: "#0088CC",
+          route: "/products/telegram",
+        });
+      });
+
+      // 3. Real Telegram Trackers
+      (tgTrackRes?.data || []).forEach((item: any) => {
+        rawActivities.push({
+          id: `tg_bot_${item.id}`,
+          platform: "telegram",
+          title: `Bot Active: @${item.bot_username || item.bot_name || "Telegram Bot"}`,
+          sub: "Tracking & invite listener running",
+          createdAt: item.created_at || new Date().toISOString(),
+          timeAgo: formatTimeAgo(item.created_at),
+          statusType: "success",
+          statusText: "Online",
+          logo: require("../../assets/images/products/telegram.png"),
+          color: "#0088CC",
+          route: "/products/telegram",
+        });
+      });
+
+      // 4. Real CRM Activities (WhatsApp messages sent, template delivery failures, calls, meetings)
+      (crmActivities || []).forEach((item: any) => {
+        const isWa =
+          item.subject?.toLowerCase().includes("whatsapp") ||
+          item.description?.toLowerCase().includes("whatsapp");
+        const isCall = item.type === "call" || item.subject?.toLowerCase().includes("call");
+        const isFailed =
+          item.subject?.toLowerCase().includes("failed") || item.status === "failed";
+
+        rawActivities.push({
+          id: `crm_act_${item.id}`,
+          platform: isWa ? "whatsapp" : isCall ? "voice" : "crm",
+          title: item.subject || item.title || "CRM Activity Logged",
+          sub: item.description ? item.description.slice(0, 80) : "Activity record updated",
+          createdAt: item.created_at || new Date().toISOString(),
+          timeAgo: formatTimeAgo(item.created_at),
+          statusType: isFailed ? "error" : "success",
+          statusText: isFailed ? "Failed" : isWa ? "Delivered" : "Logged",
+          logo: isWa
+            ? require("../../assets/images/products/whatsapp.png")
+            : isCall
+            ? require("../../assets/images/products/voice.png")
+            : require("../../assets/images/products/crm.png"),
+          color: isWa ? "#25D366" : isCall ? "#8B5CF6" : "#F59E0B",
+          route: isWa ? "/products/whatsapp" : isCall ? "/products/voice" : "/products/crm",
+        });
+      });
+
+      // 5. Real CRM Contacts / Leads
+      (crmContacts || []).forEach((item: any) => {
+        const name = [item.first_name, item.last_name].filter(Boolean).join(" ") || "New Prospect";
+        rawActivities.push({
+          id: `crm_contact_${item.id}`,
+          platform: "crm",
+          title: `New Lead: ${name}`,
+          sub: `${item.company ? item.company + " • " : ""}Status: ${item.status || "prospect"}`,
+          createdAt: item.created_at || new Date().toISOString(),
+          timeAgo: formatTimeAgo(item.created_at),
+          statusType: "info",
+          statusText: (item.status || "Lead").toUpperCase(),
+          logo: require("../../assets/images/products/crm.png"),
+          color: "#F59E0B",
+          route: "/crm/contacts",
+        });
+      });
+
+      // 6. Real CRM Deals
+      (crmDeals || []).forEach((item: any) => {
+        rawActivities.push({
+          id: `crm_deal_${item.id}`,
+          platform: "crm",
+          title: `Deal: ${item.title || "Sales Opportunity"}`,
+          sub: `Value: ₹${Number(item.value || 0).toLocaleString("en-IN")} • Stage: ${item.stage || "lead"}`,
+          createdAt: item.created_at || new Date().toISOString(),
+          timeAgo: formatTimeAgo(item.created_at),
+          statusType: item.stage === "closed_won" ? "success" : "info",
+          statusText: (item.stage || "Deal").toUpperCase(),
+          logo: require("../../assets/images/products/crm.png"),
+          color: "#F59E0B",
+          route: "/crm/deals",
+        });
+      });
+
+      // 7. Real CRM Payments
+      (crmPayments || []).forEach((item: any) => {
+        rawActivities.push({
+          id: `crm_pay_${item.id}`,
+          platform: "crm",
+          title: `Payment: ₹${Number(item.amount || 0).toFixed(2)}`,
+          sub: `${item.payment_method?.replace(/_/g, " ") || "Bank Transfer"} • ${item.status || "COMPLETED"}`,
+          createdAt: item.created_at || item.payment_date || new Date().toISOString(),
+          timeAgo: formatTimeAgo(item.created_at || item.payment_date),
+          statusType: "success",
+          statusText: "Paid",
+          logo: require("../../assets/images/products/crm.png"),
+          color: "#F59E0B",
+          route: "/crm/payments",
+        });
+      });
+
+      // 8. Real Voice Calls
+      (Array.isArray(voiceCalls) ? voiceCalls : []).forEach((item: any) => {
+        rawActivities.push({
+          id: `voice_call_${item.id}`,
+          platform: "voice",
+          title: `Voice Call: ${item.customerNumber || item.callerName || "Customer"}`,
+          sub: `${item.assistant ? item.assistant + " • " : ""}Duration: ${item.duration || "0s"}`,
+          createdAt: item.createdAt || item.time || new Date().toISOString(),
+          timeAgo: formatTimeAgo(item.createdAt || item.time),
+          statusType:
+            item.status === "completed"
+              ? "success"
+              : item.status === "failed"
+              ? "error"
+              : "warning",
+          statusText: (item.status || "CALL").toUpperCase(),
+          logo: require("../../assets/images/products/voice.png"),
+          color: "#8B5CF6",
+          route: "/products/voice",
+        });
+      });
+
+      // 9. Real WhatsApp Broadcasts
+      const waBroadcastList = Array.isArray(waBroadcasts?.broadcasts)
+        ? waBroadcasts.broadcasts
+        : Array.isArray(waBroadcasts)
+        ? waBroadcasts
+        : [];
+      waBroadcastList.forEach((item: any) => {
+        rawActivities.push({
+          id: `wa_broadcast_${item.id}`,
+          platform: "whatsapp",
+          title: `Broadcast: ${item.name || item.template_name}`,
+          sub: `Template: ${item.template_language || "en"} • Delivered: ${item.delivered_count || 0}/${item.sent_count || 0}`,
+          createdAt: item.created_at || new Date().toISOString(),
+          timeAgo: formatTimeAgo(item.created_at),
+          statusType:
+            item.status === "completed"
+              ? "success"
+              : item.status === "failed"
+              ? "error"
+              : "info",
+          statusText: (item.status || "SENT").toUpperCase(),
+          logo: require("../../assets/images/products/whatsapp.png"),
+          color: "#25D366",
+          route: "/products/whatsapp",
+        });
+      });
+
+      // 10. Real Growth Tools: Short Links, Quick Forms, Landing Pages
+      (shortLinksRes?.data || []).forEach((item: any) => {
+        rawActivities.push({
+          id: `link_${item.id}`,
+          platform: "social",
+          title: `Smart Link: /${item.short_slug}`,
+          sub: `${item.title ? item.title.slice(0, 45) + " • " : ""}${item.clicks || 0} total clicks`,
+          createdAt: item.created_at || new Date().toISOString(),
+          timeAgo: formatTimeAgo(item.created_at),
+          statusType: "info",
+          statusText: `${item.clicks || 0} Clicks`,
+          logo: require("../../assets/images/products/social.png"),
+          color: "#E1306C",
+          route: "/tools/link-shortener",
+        });
+      });
+
+      (quickFormsRes?.data || []).forEach((item: any) => {
+        rawActivities.push({
+          id: `form_${item.id}`,
+          platform: "social",
+          title: `Intake Form: ${item.title || "Feedback Form"}`,
+          sub: "Form synced & active for new responses",
+          createdAt: item.created_at || new Date().toISOString(),
+          timeAgo: formatTimeAgo(item.created_at),
+          statusType: "success",
+          statusText: "Active",
+          logo: require("../../assets/images/products/social.png"),
+          color: "#E1306C",
+          route: "/tools/quick-forms",
+        });
+      });
+
+      (landingTemplatesRes?.data || []).forEach((item: any) => {
+        rawActivities.push({
+          id: `landing_${item.id}`,
+          platform: "social",
+          title: `Landing Page: ${item.page_title || item.slug || "Published Funnel"}`,
+          sub: `/${item.slug} • ${item.page_views || 0} views • ${item.button_clicks || 0} clicks`,
+          createdAt: item.created_at || new Date().toISOString(),
+          timeAgo: formatTimeAgo(item.created_at),
+          statusType: "success",
+          statusText: "Live",
+          logo: require("../../assets/images/products/social.png"),
+          color: "#E1306C",
+          route: "/tools/my-designs",
+        });
+      });
+
+      // 11. Real Notifications
+      (notificationsRes?.data || []).forEach((item: any) => {
+        rawActivities.push({
+          id: `notif_${item.id}`,
+          platform: "system",
+          title: item.title || "Ecosystem Alert",
+          sub: item.description ? item.description.slice(0, 80) : "System notification",
+          createdAt: item.created_at || new Date().toISOString(),
+          timeAgo: formatTimeAgo(item.created_at),
+          statusType: "info",
+          statusText: "Alert",
+          logo: require("../../assets/images/network.png"),
+          color: "#6366F1",
+          route: "/notifications",
+        });
+      });
+
+      // Deduplicate and sort newest first
+      const seen = new Set<string>();
+      const sortedActivities: ActivityFeedItem[] = [];
+      rawActivities.forEach((act) => {
+        if (!seen.has(act.id)) {
+          seen.add(act.id);
+          sortedActivities.push(act);
+        }
+      });
+      sortedActivities.sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      const totalPages =
+        (bioTemplatesRes?.data?.length || 0) + (landingTemplatesRes?.data?.length || 0);
+
+      const waEventsCount =
+        rawActivities.filter((a) => a.platform === "whatsapp").length +
+        (waLogsRes?.data?.length || 0);
+
+      const voiceTotalCalls =
+        voiceOverview?.totalCalls !== undefined
+          ? voiceOverview.totalCalls
+          : Array.isArray(voiceCalls)
+          ? voiceCalls.length
+          : 0;
+
+      const voiceAssistantsCount = voiceOverview?.totalAssistants || 0;
+      const voiceCreditsDisplay = voiceOverview?.creditBalanceDisplay || "₹0.00";
 
       return {
         profile,
+        activities: sortedActivities,
         social: {
           connectedCount: socialTokens.length,
-          tokens: socialTokens,
-          accounts: [],
+          pagesCount: totalPages,
         },
         whatsapp: {
-          wabaPhone: profile.whatsapp_number || "Linked Cloud API",
+          wabaPhone: profile.whatsapp_number || waStatus?.phone_number || "Meta Cloud API",
           walletBalancePaise: walletPaise,
-          recentLogs: waLogsRes?.data || [],
+          eventsCount: waEventsCount,
+          qualityRating: waStatus?.quality_rating || "Green",
+          statusText: waStatus?.status || "Connected",
         },
         telegram: {
-          joinLinksCount: tgJoinRes?.count || 0,
-          trackerCount: tgTrackRes?.count || 0,
+          joinLinksCount: tgJoinLinksRes?.count || 0,
+          trackerCount: tgTrackRes?.data?.length || 0,
           forwardRulesCount: tgForwardRes?.count || 0,
+          joinsCount: tgJoinRes?.data?.length || 0,
+        },
+        voice: {
+          totalCalls: voiceTotalCalls,
+          totalAssistants: voiceAssistantsCount,
+          creditBalanceDisplay: voiceCreditsDisplay,
         },
         crm: {
-          formsCount: formsRes?.count || 0,
+          contactsCount: crmContacts?.length || 0,
+          dealsCount: crmDeals?.length || 0,
+          paymentsCount: crmPayments?.length || 0,
+          activitiesCount: crmActivities?.length || 0,
+          formsCount: quickFormsRes?.data?.length || 0,
           shortLinksCount: shortLinks.length,
           totalClicks,
         },
-        payments: paymentsRes?.data || [],
       };
     },
   });
@@ -223,24 +726,37 @@ export default function ConnectedPlatformsPage() {
     setActivePlatform(key);
   };
 
+  const handleActivityPress = (item: ActivityFeedItem) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (item.route) {
+      router.push(item.route as any);
+    }
+  };
+
   const currentPlatformMeta =
     PLATFORMS.find((p) => p.key === activePlatform) || PLATFORMS[0];
 
+  const filteredActivities = useMemo(() => {
+    if (!telemetry?.activities) return [];
+    if (activePlatform === "all") return telemetry.activities;
+    return telemetry.activities.filter((item) => item.platform === activePlatform);
+  }, [telemetry?.activities, activePlatform]);
+
   return (
     <AppScreen safeArea={false} backgroundColor={color.background}>
-      <AppTopBar
-        title="Activity"
-        showBack={false}
-        showPlanBadge={true}
-      />
+      <AppTopBar title="Activity" showBack={false} showPlanBadge={true} />
 
-      {isLoading && !platformData ? (
+      {isLoading && !telemetry ? (
         <ActivityScreenSkeleton />
       ) : (
         <ScrollView
           className="flex-1"
           style={{ backgroundColor: color.background }}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 130 }}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingTop: 14,
+            paddingBottom: 130,
+          }}
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
@@ -250,14 +766,26 @@ export default function ConnectedPlatformsPage() {
           }
           showsVerticalScrollIndicator={false}
         >
-          <View style={{ marginBottom: 20, gap: 8 }}>
-            <Text style={{ fontSize: 30, lineHeight: 38, fontWeight: "500", letterSpacing: -0.6, color: color.text }}>Your activity</Text>
-            <Text style={{ fontSize: 14, color: color.textSecondary }}>Keep up with your connected apps.</Text>
+          {/* Header */}
+          <View style={{ marginBottom: 20, gap: 6 }}>
+            <Text
+              style={{
+                fontSize: 30,
+                lineHeight: 38,
+                fontWeight: "600",
+                letterSpacing: -0.6,
+                color: color.text,
+              }}
+            >
+              Your activity
+            </Text>
+            <Text style={{ fontSize: 14, color: color.textSecondary }}>
+              Real-time audit telemetry across your connected workspace apps.
+            </Text>
           </View>
-          {/* Platform Tabs (Folder Style matching Tools & Inbox tabs) */}
-          <View style={{ position: "relative", marginVertical: 16 }}>
 
-
+          {/* Platform Tabs (Folder Style Pill) */}
+          <View style={{ position: "relative", marginBottom: 18 }}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -270,27 +798,24 @@ export default function ConnectedPlatformsPage() {
                     key={p.key}
                     onPress={() => handleSelectTab(p.key)}
                     style={{
-                      height: 44,
-                      paddingHorizontal: 14,
+                      height: 42,
+                      paddingHorizontal: 16,
                       justifyContent: "center",
                       alignItems: "center",
-                      borderRadius: 22,
+                      borderRadius: 21,
                       marginRight: 8,
-                      borderTopWidth: 0,
-                      borderLeftWidth: 0,
-                      borderRightWidth: 0,
-                      borderBottomWidth: 0,
-                      borderTopColor: isActive ? color.primary : "transparent",
-                      borderLeftColor: isActive ? color.primary : "transparent",
-                      borderRightColor: isActive ? color.primary : "transparent",
-                      borderBottomColor: isActive ? color.background : "transparent",
                       backgroundColor: isActive ? color.accentSoft : color.card,
-                      zIndex: isActive ? 2 : 1,
+                      borderWidth: StyleSheet.hairlineWidth,
+                      borderColor: isActive
+                        ? color.accent
+                        : isDark
+                        ? "rgba(255, 255, 255, 0.08)"
+                        : color.cardBorder,
                     }}
                   >
                     <Text
                       style={{
-                        fontSize: 12.5,
+                        fontSize: 13,
                         fontWeight: isActive ? "600" : "500",
                         letterSpacing: -0.1,
                         color: isActive ? color.accent : color.textSecondary,
@@ -313,11 +838,6 @@ export default function ConnectedPlatformsPage() {
               borderColor: isDark
                 ? "rgba(255, 255, 255, 0.08)"
                 : color.cardBorder,
-              shadowColor: "transparent",
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0,
-              shadowRadius: 0,
-              elevation: 0,
             }}
           >
             {/* Card Header: Squircle Icon + Info + Live Pill */}
@@ -336,7 +856,7 @@ export default function ConnectedPlatformsPage() {
               >
                 <Image
                   source={currentPlatformMeta.logoImage}
-                  style={{ width: 34, height: 34, borderRadius: 9 }}
+                  style={{ width: 32, height: 32, borderRadius: 8 }}
                   resizeMode="contain"
                 />
               </View>
@@ -349,23 +869,26 @@ export default function ConnectedPlatformsPage() {
                     color: color.text,
                   }}
                 >
-                  {currentPlatformMeta.label} Status
+                  {currentPlatformMeta.label === "All Activity"
+                    ? "Ecosystem Overview"
+                    : `${currentPlatformMeta.label} Status`}
                 </Text>
                 <Text
                   className="text-[11.5px] mt-0.5"
                   style={{ color: color.textSecondary }}
                   numberOfLines={1}
                 >
+                  {activePlatform === "all" &&
+                    `${telemetry?.activities?.length || 0} live telemetry events recorded`}
                   {activePlatform === "whatsapp" &&
                     (hasWhatsApp
                       ? "Meta Cloud API Gateway Active"
-                      : "Sandbox Ready")}
-                  {activePlatform === "telegram" && "MTProto Forwarder Running"}
-                  {activePlatform === "voice" &&
-                    "Ultra-Low Latency Telecalling Ready"}
-                  {activePlatform === "crm" && "Pipelines & Forms Synced"}
+                      : "Meta Cloud API Connected")}
+                  {activePlatform === "telegram" && "MTProto Forwarder & Bot Engine Running"}
+                  {activePlatform === "voice" && "Autonomous Voice AI Network Ready"}
+                  {activePlatform === "crm" && "Leads, Deals & Follow-ups Synced"}
                   {activePlatform === "social" &&
-                    `${platformData?.social?.connectedCount || 0} Accounts Synced`}
+                    `${telemetry?.social?.connectedCount || 0} Accounts • Web Funnels Active`}
                 </Text>
               </View>
               <View
@@ -392,7 +915,7 @@ export default function ConnectedPlatformsPage() {
               </View>
             </View>
 
-            {/* Metric Columns */}
+            {/* Dynamic Metric Columns */}
             <View
               className="flex-row justify-between py-3.5 mb-3 border-y"
               style={{
@@ -401,19 +924,74 @@ export default function ConnectedPlatformsPage() {
                   : "rgba(0,0,0,0.05)",
               }}
             >
+              {activePlatform === "all" && (
+                <>
+                  <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        letterSpacing: -0.2,
+                        color: color.text,
+                      }}
+                    >
+                      {telemetry?.activities?.length || 0}
+                    </Text>
+                    <Text
+                      style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
+                    >
+                      Total Events
+                    </Text>
+                  </View>
+                  <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        letterSpacing: -0.2,
+                        color: color.text,
+                      }}
+                    >
+                      5 Active
+                    </Text>
+                    <Text
+                      style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
+                    >
+                      Channels
+                    </Text>
+                  </View>
+                  <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        letterSpacing: -0.2,
+                        color: color.text,
+                      }}
+                    >
+                      Real-time
+                    </Text>
+                    <Text
+                      style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
+                    >
+                      Sync Mode
+                    </Text>
+                  </View>
+                </>
+              )}
+
               {activePlatform === "whatsapp" && (
                 <>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        letterSpacing: -0.2,
+                        color: color.text,
+                      }}
                     >
-                      ₹
-                      {(
-                        (platformData?.whatsapp?.walletBalancePaise !==
-                        undefined
-                          ? platformData.whatsapp.walletBalancePaise
-                          : 10000) / 100
-                      ).toFixed(2)}
+                      ₹{((telemetry?.whatsapp?.walletBalancePaise ?? 0) / 100).toFixed(2)}
                     </Text>
                     <Text
                       style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
@@ -423,26 +1001,36 @@ export default function ConnectedPlatformsPage() {
                   </View>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        letterSpacing: -0.2,
+                        color: color.text,
+                      }}
                     >
-                      99.8%
+                      {telemetry?.whatsapp?.eventsCount || 0}
                     </Text>
                     <Text
                       style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
-                      Delivery Rate
+                      Recent Logs
                     </Text>
                   </View>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        letterSpacing: -0.2,
+                        color: color.text,
+                      }}
                     >
-                      &lt; 2s
+                      {telemetry?.whatsapp?.qualityRating || "Green"}
                     </Text>
                     <Text
                       style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
-                      Latency
+                      Health Rating
                     </Text>
                   </View>
                 </>
@@ -452,9 +1040,14 @@ export default function ConnectedPlatformsPage() {
                 <>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        letterSpacing: -0.2,
+                        color: color.text,
+                      }}
                     >
-                      {platformData?.telegram?.forwardRulesCount || 0}
+                      {telemetry?.telegram?.forwardRulesCount || 0}
                     </Text>
                     <Text
                       style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
@@ -464,26 +1057,36 @@ export default function ConnectedPlatformsPage() {
                   </View>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        letterSpacing: -0.2,
+                        color: color.text,
+                      }}
                     >
-                      {platformData?.telegram?.trackerCount || 0}
+                      {telemetry?.telegram?.trackerCount || 0}
                     </Text>
                     <Text
                       style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
-                      Trackers
+                      Active Bots
                     </Text>
                   </View>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        letterSpacing: -0.2,
+                        color: color.text,
+                      }}
                     >
-                      0ms
+                      {telemetry?.telegram?.joinLinksCount || 0}
                     </Text>
                     <Text
                       style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
-                      Drop Rate
+                      Invite Links
                     </Text>
                   </View>
                 </>
@@ -493,38 +1096,53 @@ export default function ConnectedPlatformsPage() {
                 <>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        letterSpacing: -0.2,
+                        color: color.text,
+                      }}
                     >
-                      650ms
+                      {telemetry?.voice?.totalCalls || 0}
                     </Text>
                     <Text
                       style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
-                      WebRTC Latency
+                      Total Calls
                     </Text>
                   </View>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        letterSpacing: -0.2,
+                        color: color.text,
+                      }}
                     >
-                      2,500
+                      {telemetry?.voice?.totalAssistants || 0}
                     </Text>
                     <Text
                       style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
-                      Quota Minutes
+                      AI Assistants
                     </Text>
                   </View>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        letterSpacing: -0.2,
+                        color: color.text,
+                      }}
                     >
-                      100%
+                      {telemetry?.voice?.creditBalanceDisplay || "₹0.00"}
                     </Text>
                     <Text
                       style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
-                      ASR Accuracy
+                      Credit Balance
                     </Text>
                   </View>
                 </>
@@ -534,38 +1152,53 @@ export default function ConnectedPlatformsPage() {
                 <>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        letterSpacing: -0.2,
+                        color: color.text,
+                      }}
                     >
-                      {platformData?.crm?.formsCount || 0}
+                      {telemetry?.crm?.contactsCount || 0}
                     </Text>
                     <Text
                       style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
-                      Intake Forms
+                      Contacts
                     </Text>
                   </View>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        letterSpacing: -0.2,
+                        color: color.text,
+                      }}
                     >
-                      {platformData?.crm?.totalClicks || 0}
+                      {telemetry?.crm?.dealsCount || 0}
                     </Text>
                     <Text
                       style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
-                      Link Clicks
+                      Deals
                     </Text>
                   </View>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        letterSpacing: -0.2,
+                        color: color.text,
+                      }}
                     >
-                      Instant
+                      {telemetry?.crm?.activitiesCount || 0}
                     </Text>
                     <Text
                       style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
-                      Lead Alert
+                      Activities
                     </Text>
                   </View>
                 </>
@@ -575,38 +1208,53 @@ export default function ConnectedPlatformsPage() {
                 <>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        letterSpacing: -0.2,
+                        color: color.text,
+                      }}
                     >
-                      {platformData?.social?.connectedCount || 0}
+                      {telemetry?.social?.pagesCount || 0}
                     </Text>
                     <Text
                       style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
-                      Accounts
+                      Live Pages
                     </Text>
                   </View>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        letterSpacing: -0.2,
+                        color: color.text,
+                      }}
                     >
-                      100%
+                      {telemetry?.crm?.formsCount || 0}
                     </Text>
                     <Text
                       style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
-                      Queue Sync
+                      Intake Forms
                     </Text>
                   </View>
                   <View className="flex-1 items-center min-w-0" style={{ flexBasis: 0 }}>
                     <Text
-                      style={{ fontSize: 16, fontWeight: "600", letterSpacing: -0.2, color: color.text }}
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        letterSpacing: -0.2,
+                        color: color.text,
+                      }}
                     >
-                      Auto
+                      {telemetry?.crm?.totalClicks || 0}
                     </Text>
                     <Text
                       style={{ fontSize: 11, marginTop: 2, color: color.textSecondary }}
                     >
-                      Scheduler
+                      Link Clicks
                     </Text>
                   </View>
                 </>
@@ -620,50 +1268,78 @@ export default function ConnectedPlatformsPage() {
             >
               <Text
                 style={{
-                  fontSize: 12,
-                  fontWeight: "500",
+                  fontSize: 12.5,
+                  fontWeight: "600",
                   color: color.primary,
                 }}
               >
-                Configure {currentPlatformMeta.label} Dashboard
+                {activePlatform === "all"
+                  ? "Explore Ecosystem Integrations"
+                  : `Open ${currentPlatformMeta.label} Dashboard`}
               </Text>
               <View
                 style={{
-                  width: 22,
-                  height: 22,
-                  borderRadius: 11,
+                  width: 24,
+                  height: 24,
+                  borderRadius: 12,
                   alignItems: "center",
                   justifyContent: "center",
                   backgroundColor: color.primaryMuted,
                 }}
               >
-                <Ionicons name="arrow-forward" size={11} color={color.primary} />
+                <Ionicons name="arrow-forward" size={12} color={color.primary} />
               </View>
             </Pressable>
           </View>
 
           {/* Section: Activity Audit Log */}
-          <View className="mb-2.5 px-1 flex-row items-center justify-between">
-            <Text
-              style={{
-                fontSize: 11,
-                fontWeight: "600",
-                letterSpacing: 0.6,
-                textTransform: "uppercase",
-                color: color.textSecondary,
-              }}
-            >
-              Recent Ecosystem Telemetry
-            </Text>
+          <View className="mb-3 px-1 flex-row items-center justify-between">
+            <View className="flex-row items-center gap-2">
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: "700",
+                  letterSpacing: 0.6,
+                  textTransform: "uppercase",
+                  color: color.textSecondary,
+                }}
+              >
+                Recent Ecosystem Telemetry
+              </Text>
+              <View
+                className="px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: color.accentSoft }}
+              >
+                <Text
+                  style={{
+                    fontSize: 10.5,
+                    fontWeight: "600",
+                    color: color.accent,
+                  }}
+                >
+                  {filteredActivities.length}
+                </Text>
+              </View>
+            </View>
+
             <View
-              className="px-2 py-0.5 rounded-md"
-              style={{ backgroundColor: color.accentSoft }}
+              className="flex-row items-center gap-1.5 px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: isDark ? "rgba(34, 197, 94, 0.15)" : "#DCFCE7" }}
             >
+              <View
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: "#16A34A",
+                }}
+              />
               <Text
                 style={{
                   fontSize: 10,
-                  fontWeight: "600",
-                  color: color.accent,
+                  fontWeight: "700",
+                  color: "#16A34A",
+                  letterSpacing: 0.4,
                 }}
               >
                 LIVE
@@ -671,121 +1347,159 @@ export default function ConnectedPlatformsPage() {
             </View>
           </View>
 
-          {/* Inset Grouped Audit List */}
-          <View
-            className="rounded-[20px] overflow-hidden"
-            style={{
-              backgroundColor: color.card,
-              borderWidth: StyleSheet.hairlineWidth,
-              borderColor: isDark
-                ? "rgba(255, 255, 255, 0.08)"
-                : color.cardBorder,
-              shadowColor: "transparent",
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0,
-              shadowRadius: 0,
-              elevation: 0,
-            }}
-          >
-            {[
-              {
-                id: "1",
-                title: "WhatsApp Cloud Webhook Delivered",
-                sub: "Meta Cloud API • 200 OK",
-                time: "2m ago",
-                logo: require("../../assets/images/products/whatsapp.png"),
-                color: "#25D366",
-              },
-              {
-                id: "2",
-                title: "Telegram Stream Routing Active",
-                sub: "Channel forwarder verified",
-                time: "14m ago",
-                logo: require("../../assets/images/products/telegram.png"),
-                color: "#0088CC",
-              },
-              {
-                id: "3",
-                title: "AI Telecaller Model Initialized",
-                sub: "Voice synthesis stream connected",
-                time: "1h ago",
-                logo: require("../../assets/images/products/voice.png"),
-                color: "#8B5CF6",
-              },
-              {
-                id: "4",
-                title: "Smart CRM Form Triggered",
-                sub: "New prospect intake recorded",
-                time: "3h ago",
-                logo: require("../../assets/images/products/crm.png"),
-                color: "#F59E0B",
-              },
-            ].map((item, idx, arr) => (
-              <View key={item.id}>
-                <View className="flex-row items-center py-3.5 px-4">
-                  <View
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 11,
-                      justifyContent: "center",
-                      alignItems: "center",
-                      backgroundColor: `${item.color}15`,
-                      marginRight: 12,
-                      overflow: "hidden",
-                    }}
+          {/* Activity Feed List */}
+          {filteredActivities.length === 0 ? (
+            <ProductEmpty
+              title={`No ${currentPlatformMeta.label} Activity Yet`}
+              description={`Live triggers, broadcasts, calls, and updates for ${currentPlatformMeta.label} will be tracked here.`}
+              action={`Open ${currentPlatformMeta.label}`}
+              onAction={() => router.push(currentPlatformMeta.route as any)}
+            />
+          ) : (
+            <View
+              className="rounded-[20px] overflow-hidden"
+              style={{
+                backgroundColor: color.card,
+                borderWidth: StyleSheet.hairlineWidth,
+                borderColor: isDark
+                  ? "rgba(255, 255, 255, 0.08)"
+                  : color.cardBorder,
+              }}
+            >
+              {filteredActivities.map((item, idx, arr) => (
+                <View key={item.id}>
+                  <Pressable
+                    onPress={() => handleActivityPress(item)}
+                    style={({ pressed }) => ({
+                      opacity: pressed ? 0.75 : 1,
+                      backgroundColor: pressed
+                        ? isDark
+                          ? "rgba(255, 255, 255, 0.04)"
+                          : "rgba(0, 0, 0, 0.02)"
+                        : "transparent",
+                    })}
                   >
-                    <Image
-                      source={item.logo}
-                      style={{ width: 26, height: 26, borderRadius: 7 }}
-                      resizeMode="contain"
+                    <View className="flex-row items-center py-3.5 px-4">
+                      {/* Product Squircle Logo */}
+                      <View
+                        style={{
+                          width: 38,
+                          height: 38,
+                          borderRadius: 12,
+                          justifyContent: "center",
+                          alignItems: "center",
+                          backgroundColor: `${item.color}15`,
+                          marginRight: 12,
+                          overflow: "hidden",
+                        }}
+                      >
+                        <Image
+                          source={item.logo}
+                          style={{ width: 26, height: 26, borderRadius: 7 }}
+                          resizeMode="contain"
+                        />
+                      </View>
+
+                      {/* Content */}
+                      <View className="flex-1 min-w-0 pr-2">
+                        <View className="flex-row items-center gap-1.5 mb-0.5">
+                          <Text
+                            numberOfLines={1}
+                            style={{
+                              fontSize: 13.5,
+                              fontWeight: "600",
+                              letterSpacing: -0.15,
+                              color: color.text,
+                              flexShrink: 1,
+                            }}
+                          >
+                            {item.title}
+                          </Text>
+                          {Boolean(item.statusText) && (
+                            <View
+                              style={{
+                                paddingHorizontal: 6,
+                                paddingVertical: 1.5,
+                                borderRadius: 6,
+                                backgroundColor:
+                                  item.statusType === "error"
+                                    ? isDark
+                                      ? "rgba(239, 68, 68, 0.2)"
+                                      : "#FEE2E2"
+                                    : item.statusType === "success"
+                                    ? isDark
+                                      ? "rgba(34, 197, 94, 0.2)"
+                                      : "#DCFCE7"
+                                    : isDark
+                                    ? "rgba(99, 102, 241, 0.2)"
+                                    : "#EEF2FF",
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  fontSize: 9.5,
+                                  fontWeight: "700",
+                                  letterSpacing: 0.3,
+                                  color:
+                                    item.statusType === "error"
+                                      ? "#EF4444"
+                                      : item.statusType === "success"
+                                      ? "#16A34A"
+                                      : "#6366F1",
+                                }}
+                              >
+                                {item.statusText}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                        <Text
+                          numberOfLines={1}
+                          style={{
+                            fontSize: 11.5,
+                            lineHeight: 16,
+                            color: color.textSecondary,
+                          }}
+                        >
+                          {item.sub}
+                        </Text>
+                      </View>
+
+                      {/* Relative Time & Arrow */}
+                      <View className="items-end pl-1">
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            fontWeight: "400",
+                            color: color.textSecondary,
+                            marginBottom: 2,
+                          }}
+                        >
+                          {item.timeAgo}
+                        </Text>
+                        <Ionicons
+                          name="chevron-forward"
+                          size={12}
+                          color={color.iconSecondary || color.textSecondary}
+                        />
+                      </View>
+                    </View>
+                  </Pressable>
+
+                  {idx < arr.length - 1 && (
+                    <View
+                      className="h-[1px] ml-16"
+                      style={{
+                        backgroundColor: isDark
+                          ? "rgba(255, 255, 255, 0.06)"
+                          : "rgba(0, 0, 0, 0.05)",
+                      }}
                     />
-                  </View>
-                  <View className="flex-1 min-w-0">
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        fontWeight: "500",
-                        letterSpacing: -0.15,
-                        color: color.text,
-                      }}
-                    >
-                      {item.title}
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 11.5,
-                        marginTop: 2,
-                        color: color.textSecondary,
-                      }}
-                    >
-                      {item.sub}
-                    </Text>
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 11.5,
-                      fontWeight: "400",
-                      color: color.textSecondary,
-                      marginLeft: 8,
-                    }}
-                  >
-                    {item.time}
-                  </Text>
+                  )}
                 </View>
-                {idx < arr.length - 1 && (
-                  <View
-                    className="h-[1px] ml-14"
-                    style={{
-                      backgroundColor: isDark
-                        ? "rgba(255, 255, 255, 0.06)"
-                        : "rgba(0, 0, 0, 0.05)",
-                    }}
-                  />
-                )}
-              </View>
-            ))}
-          </View>
+              ))}
+            </View>
+          )}
         </ScrollView>
       )}
     </AppScreen>
