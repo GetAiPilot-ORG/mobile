@@ -129,8 +129,8 @@ async function main() {
     // Initialize Realtime DB notifications bridge (captures bot-dashboard Admin Broadcasts, Attendance, etc.)
     NotificationService.initRealtimeDbListener();
 
-    // Initialize page clicks & views monitor for Landing and Bio pages (alerts page owner)
-    NotificationService.initPageClickMonitor(300000);
+    // Initialize page clicks & views monitor for Landing and Bio pages (100% Realtime, alerts page owner)
+    NotificationService.initPageClickMonitor();
   } catch (err) {
     app.log.error(err);
     process.exit(1);
