@@ -92,7 +92,7 @@ export const InboxScreen: React.FC = () => {
   } = useQuery({
     queryKey: ["conversations", user?.id || "guest", searchQuery],
     queryFn: () => inboxApi.getConversations("all", "all", searchQuery),
-    staleTime: 5000,
+    staleTime: 60000,
   });
 
   // Fetch contacts for New Chat
@@ -759,7 +759,6 @@ export const InboxScreen: React.FC = () => {
           presentationStyle="fullScreen"
           onRequestClose={() => {
             setActiveConversation(null);
-            refetch();
           }}
         >
           {activeConversation && (
@@ -767,7 +766,6 @@ export const InboxScreen: React.FC = () => {
               conversation={activeConversation}
               onBack={() => {
                 setActiveConversation(null);
-                refetch();
               }}
             />
           )}
