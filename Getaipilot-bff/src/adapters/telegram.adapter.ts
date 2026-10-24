@@ -184,53 +184,7 @@ export class TelegramAdapter {
       console.warn('[TG TRACKER BOTS ERROR]', err);
     }
 
-    // Default 7 bots matching web dashboard screenshot
-    return [
-      {
-        id: 'bot-1',
-        bot_name: 'Trading Guru India',
-        bot_username: 'tradingguruindia_bot',
-        status: 'ACTIVE',
-        channel_id: 'chan-101',
-        channel_name: 'TRADING GURU SEBI REGISTERED',
-        channel_icon_url: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=150&auto=format&fit=crop&q=80',
-        bot_icon_url: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=150&auto=format&fit=crop&q=80',
-        created_at: new Date(Date.now() - 30 * 86400000).toISOString(),
-      },
-      {
-        id: 'bot-2',
-        bot_name: 'ZERO TO HERO ( TRADING )',
-        bot_username: 'zero_to_hero_tradbot',
-        status: 'ACTIVE',
-        channel_id: 'chan-102',
-        channel_name: 'ZERO TO HERO ( TRADING )',
-        channel_icon_url: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=150&auto=format&fit=crop&q=80',
-        bot_icon_url: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=150&auto=format&fit=crop&q=80',
-        created_at: new Date(Date.now() - 25 * 86400000).toISOString(),
-      },
-      {
-        id: 'bot-3',
-        bot_name: 'testMBbot',
-        bot_username: 'testeatnb_bot',
-        status: 'ACTIVE',
-        channel_id: null,
-        channel_name: null,
-        channel_icon_url: null,
-        bot_icon_url: null,
-        created_at: new Date(Date.now() - 15 * 86400000).toISOString(),
-      },
-      {
-        id: 'bot-4',
-        bot_name: 'Trade with Mohit Agrawal',
-        bot_username: 'Tradewith_MohitAgrawal_bot',
-        status: 'ACTIVE',
-        channel_id: null,
-        channel_name: null,
-        channel_icon_url: null,
-        bot_icon_url: null,
-        created_at: new Date(Date.now() - 10 * 86400000).toISOString(),
-      },
-    ];
+    return [];
   }
 
   public static async getSummary(
@@ -461,7 +415,7 @@ export class TelegramAdapter {
         botName: 'GAPGrow Bot',
         botUsername: '@GapGrowBot',
         botUrl: 'https://t.me/GapGrowBot',
-        telegramUserId: profile?.telegram_user_id || 8891953778,
+        telegramUserId: profile?.telegram_user_id || null,
         isConnected: Boolean(profile?.telegram_user_id),
       };
     } catch (err) {
@@ -470,8 +424,8 @@ export class TelegramAdapter {
         botName: 'GAPGrow Bot',
         botUsername: '@GapGrowBot',
         botUrl: 'https://t.me/GapGrowBot',
-        telegramUserId: 8891953778,
-        isConnected: true,
+        telegramUserId: null,
+        isConnected: false,
       };
     }
   }
@@ -493,7 +447,7 @@ export class TelegramAdapter {
         botName: 'GAP Auto Approve',
         botUsername: '@Gapautoapprovebot',
         botUrl: 'https://t.me/Gapautoapprovebot?start=true',
-        telegramUserId: profile?.telegram_user_id || 1032153257,
+        telegramUserId: profile?.telegram_user_id || null,
         isConnected: Boolean(profile?.telegram_user_id),
       };
     } catch (err) {
@@ -502,8 +456,8 @@ export class TelegramAdapter {
         botName: 'GAP Auto Approve',
         botUsername: '@Gapautoapprovebot',
         botUrl: 'https://t.me/Gapautoapprovebot?start=true',
-        telegramUserId: 1032153257,
-        isConnected: true,
+        telegramUserId: null,
+        isConnected: false,
       };
     }
   }
@@ -542,40 +496,29 @@ export class TelegramAdapter {
         botName: bot?.bot_name || 'GAP SEBI Report Bot',
         botUsername: bot?.bot_username ? (bot.bot_username.startsWith('@') ? bot.bot_username : `@${bot.bot_username}`) : '@ResearchReport233_bot',
         botUrl: `https://t.me/${bot?.bot_username ? bot.bot_username.replace('@', '') : 'ResearchReport233_bot'}`,
-        telegramUserId: profile?.telegram_user_id || 8891953778,
-        dmConnected: true,
+        telegramUserId: profile?.telegram_user_id || null,
+        dmConnected: Boolean(profile?.telegram_user_id),
         channelsCount: communities.length,
         reportsCount: 0,
         brandProfile: {
-          advisoryFirm: profile?.business_name || 'No Brand',
-          researchAnalyst: profile?.full_name || 'SEBI',
-          sebiRegistration: 'INH010600090',
-          website: profile?.website || 'getaipilot.com',
-          email: profile?.business_email || 'research@example.com',
-          officeAddress: 'e.g. Kallam, Latur, Maharashtra',
+          advisoryFirm: profile?.business_name || '',
+          researchAnalyst: profile?.full_name || '',
+          sebiRegistration: '',
+          website: profile?.website || '',
+          email: profile?.business_email || '',
+          officeAddress: '',
           logoUrl: profile?.avatar_url || null,
-          page1Disclaimer: 'Add short SEBI/risk disclaimer for the first page.',
-          page2Disclosure: 'Optional disclosure content.',
-          page3Conflicts: 'Optional conflict of interest content.',
-          page4Policy: 'Optional risk and policy content.',
+          page1Disclaimer: '',
+          page2Disclosure: '',
+          page3Conflicts: '',
+          page4Policy: '',
         },
         channels: communities.map((c) => ({
           id: String(c.id),
           name: c.title || 'SEBI Research Channel',
           is_active: c.is_active ?? true,
         })),
-        reports: [
-          {
-            id: 'rep_1',
-            title: 'NIFTY 24000 CE - Intraday Option Call',
-            callType: 'BUY',
-            entry: 'Rs 150',
-            target: 'Rs 200',
-            stopLoss: 'Rs 120',
-            createdAt: new Date(Date.now() - 2 * 3600000).toISOString(),
-            pdfUrl: 'https://tg.getaipilot.in/sample-report.pdf',
-          },
-        ],
+        reports: [],
       };
     } catch (err) {
       console.warn('[TG REPORT BOT ERROR]', err);
@@ -583,19 +526,19 @@ export class TelegramAdapter {
         botName: 'GAP SEBI Report Bot',
         botUsername: '@ResearchReport233_bot',
         botUrl: 'https://t.me/ResearchReport233_bot',
-        telegramUserId: 8891953778,
-        dmConnected: true,
+        telegramUserId: null,
+        dmConnected: false,
         channelsCount: 0,
         reportsCount: 0,
         brandProfile: {
-          advisoryFirm: 'No Brand',
-          researchAnalyst: 'SEBI',
-          sebiRegistration: 'INH010600090',
-          website: 'getaipilot.com',
-          email: 'research@example.com',
-          officeAddress: 'e.g. Kallam, Latur, Maharashtra',
+          advisoryFirm: '',
+          researchAnalyst: '',
+          sebiRegistration: '',
+          website: '',
+          email: '',
+          officeAddress: '',
           logoUrl: null,
-          page1Disclaimer: 'Add short SEBI/risk disclaimer for the first page.',
+          page1Disclaimer: '',
           page2Disclosure: '',
           page3Conflicts: '',
           page4Policy: '',
@@ -850,10 +793,15 @@ export class TelegramAdapter {
       }
     }
 
+    const effectiveUserId = context?.userId || '';
     try {
-      const { count } = await this.supabase
+      let query = this.supabase
         .from('tg_communities')
         .select('*', { count: 'exact', head: true });
+      if (effectiveUserId) {
+        query = query.eq('user_id', effectiveUserId);
+      }
+      const { count } = await query;
 
       return {
         success: true,
@@ -1958,66 +1906,12 @@ export class TelegramAdapter {
     return { success: true, deletedId: configId };
   }
 
-  public static async getConversations(userId: string): Promise<NormalizedConversation[]> {
-    return [
-      {
-        id: 'tg_conv_1',
-        organization_id: `org_${userId.slice(0, 8)}`,
-        contact: {
-          name: 'Aman Deep',
-          handle_or_phone: '@amandeep_crypto',
-        },
-        channel: 'telegram',
-        last_message: {
-          content: 'I subscribed to the VIP Signal group via Telesub.',
-          created_at: new Date(Date.now() - 3 * 60000).toISOString(),
-          direction: 'inbound',
-        },
-        unread_count: 1,
-        status: 'active',
-      },
-      {
-        id: 'tg_conv_2',
-        organization_id: `org_${userId.slice(0, 8)}`,
-        contact: {
-          name: 'Priya Mehta',
-          handle_or_phone: '@priya_invest',
-        },
-        channel: 'telegram',
-        last_message: {
-          content: 'Auto-approval worked instantly! Thanks.',
-          created_at: new Date(Date.now() - 55 * 60000).toISOString(),
-          direction: 'inbound',
-        },
-        unread_count: 0,
-        status: 'resolved',
-      },
-    ];
+  public static async getConversations(_userId: string): Promise<NormalizedConversation[]> {
+    return [];
   }
 
-  public static async getMessages(conversationId: string): Promise<NormalizedMessage[]> {
-    return [
-      {
-        id: `tg_msg_1`,
-        conversation_id: conversationId,
-        channel: 'telegram',
-        direction: 'inbound',
-        content: 'I subscribed to the VIP Signal group via Telesub.',
-        media: [],
-        sender: { name: 'Aman Deep', type: 'contact' },
-        created_at: new Date(Date.now() - 5 * 60000).toISOString(),
-      },
-      {
-        id: `tg_msg_2`,
-        conversation_id: conversationId,
-        channel: 'telegram',
-        direction: 'outbound',
-        content: 'Welcome Aman! You now have full access to our automated signals channel.',
-        media: [],
-        sender: { name: 'GAP Telegram Bot', type: 'bot' },
-        created_at: new Date(Date.now() - 3 * 60000).toISOString(),
-      },
-    ];
+  public static async getMessages(_conversationId: string): Promise<NormalizedMessage[]> {
+    return [];
   }
 
   public static async sendMessage(
@@ -2075,81 +1969,7 @@ export class TelegramAdapter {
       console.warn('[TG TRACKER LINKS ERROR]', err);
     }
 
-    // Default links matching Screenshot 3
-    return [
-      {
-        id: 'link-1',
-        title: 'Trading Guru',
-        bot_username: 'tradingguruindia_bot',
-        channel_name: 'TRADING GURU SEBI REGISTERED',
-        source_type: 'Direct Link',
-        bot_starts: 60,
-        joined: 42,
-        conversion_rate: 70,
-        deep_link_url: 'https://t.me/tradingguruindia_bot?start=c_guru_tg',
-        created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
-      },
-      {
-        id: 'link-2',
-        title: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        channel_name: 'ZERO TO HERO ( TRADING )',
-        source_type: 'Auto-Fetched from Telegram',
-        bot_starts: 435,
-        joined: 157,
-        conversion_rate: 36,
-        deep_link_url: 'https://t.me/zero_to_hero_tradbot?start=c_zth_promo',
-        created_at: new Date(Date.now() - 7 * 86400000).toISOString(),
-      },
-      {
-        id: 'link-3',
-        title: 'asdf',
-        bot_username: 'testeatnb_bot',
-        channel_name: 'new private channel',
-        source_type: 'Direct Link',
-        bot_starts: 3,
-        joined: 2,
-        conversion_rate: 67,
-        deep_link_url: 'https://t.me/testeatnb_bot?start=c_asdf',
-        created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-      },
-      {
-        id: 'link-4',
-        title: 'MBU',
-        bot_username: 'PasswordReset300_bot',
-        channel_name: 'testing',
-        source_type: 'Direct Link',
-        bot_starts: 0,
-        joined: 0,
-        conversion_rate: 0,
-        deep_link_url: 'https://t.me/PasswordReset300_bot?start=c_mbu',
-        created_at: new Date(Date.now() - 1 * 86400000).toISOString(),
-      },
-      {
-        id: 'link-5',
-        title: 'Primary Channel Link',
-        bot_username: 'GapAutoPilotBot',
-        channel_name: 'Unknown Channel',
-        source_type: 'Auto-Fetched from Telegram',
-        bot_starts: 0,
-        joined: 0,
-        conversion_rate: 0,
-        deep_link_url: 'https://t.me/GapAutoPilotBot?start=c_primary',
-        created_at: new Date(Date.now() - 8 * 86400000).toISOString(),
-      },
-      {
-        id: 'link-6',
-        title: 'Auto Join Request Link',
-        bot_username: 'GapAutoPilotBot',
-        channel_name: 'Unknown Channel',
-        source_type: 'Auto-Fetched from Telegram',
-        bot_starts: 0,
-        joined: 0,
-        conversion_rate: 0,
-        deep_link_url: 'https://t.me/GapAutoPilotBot?start=c_autojoin',
-        created_at: new Date(Date.now() - 9 * 86400000).toISOString(),
-      },
-    ];
+    return [];
   }
 
   public static async createTrackerLink(
@@ -2274,228 +2094,27 @@ export class TelegramAdapter {
   }
 
   public static async getTrackerDashboard(
-    context?: TelegramUserSessionContext
+    _context?: TelegramUserSessionContext
   ): Promise<TelegramTrackerDashboardData> {
-    const channels: TelegramTrackerChannelReport[] = [
-      {
-        channel_id: 'chan-1',
-        channel_name: 'Unknown Channel',
-        total_links: 11,
-        period_joins: 0,
-        joined: 0,
-        left: 0,
-        all_active: 0,
-        links: [
-          { id: 'l1', title: 'Auto Join Request Link', joins: 0 },
-          { id: 'l2', title: 'Auto Join Request Link', joins: 0 },
-          { id: 'l3', title: 'Primary Channel Link', joins: 0 },
-          { id: 'l4', title: 'asdf', joins: 0 },
-        ],
-      },
-      {
-        channel_id: 'chan-2',
-        channel_name: 'testing',
-        total_links: 1,
-        period_joins: 0,
-        joined: 0,
-        left: 0,
-        all_active: 0,
-        links: [{ id: 'l5', title: 'MBU', joins: 0 }],
-      },
-      {
-        channel_id: 'chan-3',
-        channel_name: 'ZERO TO HERO ( TRADING )',
-        total_links: 1,
-        period_joins: 0,
-        joined: 157,
-        left: 4,
-        all_active: 153,
-        links: [{ id: 'l6', title: 'zero to hero 03/04/2026', joins: 157 }],
-      },
-      {
-        channel_id: 'chan-4',
-        channel_name: 'TRADING GURU SEBI REGISTERED',
-        total_links: 1,
-        period_joins: 0,
-        joined: 42,
-        left: 2,
-        all_active: 40,
-        links: [{ id: 'l7', title: 'Trading Guru', joins: 42 }],
-      },
-    ];
-
-    const newUsers: TelegramTrackerNewUser[] = [
-      {
-        id: 'u-1',
-        telegram_user_id: '1061985331',
-        name: 'Ritesh',
-        channel_name: 'Trading Guru',
-        bot_username: 'tradingguruindia_bot',
-        time_ago: '5min ago',
-        status: 'Bot Start',
-        created_at: new Date(Date.now() - 5 * 60000).toISOString(),
-      },
-      {
-        id: 'u-2',
-        telegram_user_id: '6492128140',
-        name: '145118',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '5min ago',
-        status: 'Active',
-        created_at: new Date(Date.now() - 5 * 60000).toISOString(),
-      },
-      {
-        id: 'u-3',
-        telegram_user_id: '6492128140',
-        name: 'Natha',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '5min ago',
-        status: 'Leave',
-        created_at: new Date(Date.now() - 5 * 60000).toISOString(),
-      },
-      {
-        id: 'u-4',
-        telegram_user_id: '5389658253',
-        name: 'Mariyappan',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '7min ago',
-        status: 'Active',
-        created_at: new Date(Date.now() - 7 * 60000).toISOString(),
-      },
-      {
-        id: 'u-5',
-        telegram_user_id: '5275608620',
-        name: 'kanmani',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '7min ago',
-        status: 'Leave',
-        created_at: new Date(Date.now() - 7 * 60000).toISOString(),
-      },
-      {
-        id: 'u-6',
-        telegram_user_id: '7081700680',
-        name: 'beer a',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '7min ago',
-        status: 'Pending',
-        created_at: new Date(Date.now() - 7 * 60000).toISOString(),
-      },
-      {
-        id: 'u-7',
-        telegram_user_id: '13717278243',
-        name: 'Ali',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '8min ago',
-        status: 'Leave',
-        created_at: new Date(Date.now() - 8 * 60000).toISOString(),
-      },
-      {
-        id: 'u-8',
-        telegram_user_id: '984084400',
-        name: 'Anand',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '8min ago',
-        status: 'Active',
-        created_at: new Date(Date.now() - 8 * 60000).toISOString(),
-      },
-      {
-        id: 'u-9',
-        telegram_user_id: '7421258654',
-        name: 'Shanthayya',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '8min ago',
-        status: 'Bot Start',
-        created_at: new Date(Date.now() - 8 * 60000).toISOString(),
-      },
-      {
-        id: 'u-10',
-        telegram_user_id: '7683948764',
-        name: 'Anand G D',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '8min ago',
-        status: 'Active',
-        created_at: new Date(Date.now() - 8 * 60000).toISOString(),
-      },
-      {
-        id: 'u-11',
-        telegram_user_id: '1592653589',
-        name: 'Jothi',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '9min ago',
-        status: 'Active',
-        created_at: new Date(Date.now() - 9 * 60000).toISOString(),
-      },
-      {
-        id: 'u-12',
-        telegram_user_id: '890333712',
-        name: 'pradee',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '9min ago',
-        status: 'Leave',
-        created_at: new Date(Date.now() - 9 * 60000).toISOString(),
-      },
-      {
-        id: 'u-13',
-        telegram_user_id: '5198902537',
-        name: 'Sridevi Periasamy',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '9min ago',
-        status: 'Active',
-        created_at: new Date(Date.now() - 9 * 60000).toISOString(),
-      },
-      {
-        id: 'u-14',
-        telegram_user_id: '501908234',
-        name: 'Shaji',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '10min ago',
-        status: 'Pending',
-        created_at: new Date(Date.now() - 10 * 60000).toISOString(),
-      },
-      {
-        id: 'u-15',
-        telegram_user_id: '7531982736',
-        name: 'CS',
-        channel_name: 'zero to hero 03/04/2026',
-        bot_username: 'zero_to_hero_tradbot',
-        time_ago: '10min ago',
-        status: 'Pending',
-        created_at: new Date(Date.now() - 10 * 60000).toISOString(),
-      },
-    ];
-
     return {
       kpis: {
-        totalJoins: 193,
+        totalJoins: 0,
         todaysJoins: 0,
         thisMonthJoins: 0,
-        botStarts: 498,
-        pendingJoins: 297,
-        conversionRate: 39,
+        botStarts: 0,
+        pendingJoins: 0,
+        conversionRate: 0,
       },
       period: {
-        startDate: 'Sep 04, 2026',
-        endDate: 'Sep 11, 2026',
+        startDate: '',
+        endDate: '',
         periodJoins: 0,
-        totalTracked: 114050,
-        allTimeActive: 153,
+        totalTracked: 0,
+        allTimeActive: 0,
       },
-      channels,
-      newUsers,
-      totalUsersCount: 498,
+      channels: [],
+      newUsers: [],
+      totalUsersCount: 0,
     };
   }
 }
