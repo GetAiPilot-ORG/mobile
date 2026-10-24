@@ -6,27 +6,50 @@ try {
   Notifications = undefined;
 }
 
-// 1. Configure how notifications appear when app is in foreground / background
-// Must run at module level so that incoming notifications trigger banner & sound
+// ------------------------------------------------------------------
+// 1. Foreground handler
+//
+// Android FCM draws the tray entry (with the large icon) for remote push.
+// If we let expo-notifications ALSO draw a banner / tray entry for the same
+// remote push, the user sees 2 entries — and the Expo one has no large icon.
+//
+// Therefore: for remote push, this handler returns "show nothing"
+// (FCM already did the display). For local schedules (sendTestNotification,
+// milestone alerts), the handler returns "show normally".
+// ------------------------------------------------------------------
 if (Notifications?.setNotificationHandler) {
   try {
     Notifications.setNotificationHandler({
       handleNotification: async (notification) => {
-        // For remote push notifications on Android, Google FCM already handles the system notification banner
-        // with the richContent large image. Firing shouldShowAlert here causes Android to show a duplicate banner without the image.
         const trigger = notification?.request?.trigger as any;
         const notifData = (notification?.request?.content?.data || {}) as Record<string, any>;
-        const isRemotePush =
-          trigger?.type === 'push' ||
-          Boolean(trigger?.remoteMessage) ||
-          Boolean(notifData?.tag) ||
-          Boolean(notifData?.imageUrl) ||
-          Boolean(notification?.request?.identifier?.startsWith('getai_'));
+
+        // Only explicit local timer / scheduled notifications should trigger an in-app alert.
+        // For ALL remote push notifications, Android FCM / APNs already displays the system tray entry.
+        // Returning false here guarantees Expo NEVER creates a duplicate second notification banner.
+        const isLocalNotification =
+          Boolean(notifData?.isLocal) ||
+          trigger?.type === 'timeInterval' ||
+          trigger?.type === 'date' ||
+          trigger?.type === 'calendar';
+
+        if (!isLocalNotification) {
+          // Remote push: FCM already drew the notification tray entry. Suppress duplicate alert.
+          return {
+            shouldShowAlert: false,
+            shouldPlaySound: false,
+            shouldSetBadge: false,
+            shouldShowBanner: false,
+            shouldShowList: false,
+          };
+        }
+
+        // Local scheduled notification — let it display normally.
         return {
-          shouldShowAlert: !isRemotePush,
-          shouldPlaySound: !isRemotePush,
+          shouldShowAlert: true,
+          shouldPlaySound: true,
           shouldSetBadge: true,
-          shouldShowBanner: !isRemotePush,
+          shouldShowBanner: true,
           shouldShowList: true,
         };
       },
@@ -36,29 +59,33 @@ if (Notifications?.setNotificationHandler) {
   }
 }
 
-// 2. Headless background task with expo-task-manager (optional)
-// Safely wrapped in try-catch so it NEVER crashes if native ExpoTaskManager module is not compiled into the current binary
+// ------------------------------------------------------------------
+// 2. Optional headless background task
+//
+// We DEFINE the task (harmless) but do NOT call registerTaskAsync.
+// Calling registerTaskAsync causes some expo-notifications SDK versions to
+// re-deliver the same remote push through the handler chain a second time,
+// which is exactly the "2× notification" symptom.
+//
+// If you later need real background side-effects (e.g. writing to the DB),
+// call registerTaskAsync ONLY after you are certain you are not also
+// processing the same push via addNotificationReceivedListener.
+// ------------------------------------------------------------------
 export const BACKGROUND_NOTIFICATION_TASK = 'GETAIPILOT_BACKGROUND_NOTIFICATION_TASK';
 
 try {
   const TaskManager = require('expo-task-manager');
   if (TaskManager?.defineTask && !TaskManager.isTaskDefined(BACKGROUND_NOTIFICATION_TASK)) {
-    TaskManager.defineTask(
-      BACKGROUND_NOTIFICATION_TASK,
-      async ({ data, error }: any) => {
-        if (error) {
-          console.error('[BackgroundNotificationTask] Task error:', error);
-          return;
-        }
-        console.log('[BackgroundNotificationTask] Received notification in background/kill mode:', data);
+    TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async ({ data, error }: any) => {
+      if (error) {
+        console.error('[BackgroundNotificationTask] Task error:', error);
+        return;
       }
-    );
+      console.log('[BackgroundNotificationTask] Background payload (log only):', data);
+    });
   }
-
-  if (Notifications?.registerTaskAsync) {
-    Notifications.registerTaskAsync(BACKGROUND_NOTIFICATION_TASK).catch(() => {});
-  }
+  // 🚫 Do NOT call Notifications.registerTaskAsync here.
 } catch {
-  // Native module ExpoTaskManager is not present in the current build.
-  // Standard notifications will still display via Google FCM and system notification channels.
+  // expo-task-manager native module is not present in the current build.
+  // Standard notifications still display via FCM + system channels.
 }

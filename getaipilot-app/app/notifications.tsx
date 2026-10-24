@@ -21,7 +21,7 @@ import { AppTopBar } from '../src/components/AppTopBar';
 import { useNotifications, AppNotification } from '../src/contexts/NotificationContext';
 import { useTheme, getColors } from '@/theme';
 
-type FilterTab = 'all' | 'unread' | 'clicks' | 'lead' | 'broadcast' | 'system';
+type FilterTab = 'all' | 'unread' | 'clicks' | 'lead' | 'admin' | 'system';
 
 interface SwipeableCardProps {
   item: AppNotification;
@@ -81,7 +81,7 @@ function SwipeableNotificationCard({
           label: 'System',
         };
       case 'info':
-      case 'broadcast':
+      case 'admin':
       case 'announcement':
         return {
           icon: 'megaphone' as const,
@@ -239,32 +239,32 @@ function SwipeableNotificationCard({
       ? '#221D38' // Elevated rich purple-slate for Unread
       : '#FFFFFF' // Clean high-contrast white on light canvas
     : isDark
-    ? '#161322' // Solid opaque dark surface for Read
-    : '#F6F3FA'; // Solid opaque soft surface for Read
+      ? '#161322' // Solid opaque dark surface for Read
+      : '#F6F3FA'; // Solid opaque soft surface for Read
 
   const cardBorderColor = isUnread
     ? isDark
       ? 'rgba(167, 139, 250, 0.45)' // Glowing border for Unread
       : '#DDD6FE'
     : isDark
-    ? '#272338' // Solid subtle border for Read
-    : '#E8E3F2';
+      ? '#272338' // Solid subtle border for Read
+      : '#E8E3F2';
 
   const titleColor = isUnread
     ? isDark
       ? '#FFFFFF'
       : '#111827'
     : isDark
-    ? '#8C869D'
-    : '#6B7280';
+      ? '#8C869D'
+      : '#6B7280';
 
   const bodyColor = isUnread
     ? isDark
       ? '#D1C9E2'
       : '#374151'
     : isDark
-    ? '#716B80'
-    : '#8F8A9E';
+      ? '#716B80'
+      : '#8F8A9E';
 
   // Distinct Color for Swipe Actions:
   // Slide Left Action = Delete Red (#EF4444)
@@ -520,17 +520,27 @@ export default function NotificationsScreen() {
 
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
 
-  // Filtered notifications
-  const filteredNotifications = notificationsList.filter((item) => {
-    if (activeTab === 'unread') return !item.isRead;
-    if (activeTab === 'clicks')
-      return item.type === 'page_click' || item.type === 'page_view' || item.type === 'analytics';
-    if (activeTab === 'lead') return item.type === 'lead';
-    if (activeTab === 'broadcast')
-      return item.type === 'info' || item.type === 'broadcast' || item.type === 'announcement';
-    if (activeTab === 'system') return item.type === 'system';
-    return true;
-  });
+  // Filtered and deduplicated notifications (guarantees zero duplicate cards render on screen)
+  const filteredNotifications = React.useMemo(() => {
+    const seen = new Set<string>();
+    return notificationsList
+      .filter((item) => {
+        if (activeTab === 'unread') return !item.isRead;
+        if (activeTab === 'clicks')
+          return item.type === 'page_click' || item.type === 'page_view' || item.type === 'analytics';
+        if (activeTab === 'lead') return item.type === 'lead';
+        if (activeTab === 'admin')
+          return item.type === 'info' || item.type === 'admin' || item.type === 'announcement';
+        if (activeTab === 'system') return item.type === 'system';
+        return true;
+      })
+      .filter((item) => {
+        const dedupeKey = `${(item.title || '').trim().toLowerCase()}:::${(item.body || '').trim().toLowerCase()}`;
+        if (seen.has(dedupeKey)) return false;
+        seen.add(dedupeKey);
+        return true;
+      });
+  }, [notificationsList, activeTab]);
 
   const handleCardPress = async (item: AppNotification) => {
     if (Platform.OS !== 'web') {
@@ -663,10 +673,10 @@ export default function NotificationsScreen() {
               count: notificationsList.filter((n) => n.type === 'lead').length,
             },
             {
-              id: 'broadcast' as const,
-              label: 'Broadcasts',
+              id: 'admin' as const,
+              label: 'Admin',
               count: notificationsList.filter(
-                (n) => n.type === 'info' || n.type === 'broadcast' || n.type === 'announcement'
+                (n) => n.type === 'info' || n.type === 'admin' || n.type === 'announcement'
               ).length,
             },
             {
@@ -694,15 +704,15 @@ export default function NotificationsScreen() {
                   styles.tabButton,
                   isActive
                     ? {
-                        backgroundColor: isDark ? '#2C2740' : '#E9E3FA',
-                        borderColor: colors.accent || '#6366F1',
-                        borderWidth: 1,
-                      }
+                      backgroundColor: isDark ? '#2C2740' : '#E9E3FA',
+                      borderColor: colors.accent || '#6366F1',
+                      borderWidth: 1,
+                    }
                     : {
-                        backgroundColor: isDark ? '#1B1728' : '#F6F2FC',
-                        borderColor: isDark ? '#28233A' : '#EAE4F4',
-                        borderWidth: 1,
-                      },
+                      backgroundColor: isDark ? '#1B1728' : '#F6F2FC',
+                      borderColor: isDark ? '#28233A' : '#EAE4F4',
+                      borderWidth: 1,
+                    },
                 ]}
               >
                 <Text
@@ -712,8 +722,8 @@ export default function NotificationsScreen() {
                       color: isActive
                         ? colors.accent || '#6366F1'
                         : isDark
-                        ? '#8E87A1'
-                        : '#6B667A',
+                          ? '#8E87A1'
+                          : '#6B667A',
                       fontWeight: isActive ? '700' : '500',
                     },
                   ]}
@@ -728,8 +738,8 @@ export default function NotificationsScreen() {
                         backgroundColor: isActive
                           ? colors.accent || '#6366F1'
                           : isDark
-                          ? '#352F4C'
-                          : '#DDD7EC',
+                            ? '#352F4C'
+                            : '#DDD7EC',
                       },
                     ]}
                   >
