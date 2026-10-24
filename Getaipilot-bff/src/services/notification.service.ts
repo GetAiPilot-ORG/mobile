@@ -896,7 +896,8 @@ export class NotificationService {
           console.log(`[NotificationService] Bot-Dashboard DB Notifications Realtime Bridge: ${status}`);
         });
 
-      // 2. Gentle DB polling fallback every 5 minutes (Realtime handles instant delivery)
+      // 2. High-speed DB polling fallback every 4 seconds
+      // Guarantees push notification delivery even if the 'notifications' table is not in supabase_realtime publication
       let lastCheckedTime = new Date().toISOString();
       setInterval(async () => {
         try {
@@ -916,7 +917,7 @@ export class NotificationService {
         } catch {
           // ignore transient poll error
         }
-      }, 300000);
+      }, 4000);
     } catch (err: any) {
       console.warn('[NotificationService] Failed to initialize DB notifications bridge:', err?.message || err);
     }

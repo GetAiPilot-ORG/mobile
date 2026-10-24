@@ -130,7 +130,7 @@ async function main() {
     NotificationService.initRealtimeDbListener();
 
     // Initialize page clicks & views monitor for Landing and Bio pages (alerts page owner)
-    NotificationService.initPageClickMonitor(300000);
+    NotificationService.initPageClickMonitor(120000);
   } catch (err) {
     app.log.error(err);
     process.exit(1);
