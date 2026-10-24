@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 // Safely load expo-notifications without crashing if native module is absent (e.g. Expo Go / unlinked build)
 let Notifications: typeof import('expo-notifications') | undefined;
 try {
