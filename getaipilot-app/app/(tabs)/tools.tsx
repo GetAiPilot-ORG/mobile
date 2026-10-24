@@ -125,17 +125,17 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     badge: "CLOUD",
     route: "/tools/file-linker",
   },
-  {
-    id: "event-links",
-    title: "Event Links",
-    category: "UTILITIES",
-    description:
-      "1-click calendar invites for Google Calendar, Apple iCal, and webinars.",
-    icon: Calendar03Icon,
-    iconBg: "#D8F0F0",
-    badge: "CALENDAR",
-    route: "/tools/event-links",
-  },
+  // {
+  //   id: "event-links",
+  //   title: "Event Links",
+  //   category: "UTILITIES",
+  //   description:
+  //     "1-click calendar invites for Google Calendar, Apple iCal, and webinars.",
+  //   icon: Calendar03Icon,
+  //   iconBg: "#D8F0F0",
+  //   badge: "CALENDAR",
+  //   route: "/tools/event-links",
+  // },
   {
     id: "speech-to-text",
     title: "AI Speech to Text",

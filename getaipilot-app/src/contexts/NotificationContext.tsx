@@ -5,7 +5,6 @@ import type {
   NotificationResponse,
 } from 'expo-notifications';
 import * as Device from 'expo-device';
-import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { AppState, Platform } from 'react-native';
 import { NotificationService, PUSH_TOKEN_STORAGE_KEY } from '../services/notificationService';
@@ -30,17 +29,17 @@ export interface AppNotification {
   createdAt: string;
   isRead: boolean;
   type?:
-    | 'lead'
-    | 'message'
-    | 'billing'
-    | 'system'
-    | 'general'
-    | 'info'
-    | 'broadcast'
-    | 'announcement'
-    | 'page_click'
-    | 'page_view'
-    | 'analytics';
+  | 'lead'
+  | 'message'
+  | 'billing'
+  | 'system'
+  | 'general'
+  | 'info'
+  | 'broadcast'
+  | 'announcement'
+  | 'page_click'
+  | 'page_view'
+  | 'analytics';
 }
 
 export const NOTIFICATIONS_STORAGE_KEY = '@getaipilot_notifications_history';
@@ -53,6 +52,7 @@ export interface NotificationContextType {
   isDevice: boolean;
   isRegistering: boolean;
   requestPermissions: () => Promise<string | null>;
+  forceRefreshToken: () => Promise<string | null>;
   sendTestNotification: (
     title?: string,
     body?: string,
@@ -86,6 +86,7 @@ const NOOP_CONTEXT: NotificationContextType = {
   isDevice: false,
   isRegistering: false,
   requestPermissions: async () => null,
+  forceRefreshToken: async () => null,
   sendTestNotification: async () => { },
   notificationsList: [],
   unreadCount: 0,
@@ -250,7 +251,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           const merged = [...remoteItems, ...localOnly].sort(
             (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           );
-          AsyncStorage.setItem(getStorageKey(uid), JSON.stringify(merged)).catch(() => {});
+          AsyncStorage.setItem(getStorageKey(uid), JSON.stringify(merged)).catch(() => { });
           return merged;
         });
       }
@@ -383,7 +384,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
                 setNotificationsList((prev) => {
                   const next = [newItem, ...prev.filter((p) => p.id !== newItem.id)];
-                  AsyncStorage.setItem(getStorageKey(uid), JSON.stringify(next)).catch(() => {});
+                  AsyncStorage.setItem(getStorageKey(uid), JSON.stringify(next)).catch(() => { });
                   return next;
                 });
               } catch (pushErr) {
@@ -431,7 +432,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
                 setNotificationsList((prev) => {
                   const next = [newItem, ...prev.filter((p) => p.id !== newItem.id)];
-                  AsyncStorage.setItem(getStorageKey(uid), JSON.stringify(next)).catch(() => {});
+                  AsyncStorage.setItem(getStorageKey(uid), JSON.stringify(next)).catch(() => { });
                   return next;
                 });
               } catch (pushErr) {
@@ -474,7 +475,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           return !targetUid || targetUid === user.id;
         });
         if (cleaned.length !== prev.length) {
-          AsyncStorage.setItem(getStorageKey(user.id), JSON.stringify(cleaned)).catch(() => {});
+          AsyncStorage.setItem(getStorageKey(user.id), JSON.stringify(cleaned)).catch(() => { });
         }
         return cleaned;
       });
@@ -545,7 +546,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           setNotificationsList((prev) => {
             const filtered = prev.filter((p) => p.id !== newItem.id);
             const next = [newItem, ...filtered];
-            AsyncStorage.setItem(getStorageKey(user.id), JSON.stringify(next)).catch(() => {});
+            AsyncStorage.setItem(getStorageKey(user.id), JSON.stringify(next)).catch(() => { });
             return next;
           });
         }
@@ -566,14 +567,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             const next = prev.map((n) =>
               n.id === updatedRow.id
                 ? {
-                    ...n,
-                    isRead: Boolean(updatedRow.is_read),
-                    title: updatedRow.title || n.title,
-                    body: updatedRow.description || n.body,
-                  }
+                  ...n,
+                  isRead: Boolean(updatedRow.is_read),
+                  title: updatedRow.title || n.title,
+                  body: updatedRow.description || n.body,
+                }
                 : n
             );
-            AsyncStorage.setItem(getStorageKey(user.id), JSON.stringify(next)).catch(() => {});
+            AsyncStorage.setItem(getStorageKey(user.id), JSON.stringify(next)).catch(() => { });
             return next;
           });
         }
@@ -591,7 +592,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
           setNotificationsList((prev) => {
             const next = prev.filter((n) => n.id !== oldRow.id);
-            AsyncStorage.setItem(getStorageKey(user.id), JSON.stringify(next)).catch(() => {});
+            AsyncStorage.setItem(getStorageKey(user.id), JSON.stringify(next)).catch(() => { });
             return next;
           });
         }
@@ -650,6 +651,11 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       if (nextState === 'active') {
         fetchSupabaseNotifications(user.id);
         syncPageClickNotifications(user.id);
+        // Automatically resubscribe if socket closed while in background
+        if (channel.state === 'closed' || channel.state === 'errored') {
+          console.log('🔄 [NotificationContext] App active, reconnecting Realtime channel...');
+          channel.subscribe();
+        }
       }
     });
 
@@ -817,6 +823,22 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     }
   };
 
+  // Force clear cached push token and fetch brand new token directly from Google FCM
+  const forceRefreshToken = async (): Promise<string | null> => {
+    setIsRegistering(true);
+    try {
+      console.log('🔄 [NotificationContext] Force refreshing push token for user:', user?.id || 'anonymous');
+      const token = await NotificationService.forceRefreshToken(user?.id);
+      if (token) {
+        setExpoPushToken(token);
+        console.log('🔥 [NotificationContext] Fresh push token generated:', token);
+      }
+      return token;
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
   // Trigger test notification locally across any channel & route
   const sendTestNotification = async (
     title = 'GetAiPilot Push Notification',
@@ -940,7 +962,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             return prev;
           }
           const next = [newItem, ...prev];
-          AsyncStorage.setItem(getStorageKey(user?.id), JSON.stringify(next)).catch(() => {});
+          AsyncStorage.setItem(getStorageKey(user?.id), JSON.stringify(next)).catch(() => { });
           return next;
         });
       }
@@ -981,6 +1003,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         isDevice: Boolean(Device.isDevice),
         isRegistering,
         requestPermissions,
+        forceRefreshToken,
         sendTestNotification,
         notificationsList,
         unreadCount,

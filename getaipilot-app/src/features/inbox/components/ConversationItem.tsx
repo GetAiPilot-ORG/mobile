@@ -67,7 +67,23 @@ export const ConversationItem: React.FC<ConversationItemProps> = ({ conversation
           <Text style={[styles.handle, { color: isDark ? '#64748b' : '#777383' }]} numberOfLines={1}>
             {conversation.contact.handle_or_phone}
           </Text>
-          <ChannelBadge channel={conversation.channel} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            {conversation.bot_name ? (
+              <View
+                style={{
+                  backgroundColor: isDark ? 'rgba(2, 132, 199, 0.15)' : '#E0F2FE',
+                  paddingHorizontal: 6,
+                  paddingVertical: 1.5,
+                  borderRadius: 5,
+                }}
+              >
+                <Text style={{ fontSize: 9.5, fontWeight: '700', color: isDark ? '#38BDF8' : '#0284C7' }}>
+                  {conversation.bot_name}
+                </Text>
+              </View>
+            ) : null}
+            <ChannelBadge channel={conversation.channel} />
+          </View>
         </View>
         <View style={styles.bottomRow}>
           <Text style={[styles.lastMessage, { color: isDark ? '#777383' : '#64748b' }]} numberOfLines={1}>
