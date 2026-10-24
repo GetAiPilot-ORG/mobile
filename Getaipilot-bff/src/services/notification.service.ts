@@ -895,120 +895,167 @@ export class NotificationService {
         .subscribe((status) => {
           console.log(`[NotificationService] Bot-Dashboard DB Notifications Realtime Bridge: ${status}`);
         });
+
+      // 2. Gentle DB polling fallback every 5 minutes (Realtime handles instant delivery)
+      let lastCheckedTime = new Date().toISOString();
+      setInterval(async () => {
+        try {
+          const { data: newNotifications } = await this.adminSupabase
+            .from('notifications')
+            .select('*')
+            .gt('created_at', lastCheckedTime)
+            .order('created_at', { ascending: true })
+            .limit(20);
+
+          if (Array.isArray(newNotifications) && newNotifications.length > 0) {
+            lastCheckedTime = newNotifications[newNotifications.length - 1].created_at || new Date().toISOString();
+            for (const item of newNotifications) {
+              await this.processNotificationRow(item);
+            }
+          }
+        } catch {
+          // ignore transient poll error
+        }
+      }, 300000);
     } catch (err: any) {
       console.warn('[NotificationService] Failed to initialize DB notifications bridge:', err?.message || err);
     }
   }
 
   /**
-   * Monitor user landing pages and bio pages for click count & view milestone updates.
-   * Listens directly to postgres_changes UPDATE events on:
-   *  - free_template_submissions
-   *  - landing_template_submissions
-   *  - tg_landing_pages
-   * ZERO POLLING / ZERO REST queries: 100% event-driven, exactly like QuickPost.
+   * Monitor user landing pages and bio pages for click count & view updates.
+   * Periodically checks landing_template_submissions and free_template_submissions.
+   * When clicks or views increment, generates a notification record and sends push notification
+   * directly to that page owner's device.
    */
-  static initPageClickMonitor() {
-    try {
-      const handleSubmissionUpdate = async (payload: any, type: 'bio' | 'landing') => {
-        try {
-          const oldRow = payload.old || {};
-          const newRow = payload.new || {};
+  static initPageClickMonitor(intervalMs = 30000) {
+    let lastMetrics: Record<string, { clicks: number; views: number }> = {};
+    let initialized = false;
 
-          if (!newRow.user_id) return;
+    const checkMetrics = async () => {
+      try {
+        const [bioRes, landingRes, tgRes] = await Promise.all([
+          this.adminSupabase
+            .from('free_template_submissions')
+            .select('id, user_id, page_title, slug, page_views, button_clicks'),
+          this.adminSupabase
+            .from('landing_template_submissions')
+            .select('id, user_id, page_title, slug, page_views, button_clicks'),
+          this.adminSupabase
+            .from('tg_landing_pages')
+            .select('id, user_id, title, slug, view_count'),
+        ]);
 
-          const prevClicks = Number(oldRow.button_clicks || 0);
-          const currClicks = Number(newRow.button_clicks || 0);
+        const currentMetrics: Record<string, { clicks: number; views: number; userId: string; title: string; type: 'bio' | 'landing' }> = {};
+
+        if (Array.isArray(bioRes.data)) {
+          for (const item of bioRes.data) {
+            if (!item.user_id) continue;
+            currentMetrics[`bio_${item.id}`] = {
+              clicks: Number(item.button_clicks || 0),
+              views: Number(item.page_views || 0),
+              userId: item.user_id,
+              title: item.page_title || item.slug || 'Bio Page',
+              type: 'bio',
+            };
+          }
+        }
+
+        if (Array.isArray(landingRes.data)) {
+          for (const item of landingRes.data) {
+            if (!item.user_id) continue;
+            currentMetrics[`landing_${item.id}`] = {
+              clicks: Number(item.button_clicks || 0),
+              views: Number(item.page_views || 0),
+              userId: item.user_id,
+              title: item.page_title || item.slug || 'Landing Page',
+              type: 'landing',
+            };
+          }
+        }
+
+        if (Array.isArray(tgRes.data)) {
+          for (const item of tgRes.data) {
+            if (!item.user_id) continue;
+            currentMetrics[`tg_${item.id}`] = {
+              clicks: 0,
+              views: Number(item.view_count || 0),
+              userId: item.user_id,
+              title: item.title || item.slug || 'TG Landing Page',
+              type: 'landing',
+            };
+          }
+        }
+
+        if (!initialized) {
+          lastMetrics = {};
+          for (const [k, v] of Object.entries(currentMetrics)) {
+            lastMetrics[k] = { clicks: v.clicks, views: v.views };
+          }
+          initialized = true;
+          return;
+        }
+
+        for (const [key, curr] of Object.entries(currentMetrics)) {
+          const prev = lastMetrics[key];
+          if (!prev) {
+            lastMetrics[key] = { clicks: curr.clicks, views: curr.views };
+            continue;
+          }
+
+          const prevClicks = prev.clicks || 0;
+          const currClicks = curr.clicks || 0;
           const prevMilestone = Math.floor(prevClicks / 50) * 50;
           const currMilestone = Math.floor(currClicks / 50) * 50;
 
-          const title = newRow.page_title || newRow.slug || (type === 'bio' ? 'Bio Page' : 'Landing Page');
-          const pageTypeLabel = type === 'bio' ? 'Bio' : 'Landing';
-
           // Milestone reached at 50, 100, 150, 200, 250, ...
           if (currMilestone >= 50 && currMilestone > prevMilestone) {
-            console.log(`[NotificationService] ${currMilestone} clicks milestone achieved for user ${newRow.user_id}: ${title}`);
+            const pageTypeLabel = curr.type === 'bio' ? 'Bio' : 'Landing';
+            const title = `🏆 ${currMilestone} Clicks Milestone on ${pageTypeLabel} Page!`;
+            const description = `Congratulations! Your ${pageTypeLabel.toLowerCase()} page "${curr.title}" just crossed ${currMilestone} clicks! Total clicks: ${currClicks} 🎉`;
+
+            console.log(`[NotificationService] ${currMilestone} clicks milestone achieved for user ${curr.userId}: ${curr.title}`);
+
+            // Insert into notifications table (initRealtimeDbListener automatically sends push notification once)
             await this.adminSupabase.from('notifications').insert({
-              user_id: newRow.user_id,
-              title: `🏆 ${currMilestone} Clicks Milestone on ${pageTypeLabel} Page!`,
-              description: `Congratulations! Your ${pageTypeLabel.toLowerCase()} page "${title}" just crossed ${currMilestone} clicks! Total clicks: ${currClicks} 🎉`,
+              user_id: curr.userId,
+              title,
+              description,
               type: 'page_click',
               is_read: false,
             });
           }
 
           // Views milestone reached at 100, 200, 300, ...
-          const prevViews = Number(oldRow.page_views || 0);
-          const currViews = Number(newRow.page_views || 0);
+          const prevViews = prev.views || 0;
+          const currViews = curr.views || 0;
           const prevViewMilestone = Math.floor(prevViews / 100) * 100;
           const currViewMilestone = Math.floor(currViews / 100) * 100;
 
           if (currViewMilestone >= 100 && currViewMilestone > prevViewMilestone) {
-            console.log(`[NotificationService] ${currViewMilestone} views milestone detected for user ${newRow.user_id}: ${title}`);
+            const pageTypeLabel = curr.type === 'bio' ? 'Bio' : 'Landing';
+            const title = `👀 ${currViewMilestone} Views Milestone on ${pageTypeLabel} Page!`;
+            const description = `Awesome! Your ${pageTypeLabel.toLowerCase()} page "${curr.title}" just crossed ${currViewMilestone} views! Total views: ${currViews} 🚀`;
+
+            console.log(`[NotificationService] ${currViewMilestone} views milestone detected for user ${curr.userId}: ${curr.title}`);
+
             await this.adminSupabase.from('notifications').insert({
-              user_id: newRow.user_id,
-              title: `👀 ${currViewMilestone} Views Milestone on ${pageTypeLabel} Page!`,
-              description: `Awesome! Your ${pageTypeLabel.toLowerCase()} page "${title}" just crossed ${currViewMilestone} views! Total views: ${currViews} 🚀`,
+              user_id: curr.userId,
+              title,
+              description,
               type: 'page_view',
               is_read: false,
             });
           }
-        } catch (err: any) {
-          console.warn('[NotificationService] Error handling submission update event:', err?.message || err);
+
+          lastMetrics[key] = { clicks: curr.clicks, views: curr.views };
         }
-      };
+      } catch (err: any) {
+        console.warn('[NotificationService] Page click monitor error:', err?.message || err);
+      }
+    };
 
-      const handleTgPageUpdate = async (payload: any) => {
-        try {
-          const oldRow = payload.old || {};
-          const newRow = payload.new || {};
-
-          if (!newRow.user_id) return;
-
-          const prevViews = Number(oldRow.view_count || 0);
-          const currViews = Number(newRow.view_count || 0);
-          const prevViewMilestone = Math.floor(prevViews / 100) * 100;
-          const currViewMilestone = Math.floor(currViews / 100) * 100;
-
-          const title = newRow.title || newRow.slug || 'TG Landing Page';
-
-          if (currViewMilestone >= 100 && currViewMilestone > prevViewMilestone) {
-            console.log(`[NotificationService] ${currViewMilestone} views milestone detected for TG page user ${newRow.user_id}: ${title}`);
-            await this.adminSupabase.from('notifications').insert({
-              user_id: newRow.user_id,
-              title: `👀 ${currViewMilestone} Views Milestone on Landing Page!`,
-              description: `Awesome! Your Telegram landing page "${title}" just crossed ${currViewMilestone} views! Total views: ${currViews} 🚀`,
-              type: 'page_view',
-              is_read: false,
-            });
-          }
-        } catch (err: any) {
-          console.warn('[NotificationService] Error handling tg_landing_pages update event:', err?.message || err);
-        }
-      };
-
-      this.adminSupabase
-        .channel('public:page-milestones-realtime')
-        .on(
-          'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'free_template_submissions' },
-          (payload) => handleSubmissionUpdate(payload, 'bio')
-        )
-        .on(
-          'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'landing_template_submissions' },
-          (payload) => handleSubmissionUpdate(payload, 'landing')
-        )
-        .on(
-          'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'tg_landing_pages' },
-          (payload) => handleTgPageUpdate(payload)
-        )
-        .subscribe((status) => {
-          console.log(`[NotificationService] Page Milestone Realtime Listener: ${status}`);
-        });
-    } catch (err: any) {
-      console.warn('[NotificationService] Failed to initialize page click realtime monitor:', err?.message || err);
-    }
+    setInterval(checkMetrics, intervalMs);
+    setTimeout(checkMetrics, 5000);
   }
 }
