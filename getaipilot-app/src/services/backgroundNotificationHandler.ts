@@ -26,27 +26,7 @@ if (Notifications?.setNotificationHandler) {
         const trigger = notification?.request?.trigger as any;
         const notifData = (notification?.request?.content?.data || {}) as Record<string, any>;
 
-        // Only explicit local timer / scheduled notifications should trigger an in-app alert.
-        // For ALL remote push notifications, Android FCM / APNs already displays the system tray entry.
-        // Returning false here guarantees Expo NEVER creates a duplicate second notification banner.
-        const isLocalNotification =
-          Boolean(notifData?.isLocal) ||
-          trigger?.type === 'timeInterval' ||
-          trigger?.type === 'date' ||
-          trigger?.type === 'calendar';
-
-        if (!isLocalNotification) {
-          // Remote push: FCM already drew the notification tray entry. Suppress duplicate alert.
-          return {
-            shouldShowAlert: false,
-            shouldPlaySound: false,
-            shouldSetBadge: false,
-            shouldShowBanner: false,
-            shouldShowList: false,
-          };
-        }
-
-        // Local scheduled notification — let it display normally.
+        // Ensure notifications display alert, sound, banner and badge whether foreground or background
         return {
           shouldShowAlert: true,
           shouldPlaySound: true,
