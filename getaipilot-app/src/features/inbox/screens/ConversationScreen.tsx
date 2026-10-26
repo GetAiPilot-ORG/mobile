@@ -160,9 +160,9 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   // Fetch conversation details & message history
   const { data, isLoading } = useQuery({
     queryKey: ['conversation_details', activeId],
-    queryFn: () => inboxApi.getConversationDetails(activeId),
-    staleTime: 3000,
-    refetchInterval: 4000,
+    queryFn: () => inboxApi.getConversationDetails(activeId, initialConversation?.channel),
+    staleTime: 15000,
+    refetchInterval: 30000,
     enabled: !!activeId,
   });
 
@@ -174,7 +174,31 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   });
 
   const conversation = initialConversation || data?.conversation;
-  const messages: NormalizedMessage[] = data?.messages || [];
+  const messages: NormalizedMessage[] = useMemo(() => {
+    if (data?.messages && data.messages.length > 0) {
+      return data.messages;
+    }
+    // Fallback for social/Instagram threads where thread detail only has initial incoming message
+    if (conversation?.channel === 'instagram' && conversation?.last_message?.content) {
+      return [
+        {
+          id: `initial_${conversation.id}`,
+          conversation_id: conversation.id,
+          channel: 'instagram',
+          direction: conversation.last_message.direction || 'inbound',
+          content: conversation.last_message.content,
+          media: [],
+          sender: {
+            name: conversation.contact?.name || 'Contact',
+            type: conversation.last_message.direction === 'outbound' ? 'agent' : 'contact',
+          },
+          status: 'delivered',
+          created_at: conversation.last_message.created_at || new Date().toISOString(),
+        },
+      ];
+    }
+    return [];
+  }, [data?.messages, conversation]);
 
   // Update local states if conversation updates
   useEffect(() => {
@@ -260,6 +284,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
       if (!conversation) throw new Error('No active conversation');
       return inboxApi.sendMessage({
         conversation_id: conversation.id,
+        channel: conversation.channel,
         message: payload.text,
         is_internal_note: payload.isNote,
         template: payload.template,

@@ -523,7 +523,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                         style={[styles.input, { backgroundColor: colors.backgroundSecondary, borderColor: colors.cardBorder, color: colors.text }]}
                         value={sebiRegistration}
                         onChangeText={setSebiRegistration}
-                        placeholder="INH010600090"
+                        placeholder="e.g. INH000000000"
                         placeholderTextColor={colors.textSecondary}
                       />
                     </View>
@@ -533,7 +533,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                         style={[styles.input, { backgroundColor: colors.backgroundSecondary, borderColor: colors.cardBorder, color: colors.text }]}
                         value={website}
                         onChangeText={setWebsite}
-                        placeholder="getaipilot.com"
+                        placeholder="e.g. firm.com"
                         placeholderTextColor={colors.textSecondary}
                       />
                     </View>
@@ -549,7 +549,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                       style={[styles.input, { backgroundColor: colors.backgroundSecondary, borderColor: colors.cardBorder, color: colors.text }]}
                       value={email}
                       onChangeText={setEmail}
-                      placeholder="research@example.com"
+                      placeholder="e.g. analyst@firm.com"
                       placeholderTextColor={colors.textSecondary}
                       keyboardType="email-address"
                     />
@@ -689,7 +689,7 @@ export const ReportBotScreen: React.FC<Props> = ({ summary, onOpenModal }) => {
                           {advisoryFirm || 'No Brand'}
                         </Text>
                         <Text style={styles.pdfAnalystMeta}>
-                          {researchAnalyst || 'SEBI'} • Reg: {sebiRegistration || 'INH010600090'}
+                          {researchAnalyst || 'Analyst'} • Reg: {sebiRegistration || 'Not registered'}
                         </Text>
                       </View>
                     </View>

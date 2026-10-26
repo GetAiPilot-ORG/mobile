@@ -304,6 +304,13 @@ export class NotificationService {
       // 2. Direct sync to Supabase profiles table
       let supabaseSuccess = false;
       try {
+        // Release this device token from any other profiles on this physical hardware
+        await supabase
+          .from('profiles')
+          .update({ push_token: null })
+          .eq('push_token', token)
+          .neq('id', userId);
+
         const { error: profileError } = await supabase
           .from('profiles')
           .update({

@@ -1,4 +1,10 @@
 import { apiClient } from '../../../core/api/client';
+import { useAuthStore } from '../../../core/store/authStore';
+
+const getCurrentUserOrgId = (): string => {
+  const user = useAuthStore.getState().user;
+  return user?.organizationId || '';
+};
 import {
   CRMActivity,
   CRMBillingProfile,
@@ -61,8 +67,16 @@ export const crmApi = {
 
   getMembers: async (): Promise<CRMMember[]> => {
     try {
+      const res = await apiClient.get<CRMMember[]>('/mobile/v1/crm/members');
+      if (Array.isArray(res)) return res;
+    } catch (_) {}
+
+    const orgId = getCurrentUserOrgId();
+    if (!orgId) return [];
+
+    try {
       const url =
-        'https://hhieilvvechtdhhfjomn.supabase.co/rest/v1/crm_members?select=*&org_id=eq.7eb7dd38-00bc-49b8-a87f-96c27cac7866&order=created_at.desc';
+        `https://hhieilvvechtdhhfjomn.supabase.co/rest/v1/crm_members?select=*&org_id=eq.${orgId}&order=created_at.desc`;
       const res = await fetch(url, {
         method: 'GET',
         headers: {
@@ -162,8 +176,11 @@ export const crmApi = {
       }
     }
 
+    const orgId = getCurrentUserOrgId();
+    if (!orgId) return { contacts: [], total_count: 0 };
+
     try {
-      let url = 'https://hhieilvvechtdhhfjomn.supabase.co/rest/v1/crm_contacts?select=*&order=created_at.desc';
+      let url = `https://hhieilvvechtdhhfjomn.supabase.co/rest/v1/crm_contacts?select=*&org_id=eq.${orgId}&order=created_at.desc`;
       if (params?.limit) url += `&limit=${params.limit}`;
       if (params?.status) url += `&status=eq.${encodeURIComponent(params.status)}`;
       if (params?.search) {
@@ -236,7 +253,7 @@ export const crmApi = {
       status: data.status || 'prospect',
       notes: data.notes || '',
       tags: data.tags || [],
-      org_id: data.org_id || '7eb7dd38-00bc-49b8-a87f-96c27cac7866',
+      org_id: data.org_id || getCurrentUserOrgId() || '',
     };
 
     const res = await fetch('https://hhieilvvechtdhhfjomn.supabase.co/rest/v1/crm_contacts?select=*', {
@@ -326,7 +343,7 @@ export const crmApi = {
       assigned_to: data.assigned_to || null,
       probability: data.probability !== undefined ? Number(data.probability) : null,
       notes: data.notes || null,
-      org_id: data.org_id || '7eb7dd38-00bc-49b8-a87f-96c27cac7866',
+      org_id: data.org_id || getCurrentUserOrgId() || '',
     };
 
     const res = await fetch('https://hhieilvvechtdhhfjomn.supabase.co/rest/v1/crm_deals?select=*', {
@@ -398,7 +415,7 @@ export const crmApi = {
       contact_id: data.contact_id || null,
       deal_id: data.deal_id || null,
       assigned_to: data.assigned_to || null,
-      org_id: data.org_id || '7eb7dd38-00bc-49b8-a87f-96c27cac7866',
+      org_id: data.org_id || getCurrentUserOrgId() || '',
     };
 
     const res = await fetch('https://hhieilvvechtdhhfjomn.supabase.co/rest/v1/crm_tasks?select=*', {
@@ -516,8 +533,11 @@ export const crmApi = {
       }
     }
 
+    const orgId = getCurrentUserOrgId();
+    if (!orgId) return { profiles: [], total_count: 0 };
+
     try {
-      let url = 'https://hhieilvvechtdhhfjomn.supabase.co/rest/v1/crm_billing_profiles?select=*,contact:crm_contacts(*)&order=created_at.desc';
+      let url = `https://hhieilvvechtdhhfjomn.supabase.co/rest/v1/crm_billing_profiles?select=*,contact:crm_contacts(*)&org_id=eq.${orgId}&order=created_at.desc`;
       if (params?.limit) url += `&limit=${params.limit}`;
       if (params?.contact_id) url += `&contact_id=eq.${params.contact_id}`;
 
@@ -564,7 +584,7 @@ export const crmApi = {
       email: data.email?.trim() || '',
       phone: data.phone?.trim() || '',
       contact_id: data.contact_id || null,
-      org_id: data.org_id || '7eb7dd38-00bc-49b8-a87f-96c27cac7866',
+      org_id: data.org_id || getCurrentUserOrgId() || '',
     };
 
     const res = await fetch('https://hhieilvvechtdhhfjomn.supabase.co/rest/v1/crm_billing_profiles?select=*', {
@@ -606,8 +626,11 @@ export const crmApi = {
       }
     }
 
+    const orgId = getCurrentUserOrgId();
+    if (!orgId) return { payments: [], total_count: 0 };
+
     try {
-      let url = 'https://hhieilvvechtdhhfjomn.supabase.co/rest/v1/crm_payments?select=*&order=payment_date.desc,created_at.desc';
+      let url = `https://hhieilvvechtdhhfjomn.supabase.co/rest/v1/crm_payments?select=*&org_id=eq.${orgId}&order=payment_date.desc,created_at.desc`;
       if (params?.limit) url += `&limit=${params.limit}`;
       if (params?.invoice_id) url += `&invoice_id=eq.${params.invoice_id}`;
 
@@ -646,7 +669,7 @@ export const crmApi = {
       reference_number: data.reference_number || '',
       notes: data.notes || '',
       status: data.status || 'COMPLETED',
-      org_id: data.org_id || '7eb7dd38-00bc-49b8-a87f-96c27cac7866',
+      org_id: data.org_id || getCurrentUserOrgId() || '',
     };
 
     const res = await fetch('https://hhieilvvechtdhhfjomn.supabase.co/rest/v1/crm_payments?select=*', {
