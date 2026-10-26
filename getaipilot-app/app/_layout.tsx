@@ -24,6 +24,7 @@ import { useAuthStore } from "../src/core/store/authStore";
 import { captureReferralParam, handlePendingReferral } from "../src/services/referralService";
 import { ThemedDialogProvider } from "../src/contexts/ThemedDialogContext";
 import { Chatbot } from "../src/components/chatbot";
+import { HeadlessAudioBridge } from "../src/services/HeadlessAudioBridge";
 
 // Suppress all warning popups and known deprecation noise
 LogBox.ignoreAllLogs(true);
@@ -310,6 +311,7 @@ export default function RootLayout() {
                           <Chatbot />
                           <OfflineNotice />
                           <SplashOverlay />
+                          <HeadlessAudioBridge />
                         </ThemedDialogProvider>
                       </RazorpayProvider>
                     </NotificationProvider>

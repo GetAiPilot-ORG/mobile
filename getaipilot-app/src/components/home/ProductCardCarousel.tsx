@@ -574,8 +574,6 @@ export function ProductCardCarousel({
 
   return (
     <View style={styles.container}>
-      {sectionHeader}
-
       {/* Dribbble Peeking Deck Showcase */}
       <Animated.ScrollView
         ref={scrollViewRef}
