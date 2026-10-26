@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import {
@@ -33,6 +33,7 @@ export const AnimatedWorkspaceCards: React.FC<AnimatedWorkspaceCardsProps> = ({
       value: telemetry?.pagesCount ?? telemetry?.landingPagesCount ?? 0,
       route: '/tools/my-designs',
       icon: Layout01Icon,
+      image: require('../../../assets/icons/my-design.png'),
       gradientLight: ['#F5EFFF', '#E7D8FD'] as const,
       gradientDark: ['#2C1A48', '#1B0F2E'] as const,
       borderColorLight: 'rgba(168, 85, 247, 0.25)',
@@ -46,6 +47,7 @@ export const AnimatedWorkspaceCards: React.FC<AnimatedWorkspaceCardsProps> = ({
       value: telemetry?.quickFormsCount ?? 0,
       route: '/tools/quick-forms',
       icon: File01Icon,
+      image: require('../../../assets/icons/quick-form.png'),
       gradientLight: ['#FFF4EB', '#FDE3CE'] as const,
       gradientDark: ['#3D2214', '#24130A'] as const,
       borderColorLight: 'rgba(245, 158, 11, 0.25)',
@@ -59,6 +61,7 @@ export const AnimatedWorkspaceCards: React.FC<AnimatedWorkspaceCardsProps> = ({
       value: telemetry?.shortLinksCount ?? 0,
       route: '/tools/link-shortener',
       icon: Link01Icon,
+      image: require('../../../assets/icons/link-shortner.png'),
       gradientLight: ['#E7F7FC', '#CEF0FA'] as const,
       gradientDark: ['#10303D', '#0A1D25'] as const,
       borderColorLight: 'rgba(6, 182, 212, 0.25)',
@@ -72,16 +75,16 @@ export const AnimatedWorkspaceCards: React.FC<AnimatedWorkspaceCardsProps> = ({
   return (
     <View style={{ flexDirection: 'row', gap: 8 }}>
       {items.map((item) => (
-        <Pressable
+        <TouchableOpacity
           key={item.label}
           onPress={() => onOpen(item.route)}
           accessibilityRole="button"
           accessibilityLabel={`${item.value} ${item.label}`}
-          style={({ pressed }) => ({
+          style={{
             flex: 1,
             minHeight: 110,
             borderRadius: 22,
-            borderWidth: 1.2,
+            borderWidth: 0.1,
             borderColor: isDark ? item.borderColorDark : item.borderColorLight,
             position: 'relative',
             overflow: 'hidden',
@@ -90,8 +93,7 @@ export const AnimatedWorkspaceCards: React.FC<AnimatedWorkspaceCardsProps> = ({
             shadowOpacity: isDark ? 0.28 : 0.08,
             shadowRadius: 8,
             elevation: 3,
-            transform: [{ scale: pressed ? 0.97 : 1 }],
-          })}
+          }}
         >
           {/* 1. Rich Multi-Stop Gradient Background */}
           <LinearGradient
@@ -109,18 +111,22 @@ export const AnimatedWorkspaceCards: React.FC<AnimatedWorkspaceCardsProps> = ({
             style={StyleSheet.absoluteFill}
           />
 
-          {/* 3. Subtle Tilted Watermark Icon in Corner */}
+          {/* 3. Subtle Tilted 3D Graphic Image in Corner */}
           <View
             style={{
               position: 'absolute',
-              right: -8,
-              bottom: -8,
-              opacity: isDark ? 0.16 : 0.09,
-              transform: [{ rotate: '-14deg' }],
+              right: -6,
+              bottom: -6,
+              opacity: isDark ? 0.32 : 0.2,
+              transform: [{ rotate: '-10deg' }],
             }}
             pointerEvents="none"
           >
-            <HugeiconsIcon icon={item.icon} size={54} color={item.accent} strokeWidth={1.8} />
+            <Image
+              source={item.image}
+              style={{ width: 60, height: 60 }}
+              resizeMode="contain"
+            />
           </View>
 
           {/* 4. Card Content */}
@@ -198,7 +204,7 @@ export const AnimatedWorkspaceCards: React.FC<AnimatedWorkspaceCardsProps> = ({
               </Text>
             </View>
           </View>
-        </Pressable>
+        </TouchableOpacity>
       ))}
     </View>
   );
