@@ -403,7 +403,7 @@ export default function HomeScreen() {
           onOpen={open} />
 
         <View>
-          {section("Your workspace", "/(tabs)/products")}
+          {/* {section("Your workspace", "/(tabs)/products")} */}
           <AnimatedWorkspaceCards
             isDark={isDark}
             color={color}

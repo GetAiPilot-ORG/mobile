@@ -24,6 +24,7 @@ import { useTheme, getColors } from "../../src/theme";
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
 import { ToolCard } from "../../src/components/ToolCard";
+import { soundService } from "../../src/services/soundFeedbackService";
 import {
   openAuthenticatedTemplate,
   openAuthenticatedWebApp,
@@ -171,6 +172,7 @@ export default function FreeToolsScreen() {
   const [openingToolId, setOpeningToolId] = useState<string | null>(null);
 
   const handleToolPress = async (tool: ToolItem) => {
+    soundService.play('pop');
     if (openingToolId) return;
 
     if (!tool.builder) {
@@ -238,7 +240,10 @@ export default function FreeToolsScreen() {
               return (
                 <Pressable
                   key={cat}
-                  onPress={() => setSelectedCategory(cat)}
+                  onPress={() => {
+                    soundService.play('click');
+                    setSelectedCategory(cat);
+                  }}
                   style={{
                     height: 44,
                     paddingHorizontal: 14,

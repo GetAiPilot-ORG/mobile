@@ -17,6 +17,7 @@ import {
   ZapIcon,
 } from '@hugeicons/core-free-icons';
 import * as Haptics from 'expo-haptics';
+import { soundService } from '../../services/soundFeedbackService';
 import { ProductCenterArtwork } from './ProductCenterArtworks';
 import { ProductBottomEnvironment } from './ProductBottomEnvironment';
 

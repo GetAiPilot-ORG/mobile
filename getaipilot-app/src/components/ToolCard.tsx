@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleProp, StyleSheet, ViewStyle } from 'react-n
 import { ArrowRight01Icon } from '@/constants/icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useTheme, getColors } from '@/theme';
+import { soundService } from '../services/soundFeedbackService';
 
 interface ToolCardProps {
   title: string;
@@ -47,7 +48,10 @@ export const ToolCard: React.FC<ToolCardProps> = ({
         },
         style,
       ]}
-      onPress={onPress}
+      onPress={() => {
+        soundService.play('pop');
+        onPress?.();
+      }}
     >
       {/* Card Header: Icon + Badge */}
       <View

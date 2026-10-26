@@ -11,6 +11,7 @@ import {
   Mail01Icon,
 } from '@/constants/icons';
 import * as Haptics from 'expo-haptics';
+import { soundService } from '../services/soundFeedbackService';
 import React from 'react';
 import {
   LayoutAnimation,
@@ -163,6 +164,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
             const config = TAB_CONFIG[route.name];
 
             const onPress = () => {
+              soundService.play('click');
               if (Platform.OS !== 'web') {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }
