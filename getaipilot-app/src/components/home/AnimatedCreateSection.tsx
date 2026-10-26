@@ -1,14 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
+  Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
@@ -20,6 +23,7 @@ interface ToolItem {
   category: string;
   badge: string;
   icon: keyof typeof Ionicons.glyphMap;
+  image?: any;
   route: string;
   gradientLight: readonly [string, string];
   gradientDark: readonly [string, string];
@@ -40,6 +44,7 @@ const TOOLS_CONFIG: ToolItem[] = [
     category: 'BRANDING',
     badge: 'FREE',
     icon: 'qr-code',
+    image: require('../../../assets/icons/QR-code.png'),
     route: '/tools/qr-code',
     gradientLight: ['#F3E8FF', '#E9D5FF'] as const,
     gradientDark: ['#281442', '#180B28'] as const,
@@ -58,6 +63,7 @@ const TOOLS_CONFIG: ToolItem[] = [
     category: 'ANALYTICS',
     badge: 'POPULAR',
     icon: 'link',
+    image: require('../../../assets/icons/link-shortner.png'),
     route: '/tools/link-shortener',
     gradientLight: ['#E0F2FE', '#BAE6FD'] as const,
     gradientDark: ['#082F49', '#041C2C'] as const,
@@ -76,6 +82,7 @@ const TOOLS_CONFIG: ToolItem[] = [
     category: 'PAGES',
     badge: 'FREE',
     icon: 'phone-portrait',
+    image: require('../../../assets/icons/bio-template.png'),
     route: '/tools/bio-templates',
     gradientLight: ['#FDF2F8', '#FBCFE8'] as const,
     gradientDark: ['#3D122B', '#240A1A'] as const,
@@ -94,6 +101,7 @@ const TOOLS_CONFIG: ToolItem[] = [
     category: 'CONVERSIONS',
     badge: 'NEW',
     icon: 'document-text',
+    image: require('../../../assets/icons/quick-form.png'),
     route: '/tools/quick-forms',
     gradientLight: ['#ECFDF5', '#A7F3D0'] as const,
     gradientDark: ['#063323', '#031F15'] as const,
@@ -112,6 +120,7 @@ const TOOLS_CONFIG: ToolItem[] = [
     category: 'AI AUDIO',
     badge: 'AI PRO',
     icon: 'volume-high',
+    image: require('../../../assets/icons/ai-speech.png'),
     route: '/tools/speech-to-text',
     gradientLight: ['#FAF5FF', '#E9D5FF'] as const,
     gradientDark: ['#2E1065', '#1B093D'] as const,
@@ -130,6 +139,7 @@ const TOOLS_CONFIG: ToolItem[] = [
     category: 'SEO SCORE',
     badge: 'FREE',
     icon: 'speedometer',
+    image: require('../../../assets/icons/file-linker.png'),
     route: '/tools/website-audit',
     gradientLight: ['#FFFBEB', '#FDE68A'] as const,
     gradientDark: ['#3D2C06', '#251A03'] as const,
@@ -250,15 +260,53 @@ export function AnimatedCreateSection({
               style={({ pressed }) => [
                 styles.card,
                 {
-                  backgroundColor: isDark ? '#1C1A25' : '#FFFFFF',
-                  borderColor: isDark ? '#2C2C2E' : '#E9E6F2',
-                  shadowColor: '#000000',
-                  shadowOpacity: isDark ? 0.2 : 0.04,
-                  transform: [{ scale: pressed ? 0.98 : 1 }],
+                  borderColor: borderColor,
+                  shadowColor: tool.shadowColor,
+                  shadowOpacity: isDark ? 0.35 : 0.12,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowRadius: 10,
+                  elevation: 3,
+                  transform: [{ scale: pressed ? 0.975 : 1 }],
                 },
               ]}
             >
-              {/* Card Content - Clean surface without colored gradients */}
+              {/* 1. Dynamic Gradient Surface */}
+              <LinearGradient
+                colors={gradientColors}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+
+              {/* 2. Glass Specular Highlight */}
+              <LinearGradient
+                colors={
+                  isDark
+                    ? ['rgba(255, 255, 255, 0.08)', 'transparent']
+                    : ['rgba(255, 255, 255, 0.65)', 'transparent']
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0.6, y: 0.55 }}
+                style={StyleSheet.absoluteFill}
+              />
+
+              {/* 3. Watermark Graphic in Corner */}
+              <View
+                style={{
+                  position: 'absolute',
+                  right: -10,
+                  bottom: -10,
+                  opacity: isDark ? 0.22 : 0.12,
+                  transform: [{ rotate: '-12deg' }],
+                }}
+                pointerEvents="none"
+              >
+                {tool.image ? (
+                  <Image source={tool.image} style={{ width: 68, height: 68 }} resizeMode="contain" />
+                ) : (
+                  <Ionicons name={tool.icon} size={74} color={accent} />
+                )}
+              </View>
 
               {/* 4. Card Content */}
               <View style={styles.cardContent}>
@@ -269,10 +317,17 @@ export function AnimatedCreateSection({
                     style={[
                       styles.iconBadge,
                       {
-                        backgroundColor: badgeBg,
+                        backgroundColor: isDark
+                          ? 'rgba(255, 255, 255, 0.14)'
+                          : '#FFFFFF',
                         borderColor: isDark
-                          ? 'rgba(255, 255, 255, 0.08)'
-                          : 'rgba(0, 0, 0, 0.04)',
+                          ? 'rgba(255, 255, 255, 0.18)'
+                          : 'rgba(255, 255, 255, 0.9)',
+                        shadowColor: '#000000',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: isDark ? 0 : 0.08,
+                        shadowRadius: 4,
+                        elevation: 2,
                       },
                     ]}
                   >
@@ -285,10 +340,12 @@ export function AnimatedCreateSection({
                       style={[
                         styles.pillBadge,
                         {
-                          backgroundColor: badgeBg,
+                          backgroundColor: isDark
+                            ? 'rgba(255, 255, 255, 0.1)'
+                            : 'rgba(255, 255, 255, 0.75)',
                           borderColor: isDark
-                            ? 'rgba(255, 255, 255, 0.08)'
-                            : 'rgba(0, 0, 0, 0.04)',
+                            ? 'rgba(255, 255, 255, 0.14)'
+                            : 'rgba(255, 255, 255, 0.9)',
                         },
                       ]}
                     >
@@ -302,11 +359,11 @@ export function AnimatedCreateSection({
                         styles.actionArrow,
                         {
                           backgroundColor: isDark
-                            ? 'rgba(255, 255, 255, 0.08)'
-                            : '#F3F4F6',
-                          borderColor: isDark
                             ? 'rgba(255, 255, 255, 0.12)'
-                            : '#E5E7EB',
+                            : 'rgba(255, 255, 255, 0.75)',
+                          borderColor: isDark
+                            ? 'rgba(255, 255, 255, 0.16)'
+                            : 'rgba(255, 255, 255, 0.9)',
                         },
                       ]}
                     >
@@ -326,7 +383,7 @@ export function AnimatedCreateSection({
                     numberOfLines={1}
                     style={[
                       styles.toolTitle,
-                      { color: isDark ? '#F8FAFC' : '#1E293B' },
+                      { color: isDark ? '#F8FAFC' : '#0F172A' },
                     ]}
                   >
                     {tool.name}
@@ -335,7 +392,7 @@ export function AnimatedCreateSection({
                     numberOfLines={2}
                     style={[
                       styles.toolDesc,
-                      { color: isDark ? '#94A3B8' : '#64748B' },
+                      { color: isDark ? 'rgba(241, 245, 249, 0.75)' : '#475569' },
                     ]}
                   >
                     {tool.desc}
@@ -391,12 +448,15 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
     minHeight: 148,
     borderRadius: 22,
-    borderWidth: 1,
+    borderWidth: 0.1,
     position: 'relative',
     overflow: 'hidden',
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
-    elevation: 2,
+    ...(Platform.OS == 'ios' ? {
+      shadowOffset: { width: 0, height: 2 },
+      shadowRadius: 8,
+    } : {
+      elevation: 2,
+    }),
   },
   cardContent: {
     flex: 1,

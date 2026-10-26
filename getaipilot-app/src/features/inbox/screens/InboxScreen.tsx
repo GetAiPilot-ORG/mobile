@@ -17,6 +17,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useMemo, useState } from "react";
 import {
   FlatList,
+  Image,
   Modal,
   Pressable,
   RefreshControl,
@@ -550,9 +551,28 @@ export const InboxScreen: React.FC = () => {
               />
             }
             ListEmptyComponent={
-              <View style={{ paddingHorizontal: 32, paddingVertical: 56, alignItems: "center" }}>
-                <View style={{ width: 56, height: 56, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: color.accentSoft }}>
-                  <HugeiconsIcon icon={BubbleChatIcon} size={25} color={color.accent} strokeWidth={1.8} />
+              <View style={{ paddingHorizontal: 32, paddingVertical: 48, alignItems: "center" }}>
+                <View
+                  style={{
+                    width: 120,
+                    height: 120,
+                    borderRadius: 28,
+                    overflow: "hidden",
+                    marginBottom: 16,
+                    borderWidth: 1.5,
+                    borderColor: color.border,
+                    shadowColor: color.accent,
+                    shadowOffset: { width: 0, height: 6 },
+                    shadowOpacity: 0.25,
+                    shadowRadius: 14,
+                    elevation: 6,
+                  }}
+                >
+                  <Image
+                    source={require("../../../../assets/images/inbox-empty.jpg")}
+                    style={{ width: "100%", height: "100%" }}
+                    resizeMode="cover"
+                  />
                 </View>
                 <Text
                   className="text-[15px] font-bold mt-2.5 mb-1.5"
