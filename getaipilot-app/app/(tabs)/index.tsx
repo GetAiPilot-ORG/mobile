@@ -359,11 +359,11 @@ export default function HomeScreen() {
       <AppTopBar showPlanBadge />
       <ScrollView
         style={{ flex: 1, backgroundColor: color.background }}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 128, gap: 26 }}
+        contentContainerStyle={{ paddingHorizontal: 0, paddingTop: 12, paddingBottom: 128, gap: 26 }}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={color.accent} />}
         showsVerticalScrollIndicator={false}
       >
-        <View>
+        <View style={{ paddingHorizontal: 20 }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             <View style={{ flex: 1, paddingRight: 10 }}>
               <Text
@@ -402,7 +402,7 @@ export default function HomeScreen() {
           isDark={isDark}
           onOpen={open} />
 
-        <View>
+        <View style={{ paddingHorizontal: 20 }}>
           {/* {section("Your workspace", "/(tabs)/products")} */}
           <AnimatedWorkspaceCards
             isDark={isDark}
@@ -438,6 +438,7 @@ export default function HomeScreen() {
             shadowOpacity: isDark ? 0.3 : 0.1,
             shadowRadius: 12,
             elevation: 4,
+            marginHorizontal: 20,
           })}
         >
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 14 }}>

@@ -228,7 +228,9 @@ export function AnimatedCreateSection({
   return (
     <View style={styles.container}>
       {/* Section Header */}
-      {sectionHeader}
+      <View style={{ paddingHorizontal: 20 }}>
+        {sectionHeader}
+      </View>
 
       {/* Horizontal Carousel */}
       <ScrollView

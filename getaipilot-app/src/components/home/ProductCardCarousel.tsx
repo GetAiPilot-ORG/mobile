@@ -20,6 +20,7 @@ import * as Haptics from 'expo-haptics';
 import { soundService } from '../../services/soundFeedbackService';
 import { ProductCenterArtwork } from './ProductCenterArtworks';
 import { ProductBottomEnvironment } from './ProductBottomEnvironment';
+import { AnimatedCardHeaderGraphics } from './AnimatedCardHeaderGraphics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -387,19 +388,22 @@ function ShowcaseCardItem({
           },
         ]}
       >
-        {/* 1. Header Banner with 3D Logo & Live Radar Signal */}
-        <LinearGradient
-          colors={prod.headerGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.cardHeaderBanner}
+        {/* 1. Header Banner with Live Dynamic Animated Graphics (Transparent Header) */}
+        <View
+          style={[
+            styles.cardHeaderBanner,
+            {
+              borderBottomColor: isDark
+                ? 'rgba(255, 255, 255, 0.08)'
+                : 'rgba(0, 0, 0, 0.06)',
+            },
+          ]}
         >
-          {/* Specular gloss highlight */}
-          <LinearGradient
-            colors={['rgba(255, 255, 255, 0.35)', 'transparent']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0.6, y: 1 }}
-            style={StyleSheet.absoluteFill}
+          <AnimatedCardHeaderGraphics
+            productId={prod.id}
+            gradientColors={prod.headerGradient}
+            accent={prod.accent}
+            isDark={isDark}
           />
 
           <View style={styles.headerLeft}>
@@ -414,15 +418,27 @@ function ShowcaseCardItem({
 
             {/* Title & Subtitle */}
             <View style={styles.headerTextCol}>
-              <Text numberOfLines={1} style={styles.headerTitleText}>
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.headerTitleText,
+                  { color: isDark ? '#FFFFFF' : '#0F172A' },
+                ]}
+              >
                 {prod.title}
               </Text>
-              <Text numberOfLines={1} style={styles.headerSubtitleText}>
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.headerSubtitleText,
+                  { color: isDark ? 'rgba(255, 255, 255, 0.7)' : '#64748B' },
+                ]}
+              >
                 {prod.subtitle}
               </Text>
             </View>
           </View>
-        </LinearGradient>
+        </View>
 
         {/* Crystal Clear Center Vector Artwork (No Background, Infinitely Sharp) */}
         <View style={styles.centerWatermarkContainer} pointerEvents="none">
@@ -663,6 +679,7 @@ export function ProductCardCarousel({
 const styles = StyleSheet.create({
   container: {
     gap: 10,
+    paddingHorizontal: -20
   },
   scrollContent: {
     paddingVertical: 12,
