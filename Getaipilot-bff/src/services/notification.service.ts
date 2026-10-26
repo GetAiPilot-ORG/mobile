@@ -57,6 +57,14 @@ export class NotificationService {
     }
 
     try {
+      // 1. Release token from any previously logged-in profiles on this physical device
+      await this.adminSupabase
+        .from('profiles')
+        .update({ push_token: null })
+        .eq('push_token', payload.push_token)
+        .neq('id', userId);
+
+      // 2. Assign push token exclusively to the currently active user profile
       const { error: profileError } = await this.adminSupabase
         .from('profiles')
         .update({
@@ -557,14 +565,19 @@ export class NotificationService {
         return { success: false, reason: 'No registered push tokens found for administrators' };
       }
 
+      const adminNotifTag = `getai_admin_${Date.now()}`;
       const messages: ExpoPushMessage[] = uniqueTokens.map((token) => ({
         to: token,
         title: notification.title,
         body: notification.body,
-        data: notification.data || {},
+        data: {
+          ...(notification.data || {}),
+          tag: adminNotifTag,
+        },
         sound: 'default',
         channelId: notification.channelId || 'admin',
         priority: 'high',
+        collapseId: adminNotifTag,
         richContent: { image: DEFAULT_NOTIFICATION_LARGE_ICON },
       }));
 
