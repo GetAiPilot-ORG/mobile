@@ -252,12 +252,27 @@ export const useAuthStore = create<AuthState>((set, get) => {
     },
 
     logout: async () => {
+      const currentUser = get().user;
+      const uid = currentUser?.id;
+
       try {
+        if (uid) {
+          // Clear push token from user profile in Supabase so this account stops receiving pushes on this device
+          await supabase
+            .from('profiles')
+            .update({ push_token: null })
+            .eq('id', uid)
+            .catch(() => {});
+        }
         await apiClient.post("/mobile/v1/auth/logout", {}).catch(() => {});
       } finally {
         await supabase.auth.signOut({ scope: "local" }).catch(() => {});
         await authStorage.clear();
-        await AsyncStorage.removeItem(CACHED_USER_KEY).catch(() => {});
+        await AsyncStorage.multiRemove([
+          CACHED_USER_KEY,
+          "@getaipilot_expo_push_token",
+          "@getaipilot_push_token_synced_user",
+        ]).catch(() => {});
         set({
           user: null,
           tenantMapping: null,
