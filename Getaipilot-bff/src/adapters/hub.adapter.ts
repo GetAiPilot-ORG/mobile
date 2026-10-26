@@ -282,9 +282,19 @@ export class HubAdapter {
     return Boolean(data);
   }
 
-  /** Marks one of the user's tracked installations signed out. */
+  /** Marks one of the user's tracked installations signed out and clears push token. */
   public static async signOutDeviceSession(userId: string, sessionId?: string): Promise<boolean> {
     if (!sessionId) return false;
+
+    // Clear push token from profiles so this signing-out user does not receive pushes
+    try {
+      await this.adminClient
+        .from('profiles')
+        .update({ push_token: null })
+        .eq('id', userId);
+    } catch (e) {
+      console.warn('[HubAdapter] Notice clearing push token on signout:', e);
+    }
 
     const { data, error } = await this.adminClient
       .from('auth_device_sessions')

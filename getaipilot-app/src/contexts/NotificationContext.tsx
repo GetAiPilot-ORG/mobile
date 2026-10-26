@@ -169,7 +169,17 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
-            setNotificationsList(parsed);
+            // Deduplicate immediately upon reading cache
+            const seen = new Set<string>();
+            const deduped = parsed.filter((item: AppNotification) => {
+              const key = item.id && item.id.length > 8 && !item.id.includes(':')
+                ? `id:${item.id}`
+                : `content:${(item.title || '').trim().toLowerCase()}:::${(item.body || '').trim().toLowerCase()}`;
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            });
+            setNotificationsList(deduped);
             return;
           }
         }
@@ -224,15 +234,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const upsertNotification = useCallback(
     (item: AppNotification, uid?: string) => {
       setNotificationsList((prev) => {
-        const itemTime = new Date(item.createdAt).getTime();
-        // Match by exact id OR by matching title + body within 5 minutes to prevent dual card insertion
+        // Match by exact id OR by matching title + body (robust cross-channel dedupe)
+        const itemTitle = (item.title || '').trim().toLowerCase();
+        const itemBody = (item.body || '').trim().toLowerCase();
         const idx = prev.findIndex((p) => {
           if (p.id === item.id) return true;
-          if (
-            p.title.trim().toLowerCase() === item.title.trim().toLowerCase() &&
-            p.body.trim().toLowerCase() === item.body.trim().toLowerCase() &&
-            Math.abs(new Date(p.createdAt).getTime() - itemTime) < 5 * 60_000
-          ) {
+          const pTitle = (p.title || '').trim().toLowerCase();
+          const pBody = (p.body || '').trim().toLowerCase();
+          if (pTitle === itemTitle && pBody === itemBody) {
             return true;
           }
           return false;
