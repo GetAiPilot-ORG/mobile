@@ -127,6 +127,21 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       : '@getaipilot_notifications_guest_v2';
   }, []);
 
+  const getDismissedKey = useCallback((uid?: string) => {
+    return uid
+      ? `@getaipilot_dismissed_notifications_${uid}`
+      : '@getaipilot_dismissed_notifications_guest';
+  }, []);
+
+  const getClearedAtKey = useCallback((uid?: string) => {
+    return uid
+      ? `@getaipilot_notifications_cleared_at_${uid}`
+      : '@getaipilot_notifications_cleared_at_guest';
+  }, []);
+
+  const dismissedIdsRef = useRef<Set<string>>(new Set());
+  const clearedAtRef = useRef<number>(0);
+
   // ------------------------------------------------------------------
   // ONE canonical dedupe namespace, keyed by row id or content.
   // ------------------------------------------------------------------
@@ -164,6 +179,33 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     },
     [persist, user?.id]
   );
+
+  // Load dismissed set and clearedAt threshold on startup
+  useEffect(() => {
+    (async () => {
+      try {
+        const [dismissedJson, clearedAtVal] = await Promise.all([
+          AsyncStorage.getItem(getDismissedKey(user?.id)),
+          AsyncStorage.getItem(getClearedAtKey(user?.id)),
+        ]);
+        if (dismissedJson) {
+          const ids: string[] = JSON.parse(dismissedJson);
+          if (Array.isArray(ids)) {
+            dismissedIdsRef.current = new Set(ids);
+          }
+        } else {
+          dismissedIdsRef.current = new Set();
+        }
+        if (clearedAtVal) {
+          clearedAtRef.current = Number(clearedAtVal) || 0;
+        } else {
+          clearedAtRef.current = 0;
+        }
+      } catch {
+        /* noop */
+      }
+    })();
+  }, [user?.id, getDismissedKey, getClearedAtKey]);
 
   useEffect(() => {
     (async () => {
@@ -298,20 +340,30 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         }
         if (!Array.isArray(data)) return;
 
-        const remoteItems: AppNotification[] = data.map((row: any) => ({
-          id: String(row.id),
-          title: row.title || 'Notification',
-          body: row.description || '',
-          data: {
-            type: row.type,
-            userId: row.user_id,
-            route: resolveRoute({ type: row.type }),
-            id: row.id,
-          },
-          createdAt: row.created_at || new Date().toISOString(),
-          isRead: Boolean(row.is_read),
-          type: (row.type as any) || 'general',
-        }));
+        const remoteItems: AppNotification[] = data
+          .filter((row: any) => {
+            const rowId = String(row.id);
+            if (dismissedIdsRef.current.has(rowId)) return false;
+            if (clearedAtRef.current > 0 && row.created_at) {
+              const rowTime = new Date(row.created_at).getTime();
+              if (rowTime <= clearedAtRef.current) return false;
+            }
+            return true;
+          })
+          .map((row: any) => ({
+            id: String(row.id),
+            title: row.title || 'Notification',
+            body: row.description || '',
+            data: {
+              type: row.type,
+              userId: row.user_id,
+              route: resolveRoute({ type: row.type }),
+              id: row.id,
+            },
+            createdAt: row.created_at || new Date().toISOString(),
+            isRead: Boolean(row.is_read),
+            type: (row.type as any) || 'general',
+          }));
 
         setNotificationsList((prev) => {
           const prevById = new Map(prev.map((p) => [p.id, p]));
@@ -326,6 +378,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           }
 
           for (const leftover of prevById.values()) {
+            if (dismissedIdsRef.current.has(leftover.id)) continue;
             const targetUid = leftover.data?.userId || leftover.data?.user_id;
             if (targetUid && targetUid !== uid) continue;
             // Purge any stored duplicate cards that match a remote notification by title + body
@@ -587,8 +640,16 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   };
 
   const deleteNotification = async (id: string) => {
+    // 1. Record in dismissed set so it is never restored on sync/refresh
+    dismissedIdsRef.current.add(id);
+    const dismissedArr = Array.from(dismissedIdsRef.current);
+    AsyncStorage.setItem(getDismissedKey(user?.id), JSON.stringify(dismissedArr)).catch(() => {});
+
+    // 2. Remove from active state & local storage
     const updated = notificationsList.filter((n) => n.id !== id);
     await saveNotifications(updated);
+
+    // 3. Sync delete to Supabase if user-owned
     if (user?.id) {
       try {
         await supabase.from('notifications').delete().eq('id', id);
@@ -599,7 +660,22 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   };
 
   const clearAllNotifications = async () => {
+    // 1. Mark clearedAt timestamp so all notifications prior to now are ignored
+    const now = Date.now();
+    clearedAtRef.current = now;
+    AsyncStorage.setItem(getClearedAtKey(user?.id), String(now)).catch(() => {});
+
+    // 2. Add all current IDs to dismissed set
+    for (const item of notificationsList) {
+      dismissedIdsRef.current.add(item.id);
+    }
+    const dismissedArr = Array.from(dismissedIdsRef.current);
+    AsyncStorage.setItem(getDismissedKey(user?.id), JSON.stringify(dismissedArr)).catch(() => {});
+
+    // 3. Clear active state & local storage
     await saveNotifications([]);
+
+    // 4. Sync delete user-owned rows from Supabase
     if (user?.id) {
       try {
         await supabase.from('notifications').delete().eq('user_id', user.id);
