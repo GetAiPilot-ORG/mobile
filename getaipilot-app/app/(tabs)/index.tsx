@@ -2,14 +2,7 @@ import { HomeSkeleton } from "@/components/skeletonScreen/HomeSkeletonScreen";
 import { NetworkStatusScreen } from "@/components/StatusScreen";
 import { getColors, useTheme } from "@/theme";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  ArrowRight01Icon,
-  Layout01Icon,
-  File01Icon,
-  Link01Icon,
-  ShieldCheckIcon,
-  GiftIcon,
-} from "@/constants/icons";
+import { ArrowRight01Icon } from "@/constants/icons";
 import { useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -98,14 +91,14 @@ export default function HomeScreen() {
         const token =
           expoPushToken || (requestPermissions ? await requestPermissions() : null);
         console.log('==============================================');
-        console.log('📲 [HomeScreen] CONSOLE PUSH TOKEN:');
+        console.log('[HomeScreen] CONSOLE PUSH TOKEN:');
         console.log(
           token ||
-          '⚠️ No push token generated (check permissions, physical device, or development build)'
+          'No push token generated (check permissions, physical device, or development build)'
         );
         console.log('==============================================');
       } catch (err) {
-        console.log('ℹ️ [HomeScreen] Push token notice:', err);
+        console.log('[HomeScreen] Push token notice:', err);
       }
     })();
   }, [expoPushToken, requestPermissions]);

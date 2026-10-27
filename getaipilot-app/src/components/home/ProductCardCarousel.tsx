@@ -12,8 +12,22 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import {
+  Activity01Icon,
+  Analytics01Icon,
   ArrowRight01Icon,
+  ArrowUpRight01Icon,
+  Award01Icon,
+  BotMessageSquareIcon,
+  Calendar01Icon,
+  Call02Icon,
+  ChartLineData01Icon,
+  Clock01Icon,
+  FireIcon,
+  Megaphone01Icon,
+  RefreshIcon,
+  Rocket01Icon,
   SparklesIcon,
+  VoiceToTextIcon,
   ZapIcon,
 } from '@hugeicons/core-free-icons';
 import * as Haptics from 'expo-haptics';
@@ -33,7 +47,7 @@ const SNAP_INTERVAL = CARD_WIDTH + CARD_GAP + 16;
 const SIDE_PADDING = (SCREEN_WIDTH - CARD_WIDTH) / 2;
 
 interface FeedItem {
-  iconEmoji: string;
+  icon: any;
   badgeBg: string;
   title: string;
   text: string;
@@ -75,7 +89,7 @@ const SHOWCASE_PRODUCTS: ProductShowcaseCard[] = [
     ctaText: 'Launch Telegram Pilot',
     feedItems: [
       {
-        iconEmoji: '⚡',
+        icon: ZapIcon,
         badgeBg: 'rgba(2, 132, 199, 0.14)',
         title: 'Channel Feed Relay',
         text: 'Relayed 14 media posts to 8 VIP channels in 118ms.',
@@ -83,7 +97,7 @@ const SHOWCASE_PRODUCTS: ProductShowcaseCard[] = [
         statBadgeColor: '#0284C7',
       },
       {
-        iconEmoji: '🔥',
+        icon: FireIcon,
         badgeBg: 'rgba(249, 115, 22, 0.14)',
         title: 'Emoji Reaction Trigger',
         text: 'Reaction detected → Automated VIP coupon dispatched.',
@@ -91,7 +105,7 @@ const SHOWCASE_PRODUCTS: ProductShowcaseCard[] = [
         statBadgeColor: '#F97316',
       },
       {
-        iconEmoji: '📊',
+        icon: Activity01Icon,
         badgeBg: 'rgba(16, 185, 129, 0.14)',
         title: 'Channel Network Uptime',
         text: '2,490 active subscribers connected with zero downtime.',
@@ -116,7 +130,7 @@ const SHOWCASE_PRODUCTS: ProductShowcaseCard[] = [
     ctaText: 'Open WhatsApp Cloud',
     feedItems: [
       {
-        iconEmoji: '📢',
+        icon: Megaphone01Icon,
         badgeBg: 'rgba(16, 185, 129, 0.14)',
         title: 'Mass Template Broadcast',
         text: 'Delivered "VIP Early Access" campaign to 4,200 leads.',
@@ -124,7 +138,7 @@ const SHOWCASE_PRODUCTS: ProductShowcaseCard[] = [
         statBadgeColor: '#059669',
       },
       {
-        iconEmoji: '🤖',
+        icon: BotMessageSquareIcon,
         badgeBg: 'rgba(14, 165, 233, 0.14)',
         title: '24/7 Conversational AI',
         text: 'Customer: "Book consultation" → Confirmed for 3:00 PM.',
@@ -132,7 +146,7 @@ const SHOWCASE_PRODUCTS: ProductShowcaseCard[] = [
         statBadgeColor: '#0284C7',
       },
       {
-        iconEmoji: '🔄',
+        icon: RefreshIcon,
         badgeBg: 'rgba(139, 92, 246, 0.14)',
         title: 'CRM Lead Sync Engine',
         text: 'New contacts auto-created with lead score in pipeline.',
@@ -157,7 +171,7 @@ const SHOWCASE_PRODUCTS: ProductShowcaseCard[] = [
     ctaText: 'Deploy Voice AI Agent',
     feedItems: [
       {
-        iconEmoji: '📞',
+        icon: Call02Icon,
         badgeBg: 'rgba(147, 51, 234, 0.14)',
         title: 'Inbound Reception Call',
         text: 'AI answered, answered custom FAQs and booked calendar.',
@@ -165,7 +179,7 @@ const SHOWCASE_PRODUCTS: ProductShowcaseCard[] = [
         statBadgeColor: '#7E22CE',
       },
       {
-        iconEmoji: '🎙️',
+        icon: VoiceToTextIcon,
         badgeBg: 'rgba(236, 72, 153, 0.14)',
         title: 'Neural Speech Stream',
         text: 'Human-like conversational audio streaming under 280ms.',
@@ -173,7 +187,7 @@ const SHOWCASE_PRODUCTS: ProductShowcaseCard[] = [
         statBadgeColor: '#DB2777',
       },
       {
-        iconEmoji: '↗️',
+        icon: ArrowUpRight01Icon,
         badgeBg: 'rgba(16, 185, 129, 0.14)',
         title: 'Live Agent Transfer',
         text: 'Warm transfer connected VIP enterprise client seamlessly.',
@@ -198,7 +212,7 @@ const SHOWCASE_PRODUCTS: ProductShowcaseCard[] = [
     ctaText: 'Open Smart CRM',
     feedItems: [
       {
-        iconEmoji: '🏆',
+        icon: Award01Icon,
         badgeBg: 'rgba(245, 158, 11, 0.14)',
         title: 'Deal Won: Enterprise',
         text: 'Acme Corp moved to "Closed Won" → $18,500 contract.',
@@ -206,7 +220,7 @@ const SHOWCASE_PRODUCTS: ProductShowcaseCard[] = [
         statBadgeColor: '#D97706',
       },
       {
-        iconEmoji: '📈',
+        icon: ChartLineData01Icon,
         badgeBg: 'rgba(2, 132, 199, 0.14)',
         title: 'Pipeline Velocity',
         text: '28 active opportunities in stage ($94,500 total volume).',
@@ -214,7 +228,7 @@ const SHOWCASE_PRODUCTS: ProductShowcaseCard[] = [
         statBadgeColor: '#0284C7',
       },
       {
-        iconEmoji: '⏰',
+        icon: Clock01Icon,
         badgeBg: 'rgba(16, 185, 129, 0.14)',
         title: 'Automated Follow-Up',
         text: 'Day-3 personalized proposal follow-up scheduled.',
@@ -239,7 +253,7 @@ const SHOWCASE_PRODUCTS: ProductShowcaseCard[] = [
     ctaText: 'Schedule Posts Now',
     feedItems: [
       {
-        iconEmoji: '🚀',
+        icon: Rocket01Icon,
         badgeBg: 'rgba(236, 72, 153, 0.14)',
         title: 'Multi-Network Post',
         text: 'Simultaneously published reel to IG, X, LinkedIn & TikTok.',
@@ -247,7 +261,7 @@ const SHOWCASE_PRODUCTS: ProductShowcaseCard[] = [
         statBadgeColor: '#DB2777',
       },
       {
-        iconEmoji: '📅',
+        icon: Calendar01Icon,
         badgeBg: 'rgba(139, 92, 246, 0.14)',
         title: 'Unified Content Queue',
         text: '16 viral posts scheduled across all business channels.',
@@ -255,7 +269,7 @@ const SHOWCASE_PRODUCTS: ProductShowcaseCard[] = [
         statBadgeColor: '#7C3AED',
       },
       {
-        iconEmoji: '📈',
+        icon: Analytics01Icon,
         badgeBg: 'rgba(16, 185, 129, 0.14)',
         title: 'Engagement Growth',
         text: '+42.5% reach and 18,200 impressions over the last 7 days.',
@@ -453,11 +467,16 @@ function ShowcaseCardItem({
         <View style={styles.cardBody}>
           {prod.feedItems.map((item, itemIdx) => (
             <View key={itemIdx} style={styles.feedRow}>
-              {/* Emoji Badge Icon */}
+              {/* Badge Icon */}
               <View
                 style={[styles.feedIconBadge, { backgroundColor: item.badgeBg }]}
               >
-                <Text style={styles.feedIconEmoji}>{item.iconEmoji}</Text>
+                <HugeiconsIcon
+                  icon={item.icon}
+                  size={16}
+                  color={item.statBadgeColor}
+                  strokeWidth={2}
+                />
               </View>
 
               {/* Feed Content */}
@@ -812,9 +831,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
-  },
-  feedIconEmoji: {
-    fontSize: 14,
   },
   feedContentCol: {
     flex: 1,
