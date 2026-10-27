@@ -258,11 +258,24 @@ export const useAuthStore = create<AuthState>((set, get) => {
       try {
         if (uid) {
           // Clear push token from user profile in Supabase so this account stops receiving pushes on this device
+          const cachedToken = await AsyncStorage.getItem('@getaipilot_expo_push_token').catch(() => null);
           const { error: pushTokenError } = await supabase
             .from('profiles')
             .update({ push_token: null })
             .eq('id', uid);
           if (pushTokenError) console.warn('[Auth] Could not clear push token:', pushTokenError.message);
+
+          if (cachedToken) {
+            try {
+              await supabase
+                .from('user_push_tokens')
+                .delete()
+                .eq('user_id', uid)
+                .eq('push_token', cachedToken);
+            } catch {
+              // noop
+            }
+          }
         }
         await apiClient.post("/mobile/v1/auth/logout", {}).catch(() => {});
       } finally {
