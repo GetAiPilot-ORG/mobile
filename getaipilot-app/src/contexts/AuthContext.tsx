@@ -107,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       full_name: userWithMeta.name,
       role: userWithMeta.role,
       is_admin: Boolean(userWithMeta.role?.toLowerCase() === 'admin' || (userWithMeta as any).is_admin === true),
-      onboarding_completed: onboardingCompleted ?? true,
+      onboarding_completed: onboardingCompleted ?? false,
       account_status: 'active',
     };
   }, [userWithMeta, onboardingCompleted]);
@@ -124,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userWithMeta?.role?.toLowerCase() === 'admin' ||
     (userWithMeta as any)?.is_admin === true
   );
-  const onboardingComplete = onboardingCompleted ?? true;
+  const onboardingComplete = onboardingCompleted ?? false;
   const accountStatus: 'active' | 'suspended' | 'banned' = 'active';
 
   const contextValue = useMemo(

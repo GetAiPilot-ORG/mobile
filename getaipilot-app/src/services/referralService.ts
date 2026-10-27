@@ -175,18 +175,9 @@ export const getOrCreateReferralCode = async (userId: string, email?: string): P
     const existing = await getReferralCode(userId);
     if (existing) return existing;
 
-    const newCode = "GAP" + userId.replace(/-/g, "").slice(0, 5).toUpperCase();
-    const { error } = await supabase
-      .from("profiles")
-      .update({ referral_code: newCode })
-      .eq("id", userId);
-
-    if (error) {
-      console.warn("[Referral] Could not update generated referral code:", error);
-    }
-    return newCode;
+    return "GAP" + userId.replace(/-/g, "").slice(0, 5).toUpperCase();
   } catch (e) {
-    console.error("[Referral] Exception creating referral code:", e);
+    console.error("[Referral] Exception reading referral code:", e);
     return "GAP" + userId.slice(0, 5).toUpperCase();
   }
 };
@@ -404,22 +395,16 @@ export const handlePendingReferral = async (
       return { referral: existingRef };
     }
 
-    // Ensure user profile exists
+    // Verify that user profile exists and onboarding is complete before linking referral
     const { data: userProfile } = await supabase
       .from("profiles")
-      .select("id")
+      .select("id, onboarding_completed")
       .eq("id", user.id)
       .maybeSingle();
 
-    if (!userProfile) {
-      await supabase.from("profiles").upsert(
-        {
-          id: user.id,
-          email: user.email,
-          full_name: user.user_metadata?.full_name || user.email?.split("@")[0] || "User",
-        },
-        { onConflict: "id" }
-      );
+    if (!userProfile || !userProfile.onboarding_completed) {
+      console.log("[Referral] User has not completed onboarding yet. Deferring referral linking.");
+      return { referral: null, error: "Awaiting onboarding completion" };
     }
 
     // Insert referral
@@ -468,10 +453,18 @@ export const getActiveReferralDiscount = async (
   }
 
   try {
-    // 1. Link pending referral if present in storage
+    // 1. Link pending referral if present in storage ONLY IF user already completed onboarding
     const pendingCode = await getPendingReferralCode();
     if (pendingCode) {
-      await handlePendingReferral(pendingCode);
+      const { data: profileCheck } = await supabase
+        .from("profiles")
+        .select("id, onboarding_completed")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (profileCheck?.onboarding_completed) {
+        await handlePendingReferral(pendingCode);
+      }
     }
 
     // 2. Check if this user was referred by someone

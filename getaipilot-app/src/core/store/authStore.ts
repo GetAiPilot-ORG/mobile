@@ -83,8 +83,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
     checkOnboardingStatus: async (userId?: string) => {
       const uid = userId || get().user?.id;
       if (!uid) {
-        set({ onboardingCompleted: true });
-        return true;
+        set({ onboardingCompleted: false });
+        return false;
       }
       try {
         const { data, error } = await supabase
@@ -94,9 +94,10 @@ export const useAuthStore = create<AuthState>((set, get) => {
           .maybeSingle();
 
         if (error) {
-          console.warn("[AuthStore] Error checking onboarding status:", error);
-          set({ onboardingCompleted: true });
-          return true;
+          console.warn("[AuthStore] Notice checking onboarding status:", error.message);
+          // If profile row doesn't exist yet, user needs onboarding
+          set({ onboardingCompleted: false });
+          return false;
         }
 
         const isComplete = Boolean(data?.onboarding_completed);
@@ -104,8 +105,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
         return isComplete;
       } catch (err) {
         console.warn("[AuthStore] Failed to check onboarding status:", err);
-        set({ onboardingCompleted: true });
-        return true;
+        set({ onboardingCompleted: false });
+        return false;
       }
     },
 

@@ -36,6 +36,7 @@ import {
   FaceIdIcon,
   ZapIcon,
   Briefcase01Icon,
+  Mail01Icon,
 } from '@hugeicons/core-free-icons';
 
 import { getColors, useTheme } from '@/theme';
@@ -102,13 +103,19 @@ export default function OnboardingScreen() {
     const fn = (user as any)?.user_metadata?.full_name || '';
     return fn.split(' ').slice(1).join(' ') || '';
   });
+  const userEmail = user?.email || '';
+  const isTruecaller = userEmail.endsWith('@truecaller.getaipilot.in');
+  const isPhoneOrTruecaller = !userEmail || isTruecaller || !!(user as any)?.phone;
+
+  const [email, setEmail] = useState(() => (user?.email && !isTruecaller ? user.email : ''));
   const [state, setState] = useState('');
   const [phone, setPhone] = useState((user as any)?.phone || '');
   const [businessName, setBusinessName] = useState('');
-  const [businessEmail, setBusinessEmail] = useState('');
+  const [businessEmail, setBusinessEmail] = useState(() => (user?.email && !isTruecaller ? user.email : ''));
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [teamSize, setTeamSize] = useState(TEAM_SIZES[0]);
   const [loading, setLoading] = useState(false);
+  const [isValidatingEmail, setIsValidatingEmail] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Step 3 Permissions State
@@ -124,6 +131,38 @@ export default function OnboardingScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const [isUpdatingBiometrics, setIsUpdatingBiometrics] = useState(false);
+  const isSubmittingRef = useRef(false);
+
+  // Guard: strictly ensure user has confirmed their email before entering onboarding
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const u = data?.user;
+      if (u) {
+        const isEmailAccount = u.email && !u.email.endsWith('@truecaller.getaipilot.in');
+        if (isEmailAccount && !u.email_confirmed_at && !u.phone) {
+          console.warn('[Onboarding] User email not confirmed yet -> redirecting to /verify-email');
+          router.replace({
+            pathname: '/(auth)/verify-email',
+            params: { email: u.email || '' },
+          } as any);
+        }
+      }
+    }).catch(() => {});
+  }, []);
+
+
+  // Prefill phone and email if known (matching bot-dashboard)
+  useEffect(() => {
+    if (user) {
+      if (user.email && !isTruecaller) {
+        setEmail((prev) => prev || user.email || '');
+        setBusinessEmail((prev) => prev || user.email || '');
+      }
+      if ((user as any)?.phone) {
+        setPhone((prev: string) => prev || (user as any).phone || '');
+      }
+    }
+  }, [user, isTruecaller]);
 
   useEffect(() => {
     async function loadBiometrics() {
@@ -135,6 +174,7 @@ export default function OnboardingScreen() {
 
   useEffect(() => {
     const onBackPress = () => {
+      if (loading || isSubmittingRef.current) return true;
       if (step === 3) {
         animateToStep(2);
         return true;
@@ -148,7 +188,7 @@ export default function OnboardingScreen() {
 
     const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
     return () => sub.remove();
-  }, [step]);
+  }, [step, loading]);
 
   const animateToStep = (nextStep: 1 | 2 | 3) => {
     Animated.parallel([
@@ -196,7 +236,8 @@ export default function OnboardingScreen() {
     animateToStep(2);
   };
 
-  const handleContinueToStep3 = () => {
+  const handleContinueToStep3 = async () => {
+    Keyboard.dismiss();
     if (!firstName.trim()) {
       triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
       setError('Please provide your first name.');
@@ -207,18 +248,87 @@ export default function OnboardingScreen() {
       setError('Please provide your last name.');
       return;
     }
+
+    const targetEmail = (accountType === 'business' ? businessEmail : email || userEmail || '').trim().toLowerCase();
+
+    // 1. Business email validation
     if (accountType === 'business') {
       if (!businessName.trim()) {
         triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
         setError('Please provide your business or agency name.');
         return;
       }
-      if (businessEmail.trim() && !isValidEmail(businessEmail.trim())) {
+      if (!targetEmail) {
+        triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+        setError('Please provide your work or business email.');
+        return;
+      }
+      if (!isValidEmail(targetEmail)) {
         triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
         setError('Please provide a valid business email address.');
         return;
       }
+    } else {
+      // 2. Personal email validation (Required for Phone/Truecaller user, matching bot-dashboard)
+      if (isPhoneOrTruecaller && !targetEmail) {
+        triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+        setError('Please provide your email address for account recovery.');
+        return;
+      }
+      if (targetEmail && !isValidEmail(targetEmail)) {
+        triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+        setError('Please provide a valid email address.');
+        return;
+      }
     }
+
+    // 3. Email & Phone Uniqueness Check via Supabase RPC (matching bot-dashboard)
+    setIsValidatingEmail(true);
+    setError(null);
+
+    try {
+      // Retrieve current session user email reliably
+      let currentAccountEmail = (user?.email || userEmail || '').trim().toLowerCase();
+      let currentAccountId = user?.id;
+      if (!currentAccountEmail || !currentAccountId) {
+        const { data: currentAuth } = await supabase.auth.getUser();
+        if (currentAuth?.user) {
+          currentAccountEmail = (currentAuth.user.email || '').trim().toLowerCase();
+          currentAccountId = currentAuth.user.id;
+        }
+      }
+
+      if (targetEmail && targetEmail !== currentAccountEmail) {
+        const { data: emailTaken, error: rpcEmailErr } = await supabase.rpc('check_email_exists', {
+          email_to_check: targetEmail,
+        });
+        if (!rpcEmailErr && emailTaken) {
+          triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+          setError('This email address is already registered with another account. Please use a different email.');
+          setIsValidatingEmail(false);
+          return;
+        }
+      }
+
+      const cleanPhone = phone.trim();
+      if (cleanPhone) {
+        const { data: phoneTaken, error: rpcPhoneErr } = await supabase.rpc('check_phone_exists', {
+          phone_to_check: cleanPhone,
+          exclude_user_id: currentAccountId || user?.id,
+        });
+        if (!rpcPhoneErr && phoneTaken) {
+          triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+          setError('This phone number is already registered with another account. Please use your own unique phone number.');
+          setIsValidatingEmail(false);
+          return;
+        }
+      }
+    } catch (verifyErr) {
+      console.warn('[Onboarding] check_email_exists notice:', verifyErr);
+    } finally {
+      setIsValidatingEmail(false);
+    }
+
     setError(null);
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
     animateToStep(3);
@@ -253,10 +363,49 @@ export default function OnboardingScreen() {
 
   const handleCompleteOnboarding = async () => {
     Keyboard.dismiss();
-    if (!user) return;
-    setError(null);
 
+    // 1. Double-tap & concurrency lock
+    if (loading || isSubmittingRef.current) return;
+
+    // 2. Validate essential fields before committing to database
+    if (!firstName.trim() || !lastName.trim()) {
+      triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+      setError('Please provide your first and last name.');
+      animateToStep(2);
+      return;
+    }
+    if (accountType === 'business' && !businessName.trim()) {
+      triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+      setError('Please provide your business or agency name.');
+      animateToStep(2);
+      return;
+    }
+
+    const targetEmail = (accountType === 'business' ? businessEmail : email || userEmail || '').trim().toLowerCase();
+    if ((isPhoneOrTruecaller || accountType === 'business') && !targetEmail) {
+      triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+      setError('Please provide a valid email address.');
+      animateToStep(2);
+      return;
+    }
+
+    // 3. Ensure valid active user session
+    let userId = user?.id;
+    let activeUserEmail = user?.email;
+    if (!userId) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      userId = sessionData?.session?.user?.id;
+      activeUserEmail = sessionData?.session?.user?.email;
+    }
+    if (!userId) {
+      triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+      setError('Your session has expired. Please log in again.');
+      return;
+    }
+
+    isSubmittingRef.current = true;
     setLoading(true);
+    setError(null);
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
@@ -264,13 +413,13 @@ export default function OnboardingScreen() {
       await AsyncStorage.setItem('@pref_push', notificationsEnabled ? 'true' : 'false');
       await AsyncStorage.setItem('@pref_haptics', hapticsEnabled ? 'true' : 'false');
 
-      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim() || user.email?.split('@')[0];
+      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim() || targetEmail?.split('@')[0] || activeUserEmail?.split('@')[0];
 
       // ---- REFERRAL CODE: reuse existing if present, else generate (matching bot-dashboard) ----
       const { data: existingProfile, error: existingProfileError } = await supabase
         .from('profiles')
         .select('referral_code')
-        .eq('id', user.id)
+        .eq('id', userId)
         .maybeSingle();
 
       if (existingProfileError) {
@@ -286,21 +435,25 @@ export default function OnboardingScreen() {
         console.log('[Onboarding] Reusing existing referral code:', referralCode);
       }
 
+      const cachedPushToken = await AsyncStorage.getItem('@getaipilot_expo_push_token');
+
       const { error: updateError } = await supabase
         .from('profiles')
         .upsert(
           {
-            id: user.id,
+            id: userId,
             first_name: firstName.trim() || null,
             last_name: lastName.trim() || null,
             full_name: fullName,
+            email: targetEmail || activeUserEmail || null,
             account_type: accountType,
             business_name: accountType === 'business' ? (businessName.trim() || null) : null,
-            business_email: accountType === 'business' ? (businessEmail.trim() || null) : null,
+            business_email: accountType === 'business' ? (targetEmail || null) : null,
             state: state.trim() || null,
             category: accountType === 'business' ? category : null,
             team_size: accountType === 'business' ? teamSize : '1',
             phone: phone.trim() || null,
+            push_token: notificationsEnabled ? cachedPushToken : null,
             referral_code: referralCode,
             onboarding_completed: true,
             updated_at: new Date().toISOString(),
@@ -309,6 +462,16 @@ export default function OnboardingScreen() {
         );
 
       if (updateError) throw updateError;
+
+      // Update email in auth.users if user joined via Phone or Truecaller (matching bot-dashboard)
+      if (targetEmail && isPhoneOrTruecaller && targetEmail !== (activeUserEmail || '').toLowerCase()) {
+        try {
+          await supabase.auth.updateUser({ email: targetEmail });
+          console.log('[Onboarding] Updated auth user email to:', targetEmail);
+        } catch (authEmailErr) {
+          console.warn('[Onboarding] Notice updating auth user email:', authEmailErr);
+        }
+      }
 
       useAuthStore.getState().setOnboardingCompleted(true);
 
@@ -336,13 +499,17 @@ export default function OnboardingScreen() {
       triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
       setError(err.message || 'Failed to complete onboarding. Please try again.');
     } finally {
+      isSubmittingRef.current = false;
       setLoading(false);
     }
   };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View style={[styles.container, isDark && styles.containerDark]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={[styles.container, isDark && styles.containerDark]}
+      >
         {/* Ambient Top Glow Orbs */}
         <View pointerEvents="none" style={styles.ambientGlowContainer}>
           <LinearGradient
@@ -355,12 +522,7 @@ export default function OnboardingScreen() {
           />
         </View>
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={{ flex: 1 }}
-          enabled={Platform.OS === 'ios'}
-        >
-          <ScrollView
+        <ScrollView
             contentContainerStyle={[
               styles.scrollContent,
               {
@@ -371,16 +533,39 @@ export default function OnboardingScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {/* 1. Header Bar: Sign Out + 3-Step Segments + Skip */}
+            {/* 1. Header Bar: Navigation */}
             <View style={styles.topBar}>
+              {step > 1 ? (
+                <TouchableOpacity
+                  disabled={loading}
+                  onPress={() => {
+                    triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
+                    animateToStep((step - 1) as 1 | 2);
+                  }}
+                  hitSlop={8}
+                  style={[styles.navPillBtn, isDark && styles.navPillBtnDark, loading && { opacity: 0.5 }]}
+                >
+                  <HugeiconsIcon
+                    icon={ArrowLeft01Icon}
+                    size={14}
+                    color={isDark ? '#94A3B8' : '#64748B'}
+                    strokeWidth={2}
+                  />
+                  <Text style={[styles.navBtnText, isDark && styles.navBtnTextDark]}>Back</Text>
+                </TouchableOpacity>
+              ) : (
+                <View style={{ width: 40 }} />
+              )}
+
               <TouchableOpacity
+                disabled={loading}
                 onPress={async () => {
                   triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
                   await useAuthStore.getState().logout();
                   router.replace('/(auth)/login' as any);
                 }}
                 hitSlop={8}
-                style={[styles.navPillBtn, isDark && styles.navPillBtnDark]}
+                style={[styles.navPillBtn, isDark && styles.navPillBtnDark, loading && { opacity: 0.5 }]}
               >
                 <HugeiconsIcon
                   icon={Logout01Icon}
@@ -666,6 +851,27 @@ export default function OnboardingScreen() {
                       />
                     </View>
 
+                    {/* Email Input - matching bot-dashboard (Required for Phone & Truecaller signups) */}
+                    <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
+
+                    <View style={styles.inputRow}>
+                      <TextInput
+                        style={[styles.nativeInput, isDark && styles.nativeInputDark]}
+                        placeholder={
+                          isPhoneOrTruecaller
+                            ? 'Email Address (Required for Recovery) *'
+                            : 'Email Address'
+                        }
+                        placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
+                        value={email}
+                        onChangeText={setEmail}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        returnKeyType="next"
+                      />
+                    </View>
+
                     <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
 
                     <View style={styles.inputRow}>
@@ -723,7 +929,7 @@ export default function OnboardingScreen() {
                         <View style={styles.inputRow}>
                           <TextInput
                             style={[styles.nativeInput, isDark && styles.nativeInputDark]}
-                            placeholder="Work / Business Email"
+                            placeholder="Work / Business Email *"
                             placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
                             value={businessEmail}
                             onChangeText={setBusinessEmail}
@@ -815,7 +1021,8 @@ export default function OnboardingScreen() {
                   <TouchableOpacity
                     activeOpacity={0.88}
                     onPress={handleContinueToStep3}
-                    style={styles.primaryCtaWrapper}
+                    disabled={isValidatingEmail || loading}
+                    style={[styles.primaryCtaWrapper, (isValidatingEmail || loading) && { opacity: 0.85 }]}
                   >
                     <LinearGradient
                       colors={['#2563EB', '#1D4ED8']}
@@ -823,10 +1030,16 @@ export default function OnboardingScreen() {
                       end={{ x: 1, y: 0 }}
                       style={styles.primaryCtaGradient}
                     >
-                      <Text style={styles.primaryCtaText}>Continue to Security & Alerts</Text>
-                      <View style={styles.primaryCtaIconCircle}>
-                        <HugeiconsIcon icon={ArrowRight01Icon} size={15} color="#FFFFFF" strokeWidth={2.4} />
-                      </View>
+                      {isValidatingEmail ? (
+                        <ActivityIndicator color="#FFFFFF" size="small" />
+                      ) : (
+                        <>
+                          <Text style={styles.primaryCtaText}>Continue to Security & Alerts</Text>
+                          <View style={styles.primaryCtaIconCircle}>
+                            <HugeiconsIcon icon={ArrowRight01Icon} size={15} color="#FFFFFF" strokeWidth={2.4} />
+                          </View>
+                        </>
+                      )}
                     </LinearGradient>
                   </TouchableOpacity>
 
@@ -883,7 +1096,7 @@ export default function OnboardingScreen() {
                       <Switch
                         value={biometricSettings.enabled}
                         onValueChange={handleToggleBiometricInOnboarding}
-                        disabled={isUpdatingBiometrics}
+                        disabled={isUpdatingBiometrics || loading}
                         trackColor={{ false: isDark ? '#334155' : '#E2E8F0', true: '#10B981' }}
                         thumbColor="#FFFFFF"
                       />
@@ -909,6 +1122,7 @@ export default function OnboardingScreen() {
                       </View>
                       <Switch
                         value={notificationsEnabled}
+                        disabled={loading}
                         onValueChange={(val) => {
                           triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
                           setNotificationsEnabled(val);
@@ -938,6 +1152,7 @@ export default function OnboardingScreen() {
                       </View>
                       <Switch
                         value={hapticsEnabled}
+                        disabled={loading}
                         onValueChange={(val) => {
                           triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
                           setHapticsEnabled(val);
@@ -953,7 +1168,7 @@ export default function OnboardingScreen() {
                     activeOpacity={0.88}
                     onPress={handleCompleteOnboarding}
                     disabled={loading}
-                    style={styles.primaryCtaWrapper}
+                    style={[styles.primaryCtaWrapper, loading && { opacity: 0.85 }]}
                   >
                     <LinearGradient
                       colors={['#10B981', '#059669']}
@@ -976,7 +1191,8 @@ export default function OnboardingScreen() {
 
                   {/* Back to Step 2 Button */}
                   <TouchableOpacity
-                    style={[styles.backNavBtn, isDark && styles.backNavBtnDark]}
+                    disabled={loading}
+                    style={[styles.backNavBtn, isDark && styles.backNavBtnDark, loading && { opacity: 0.5 }]}
                     onPress={() => {
                       triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
                       animateToStep(2);
@@ -996,8 +1212,7 @@ export default function OnboardingScreen() {
               )}
             </Animated.View>
           </ScrollView>
-        </KeyboardAvoidingView>
-      </View>
+      </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
   );
 }

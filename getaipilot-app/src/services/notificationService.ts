@@ -10,7 +10,6 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '../core/api/client';
-import { supabase } from '../lib/supabase';
 
 export const PUSH_TOKEN_STORAGE_KEY = '@getaipilot_expo_push_token';
 export const LAST_SYNCED_USER_KEY = '@getaipilot_push_token_synced_user';
@@ -298,43 +297,12 @@ export class NotificationService {
         bffSuccess = true;
         console.log('✅ [NotificationService] Successfully synced push token to BFF for user:', userId);
       } catch (bffErr) {
-        console.log('[NotificationService] BFF offline or unreachable, using Supabase direct sync...');
+        console.log('[NotificationService] BFF offline or unreachable for push token sync.');
       }
 
-      // 2. Direct sync to Supabase profiles table
-      let supabaseSuccess = false;
-      try {
-        // Release this device token from any other profiles on this physical hardware
-        await supabase
-          .from('profiles')
-          .update({ push_token: null })
-          .eq('push_token', token)
-          .neq('id', userId);
-
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            push_token: token,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', userId);
-
-        if (profileError) {
-          console.warn('⚠️ [NotificationService] Supabase profile push_token update notice:', profileError.message);
-        } else {
-          supabaseSuccess = true;
-          console.log('✅ [NotificationService] Successfully updated push_token in profiles table for user:', userId);
-        }
-      } catch (sbErr) {
-        console.warn('[NotificationService] Supabase sync error:', sbErr);
-      }
-
-      if (bffSuccess || supabaseSuccess) {
-        await AsyncStorage.setItem(LAST_SYNCED_USER_KEY, userId);
-        await AsyncStorage.setItem(PUSH_TOKEN_STORAGE_KEY, token);
-        return true;
-      }
-      return false;
+      await AsyncStorage.setItem(LAST_SYNCED_USER_KEY, userId);
+      await AsyncStorage.setItem(PUSH_TOKEN_STORAGE_KEY, token);
+      return bffSuccess;
     } catch (err) {
       console.warn('[NotificationService] Sync token error:', err);
       return false;

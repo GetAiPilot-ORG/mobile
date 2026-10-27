@@ -99,11 +99,9 @@ function ReferralLinkListener() {
     const processUrl = async (rawUrl: string | null) => {
       if (!rawUrl) return;
       try {
-        const capturedCode = await captureReferralParam(rawUrl);
-        if (capturedCode) {
-          // If a user session is active, attempt linking immediately
-          await handlePendingReferral(capturedCode);
-        }
+        // Only capture and persist pending referral code in storage.
+        // Linking will take place when the user finishes onboarding!
+        await captureReferralParam(rawUrl);
       } catch (e) {
         console.warn("[ReferralLinkListener] Link capture error:", e);
       }
@@ -124,11 +122,12 @@ function ReferralLinkListener() {
 
 /**
  * Authoritative, single-point auth route guard.
- * Listens exclusively to [authStatus, segments] and performs redirects
+ * Listens exclusively to [authStatus, onboardingCompleted, segments] and performs redirects
  * ONLY after session hydration has resolved.
  */
 function AuthRouteGuard() {
   const authStatus = useAuthStore((s) => s.authStatus);
+  const onboardingCompleted = useAuthStore((s) => s.onboardingCompleted);
   const segments = useSegments();
   const router = useRouter();
 
@@ -136,9 +135,21 @@ function AuthRouteGuard() {
     // 1. NEVER navigate during hydration
     if (authStatus === "hydrating") return;
 
-    // 2. Identify active route group
-    const segment0 = segments[0] as string | undefined;
-    const inAuthGroup = segment0 === "(auth)";
+    // 2. Identify active route group robustly across Expo Router segment formats
+    const inAuthGroup = segments.some(
+      (s) =>
+        s === "(auth)" ||
+        s === "login" ||
+        s === "signup" ||
+        s === "verify-email" ||
+        s === "forgot-password" ||
+        s === "reset-password" ||
+        s === "callback",
+    );
+    const isPendingAuthScreen = segments.some(
+      (s) => s === "verify-email" || s === "callback",
+    );
+    const inOnboarding = segments.some((s) => s === "onboarding");
 
     const timer = setTimeout(() => {
       if (authStatus === "unauthenticated" && !inAuthGroup) {
@@ -149,19 +160,30 @@ function AuthRouteGuard() {
         }
         router.replace("/(auth)/login" as any);
       } else if (authStatus === "authenticated") {
-        if (inAuthGroup) {
-          if (__DEV__) {
-            console.log(
-              "[AuthGuard] Authenticated user on auth route -> navigating to tabs (Home)",
-            );
+        if (onboardingCompleted === false) {
+          if (!inOnboarding && !isPendingAuthScreen) {
+            if (__DEV__) {
+              console.log(
+                "[AuthGuard] Authenticated user requires onboarding -> navigating to /onboarding",
+              );
+            }
+            router.replace("/onboarding" as any);
           }
-          router.replace("/(tabs)" as any);
+        } else if (onboardingCompleted === true) {
+          if (inAuthGroup || inOnboarding) {
+            if (__DEV__) {
+              console.log(
+                "[AuthGuard] Authenticated onboarded user -> navigating to tabs (Home)",
+              );
+            }
+            router.replace("/(tabs)" as any);
+          }
         }
       }
     }, 1);
 
     return () => clearTimeout(timer);
-  }, [authStatus, segments]);
+  }, [authStatus, onboardingCompleted, segments]);
 
   return null;
 }
@@ -234,6 +256,14 @@ function ThemedNavigationStack() {
       />
       <Stack.Screen
         name="(auth)/forgot-password"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="(auth)/verify-email"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="(auth)/callback"
         options={{ headerShown: false }}
       />
       <Stack.Screen

@@ -106,7 +106,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const canUseNotifications = Boolean(Notifications);
 
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, onboardingComplete } = useAuth();
 
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
   const [notification, setNotification] = useState<Notification | null>(null);
@@ -663,7 +663,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
       if (result.token) {
         setExpoPushToken(result.token);
-        if (user?.id) {
+        if (user?.id && onboardingComplete) {
           await NotificationService.syncPushTokenWithBackend(result.token, user.id);
         }
         return result.token;
@@ -680,7 +680,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const forceRefreshToken = async (): Promise<string | null> => {
     setIsRegistering(true);
     try {
-      const token = await NotificationService.forceRefreshToken(user?.id);
+      const token = await NotificationService.forceRefreshToken(onboardingComplete ? user?.id : undefined);
       if (token) setExpoPushToken(token);
       return token;
     } finally {
@@ -734,10 +734,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, [canUseNotifications]);
 
   useEffect(() => {
-    if (user?.id && expoPushToken) {
+    if (user?.id && expoPushToken && onboardingComplete) {
       NotificationService.syncPushTokenWithBackend(expoPushToken, user.id).catch(() => { });
     }
-  }, [user?.id, expoPushToken]);
+  }, [user?.id, expoPushToken, onboardingComplete]);
 
   useEffect(() => {
     if (!canUseNotifications || !Notifications) return;
