@@ -87,17 +87,20 @@ export class NotificationService {
         .neq('id', userId);
 
       // 3. Assign push token exclusively to the currently active user profile
-      const { error: profileError } = await this.adminSupabase
+      const { data: savedProfile, error: profileError } = await this.adminSupabase
         .from('profiles')
         .update({
           push_token: payload.push_token,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', userId);
+        .eq('id', userId)
+        .select('id')
+        .maybeSingle();
 
       if (profileError) {
-        console.warn(`[NotificationService] Profile push_token update warning:`, profileError.message);
+        throw new Error(`Profile push token update failed: ${profileError.message}`);
       }
+      if (!savedProfile) throw new Error('No profile found for push token registration');
 
       console.log(`[NotificationService] Registered push token for user ${userId}`);
       return { success: true, token: payload.push_token };
@@ -214,7 +217,7 @@ export class NotificationService {
                     await this.adminSupabase.from('profiles').update({ push_token: null }).eq('push_token', tToken);
                   }
                 } else if (r?.status === 'ok') {
-                  console.log(`🎉 [NotificationService] FCM Confirmed Delivery for ${tToken}`);
+                  console.log(`[NotificationService] Push service accepted notification for ${tToken}; device display is not confirmed.`);
                 }
               }
             } catch (rErr: any) {

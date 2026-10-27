@@ -11,6 +11,7 @@ import { NotificationService, PUSH_TOKEN_STORAGE_KEY } from '../services/notific
 import { useAuth } from './AuthContext';
 import { supabase } from '../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
 
 type NotificationsModule = typeof import('expo-notifications');
 
@@ -114,6 +115,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const [isRegistering, setIsRegistering] = useState(false);
   const [notificationsList, setNotificationsList] = useState<AppNotification[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const currentUserId = useRef(user?.id);
+  currentUserId.current = user?.id;
+  const registrationInFlight = useRef<Promise<string | null> | null>(null);
 
   const appIsActiveRef = useRef<boolean>(AppState.currentState === 'active');
 
@@ -663,26 +667,40 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   const requestPermissions = async (): Promise<string | null> => {
     if (!Notifications) return null;
-    if (isRegistering) return expoPushToken;
-    setIsRegistering(true);
-    try {
-      const result = await NotificationService.registerForPushNotificationsAsync();
-      const granted = result.status === 'granted';
-      setPermissionGranted(granted);
+    if (registrationInFlight.current) return registrationInFlight.current;
+    const attempt = async (): Promise<string | null> => {
+      setIsRegistering(true);
+      try {
+        const result = await NotificationService.registerForPushNotificationsAsync();
+        const granted = result.status === 'granted';
+        setPermissionGranted(granted);
 
-      if (result.token) {
-        setExpoPushToken(result.token);
-        if (user?.id) {
-          await NotificationService.syncPushTokenWithBackend(result.token, user.id);
+        if (result.token) {
+          setExpoPushToken(result.token);
+          const uid = currentUserId.current;
+          if (uid) {
+            const saved = await NotificationService.syncPushTokenWithBackend(result.token, uid);
+            if (currentUserId.current !== uid) return null;
+            if (!saved) {
+              console.warn('[NotificationContext] Push token not saved; registration will retry.');
+              return null;
+            }
+          }
+          return result.token;
         }
-        return result.token;
+        return null;
+      } catch (err) {
+        console.warn('❌ [NotificationContext] Registration error:', err);
+        return null;
+      } finally {
+        setIsRegistering(false);
       }
-      return null;
-    } catch (err) {
-      console.warn('❌ [NotificationContext] Registration error:', err);
-      return null;
+    };
+    registrationInFlight.current = attempt();
+    try {
+      return await registrationInFlight.current;
     } finally {
-      setIsRegistering(false);
+      registrationInFlight.current = null;
     }
   };
 
@@ -739,14 +757,31 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       .then(({ status }) => setPermissionGranted(status === 'granted'))
       .catch(() => { });
 
-    requestPermissions().catch(() => { });
-  }, [canUseNotifications]);
-
-  useEffect(() => {
-    if (user?.id && expoPushToken) {
-      NotificationService.syncPushTokenWithBackend(expoPushToken, user.id).catch(() => { });
-    }
-  }, [user?.id, expoPushToken]);
+    let stopped = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    const register = async () => {
+      if (stopped || AppState.currentState !== 'active') return;
+      if (retryTimer) clearTimeout(retryTimer);
+      const token = await requestPermissions();
+      if (!token && !stopped) {
+        if (retryTimer) clearTimeout(retryTimer);
+        retryTimer = setTimeout(register, 30_000);
+      }
+    };
+    void register();
+    const appSubscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void register();
+    });
+    const unsubscribeNetwork = NetInfo.addEventListener((state) => {
+      if (state.isConnected && state.isInternetReachable !== false) void register();
+    });
+    return () => {
+      stopped = true;
+      if (retryTimer) clearTimeout(retryTimer);
+      appSubscription.remove();
+      unsubscribeNetwork();
+    };
+  }, [canUseNotifications, user?.id]);
 
   useEffect(() => {
     if (!canUseNotifications || !Notifications) return;

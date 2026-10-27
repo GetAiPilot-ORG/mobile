@@ -1515,7 +1515,7 @@ export default function AccountScreen() {
                 </View>
                 <Switch
                   value={pushEnabled}
-                  onValueChange={(val) => handleTogglePref('@pref_push', val, setPushEnabled)}
+                  onValueChange={handleTogglePush}
                   trackColor={{ false: isDark ? '#3A3A3C' : '#E9E6F2', true: '#6C55C5' }}
                   thumbColor="#FFFFFF"
                 />

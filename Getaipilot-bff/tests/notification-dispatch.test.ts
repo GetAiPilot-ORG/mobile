@@ -51,3 +51,20 @@ test('shared claim prevents concurrent dispatch and dispatch after a process res
     globalThis.setTimeout = originalTimeout;
   }
 });
+
+test('registration rejects a profile update that matches no user', async () => {
+  const { NotificationService } = await import('../src/services/notification.service.js');
+  let savedProfile: { id: string } | null = null;
+  const builder: any = {
+    update: () => builder,
+    eq: () => builder,
+    neq: async () => ({ error: null }),
+    select: () => builder,
+    maybeSingle: async () => ({ data: savedProfile, error: null }),
+  };
+  (NotificationService as any).adminSupabase = { from: () => builder };
+  const payload = { push_token: 'ExponentPushToken[test]' };
+  await assert.rejects(NotificationService.registerUserPushToken('user-1', payload), /No profile found/);
+  savedProfile = { id: 'user-1' };
+  assert.equal((await NotificationService.registerUserPushToken('user-1', payload)).success, true);
+});
