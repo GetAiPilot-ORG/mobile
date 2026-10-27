@@ -60,7 +60,7 @@ export class NotificationService {
     try {
       // 1. Multi-device: Upsert into user_push_tokens if installation_id is provided
       if (payload.installation_id && payload.installation_id !== 'unknown') {
-        await this.adminSupabase
+        const { error: tokenError } = await this.adminSupabase
           .from('user_push_tokens')
           .upsert(
             {
@@ -73,8 +73,10 @@ export class NotificationService {
               updated_at: new Date().toISOString(),
             },
             { onConflict: 'installation_id' }
-          )
-          .catch((err) => console.warn('[NotificationService] user_push_tokens upsert notice:', err?.message));
+          );
+        if (tokenError) {
+          console.warn('[NotificationService] user_push_tokens upsert notice:', tokenError.message);
+        }
       }
 
       // 2. Release token from any previously logged-in profiles on this physical device
@@ -981,7 +983,7 @@ export class NotificationService {
 
   /**
    * Process a single `notifications` row → exactly ONE Expo push.
-   * Canonical dedupe key = row.id (processedRowIds, 5 min window).
+   * A persistent unique row claim coordinates all running BFF instances.
    * sendExpoPushNotification additionally dedupes by `row:${rowId}:${token}`.
    */
   static async processNotificationRow(row: any) {
@@ -989,9 +991,29 @@ export class NotificationService {
 
     // Canonical server-side row dedupe (safely stringified to prevent number/string mismatch)
     const rowIdKey = row.id != null ? String(row.id) : null;
+    if (!rowIdKey) {
+      console.error('[NotificationService] Refusing to dispatch a notification without a row id.');
+      return;
+    }
     if (rowIdKey) {
       if (NotificationService.processedRowIds.has(rowIdKey)) {
         console.log(`🛑 [NotificationService] Row ${rowIdKey} already processed. Skipping.`);
+        return;
+      }
+      // Realtime delivers each INSERT to every subscribed BFF process. A local
+      // Set cannot arbitrate between production replicas or a local dev server.
+      // The database primary key makes claiming a row atomic across processes.
+      const { error: claimError } = await this.adminSupabase
+        .from('notification_push_claims')
+        .insert({ notification_id: rowIdKey });
+
+      if (claimError) {
+        if (claimError.code === '23505') {
+          console.log(`[NotificationService] Row ${rowIdKey} claimed by another dispatcher. Skipping.`);
+        } else {
+          // Fail closed: falling back to a local guard would reintroduce duplicates.
+          console.error(`[NotificationService] Cannot claim row ${rowIdKey}; push not dispatched:`, claimError);
+        }
         return;
       }
       NotificationService.processedRowIds.add(rowIdKey);
