@@ -30,7 +30,11 @@ import { AppTopBar } from "../../src/components/AppTopBar";
 // Preserved for future use:
 // import { AnimatedHeroBanner } from "../../src/components/home/AnimatedHeroBanner";
 import { AnimatedEngineItem } from "../../src/components/home/AnimatedEngineItem";
+import { AnimatedAiLogo } from "../../src/components/home/AnimatedAiLogo";
+import { ProductCardCarousel } from "../../src/components/home/ProductCardCarousel";
 import { AnimatedCreateSection } from "../../src/components/home/AnimatedCreateSection";
+import { AnimatedWorkspaceCards } from "../../src/components/home/AnimatedWorkspaceCards";
+import { HomeSecurityAndInviteCards } from "../../src/components/home/HomeSecurityAndInviteCards";
 // Preserved for future use:
 // import { AnimatedPlanBanner } from "../../src/components/home/AnimatedPlanBanner";
 // Preserved for future use:
@@ -338,15 +342,17 @@ export default function HomeScreen() {
     triggerHaptic();
     router.push(route as any);
   };
-  const section = (title: string, route: string) => (
-    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-      <Text style={{ fontSize: 18, lineHeight: 24, fontWeight: "600", letterSpacing: -0.3, color: color.text }}>{title}</Text>
-      <Pressable onPress={() => open(route)} accessibilityRole="button" accessibilityLabel={`View all ${title.toLowerCase()}`} hitSlop={6} style={{ minHeight: 36, flexDirection: "row", alignItems: "center", gap: 4 }}>
-        <Text style={{ fontSize: 13, fontWeight: "500", color: color.link }}>View all</Text>
-        <HugeiconsIcon icon={ArrowRight01Icon} size={14} color={color.link} strokeWidth={2} />
-      </Pressable>
-    </View>
-  );
+  const section = (title: string, route: string) => {
+    return (
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <Text style={{ fontSize: 18, lineHeight: 24, fontWeight: "600", letterSpacing: -0.3, color: color.text }}>{title}</Text>
+        <Pressable onPress={() => open(route)} accessibilityRole="button" accessibilityLabel={`View all ${title.toLowerCase()}`} hitSlop={6} style={{ minHeight: 36, flexDirection: "row", alignItems: "center", gap: 4 }}>
+          <Text style={{ fontSize: 13, fontWeight: "500", color: color.link }}>View all</Text>
+          <HugeiconsIcon icon={ArrowRight01Icon} size={14} color={color.link} strokeWidth={2} />
+        </Pressable>
+      </View>
+    )
+  };
 
   return (
     <AppScreen safeArea={false} backgroundColor={color.background}>
@@ -358,18 +364,25 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View>
-          <Text
-            style={{
-              maxWidth: 310,
-              fontSize: 32,
-              lineHeight: 38,
-              fontWeight: "600",
-              letterSpacing: -0.85,
-              color: color.text,
-            }}
-          >
-            Your work,{"\n"}made effortless.
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <View style={{ flex: 1, paddingRight: 10 }}>
+              <Text
+                style={{
+                  fontSize: 32,
+                  lineHeight: 38,
+                  fontWeight: "600",
+                  letterSpacing: -0.85,
+                  color: color.text,
+                }}
+              >
+                Your work,{"\n"}made effortless.
+              </Text>
+            </View>
+            <AnimatedAiLogo
+              size={66}
+              isDark={isDark}
+            />
+          </View>
           <View style={{ flexDirection: "row", gap: 8, marginTop: 20 }}>
             {ENGINES.map((item, index) => (
               <AnimatedEngineItem
@@ -385,28 +398,18 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        <ProductCardCarousel
+          isDark={isDark}
+          onOpen={open} />
+
         <View>
           {section("Your workspace", "/(tabs)/products")}
-          <View style={{ backgroundColor: color.card, borderRadius: 24, padding: 20, flexDirection: "row", gap: 10 }}>
-            {[
-              {
-                label: "Pages",
-                value: telemetry?.pagesCount ?? telemetry?.landingPagesCount ?? 0,
-                route: "/tools/my-designs",
-                icon: Layout01Icon,
-              },
-              { label: "Forms", value: telemetry?.quickFormsCount ?? 0, route: "/tools/quick-forms", icon: File01Icon },
-              { label: "Links", value: telemetry?.shortLinksCount ?? 0, route: "/tools/link-shortener", icon: Link01Icon },
-            ].map((item, index) => (
-              <Pressable cssInterop={false} key={item.label} onPress={() => open(item.route)} accessibilityRole="button" accessibilityLabel={`${item.value} ${item.label}`} style={{ flex: 1, alignItems: "center", gap: 7 }}>
-                <View style={{ width: 38, height: 38, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: pastel[(index + 2) % pastel.length] }}>
-                  <HugeiconsIcon icon={item.icon} size={19} color={color.text} strokeWidth={1.8} />
-                </View>
-                <Text style={{ fontSize: 25, lineHeight: 30, fontWeight: "600", color: color.text, textAlign: "center" }}>{item.value}</Text>
-                <Text style={{ fontSize: 12, color: color.textSecondary, textAlign: "center" }}>{item.label}</Text>
-              </Pressable>
-            ))}
-          </View>
+          <AnimatedWorkspaceCards
+            isDark={isDark}
+            color={color}
+            telemetry={telemetry}
+            onOpen={open}
+          />
         </View>
 
         <AnimatedCreateSection
@@ -415,35 +418,75 @@ export default function HomeScreen() {
           sectionHeader={section("Create something", "/(tabs)/tools")}
         />
 
-        <Pressable cssInterop={false} onPress={() => open("/account/plans")} accessibilityRole="button" accessibilityLabel="View plans"
-          style={({ pressed }) => ({ backgroundColor: isDark ? "#383044" : "#E5DCF9", borderRadius: 24, padding: 22, opacity: pressed ? 0.78 : 1, transform: [{ scale: pressed ? 0.992 : 1 }] })}>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-            <View style={{ flex: 1, gap: 6 }}>
-              <Text style={{ fontSize: 22, lineHeight: 28, fontWeight: "600", letterSpacing: -0.35, color: color.text }}>Room to grow</Text>
-              <Text style={{ fontSize: 13, color: color.textSecondary }}>{planLabel || "Free"} plan</Text>
+        <Pressable
+          cssInterop={false}
+          onPress={() => open("/account/plans")}
+          accessibilityRole="button"
+          accessibilityLabel="View plans"
+          style={({ pressed }) => ({
+            backgroundColor: isDark ? "#2C2042" : "#EDE7FA",
+            borderRadius: 24,
+            padding: 18,
+            borderWidth: 1.2,
+            borderColor: isDark ? "rgba(167, 139, 250, 0.24)" : "rgba(147, 51, 234, 0.16)",
+            opacity: pressed ? 0.85 : 1,
+            transform: [{ scale: pressed ? 0.992 : 1 }],
+            position: "relative",
+            overflow: "hidden",
+            shadowColor: "#8B5CF6",
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: isDark ? 0.3 : 0.1,
+            shadowRadius: 12,
+            elevation: 4,
+          })}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
+            <View
+              style={{
+                width: 54,
+                height: 54,
+                borderRadius: 16,
+                overflow: "hidden",
+                backgroundColor: "#FFFFFF",
+                shadowColor: "#8B5CF6",
+                shadowOffset: { width: 0, height: 3 },
+                shadowOpacity: 0.25,
+                shadowRadius: 6,
+                elevation: 4,
+              }}
+            >
+              <Image
+                source={require("../../assets/images/growimage.jpg")}
+                style={{ width: "100%", height: "100%" }}
+                resizeMode="cover"
+              />
             </View>
-            <View style={{ backgroundColor: color.buttonPrimary, paddingHorizontal: 18, paddingVertical: 12, borderRadius: 24 }}>
-              <Text style={{ fontSize: 12, fontWeight: "500", color: color.buttonPrimaryForeground }}>View plans</Text>
+            <View style={{ flex: 1, gap: 3 }}>
+              <Text style={{ fontSize: 19, lineHeight: 24, fontWeight: "700", letterSpacing: -0.35, color: color.text }}>
+                Room to grow
+              </Text>
+              <Text style={{ fontSize: 12, color: color.textSecondary }}>
+                {planLabel || "Free"} plan • Scale without limits
+              </Text>
+            </View>
+            <View style={{ backgroundColor: color.buttonPrimary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20 }}>
+              <Text style={{ fontSize: 12, fontWeight: "600", color: color.buttonPrimaryForeground }}>View plans</Text>
             </View>
           </View>
         </Pressable>
 
-        <View style={{ flexDirection: "row", gap: 12 }}>
-          {[
-            { title: "Security", detail: isLoadingDevices ? "Checking devices…" : `${deviceSessions?.activeDeviceCount ?? 1} signed-in device${(deviceSessions?.activeDeviceCount ?? 1) === 1 ? "" : "s"}`, icon: ShieldCheckIcon, route: "/(tabs)/account" },
-            { title: "Invite friends", detail: "Your referrals", icon: GiftIcon, route: "/Referral" },
-          ].map((item) => (
-            <Pressable cssInterop={false} key={item.title} onPress={() => item.title === "Security" ? router.push({ pathname: "/(tabs)/account", params: { tab: "security" } } as any) : open(item.route)}
-              accessibilityRole="button" accessibilityLabel={item.title}
-              style={({ pressed }) => ({ flex: 1, minHeight: 142, backgroundColor: color.card, borderRadius: 22, padding: 17, gap: 10, opacity: pressed ? 0.72 : 1, transform: [{ scale: pressed ? 0.985 : 1 }] })}>
-              <View style={{ width: 38, height: 38, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: color.accentSoft }}>
-                <HugeiconsIcon icon={item.icon} size={20} color={color.accent} strokeWidth={1.8} />
-              </View>
-              <Text style={{ fontSize: 15, fontWeight: "600", color: color.text }}>{item.title}</Text>
-              <Text style={{ fontSize: 12, lineHeight: 18, color: color.textSecondary }}>{item.detail}</Text>
-            </Pressable>
-          ))}
-        </View>
+        <HomeSecurityAndInviteCards
+          isDark={isDark}
+          activeDeviceCount={deviceSessions?.activeDeviceCount ?? 1}
+          isLoadingDevices={isLoadingDevices}
+          onOpenSecurity={() =>
+            router.push({
+              pathname: "/(tabs)/account",
+              params: { tab: "security" },
+            } as any)
+          }
+          onOpenReferral={() => open("/Referral")}
+        />
       </ScrollView>
     </AppScreen>
   );

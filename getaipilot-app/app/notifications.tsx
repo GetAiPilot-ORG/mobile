@@ -430,15 +430,17 @@ function SwipeableNotificationCard({
                   >
                     {item.body}
                   </Text>
-                  {notifImageUrl ? (
-                    <View style={styles.notificationRightImageWrapper}>
-                      <Image
-                        source={{ uri: notifImageUrl }}
-                        style={styles.notificationRightImage}
-                        resizeMode="contain"
-                      />
-                    </View>
-                  ) : null}
+                  <View style={styles.notificationRightImageWrapper}>
+                    <Image
+                      source={
+                        notifImageUrl && notifImageUrl.startsWith('http')
+                          ? { uri: notifImageUrl }
+                          : require('../assets/images/logo-white-bg.png')
+                      }
+                      style={styles.notificationRightImage}
+                      resizeMode="contain"
+                    />
+                  </View>
                 </View>
 
                 {isLongText && (
@@ -788,16 +790,11 @@ export default function NotificationsScreen() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <View
-              style={[
-                styles.emptyIconCircle,
-                { backgroundColor: isDark ? '#221F31' : '#F1EDFA' },
-              ]}
-            >
-              <Ionicons
-                name="notifications-off-outline"
-                size={42}
-                color={isDark ? '#7E7693' : '#9B93AD'}
+            <View style={styles.emptyGraphicWrapper}>
+              <Image
+                source={require('../assets/images/notifications-empty.jpg')}
+                style={styles.emptyGraphic}
+                resizeMode="cover"
               />
             </View>
             <Text
@@ -1085,15 +1082,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
-    paddingVertical: 60,
+    paddingVertical: 48,
   },
-  emptyIconCircle: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
+  emptyGraphicWrapper: {
+    width: 130,
+    height: 130,
+    borderRadius: 32,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 18,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: 'rgba(167, 139, 250, 0.25)',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  emptyGraphic: {
+    width: '100%',
+    height: '100%',
   },
   emptyTitle: {
     fontSize: 19,

@@ -47,6 +47,7 @@ export class NotificationService {
     userId: string,
     payload: {
       push_token: string;
+      installation_id?: string;
       platform?: string;
       device_name?: string;
       app_version?: string;
@@ -57,14 +58,33 @@ export class NotificationService {
     }
 
     try {
-      // 1. Release token from any previously logged-in profiles on this physical device
+      // 1. Multi-device: Upsert into user_push_tokens if installation_id is provided
+      if (payload.installation_id && payload.installation_id !== 'unknown') {
+        await this.adminSupabase
+          .from('user_push_tokens')
+          .upsert(
+            {
+              user_id: userId,
+              installation_id: payload.installation_id,
+              push_token: payload.push_token,
+              platform: payload.platform || 'android',
+              device_name: payload.device_name || 'Device',
+              app_version: payload.app_version || '1.0.0',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'installation_id' }
+          )
+          .catch((err) => console.warn('[NotificationService] user_push_tokens upsert notice:', err?.message));
+      }
+
+      // 2. Release token from any previously logged-in profiles on this physical device
       await this.adminSupabase
         .from('profiles')
         .update({ push_token: null })
         .eq('push_token', payload.push_token)
         .neq('id', userId);
 
-      // 2. Assign push token exclusively to the currently active user profile
+      // 3. Assign push token exclusively to the currently active user profile
       const { error: profileError } = await this.adminSupabase
         .from('profiles')
         .update({
@@ -273,14 +293,31 @@ export class NotificationService {
     }
   ) {
     try {
-      const { data: profile } = await this.adminSupabase
-        .from('profiles')
+      // 1. Check user_push_tokens table first for multi-device support
+      const { data: devices } = await this.adminSupabase
+        .from('user_push_tokens')
         .select('push_token')
-        .eq('id', userId)
-        .maybeSingle();
+        .eq('user_id', userId);
 
-      const pushToken = profile?.push_token;
-      if (!pushToken) {
+      const tokens: string[] = (devices || [])
+        .map((d: any) => d.push_token)
+        .filter((t: any) => Boolean(t && (t.startsWith('ExponentPushToken[') || t.startsWith('ExpoPushToken['))));
+
+      // 2. Fallback to profiles table if user_push_tokens is empty
+      if (tokens.length === 0) {
+        const { data: profile } = await this.adminSupabase
+          .from('profiles')
+          .select('push_token')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (profile?.push_token) {
+          tokens.push(profile.push_token);
+        }
+      }
+
+      const uniqueTokens = Array.from(new Set(tokens));
+      if (uniqueTokens.length === 0) {
         return { success: false, reason: 'User has no registered push token' };
       }
 
@@ -294,8 +331,8 @@ export class NotificationService {
 
       const rowId = notification.data?.id;
       const notifTag = `getai_${rowId || userId}`;
-      const payload: ExpoPushMessage = {
-        to: pushToken,
+      const messages: ExpoPushMessage[] = uniqueTokens.map((token) => ({
+        to: token,
         title: notification.title,
         body: notification.body,
         data: {
@@ -309,9 +346,9 @@ export class NotificationService {
         badge: 1,
         collapseId: notifTag,
         richContent: { image: imageUrl },
-      };
+      }));
 
-      return await this.sendExpoPushNotification(payload);
+      return await this.sendExpoPushNotification(messages);
     } catch (err: any) {
       console.error(`[NotificationService] Error sending notification to user ${userId}:`, err);
       return { success: false, error: err.message };
@@ -418,24 +455,21 @@ export class NotificationService {
     channelId?: string;
   }) {
     try {
-      const { data: profiles, error } = await this.adminSupabase
-        .from('profiles')
-        .select('id, push_token')
-        .not('push_token', 'is', null);
+      // Query tokens from both user_push_tokens and legacy profiles table
+      const [devicesRes, profilesRes] = await Promise.all([
+        this.adminSupabase.from('user_push_tokens').select('push_token'),
+        this.adminSupabase.from('profiles').select('push_token').not('push_token', 'is', null),
+      ]);
 
-      if (error || !profiles) {
-        console.warn('[NotificationService] Failed to query user push tokens for broadcast:', error?.message);
-        return { success: false, error: error?.message };
-      }
+      const allTokens = [
+        ...(devicesRes.data || []).map((d: any) => d.push_token),
+        ...(profilesRes.data || []).map((p: any) => p.push_token),
+      ].filter(
+        (t): t is string =>
+          Boolean(t && (t.startsWith('ExponentPushToken[') || t.startsWith('ExpoPushToken[')))
+      );
 
-      const validTokens = profiles
-        .map((p) => p.push_token)
-        .filter(
-          (t): t is string =>
-            Boolean(t && (t.startsWith('ExponentPushToken[') || t.startsWith('ExpoPushToken[')))
-        );
-
-      const uniqueTokens = Array.from(new Set(validTokens));
+      const uniqueTokens = Array.from(new Set(allTokens));
       if (uniqueTokens.length === 0) {
         console.warn('[NotificationService] No registered user push tokens found for broadcast.');
         return { success: false, reason: 'No registered push tokens found for users' };

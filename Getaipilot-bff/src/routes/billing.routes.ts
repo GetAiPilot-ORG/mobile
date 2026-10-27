@@ -12,6 +12,8 @@ export async function billingRoutes(fastify: FastifyInstance) {
       user_id?: string;
       userId?: string;
       push_token: string;
+      installation_id?: string;
+      installationId?: string;
       platform?: string;
       device_name?: string;
       app_version?: string;
@@ -24,7 +26,10 @@ export async function billingRoutes(fastify: FastifyInstance) {
     }
 
     try {
-      const result = await NotificationService.registerUserPushToken(userId, body);
+      const result = await NotificationService.registerUserPushToken(userId, {
+        ...body,
+        installation_id: body.installation_id || body.installationId,
+      });
       return reply.send(result);
     } catch (err: any) {
       return reply.status(500).send({ error: err.message || 'Failed to save push token' });
