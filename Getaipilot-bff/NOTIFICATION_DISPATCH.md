@@ -25,5 +25,5 @@ This does not deduplicate two distinct notification rows, multiple Expo tokens
 that route to one installation, or senders outside this BFF. Confirm a particular
 incident using the notification row ID and Expo ticket logs. Never print keys.
 
-Verification: `node --import tsx --test tests/notification-dispatch.test.ts`
+Verification: `node --import tsx tests/notification-dispatch.test.ts`
 and `npm run typecheck` from this directory.

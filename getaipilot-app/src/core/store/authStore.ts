@@ -258,11 +258,11 @@ export const useAuthStore = create<AuthState>((set, get) => {
       try {
         if (uid) {
           // Clear push token from user profile in Supabase so this account stops receiving pushes on this device
-          await supabase
+          const { error: pushTokenError } = await supabase
             .from('profiles')
             .update({ push_token: null })
-            .eq('id', uid)
-            .catch(() => {});
+            .eq('id', uid);
+          if (pushTokenError) console.warn('[Auth] Could not clear push token:', pushTokenError.message);
         }
         await apiClient.post("/mobile/v1/auth/logout", {}).catch(() => {});
       } finally {
