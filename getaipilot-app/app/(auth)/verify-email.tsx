@@ -72,6 +72,7 @@ export default function VerifyEmailScreen() {
   const pulseAnim1 = useRef(new Animated.Value(0)).current;
   const pulseAnim2 = useRef(new Animated.Value(0)).current;
   const scaleIconAnim = useRef(new Animated.Value(1)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current; // Fade-in for subtitle
 
   const triggerHaptic = (style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Light) => {
     if (Platform.OS !== 'web') {
@@ -113,6 +114,16 @@ export default function VerifyEmailScreen() {
       pulse2.stop();
     };
   }, [pulseAnim1, pulseAnim2]);
+
+  // Fade-in animation for subtitle text
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   // Resend cooldown timer
   useEffect(() => {
@@ -406,119 +417,10 @@ export default function VerifyEmailScreen() {
               Check your inbox
             </Text>
 
-            <Text style={[styles.subtitle, isDark && styles.subtitleDark]}>
-              We sent a confirmation link to verify your email and activate your account.
-            </Text>
+            {/* Magic link instruction */}
+            <Animated.Text style={[styles.subtitle, isDark && styles.subtitleDark, { opacity: fadeAnim }]}>We sent a magic link to your email. Tap the link to verify your account.</Animated.Text>
 
-            {/* Email Address Pill */}
-            {displayEmail ? (
-              <Pressable
-                onPress={handleCopyEmail}
-                style={[styles.emailPill, isDark && styles.emailPillDark]}
-                android_ripple={{ color: 'rgba(37,99,235,0.1)' }}
-              >
-                <View style={styles.emailPillLeft}>
-                  <HugeiconsIcon icon={Mail01Icon} size={16} color="#2563EB" strokeWidth={2} />
-                  <Text
-                    style={[styles.emailPillText, isDark && styles.emailPillTextDark]}
-                    numberOfLines={1}
-                  >
-                    {displayEmail}
-                  </Text>
-                </View>
-                <View style={styles.copyButton}>
-                  <HugeiconsIcon
-                    icon={copied ? CheckmarkCircle01Icon : Copy01Icon}
-                    size={16}
-                    color={copied ? '#10B981' : isDark ? '#94A3B8' : '#64748B'}
-                    strokeWidth={2}
-                  />
-                  <Text style={[styles.copyLabel, copied && styles.copyLabelSuccess]}>
-                    {copied ? 'Copied' : 'Copy'}
-                  </Text>
-                </View>
-              </Pressable>
-            ) : null}
-
-            {/* Instruction Callout */}
-            <View style={[styles.instructionBox, isDark && styles.instructionBoxDark]}>
-              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={18} color="#10B981" strokeWidth={2.4} />
-              <Text style={[styles.instructionText, isDark && styles.instructionTextDark]}>
-                Click the confirmation link inside your email to jump directly into onboarding.
-              </Text>
-            </View>
-
-            {/* Feedback Banner */}
-            {feedback && (
-              <View
-                style={[
-                  styles.feedbackBanner,
-                  feedback.type === 'error' ? styles.feedbackBannerError : styles.feedbackBannerSuccess,
-                ]}
-              >
-                <Ionicons
-                  name={feedback.type === 'error' ? 'alert-circle' : 'checkmark-circle'}
-                  size={18}
-                  color={feedback.type === 'error' ? '#EF4444' : '#10B981'}
-                />
-                <Text
-                  style={[
-                    styles.feedbackBannerText,
-                    feedback.type === 'error' ? styles.feedbackErrorText : styles.feedbackSuccessText,
-                  ]}
-                >
-                  {feedback.message}
-                </Text>
-              </View>
-            )}
-
-            {/* Primary Action: Open Email App */}
-            <TouchableOpacity
-              style={[
-                styles.primaryButton,
-              ]}
-              onPress={handleOpenEmailApp}
-            >
-              <HugeiconsIcon icon={Mail01Icon} size={20} color="#FFFFFF" strokeWidth={2} />
-              <Text style={styles.primaryButtonText}>Open Email App</Text>
-              <HugeiconsIcon icon={ArrowRight01Icon} size={18} color="#FFFFFF" strokeWidth={2.4} />
-            </TouchableOpacity>
-
-            {/* Secondary Action: I've Already Confirmed */}
-            <TouchableOpacity
-              style={[
-                styles.secondaryButton,
-                isDark && styles.secondaryButtonDark,
-              ]}
-              onPress={handleCheckStatus}
-              disabled={isCheckingStatus}
-            >
-              {isCheckingStatus ? (
-                <ActivityIndicator size="small" color={isDark ? '#60A5FA' : '#2563EB'} />
-              ) : (
-                <>
-                  <Ionicons
-                    name="refresh-outline"
-                    size={18}
-                    color={isDark ? '#93C5FD' : '#2563EB'}
-                  />
-                  <Text style={[styles.secondaryButtonText, isDark && styles.secondaryButtonTextDark]}>
-                    I've Confirmed, Continue
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-
-            {/* Divider */}
-            <View style={styles.dividerRow}>
-              <View style={[styles.dividerLine, isDark && styles.dividerLineDark]} />
-              <Text style={[styles.dividerText, isDark && styles.dividerTextDark]}>
-                OR ENTER 8-DIGIT CODE
-              </Text>
-              <View style={[styles.dividerLine, isDark && styles.dividerLineDark]} />
-            </View>
-
-            {/* 8-digit OTP verification option */}
+            {/* 8-digit OTP verification option
             <View style={styles.otpSection}>
               <View
                 style={[
@@ -557,7 +459,7 @@ export default function VerifyEmailScreen() {
                   </Pressable>
                 )}
               </View>
-            </View>
+            </View> */}
 
             {/* Resend Link Section */}
             <View style={styles.resendSection}>
@@ -598,15 +500,6 @@ export default function VerifyEmailScreen() {
               <HugeiconsIcon icon={ArrowLeft01Icon} size={16} color={isDark ? '#94A3B8' : '#64748B'} strokeWidth={2} />
               <Text style={[styles.footerLinkText, isDark && styles.footerLinkTextDark]}>
                 Wrong email? Sign Up again
-              </Text>
-            </Pressable>
-
-            <Pressable
-              onPress={() => router.replace('/(auth)/login' as any)}
-              style={styles.footerLink}
-            >
-              <Text style={[styles.footerLinkText, isDark && styles.footerLinkTextDark]}>
-                Back to Sign In
               </Text>
             </Pressable>
           </View>

@@ -175,7 +175,23 @@ export const getOrCreateReferralCode = async (userId: string, email?: string): P
     const existing = await getReferralCode(userId);
     if (existing) return existing;
 
-    return "GAP" + userId.replace(/-/g, "").slice(0, 5).toUpperCase();
+    const fallbackCode = "GAP" + userId.replace(/-/g, "").slice(0, 5).toUpperCase();
+
+    // Persist code only if the user has already completed onboarding
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("onboarding_completed")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (profile?.onboarding_completed) {
+      await supabase
+        .from("profiles")
+        .update({ referral_code: fallbackCode })
+        .eq("id", userId);
+    }
+
+    return fallbackCode;
   } catch (e) {
     console.error("[Referral] Exception reading referral code:", e);
     return "GAP" + userId.slice(0, 5).toUpperCase();

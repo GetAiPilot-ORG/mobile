@@ -147,7 +147,7 @@ export default function OnboardingScreen() {
           } as any);
         }
       }
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
 
@@ -523,695 +523,669 @@ export default function OnboardingScreen() {
         </View>
 
         <ScrollView
-            contentContainerStyle={[
-              styles.scrollContent,
-              {
-                paddingTop: Math.max(insets.top + 12, 36),
-                paddingBottom: Math.max(insets.bottom + 28, 36),
-              },
-            ]}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {/* 1. Header Bar: Navigation */}
-            <View style={styles.topBar}>
-              {step > 1 ? (
-                <TouchableOpacity
-                  disabled={loading}
-                  onPress={() => {
-                    triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-                    animateToStep((step - 1) as 1 | 2);
-                  }}
-                  hitSlop={8}
-                  style={[styles.navPillBtn, isDark && styles.navPillBtnDark, loading && { opacity: 0.5 }]}
-                >
-                  <HugeiconsIcon
-                    icon={ArrowLeft01Icon}
-                    size={14}
-                    color={isDark ? '#94A3B8' : '#64748B'}
-                    strokeWidth={2}
-                  />
-                  <Text style={[styles.navBtnText, isDark && styles.navBtnTextDark]}>Back</Text>
-                </TouchableOpacity>
-              ) : (
-                <View style={{ width: 40 }} />
-              )}
-
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingTop: Math.max(insets.top + 12, 36),
+              paddingBottom: Math.max(insets.bottom + 28, 36),
+            },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* 1. Header Bar: Navigation */}
+          <View style={styles.topBar}>
+            {step > 1 ? (
               <TouchableOpacity
                 disabled={loading}
-                onPress={async () => {
+                onPress={() => {
                   triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-                  await useAuthStore.getState().logout();
-                  router.replace('/(auth)/login' as any);
+                  animateToStep((step - 1) as 1 | 2);
                 }}
                 hitSlop={8}
                 style={[styles.navPillBtn, isDark && styles.navPillBtnDark, loading && { opacity: 0.5 }]}
               >
                 <HugeiconsIcon
-                  icon={Logout01Icon}
+                  icon={ArrowLeft01Icon}
                   size={14}
                   color={isDark ? '#94A3B8' : '#64748B'}
                   strokeWidth={2}
                 />
-                <Text style={[styles.navBtnText, isDark && styles.navBtnTextDark]}>Sign out</Text>
+                <Text style={[styles.navBtnText, isDark && styles.navBtnTextDark]}>Back</Text>
               </TouchableOpacity>
-            </View>
-
-            {/* 2. Brand Hero: Living AI Logo + Step Badge + Typography */}
-            <View style={styles.heroSection}>
-              <View style={[styles.aiLogoHalo, isDark && styles.aiLogoHaloDark]}>
-                <AnimatedAiLogo size={70} isDark={isDark} />
-              </View>
-
-              <View style={[styles.stepPillBadge, isDark && styles.stepPillBadgeDark]}>
-                <View style={styles.stepPulseDot} />
-                <Text style={[styles.stepPillText, isDark && styles.stepPillTextDark]}>
-                  STEP {step} OF 3 • {step === 1 ? 'ACCOUNT PROFILE' : step === 2 ? 'WORKSPACE SETUP' : 'SECURITY & ALERTS'}
-                </Text>
-              </View>
-
-              <Text style={[styles.heroHeading, isDark && styles.heroHeadingDark]}>
-                {step === 1 ? 'Choose Account Type' : step === 2 ? 'Configure Workspace' : 'Security & Permissions'}
-              </Text>
-              <Text style={[styles.heroSubheading, isDark && styles.heroSubheadingDark]}>
-                {step === 1
-                  ? 'Tailor your AI workspace engines according to your specific needs'
-                  : step === 2
-                    ? 'Set up your default workspace profile and automation contact information'
-                    : 'Authorize device security and real-time alerts for an optimal experience'}
-              </Text>
-            </View>
-
-            {/* Inline Error Notice */}
-            {error && (
-              <View style={[styles.errorBanner, isDark && styles.errorBannerDark]}>
-                <Text style={styles.errorBannerText}>{error}</Text>
-              </View>
+            ) : (
+              <View style={{ width: 40 }} />
             )}
 
-            {/* Animated Step Body Content */}
-            <Animated.View
-              style={{
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
+            <TouchableOpacity
+              disabled={loading}
+              onPress={async () => {
+                triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
+                await useAuthStore.getState().logout();
+                router.replace('/(auth)/login' as any);
               }}
+              hitSlop={8}
+              style={[styles.navPillBtn, isDark && styles.navPillBtnDark, loading && { opacity: 0.5 }]}
             >
-              {step === 1 ? (
-                /* ========================================================
-                   STEP 1: Premium Account Type Selection Cards
-                   ======================================================== */
-                <View style={styles.stepContent}>
-                  {/* Option 1: Business / Agency Card */}
-                  <TouchableOpacity
-                    style={[
-                      styles.accountCard,
-                      accountType === 'business' && styles.accountCardActiveBusiness,
-                      isDark && styles.accountCardDark,
-                      isDark && accountType === 'business' && styles.accountCardActiveBusinessDark,
-                    ]}
-                    onPress={() => handleSelectAccountType('business')}
-                  >
-                    {/* Top Row: Icon Squircle + Title + Badge + Selector */}
-                    <View style={styles.cardHeaderRow}>
-                      <LinearGradient
-                        colors={
-                          accountType === 'business'
-                            ? ['#2563EB', '#1D4ED8']
-                            : isDark
-                              ? ['#2C2B38', '#201F2B']
-                              : ['#F1F5F9', '#E2E8F0']
-                        }
-                        style={styles.cardIconSquircle}
-                      >
-                        <HugeiconsIcon
-                          icon={Building02Icon}
-                          size={24}
-                          color={accountType === 'business' ? '#FFFFFF' : isDark ? '#94A3B8' : '#475569'}
-                          strokeWidth={2}
-                        />
-                      </LinearGradient>
+              <HugeiconsIcon
+                icon={Logout01Icon}
+                size={14}
+                color={isDark ? '#94A3B8' : '#64748B'}
+                strokeWidth={2}
+              />
+              <Text style={[styles.navBtnText, isDark && styles.navBtnTextDark]}>Sign out</Text>
+            </TouchableOpacity>
+          </View>
 
-                      <View style={styles.cardHeaderCol}>
-                        <View style={styles.cardTitleTagRow}>
-                          <Text style={[styles.cardTitle, isDark && styles.cardTitleDark]}>
-                            Business / Agency
-                          </Text>
-                          <View style={styles.popularTagPill}>
-                            <Text style={styles.popularTagText}>RECOMMENDED</Text>
-                          </View>
-                        </View>
-                        <Text style={[styles.cardSubtitle, isDark && styles.cardSubtitleDark]}>
-                          For marketing teams, agencies, and businesses managing multiple automation channels
-                        </Text>
-                      </View>
+          {/* 2. Brand Hero: Living AI Logo + Step Badge + Typography */}
+          <View style={styles.heroSection}>
+            <View style={[styles.aiLogoHalo, isDark && styles.aiLogoHaloDark]}>
+              <AnimatedAiLogo size={70} isDark={isDark} />
+            </View>
 
-                      {/* Selector Radio / Checked Indicator */}
-                      <View
-                        style={[
-                          styles.selectorCircle,
-                          accountType === 'business' && styles.selectorCircleActiveBusiness,
-                          isDark && styles.selectorCircleDark,
-                        ]}
-                      >
-                        {accountType === 'business' ? (
-                          <HugeiconsIcon icon={CheckmarkCircle01Icon} size={22} color="#2563EB" strokeWidth={2.4} />
-                        ) : null}
-                      </View>
-                    </View>
+            <View style={[styles.stepPillBadge, isDark && styles.stepPillBadgeDark]}>
+              <View style={styles.stepPulseDot} />
+              <Text style={[styles.stepPillText, isDark && styles.stepPillTextDark]}>
+                STEP {step} OF 3 • {step === 1 ? 'ACCOUNT PROFILE' : step === 2 ? 'WORKSPACE SETUP' : 'SECURITY & ALERTS'}
+              </Text>
+            </View>
 
-                    {/* Feature Micro-Badges Row */}
-                    <View style={styles.featurePillsRow}>
-                      <View style={[styles.featurePill, isDark && styles.featurePillDark]}>
-                        <HugeiconsIcon icon={ZapIcon} size={11} color="#2563EB" strokeWidth={2.2} />
-                        <Text style={[styles.featurePillText, isDark && styles.featurePillTextDark]}>
-                          Multi-Bot Relays
-                        </Text>
-                      </View>
-                      <View style={[styles.featurePill, isDark && styles.featurePillDark]}>
-                        <HugeiconsIcon icon={Briefcase01Icon} size={11} color="#2563EB" strokeWidth={2.2} />
-                        <Text style={[styles.featurePillText, isDark && styles.featurePillTextDark]}>
-                          Smart CRM Sync
-                        </Text>
-                      </View>
-                      <View style={[styles.featurePill, isDark && styles.featurePillDark]}>
-                        <HugeiconsIcon icon={SparklesIcon} size={11} color="#2563EB" strokeWidth={2.2} />
-                        <Text style={[styles.featurePillText, isDark && styles.featurePillTextDark]}>
-                          Meta Cloud API
-                        </Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
+            <Text style={[styles.heroHeading, isDark && styles.heroHeadingDark]}>
+              {step === 1 ? 'Choose Account Type' : step === 2 ? 'Configure Workspace' : 'Security & Permissions'}
+            </Text>
+            <Text style={[styles.heroSubheading, isDark && styles.heroSubheadingDark]}>
+              {step === 1
+                ? 'Tailor your AI workspace engines according to your specific needs'
+                : step === 2
+                  ? 'Set up your default workspace profile and automation contact information'
+                  : 'Authorize device security and real-time alerts for an optimal experience'}
+            </Text>
+          </View>
 
-                  {/* Option 2: Creator / Individual Card */}
-                  <TouchableOpacity
-                    style={[
-                      styles.accountCard,
-                      accountType === 'personal' && styles.accountCardActivePersonal,
-                      isDark && styles.accountCardDark,
-                      isDark && accountType === 'personal' && styles.accountCardActivePersonalDark,
-                    ]}
-                    onPress={() => handleSelectAccountType('personal')}
-                  >
-                    {/* Top Row: Icon Squircle + Title + Badge + Selector */}
-                    <View style={styles.cardHeaderRow}>
-                      <LinearGradient
-                        colors={
-                          accountType === 'personal'
-                            ? ['#8B5CF6', '#6D28D9']
-                            : isDark
-                              ? ['#2C2B38', '#201F2B']
-                              : ['#F1F5F9', '#E2E8F0']
-                        }
-                        style={styles.cardIconSquircle}
-                      >
-                        <HugeiconsIcon
-                          icon={UserIcon}
-                          size={24}
-                          color={accountType === 'personal' ? '#FFFFFF' : isDark ? '#94A3B8' : '#475569'}
-                          strokeWidth={2}
-                        />
-                      </LinearGradient>
+          {/* Inline Error Notice */}
+          {error && (
+            <View style={[styles.errorBanner, isDark && styles.errorBannerDark]}>
+              <Text style={styles.errorBannerText}>{error}</Text>
+            </View>
+          )}
 
-                      <View style={styles.cardHeaderCol}>
-                        <View style={styles.cardTitleTagRow}>
-                          <Text style={[styles.cardTitle, isDark && styles.cardTitleDark]}>
-                            Creator / Individual
-                          </Text>
-                          <View style={styles.soloTagPill}>
-                            <Text style={styles.soloTagText}>SOLO & CREATOR</Text>
-                          </View>
-                        </View>
-                        <Text style={[styles.cardSubtitle, isDark && styles.cardSubtitleDark]}>
-                          For solo founders, content creators, and community managers
-                        </Text>
-                      </View>
-
-                      {/* Selector Radio / Checked Indicator */}
-                      <View
-                        style={[
-                          styles.selectorCircle,
-                          accountType === 'personal' && styles.selectorCircleActivePersonal,
-                          isDark && styles.selectorCircleDark,
-                        ]}
-                      >
-                        {accountType === 'personal' ? (
-                          <HugeiconsIcon icon={CheckmarkCircle01Icon} size={22} color="#8B5CF6" strokeWidth={2.4} />
-                        ) : null}
-                      </View>
-                    </View>
-
-                    {/* Feature Micro-Badges Row */}
-                    <View style={styles.featurePillsRow}>
-                      <View style={[styles.featurePill, isDark && styles.featurePillDark]}>
-                        <HugeiconsIcon icon={SparklesIcon} size={11} color="#8B5CF6" strokeWidth={2.2} />
-                        <Text style={[styles.featurePillText, isDark && styles.featurePillTextDark]}>
-                          Bio & Link Builder
-                        </Text>
-                      </View>
-                      <View style={[styles.featurePill, isDark && styles.featurePillDark]}>
-                        <HugeiconsIcon icon={ZapIcon} size={11} color="#8B5CF6" strokeWidth={2.2} />
-                        <Text style={[styles.featurePillText, isDark && styles.featurePillTextDark]}>
-                          Social Auto-Post
-                        </Text>
-                      </View>
-                      <View style={[styles.featurePill, isDark && styles.featurePillDark]}>
-                        <HugeiconsIcon icon={CheckmarkCircle01Icon} size={11} color="#8B5CF6" strokeWidth={2.2} />
-                        <Text style={[styles.featurePillText, isDark && styles.featurePillTextDark]}>
-                          Quick Lead Forms
-                        </Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-
-                  {/* Primary CTA Button */}
-                  <TouchableOpacity
-                    activeOpacity={0.88}
-                    onPress={handleContinueToStep2}
-                    style={styles.primaryCtaWrapper}
-                  >
+          {/* Animated Step Body Content */}
+          <Animated.View
+            style={{
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            }}
+          >
+            {step === 1 ? (
+              /* ========================================================
+                 STEP 1: Premium Account Type Selection Cards
+                 ======================================================== */
+              <View style={styles.stepContent}>
+                {/* Option 1: Business / Agency Card */}
+                <TouchableOpacity
+                  style={[
+                    styles.accountCard,
+                    accountType === 'business' && styles.accountCardActiveBusiness,
+                    isDark && styles.accountCardDark,
+                    isDark && accountType === 'business' && styles.accountCardActiveBusinessDark,
+                  ]}
+                  onPress={() => handleSelectAccountType('business')}
+                >
+                  {/* Top Row: Icon Squircle + Title + Badge + Selector */}
+                  <View style={styles.cardHeaderRow}>
                     <LinearGradient
                       colors={
                         accountType === 'business'
                           ? ['#2563EB', '#1D4ED8']
-                          : ['#8B5CF6', '#7C3AED']
+                          : isDark
+                            ? ['#2C2B38', '#201F2B']
+                            : ['#F1F5F9', '#E2E8F0']
                       }
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={styles.primaryCtaGradient}
+                      style={styles.cardIconSquircle}
                     >
-                      <Text style={styles.primaryCtaText}>Continue to Details</Text>
-                      <View style={styles.primaryCtaIconCircle}>
-                        <HugeiconsIcon
-                          icon={ArrowRight01Icon}
-                          size={15}
-                          color="#FFFFFF"
-                          strokeWidth={2.4}
-                        />
-                      </View>
+                      <HugeiconsIcon
+                        icon={Building02Icon}
+                        size={24}
+                        color={accountType === 'business' ? '#FFFFFF' : isDark ? '#94A3B8' : '#475569'}
+                        strokeWidth={2}
+                      />
                     </LinearGradient>
-                  </TouchableOpacity>
-                </View>
-              ) : step === 2 ? (
-                /* ========================================================
-                   STEP 2: Workspace Details (matching website onboarding)
-                   ======================================================== */
-                <View style={styles.stepContent}>
-                  {/* Profile Details Group */}
-                  <View style={styles.sectionHeaderRow}>
-                    <HugeiconsIcon icon={UserIcon} size={16} color={colors.accent} strokeWidth={2} />
-                    <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
-                      Profile Information
-                    </Text>
+
+                    <View style={styles.cardHeaderCol}>
+                      <View style={styles.cardTitleTagRow}>
+                        <Text style={[styles.cardTitle, isDark && styles.cardTitleDark]}>
+                          Business / Agency
+                        </Text>
+
+                      </View>
+
+                    </View>
+
+                    {/* Selector Radio / Checked Indicator */}
+                    <View
+                      style={[
+                        styles.selectorCircle,
+                        accountType === 'business' && styles.selectorCircleActiveBusiness,
+                        isDark && styles.selectorCircleDark,
+                      ]}
+                    >
+                      {accountType === 'business' ? (
+                        <HugeiconsIcon icon={CheckmarkCircle01Icon} size={22} color="#2563EB" strokeWidth={2.4} />
+                      ) : null}
+                    </View>
+                  </View>
+                </TouchableOpacity>
+
+                {/* Option 2: Creator / Individual Card */}
+                <TouchableOpacity
+                  style={[
+                    styles.accountCard,
+                    accountType === 'personal' && styles.accountCardActivePersonal,
+                    isDark && styles.accountCardDark,
+                    isDark && accountType === 'personal' && styles.accountCardActivePersonalDark,
+                  ]}
+                  onPress={() => handleSelectAccountType('personal')}
+                >
+                  {/* Top Row: Icon Squircle + Title + Badge + Selector */}
+                  <View style={styles.cardHeaderRow}>
+                    <LinearGradient
+                      colors={
+                        accountType === 'personal'
+                          ? ['#8B5CF6', '#6D28D9']
+                          : isDark
+                            ? ['#2C2B38', '#201F2B']
+                            : ['#F1F5F9', '#E2E8F0']
+                      }
+                      style={styles.cardIconSquircle}
+                    >
+                      <HugeiconsIcon
+                        icon={UserIcon}
+                        size={24}
+                        color={accountType === 'personal' ? '#FFFFFF' : isDark ? '#94A3B8' : '#475569'}
+                        strokeWidth={2}
+                      />
+                    </LinearGradient>
+
+                    <View style={styles.cardHeaderCol}>
+                      <View style={styles.cardTitleTagRow}>
+                        <Text style={[styles.cardTitle, isDark && styles.cardTitleDark]}>
+                          Creator / Individual
+                        </Text>
+                        <View style={styles.soloTagPill}>
+                          <Text style={styles.soloTagText}>SOLO & CREATOR</Text>
+                        </View>
+                      </View>
+                      <Text style={[styles.cardSubtitle, isDark && styles.cardSubtitleDark]}>
+                        For solo founders, content creators, and community managers
+                      </Text>
+                    </View>
+
+                    {/* Selector Radio / Checked Indicator */}
+                    <View
+                      style={[
+                        styles.selectorCircle,
+                        accountType === 'personal' && styles.selectorCircleActivePersonal,
+                        isDark && styles.selectorCircleDark,
+                      ]}
+                    >
+                      {accountType === 'personal' ? (
+                        <HugeiconsIcon icon={CheckmarkCircle01Icon} size={22} color="#8B5CF6" strokeWidth={2.4} />
+                      ) : null}
+                    </View>
                   </View>
 
-                  <View style={[styles.glassInputCard, isDark && styles.glassInputCardDark]}>
-                    <View style={styles.inputRow}>
-                      <TextInput
-                        style={[styles.nativeInput, isDark && styles.nativeInputDark]}
-                        placeholder="First Name *"
-                        placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
-                        value={firstName}
-                        onChangeText={setFirstName}
-                        autoCapitalize="words"
-                        returnKeyType="next"
+                  {/* Feature Micro-Badges Row */}
+                  <View style={styles.featurePillsRow}>
+                    <View style={[styles.featurePill, isDark && styles.featurePillDark]}>
+                      <HugeiconsIcon icon={SparklesIcon} size={11} color="#8B5CF6" strokeWidth={2.2} />
+                      <Text style={[styles.featurePillText, isDark && styles.featurePillTextDark]}>
+                        Bio & Link Builder
+                      </Text>
+                    </View>
+                    <View style={[styles.featurePill, isDark && styles.featurePillDark]}>
+                      <HugeiconsIcon icon={ZapIcon} size={11} color="#8B5CF6" strokeWidth={2.2} />
+                      <Text style={[styles.featurePillText, isDark && styles.featurePillTextDark]}>
+                        Social Auto-Post
+                      </Text>
+                    </View>
+                    <View style={[styles.featurePill, isDark && styles.featurePillDark]}>
+                      <HugeiconsIcon icon={CheckmarkCircle01Icon} size={11} color="#8B5CF6" strokeWidth={2.2} />
+                      <Text style={[styles.featurePillText, isDark && styles.featurePillTextDark]}>
+                        Quick Lead Forms
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+
+                {/* Primary CTA Button */}
+                <TouchableOpacity
+                  activeOpacity={0.88}
+                  onPress={handleContinueToStep2}
+                  style={styles.primaryCtaWrapper}
+                >
+                  <LinearGradient
+                    colors={
+                      accountType === 'business'
+                        ? ['#2563EB', '#1D4ED8']
+                        : ['#8B5CF6', '#7C3AED']
+                    }
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.primaryCtaGradient}
+                  >
+                    <Text style={styles.primaryCtaText}>Continue to Details</Text>
+                    <View style={styles.primaryCtaIconCircle}>
+                      <HugeiconsIcon
+                        icon={ArrowRight01Icon}
+                        size={15}
+                        color="#FFFFFF"
+                        strokeWidth={2.4}
                       />
                     </View>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            ) : step === 2 ? (
+              /* ========================================================
+                 STEP 2: Workspace Details (matching website onboarding)
+                 ======================================================== */
+              <View style={styles.stepContent}>
+                {/* Profile Details Group */}
+                <View style={styles.sectionHeaderRow}>
+                  <HugeiconsIcon icon={UserIcon} size={16} color={colors.accent} strokeWidth={2} />
+                  <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
+                    Profile Information
+                  </Text>
+                </View>
 
-                    <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
+                <View style={[styles.glassInputCard, isDark && styles.glassInputCardDark]}>
+                  <View style={styles.inputRow}>
+                    <TextInput
+                      style={[styles.nativeInput, isDark && styles.nativeInputDark]}
+                      placeholder="First Name *"
+                      placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
+                      value={firstName}
+                      onChangeText={setFirstName}
+                      autoCapitalize="words"
+                      returnKeyType="next"
+                    />
+                  </View>
 
-                    <View style={styles.inputRow}>
-                      <TextInput
-                        style={[styles.nativeInput, isDark && styles.nativeInputDark]}
-                        placeholder="Last Name *"
-                        placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
-                        value={lastName}
-                        onChangeText={setLastName}
-                        autoCapitalize="words"
-                        returnKeyType="next"
-                      />
+                  <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
+
+                  <View style={styles.inputRow}>
+                    <TextInput
+                      style={[styles.nativeInput, isDark && styles.nativeInputDark]}
+                      placeholder="Last Name *"
+                      placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
+                      value={lastName}
+                      onChangeText={setLastName}
+                      autoCapitalize="words"
+                      returnKeyType="next"
+                    />
+                  </View>
+
+                  {/* Email Input - matching bot-dashboard (Required for Phone & Truecaller signups) */}
+                  <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
+
+                  <View style={styles.inputRow}>
+                    <TextInput
+                      style={[styles.nativeInput, isDark && styles.nativeInputDark]}
+                      placeholder={
+                        isPhoneOrTruecaller
+                          ? 'Email Address (Required for Recovery) *'
+                          : 'Email Address'
+                      }
+                      placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
+                      value={email}
+                      onChangeText={setEmail}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      returnKeyType="next"
+                    />
+                  </View>
+
+                  <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
+
+                  <View style={styles.inputRow}>
+                    <TextInput
+                      style={[styles.nativeInput, isDark && styles.nativeInputDark]}
+                      placeholder="Mobile / WhatsApp Number"
+                      placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
+                      value={phone}
+                      onChangeText={setPhone}
+                      keyboardType="phone-pad"
+                      returnKeyType="next"
+                    />
+                  </View>
+
+                  <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
+
+                  <View style={styles.inputRow}>
+                    <TextInput
+                      style={[styles.nativeInput, isDark && styles.nativeInputDark]}
+                      placeholder="State / Region (e.g. California, Delhi, Ontario)"
+                      placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
+                      value={state}
+                      onChangeText={setState}
+                      autoCapitalize="words"
+                      returnKeyType="next"
+                    />
+                  </View>
+                </View>
+
+                {/* Business Specific Details (when accountType === 'business') */}
+                {accountType === 'business' && (
+                  <>
+                    <View style={[styles.sectionHeaderRow, { marginTop: 10 }]}>
+                      <HugeiconsIcon icon={Building02Icon} size={16} color={colors.accent} strokeWidth={2} />
+                      <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
+                        Organization Details
+                      </Text>
                     </View>
 
-                    {/* Email Input - matching bot-dashboard (Required for Phone & Truecaller signups) */}
-                    <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
+                    <View style={[styles.glassInputCard, isDark && styles.glassInputCardDark]}>
+                      <View style={styles.inputRow}>
+                        <TextInput
+                          style={[styles.nativeInput, isDark && styles.nativeInputDark]}
+                          placeholder="Business / Company Name *"
+                          placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
+                          value={businessName}
+                          onChangeText={setBusinessName}
+                          autoCapitalize="words"
+                          returnKeyType="next"
+                        />
+                      </View>
 
-                    <View style={styles.inputRow}>
-                      <TextInput
-                        style={[styles.nativeInput, isDark && styles.nativeInputDark]}
-                        placeholder={
-                          isPhoneOrTruecaller
-                            ? 'Email Address (Required for Recovery) *'
-                            : 'Email Address'
+                      <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
+
+                      <View style={styles.inputRow}>
+                        <TextInput
+                          style={[styles.nativeInput, isDark && styles.nativeInputDark]}
+                          placeholder="Work / Business Email *"
+                          placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
+                          value={businessEmail}
+                          onChangeText={setBusinessEmail}
+                          keyboardType="email-address"
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                          returnKeyType="next"
+                        />
+                      </View>
+                    </View>
+
+                    {/* Industry Category */}
+                    <Text style={[styles.subSectionTitle, isDark && styles.subSectionTitleDark]}>
+                      Industry Category
+                    </Text>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.chipsScrollContent}
+                    >
+                      {CATEGORIES.map((cat) => {
+                        const isSelected = category === cat;
+                        return (
+                          <TouchableOpacity
+                            key={cat}
+                            style={[
+                              styles.categoryChip,
+                              isSelected && styles.categoryChipActive,
+                              isDark && styles.categoryChipDark,
+                              isDark && isSelected && styles.categoryChipActiveDark,
+                            ]}
+                            onPress={() => {
+                              triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
+                              setCategory(cat);
+                            }}
+                          >
+                            <Text
+                              style={[
+                                styles.categoryChipText,
+                                isSelected && styles.categoryChipTextActive,
+                                isDark && styles.categoryChipTextDark,
+                              ]}
+                            >
+                              {cat}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+
+                    {/* Team Size Segmented Control */}
+                    <Text style={[styles.subSectionTitle, isDark && styles.subSectionTitleDark]}>
+                      Team Size
+                    </Text>
+                    <View style={[styles.segmentedWrapper, isDark && styles.segmentedWrapperDark]}>
+                      {TEAM_SIZES.map((size) => {
+                        const isSelected = teamSize === size;
+                        return (
+                          <TouchableOpacity
+                            key={size}
+                            style={[
+                              styles.segmentPill,
+                              isSelected && styles.segmentPillActive,
+                              isDark && styles.segmentPillDark,
+                              isDark && isSelected && styles.segmentPillActiveDark,
+                            ]}
+                            onPress={() => {
+                              triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
+                              setTeamSize(size);
+                            }}
+                          >
+                            <Text
+                              style={[
+                                styles.segmentPillText,
+                                isSelected && styles.segmentPillTextActive,
+                                isDark && styles.segmentPillTextDark,
+                              ]}
+                            >
+                              {size}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </>
+                )}
+
+                {/* Continue Button */}
+                <TouchableOpacity
+                  activeOpacity={0.88}
+                  onPress={handleContinueToStep3}
+                  disabled={isValidatingEmail || loading}
+                  style={[styles.primaryCtaWrapper, (isValidatingEmail || loading) && { opacity: 0.85 }]}
+                >
+                  <LinearGradient
+                    colors={['#2563EB', '#1D4ED8']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.primaryCtaGradient}
+                  >
+                    {isValidatingEmail ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <>
+                        <Text style={styles.primaryCtaText}>Continue to Security & Alerts</Text>
+                        <View style={styles.primaryCtaIconCircle}>
+                          <HugeiconsIcon icon={ArrowRight01Icon} size={15} color="#FFFFFF" strokeWidth={2.4} />
+                        </View>
+                      </>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                {/* Back to Step 1 Button */}
+                <TouchableOpacity
+                  style={[styles.backNavBtn, isDark && styles.backNavBtnDark]}
+                  onPress={() => {
+                    triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
+                    animateToStep(1);
+                  }}
+                >
+                  <HugeiconsIcon
+                    icon={ArrowLeft01Icon}
+                    size={15}
+                    color={isDark ? '#94A3B8' : '#64748B'}
+                    strokeWidth={2}
+                  />
+                  <Text style={[styles.backNavBtnText, isDark && styles.backNavBtnTextDark]}>
+                    Back to Account Type
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              /* ========================================================
+                 STEP 3: Permissions & Security Setup
+                 ======================================================== */
+              <View style={styles.stepContent}>
+                <View style={[styles.permissionCardGroup, isDark && styles.permissionCardGroupDark]}>
+                  {/* 1. Biometric / Face ID Card */}
+                  <View style={styles.permissionItemRow}>
+                    <LinearGradient
+                      colors={['rgba(16, 185, 129, 0.2)', 'rgba(16, 185, 129, 0.08)']}
+                      style={styles.permissionIconSurface}
+                    >
+                      <HugeiconsIcon
+                        icon={
+                          biometricSettings.biometricType === 'FACE_ID'
+                            ? FaceIdIcon
+                            : ShieldCheckIcon
                         }
-                        placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
-                        value={email}
-                        onChangeText={setEmail}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        returnKeyType="next"
+                        size={22}
+                        color="#10B981"
+                        strokeWidth={2}
                       />
+                    </LinearGradient>
+                    <View style={styles.permissionContentCol}>
+                      <Text style={[styles.permissionHeading, isDark && styles.permissionHeadingDark]}>
+                        {biometricSettings.biometricLabel} Lock
+                      </Text>
+                      <Text style={[styles.permissionDetails, isDark && styles.permissionDetailsDark]}>
+                        1-tap fast biometric access & encrypted local credentials
+                      </Text>
                     </View>
-
-                    <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
-
-                    <View style={styles.inputRow}>
-                      <TextInput
-                        style={[styles.nativeInput, isDark && styles.nativeInputDark]}
-                        placeholder="Mobile / WhatsApp Number"
-                        placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
-                        value={phone}
-                        onChangeText={setPhone}
-                        keyboardType="phone-pad"
-                        returnKeyType="next"
-                      />
-                    </View>
-
-                    <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
-
-                    <View style={styles.inputRow}>
-                      <TextInput
-                        style={[styles.nativeInput, isDark && styles.nativeInputDark]}
-                        placeholder="State / Region (e.g. California, Delhi, Ontario)"
-                        placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
-                        value={state}
-                        onChangeText={setState}
-                        autoCapitalize="words"
-                        returnKeyType="next"
-                      />
-                    </View>
+                    <Switch
+                      value={biometricSettings.enabled}
+                      onValueChange={handleToggleBiometricInOnboarding}
+                      disabled={isUpdatingBiometrics || loading}
+                      trackColor={{ false: isDark ? '#334155' : '#E2E8F0', true: '#10B981' }}
+                      thumbColor="#FFFFFF"
+                    />
                   </View>
 
-                  {/* Business Specific Details (when accountType === 'business') */}
-                  {accountType === 'business' && (
-                    <>
-                      <View style={[styles.sectionHeaderRow, { marginTop: 10 }]}>
-                        <HugeiconsIcon icon={Building02Icon} size={16} color={colors.accent} strokeWidth={2} />
-                        <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
-                          Organization Details
-                        </Text>
-                      </View>
+                  <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
 
-                      <View style={[styles.glassInputCard, isDark && styles.glassInputCardDark]}>
-                        <View style={styles.inputRow}>
-                          <TextInput
-                            style={[styles.nativeInput, isDark && styles.nativeInputDark]}
-                            placeholder="Business / Company Name *"
-                            placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
-                            value={businessName}
-                            onChangeText={setBusinessName}
-                            autoCapitalize="words"
-                            returnKeyType="next"
-                          />
-                        </View>
-
-                        <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
-
-                        <View style={styles.inputRow}>
-                          <TextInput
-                            style={[styles.nativeInput, isDark && styles.nativeInputDark]}
-                            placeholder="Work / Business Email *"
-                            placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
-                            value={businessEmail}
-                            onChangeText={setBusinessEmail}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            autoCorrect={false}
-                            returnKeyType="next"
-                          />
-                        </View>
-                      </View>
-
-                      {/* Industry Category */}
-                      <Text style={[styles.subSectionTitle, isDark && styles.subSectionTitleDark]}>
-                        Industry Category
-                      </Text>
-                      <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.chipsScrollContent}
-                      >
-                        {CATEGORIES.map((cat) => {
-                          const isSelected = category === cat;
-                          return (
-                            <TouchableOpacity
-                              key={cat}
-                              style={[
-                                styles.categoryChip,
-                                isSelected && styles.categoryChipActive,
-                                isDark && styles.categoryChipDark,
-                                isDark && isSelected && styles.categoryChipActiveDark,
-                              ]}
-                              onPress={() => {
-                                triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-                                setCategory(cat);
-                              }}
-                            >
-                              <Text
-                                style={[
-                                  styles.categoryChipText,
-                                  isSelected && styles.categoryChipTextActive,
-                                  isDark && styles.categoryChipTextDark,
-                                ]}
-                              >
-                                {cat}
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </ScrollView>
-
-                      {/* Team Size Segmented Control */}
-                      <Text style={[styles.subSectionTitle, isDark && styles.subSectionTitleDark]}>
-                        Team Size
-                      </Text>
-                      <View style={[styles.segmentedWrapper, isDark && styles.segmentedWrapperDark]}>
-                        {TEAM_SIZES.map((size) => {
-                          const isSelected = teamSize === size;
-                          return (
-                            <TouchableOpacity
-                              key={size}
-                              style={[
-                                styles.segmentPill,
-                                isSelected && styles.segmentPillActive,
-                                isDark && styles.segmentPillDark,
-                                isDark && isSelected && styles.segmentPillActiveDark,
-                              ]}
-                              onPress={() => {
-                                triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-                                setTeamSize(size);
-                              }}
-                            >
-                              <Text
-                                style={[
-                                  styles.segmentPillText,
-                                  isSelected && styles.segmentPillTextActive,
-                                  isDark && styles.segmentPillTextDark,
-                                ]}
-                              >
-                                {size}
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
-                    </>
-                  )}
-
-                  {/* Continue Button */}
-                  <TouchableOpacity
-                    activeOpacity={0.88}
-                    onPress={handleContinueToStep3}
-                    disabled={isValidatingEmail || loading}
-                    style={[styles.primaryCtaWrapper, (isValidatingEmail || loading) && { opacity: 0.85 }]}
-                  >
+                  {/* 2. Push Notifications Card */}
+                  <View style={styles.permissionItemRow}>
                     <LinearGradient
-                      colors={['#2563EB', '#1D4ED8']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={styles.primaryCtaGradient}
+                      colors={['rgba(37, 99, 235, 0.2)', 'rgba(37, 99, 235, 0.08)']}
+                      style={styles.permissionIconSurface}
                     >
-                      {isValidatingEmail ? (
-                        <ActivityIndicator color="#FFFFFF" size="small" />
-                      ) : (
-                        <>
-                          <Text style={styles.primaryCtaText}>Continue to Security & Alerts</Text>
-                          <View style={styles.primaryCtaIconCircle}>
-                            <HugeiconsIcon icon={ArrowRight01Icon} size={15} color="#FFFFFF" strokeWidth={2.4} />
-                          </View>
-                        </>
-                      )}
+                      <HugeiconsIcon icon={Notification01Icon} size={22} color="#2563EB" strokeWidth={2} />
                     </LinearGradient>
-                  </TouchableOpacity>
-
-                  {/* Back to Step 1 Button */}
-                  <TouchableOpacity
-                    style={[styles.backNavBtn, isDark && styles.backNavBtnDark]}
-                    onPress={() => {
-                      triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-                      animateToStep(1);
-                    }}
-                  >
-                    <HugeiconsIcon
-                      icon={ArrowLeft01Icon}
-                      size={15}
-                      color={isDark ? '#94A3B8' : '#64748B'}
-                      strokeWidth={2}
+                    <View style={styles.permissionContentCol}>
+                      <Text style={[styles.permissionHeading, isDark && styles.permissionHeadingDark]}>
+                        Push Notifications
+                      </Text>
+                      <Text style={[styles.permissionDetails, isDark && styles.permissionDetailsDark]}>
+                        Real-time alerts when new leads arrive & automations run
+                      </Text>
+                    </View>
+                    <Switch
+                      value={notificationsEnabled}
+                      disabled={loading}
+                      onValueChange={(val) => {
+                        triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
+                        setNotificationsEnabled(val);
+                      }}
+                      trackColor={{ false: isDark ? '#334155' : '#E2E8F0', true: '#2563EB' }}
+                      thumbColor="#FFFFFF"
                     />
-                    <Text style={[styles.backNavBtnText, isDark && styles.backNavBtnTextDark]}>
-                      Back to Account Type
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                /* ========================================================
-                   STEP 3: Permissions & Security Setup
-                   ======================================================== */
-                <View style={styles.stepContent}>
-                  <View style={[styles.permissionCardGroup, isDark && styles.permissionCardGroupDark]}>
-                    {/* 1. Biometric / Face ID Card */}
-                    <View style={styles.permissionItemRow}>
-                      <LinearGradient
-                        colors={['rgba(16, 185, 129, 0.2)', 'rgba(16, 185, 129, 0.08)']}
-                        style={styles.permissionIconSurface}
-                      >
-                        <HugeiconsIcon
-                          icon={
-                            biometricSettings.biometricType === 'FACE_ID'
-                              ? FaceIdIcon
-                              : ShieldCheckIcon
-                          }
-                          size={22}
-                          color="#10B981"
-                          strokeWidth={2}
-                        />
-                      </LinearGradient>
-                      <View style={styles.permissionContentCol}>
-                        <Text style={[styles.permissionHeading, isDark && styles.permissionHeadingDark]}>
-                          {biometricSettings.biometricLabel} Lock
-                        </Text>
-                        <Text style={[styles.permissionDetails, isDark && styles.permissionDetailsDark]}>
-                          1-tap fast biometric access & encrypted local credentials
-                        </Text>
-                      </View>
-                      <Switch
-                        value={biometricSettings.enabled}
-                        onValueChange={handleToggleBiometricInOnboarding}
-                        disabled={isUpdatingBiometrics || loading}
-                        trackColor={{ false: isDark ? '#334155' : '#E2E8F0', true: '#10B981' }}
-                        thumbColor="#FFFFFF"
-                      />
-                    </View>
-
-                    <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
-
-                    {/* 2. Push Notifications Card */}
-                    <View style={styles.permissionItemRow}>
-                      <LinearGradient
-                        colors={['rgba(37, 99, 235, 0.2)', 'rgba(37, 99, 235, 0.08)']}
-                        style={styles.permissionIconSurface}
-                      >
-                        <HugeiconsIcon icon={Notification01Icon} size={22} color="#2563EB" strokeWidth={2} />
-                      </LinearGradient>
-                      <View style={styles.permissionContentCol}>
-                        <Text style={[styles.permissionHeading, isDark && styles.permissionHeadingDark]}>
-                          Push Notifications
-                        </Text>
-                        <Text style={[styles.permissionDetails, isDark && styles.permissionDetailsDark]}>
-                          Real-time alerts when new leads arrive & automations run
-                        </Text>
-                      </View>
-                      <Switch
-                        value={notificationsEnabled}
-                        disabled={loading}
-                        onValueChange={(val) => {
-                          triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-                          setNotificationsEnabled(val);
-                        }}
-                        trackColor={{ false: isDark ? '#334155' : '#E2E8F0', true: '#2563EB' }}
-                        thumbColor="#FFFFFF"
-                      />
-                    </View>
-
-                    <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
-
-                    {/* 3. Sensory Haptics Card */}
-                    <View style={styles.permissionItemRow}>
-                      <LinearGradient
-                        colors={['rgba(139, 92, 246, 0.2)', 'rgba(139, 92, 246, 0.08)']}
-                        style={styles.permissionIconSurface}
-                      >
-                        <HugeiconsIcon icon={ZapIcon} size={22} color="#8B5CF6" strokeWidth={2} />
-                      </LinearGradient>
-                      <View style={styles.permissionContentCol}>
-                        <Text style={[styles.permissionHeading, isDark && styles.permissionHeadingDark]}>
-                          Tactile Haptic Feedback
-                        </Text>
-                        <Text style={[styles.permissionDetails, isDark && styles.permissionDetailsDark]}>
-                          Responsive tactile vibrations on buttons and actions
-                        </Text>
-                      </View>
-                      <Switch
-                        value={hapticsEnabled}
-                        disabled={loading}
-                        onValueChange={(val) => {
-                          triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-                          setHapticsEnabled(val);
-                        }}
-                        trackColor={{ false: isDark ? '#334155' : '#E2E8F0', true: '#8B5CF6' }}
-                        thumbColor="#FFFFFF"
-                      />
-                    </View>
                   </View>
 
-                  {/* Complete Setup Primary CTA */}
-                  <TouchableOpacity
-                    activeOpacity={0.88}
-                    onPress={handleCompleteOnboarding}
-                    disabled={loading}
-                    style={[styles.primaryCtaWrapper, loading && { opacity: 0.85 }]}
-                  >
-                    <LinearGradient
-                      colors={['#10B981', '#059669']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={styles.primaryCtaGradient}
-                    >
-                      {loading ? (
-                        <ActivityIndicator color="#FFFFFF" size="small" />
-                      ) : (
-                        <>
-                          <Text style={styles.primaryCtaText}>Complete Workspace Setup</Text>
-                          <View style={styles.primaryCtaIconCircle}>
-                            <HugeiconsIcon icon={CheckmarkCircle01Icon} size={16} color="#FFFFFF" strokeWidth={2.4} />
-                          </View>
-                        </>
-                      )}
-                    </LinearGradient>
-                  </TouchableOpacity>
+                  <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
 
-                  {/* Back to Step 2 Button */}
-                  <TouchableOpacity
-                    disabled={loading}
-                    style={[styles.backNavBtn, isDark && styles.backNavBtnDark, loading && { opacity: 0.5 }]}
-                    onPress={() => {
-                      triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-                      animateToStep(2);
-                    }}
-                  >
-                    <HugeiconsIcon
-                      icon={ArrowLeft01Icon}
-                      size={15}
-                      color={isDark ? '#94A3B8' : '#64748B'}
-                      strokeWidth={2}
+                  {/* 3. Sensory Haptics Card */}
+                  <View style={styles.permissionItemRow}>
+                    <LinearGradient
+                      colors={['rgba(139, 92, 246, 0.2)', 'rgba(139, 92, 246, 0.08)']}
+                      style={styles.permissionIconSurface}
+                    >
+                      <HugeiconsIcon icon={ZapIcon} size={22} color="#8B5CF6" strokeWidth={2} />
+                    </LinearGradient>
+                    <View style={styles.permissionContentCol}>
+                      <Text style={[styles.permissionHeading, isDark && styles.permissionHeadingDark]}>
+                        Tactile Haptic Feedback
+                      </Text>
+                      <Text style={[styles.permissionDetails, isDark && styles.permissionDetailsDark]}>
+                        Responsive tactile vibrations on buttons and actions
+                      </Text>
+                    </View>
+                    <Switch
+                      value={hapticsEnabled}
+                      disabled={loading}
+                      onValueChange={(val) => {
+                        triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
+                        setHapticsEnabled(val);
+                      }}
+                      trackColor={{ false: isDark ? '#334155' : '#E2E8F0', true: '#8B5CF6' }}
+                      thumbColor="#FFFFFF"
                     />
-                    <Text style={[styles.backNavBtnText, isDark && styles.backNavBtnTextDark]}>
-                      Back to Workspace Details
-                    </Text>
-                  </TouchableOpacity>
+                  </View>
                 </View>
-              )}
-            </Animated.View>
-          </ScrollView>
+
+                {/* Complete Setup Primary CTA */}
+                <TouchableOpacity
+                  activeOpacity={0.88}
+                  onPress={handleCompleteOnboarding}
+                  disabled={loading}
+                  style={[styles.primaryCtaWrapper, loading && { opacity: 0.85 }]}
+                >
+                  <LinearGradient
+                    colors={['#10B981', '#059669']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.primaryCtaGradient}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <>
+                        <Text style={styles.primaryCtaText}>Complete Workspace Setup</Text>
+                        <View style={styles.primaryCtaIconCircle}>
+                          <HugeiconsIcon icon={CheckmarkCircle01Icon} size={16} color="#FFFFFF" strokeWidth={2.4} />
+                        </View>
+                      </>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                {/* Back to Step 2 Button */}
+                <TouchableOpacity
+                  disabled={loading}
+                  style={[styles.backNavBtn, isDark && styles.backNavBtnDark, loading && { opacity: 0.5 }]}
+                  onPress={() => {
+                    triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
+                    animateToStep(2);
+                  }}
+                >
+                  <HugeiconsIcon
+                    icon={ArrowLeft01Icon}
+                    size={15}
+                    color={isDark ? '#94A3B8' : '#64748B'}
+                    strokeWidth={2}
+                  />
+                  <Text style={[styles.backNavBtnText, isDark && styles.backNavBtnTextDark]}>
+                    Back to Workspace Details
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </Animated.View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
   );

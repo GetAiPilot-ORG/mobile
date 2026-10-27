@@ -124,19 +124,7 @@ export default function SignupScreen() {
         return;
       }
 
-      // 2. Dispatch a magic confirmation link so the user receives email verification
-      try {
-        await supabase.auth.signInWithOtp({
-          email: cleanEmail,
-          options: {
-            emailRedirectTo: redirectUrl,
-          },
-        });
-      } catch (otpErr) {
-        console.warn('[Signup] Notice sending verification magic link:', otpErr);
-      }
-
-      // 3. Clear unverified local session so user must verify email before onboarding
+      // 2. Clear unverified local session so user must verify email before onboarding
       await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
 
       triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
