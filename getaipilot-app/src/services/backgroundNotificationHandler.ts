@@ -16,8 +16,27 @@ try {
 if (Notifications?.setNotificationHandler) {
   try {
     Notifications.setNotificationHandler({
-      handleNotification: async () => {
-        // Allow Expo to present the notification while the app is foregrounded.
+      handleNotification: async (notification) => {
+        // Android FCM natively presents remote push notifications (with full logo/icon).
+        // If the app is foregrounded and expo-notifications also presents it,
+        // Android shows a duplicate banner without the logo.
+        const trigger = (notification?.request?.trigger || {}) as any;
+        const isRemotePush =
+          trigger?.type === 'push' ||
+          trigger?.type === 'remote' ||
+          Boolean(notification?.request?.content?.data?.tag);
+
+        if (isRemotePush) {
+          return {
+            shouldShowAlert: false,
+            shouldPlaySound: false,
+            shouldSetBadge: true,
+            shouldShowBanner: false,
+            shouldShowList: true,
+          };
+        }
+
+        // For local scheduled notifications, present normally
         return {
           shouldShowAlert: true,
           shouldPlaySound: true,
