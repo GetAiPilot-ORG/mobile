@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import { useTheme, getColors } from '@/theme';
 import { AppScreen } from '../../src/components/AppScreen';
+import { AppTopBar } from '../../src/components/AppTopBar';
 import { DeviceSessionsSkeleton } from '../../src/components/skeletonScreen';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { apiClient } from '../../src/core/api/client';
@@ -702,7 +703,8 @@ export default function AccountScreen() {
   };
 
   return (
-    <AppScreen safeArea="top">
+    <AppScreen safeArea={false}>
+      <AppTopBar title="Account" showBack onBackPress={() => router.navigate('/(tabs)' as any)} />
       <ScrollView
         style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}
         contentContainerStyle={styles.scrollContent}

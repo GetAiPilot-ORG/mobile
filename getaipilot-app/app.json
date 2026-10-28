@@ -54,14 +54,6 @@
     },
     "plugins": [
       [
-        "expo-build-properties",
-        {
-          "ios": {
-            "enableSceneSupport": true
-          }
-        }
-      ],
-      [
         "expo-navigation-bar",
         {
           "enforceContrast": false,
