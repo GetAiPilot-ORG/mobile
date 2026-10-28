@@ -16,6 +16,12 @@
         "ITSAppUsesNonExemptEncryption": false,
         "UIBackgroundModes": [
           "remote-notification"
+        ],
+        "LSApplicationQueriesSchemes": [
+          "message",
+          "googlegmail",
+          "ms-outlook",
+          "ymail"
         ]
       }
     },
