@@ -437,22 +437,17 @@ export default function HomeScreen() {
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
             <View
               style={{
-                width: 54,
-                height: 54,
+                width: 56,
+                height: 56,
                 borderRadius: 16,
-                overflow: "hidden",
-                backgroundColor: "#FFFFFF",
-                shadowColor: "#8B5CF6",
-                shadowOffset: { width: 0, height: 3 },
-                shadowOpacity: 0.25,
-                shadowRadius: 6,
-                elevation: 4,
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
               <Image
-                source={require("../../assets/images/growimage.jpg")}
+                source={require("../../assets/images/plans-crown.png")}
                 style={{ width: "100%", height: "100%" }}
-                resizeMode="cover"
+                resizeMode="contain"
               />
             </View>
             <View style={{ flex: 1, gap: 3 }}>
