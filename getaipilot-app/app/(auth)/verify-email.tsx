@@ -33,6 +33,7 @@ import {
   ShieldCheckIcon,
 } from '@hugeicons/core-free-icons';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { getColors, useTheme } from '@/theme';
 import { supabase } from '../../src/lib/supabase';
@@ -196,22 +197,6 @@ export default function VerifyEmailScreen() {
     };
   }, []);
 
-  // Open default email app
-  const handleOpenEmailApp = async () => {
-    triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-    try {
-      if (Platform.OS === 'ios') {
-        const canOpenMessage = await Linking.canOpenURL('message:');
-        if (canOpenMessage) {
-          await Linking.openURL('message:');
-          return;
-        }
-      }
-      await Linking.openURL('mailto:');
-    } catch (err) {
-      console.warn('[VerifyEmail] Could not open mail client:', err);
-    }
-  };
 
   // Copy email to clipboard
   const handleCopyEmail = async () => {
@@ -222,41 +207,11 @@ export default function VerifyEmailScreen() {
     setTimeout(() => setCopied(false), 2500);
   };
 
-  // Manual Check Confirmation Status
-  const handleCheckStatus = async () => {
-    if (isCheckingStatus) return;
-    setIsCheckingStatus(true);
-    triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-    setFeedback(null);
-
-    try {
-      const { data, error } = await supabase.auth.getUser();
-      if (error) throw error;
-
-      if (data?.user?.email_confirmed_at) {
-        const { data: sessionData } = await supabase.auth.getSession();
-        proceedToOnboarding(sessionData?.session || undefined);
-      } else {
-        triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
-        setFeedback({
-          type: 'error',
-          message: 'Your email has not been confirmed yet. Please check your inbox or spam folder and tap the link.',
-        });
-      }
-    } catch (err: any) {
-      setFeedback({
-        type: 'error',
-        message: err.message || 'Unable to verify status. Please ensure you clicked the confirmation link.',
-      });
-    } finally {
-      setIsCheckingStatus(false);
-    }
-  };
 
   // Verify OTP code directly if typed (supports 8-digit and 6-digit codes)
   const handleVerifyOtp = async (codeToVerify?: string) => {
     const targetCode = (codeToVerify || otpCode).trim();
-    if (targetCode.length < 6 || isVerifyingOtp || !displayEmail) return;
+    if (targetCode.length < 8 || isVerifyingOtp || !displayEmail) return;
 
     Keyboard.dismiss();
     setIsVerifyingOtp(true);
@@ -264,27 +219,38 @@ export default function VerifyEmailScreen() {
     setFeedback(null);
 
     try {
-      // 1. Try type: 'signup'
+      // 1. Try 'email' type first (primary for mobile signInWithOtp)
       let { data, error } = await supabase.auth.verifyOtp({
         email: displayEmail,
         token: targetCode,
-        type: 'signup',
+        type: 'email',
       });
 
-      // 2. Fallback to 'email' type if signup token didn't match
+      // 2. Fallback to 'signup' type (primary for web signUp)
       if (error) {
-        const emailOtpRes = await supabase.auth.verifyOtp({
+        const signupRes = await supabase.auth.verifyOtp({
           email: displayEmail,
           token: targetCode,
-          type: 'email',
+          type: 'signup',
         });
-        if (!emailOtpRes.error) {
-          data = emailOtpRes.data;
+        if (!signupRes.error) {
+          data = signupRes.data;
           error = null;
         }
       }
 
       if (error) throw error;
+
+      // 3. Apply password set during mobile signup if available
+      try {
+        const savedPwd = await AsyncStorage.getItem(`@gap_reg_pwd_${displayEmail}`);
+        if (savedPwd) {
+          await supabase.auth.updateUser({ password: savedPwd });
+          await AsyncStorage.removeItem(`@gap_reg_pwd_${displayEmail}`);
+        }
+      } catch (pwdErr) {
+        console.warn('[VerifyEmail] Error applying registration password:', pwdErr);
+      }
 
       if (data?.session) {
         proceedToOnboarding(data.session);
@@ -312,35 +278,45 @@ export default function VerifyEmailScreen() {
 
     try {
       const redirectUrl = Linking.createURL('/(auth)/callback');
-      const { error } = await supabase.auth.signInWithOtp({
-        email: displayEmail,
-        options: {
-          emailRedirectTo: redirectUrl,
-        },
-      });
+      const isMobile = Platform.OS === 'ios' || Platform.OS === 'android';
 
-      if (error) {
-        const resendRes = await supabase.auth.resend({
+      if (isMobile) {
+        const { error } = await supabase.auth.signInWithOtp({
+          email: displayEmail,
+          options: {
+            emailRedirectTo: redirectUrl,
+            data: {
+              platform: Platform.OS,
+              device_os: Platform.OS,
+              is_mobile: true,
+              signup_source: 'mobile_app',
+              client_source: 'getaipilot_mobile',
+            },
+          },
+        });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.auth.resend({
           type: 'signup',
           email: displayEmail,
           options: {
             emailRedirectTo: redirectUrl,
           },
         });
-        if (resendRes.error) throw resendRes.error;
+        if (error) throw error;
       }
 
       triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
       setResendCooldown(60);
       setFeedback({
         type: 'success',
-        message: 'A fresh confirmation email has been sent to your inbox.',
+        message: 'A fresh 6-digit verification code has been sent to your email.',
       });
     } catch (err: any) {
       triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
       setFeedback({
         type: 'error',
-        message: err.message || 'Could not resend email right now. Please try again shortly.',
+        message: err.message || 'Could not resend code right now. Please try again shortly.',
       });
     } finally {
       setIsResending(false);
@@ -414,13 +390,65 @@ export default function VerifyEmailScreen() {
             </View>
 
             <Text style={[styles.title, isDark && styles.titleDark]}>
-              Check your inbox
+              Verify your email
             </Text>
 
-            {/* Magic link instruction */}
-            <Animated.Text style={[styles.subtitle, isDark && styles.subtitleDark, { opacity: fadeAnim }]}>We sent a magic link to your email. Tap the link to verify your account.</Animated.Text>
+            {/* Instruction */}
+            <Animated.Text style={[styles.subtitle, isDark && styles.subtitleDark, { opacity: fadeAnim }]}>
+              Enter the verification code sent to your email:
+            </Animated.Text>
 
-            {/* 8-digit OTP verification option
+            {/* Email Pill with Copy */}
+            {Boolean(displayEmail) && (
+              <View style={[styles.emailPill, isDark && styles.emailPillDark]}>
+                <View style={styles.emailPillLeft}>
+                  <HugeiconsIcon icon={Mail01Icon} size={16} color={isDark ? '#94A3B8' : '#64748B'} strokeWidth={2} />
+                  <Text numberOfLines={1} style={[styles.emailPillText, isDark && styles.emailPillTextDark]}>
+                    {displayEmail}
+                  </Text>
+                </View>
+                <Pressable onPress={handleCopyEmail} style={styles.copyButton} hitSlop={8}>
+                  {copied ? (
+                    <>
+                      <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} color="#10B981" strokeWidth={2.5} />
+                      <Text style={[styles.copyLabel, styles.copyLabelSuccess]}>Copied</Text>
+                    </>
+                  ) : (
+                    <>
+                      <HugeiconsIcon icon={Copy01Icon} size={14} color={isDark ? '#94A3B8' : '#64748B'} strokeWidth={2} />
+                      <Text style={styles.copyLabel}>Copy</Text>
+                    </>
+                  )}
+                </Pressable>
+              </View>
+            )}
+
+            {/* Inline Feedback Banner */}
+            {feedback && (
+              <View
+                style={[
+                  styles.feedbackBanner,
+                  feedback.type === 'error' ? styles.feedbackBannerError : styles.feedbackBannerSuccess,
+                ]}
+              >
+                <HugeiconsIcon
+                  icon={feedback.type === 'error' ? Mail01Icon : CheckmarkCircle01Icon}
+                  size={16}
+                  color={feedback.type === 'error' ? '#DC2626' : '#15803D'}
+                  strokeWidth={2}
+                />
+                <Text
+                  style={[
+                    styles.feedbackBannerText,
+                    feedback.type === 'error' ? styles.feedbackErrorText : styles.feedbackSuccessText,
+                  ]}
+                >
+                  {feedback.message}
+                </Text>
+              </View>
+            )}
+
+            {/* 6-Digit OTP Verification Section */}
             <View style={styles.otpSection}>
               <View
                 style={[
@@ -431,8 +459,8 @@ export default function VerifyEmailScreen() {
               >
                 <TextInput
                   style={[styles.otpInput, isDark && styles.otpInputDark]}
-                  placeholder="Enter 8-digit verification code"
-                  placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
+                  placeholder="• • • • • • • •"
+                  placeholderTextColor={isDark ? '#475569' : '#CBD5E1'}
                   value={otpCode}
                   onChangeText={(val) => {
                     const clean = val.replace(/\D/g, '').slice(0, 8);
@@ -444,34 +472,41 @@ export default function VerifyEmailScreen() {
                   keyboardType="number-pad"
                   maxLength={8}
                   editable={!isVerifyingOtp}
+                  autoFocus={true}
                 />
-                {otpCode.length >= 8 && (
-                  <Pressable
-                    style={styles.otpSubmitBtn}
-                    onPress={() => handleVerifyOtp()}
-                    disabled={isVerifyingOtp}
-                  >
-                    {isVerifyingOtp ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                    ) : (
-                      <Text style={styles.otpSubmitBtnText}>Verify</Text>
-                    )}
-                  </Pressable>
-                )}
               </View>
-            </View> */}
+            </View>
+
+            {/* Primary Action Button ("Verify Code") */}
+            <Pressable
+              style={({ pressed }) => [
+                styles.primaryButton,
+                pressed && styles.primaryButtonPressed,
+                otpCode.length < 8 && { opacity: 0.6 },
+              ]}
+              onPress={() => handleVerifyOtp()}
+              disabled={otpCode.length < 8 || isVerifyingOtp}
+            >
+              {isVerifyingOtp ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Text style={styles.primaryButtonText}>Verify Code</Text>
+                  <HugeiconsIcon icon={ArrowRight01Icon} size={18} color="#FFFFFF" strokeWidth={2.5} />
+                </>
+              )}
+            </Pressable>
+
 
             {/* Resend Link Section */}
             <View style={styles.resendSection}>
               <Text style={[styles.resendPromptText, isDark && styles.resendPromptTextDark]}>
-                Didn't receive the email?
+                Didn't receive the code?
               </Text>
               <TouchableOpacity
                 onPress={handleResend}
                 disabled={resendCooldown > 0 || isResending}
-                style={[
-                  styles.resendButton,
-                ]}
+                style={styles.resendButton}
               >
                 {isResending ? (
                   <ActivityIndicator size="small" color="#2563EB" />
@@ -484,7 +519,7 @@ export default function VerifyEmailScreen() {
                   >
                     {resendCooldown > 0
                       ? `Resend in ${resendCooldown}s`
-                      : 'Resend confirmation email'}
+                      : 'Resend verification code'}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -505,7 +540,7 @@ export default function VerifyEmailScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </TouchableWithoutFeedback>
+    </TouchableWithoutFeedback >
   );
 }
 
@@ -801,12 +836,13 @@ const styles = StyleSheet.create({
   otpInputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1.5,
     borderColor: '#E2E8F0',
     borderRadius: 14,
     backgroundColor: '#F8FAFC',
-    paddingHorizontal: 14,
-    height: 48,
+    paddingHorizontal: 16,
+    height: 54,
   },
   otpInputWrapperDark: {
     borderColor: '#334155',
@@ -814,13 +850,16 @@ const styles = StyleSheet.create({
   },
   otpInputWrapperActive: {
     borderColor: '#2563EB',
+    backgroundColor: '#FFFFFF',
   },
   otpInput: {
     flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: '800',
     color: '#0F172A',
-    letterSpacing: 2,
+    letterSpacing: 8,
+    textAlign: 'center',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   otpInputDark: {
     color: '#F8FAFC',
