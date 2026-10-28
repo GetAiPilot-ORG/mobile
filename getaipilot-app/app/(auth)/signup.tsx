@@ -30,6 +30,7 @@ import { supabase } from '../../src/lib/supabase';
 import { isValidEmail } from '../../src/lib/validators';
 import { useAuthStore } from '../../src/core/store/authStore';
 import { useTheme, getColors } from '@/theme';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const brandLogo = require('../../assets/images/icon.png');
 
@@ -98,42 +99,84 @@ export default function SignupScreen() {
 
       const redirectUrl = Linking.createURL('/(auth)/callback');
       const fullName = cleanEmail.split('@')[0];
+      const isMobile = Platform.OS === 'ios' || Platform.OS === 'android';
 
-      // 2. Execute Supabase signup with deep link redirect for magic confirmation
-      const { data, error } = await supabase.auth.signUp({
-        email: cleanEmail,
-        password: password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            username: fullName,
-            full_name: fullName,
+      if (isMobile) {
+        // Mobile device flow (iOS/Android): Save password temporarily to apply upon OTP verification
+        if (password) {
+          await AsyncStorage.setItem(`@gap_reg_pwd_${cleanEmail}`, password);
+        }
+
+        // Trigger OTP email (Supabase routes to getaipilot_confirm_email_otp template!)
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+          email: cleanEmail,
+          options: {
+            shouldCreateUser: true,
+            emailRedirectTo: redirectUrl,
+            data: {
+              username: fullName,
+              full_name: fullName,
+              platform: Platform.OS,
+              device_os: Platform.OS,
+              is_mobile: true,
+              signup_source: 'mobile_app',
+              client_source: 'getaipilot_mobile',
+              template: 'getaipilot_confirm_email_otp',
+              template_key: 'getaipilot_confirm_email_otp',
+            },
           },
-        },
-      });
-
-      if (error) throw error;
-
-      // Supabase returns empty identities array if user already registered
-      if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-        triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
-        setFeedback({
-          type: 'error',
-          message: 'An account with this email already exists. Please sign in or reset your password.',
         });
-        return;
+
+        if (otpError) throw otpError;
+
+        triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
+
+        // Navigate directly to verify-email screen with mobile OTP flow
+        router.replace({
+          pathname: '/(auth)/verify-email',
+          params: { email: cleanEmail, fromSignup: 'true' },
+        } as any);
+      } else {
+        // Web device flow: Standard signUp with email confirmation link
+        const { data, error } = await supabase.auth.signUp({
+          email: cleanEmail,
+          password: password,
+          options: {
+            emailRedirectTo: redirectUrl,
+            data: {
+              username: fullName,
+              full_name: fullName,
+              platform: 'web',
+              device_os: 'web',
+              is_mobile: false,
+              signup_source: 'web',
+              client_source: 'getaipilot_web',
+            },
+          },
+        });
+
+        if (error) throw error;
+
+        // Supabase returns empty identities array if user already registered
+        if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+          triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+          setFeedback({
+            type: 'error',
+            message: 'An account with this email already exists. Please sign in or reset your password.',
+          });
+          return;
+        }
+
+        // Clear unverified local session so user must verify email before onboarding
+        await supabase.auth.signOut({ scope: 'local' }).catch(() => { });
+
+        triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
+
+        router.replace({
+          pathname: '/(auth)/verify-email',
+          params: { email: cleanEmail },
+        } as any);
       }
-
-      // 2. Clear unverified local session so user must verify email before onboarding
-      await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
-
-      triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
-
-      // 4. Navigate directly to verify-email screen
-      router.replace({
-        pathname: '/(auth)/verify-email',
-        params: { email: cleanEmail },
-      } as any);
     } catch (err: any) {
       triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
       setFeedback({
@@ -176,123 +219,123 @@ export default function SignupScreen() {
             Create your GetAiPilot{'\n'}account
           </Text>
 
-              {/* Inline Feedback Banner */}
-              {feedback && (
-                <View
-                  style={[
-                    styles.feedbackBanner,
-                    feedback.type === 'error' ? styles.feedbackBannerError : styles.feedbackBannerSuccess,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.feedbackBannerText,
-                      feedback.type === 'error' ? styles.feedbackErrorText : styles.feedbackSuccessText,
-                    ]}
-                  >
-                    {feedback.message}
-                  </Text>
-                </View>
-              )}
-
-              {/* Grouped iOS Input Fields Card */}
-              <View style={[styles.inputGroup, isDark && styles.inputGroupDark]}>
-                {/* Field 1: Email Address */}
-                <View style={styles.inputRow}>
-                  <TextInput
-                    style={[styles.nativeInput, isDark && styles.nativeInputDark]}
-                    placeholder="Email address"
-                    placeholderTextColor={isDark ? '#636366' : '#8E8E93'}
-                    value={email}
-                    onChangeText={setEmail}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    keyboardType="email-address"
-                    returnKeyType="next"
-                  />
-                  {email.length > 0 && (
-                    <Pressable
-                      onPress={() => setEmail('')}
-                      hitSlop={10}
-                      style={styles.clearBtn}
-                    >
-                      <Ionicons name="close-circle" size={16} color={isDark ? '#6B7280' : '#9CA3AF'} />
-                    </Pressable>
-                  )}
-                </View>
-
-                <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
-
-                {/* Field 2: Password */}
-                <View style={styles.inputRow}>
-                  <TextInput
-                    style={[styles.nativeInput, { flex: 1 }, isDark && styles.nativeInputDark]}
-                    placeholder="Choose password (min 6 chars)"
-                    placeholderTextColor={isDark ? '#636366' : '#8E8E93'}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                    returnKeyType="done"
-                    onSubmitEditing={handleSignup}
-                  />
-                  {password.length > 0 && (
-                    <Pressable
-                      onPress={() => setShowPassword(!showPassword)}
-                      hitSlop={8}
-                      style={styles.eyeBtn}
-                    >
-                      <Text style={[styles.eyeBtnText, isDark && styles.eyeBtnTextDark]}>
-                        {showPassword ? 'Hide' : 'Show'}
-                      </Text>
-                    </Pressable>
-                  )}
-                </View>
-              </View>
-
-              {/* Terms Note */}
-              <Text style={[styles.termsText, isDark && styles.termsTextDark]}>
-                By signing up, you agree to GetAiPilot's{' '}
-                <Text style={styles.termsHighlight}>Terms of Service</Text> and{' '}
-                <Text style={styles.termsHighlight}>Privacy Policy</Text>.
-              </Text>
-
-              {/* Primary Action Button ("Create account") */}
-              <Pressable
+          {/* Inline Feedback Banner */}
+          {feedback && (
+            <View
+              style={[
+                styles.feedbackBanner,
+                feedback.type === 'error' ? styles.feedbackBannerError : styles.feedbackBannerSuccess,
+              ]}
+            >
+              <Text
                 style={[
-                  styles.primaryButton,
-                  !isFormValid && styles.primaryButtonDisabled,
-                  loading && { opacity: 0.8 },
+                  styles.feedbackBannerText,
+                  feedback.type === 'error' ? styles.feedbackErrorText : styles.feedbackSuccessText,
                 ]}
-                onPress={handleSignup}
-                disabled={!isFormValid || loading}
               >
-                {loading ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text
-                    style={[
-                      styles.primaryButtonText,
-                      !isFormValid && styles.primaryButtonTextDisabled,
-                    ]}
-                  >
-                    Create account
-                  </Text>
-                )}
-              </Pressable>
+                {feedback.message}
+              </Text>
+            </View>
+          )}
 
-              {/* Secondary Action Button ("Log in instead") */}
-              <Pressable
-                style={[styles.secondaryButton, isDark && styles.secondaryButtonDark]}
-                onPress={() => {
-                  triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-                  router.push('/(auth)/login' as any);
-                }}
+          {/* Grouped iOS Input Fields Card */}
+          <View style={[styles.inputGroup, isDark && styles.inputGroupDark]}>
+            {/* Field 1: Email Address */}
+            <View style={styles.inputRow}>
+              <TextInput
+                style={[styles.nativeInput, isDark && styles.nativeInputDark]}
+                placeholder="Email address"
+                placeholderTextColor={isDark ? '#636366' : '#8E8E93'}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                returnKeyType="next"
+              />
+              {email.length > 0 && (
+                <Pressable
+                  onPress={() => setEmail('')}
+                  hitSlop={10}
+                  style={styles.clearBtn}
+                >
+                  <Ionicons name="close-circle" size={16} color={isDark ? '#6B7280' : '#9CA3AF'} />
+                </Pressable>
+              )}
+            </View>
+
+            <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
+
+            {/* Field 2: Password */}
+            <View style={styles.inputRow}>
+              <TextInput
+                style={[styles.nativeInput, { flex: 1 }, isDark && styles.nativeInputDark]}
+                placeholder="Choose password (min 6 chars)"
+                placeholderTextColor={isDark ? '#636366' : '#8E8E93'}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                returnKeyType="done"
+                onSubmitEditing={handleSignup}
+              />
+              {password.length > 0 && (
+                <Pressable
+                  onPress={() => setShowPassword(!showPassword)}
+                  hitSlop={8}
+                  style={styles.eyeBtn}
+                >
+                  <Text style={[styles.eyeBtnText, isDark && styles.eyeBtnTextDark]}>
+                    {showPassword ? 'Hide' : 'Show'}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          </View>
+
+          {/* Terms Note */}
+          <Text style={[styles.termsText, isDark && styles.termsTextDark]}>
+            By signing up, you agree to GetAiPilot's{' '}
+            <Text style={styles.termsHighlight}>Terms of Service</Text> and{' '}
+            <Text style={styles.termsHighlight}>Privacy Policy</Text>.
+          </Text>
+
+          {/* Primary Action Button ("Create account") */}
+          <Pressable
+            style={[
+              styles.primaryButton,
+              !isFormValid && styles.primaryButtonDisabled,
+              loading && { opacity: 0.8 },
+            ]}
+            onPress={handleSignup}
+            disabled={!isFormValid || loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text
+                style={[
+                  styles.primaryButtonText,
+                  !isFormValid && styles.primaryButtonTextDisabled,
+                ]}
               >
-                <Text style={[styles.secondaryButtonText, isDark && styles.secondaryButtonTextDark]}>
-                  Already have an account? Log in
-                </Text>
-              </Pressable>
+                Create account
+              </Text>
+            )}
+          </Pressable>
+
+          {/* Secondary Action Button ("Log in instead") */}
+          <Pressable
+            style={[styles.secondaryButton, isDark && styles.secondaryButtonDark]}
+            onPress={() => {
+              triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
+              router.push('/(auth)/login' as any);
+            }}
+          >
+            <Text style={[styles.secondaryButtonText, isDark && styles.secondaryButtonTextDark]}>
+              Already have an account? Log in
+            </Text>
+          </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>

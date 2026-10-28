@@ -22,6 +22,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from 'expo-router';
 import { useTheme, getColors } from '@/theme';
 import { useAuth } from '../contexts/AuthContext';
 import { TabMotion } from './TabMotion';
@@ -69,7 +70,9 @@ const TAB_CONFIG: Record<string, TabItemConfig> = {
 export interface FloatingTabBarProps {
   state: any;
   descriptors: any;
-  navigation: any;
+  navigation?: any;
+  emitter?: any;
+  navigateToTab?: (key: string) => void;
   insets?: any;
 }
 
@@ -88,14 +91,16 @@ const tabSpringAnimation = {
   },
 };
 
-export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
+export function FloatingTabBar({ state, descriptors, navigation, emitter, navigateToTab }: FloatingTabBarProps) {
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const reducedMotion = useReducedMotion();
   const { user, profile } = useAuth();
+  const hookNavigation = useNavigation();
+  const nav = navigation || hookNavigation;
 
-  if (!state?.routes || !descriptors || !navigation) {
+  if (!state?.routes || !descriptors) {
     return null;
   }
 
@@ -133,8 +138,12 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
     visibleRoutes.findIndex((r: any) => r.name === currentRouteName)
   );
 
+  const webRootStyle = Platform.OS === 'web'
+    ? ({ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 9999 } as any)
+    : undefined;
+
   return (
-    <View style={styles.dockRoot} pointerEvents="box-none">
+    <View style={[styles.dockRoot, webRootStyle]} pointerEvents="box-none">
       {/* Floating Pill Tab Bar with transparent / frosted glassmorphic background */}
       <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
         <View
@@ -171,22 +180,39 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
 
               if (!reducedMotion) LayoutAnimation.configureNext(tabSpringAnimation);
 
-              const event = navigation.emit({
-                type: 'tabPress',
-                target: route.key,
-                canPreventDefault: true,
-              });
+              const event = emitter
+                ? emitter.emit({
+                    type: 'tabPress',
+                    target: route.key,
+                    canPreventDefault: true,
+                  })
+                : nav?.emit?.({
+                    type: 'tabPress',
+                    target: route.key,
+                    canPreventDefault: true,
+                  });
 
-              if (!isFocused && !event.defaultPrevented) {
-                navigation.navigate(route.name);
+              if (!isFocused && !event?.defaultPrevented) {
+                if (navigateToTab) {
+                  navigateToTab(route.key);
+                } else if (nav?.navigate) {
+                  nav.navigate(route.name);
+                }
               }
             };
 
             const onLongPress = () => {
-              navigation.emit({
-                type: 'tabLongPress',
-                target: route.key,
-              });
+              if (emitter) {
+                emitter.emit({
+                  type: 'tabLongPress',
+                  target: route.key,
+                });
+              } else if (nav?.emit) {
+                nav.emit({
+                  type: 'tabLongPress',
+                  target: route.key,
+                });
+              }
             };
 
             const IconComponent = config?.icon || Home01Icon;

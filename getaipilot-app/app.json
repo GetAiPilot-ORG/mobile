@@ -16,6 +16,12 @@
         "ITSAppUsesNonExemptEncryption": false,
         "UIBackgroundModes": [
           "remote-notification"
+        ],
+        "LSApplicationQueriesSchemes": [
+          "message",
+          "googlegmail",
+          "ms-outlook",
+          "ymail"
         ]
       }
     },
@@ -47,14 +53,6 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "enableSceneSupport": true
-          }
-        }
-      ],
       [
         "expo-navigation-bar",
         {
