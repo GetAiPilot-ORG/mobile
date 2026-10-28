@@ -179,7 +179,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    router.push('/(tabs)/account' as any);
+    router.navigate('/(tabs)/account' as any);
   };
 
   const displayName = user?.name || user?.user_metadata?.full_name || user?.email || 'User';

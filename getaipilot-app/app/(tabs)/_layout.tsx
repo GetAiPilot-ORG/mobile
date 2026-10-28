@@ -36,7 +36,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="products"
         options={{
-          href: null, // Hidden from bottom bar
+          title: "Products",
         }}
       />
       <Tabs.Screen
@@ -60,13 +60,13 @@ export default function TabLayout() {
       <Tabs.Screen
         name="account"
         options={{
-          href: null, // Hidden from bottom bar
+          title: "Account",
         }}
       />
       <Tabs.Screen
         name="fleet"
         options={{
-          href: null, // Hidden from bottom bar
+          title: "Fleet",
         }}
       />
     </Tabs>
