@@ -2,7 +2,6 @@
   "expo": {
     "name": "GetAIPilot",
     "slug": "getaipilot",
-    "owner": "poojareactnative",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logobag.png",
@@ -43,7 +42,9 @@
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
         "RECORD_AUDIO",
-        "MODIFY_AUDIO_SETTINGS"
+        "MODIFY_AUDIO_SETTINGS",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
       ]
     },
     "web": {
@@ -101,10 +102,15 @@
       "reactCompiler": true
     },
     "extra": {
-      "eas": {
-        "projectId": "b20e09aa-b2a4-483d-ba57-6b1b70f6d988"
+      "router": {},
+      "expo-navigation-bar": {
+        "enforceContrast": false,
+        "style": "dark"
       },
-      "router": {}
-    }
+      "eas": {
+        "projectId": "08c04d39-4b19-437c-ba60-bac94d475279"
+      }
+    },
+    "owner": "priyansh.dev"
   }
 }
