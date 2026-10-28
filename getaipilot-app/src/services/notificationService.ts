@@ -10,6 +10,8 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '../core/api/client';
+import { supabase } from '../lib/supabase';
+import { getDeviceLoginInfo } from '../lib/device-session';
 
 export const PUSH_TOKEN_STORAGE_KEY = '@getaipilot_expo_push_token';
 export const LAST_SYNCED_USER_KEY = '@getaipilot_push_token_synced_user';
@@ -187,7 +189,7 @@ export class NotificationService {
       const projectId =
         Constants?.expoConfig?.extra?.eas?.projectId ??
         Constants?.easConfig?.projectId ??
-        'b20e09aa-b2a4-483d-ba57-6b1b70f6d988';
+        '08c04d39-4b19-437c-ba60-bac94d475279';
 
       let token: string | null = null;
       let lastFetchError: any = null;
@@ -281,9 +283,16 @@ export class NotificationService {
     console.log(`📡 [NotificationService] Syncing push token for user ${userId}...`);
 
     try {
+      let installationId = 'unknown';
+      try {
+        const deviceInfo = await getDeviceLoginInfo();
+        installationId = deviceInfo.installationId;
+      } catch {}
+
       const payload = {
         user_id: userId,
         push_token: token,
+        installation_id: installationId,
         platform: Platform.OS,
         device_name: Device.modelName || (Platform.OS === 'ios' ? 'iPhone' : 'Android Device'),
         app_version: Constants?.expoConfig?.version || '1.0.0',
@@ -293,16 +302,73 @@ export class NotificationService {
       // 1. Try BFF endpoint
       let bffSuccess = false;
       try {
-        await apiClient.post('/mobile/v1/user/push-token', payload, { skipAuth: true });
+        const result = await apiClient.post<{ success: boolean }>('/mobile/v1/user/push-token', payload, { skipAuth: true });
+        if (!result?.success) throw new Error('Backend did not confirm token registration');
         bffSuccess = true;
         console.log('✅ [NotificationService] Successfully synced push token to BFF for user:', userId);
       } catch (bffErr) {
         console.log('[NotificationService] BFF offline or unreachable for push token sync.');
       }
 
-      await AsyncStorage.setItem(LAST_SYNCED_USER_KEY, userId);
-      await AsyncStorage.setItem(PUSH_TOKEN_STORAGE_KEY, token);
-      return bffSuccess;
+      // 2. Direct sync to Supabase (user_push_tokens table & backward-compatible profiles table)
+      let supabaseSuccess = false;
+      try {
+        // Upsert to user_push_tokens (handles multi-device and reassignments cleanly)
+        if (installationId && installationId !== 'unknown') {
+          const { error: deviceTokenError } = await supabase
+            .from('user_push_tokens')
+            .upsert(
+              {
+                user_id: userId,
+                installation_id: installationId,
+                push_token: token,
+                platform: Platform.OS,
+                device_name: Device.modelName || (Platform.OS === 'ios' ? 'iPhone' : 'Android Device'),
+                app_version: Constants?.expoConfig?.version || '1.0.0',
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'installation_id' }
+            );
+          if (deviceTokenError) {
+            console.warn('[NotificationService] user_push_tokens upsert notice:', deviceTokenError.message);
+          }
+        }
+
+        // Release this device token from any other profiles on this physical hardware
+        await supabase
+          .from('profiles')
+          .update({ push_token: null })
+          .eq('push_token', token)
+          .neq('id', userId);
+
+        const { data: savedProfile, error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            push_token: token,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', userId)
+          .select('id')
+          .maybeSingle();
+
+        if (profileError) {
+          console.warn('⚠️ [NotificationService] Supabase profile push_token update notice:', profileError.message);
+        } else if (savedProfile) {
+          supabaseSuccess = true;
+          console.log('✅ [NotificationService] Successfully updated push_token in profiles table for user:', userId);
+        } else {
+          console.warn('[NotificationService] Profile token update matched no accessible row.');
+        }
+      } catch (sbErr) {
+        console.warn('[NotificationService] Supabase sync error:', sbErr);
+      }
+
+      if (bffSuccess || supabaseSuccess) {
+        await AsyncStorage.setItem(LAST_SYNCED_USER_KEY, userId);
+        await AsyncStorage.setItem(PUSH_TOKEN_STORAGE_KEY, token);
+        return true;
+      }
+      return false;
     } catch (err) {
       console.warn('[NotificationService] Sync token error:', err);
       return false;
