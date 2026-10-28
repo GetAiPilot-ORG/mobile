@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -6,10 +6,8 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -26,24 +24,15 @@ import { HugeiconsIcon } from '@hugeicons/react-native';
 import {
   Building02Icon,
   UserIcon,
-  CheckmarkCircle01Icon,
   ArrowRight01Icon,
   ArrowLeft01Icon,
   Logout01Icon,
-  SparklesIcon,
-  ShieldCheckIcon,
-  Notification01Icon,
-  FaceIdIcon,
-  ZapIcon,
-  Briefcase01Icon,
-  Mail01Icon,
 } from '@hugeicons/core-free-icons';
 
 import { getColors, useTheme } from '@/theme';
 import { AnimatedAiLogo } from '../src/components/home/AnimatedAiLogo';
 import { useAuth } from '../src/contexts/AuthContext';
 import { useAuthStore } from '../src/core/store/authStore';
-import { BiometricService, BiometricSettings } from '../src/lib/biometrics';
 import { supabase } from '../src/lib/supabase';
 import { isValidEmail } from '../src/lib/validators';
 import { getPendingReferralCode, handlePendingReferral } from '../src/services/referralService';
@@ -83,12 +72,12 @@ export default function OnboardingScreen() {
   const colors = getColors(isDark);
   const { user, refreshProfile } = useAuth();
 
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2>(1);
   const [accountType, setAccountType] = useState<'business' | 'personal'>('business');
 
   // Animation values for smooth step transitions and card interactions
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const slideAnim = useRef(new Animated.Value(0)).current;
+  const [fadeAnim] = useState(() => new Animated.Value(1));
+  const [slideAnim] = useState(() => new Animated.Value(0));
 
   // Form Fields matching website onboarding & DB schema
   const [firstName, setFirstName] = useState(() => {
@@ -118,19 +107,9 @@ export default function OnboardingScreen() {
   const [isValidatingEmail, setIsValidatingEmail] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Step 3 Permissions State
-  const [biometricSettings, setBiometricSettings] = useState<BiometricSettings>({
-    enabled: false,
-    timeoutMinutes: 0,
-    biometricType: 'NONE',
-    biometricLabel: 'Face ID / Passcode',
-    hardwareDescription: 'Device Security',
-    hasHardware: false,
-    isEnrolled: false,
-  });
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [hapticsEnabled, setHapticsEnabled] = useState(true);
-  const [isUpdatingBiometrics, setIsUpdatingBiometrics] = useState(false);
+  // Device Preferences State
+  const [notificationsEnabled] = useState(true);
+  const [hapticsEnabled] = useState(true);
   const isSubmittingRef = useRef(false);
 
   // Guard: strictly ensure user has confirmed their email before entering onboarding
@@ -148,49 +127,30 @@ export default function OnboardingScreen() {
         }
       }
     }).catch(() => { });
-  }, []);
-
+  }, [router]);
 
   // Prefill phone and email if known (matching bot-dashboard)
   useEffect(() => {
     if (user) {
-      if (user.email && !isTruecaller) {
-        setEmail((prev) => prev || user.email || '');
-        setBusinessEmail((prev) => prev || user.email || '');
-      }
-      if ((user as any)?.phone) {
-        setPhone((prev: string) => prev || (user as any).phone || '');
-      }
+      queueMicrotask(() => {
+        if (user.email && !isTruecaller) {
+          setEmail((prev) => prev || user.email || '');
+          setBusinessEmail((prev) => prev || user.email || '');
+        }
+        if ((user as any)?.phone) {
+          setPhone((prev: string) => prev || (user as any).phone || '');
+        }
+      });
     }
   }, [user, isTruecaller]);
 
-  useEffect(() => {
-    async function loadBiometrics() {
-      const settings = await BiometricService.getSettings();
-      setBiometricSettings(settings);
+  const triggerHaptic = (style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Light) => {
+    if (Platform.OS !== 'web' && hapticsEnabled) {
+      Haptics.impactAsync(style);
     }
-    loadBiometrics();
-  }, []);
+  };
 
-  useEffect(() => {
-    const onBackPress = () => {
-      if (loading || isSubmittingRef.current) return true;
-      if (step === 3) {
-        animateToStep(2);
-        return true;
-      }
-      if (step === 2) {
-        animateToStep(1);
-        return true;
-      }
-      return true; // prevent exiting to protected tabs
-    };
-
-    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-    return () => sub.remove();
-  }, [step, loading]);
-
-  const animateToStep = (nextStep: 1 | 2 | 3) => {
+  const animateToStep = useCallback((nextStep: 1 | 2) => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -218,13 +178,21 @@ export default function OnboardingScreen() {
         }),
       ]).start();
     });
-  };
+  }, [fadeAnim, slideAnim, step]);
 
-  const triggerHaptic = (style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Light) => {
-    if (Platform.OS !== 'web' && hapticsEnabled) {
-      Haptics.impactAsync(style);
-    }
-  };
+  useEffect(() => {
+    const onBackPress = () => {
+      if (loading || isSubmittingRef.current) return true;
+      if (step === 2) {
+        animateToStep(1);
+        return true;
+      }
+      return true; // prevent exiting to protected tabs
+    };
+
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, [step, loading, animateToStep]);
 
   const handleSelectAccountType = (type: 'business' | 'personal') => {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
@@ -236,8 +204,14 @@ export default function OnboardingScreen() {
     animateToStep(2);
   };
 
-  const handleContinueToStep3 = async () => {
+  const handleCompleteOnboarding = async () => {
     Keyboard.dismiss();
+
+    // 1. Double-tap & concurrency lock
+    if (loading || isSubmittingRef.current || isValidatingEmail) return;
+    setError(null);
+
+    // 2. Validate essential fields
     if (!firstName.trim()) {
       triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
       setError('Please provide your first name.');
@@ -251,7 +225,7 @@ export default function OnboardingScreen() {
 
     const targetEmail = (accountType === 'business' ? businessEmail : email || userEmail || '').trim().toLowerCase();
 
-    // 1. Business email validation
+    // Business email validation
     if (accountType === 'business') {
       if (!businessName.trim()) {
         triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
@@ -269,7 +243,7 @@ export default function OnboardingScreen() {
         return;
       }
     } else {
-      // 2. Personal email validation (Required for Phone/Truecaller user, matching bot-dashboard)
+      // Personal email validation (Required for Phone/Truecaller user)
       if (isPhoneOrTruecaller && !targetEmail) {
         triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
         setError('Please provide your email address for account recovery.');
@@ -282,12 +256,12 @@ export default function OnboardingScreen() {
       }
     }
 
-    // 3. Email & Phone Uniqueness Check via Supabase RPC (matching bot-dashboard)
+    // 3. Email & Phone Uniqueness Check via Supabase RPC
     setIsValidatingEmail(true);
+    setLoading(true);
     setError(null);
 
     try {
-      // Retrieve current session user email reliably
       let currentAccountEmail = (user?.email || userEmail || '').trim().toLowerCase();
       let currentAccountId = user?.id;
       if (!currentAccountEmail || !currentAccountId) {
@@ -306,6 +280,7 @@ export default function OnboardingScreen() {
           triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
           setError('This email address is already registered with another account. Please use a different email.');
           setIsValidatingEmail(false);
+          setLoading(false);
           return;
         }
       }
@@ -320,6 +295,7 @@ export default function OnboardingScreen() {
           triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
           setError('This phone number is already registered with another account. Please use your own unique phone number.');
           setIsValidatingEmail(false);
+          setLoading(false);
           return;
         }
       }
@@ -329,67 +305,7 @@ export default function OnboardingScreen() {
       setIsValidatingEmail(false);
     }
 
-    setError(null);
-    triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
-    animateToStep(3);
-  };
-
-  const handleToggleBiometricInOnboarding = async (val: boolean) => {
-    if (isUpdatingBiometrics) return;
-    setIsUpdatingBiometrics(true);
-
-    // Optimistic UI state update
-    setBiometricSettings((prev) => ({ ...prev, enabled: val }));
-    triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-
-    try {
-      await BiometricService.setEnabled(val);
-      const updated = await BiometricService.getSettings();
-      setBiometricSettings(updated);
-
-      if (val) {
-        triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
-        BiometricService.authenticate(`Enable ${updated.biometricLabel} for GetAiPilot`).catch((e) =>
-          console.warn('Onboarding biometric error:', e)
-        );
-      }
-    } catch (e) {
-      console.warn('Onboarding biometric error:', e);
-      setBiometricSettings((prev) => ({ ...prev, enabled: !val }));
-    } finally {
-      setIsUpdatingBiometrics(false);
-    }
-  };
-
-  const handleCompleteOnboarding = async () => {
-    Keyboard.dismiss();
-
-    // 1. Double-tap & concurrency lock
-    if (loading || isSubmittingRef.current) return;
-
-    // 2. Validate essential fields before committing to database
-    if (!firstName.trim() || !lastName.trim()) {
-      triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
-      setError('Please provide your first and last name.');
-      animateToStep(2);
-      return;
-    }
-    if (accountType === 'business' && !businessName.trim()) {
-      triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
-      setError('Please provide your business or agency name.');
-      animateToStep(2);
-      return;
-    }
-
-    const targetEmail = (accountType === 'business' ? businessEmail : email || userEmail || '').trim().toLowerCase();
-    if ((isPhoneOrTruecaller || accountType === 'business') && !targetEmail) {
-      triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
-      setError('Please provide a valid email address.');
-      animateToStep(2);
-      return;
-    }
-
-    // 3. Ensure valid active user session
+    // 4. Ensure valid active user session
     let userId = user?.id;
     let activeUserEmail = user?.email;
     if (!userId) {
@@ -400,12 +316,11 @@ export default function OnboardingScreen() {
     if (!userId) {
       triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
       setError('Your session has expired. Please log in again.');
+      setLoading(false);
       return;
     }
 
     isSubmittingRef.current = true;
-    setLoading(true);
-    setError(null);
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
@@ -540,7 +455,7 @@ export default function OnboardingScreen() {
                 disabled={loading}
                 onPress={() => {
                   triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-                  animateToStep((step - 1) as 1 | 2);
+                  animateToStep(1);
                 }}
                 hitSlop={8}
                 style={[styles.navPillBtn, isDark && styles.navPillBtnDark, loading && { opacity: 0.5 }]}
@@ -586,19 +501,17 @@ export default function OnboardingScreen() {
             <View style={[styles.stepPillBadge, isDark && styles.stepPillBadgeDark]}>
               <View style={styles.stepPulseDot} />
               <Text style={[styles.stepPillText, isDark && styles.stepPillTextDark]}>
-                STEP {step} OF 3 • {step === 1 ? 'ACCOUNT PROFILE' : step === 2 ? 'WORKSPACE SETUP' : 'SECURITY & ALERTS'}
+                STEP {step} OF 2 • {step === 1 ? 'ACCOUNT PROFILE' : 'WORKSPACE SETUP'}
               </Text>
             </View>
 
             <Text style={[styles.heroHeading, isDark && styles.heroHeadingDark]}>
-              {step === 1 ? 'Choose Account Type' : step === 2 ? 'Configure Workspace' : 'Security & Permissions'}
+              {step === 1 ? 'Choose Account Type' : 'Configure Workspace'}
             </Text>
             <Text style={[styles.heroSubheading, isDark && styles.heroSubheadingDark]}>
               {step === 1
                 ? 'Tailor your AI workspace engines according to your specific needs'
-                : step === 2
-                  ? 'Set up your default workspace profile and automation contact information'
-                  : 'Authorize device security and real-time alerts for an optimal experience'}
+                : 'Set up your default workspace profile and automation contact information'}
             </Text>
           </View>
 
@@ -623,6 +536,7 @@ export default function OnboardingScreen() {
               <View style={styles.stepContent}>
                 {/* Option 1: Business / Agency Card */}
                 <TouchableOpacity
+                  activeOpacity={0.85}
                   style={[
                     styles.accountCard,
                     accountType === 'business' && styles.accountCardActiveBusiness,
@@ -631,7 +545,6 @@ export default function OnboardingScreen() {
                   ]}
                   onPress={() => handleSelectAccountType('business')}
                 >
-                  {/* Top Row: Icon Squircle + Title + Badge + Selector */}
                   <View style={styles.cardHeaderRow}>
                     <LinearGradient
                       colors={
@@ -645,23 +558,21 @@ export default function OnboardingScreen() {
                     >
                       <HugeiconsIcon
                         icon={Building02Icon}
-                        size={24}
+                        size={22}
                         color={accountType === 'business' ? '#FFFFFF' : isDark ? '#94A3B8' : '#475569'}
                         strokeWidth={2}
                       />
                     </LinearGradient>
 
                     <View style={styles.cardHeaderCol}>
-                      <View style={styles.cardTitleTagRow}>
-                        <Text style={[styles.cardTitle, isDark && styles.cardTitleDark]}>
-                          Business / Agency
-                        </Text>
-
-                      </View>
-
+                      <Text style={[styles.cardTitle, isDark && styles.cardTitleDark]}>
+                        Business / Agency
+                      </Text>
+                      <Text style={[styles.cardSubtitle, isDark && styles.cardSubtitleDark]}>
+                        For companies, agencies, and teams
+                      </Text>
                     </View>
 
-                    {/* Selector Radio / Checked Indicator */}
                     <View
                       style={[
                         styles.selectorCircle,
@@ -669,15 +580,16 @@ export default function OnboardingScreen() {
                         isDark && styles.selectorCircleDark,
                       ]}
                     >
-                      {accountType === 'business' ? (
-                        <HugeiconsIcon icon={CheckmarkCircle01Icon} size={22} color="#2563EB" strokeWidth={2.4} />
-                      ) : null}
+                      {accountType === 'business' && (
+                        <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                      )}
                     </View>
                   </View>
                 </TouchableOpacity>
 
                 {/* Option 2: Creator / Individual Card */}
                 <TouchableOpacity
+                  activeOpacity={0.85}
                   style={[
                     styles.accountCard,
                     accountType === 'personal' && styles.accountCardActivePersonal,
@@ -686,7 +598,6 @@ export default function OnboardingScreen() {
                   ]}
                   onPress={() => handleSelectAccountType('personal')}
                 >
-                  {/* Top Row: Icon Squircle + Title + Badge + Selector */}
                   <View style={styles.cardHeaderRow}>
                     <LinearGradient
                       colors={
@@ -700,27 +611,21 @@ export default function OnboardingScreen() {
                     >
                       <HugeiconsIcon
                         icon={UserIcon}
-                        size={24}
+                        size={22}
                         color={accountType === 'personal' ? '#FFFFFF' : isDark ? '#94A3B8' : '#475569'}
                         strokeWidth={2}
                       />
                     </LinearGradient>
 
                     <View style={styles.cardHeaderCol}>
-                      <View style={styles.cardTitleTagRow}>
-                        <Text style={[styles.cardTitle, isDark && styles.cardTitleDark]}>
-                          Creator / Individual
-                        </Text>
-                        <View style={styles.soloTagPill}>
-                          <Text style={styles.soloTagText}>SOLO & CREATOR</Text>
-                        </View>
-                      </View>
+                      <Text style={[styles.cardTitle, isDark && styles.cardTitleDark]}>
+                        Creator / Individual
+                      </Text>
                       <Text style={[styles.cardSubtitle, isDark && styles.cardSubtitleDark]}>
-                        For solo founders, content creators, and community managers
+                        For solo founders, creators, and personal use
                       </Text>
                     </View>
 
-                    {/* Selector Radio / Checked Indicator */}
                     <View
                       style={[
                         styles.selectorCircle,
@@ -728,31 +633,9 @@ export default function OnboardingScreen() {
                         isDark && styles.selectorCircleDark,
                       ]}
                     >
-                      {accountType === 'personal' ? (
-                        <HugeiconsIcon icon={CheckmarkCircle01Icon} size={22} color="#8B5CF6" strokeWidth={2.4} />
-                      ) : null}
-                    </View>
-                  </View>
-
-                  {/* Feature Micro-Badges Row */}
-                  <View style={styles.featurePillsRow}>
-                    <View style={[styles.featurePill, isDark && styles.featurePillDark]}>
-                      <HugeiconsIcon icon={SparklesIcon} size={11} color="#8B5CF6" strokeWidth={2.2} />
-                      <Text style={[styles.featurePillText, isDark && styles.featurePillTextDark]}>
-                        Bio & Link Builder
-                      </Text>
-                    </View>
-                    <View style={[styles.featurePill, isDark && styles.featurePillDark]}>
-                      <HugeiconsIcon icon={ZapIcon} size={11} color="#8B5CF6" strokeWidth={2.2} />
-                      <Text style={[styles.featurePillText, isDark && styles.featurePillTextDark]}>
-                        Social Auto-Post
-                      </Text>
-                    </View>
-                    <View style={[styles.featurePill, isDark && styles.featurePillDark]}>
-                      <HugeiconsIcon icon={CheckmarkCircle01Icon} size={11} color="#8B5CF6" strokeWidth={2.2} />
-                      <Text style={[styles.featurePillText, isDark && styles.featurePillTextDark]}>
-                        Quick Lead Forms
-                      </Text>
+                      {accountType === 'personal' && (
+                        <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                      )}
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -773,7 +656,7 @@ export default function OnboardingScreen() {
                     end={{ x: 1, y: 0 }}
                     style={styles.primaryCtaGradient}
                   >
-                    <Text style={styles.primaryCtaText}>Continue to Details</Text>
+                    <Text style={styles.primaryCtaText}>Continue</Text>
                     <View style={styles.primaryCtaIconCircle}>
                       <HugeiconsIcon
                         icon={ArrowRight01Icon}
@@ -785,7 +668,7 @@ export default function OnboardingScreen() {
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
-            ) : step === 2 ? (
+            ) : (
               /* ========================================================
                  STEP 2: Workspace Details (matching website onboarding)
                  ======================================================== */
@@ -991,10 +874,10 @@ export default function OnboardingScreen() {
                   </>
                 )}
 
-                {/* Continue Button */}
+                {/* Complete Setup Primary CTA */}
                 <TouchableOpacity
                   activeOpacity={0.88}
-                  onPress={handleContinueToStep3}
+                  onPress={handleCompleteOnboarding}
                   disabled={isValidatingEmail || loading}
                   style={[styles.primaryCtaWrapper, (isValidatingEmail || loading) && { opacity: 0.85 }]}
                 >
@@ -1004,11 +887,11 @@ export default function OnboardingScreen() {
                     end={{ x: 1, y: 0 }}
                     style={styles.primaryCtaGradient}
                   >
-                    {isValidatingEmail ? (
+                    {isValidatingEmail || loading ? (
                       <ActivityIndicator color="#FFFFFF" size="small" />
                     ) : (
                       <>
-                        <Text style={styles.primaryCtaText}>Continue to Security & Alerts</Text>
+                        <Text style={styles.primaryCtaText}>Complete Setup</Text>
                         <View style={styles.primaryCtaIconCircle}>
                           <HugeiconsIcon icon={ArrowRight01Icon} size={15} color="#FFFFFF" strokeWidth={2.4} />
                         </View>
@@ -1019,7 +902,8 @@ export default function OnboardingScreen() {
 
                 {/* Back to Step 1 Button */}
                 <TouchableOpacity
-                  style={[styles.backNavBtn, isDark && styles.backNavBtnDark]}
+                  disabled={loading || isValidatingEmail}
+                  style={[styles.backNavBtn, isDark && styles.backNavBtnDark, (loading || isValidatingEmail) && { opacity: 0.5 }]}
                   onPress={() => {
                     triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
                     animateToStep(1);
@@ -1033,153 +917,6 @@ export default function OnboardingScreen() {
                   />
                   <Text style={[styles.backNavBtnText, isDark && styles.backNavBtnTextDark]}>
                     Back to Account Type
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              /* ========================================================
-                 STEP 3: Permissions & Security Setup
-                 ======================================================== */
-              <View style={styles.stepContent}>
-                <View style={[styles.permissionCardGroup, isDark && styles.permissionCardGroupDark]}>
-                  {/* 1. Biometric / Face ID Card */}
-                  <View style={styles.permissionItemRow}>
-                    <LinearGradient
-                      colors={['rgba(16, 185, 129, 0.2)', 'rgba(16, 185, 129, 0.08)']}
-                      style={styles.permissionIconSurface}
-                    >
-                      <HugeiconsIcon
-                        icon={
-                          biometricSettings.biometricType === 'FACE_ID'
-                            ? FaceIdIcon
-                            : ShieldCheckIcon
-                        }
-                        size={22}
-                        color="#10B981"
-                        strokeWidth={2}
-                      />
-                    </LinearGradient>
-                    <View style={styles.permissionContentCol}>
-                      <Text style={[styles.permissionHeading, isDark && styles.permissionHeadingDark]}>
-                        {biometricSettings.biometricLabel} Lock
-                      </Text>
-                      <Text style={[styles.permissionDetails, isDark && styles.permissionDetailsDark]}>
-                        1-tap fast biometric access & encrypted local credentials
-                      </Text>
-                    </View>
-                    <Switch
-                      value={biometricSettings.enabled}
-                      onValueChange={handleToggleBiometricInOnboarding}
-                      disabled={isUpdatingBiometrics || loading}
-                      trackColor={{ false: isDark ? '#334155' : '#E2E8F0', true: '#10B981' }}
-                      thumbColor="#FFFFFF"
-                    />
-                  </View>
-
-                  <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
-
-                  {/* 2. Push Notifications Card */}
-                  <View style={styles.permissionItemRow}>
-                    <LinearGradient
-                      colors={['rgba(37, 99, 235, 0.2)', 'rgba(37, 99, 235, 0.08)']}
-                      style={styles.permissionIconSurface}
-                    >
-                      <HugeiconsIcon icon={Notification01Icon} size={22} color="#2563EB" strokeWidth={2} />
-                    </LinearGradient>
-                    <View style={styles.permissionContentCol}>
-                      <Text style={[styles.permissionHeading, isDark && styles.permissionHeadingDark]}>
-                        Push Notifications
-                      </Text>
-                      <Text style={[styles.permissionDetails, isDark && styles.permissionDetailsDark]}>
-                        Real-time alerts when new leads arrive & automations run
-                      </Text>
-                    </View>
-                    <Switch
-                      value={notificationsEnabled}
-                      disabled={loading}
-                      onValueChange={(val) => {
-                        triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-                        setNotificationsEnabled(val);
-                      }}
-                      trackColor={{ false: isDark ? '#334155' : '#E2E8F0', true: '#2563EB' }}
-                      thumbColor="#FFFFFF"
-                    />
-                  </View>
-
-                  <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
-
-                  {/* 3. Sensory Haptics Card */}
-                  <View style={styles.permissionItemRow}>
-                    <LinearGradient
-                      colors={['rgba(139, 92, 246, 0.2)', 'rgba(139, 92, 246, 0.08)']}
-                      style={styles.permissionIconSurface}
-                    >
-                      <HugeiconsIcon icon={ZapIcon} size={22} color="#8B5CF6" strokeWidth={2} />
-                    </LinearGradient>
-                    <View style={styles.permissionContentCol}>
-                      <Text style={[styles.permissionHeading, isDark && styles.permissionHeadingDark]}>
-                        Tactile Haptic Feedback
-                      </Text>
-                      <Text style={[styles.permissionDetails, isDark && styles.permissionDetailsDark]}>
-                        Responsive tactile vibrations on buttons and actions
-                      </Text>
-                    </View>
-                    <Switch
-                      value={hapticsEnabled}
-                      disabled={loading}
-                      onValueChange={(val) => {
-                        triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-                        setHapticsEnabled(val);
-                      }}
-                      trackColor={{ false: isDark ? '#334155' : '#E2E8F0', true: '#8B5CF6' }}
-                      thumbColor="#FFFFFF"
-                    />
-                  </View>
-                </View>
-
-                {/* Complete Setup Primary CTA */}
-                <TouchableOpacity
-                  activeOpacity={0.88}
-                  onPress={handleCompleteOnboarding}
-                  disabled={loading}
-                  style={[styles.primaryCtaWrapper, loading && { opacity: 0.85 }]}
-                >
-                  <LinearGradient
-                    colors={['#10B981', '#059669']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.primaryCtaGradient}
-                  >
-                    {loading ? (
-                      <ActivityIndicator color="#FFFFFF" size="small" />
-                    ) : (
-                      <>
-                        <Text style={styles.primaryCtaText}>Complete Workspace Setup</Text>
-                        <View style={styles.primaryCtaIconCircle}>
-                          <HugeiconsIcon icon={CheckmarkCircle01Icon} size={16} color="#FFFFFF" strokeWidth={2.4} />
-                        </View>
-                      </>
-                    )}
-                  </LinearGradient>
-                </TouchableOpacity>
-
-                {/* Back to Step 2 Button */}
-                <TouchableOpacity
-                  disabled={loading}
-                  style={[styles.backNavBtn, isDark && styles.backNavBtnDark, loading && { opacity: 0.5 }]}
-                  onPress={() => {
-                    triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-                    animateToStep(2);
-                  }}
-                >
-                  <HugeiconsIcon
-                    icon={ArrowLeft01Icon}
-                    size={15}
-                    color={isDark ? '#94A3B8' : '#64748B'}
-                    strokeWidth={2}
-                  />
-                  <Text style={[styles.backNavBtnText, isDark && styles.backNavBtnTextDark]}>
-                    Back to Workspace Details
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -1394,11 +1131,10 @@ const styles = StyleSheet.create({
      ======================================================== */
   accountCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 22,
+    borderRadius: 18,
     padding: 16,
-    borderWidth: 0.1,
+    borderWidth: 1.5,
     borderColor: '#E2E8F0',
-    gap: 12,
   },
   accountCardDark: {
     backgroundColor: '#151622',
@@ -1408,39 +1144,39 @@ const styles = StyleSheet.create({
   },
   accountCardActiveBusiness: {
     borderColor: '#2563EB',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8FAFC',
     shadowColor: '#2563EB',
-    shadowOpacity: 0.16,
-    shadowRadius: 16,
-    elevation: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 2,
   },
   accountCardActiveBusinessDark: {
     backgroundColor: '#141829',
     borderColor: '#3B82F6',
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.25,
   },
   accountCardActivePersonal: {
     borderColor: '#8B5CF6',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAF8FF',
     shadowColor: '#8B5CF6',
-    shadowOpacity: 0.16,
-    shadowRadius: 16,
-    elevation: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 2,
   },
   accountCardActivePersonalDark: {
     backgroundColor: '#1B1429',
     borderColor: '#A855F7',
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.25,
   },
 
   cardHeaderRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
+    alignItems: 'center',
+    gap: 14,
   },
   cardIconSquircle: {
-    width: 46,
-    height: 46,
+    width: 48,
+    height: 48,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1449,16 +1185,10 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 3,
   },
-  cardTitleTagRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
   cardTitle: {
     fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: -0.3,
+    fontWeight: '700',
+    letterSpacing: -0.2,
     color: '#0F172A',
   },
   cardTitleDark: {
@@ -1489,8 +1219,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   cardSubtitle: {
-    fontSize: 12,
-    lineHeight: 16.5,
+    fontSize: 13,
+    lineHeight: 18,
     color: '#64748B',
   },
   cardSubtitleDark: {
@@ -1500,22 +1230,21 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    borderWidth: 0.1,
+    borderWidth: 1.5,
     borderColor: '#CBD5E1',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
   },
   selectorCircleDark: {
     borderColor: '#475569',
   },
   selectorCircleActiveBusiness: {
     borderColor: '#2563EB',
-    borderWidth: 0,
+    backgroundColor: '#2563EB',
   },
   selectorCircleActivePersonal: {
     borderColor: '#8B5CF6',
-    borderWidth: 0,
+    backgroundColor: '#8B5CF6',
   },
 
   featurePillsRow: {
@@ -1754,54 +1483,5 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.4,
-  },
-
-  /* ========================================================
-     Step 3: Security & Permissions Components
-     ======================================================== */
-  permissionCardGroup: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    borderWidth: 0.1,
-    borderColor: '#E2E8F0',
-    overflow: 'hidden',
-  },
-  permissionCardGroupDark: {
-    backgroundColor: '#151622',
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  permissionItemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-  },
-  permissionIconSurface: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  permissionContentCol: {
-    flex: 1,
-    gap: 2,
-  },
-  permissionHeading: {
-    fontSize: 14.5,
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  permissionHeadingDark: {
-    color: '#FFFFFF',
-  },
-  permissionDetails: {
-    fontSize: 11.5,
-    lineHeight: 16,
-    color: '#64748B',
-  },
-  permissionDetailsDark: {
-    color: '#94A3B8',
   },
 });
