@@ -307,7 +307,7 @@ export class NotificationService {
         bffSuccess = true;
         console.log('✅ [NotificationService] Successfully synced push token to BFF for user:', userId);
       } catch (bffErr) {
-        console.log('[NotificationService] BFF offline or unreachable, using Supabase direct sync...');
+        console.log('[NotificationService] BFF offline or unreachable for push token sync.');
       }
 
       // 2. Direct sync to Supabase (user_push_tokens table & backward-compatible profiles table)

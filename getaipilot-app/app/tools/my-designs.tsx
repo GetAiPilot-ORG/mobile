@@ -16,6 +16,7 @@ import { AppTopBar } from "../../src/components/AppTopBar";
 import { useAuthStore } from "../../src/core/store/authStore";
 import { supabase } from "../../src/lib/supabase";
 import { openAuthenticatedTemplate } from "../../src/lib/template-deep-link";
+import { soundService } from "../../src/services/soundFeedbackService";
 import { useTheme, getColors, AppColors } from "@/theme";
 import { TemplatesListSkeleton } from "../../src/components/skeletonScreen";
 import { HugeiconsIcon } from "@hugeicons/react-native";
@@ -183,6 +184,7 @@ export default function MyDesignScreen() {
   }, [bioPages, landingPages]);
 
   const handleCopyLink = async (item: UnifiedDesignItem) => {
+    soundService.play('success');
     const url =
       item.type === "bio"
         ? `https://gbio.us/${item.slug}`
@@ -195,6 +197,7 @@ export default function MyDesignScreen() {
   };
 
   const handleViewLive = (item: UnifiedDesignItem) => {
+    soundService.play('radar');
     const url =
       item.type === "bio"
         ? `https://gbio.us/${item.slug}`
@@ -206,6 +209,7 @@ export default function MyDesignScreen() {
   };
 
   const handleEditInCanvas = async (item: UnifiedDesignItem) => {
+    soundService.play('pop');
     try {
       if (item.type === "bio") {
         await openAuthenticatedTemplate("bio-builder", item.id || item.template_id);
@@ -219,6 +223,7 @@ export default function MyDesignScreen() {
   };
 
   const handleDeleteItem = (item: UnifiedDesignItem) => {
+    soundService.play('click');
     Alert.alert(
       "Delete Design",
       `Are you sure you want to permanently delete "${item.page_title || item.slug}"?`,
@@ -257,6 +262,7 @@ export default function MyDesignScreen() {
   };
 
   const handleCreateBio = async () => {
+    soundService.play('pop');
     try {
       await openAuthenticatedTemplate("bio-builder", "creators-v1");
     } catch (e) {
@@ -265,6 +271,7 @@ export default function MyDesignScreen() {
   };
 
   const handleCreateLanding = async () => {
+    soundService.play('pop');
     try {
       await openAuthenticatedTemplate("landing-templates");
     } catch (e) {

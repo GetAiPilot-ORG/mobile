@@ -1,12 +1,7 @@
-import { getColors, useTheme } from '@/theme';
-import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Haptics from 'expo-haptics';
-import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   BackHandler,
   Keyboard,
   KeyboardAvoidingView,
@@ -17,18 +12,41 @@ import {
   Switch,
   Text,
   TextInput,
+  TouchableOpacity,
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import {
+  Building02Icon,
+  UserIcon,
+  CheckmarkCircle01Icon,
+  ArrowRight01Icon,
+  ArrowLeft01Icon,
+  Logout01Icon,
+  SparklesIcon,
+  ShieldCheckIcon,
+  Notification01Icon,
+  FaceIdIcon,
+  ZapIcon,
+  Briefcase01Icon,
+  Mail01Icon,
+} from '@hugeicons/core-free-icons';
+
+import { getColors, useTheme } from '@/theme';
+import { AnimatedAiLogo } from '../src/components/home/AnimatedAiLogo';
 import { useAuth } from '../src/contexts/AuthContext';
 import { useAuthStore } from '../src/core/store/authStore';
 import { BiometricService, BiometricSettings } from '../src/lib/biometrics';
 import { supabase } from '../src/lib/supabase';
 import { isValidEmail } from '../src/lib/validators';
 import { getPendingReferralCode, handlePendingReferral } from '../src/services/referralService';
-
-const brandLogo = require('../assets/images/icon.png');
 
 const CATEGORIES = [
   'Agency & Marketing',
@@ -44,6 +62,20 @@ const CATEGORIES = [
 
 const TEAM_SIZES = ['1-5', '6-15', '16-50', '50+'];
 
+export const generateReferralCode = (): string => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+  let code = '';
+
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(
+      Math.floor(Math.random() * chars.length)
+    );
+  }
+
+  return code;
+};
+
 export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -53,6 +85,10 @@ export default function OnboardingScreen() {
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [accountType, setAccountType] = useState<'business' | 'personal'>('business');
+
+  // Animation values for smooth step transitions and card interactions
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
   // Form Fields matching website onboarding & DB schema
   const [firstName, setFirstName] = useState(() => {
@@ -67,14 +103,19 @@ export default function OnboardingScreen() {
     const fn = (user as any)?.user_metadata?.full_name || '';
     return fn.split(' ').slice(1).join(' ') || '';
   });
+  const userEmail = user?.email || '';
+  const isTruecaller = userEmail.endsWith('@truecaller.getaipilot.in');
+  const isPhoneOrTruecaller = !userEmail || isTruecaller || !!(user as any)?.phone;
+
+  const [email, setEmail] = useState(() => (user?.email && !isTruecaller ? user.email : ''));
   const [state, setState] = useState('');
   const [phone, setPhone] = useState((user as any)?.phone || '');
   const [businessName, setBusinessName] = useState('');
-  const [businessEmail, setBusinessEmail] = useState('');
+  const [businessEmail, setBusinessEmail] = useState(() => (user?.email && !isTruecaller ? user.email : ''));
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [teamSize, setTeamSize] = useState(TEAM_SIZES[0]);
-  const [referralCode, setReferralCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isValidatingEmail, setIsValidatingEmail] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Step 3 Permissions State
@@ -90,6 +131,38 @@ export default function OnboardingScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const [isUpdatingBiometrics, setIsUpdatingBiometrics] = useState(false);
+  const isSubmittingRef = useRef(false);
+
+  // Guard: strictly ensure user has confirmed their email before entering onboarding
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const u = data?.user;
+      if (u) {
+        const isEmailAccount = u.email && !u.email.endsWith('@truecaller.getaipilot.in');
+        if (isEmailAccount && !u.email_confirmed_at && !u.phone) {
+          console.warn('[Onboarding] User email not confirmed yet -> redirecting to /verify-email');
+          router.replace({
+            pathname: '/(auth)/verify-email',
+            params: { email: u.email || '' },
+          } as any);
+        }
+      }
+    }).catch(() => { });
+  }, []);
+
+
+  // Prefill phone and email if known (matching bot-dashboard)
+  useEffect(() => {
+    if (user) {
+      if (user.email && !isTruecaller) {
+        setEmail((prev) => prev || user.email || '');
+        setBusinessEmail((prev) => prev || user.email || '');
+      }
+      if ((user as any)?.phone) {
+        setPhone((prev: string) => prev || (user as any).phone || '');
+      }
+    }
+  }, [user, isTruecaller]);
 
   useEffect(() => {
     async function loadBiometrics() {
@@ -97,24 +170,17 @@ export default function OnboardingScreen() {
       setBiometricSettings(settings);
     }
     loadBiometrics();
-
-    async function loadPendingReferral() {
-      const pending = await getPendingReferralCode();
-      if (pending) {
-        setReferralCode(pending);
-      }
-    }
-    loadPendingReferral();
   }, []);
 
   useEffect(() => {
     const onBackPress = () => {
+      if (loading || isSubmittingRef.current) return true;
       if (step === 3) {
-        setStep(2);
+        animateToStep(2);
         return true;
       }
       if (step === 2) {
-        setStep(1);
+        animateToStep(1);
         return true;
       }
       return true; // prevent exiting to protected tabs
@@ -122,7 +188,37 @@ export default function OnboardingScreen() {
 
     const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
     return () => sub.remove();
-  }, [step]);
+  }, [step, loading]);
+
+  const animateToStep = (nextStep: 1 | 2 | 3) => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 120,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: nextStep > step ? -14 : 14,
+        duration: 120,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setStep(nextStep);
+      slideAnim.setValue(nextStep > step ? 14 : -14);
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 220,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 220,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    });
+  };
 
   const triggerHaptic = (style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Light) => {
     if (Platform.OS !== 'web' && hapticsEnabled) {
@@ -137,10 +233,11 @@ export default function OnboardingScreen() {
 
   const handleContinueToStep2 = () => {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
-    setStep(2);
+    animateToStep(2);
   };
 
-  const handleContinueToStep3 = () => {
+  const handleContinueToStep3 = async () => {
+    Keyboard.dismiss();
     if (!firstName.trim()) {
       triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
       setError('Please provide your first name.');
@@ -151,21 +248,90 @@ export default function OnboardingScreen() {
       setError('Please provide your last name.');
       return;
     }
+
+    const targetEmail = (accountType === 'business' ? businessEmail : email || userEmail || '').trim().toLowerCase();
+
+    // 1. Business email validation
     if (accountType === 'business') {
       if (!businessName.trim()) {
         triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
         setError('Please provide your business or agency name.');
         return;
       }
-      if (businessEmail.trim() && !isValidEmail(businessEmail.trim())) {
+      if (!targetEmail) {
+        triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+        setError('Please provide your work or business email.');
+        return;
+      }
+      if (!isValidEmail(targetEmail)) {
         triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
         setError('Please provide a valid business email address.');
         return;
       }
+    } else {
+      // 2. Personal email validation (Required for Phone/Truecaller user, matching bot-dashboard)
+      if (isPhoneOrTruecaller && !targetEmail) {
+        triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+        setError('Please provide your email address for account recovery.');
+        return;
+      }
+      if (targetEmail && !isValidEmail(targetEmail)) {
+        triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+        setError('Please provide a valid email address.');
+        return;
+      }
     }
+
+    // 3. Email & Phone Uniqueness Check via Supabase RPC (matching bot-dashboard)
+    setIsValidatingEmail(true);
+    setError(null);
+
+    try {
+      // Retrieve current session user email reliably
+      let currentAccountEmail = (user?.email || userEmail || '').trim().toLowerCase();
+      let currentAccountId = user?.id;
+      if (!currentAccountEmail || !currentAccountId) {
+        const { data: currentAuth } = await supabase.auth.getUser();
+        if (currentAuth?.user) {
+          currentAccountEmail = (currentAuth.user.email || '').trim().toLowerCase();
+          currentAccountId = currentAuth.user.id;
+        }
+      }
+
+      if (targetEmail && targetEmail !== currentAccountEmail) {
+        const { data: emailTaken, error: rpcEmailErr } = await supabase.rpc('check_email_exists', {
+          email_to_check: targetEmail,
+        });
+        if (!rpcEmailErr && emailTaken) {
+          triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+          setError('This email address is already registered with another account. Please use a different email.');
+          setIsValidatingEmail(false);
+          return;
+        }
+      }
+
+      const cleanPhone = phone.trim();
+      if (cleanPhone) {
+        const { data: phoneTaken, error: rpcPhoneErr } = await supabase.rpc('check_phone_exists', {
+          phone_to_check: cleanPhone,
+          exclude_user_id: currentAccountId || user?.id,
+        });
+        if (!rpcPhoneErr && phoneTaken) {
+          triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+          setError('This phone number is already registered with another account. Please use your own unique phone number.');
+          setIsValidatingEmail(false);
+          return;
+        }
+      }
+    } catch (verifyErr) {
+      console.warn('[Onboarding] check_email_exists notice:', verifyErr);
+    } finally {
+      setIsValidatingEmail(false);
+    }
+
     setError(null);
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
-    setStep(3);
+    animateToStep(3);
   };
 
   const handleToggleBiometricInOnboarding = async (val: boolean) => {
@@ -183,7 +349,7 @@ export default function OnboardingScreen() {
 
       if (val) {
         triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
-        BiometricService.authenticate(`Enable ${updated.biometricLabel} for GetAIPilot`).catch((e) =>
+        BiometricService.authenticate(`Enable ${updated.biometricLabel} for GetAiPilot`).catch((e) =>
           console.warn('Onboarding biometric error:', e)
         );
       }
@@ -197,10 +363,49 @@ export default function OnboardingScreen() {
 
   const handleCompleteOnboarding = async () => {
     Keyboard.dismiss();
-    if (!user) return;
-    setError(null);
 
+    // 1. Double-tap & concurrency lock
+    if (loading || isSubmittingRef.current) return;
+
+    // 2. Validate essential fields before committing to database
+    if (!firstName.trim() || !lastName.trim()) {
+      triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+      setError('Please provide your first and last name.');
+      animateToStep(2);
+      return;
+    }
+    if (accountType === 'business' && !businessName.trim()) {
+      triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+      setError('Please provide your business or agency name.');
+      animateToStep(2);
+      return;
+    }
+
+    const targetEmail = (accountType === 'business' ? businessEmail : email || userEmail || '').trim().toLowerCase();
+    if ((isPhoneOrTruecaller || accountType === 'business') && !targetEmail) {
+      triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+      setError('Please provide a valid email address.');
+      animateToStep(2);
+      return;
+    }
+
+    // 3. Ensure valid active user session
+    let userId = user?.id;
+    let activeUserEmail = user?.email;
+    if (!userId) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      userId = sessionData?.session?.user?.id;
+      activeUserEmail = sessionData?.session?.user?.email;
+    }
+    if (!userId) {
+      triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+      setError('Your session has expired. Please log in again.');
+      return;
+    }
+
+    isSubmittingRef.current = true;
     setLoading(true);
+    setError(null);
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
@@ -208,23 +413,48 @@ export default function OnboardingScreen() {
       await AsyncStorage.setItem('@pref_push', notificationsEnabled ? 'true' : 'false');
       await AsyncStorage.setItem('@pref_haptics', hapticsEnabled ? 'true' : 'false');
 
-      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim() || user.email?.split('@')[0];
+      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim() || targetEmail?.split('@')[0] || activeUserEmail?.split('@')[0];
+
+      // ---- REFERRAL CODE: reuse existing if present, else generate (matching bot-dashboard) ----
+      const { data: existingProfile, error: existingProfileError } = await supabase
+        .from('profiles')
+        .select('referral_code')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (existingProfileError) {
+        console.warn('[Onboarding] Could not fetch existing profile:', existingProfileError);
+      }
+
+      let referralCode = existingProfile?.referral_code ?? null;
+
+      if (!referralCode) {
+        referralCode = generateReferralCode();
+        console.log('[Onboarding] Generated new referral code for user:', referralCode);
+      } else {
+        console.log('[Onboarding] Reusing existing referral code:', referralCode);
+      }
+
+      const cachedPushToken = await AsyncStorage.getItem('@getaipilot_expo_push_token');
 
       const { error: updateError } = await supabase
         .from('profiles')
         .upsert(
           {
-            id: user.id,
+            id: userId,
             first_name: firstName.trim() || null,
             last_name: lastName.trim() || null,
             full_name: fullName,
+            email: targetEmail || activeUserEmail || null,
             account_type: accountType,
             business_name: accountType === 'business' ? (businessName.trim() || null) : null,
-            business_email: accountType === 'business' ? (businessEmail.trim() || null) : null,
+            business_email: accountType === 'business' ? (targetEmail || null) : null,
             state: state.trim() || null,
             category: accountType === 'business' ? category : null,
             team_size: accountType === 'business' ? teamSize : '1',
             phone: phone.trim() || null,
+            push_token: notificationsEnabled ? cachedPushToken : null,
+            referral_code: referralCode,
             onboarding_completed: true,
             updated_at: new Date().toISOString(),
           },
@@ -233,16 +463,26 @@ export default function OnboardingScreen() {
 
       if (updateError) throw updateError;
 
+      // Update email in auth.users if user joined via Phone or Truecaller (matching bot-dashboard)
+      if (targetEmail && isPhoneOrTruecaller && targetEmail !== (activeUserEmail || '').toLowerCase()) {
+        try {
+          await supabase.auth.updateUser({ email: targetEmail });
+          console.log('[Onboarding] Updated auth user email to:', targetEmail);
+        } catch (authEmailErr) {
+          console.warn('[Onboarding] Notice updating auth user email:', authEmailErr);
+        }
+      }
+
       useAuthStore.getState().setOnboardingCompleted(true);
 
-      // Link referral code if provided
-      const cleanRef = referralCode.trim();
-      if (cleanRef) {
-        try {
-          await handlePendingReferral(cleanRef);
-        } catch (refErr) {
-          console.warn('[Onboarding] Referral linking error:', refErr);
+      // Link pending referral code if user arrived via invite link
+      try {
+        const pendingRef = await getPendingReferralCode();
+        if (pendingRef) {
+          await handlePendingReferral(pendingRef);
         }
+      } catch (refErr) {
+        console.warn('[Onboarding] Referral linking error:', refErr);
       }
 
       // Activate Free Trial via Supabase RPC
@@ -259,190 +499,311 @@ export default function OnboardingScreen() {
       triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
       setError(err.message || 'Failed to complete onboarding. Please try again.');
     } finally {
+      isSubmittingRef.current = false;
       setLoading(false);
     }
   };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View style={[styles.container, isDark && styles.containerDark]}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={{ flex: 1 }}
-          enabled={Platform.OS === 'ios'}
-        >
-          <ScrollView
-            contentContainerStyle={[
-              styles.scrollContent,
-              {
-                paddingTop: Math.max(insets.top + 16, 44),
-                paddingBottom: Math.max(insets.bottom + 24, 32),
-              },
-            ]}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Top Bar with Sign Out & Skip to Home */}
-            <View style={styles.topBar}>
-              <Pressable
-                onPress={async () => {
-                  triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-                  await useAuthStore.getState().logout();
-                  router.replace('/(auth)/login' as any);
-                }}
-                hitSlop={8}
-                style={styles.signOutBtn}
-              >
-                <Text style={[styles.signOutText, isDark && styles.signOutTextDark]}>Sign out</Text>
-              </Pressable>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={[styles.container, isDark && styles.containerDark]}
+      >
+        {/* Ambient Top Glow Orbs */}
+        <View pointerEvents="none" style={styles.ambientGlowContainer}>
+          <LinearGradient
+            colors={
+              isDark
+                ? ['rgba(59, 130, 246, 0.16)', 'rgba(139, 92, 246, 0.08)', 'transparent']
+                : ['rgba(59, 130, 246, 0.12)', 'rgba(167, 139, 250, 0.06)', 'transparent']
+            }
+            style={styles.ambientTopGlow}
+          />
+        </View>
 
-              <Pressable
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingTop: Math.max(insets.top + 12, 36),
+              paddingBottom: Math.max(insets.bottom + 28, 36),
+            },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* 1. Header Bar: Navigation */}
+          <View style={styles.topBar}>
+            {step > 1 ? (
+              <TouchableOpacity
+                disabled={loading}
                 onPress={() => {
                   triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-                  useAuthStore.getState().setOnboardingCompleted(true);
-                  router.replace('/(tabs)' as any);
+                  animateToStep((step - 1) as 1 | 2);
                 }}
                 hitSlop={8}
-                style={styles.skipBtn}
+                style={[styles.navPillBtn, isDark && styles.navPillBtnDark, loading && { opacity: 0.5 }]}
               >
-                <Text style={[styles.skipText, isDark && styles.skipTextDark]}>Skip to Home →</Text>
-              </Pressable>
-            </View>
-
-            {/* Top Brand Logo Section */}
-            <View style={styles.logoSection}>
-              <View style={styles.logoWrapper}>
-                <Image
-                  source={brandLogo}
-                  style={styles.logoImage}
-                  contentFit="contain"
-                  transition={200}
+                <HugeiconsIcon
+                  icon={ArrowLeft01Icon}
+                  size={14}
+                  color={isDark ? '#94A3B8' : '#64748B'}
+                  strokeWidth={2}
                 />
-              </View>
+                <Text style={[styles.navBtnText, isDark && styles.navBtnTextDark]}>Back</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={{ width: 40 }} />
+            )}
+
+            <TouchableOpacity
+              disabled={loading}
+              onPress={async () => {
+                triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
+                await useAuthStore.getState().logout();
+                router.replace('/(auth)/login' as any);
+              }}
+              hitSlop={8}
+              style={[styles.navPillBtn, isDark && styles.navPillBtnDark, loading && { opacity: 0.5 }]}
+            >
+              <HugeiconsIcon
+                icon={Logout01Icon}
+                size={14}
+                color={isDark ? '#94A3B8' : '#64748B'}
+                strokeWidth={2}
+              />
+              <Text style={[styles.navBtnText, isDark && styles.navBtnTextDark]}>Sign out</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* 2. Brand Hero: Living AI Logo + Step Badge + Typography */}
+          <View style={styles.heroSection}>
+            <View style={[styles.aiLogoHalo, isDark && styles.aiLogoHaloDark]}>
+              <AnimatedAiLogo size={70} isDark={isDark} />
             </View>
 
-            {/* iOS Step Progress Indicator */}
-            <View style={styles.stepBadgeContainer}>
-              <View style={[styles.stepBadge, isDark && styles.stepBadgeDark]}>
-                <Text style={[styles.stepBadgeText, isDark && styles.stepBadgeTextDark]}>
-                  Step {step} of 3 • {step === 1 ? 'Account Type' : step === 2 ? 'Workspace Details' : 'Security & Alerts'}
-                </Text>
-              </View>
+            <View style={[styles.stepPillBadge, isDark && styles.stepPillBadgeDark]}>
+              <View style={styles.stepPulseDot} />
+              <Text style={[styles.stepPillText, isDark && styles.stepPillTextDark]}>
+                STEP {step} OF 3 • {step === 1 ? 'ACCOUNT PROFILE' : step === 2 ? 'WORKSPACE SETUP' : 'SECURITY & ALERTS'}
+              </Text>
             </View>
 
-            {/* Heading & Subtitle */}
-            <Text style={[styles.heading, isDark && styles.headingDark]}>
+            <Text style={[styles.heroHeading, isDark && styles.heroHeadingDark]}>
               {step === 1 ? 'Choose Account Type' : step === 2 ? 'Configure Workspace' : 'Security & Permissions'}
             </Text>
-            <Text style={[styles.subheading, isDark && styles.subheadingDark]}>
+            <Text style={[styles.heroSubheading, isDark && styles.heroSubheadingDark]}>
               {step === 1
                 ? 'Tailor your AI workspace engines according to your specific needs'
                 : step === 2
                   ? 'Set up your default workspace profile and automation contact information'
                   : 'Authorize device security and real-time alerts for an optimal experience'}
             </Text>
+          </View>
 
-            {/* Inline Error Banner */}
-            {error && (
-              <View style={styles.errorBanner}>
-                <Text style={styles.errorBannerText}>{error}</Text>
-              </View>
-            )}
+          {/* Inline Error Notice */}
+          {error && (
+            <View style={[styles.errorBanner, isDark && styles.errorBannerDark]}>
+              <Text style={styles.errorBannerText}>{error}</Text>
+            </View>
+          )}
 
+          {/* Animated Step Body Content */}
+          <Animated.View
+            style={{
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            }}
+          >
             {step === 1 ? (
-              /* STEP 1: Account Type Selection */
+              /* ========================================================
+                 STEP 1: Premium Account Type Selection Cards
+                 ======================================================== */
               <View style={styles.stepContent}>
-                {/* Option 1: Business / Agency */}
-                <Pressable
+                {/* Option 1: Business / Agency Card */}
+                <TouchableOpacity
                   style={[
-                    styles.optionCard,
-                    accountType === 'business' && styles.optionCardActive,
-                    isDark && styles.optionCardDark,
-                    isDark && accountType === 'business' && styles.optionCardActiveDark,
+                    styles.accountCard,
+                    accountType === 'business' && styles.accountCardActiveBusiness,
+                    isDark && styles.accountCardDark,
+                    isDark && accountType === 'business' && styles.accountCardActiveBusinessDark,
                   ]}
                   onPress={() => handleSelectAccountType('business')}
                 >
-                  <View style={[styles.optionIconBox, isDark && styles.optionIconBoxDark]}>
-                    <Ionicons
-                      name="business-outline"
-                      size={22}
-                      color={accountType === 'business' ? '#0084FF' : (isDark ? '#9CA3AF' : '#6B7280')}
-                    />
-                  </View>
-                  <View style={styles.optionTextBox}>
-                    <Text style={[styles.optionTitle, isDark && styles.optionTitleDark]}>
-                      Business / Agency
-                    </Text>
-                    <Text style={[styles.optionDesc, isDark && styles.optionDescDark]}>
-                      For marketing teams, agencies, and businesses managing multiple automation channels
-                    </Text>
-                  </View>
-                  <View
-                    style={[
-                      styles.radioCircle,
-                      accountType === 'business' && styles.radioCircleActive,
-                      isDark && styles.radioCircleDark,
-                    ]}
-                  >
-                    {accountType === 'business' && <Ionicons name="checkmark" size={13} color="#FFFFFF" />}
-                  </View>
-                </Pressable>
+                  {/* Top Row: Icon Squircle + Title + Badge + Selector */}
+                  <View style={styles.cardHeaderRow}>
+                    <LinearGradient
+                      colors={
+                        accountType === 'business'
+                          ? ['#2563EB', '#1D4ED8']
+                          : isDark
+                            ? ['#2C2B38', '#201F2B']
+                            : ['#F1F5F9', '#E2E8F0']
+                      }
+                      style={styles.cardIconSquircle}
+                    >
+                      <HugeiconsIcon
+                        icon={Building02Icon}
+                        size={24}
+                        color={accountType === 'business' ? '#FFFFFF' : isDark ? '#94A3B8' : '#475569'}
+                        strokeWidth={2}
+                      />
+                    </LinearGradient>
 
-                {/* Option 2: Creator / Individual */}
-                <Pressable
+                    <View style={styles.cardHeaderCol}>
+                      <View style={styles.cardTitleTagRow}>
+                        <Text style={[styles.cardTitle, isDark && styles.cardTitleDark]}>
+                          Business / Agency
+                        </Text>
+
+                      </View>
+
+                    </View>
+
+                    {/* Selector Radio / Checked Indicator */}
+                    <View
+                      style={[
+                        styles.selectorCircle,
+                        accountType === 'business' && styles.selectorCircleActiveBusiness,
+                        isDark && styles.selectorCircleDark,
+                      ]}
+                    >
+                      {accountType === 'business' ? (
+                        <HugeiconsIcon icon={CheckmarkCircle01Icon} size={22} color="#2563EB" strokeWidth={2.4} />
+                      ) : null}
+                    </View>
+                  </View>
+                </TouchableOpacity>
+
+                {/* Option 2: Creator / Individual Card */}
+                <TouchableOpacity
                   style={[
-                    styles.optionCard,
-                    accountType === 'personal' && styles.optionCardActive,
-                    isDark && styles.optionCardDark,
-                    isDark && accountType === 'personal' && styles.optionCardActiveDark,
+                    styles.accountCard,
+                    accountType === 'personal' && styles.accountCardActivePersonal,
+                    isDark && styles.accountCardDark,
+                    isDark && accountType === 'personal' && styles.accountCardActivePersonalDark,
                   ]}
                   onPress={() => handleSelectAccountType('personal')}
                 >
-                  <View style={[styles.optionIconBox, isDark && styles.optionIconBoxDark]}>
-                    <Ionicons
-                      name="person-outline"
-                      size={22}
-                      color={accountType === 'personal' ? '#0084FF' : (isDark ? '#9CA3AF' : '#6B7280')}
-                    />
-                  </View>
-                  <View style={styles.optionTextBox}>
-                    <Text style={[styles.optionTitle, isDark && styles.optionTitleDark]}>
-                      Creator / Individual
-                    </Text>
-                    <Text style={[styles.optionDesc, isDark && styles.optionDescDark]}>
-                      For solo founders, content creators, and community managers
-                    </Text>
-                  </View>
-                  <View
-                    style={[
-                      styles.radioCircle,
-                      accountType === 'personal' && styles.radioCircleActive,
-                      isDark && styles.radioCircleDark,
-                    ]}
-                  >
-                    {accountType === 'personal' && <Ionicons name="checkmark" size={13} color="#FFFFFF" />}
-                  </View>
-                </Pressable>
+                  {/* Top Row: Icon Squircle + Title + Badge + Selector */}
+                  <View style={styles.cardHeaderRow}>
+                    <LinearGradient
+                      colors={
+                        accountType === 'personal'
+                          ? ['#8B5CF6', '#6D28D9']
+                          : isDark
+                            ? ['#2C2B38', '#201F2B']
+                            : ['#F1F5F9', '#E2E8F0']
+                      }
+                      style={styles.cardIconSquircle}
+                    >
+                      <HugeiconsIcon
+                        icon={UserIcon}
+                        size={24}
+                        color={accountType === 'personal' ? '#FFFFFF' : isDark ? '#94A3B8' : '#475569'}
+                        strokeWidth={2}
+                      />
+                    </LinearGradient>
 
-                {/* Primary Action Button */}
-                <Pressable style={[styles.primaryButton, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }]} onPress={handleContinueToStep2}>
-                  <Text style={styles.primaryButtonText}>Continue to Details</Text>
-                  <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
-                </Pressable>
+                    <View style={styles.cardHeaderCol}>
+                      <View style={styles.cardTitleTagRow}>
+                        <Text style={[styles.cardTitle, isDark && styles.cardTitleDark]}>
+                          Creator / Individual
+                        </Text>
+                        <View style={styles.soloTagPill}>
+                          <Text style={styles.soloTagText}>SOLO & CREATOR</Text>
+                        </View>
+                      </View>
+                      <Text style={[styles.cardSubtitle, isDark && styles.cardSubtitleDark]}>
+                        For solo founders, content creators, and community managers
+                      </Text>
+                    </View>
+
+                    {/* Selector Radio / Checked Indicator */}
+                    <View
+                      style={[
+                        styles.selectorCircle,
+                        accountType === 'personal' && styles.selectorCircleActivePersonal,
+                        isDark && styles.selectorCircleDark,
+                      ]}
+                    >
+                      {accountType === 'personal' ? (
+                        <HugeiconsIcon icon={CheckmarkCircle01Icon} size={22} color="#8B5CF6" strokeWidth={2.4} />
+                      ) : null}
+                    </View>
+                  </View>
+
+                  {/* Feature Micro-Badges Row */}
+                  <View style={styles.featurePillsRow}>
+                    <View style={[styles.featurePill, isDark && styles.featurePillDark]}>
+                      <HugeiconsIcon icon={SparklesIcon} size={11} color="#8B5CF6" strokeWidth={2.2} />
+                      <Text style={[styles.featurePillText, isDark && styles.featurePillTextDark]}>
+                        Bio & Link Builder
+                      </Text>
+                    </View>
+                    <View style={[styles.featurePill, isDark && styles.featurePillDark]}>
+                      <HugeiconsIcon icon={ZapIcon} size={11} color="#8B5CF6" strokeWidth={2.2} />
+                      <Text style={[styles.featurePillText, isDark && styles.featurePillTextDark]}>
+                        Social Auto-Post
+                      </Text>
+                    </View>
+                    <View style={[styles.featurePill, isDark && styles.featurePillDark]}>
+                      <HugeiconsIcon icon={CheckmarkCircle01Icon} size={11} color="#8B5CF6" strokeWidth={2.2} />
+                      <Text style={[styles.featurePillText, isDark && styles.featurePillTextDark]}>
+                        Quick Lead Forms
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+
+                {/* Primary CTA Button */}
+                <TouchableOpacity
+                  activeOpacity={0.88}
+                  onPress={handleContinueToStep2}
+                  style={styles.primaryCtaWrapper}
+                >
+                  <LinearGradient
+                    colors={
+                      accountType === 'business'
+                        ? ['#2563EB', '#1D4ED8']
+                        : ['#8B5CF6', '#7C3AED']
+                    }
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.primaryCtaGradient}
+                  >
+                    <Text style={styles.primaryCtaText}>Continue to Details</Text>
+                    <View style={styles.primaryCtaIconCircle}>
+                      <HugeiconsIcon
+                        icon={ArrowRight01Icon}
+                        size={15}
+                        color="#FFFFFF"
+                        strokeWidth={2.4}
+                      />
+                    </View>
+                  </LinearGradient>
+                </TouchableOpacity>
               </View>
             ) : step === 2 ? (
-              /* STEP 2: Workspace Details (matching website onboarding) */
+              /* ========================================================
+                 STEP 2: Workspace Details (matching website onboarding)
+                 ======================================================== */
               <View style={styles.stepContent}>
-                {/* Personal Information Group */}
-                <Text style={[styles.fieldCategoryLabel, isDark && styles.fieldCategoryLabelDark]}>
-                  Profile Details
-                </Text>
-                <View style={[styles.inputGroup, isDark && styles.inputGroupDark]}>
+                {/* Profile Details Group */}
+                <View style={styles.sectionHeaderRow}>
+                  <HugeiconsIcon icon={UserIcon} size={16} color={colors.accent} strokeWidth={2} />
+                  <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
+                    Profile Information
+                  </Text>
+                </View>
+
+                <View style={[styles.glassInputCard, isDark && styles.glassInputCardDark]}>
                   <View style={styles.inputRow}>
                     <TextInput
                       style={[styles.nativeInput, isDark && styles.nativeInputDark]}
                       placeholder="First Name *"
-                      placeholderTextColor={colors.inputPlaceholder}
+                      placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
                       value={firstName}
                       onChangeText={setFirstName}
                       autoCapitalize="words"
@@ -456,10 +817,31 @@ export default function OnboardingScreen() {
                     <TextInput
                       style={[styles.nativeInput, isDark && styles.nativeInputDark]}
                       placeholder="Last Name *"
-                      placeholderTextColor={colors.inputPlaceholder}
+                      placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
                       value={lastName}
                       onChangeText={setLastName}
                       autoCapitalize="words"
+                      returnKeyType="next"
+                    />
+                  </View>
+
+                  {/* Email Input - matching bot-dashboard (Required for Phone & Truecaller signups) */}
+                  <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
+
+                  <View style={styles.inputRow}>
+                    <TextInput
+                      style={[styles.nativeInput, isDark && styles.nativeInputDark]}
+                      placeholder={
+                        isPhoneOrTruecaller
+                          ? 'Email Address (Required for Recovery) *'
+                          : 'Email Address'
+                      }
+                      placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
+                      value={email}
+                      onChangeText={setEmail}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
                       returnKeyType="next"
                     />
                   </View>
@@ -470,7 +852,7 @@ export default function OnboardingScreen() {
                     <TextInput
                       style={[styles.nativeInput, isDark && styles.nativeInputDark]}
                       placeholder="Mobile / WhatsApp Number"
-                      placeholderTextColor={colors.inputPlaceholder}
+                      placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
                       value={phone}
                       onChangeText={setPhone}
                       keyboardType="phone-pad"
@@ -484,7 +866,7 @@ export default function OnboardingScreen() {
                     <TextInput
                       style={[styles.nativeInput, isDark && styles.nativeInputDark]}
                       placeholder="State / Region (e.g. California, Delhi, Ontario)"
-                      placeholderTextColor={colors.inputPlaceholder}
+                      placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
                       value={state}
                       onChangeText={setState}
                       autoCapitalize="words"
@@ -496,15 +878,19 @@ export default function OnboardingScreen() {
                 {/* Business Specific Details (when accountType === 'business') */}
                 {accountType === 'business' && (
                   <>
-                    <Text style={[styles.fieldCategoryLabel, isDark && styles.fieldCategoryLabelDark]}>
-                      Organization Details
-                    </Text>
-                    <View style={[styles.inputGroup, isDark && styles.inputGroupDark]}>
+                    <View style={[styles.sectionHeaderRow, { marginTop: 10 }]}>
+                      <HugeiconsIcon icon={Building02Icon} size={16} color={colors.accent} strokeWidth={2} />
+                      <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
+                        Organization Details
+                      </Text>
+                    </View>
+
+                    <View style={[styles.glassInputCard, isDark && styles.glassInputCardDark]}>
                       <View style={styles.inputRow}>
                         <TextInput
                           style={[styles.nativeInput, isDark && styles.nativeInputDark]}
                           placeholder="Business / Company Name *"
-                          placeholderTextColor={colors.inputPlaceholder}
+                          placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
                           value={businessName}
                           onChangeText={setBusinessName}
                           autoCapitalize="words"
@@ -517,8 +903,8 @@ export default function OnboardingScreen() {
                       <View style={styles.inputRow}>
                         <TextInput
                           style={[styles.nativeInput, isDark && styles.nativeInputDark]}
-                          placeholder="Work / Business Email"
-                          placeholderTextColor={colors.inputPlaceholder}
+                          placeholder="Work / Business Email *"
+                          placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
                           value={businessEmail}
                           onChangeText={setBusinessEmail}
                           keyboardType="email-address"
@@ -530,24 +916,24 @@ export default function OnboardingScreen() {
                     </View>
 
                     {/* Industry Category */}
-                    <Text style={[styles.fieldCategoryLabel, isDark && styles.fieldCategoryLabelDark]}>
+                    <Text style={[styles.subSectionTitle, isDark && styles.subSectionTitleDark]}>
                       Industry Category
                     </Text>
                     <ScrollView
                       horizontal
                       showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={styles.chipsContainer}
+                      contentContainerStyle={styles.chipsScrollContent}
                     >
                       {CATEGORIES.map((cat) => {
                         const isSelected = category === cat;
                         return (
-                          <Pressable
+                          <TouchableOpacity
                             key={cat}
                             style={[
-                              styles.chip,
-                              isSelected && styles.chipActive,
-                              isDark && styles.chipDark,
-                              isDark && isSelected && styles.chipActiveDark,
+                              styles.categoryChip,
+                              isSelected && styles.categoryChipActive,
+                              isDark && styles.categoryChipDark,
+                              isDark && isSelected && styles.categoryChipActiveDark,
                             ]}
                             onPress={() => {
                               triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
@@ -556,32 +942,33 @@ export default function OnboardingScreen() {
                           >
                             <Text
                               style={[
-                                styles.chipText,
-                                isSelected && styles.chipTextActive,
-                                isDark && styles.chipTextDark,
+                                styles.categoryChipText,
+                                isSelected && styles.categoryChipTextActive,
+                                isDark && styles.categoryChipTextDark,
                               ]}
                             >
                               {cat}
                             </Text>
-                          </Pressable>
+                          </TouchableOpacity>
                         );
                       })}
                     </ScrollView>
 
                     {/* Team Size Segmented Control */}
-                    <Text style={[styles.fieldCategoryLabel, isDark && styles.fieldCategoryLabelDark]}>
+                    <Text style={[styles.subSectionTitle, isDark && styles.subSectionTitleDark]}>
                       Team Size
                     </Text>
-                    <View style={[styles.segmentedControl, isDark && styles.segmentedControlDark]}>
+                    <View style={[styles.segmentedWrapper, isDark && styles.segmentedWrapperDark]}>
                       {TEAM_SIZES.map((size) => {
                         const isSelected = teamSize === size;
                         return (
-                          <Pressable
+                          <TouchableOpacity
                             key={size}
                             style={[
-                              styles.segmentButton,
-                              isSelected && styles.segmentButtonActive,
-                              isDark && isSelected && styles.segmentButtonActiveDark,
+                              styles.segmentPill,
+                              isSelected && styles.segmentPillActive,
+                              isDark && styles.segmentPillDark,
+                              isDark && isSelected && styles.segmentPillActiveDark,
                             ]}
                             onPress={() => {
                               triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
@@ -590,98 +977,101 @@ export default function OnboardingScreen() {
                           >
                             <Text
                               style={[
-                                styles.segmentText,
-                                isSelected && styles.segmentTextActive,
-                                isDark && styles.segmentTextDark,
+                                styles.segmentPillText,
+                                isSelected && styles.segmentPillTextActive,
+                                isDark && styles.segmentPillTextDark,
                               ]}
                             >
                               {size}
                             </Text>
-                          </Pressable>
+                          </TouchableOpacity>
                         );
                       })}
                     </View>
                   </>
                 )}
 
-                {/* Referral Code Group */}
-                <Text style={[styles.fieldCategoryLabel, isDark && styles.fieldCategoryLabelDark]}>
-                  Referral Code
-                </Text>
-                <View style={[styles.inputGroup, isDark && styles.inputGroupDark]}>
-                  <View style={[styles.inputRow, { flexDirection: 'row', alignItems: 'center' }]}>
-                    <TextInput
-                      style={[
-                        styles.nativeInput,
-                        isDark && styles.nativeInputDark,
-                        { flex: 1, letterSpacing: referralCode ? 1.2 : 0 },
-                      ]}
-                      placeholder="Referral Code (Optional) - 5% Off"
-                      placeholderTextColor={colors.inputPlaceholder}
-                      value={referralCode}
-                      onChangeText={(txt) => setReferralCode(txt.toUpperCase().trim())}
-                      autoCapitalize="characters"
-                      autoCorrect={false}
-                      returnKeyType="done"
-                    />
-                    {referralCode.trim().length >= 3 && (
-                      <View style={styles.discountBadge}>
-                        <Text style={styles.discountBadgeText}>5% OFF</Text>
-                      </View>
+                {/* Continue Button */}
+                <TouchableOpacity
+                  activeOpacity={0.88}
+                  onPress={handleContinueToStep3}
+                  disabled={isValidatingEmail || loading}
+                  style={[styles.primaryCtaWrapper, (isValidatingEmail || loading) && { opacity: 0.85 }]}
+                >
+                  <LinearGradient
+                    colors={['#2563EB', '#1D4ED8']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.primaryCtaGradient}
+                  >
+                    {isValidatingEmail ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <>
+                        <Text style={styles.primaryCtaText}>Continue to Security & Alerts</Text>
+                        <View style={styles.primaryCtaIconCircle}>
+                          <HugeiconsIcon icon={ArrowRight01Icon} size={15} color="#FFFFFF" strokeWidth={2.4} />
+                        </View>
+                      </>
                     )}
-                  </View>
-                </View>
+                  </LinearGradient>
+                </TouchableOpacity>
 
-                {/* Continue to Step 3 Button */}
-                <Pressable style={styles.primaryButton} onPress={handleContinueToStep3}>
-                  <Text style={styles.primaryButtonText}>Continue to Security & Alerts →</Text>
-                </Pressable>
-
-                {/* Back Button */}
-                <Pressable
-                  style={[styles.secondaryButton, isDark && styles.secondaryButtonDark]}
+                {/* Back to Step 1 Button */}
+                <TouchableOpacity
+                  style={[styles.backNavBtn, isDark && styles.backNavBtnDark]}
                   onPress={() => {
                     triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-                    setStep(1);
+                    animateToStep(1);
                   }}
                 >
-                  <Text style={[styles.secondaryButtonText, isDark && styles.secondaryButtonTextDark]}>
-                    ← Back to Account Type
+                  <HugeiconsIcon
+                    icon={ArrowLeft01Icon}
+                    size={15}
+                    color={isDark ? '#94A3B8' : '#64748B'}
+                    strokeWidth={2}
+                  />
+                  <Text style={[styles.backNavBtnText, isDark && styles.backNavBtnTextDark]}>
+                    Back to Account Type
                   </Text>
-                </Pressable>
+                </TouchableOpacity>
               </View>
             ) : (
-              /* STEP 3: Permissions & Security Setup */
+              /* ========================================================
+                 STEP 3: Permissions & Security Setup
+                 ======================================================== */
               <View style={styles.stepContent}>
-                <View style={[styles.permissionGroup, isDark && styles.permissionGroupDark]}>
+                <View style={[styles.permissionCardGroup, isDark && styles.permissionCardGroupDark]}>
                   {/* 1. Biometric / Face ID Card */}
-                  <View style={styles.permissionRow}>
-                    <View style={[styles.permissionIconCircle, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-                      <Ionicons
-                        name={
+                  <View style={styles.permissionItemRow}>
+                    <LinearGradient
+                      colors={['rgba(16, 185, 129, 0.2)', 'rgba(16, 185, 129, 0.08)']}
+                      style={styles.permissionIconSurface}
+                    >
+                      <HugeiconsIcon
+                        icon={
                           biometricSettings.biometricType === 'FACE_ID'
-                            ? 'scan-outline'
-                            : biometricSettings.biometricType === 'TOUCH_ID' || biometricSettings.biometricType === 'FINGERPRINT'
-                              ? 'finger-print-outline'
-                              : 'shield-checkmark-outline'
+                            ? FaceIdIcon
+                            : ShieldCheckIcon
                         }
                         size={22}
                         color="#10B981"
+                        strokeWidth={2}
                       />
-                    </View>
-                    <View style={styles.permissionTextBox}>
-                      <Text style={[styles.permissionTitle, isDark && styles.permissionTitleDark]}>
+                    </LinearGradient>
+                    <View style={styles.permissionContentCol}>
+                      <Text style={[styles.permissionHeading, isDark && styles.permissionHeadingDark]}>
                         {biometricSettings.biometricLabel} Lock
                       </Text>
-                      <Text style={[styles.permissionDesc, isDark && styles.permissionDescDark]}>
+                      <Text style={[styles.permissionDetails, isDark && styles.permissionDetailsDark]}>
                         1-tap fast biometric access & encrypted local credentials
                       </Text>
                     </View>
                     <Switch
                       value={biometricSettings.enabled}
                       onValueChange={handleToggleBiometricInOnboarding}
-                      disabled={isUpdatingBiometrics}
-                      trackColor={{ false: isDark ? '#3A3A3C' : '#E9E6F2', true: '#10B981' }}
+                      disabled={isUpdatingBiometrics || loading}
+                      trackColor={{ false: isDark ? '#334155' : '#E2E8F0', true: '#10B981' }}
                       thumbColor="#FFFFFF"
                     />
                   </View>
@@ -689,86 +1079,114 @@ export default function OnboardingScreen() {
                   <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
 
                   {/* 2. Push Notifications Card */}
-                  <View style={styles.permissionRow}>
-                    <View style={[styles.permissionIconCircle, { backgroundColor: 'rgba(10, 132, 255, 0.15)' }]}>
-                      <Ionicons name="notifications-outline" size={22} color="#0A84FF" />
-                    </View>
-                    <View style={styles.permissionTextBox}>
-                      <Text style={[styles.permissionTitle, isDark && styles.permissionTitleDark]}>
+                  <View style={styles.permissionItemRow}>
+                    <LinearGradient
+                      colors={['rgba(37, 99, 235, 0.2)', 'rgba(37, 99, 235, 0.08)']}
+                      style={styles.permissionIconSurface}
+                    >
+                      <HugeiconsIcon icon={Notification01Icon} size={22} color="#2563EB" strokeWidth={2} />
+                    </LinearGradient>
+                    <View style={styles.permissionContentCol}>
+                      <Text style={[styles.permissionHeading, isDark && styles.permissionHeadingDark]}>
                         Push Notifications
                       </Text>
-                      <Text style={[styles.permissionDesc, isDark && styles.permissionDescDark]}>
+                      <Text style={[styles.permissionDetails, isDark && styles.permissionDetailsDark]}>
                         Real-time alerts when new leads arrive & automations run
                       </Text>
                     </View>
                     <Switch
                       value={notificationsEnabled}
+                      disabled={loading}
                       onValueChange={(val) => {
                         triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
                         setNotificationsEnabled(val);
                       }}
-                      trackColor={{ false: isDark ? '#3A3A3C' : '#E9E6F2', true: '#0A84FF' }}
+                      trackColor={{ false: isDark ? '#334155' : '#E2E8F0', true: '#2563EB' }}
                       thumbColor="#FFFFFF"
                     />
                   </View>
 
                   <View style={[styles.hairlineDivider, isDark && styles.hairlineDividerDark]} />
 
-                  {/* 3. Sensory Haptics */}
-                  <View style={styles.permissionRow}>
-                    <View style={[styles.permissionIconCircle, { backgroundColor: 'rgba(139, 92, 246, 0.15)' }]}>
-                      <Ionicons name="phone-portrait-outline" size={22} color="#8B5CF6" />
-                    </View>
-                    <View style={styles.permissionTextBox}>
-                      <Text style={[styles.permissionTitle, isDark && styles.permissionTitleDark]}>
+                  {/* 3. Sensory Haptics Card */}
+                  <View style={styles.permissionItemRow}>
+                    <LinearGradient
+                      colors={['rgba(139, 92, 246, 0.2)', 'rgba(139, 92, 246, 0.08)']}
+                      style={styles.permissionIconSurface}
+                    >
+                      <HugeiconsIcon icon={ZapIcon} size={22} color="#8B5CF6" strokeWidth={2} />
+                    </LinearGradient>
+                    <View style={styles.permissionContentCol}>
+                      <Text style={[styles.permissionHeading, isDark && styles.permissionHeadingDark]}>
                         Tactile Haptic Feedback
                       </Text>
-                      <Text style={[styles.permissionDesc, isDark && styles.permissionDescDark]}>
+                      <Text style={[styles.permissionDetails, isDark && styles.permissionDetailsDark]}>
                         Responsive tactile vibrations on buttons and actions
                       </Text>
                     </View>
                     <Switch
                       value={hapticsEnabled}
+                      disabled={loading}
                       onValueChange={(val) => {
                         triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
                         setHapticsEnabled(val);
                       }}
-                      trackColor={{ false: isDark ? '#3A3A3C' : '#E9E6F2', true: '#8B5CF6' }}
+                      trackColor={{ false: isDark ? '#334155' : '#E2E8F0', true: '#8B5CF6' }}
                       thumbColor="#FFFFFF"
                     />
                   </View>
                 </View>
 
                 {/* Complete Setup Primary CTA */}
-                <Pressable
-                  style={[styles.primaryButton, loading && { opacity: 0.8 }]}
+                <TouchableOpacity
+                  activeOpacity={0.88}
                   onPress={handleCompleteOnboarding}
                   disabled={loading}
+                  style={[styles.primaryCtaWrapper, loading && { opacity: 0.85 }]}
                 >
-                  {loading ? (
-                    <ActivityIndicator color="#FFFFFF" />
-                  ) : (
-                    <Text style={styles.primaryButtonText}>Complete Setup & Enter Hub</Text>
-                  )}
-                </Pressable>
+                  <LinearGradient
+                    colors={['#10B981', '#059669']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.primaryCtaGradient}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <>
+                        <Text style={styles.primaryCtaText}>Complete Workspace Setup</Text>
+                        <View style={styles.primaryCtaIconCircle}>
+                          <HugeiconsIcon icon={CheckmarkCircle01Icon} size={16} color="#FFFFFF" strokeWidth={2.4} />
+                        </View>
+                      </>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
 
-                {/* Back to Step 2 */}
-                <Pressable
-                  style={[styles.secondaryButton, isDark && styles.secondaryButtonDark]}
+                {/* Back to Step 2 Button */}
+                <TouchableOpacity
+                  disabled={loading}
+                  style={[styles.backNavBtn, isDark && styles.backNavBtnDark, loading && { opacity: 0.5 }]}
                   onPress={() => {
                     triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-                    setStep(2);
+                    animateToStep(2);
                   }}
                 >
-                  <Text style={[styles.secondaryButtonText, isDark && styles.secondaryButtonTextDark]}>
-                    ← Back to Workspace Details
+                  <HugeiconsIcon
+                    icon={ArrowLeft01Icon}
+                    size={15}
+                    color={isDark ? '#94A3B8' : '#64748B'}
+                    strokeWidth={2}
+                  />
+                  <Text style={[styles.backNavBtnText, isDark && styles.backNavBtnTextDark]}>
+                    Back to Workspace Details
                   </Text>
-                </Pressable>
+                </TouchableOpacity>
               </View>
             )}
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </View>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
   );
 }
@@ -776,421 +1194,614 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F3FB',
+    backgroundColor: '#F8F9FD',
   },
   containerDark: {
-    backgroundColor: '#14131B',
+    backgroundColor: '#0D0E15',
+  },
+  ambientGlowContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 380,
+    overflow: 'hidden',
+  },
+  ambientTopGlow: {
+    width: '100%',
+    height: '100%',
   },
   scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    justifyContent: 'center',
-    alignItems: 'stretch',
-    maxWidth: 500,
-    width: '100%',
-    alignSelf: 'center',
+    paddingHorizontal: 20,
+    gap: 16,
   },
+
+  /* Top Navigation Bar */
   topBar: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-    width: '100%',
+    marginBottom: 6,
   },
-  signOutBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-  },
-  signOutText: {
-    fontSize: 13,
-    color: '#6B7280',
-    fontWeight: '600',
-  },
-  signOutTextDark: {
-    color: '#9CA3AF',
-  },
-  skipBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-  },
-  skipText: {
-    fontSize: 13,
-    color: '#2563EB',
-    fontWeight: '600',
-  },
-  skipTextDark: {
-    color: '#60A5FA',
-  },
-  logoSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-    width: '100%',
-  },
-  logoWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-  },
-  logoImage: {
-    width: 80,
-    height: 80,
-    backgroundColor: 'transparent',
-  },
-  stepBadgeContainer: {
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  stepBadge: {
-    backgroundColor: '#F0EEF8',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 14,
-  },
-  stepBadgeDark: {
-    backgroundColor: '#252230',
-  },
-  stepBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#0084FF',
-    letterSpacing: 0.2,
-  },
-  stepBadgeTextDark: {
-    color: '#3B82F6',
-  },
-  heading: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#000000',
-    textAlign: 'center',
-    lineHeight: 31,
-    letterSpacing: -0.6,
-    marginBottom: 8,
-  },
-  headingDark: {
-    color: '#FFFFFF',
-  },
-  subheading: {
-    fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
-    paddingHorizontal: 12,
-  },
-  subheadingDark: {
-    color: '#9CA3AF',
-  },
-  errorBanner: {
-    backgroundColor: '#FEE2E2',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    marginBottom: 18,
-  },
-  errorBannerText: {
-    color: '#DC2626',
-    fontSize: 13,
-    fontWeight: '600',
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  stepContent: {
-    gap: 14,
-  },
-  optionCard: {
+  navPillBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0EEF8',
+    gap: 5,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
     borderRadius: 20,
-    padding: 16,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderWidth: 0.1,
+    borderColor: 'rgba(226, 232, 240, 0.8)',
+  },
+  navPillBtnDark: {
+    backgroundColor: 'rgba(28, 29, 41, 0.75)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  navBtnText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  navBtnTextDark: {
+    color: '#94A3B8',
+  },
+  skipBtnText: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#2563EB',
+  },
+  skipBtnTextDark: {
+    color: '#60A5FA',
+  },
+
+  /* 3-Step Segments Indicator */
+  stepperContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  stepperSegment: {
+    width: 18,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#E2E8F0',
+  },
+  stepperSegmentDark: {
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  stepperSegmentActive: {
+    width: 32,
+    backgroundColor: '#2563EB',
+  },
+  stepperSegmentActiveDark: {
+    width: 32,
+    backgroundColor: '#60A5FA',
+  },
+  stepperSegmentCompleted: {
+    width: 20,
+    backgroundColor: '#10B981',
+  },
+  stepperSegmentCompletedDark: {
+    width: 20,
+    backgroundColor: '#10B981',
+  },
+
+  /* Brand Hero Section */
+  heroSection: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+  },
+  aiLogoHalo: {
+    width: 86,
+    height: 86,
+    borderRadius: 43,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderWidth: 0.1,
+    borderColor: 'rgba(59, 130, 246, 0.18)',
+    marginBottom: 16,
+  },
+  aiLogoHaloDark: {
+    backgroundColor: 'rgba(28, 29, 41, 0.65)',
+    borderColor: 'rgba(96, 165, 250, 0.24)',
+    shadowOpacity: 0.28,
+  },
+  stepPillBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
+    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+    borderWidth: 0.1,
+    borderColor: 'rgba(37, 99, 235, 0.18)',
+    marginBottom: 10,
+  },
+  stepPillBadgeDark: {
+    backgroundColor: 'rgba(96, 165, 250, 0.12)',
+    borderColor: 'rgba(96, 165, 250, 0.22)',
+  },
+  stepPulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#2563EB',
+  },
+  stepPillText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#2563EB',
+    letterSpacing: 0.8,
+  },
+  stepPillTextDark: {
+    color: '#60A5FA',
+  },
+  heroHeading: {
+    fontSize: 27,
+    fontWeight: '800',
+    color: '#0F172A',
+    textAlign: 'center',
+    lineHeight: 33,
+    letterSpacing: -0.7,
+    marginBottom: 6,
+  },
+  heroHeadingDark: {
+    color: '#FFFFFF',
+  },
+  heroSubheading: {
+    fontSize: 13.5,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 19,
+    paddingHorizontal: 14,
+  },
+  heroSubheadingDark: {
+    color: '#94A3B8',
+  },
+
+  /* Error Banner */
+  errorBanner: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderWidth: 0.1,
+    borderColor: 'rgba(239, 68, 68, 0.25)',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+  },
+  errorBannerDark: {
+    backgroundColor: 'rgba(239, 68, 68, 0.16)',
+    borderColor: 'rgba(239, 68, 68, 0.35)',
+  },
+  errorBannerText: {
+    color: '#EF4444',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+
+  /* Step Content Wrapper */
+  stepContent: {
     gap: 14,
+    marginTop: 4,
   },
-  optionCardDark: {
-    backgroundColor: '#252230',
-  },
-  optionCardActive: {
+
+  /* ========================================================
+     Account Type Selection Cards (Step 1)
+     ======================================================== */
+  accountCard: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#0084FF',
-    shadowColor: '#0084FF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 3,
+    borderRadius: 22,
+    padding: 16,
+    borderWidth: 0.1,
+    borderColor: '#E2E8F0',
+    gap: 12,
   },
-  optionCardActiveDark: {
-    backgroundColor: '#1E293B',
+  accountCardDark: {
+    backgroundColor: '#151622',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    shadowColor: '#000000',
+    shadowOpacity: 0.3,
+  },
+  accountCardActiveBusiness: {
+    borderColor: '#2563EB',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#2563EB',
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  accountCardActiveBusinessDark: {
+    backgroundColor: '#141829',
     borderColor: '#3B82F6',
+    shadowOpacity: 0.35,
   },
-  optionIconBox: {
+  accountCardActivePersonal: {
+    borderColor: '#8B5CF6',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#8B5CF6',
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  accountCardActivePersonalDark: {
+    backgroundColor: '#1B1429',
+    borderColor: '#A855F7',
+    shadowOpacity: 0.35,
+  },
+
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  cardIconSquircle: {
     width: 46,
     height: 46,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    justifyContent: 'center',
   },
-  optionIconBoxDark: {
-    backgroundColor: '#3A3549',
-  },
-  optionIconEmoji: {
-    fontSize: 22,
-  },
-  optionTextBox: {
+  cardHeaderCol: {
     flex: 1,
+    gap: 3,
   },
-  optionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#000000',
-    marginBottom: 4,
-  },
-  optionTitleDark: {
-    color: '#FFFFFF',
-  },
-  optionDesc: {
-    fontSize: 12,
-    color: '#6B7280',
-    lineHeight: 16,
-  },
-  optionDescDark: {
-    color: '#9CA3AF',
-  },
-  radioCircle: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: '#9CA3AF',
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
+  cardTitleTagRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
   },
-  radioCircleDark: {
-    borderColor: '#6B7280',
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+    color: '#0F172A',
   },
-  radioCircleActive: {
-    backgroundColor: '#0084FF',
-    borderColor: '#0084FF',
-  },
-  radioCheckmark: {
+  cardTitleDark: {
     color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '900',
   },
-  fieldCategoryLabel: {
+  popularTagPill: {
+    backgroundColor: 'rgba(37, 99, 235, 0.12)',
+    paddingHorizontal: 7,
+    paddingVertical: 2.5,
+    borderRadius: 6,
+  },
+  popularTagText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#2563EB',
+    letterSpacing: 0.5,
+  },
+  soloTagPill: {
+    backgroundColor: 'rgba(139, 92, 246, 0.12)',
+    paddingHorizontal: 7,
+    paddingVertical: 2.5,
+    borderRadius: 6,
+  },
+  soloTagText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#8B5CF6',
+    letterSpacing: 0.5,
+  },
+  cardSubtitle: {
+    fontSize: 12,
+    lineHeight: 16.5,
+    color: '#64748B',
+  },
+  cardSubtitleDark: {
+    color: '#94A3B8',
+  },
+  selectorCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 0.1,
+    borderColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  selectorCircleDark: {
+    borderColor: '#475569',
+  },
+  selectorCircleActiveBusiness: {
+    borderColor: '#2563EB',
+    borderWidth: 0,
+  },
+  selectorCircleActivePersonal: {
+    borderColor: '#8B5CF6',
+    borderWidth: 0,
+  },
+
+  featurePillsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    paddingTop: 4,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  featurePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4.5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 0.1,
+    borderColor: '#E2E8F0',
+  },
+  featurePillDark: {
+    backgroundColor: '#1E2030',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  featurePillText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  featurePillTextDark: {
+    color: '#CBD5E1',
+  },
+
+  /* Primary High-Impact CTA Button */
+  primaryCtaWrapper: {
+    borderRadius: 24,
+    overflow: 'hidden',
+    marginTop: 8,
+  },
+  primaryCtaGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+  },
+  primaryCtaText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
+  primaryCtaIconCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  /* Back Button */
+  backNavBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 14,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 0.1,
+    borderColor: '#E2E8F0',
+  },
+  backNavBtnDark: {
+    backgroundColor: '#151622',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  backNavBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  backNavBtnTextDark: {
+    color: '#CBD5E1',
+  },
+
+  /* ========================================================
+     Step 2: Workspace Details Components
+     ======================================================== */
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
+    marginBottom: -4,
+  },
+  sectionTitle: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: '#1E293B',
+    letterSpacing: -0.2,
+  },
+  sectionTitleDark: {
+    color: '#F1F5F9',
+  },
+  subSectionTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#4B5563',
+    color: '#475569',
     marginTop: 4,
   },
-  fieldCategoryLabelDark: {
-    color: '#9CA3AF',
+  subSectionTitleDark: {
+    color: '#94A3B8',
   },
-  inputGroup: {
-    backgroundColor: '#F0EEF8',
-    borderRadius: 16,
+  glassInputCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    borderWidth: 0.1,
+    borderColor: '#E2E8F0',
     overflow: 'hidden',
   },
-  inputGroupDark: {
-    backgroundColor: '#252230',
+  glassInputCardDark: {
+    backgroundColor: '#151622',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   inputRow: {
     paddingHorizontal: 16,
-    minHeight: 52,
+    minHeight: 50,
     justifyContent: 'center',
   },
   nativeInput: {
-    fontSize: 15,
-    color: '#000000',
-    paddingVertical: 14,
+    fontSize: 14.5,
+    color: '#0F172A',
+    paddingVertical: 13,
   },
   nativeInputDark: {
     color: '#FFFFFF',
   },
   hairlineDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#E9E6F2',
+    backgroundColor: '#F1F5F9',
     marginLeft: 16,
   },
   hairlineDividerDark: {
-    backgroundColor: '#3A3549',
+    backgroundColor: 'rgba(255, 255, 255, 0.07)',
   },
-  chipsContainer: {
+
+  /* Chips */
+  chipsScrollContent: {
     flexDirection: 'row',
     gap: 8,
     paddingVertical: 2,
   },
-  chip: {
-    backgroundColor: '#F0EEF8',
+  categoryChip: {
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 14,
     paddingVertical: 9,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
+    borderRadius: 16,
+    borderWidth: 0.1,
+    borderColor: '#E2E8F0',
   },
-  chipDark: {
-    backgroundColor: '#252230',
+  categoryChipDark: {
+    backgroundColor: '#151622',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
-  chipActive: {
-    backgroundColor: '#EBF5FF',
-    borderColor: '#0084FF',
+  categoryChipActive: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#2563EB',
   },
-  chipActiveDark: {
-    backgroundColor: '#1E293B',
+  categoryChipActiveDark: {
+    backgroundColor: '#172554',
     borderColor: '#3B82F6',
   },
-  chipText: {
-    fontSize: 13,
+  categoryChipText: {
+    fontSize: 12.5,
     fontWeight: '600',
-    color: '#4B5563',
+    color: '#475569',
   },
-  chipTextDark: {
-    color: '#9CA3AF',
+  categoryChipTextDark: {
+    color: '#94A3B8',
   },
-  chipTextActive: {
-    color: '#0084FF',
+  categoryChipTextActive: {
+    color: '#2563EB',
     fontWeight: '700',
   },
-  segmentedControl: {
+
+  /* Segmented Control */
+  segmentedWrapper: {
     flexDirection: 'row',
-    backgroundColor: '#F0EEF8',
-    borderRadius: 14,
-    padding: 4,
-  },
-  segmentedControlDark: {
-    backgroundColor: '#252230',
-  },
-  segmentButton: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderRadius: 10,
-  },
-  segmentButtonActive: {
     backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    borderRadius: 16,
+    padding: 4,
+    borderWidth: 0.1,
+    borderColor: '#E2E8F0',
   },
-  segmentButtonActiveDark: {
-    backgroundColor: '#3A3549',
+  segmentedWrapperDark: {
+    backgroundColor: '#151622',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
-  segmentText: {
-    fontSize: 13,
+  segmentPill: {
+    flex: 1,
+    paddingVertical: 9,
+    alignItems: 'center',
+    borderRadius: 12,
+  },
+  segmentPillDark: {},
+  segmentPillActive: {
+    backgroundColor: '#2563EB',
+  },
+  segmentPillActiveDark: {
+    backgroundColor: '#3B82F6',
+  },
+  segmentPillText: {
+    fontSize: 12.5,
     fontWeight: '600',
-    color: '#6B7280',
+    color: '#64748B',
   },
-  segmentTextDark: {
-    color: '#9CA3AF',
+  segmentPillTextDark: {
+    color: '#94A3B8',
   },
-  segmentTextActive: {
-    color: '#0084FF',
-    fontWeight: '700',
+  segmentPillTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '800',
   },
-  discountBadge: {
-    backgroundColor: '#DCFCE7',
+
+  discountBadgePill: {
+    backgroundColor: 'rgba(16, 185, 129, 0.14)',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 6,
-    marginRight: 4,
+    borderRadius: 8,
   },
   discountBadgeText: {
     color: '#10B981',
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.4,
   },
-  primaryButton: {
-    backgroundColor: '#0084FF',
-    paddingVertical: 15,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 6,
-    shadowColor: '#0084FF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-  },
-  secondaryButton: {
-    backgroundColor: '#F0EEF8',
-    paddingVertical: 15,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  secondaryButtonDark: {
-    backgroundColor: '#252230',
-  },
-  secondaryButtonText: {
-    color: '#000000',
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-  },
-  secondaryButtonTextDark: {
-    color: '#FFFFFF',
-  },
-  permissionGroup: {
-    backgroundColor: '#F0EEF8',
-    borderRadius: 16,
+
+  /* ========================================================
+     Step 3: Security & Permissions Components
+     ======================================================== */
+  permissionCardGroup: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    borderWidth: 0.1,
+    borderColor: '#E2E8F0',
     overflow: 'hidden',
   },
-  permissionGroupDark: {
-    backgroundColor: '#252230',
+  permissionCardGroupDark: {
+    backgroundColor: '#151622',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
-  permissionRow: {
+  permissionItemRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 14,
+    gap: 12,
   },
-  permissionIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+  permissionIconSurface: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 14,
   },
-  permissionTextBox: {
+  permissionContentCol: {
     flex: 1,
-    paddingRight: 10,
+    gap: 2,
   },
-  permissionTitle: {
-    fontSize: 15,
+  permissionHeading: {
+    fontSize: 14.5,
     fontWeight: '700',
-    color: '#000000',
-    marginBottom: 2,
+    color: '#0F172A',
   },
-  permissionTitleDark: {
+  permissionHeadingDark: {
     color: '#FFFFFF',
   },
-  permissionDesc: {
-    fontSize: 12,
-    color: '#6B7280',
+  permissionDetails: {
+    fontSize: 11.5,
     lineHeight: 16,
+    color: '#64748B',
   },
-  permissionDescDark: {
-    color: '#9CA3AF',
+  permissionDetailsDark: {
+    color: '#94A3B8',
   },
 });

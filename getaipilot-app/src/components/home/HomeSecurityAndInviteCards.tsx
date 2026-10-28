@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { soundService } from '../../services/soundFeedbackService';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import {
   ArrowRight01Icon,
@@ -158,6 +159,7 @@ export function HomeSecurityAndInviteCards({
   }, [radarPulse, radarOpacity, shieldBreathe, moneyFloatY, moneyRotate, starPulse1, starPulse2]);
 
   const handleSecurityPress = () => {
+    soundService.play('radar');
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -165,6 +167,7 @@ export function HomeSecurityAndInviteCards({
   };
 
   const handleReferralPress = () => {
+    soundService.play('success');
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -618,6 +621,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     width: '100%',
+    paddingHorizontal: 20
   },
   cardWrapper: {
     flex: 1,

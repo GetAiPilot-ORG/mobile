@@ -30,7 +30,7 @@ interface AnimatedAiLogoProps {
  * 5. Interactive Touch Haptics: Tactile spring compression on tap.
  */
 export function AnimatedAiLogo({
-  size = 66,
+  size = 6,
   isDark = true,
   onPress,
 }: AnimatedAiLogoProps) {
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   },
   synapseRipple: {
     position: 'absolute',
-    borderWidth: 1.5,
+    borderWidth: 1,
   },
   ambientCoreGlow: {
     position: 'absolute',
@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
     width: 3.5,
     height: 3.5,
     borderRadius: 1.75,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#e6850fff',
   },
   bodyLayer: {
     position: 'absolute',

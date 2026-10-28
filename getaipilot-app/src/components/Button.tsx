@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useTheme, getColors } from '@/theme';
+import { soundService } from '../services/soundFeedbackService';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'destructive' | 'ghost';
 export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
@@ -77,6 +78,11 @@ export const Button: React.FC<ButtonProps> = ({
     return colors.text;
   };
 
+  const handlePress = (e: any) => {
+    soundService.play(variant === 'destructive' ? 'radar' : 'click');
+    props.onPress?.(e);
+  };
+
   return (
     <TouchableOpacity
       className={`
@@ -92,6 +98,7 @@ export const Button: React.FC<ButtonProps> = ({
       accessibilityState={{ disabled: disabled || isLoading, busy: isLoading }}
       style={[getVariantStyle(), { borderRadius: 999, minHeight: size === 'xs' ? 36 : 48 }, style]}
       {...props}
+      onPress={handlePress}
     >
       {isLoading ? (
         <ActivityIndicator

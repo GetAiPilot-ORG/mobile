@@ -30,6 +30,8 @@ import { BiometricService, BiometricSettings } from '../../src/lib/biometrics';
 import { supabase } from '../../src/lib/supabase';
 import { Profile } from '../../src/types/database';
 import { useThemedDialog } from '@/components';
+import { soundService } from '../../src/services/soundFeedbackService';
+import { SoundFeedbackDemoModal } from '../../src/components/dev/SoundFeedbackDemoModal';
 
 type AccountTab = 'overview' | 'edit' | 'security' | 'billing' | 'preferences';
 
@@ -183,6 +185,9 @@ export default function AccountScreen() {
   // Preference switches & Biometrics state
   const [pushEnabled, setPushEnabled] = useState(true);
   const [emailAlerts, setEmailAlerts] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(soundService?.isSoundOn?.() ?? true);
+  const [hapticsEnabled, setHapticsEnabled] = useState(soundService?.isHapticsOn?.() ?? true);
+  const [showSoundDemo, setShowSoundDemo] = useState(false);
   const [biometricSettings, setBiometricSettings] = useState<BiometricSettings>({
     enabled: false,
     timeoutMinutes: 0,
@@ -1445,6 +1450,66 @@ export default function AccountScreen() {
         {/* TAB 5: PREFERENCES */}
         {activeTab === 'preferences' && (
           <View style={styles.tabContent}>
+            {/* SOUND & AUDIO FEEDBACK (ON TOP OF APPEARANCE & THEME) */}
+            <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
+              SOUND & AUDIO FEEDBACK
+            </Text>
+            <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+              {/* Sound Effects Toggle */}
+              <View style={[styles.switchRow, isDark ? styles.switchRowDark : styles.switchRowLight]}>
+                <View style={{ flex: 1, paddingRight: 10 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Ionicons name="volume-medium-outline" size={17} color={isDark ? '#C084FC' : '#7C3AED'} />
+                    <Text style={[styles.switchTitle, isDark && styles.switchTitleDark]}>Button & UI Sounds</Text>
+                    {soundEnabled && (
+                      <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#10B981' }} />
+                    )}
+                  </View>
+                  <Text style={[styles.switchSubtitle, isDark && styles.switchSubtitleDark]}>
+                    Synthesized audio cues powered by @web-kits/audio
+                  </Text>
+                </View>
+                <Switch
+                  value={soundEnabled}
+                  onValueChange={(val) => {
+                    setSoundEnabled(val);
+                    soundService.setSoundEnabled(val);
+                    if (val) soundService.play('pop');
+                  }}
+                  trackColor={{ false: '#475569', true: '#8B5CF6' }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+
+              {/* Haptic Vibrations Toggle */}
+              <View style={[styles.switchRow, isDark ? styles.switchRowDark : styles.switchRowLight]}>
+                <View style={{ flex: 1, paddingRight: 10 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Ionicons name="radio-outline" size={17} color={isDark ? '#34D399' : '#059669'} />
+                    <Text style={[styles.switchTitle, isDark && styles.switchTitleDark]}>Haptic Vibrations</Text>
+                    {hapticsEnabled && (
+                      <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#10B981' }} />
+                    )}
+                  </View>
+                  <Text style={[styles.switchSubtitle, isDark && styles.switchSubtitleDark]}>
+                    Tactile motor feedback on taps and card scrolls
+                  </Text>
+                </View>
+                <Switch
+                  value={hapticsEnabled}
+                  onValueChange={(val) => {
+                    setHapticsEnabled(val);
+                    soundService.setHapticsEnabled(val);
+                    if (val && Platform.OS !== 'web') {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    }
+                  }}
+                  trackColor={{ false: '#475569', true: '#10B981' }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+            </View>
+
             <Text style={[styles.sectionCaption, isDark && styles.sectionCaptionDark]}>
               APPEARANCE & THEME
             </Text>
@@ -1568,6 +1633,13 @@ export default function AccountScreen() {
           GetAiPilot v1.0.0
         </Text>
       </ScrollView>
+
+      {/* Audio & Haptic Evaluation Suite Modal */}
+      <SoundFeedbackDemoModal
+        visible={showSoundDemo}
+        onClose={() => setShowSoundDemo(false)}
+        isDark={isDark}
+      />
     </AppScreen>
   );
 }

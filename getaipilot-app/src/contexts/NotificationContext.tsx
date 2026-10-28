@@ -107,7 +107,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const canUseNotifications = Boolean(Notifications);
 
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, onboardingComplete } = useAuth();
 
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
   const [notification, setNotification] = useState<Notification | null>(null);
@@ -783,7 +783,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const forceRefreshToken = async (): Promise<string | null> => {
     setIsRegistering(true);
     try {
-      const token = await NotificationService.forceRefreshToken(user?.id);
+      const token = await NotificationService.forceRefreshToken(onboardingComplete ? user?.id : undefined);
       if (token) setExpoPushToken(token);
       return token;
     } finally {
