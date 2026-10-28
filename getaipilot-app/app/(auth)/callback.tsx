@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../src/lib/supabase';
 import { useAuthStore } from '../../src/core/store/authStore';
@@ -12,23 +13,80 @@ export default function AuthCallbackScreen() {
     access_token?: string;
     refresh_token?: string;
     code?: string;
+    token_hash?: string;
+    token?: string;
+    type?: string;
     error_description?: string;
+    error?: string;
   }>();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const syncSession = useAuthStore((s) => s.syncSession);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const isHandledRef = useRef(false);
 
   useEffect(() => {
     let isCancelled = false;
 
+    const handleSuccess = async (session: any) => {
+      if (isHandledRef.current || isCancelled) return;
+      isHandledRef.current = true;
+
+      await syncSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+        user: session.user,
+      });
+
+      // Check whether user needs onboarding (matching bot-dashboard)
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('onboarding_completed')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (!profile?.onboarding_completed) {
+          useAuthStore.getState().setOnboardingCompleted(false);
+          router.replace('/onboarding' as any);
+        } else {
+          useAuthStore.getState().setOnboardingCompleted(true);
+          router.replace('/(tabs)' as any);
+        }
+      } catch (e) {
+        console.warn('[Callback] Profile onboarding check fallback:', e);
+        router.replace('/onboarding' as any);
+      }
+    };
+
     async function handleAuth() {
       try {
-        if (params.error_description) {
-          throw new Error(decodeURIComponent(params.error_description));
+        const errorDesc = params.error_description || params.error;
+        if (errorDesc) {
+          throw new Error(decodeURIComponent(errorDesc));
         }
 
-        // Direct token exchange from deep link fragment or query
+        // 1. Check raw URL for hash parameters (#access_token=...&refresh_token=...)
+        const rawUrl = await Linking.getInitialURL();
+        if (rawUrl && rawUrl.includes('#')) {
+          const hashString = rawUrl.split('#')[1];
+          const hashParams = new URLSearchParams(hashString);
+          const hashAccessToken = hashParams.get('access_token');
+          const hashRefreshToken = hashParams.get('refresh_token');
+
+          if (hashAccessToken) {
+            const { data, error } = await supabase.auth.setSession({
+              access_token: hashAccessToken,
+              refresh_token: hashRefreshToken || '',
+            });
+            if (!error && data?.session) {
+              await handleSuccess(data.session);
+              return;
+            }
+          }
+        }
+
+        // 2. Direct token exchange from query parameters
         if (params.access_token) {
           const { data, error } = await supabase.auth.setSession({
             access_token: params.access_token,
@@ -36,55 +94,49 @@ export default function AuthCallbackScreen() {
           });
           if (error) throw error;
           if (data.session) {
-            await syncSession({
-              access_token: data.session.access_token,
-              refresh_token: data.session.refresh_token,
-              user: data.session.user,
-            });
-            if (!isCancelled) {
-              router.replace('/(tabs)');
-            }
+            await handleSuccess(data.session);
             return;
           }
         }
 
-        // PKCE Auth Code exchange
+        // 3. PKCE Auth Code exchange
         if (params.code) {
           const { data, error } = await supabase.auth.exchangeCodeForSession(params.code);
           if (error) throw error;
           if (data.session) {
-            await syncSession({
-              access_token: data.session.access_token,
-              refresh_token: data.session.refresh_token,
-              user: data.session.user,
-            });
-            if (!isCancelled) {
-              router.replace('/(tabs)');
-            }
+            await handleSuccess(data.session);
             return;
           }
         }
 
-        // Fallback: Check existing session in Supabase client
+        // 4. Token Hash / Magic Link Confirmation (verifyOtp)
+        const tokenHash = params.token_hash || params.token;
+        const otpType = (params.type as any) || 'signup';
+        if (tokenHash) {
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: otpType,
+          });
+          if (error) throw error;
+          if (data?.session) {
+            await handleSuccess(data.session);
+            return;
+          }
+        }
+
+        // 5. Fallback: Check existing session in Supabase client
         const { data: existingSessionData } = await supabase.auth.getSession();
         if (existingSessionData?.session) {
-          await syncSession({
-            access_token: existingSessionData.session.access_token,
-            refresh_token: existingSessionData.session.refresh_token,
-            user: existingSessionData.session.user,
-          });
-          if (!isCancelled) {
-            router.replace('/(tabs)');
-          }
+          await handleSuccess(existingSessionData.session);
           return;
         }
 
-        throw new Error('Authentication parameters missing or expired. Please request a new login link.');
+        throw new Error('Authentication parameters missing or expired. Please request a new confirmation link.');
       } catch (err: any) {
-        if (!isCancelled) {
+        if (!isCancelled && !isHandledRef.current) {
           setErrorMsg(err?.message || 'Failed to authenticate. Please return to login.');
           setTimeout(() => {
-            if (!isCancelled) {
+            if (!isCancelled && !isHandledRef.current) {
               router.replace('/(auth)/login');
             }
           }, 3500);
@@ -92,10 +144,18 @@ export default function AuthCallbackScreen() {
       }
     }
 
+    // Auth state listener for instant background login on magic link click
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session) {
+        await handleSuccess(session);
+      }
+    });
+
     handleAuth();
 
     return () => {
       isCancelled = true;
+      authListener?.subscription?.unsubscribe();
     };
   }, [params]);
 
@@ -113,7 +173,7 @@ export default function AuthCallbackScreen() {
           <ActivityIndicator size="large" color="#0A84FF" />
           <Text style={[styles.title, isDark && styles.titleDark]}>Signing you in...</Text>
           <Text style={[styles.subtitle, isDark && styles.subtitleDark]}>
-            Verifying your security credentials and preparing workspace.
+            Verifying your confirmation link and preparing your workspace.
           </Text>
         </View>
       )}

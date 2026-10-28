@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
+import { soundService } from '../../services/soundFeedbackService';
 
 interface ToolItem {
   id: string;
@@ -227,7 +228,9 @@ export function AnimatedCreateSection({
   return (
     <View style={styles.container}>
       {/* Section Header */}
-      {sectionHeader}
+      <View style={{ paddingHorizontal: 20 }}>
+        {sectionHeader}
+      </View>
 
       {/* Horizontal Carousel */}
       <ScrollView
@@ -254,7 +257,10 @@ export function AnimatedCreateSection({
             <Pressable
               key={tool.id}
               cssInterop={false}
-              onPress={() => onOpen(tool.route)}
+              onPress={() => {
+                soundService.play('pop');
+                onOpen(tool.route);
+              }}
               accessibilityRole="button"
               accessibilityLabel={`${tool.name}: ${tool.desc}`}
               style={({ pressed }) => [

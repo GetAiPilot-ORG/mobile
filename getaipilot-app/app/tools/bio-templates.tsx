@@ -19,6 +19,7 @@ import {
   openAuthenticatedTemplate,
 } from "../../src/lib/template-deep-link";
 import { supabase } from "../../src/lib/supabase";
+import { soundService } from "../../src/services/soundFeedbackService";
 import { useTheme, getColors, AppColors } from "@/theme";
 import { TemplatesListSkeleton } from "../../src/components/skeletonScreen";
 
@@ -153,6 +154,7 @@ export default function BioTemplatesScreen() {
   }, []);
 
   const handlePreview = useCallback((template: TemplateSubmission) => {
+    soundService.play('radar');
     Linking.openURL(`https://gbio.us/${template.slug}/` || "").catch((err) => {
       console.error("Failed to open URL:", err);
       Alert.alert("Error", "Failed to open the template link.");
@@ -160,6 +162,7 @@ export default function BioTemplatesScreen() {
   }, []);
 
   const handleOpenBioDashboard = useCallback(async () => {
+    soundService.play('pop');
     try {
       await openAuthenticatedDashboard("bio-dashboard");
     } catch (error) {
@@ -169,6 +172,7 @@ export default function BioTemplatesScreen() {
   }, []);
 
   const handleOpenEditor = useCallback(async (template: TemplateSubmission) => {
+    soundService.play('pop');
     try {
       setOpeningId(template.id);
       await openAuthenticatedTemplate("bio-builder", template.id);

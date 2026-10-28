@@ -2,14 +2,7 @@ import { HomeSkeleton } from "@/components/skeletonScreen/HomeSkeletonScreen";
 import { NetworkStatusScreen } from "@/components/StatusScreen";
 import { getColors, useTheme } from "@/theme";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  ArrowRight01Icon,
-  Layout01Icon,
-  File01Icon,
-  Link01Icon,
-  ShieldCheckIcon,
-  GiftIcon,
-} from "@/constants/icons";
+import { ArrowRight01Icon } from "@/constants/icons";
 import { useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -98,14 +91,14 @@ export default function HomeScreen() {
         const token =
           expoPushToken || (requestPermissions ? await requestPermissions() : null);
         console.log('==============================================');
-        console.log('📲 [HomeScreen] CONSOLE PUSH TOKEN:');
+        console.log('[HomeScreen] CONSOLE PUSH TOKEN:');
         console.log(
           token ||
-          '⚠️ No push token generated (check permissions, physical device, or development build)'
+          'No push token generated (check permissions, physical device, or development build)'
         );
         console.log('==============================================');
       } catch (err) {
-        console.log('ℹ️ [HomeScreen] Push token notice:', err);
+        console.log('[HomeScreen] Push token notice:', err);
       }
     })();
   }, [expoPushToken, requestPermissions]);
@@ -359,11 +352,11 @@ export default function HomeScreen() {
       <AppTopBar showPlanBadge />
       <ScrollView
         style={{ flex: 1, backgroundColor: color.background }}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 128, gap: 26 }}
+        contentContainerStyle={{ paddingHorizontal: 0, paddingTop: 12, paddingBottom: 128, gap: 26 }}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={color.accent} />}
         showsVerticalScrollIndicator={false}
       >
-        <View>
+        <View style={{ paddingHorizontal: 20 }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             <View style={{ flex: 1, paddingRight: 10 }}>
               <Text
@@ -402,8 +395,8 @@ export default function HomeScreen() {
           isDark={isDark}
           onOpen={open} />
 
-        <View>
-          {section("Your workspace", "/(tabs)/products")}
+        <View style={{ paddingHorizontal: 20 }}>
+          {/* {section("Your workspace", "/(tabs)/products")} */}
           <AnimatedWorkspaceCards
             isDark={isDark}
             color={color}
@@ -438,6 +431,7 @@ export default function HomeScreen() {
             shadowOpacity: isDark ? 0.3 : 0.1,
             shadowRadius: 12,
             elevation: 4,
+            marginHorizontal: 20,
           })}
         >
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 14 }}>

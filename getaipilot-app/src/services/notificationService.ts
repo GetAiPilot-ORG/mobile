@@ -302,11 +302,12 @@ export class NotificationService {
       // 1. Try BFF endpoint
       let bffSuccess = false;
       try {
-        await apiClient.post('/mobile/v1/user/push-token', payload, { skipAuth: true });
+        const result = await apiClient.post<{ success: boolean }>('/mobile/v1/user/push-token', payload, { skipAuth: true });
+        if (!result?.success) throw new Error('Backend did not confirm token registration');
         bffSuccess = true;
         console.log('✅ [NotificationService] Successfully synced push token to BFF for user:', userId);
       } catch (bffErr) {
-        console.log('[NotificationService] BFF offline or unreachable, using Supabase direct sync...');
+        console.log('[NotificationService] BFF offline or unreachable for push token sync.');
       }
 
       // 2. Direct sync to Supabase (user_push_tokens table & backward-compatible profiles table)
@@ -314,7 +315,7 @@ export class NotificationService {
       try {
         // Upsert to user_push_tokens (handles multi-device and reassignments cleanly)
         if (installationId && installationId !== 'unknown') {
-          await supabase
+          const { error: deviceTokenError } = await supabase
             .from('user_push_tokens')
             .upsert(
               {
@@ -327,8 +328,10 @@ export class NotificationService {
                 updated_at: new Date().toISOString(),
               },
               { onConflict: 'installation_id' }
-            )
-            .catch((e) => console.warn('[NotificationService] user_push_tokens upsert notice:', e?.message));
+            );
+          if (deviceTokenError) {
+            console.warn('[NotificationService] user_push_tokens upsert notice:', deviceTokenError.message);
+          }
         }
 
         // Release this device token from any other profiles on this physical hardware
@@ -338,19 +341,23 @@ export class NotificationService {
           .eq('push_token', token)
           .neq('id', userId);
 
-        const { error: profileError } = await supabase
+        const { data: savedProfile, error: profileError } = await supabase
           .from('profiles')
           .update({
             push_token: token,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', userId);
+          .eq('id', userId)
+          .select('id')
+          .maybeSingle();
 
         if (profileError) {
           console.warn('⚠️ [NotificationService] Supabase profile push_token update notice:', profileError.message);
-        } else {
+        } else if (savedProfile) {
           supabaseSuccess = true;
           console.log('✅ [NotificationService] Successfully updated push_token in profiles table for user:', userId);
+        } else {
+          console.warn('[NotificationService] Profile token update matched no accessible row.');
         }
       } catch (sbErr) {
         console.warn('[NotificationService] Supabase sync error:', sbErr);

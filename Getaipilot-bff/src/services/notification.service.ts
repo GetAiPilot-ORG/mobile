@@ -60,7 +60,7 @@ export class NotificationService {
     try {
       // 1. Multi-device: Upsert into user_push_tokens if installation_id is provided
       if (payload.installation_id && payload.installation_id !== 'unknown') {
-        await this.adminSupabase
+        const { error: tokenError } = await this.adminSupabase
           .from('user_push_tokens')
           .upsert(
             {
@@ -73,8 +73,10 @@ export class NotificationService {
               updated_at: new Date().toISOString(),
             },
             { onConflict: 'installation_id' }
-          )
-          .catch((err) => console.warn('[NotificationService] user_push_tokens upsert notice:', err?.message));
+          );
+        if (tokenError) {
+          console.warn('[NotificationService] user_push_tokens upsert notice:', tokenError.message);
+        }
       }
 
       // 2. Release token from any previously logged-in profiles on this physical device
@@ -85,17 +87,20 @@ export class NotificationService {
         .neq('id', userId);
 
       // 3. Assign push token exclusively to the currently active user profile
-      const { error: profileError } = await this.adminSupabase
+      const { data: savedProfile, error: profileError } = await this.adminSupabase
         .from('profiles')
         .update({
           push_token: payload.push_token,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', userId);
+        .eq('id', userId)
+        .select('id')
+        .maybeSingle();
 
       if (profileError) {
-        console.warn(`[NotificationService] Profile push_token update warning:`, profileError.message);
+        throw new Error(`Profile push token update failed: ${profileError.message}`);
       }
+      if (!savedProfile) throw new Error('No profile found for push token registration');
 
       console.log(`[NotificationService] Registered push token for user ${userId}`);
       return { success: true, token: payload.push_token };
@@ -159,70 +164,78 @@ export class NotificationService {
     }
 
     try {
-      const response = await axios.post(
-        'https://exp.host/--/api/v2/push/send',
-        uniqueMessages,
-        {
-          headers: {
-            Accept: 'application/json',
-            'Accept-encoding': 'gzip, deflate',
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const tickets: any[] = [];
+      const ticketToTokenMap = new Map<string, string>();
 
-      const tickets = response.data?.data;
-      if (Array.isArray(tickets)) {
-        const ticketToTokenMap = new Map<string, string>();
-        for (let i = 0; i < tickets.length; i++) {
-          const ticket = tickets[i];
-          const msg = uniqueMessages[i];
-          const targetToken = Array.isArray(msg?.to) ? msg.to.join(',') : msg?.to;
-          if (ticket?.status === 'error') {
-            console.error(
-              `❌ [NotificationService] Delivery ticket error for ${targetToken}:`,
-              ticket.message,
-              ticket.details
-            );
-            if (ticket.details?.error === 'DeviceNotRegistered') {
-              console.warn(`🧹 [NotificationService] Removing expired FCM token from profiles: ${targetToken}`);
-              await this.adminSupabase.from('profiles').update({ push_token: null }).eq('push_token', targetToken);
+      // Send requests individually to avoid PUSH_TOO_MANY_EXPERIENCE_IDS across differing EAS projects/builds
+      for (let i = 0; i < uniqueMessages.length; i++) {
+        const msg = uniqueMessages[i];
+        const targetToken = Array.isArray(msg?.to) ? msg.to.join(',') : msg?.to;
+        try {
+          const res = await axios.post(
+            'https://exp.host/--/api/v2/push/send',
+            msg,
+            {
+              headers: {
+                Accept: 'application/json',
+                'Accept-encoding': 'gzip, deflate',
+                'Content-Type': 'application/json',
+              },
             }
-          } else if (ticket?.id && targetToken) {
-            ticketToTokenMap.set(ticket.id, targetToken);
-            console.log(`✅ [NotificationService] Push ticket dispatched: ${ticket.id} to ${targetToken}`);
-          }
-        }
-
-        if (ticketToTokenMap.size > 0) {
-          setTimeout(async () => {
-            try {
-              const receiptRes = await axios.post(
-                'https://exp.host/--/api/v2/push/getReceipts',
-                { ids: Array.from(ticketToTokenMap.keys()) },
-                { headers: { 'Content-Type': 'application/json' } }
+          );
+          const t = res.data?.data;
+          if (t) {
+            tickets.push(t);
+            if (t.status === 'error') {
+              console.error(
+                `❌ [NotificationService] Delivery ticket error for ${targetToken}:`,
+                t.message,
+                t.details
               );
-              const receipts = receiptRes.data?.data || {};
-              for (const [tId, tToken] of ticketToTokenMap.entries()) {
-                const r = receipts[tId];
-                if (r?.status === 'error') {
-                  console.error(`❌ [NotificationService] FCM Receipt failed for ${tToken}:`, r.message, r.details);
-                  if (r.details?.error === 'DeviceNotRegistered') {
-                    console.warn(`🧹 [NotificationService] Auto-cleaning invalid FCM token: ${tToken}`);
-                    await this.adminSupabase.from('profiles').update({ push_token: null }).eq('push_token', tToken);
-                  }
-                } else if (r?.status === 'ok') {
-                  console.log(`🎉 [NotificationService] FCM Confirmed Delivery for ${tToken}`);
-                }
+              if (t.details?.error === 'DeviceNotRegistered') {
+                console.warn(`🧹 [NotificationService] Removing expired FCM token: ${targetToken}`);
+                await this.adminSupabase.from('profiles').update({ push_token: null }).eq('push_token', targetToken);
+                await this.adminSupabase.from('user_push_tokens').delete().eq('push_token', targetToken);
               }
-            } catch (rErr: any) {
-              console.warn('[NotificationService] Receipt check notice:', rErr?.message || rErr);
+            } else if (t.id && targetToken) {
+              ticketToTokenMap.set(t.id, targetToken);
+              console.log(`✅ [NotificationService] Push ticket dispatched: ${t.id} to ${targetToken}`);
             }
-          }, 2500);
+          }
+        } catch (itemErr: any) {
+          console.error(`❌ [NotificationService] Error sending to ${targetToken}:`, itemErr?.response?.data || itemErr.message);
         }
       }
 
-      return { success: true, data: response.data };
+      if (ticketToTokenMap.size > 0) {
+        setTimeout(async () => {
+          try {
+            const receiptRes = await axios.post(
+              'https://exp.host/--/api/v2/push/getReceipts',
+              { ids: Array.from(ticketToTokenMap.keys()) },
+              { headers: { 'Content-Type': 'application/json' } }
+            );
+            const receipts = receiptRes.data?.data || {};
+            for (const [tId, tToken] of ticketToTokenMap.entries()) {
+              const r = receipts[tId];
+              if (r?.status === 'error') {
+                console.error(`❌ [NotificationService] FCM Receipt failed for ${tToken}:`, r.message, r.details);
+                if (r.details?.error === 'DeviceNotRegistered') {
+                  console.warn(`🧹 [NotificationService] Auto-cleaning invalid FCM token: ${tToken}`);
+                  await this.adminSupabase.from('profiles').update({ push_token: null }).eq('push_token', tToken);
+                  await this.adminSupabase.from('user_push_tokens').delete().eq('push_token', tToken);
+                }
+              } else if (r?.status === 'ok') {
+                console.log(`[NotificationService] Push service accepted notification for ${tToken}`);
+              }
+            }
+          } catch (rErr: any) {
+            console.warn('[NotificationService] Receipt check notice:', rErr?.message || rErr);
+          }
+        }, 2500);
+      }
+
+      return { success: true, tickets };
     } catch (error: any) {
       console.error(
         '[NotificationService] Error sending Expo push notification:',
@@ -981,7 +994,7 @@ export class NotificationService {
 
   /**
    * Process a single `notifications` row → exactly ONE Expo push.
-   * Canonical dedupe key = row.id (processedRowIds, 5 min window).
+   * A persistent unique row claim coordinates all running BFF instances.
    * sendExpoPushNotification additionally dedupes by `row:${rowId}:${token}`.
    */
   static async processNotificationRow(row: any) {
@@ -989,9 +1002,29 @@ export class NotificationService {
 
     // Canonical server-side row dedupe (safely stringified to prevent number/string mismatch)
     const rowIdKey = row.id != null ? String(row.id) : null;
+    if (!rowIdKey) {
+      console.error('[NotificationService] Refusing to dispatch a notification without a row id.');
+      return;
+    }
     if (rowIdKey) {
       if (NotificationService.processedRowIds.has(rowIdKey)) {
         console.log(`🛑 [NotificationService] Row ${rowIdKey} already processed. Skipping.`);
+        return;
+      }
+      // Realtime delivers each INSERT to every subscribed BFF process. A local
+      // Set cannot arbitrate between production replicas or a local dev server.
+      // The database primary key makes claiming a row atomic across processes.
+      const { error: claimError } = await this.adminSupabase
+        .from('notification_push_claims')
+        .insert({ notification_id: rowIdKey });
+
+      if (claimError) {
+        if (claimError.code === '23505') {
+          console.log(`[NotificationService] Row ${rowIdKey} claimed by another dispatcher. Skipping.`);
+        } else {
+          // Fail closed: falling back to a local guard would reintroduce duplicates.
+          console.error(`[NotificationService] Cannot claim row ${rowIdKey}; push not dispatched:`, claimError);
+        }
         return;
       }
       NotificationService.processedRowIds.add(rowIdKey);
