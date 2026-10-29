@@ -3,7 +3,7 @@ import { FloatingTabBar } from "../../src/components/FloatingTabBar";
 import { useTheme, getColors } from "@/theme";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 export const unstable_settings = {
-  initialRouteName: "index",
+  anchor: "index",
 };
 
 export default function TabLayout() {
@@ -13,7 +13,7 @@ export default function TabLayout() {
 
   return (
     <Tabs
-      backBehavior="history"
+      backBehavior="initialRoute"
       tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,
