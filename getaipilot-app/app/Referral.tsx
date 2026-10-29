@@ -13,6 +13,7 @@ import {
   Link as LinkIcon,
   Lock,
   Mail,
+  Percent,
   Phone,
   Share2,
   ShieldCheck,
@@ -652,11 +653,13 @@ export default function ReferralScreen() {
                   </View>
                   <View style={{ flex: 1, marginLeft: 12 }}>
                     <Text style={[styles.lockedNoticeTitle, { color: colors.text }]}>
-                      GAP Pro Required to Refer & Earn
+                      {incomingRef?.hasReferrer
+                        ? "5% Referral Welcome Discount Available"
+                        : "GAP Pro Required to Refer & Earn"}
                     </Text>
                     <Text style={[styles.lockedNoticeBody, { color: colors.textSecondary }]}>
                       {incomingRef?.hasReferrer
-                        ? `You were invited by ${incomingRef.referrerName || "a friend"}! Get 5% OFF GAP Pro now, then start earning flat ₹100 cash per referral.`
+                        ? `You were invited by ${incomingRef.referrerName || "a friend"}! You get 5% Welcome Discount on all GAP Pro plans. Upgrade now to claim your 5% OFF and start earning flat ₹100 cash per referral.`
                         : "Upgrade to GAP Pro to unlock your personal referral link and start earning flat ₹100 cash on every friend who joins."}
                     </Text>
                   </View>
@@ -745,12 +748,12 @@ export default function ReferralScreen() {
                 badgeText={
                   eligibility && !eligibility.canRefer
                     ? "🔒 GAP Pro Plan Required to Share"
-                    : "Flat ₹100 Cash Every Referral"
+                    : "Give 5% OFF • Earn ₹100 Cash"
                 }
                 subtitle={
                   eligibility && !eligibility.canRefer
-                    ? "You must have an active GAP Pro plan to activate and share your referral link with friends."
-                    : "Share your referral code or link. Earn flat ₹100 cash reward on every friend who joins!"
+                    ? "You must have an active GAP Pro plan to activate your referral link. Friends you invite get 5% OFF GAP Pro!"
+                    : "Friends you refer get 5% Welcome Discount on all GAP Pro plans. You earn flat ₹100 cash on every subscription!"
                 }
                 buttonText={
                   eligibility && !eligibility.canRefer
@@ -758,64 +761,6 @@ export default function ReferralScreen() {
                     : "Share Referral Link"
                 }
               />
-            </View>
-
-            {/* Milestone Progression Card */}
-            <View
-              style={[
-                styles.milestoneCard,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
-            >
-              <View style={styles.milestoneTopRow}>
-                <View style={styles.milestoneBadge}>
-                  <Award size={16} color="#FFFFFF" />
-                  <Text style={styles.milestoneBadgeText}>
-                    {completedCount >= 1 ? currentMilestone.title : "Bronze Candidate"}
-                  </Text>
-                </View>
-
-                <Pressable
-                  onPress={() => setShowMilestonesModal(true)}
-                  style={styles.viewPerksBtn}
-                >
-                  <Text style={[styles.viewPerksText, { color: colors.primary }]}>
-                    View Cash Tiers →
-                  </Text>
-                </Pressable>
-              </View>
-
-              <Text style={[styles.milestonePerkHeading, { color: colors.text }]}>
-                {completedCount >= 1
-                  ? `Unlocked: ${currentMilestone.bonusPerk}`
-                  : "Refer 1 friend to earn ₹100 cash & unlock Bronze Pilot"}
-              </Text>
-
-              {/* Progress Bar */}
-              <View style={styles.progressBarWrapper}>
-                <View style={[styles.progressBarTrack, { backgroundColor: colors.border }]}>
-                  <View
-                    style={[
-                      styles.progressBarFill,
-                      {
-                        width: `${progressPercent}%`,
-                        backgroundColor: currentMilestone.badgeColor || colors.primary,
-                      },
-                    ]}
-                  />
-                </View>
-
-                <View style={styles.progressLabelRow}>
-                  <Text style={[styles.progressSubtitle, { color: colors.textSecondary }]}>
-                    {nextMilestone
-                      ? `${completedCount} / ${nextMilestone.requiredReferrals} referrals to ${nextMilestone.title}`
-                      : "Diamond VIP status achieved!"}
-                  </Text>
-                  <Text style={[styles.progressPercentText, { color: colors.text }]}>
-                    {progressPercent}%
-                  </Text>
-                </View>
-              </View>
             </View>
 
             {/* Statistics */}
@@ -838,6 +783,55 @@ export default function ReferralScreen() {
                 value={`₹${totalRewards.toFixed(0)}`}
                 colors={colors}
               />
+            </View>
+
+            {/* 5% Welcome Discount Feature Pill */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                backgroundColor: isDark ? "rgba(139, 92, 246, 0.12)" : "#F5F3FF",
+                borderWidth: 1,
+                borderColor: isDark ? "rgba(139, 92, 246, 0.3)" : "#DDD6FE",
+                borderRadius: 14,
+                paddingVertical: 10,
+                paddingHorizontal: 14,
+                marginBottom: 16,
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
+                <View
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: "#8B5CF6",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Percent size={16} color="#FFFFFF" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontWeight: "700", color: isDark ? "#C084FC" : "#6D28D9" }}>
+                    5% Welcome Discount Active
+                  </Text>
+                  <Text style={{ fontSize: 11, color: isDark ? "#E9D5FF" : "#7C3AED" }}>
+                    Every friend you invite gets 5% OFF all GAP Pro plans
+                  </Text>
+                </View>
+              </View>
+              <View
+                style={{
+                  backgroundColor: "#8B5CF6",
+                  paddingHorizontal: 8,
+                  paddingVertical: 3,
+                  borderRadius: 8,
+                }}
+              >
+                <Text style={{ fontSize: 11, fontWeight: "800", color: "#FFFFFF" }}>5% OFF</Text>
+              </View>
             </View>
 
             {/* Available Cash & Withdraw Banner */}
@@ -1185,9 +1179,32 @@ export default function ReferralScreen() {
                 <Text style={[styles.referralTitle, { color: colors.text }]} numberOfLines={1}>
                   {displayName}
                 </Text>
-                <Text style={[styles.referralDate, { color: colors.textSecondary }]}>
-                  {isDone ? "Plan Subscribed • " : "Awaiting Plan • "}{formatDate(item.created_at)}
-                </Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 2 }}>
+                  <Text style={[styles.referralDate, { color: colors.textSecondary }]}>
+                    {formatDate(item.created_at)}
+                  </Text>
+                  <Text style={{ fontSize: 10, color: colors.textSecondary }}>•</Text>
+                  <View
+                    style={{
+                      backgroundColor: isDone
+                        ? (isDark ? "rgba(16, 185, 129, 0.2)" : "#ECFDF5")
+                        : (isDark ? "rgba(139, 92, 246, 0.2)" : "#F5F3FF"),
+                      paddingHorizontal: 6,
+                      paddingVertical: 1,
+                      borderRadius: 6,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        fontWeight: "700",
+                        color: isDone ? "#10B981" : "#8B5CF6",
+                      }}
+                    >
+                      {isDone ? "5% Discount Used" : "5% Welcome Discount"}
+                    </Text>
+                  </View>
+                </View>
               </View>
 
               <View style={styles.referralRight}>
@@ -1201,16 +1218,6 @@ export default function ReferralScreen() {
                     {statusConfig.label}
                   </Text>
                 </View>
-
-                {isDone ? (
-                  <Text style={[styles.rewardAmount, { color: "#10B981" }]}>
-                    +₹{Math.max(100, Number(item.reward_amount) || 100)}
-                  </Text>
-                ) : (
-                  <Text style={[styles.rewardPendingAmount, { color: colors.textSecondary }]}>
-                    ₹100 on sub
-                  </Text>
-                )}
               </View>
 
               <ChevronRight size={15} color={colors.textSecondary} style={{ marginLeft: 6 }} />
@@ -1568,31 +1575,58 @@ export default function ReferralScreen() {
                     </View>
                   </View>
 
-                  {/* Reward Amount */}
-                  <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
+                  {/* Friend's Welcome Discount */}
+                  <View style={styles.detailRow}>
                     <View style={styles.detailRowLeft}>
-                      <Wallet size={16} color={colors.textSecondary} />
+                      <Percent size={16} color="#8B5CF6" />
                       <Text style={[styles.detailRowLabel, { color: colors.textSecondary }]}>
-                        Cash Reward
+                        Welcome Discount
                       </Text>
                     </View>
-                    <Text
-                      style={[
-                        styles.detailRowValue,
-                        {
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 6,
+                        backgroundColor:
+                          selectedReferral.status === "completed" || selectedReferral.status === "rewarded"
+                            ? (isDark ? "rgba(16, 185, 129, 0.2)" : "#ECFDF5")
+                            : (isDark ? "rgba(139, 92, 246, 0.2)" : "#F5F3FF"),
+                        paddingHorizontal: 8,
+                        paddingVertical: 3,
+                        borderRadius: 8,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: "800",
                           color:
                             selectedReferral.status === "completed" || selectedReferral.status === "rewarded"
                               ? "#10B981"
-                              : "#F59E0B",
+                              : "#8B5CF6",
+                        }}
+                      >
+                        5% OFF GAP Pro
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 10,
                           fontWeight: "700",
-                        },
-                      ]}
-                    >
-                      {selectedReferral.status === "completed" || selectedReferral.status === "rewarded"
-                        ? `+₹${Math.max(100, Number(selectedReferral.reward_amount) || 100)} Cash`
-                        : "₹100 (On Plan Purchase)"}
-                    </Text>
+                          color:
+                            selectedReferral.status === "completed" || selectedReferral.status === "rewarded"
+                              ? "#059669"
+                              : "#7C3AED",
+                        }}
+                      >
+                        {selectedReferral.status === "completed" || selectedReferral.status === "rewarded"
+                          ? "• Claimed"
+                          : "• Active"}
+                      </Text>
+                    </View>
                   </View>
+
+
                 </View>
 
                 {/* Status Explanation Box */}
@@ -1623,8 +1657,8 @@ export default function ReferralScreen() {
                     ]}
                   >
                     {selectedReferral.status === "completed" || selectedReferral.status === "rewarded"
-                      ? "✓ This friend has subscribed to a paid plan. Flat ₹100 cash reward was credited to your Available Cash balance."
-                      : "⏳ This friend has joined GetAiPilot. As soon as they subscribe to any paid plan, ₹100 cash will be credited directly to your Available Cash balance."}
+                      ? "✓ This friend claimed their 5% welcome discount on GAP Pro. Flat ₹100 cash reward was credited directly to your Available Cash balance."
+                      : "⏳ This friend joined with your referral link and gets 5% OFF on all GAP Pro plans. As soon as they subscribe, ₹100 cash will be credited directly to your Available Cash balance."}
                   </Text>
                 </View>
               </ScrollView>
