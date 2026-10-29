@@ -783,7 +783,7 @@ export const ReportBotModal: React.FC<ReportBotModalProps> = ({ visible, onClose
                 <View style={styles.urlInputRow}>
                   <TextInput
                     style={[styles.input, isDark ? styles.inputDark : styles.inputLight, { flex: 1 }]}
-                    placeholder="https://example.com/logobag.png"
+                    placeholder="https://example.com/logobag.webp"
                     placeholderTextColor="#777383"
                     value={customLogoInput}
                     onChangeText={setCustomLogoInput}

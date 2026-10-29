@@ -10,7 +10,7 @@ export interface Props {
 
 export type AnimatedSplashScreenProps = Props;
 
-const brandLogo = require('../../../assets/images/icon.png');
+const brandLogo = require('../../../assets/images/icon.webp');
 
 export function AnimatedSplashScreen({ minDurationMs = 180, onAnimationComplete }: Props) {
   const { colors, isDark } = useTheme();

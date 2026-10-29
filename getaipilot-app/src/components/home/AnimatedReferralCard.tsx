@@ -189,7 +189,7 @@ export function AnimatedReferralCard({
         >
           {/* Transparent PNG Illustration */}
           <Image
-            source={require('../../../assets/images/referral-invite.png')}
+            source={require('../../../assets/images/referral-invite.webp')}
             style={styles.illustrationImage}
             resizeMode="contain"
           />

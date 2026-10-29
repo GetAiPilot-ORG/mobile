@@ -4,11 +4,11 @@ The five product dashboards have their own rebuilt compositions using the user's
 
 | Product | Main composition | Preview |
 | --- | --- | --- |
-| Telegram | Community summary, forwarding panel, filtered tools | [Telegram](screens/telegram.png) |
-| WhatsApp | Connected account, audience actions, broadcasts, messaging balance | [WhatsApp](screens/whatsapp.png) |
-| Voice AI | Calling balance, assistants, campaigns, phone lines | [Voice AI](screens/voice.png) |
-| CRM | Pipeline, follow-ups, leads, creation actions | [CRM](screens/crm.png) |
-| Social | Connected channels, publishing queue, activity, plan | [Social](screens/social.png) |
+| Telegram | Community summary, forwarding panel, filtered tools | [Telegram](screens/telegram.webp) |
+| WhatsApp | Connected account, audience actions, broadcasts, messaging balance | [WhatsApp](screens/whatsapp.webp) |
+| Voice AI | Calling balance, assistants, campaigns, phone lines | [Voice AI](screens/voice.webp) |
+| CRM | Pipeline, follow-ups, leads, creation actions | [CRM](screens/crm.webp) |
+| Social | Connected channels, publishing queue, activity, plan | [Social](screens/social.webp) |
 
 ## Inner screens
 

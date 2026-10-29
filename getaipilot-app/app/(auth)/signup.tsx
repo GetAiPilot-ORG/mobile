@@ -32,7 +32,7 @@ import { useAuthStore } from '../../src/core/store/authStore';
 import { useTheme, getColors } from '@/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const brandLogo = require('../../assets/images/icon.png');
+const brandLogo = require('../../assets/images/icon.webp');
 
 export default function SignupScreen() {
   const router = useRouter();

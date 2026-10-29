@@ -33,7 +33,7 @@ import { isValidEmail } from "../../src/lib/validators";
 
 const REMEMBER_ME_KEY = "@gap_remember_me";
 const SAVE_LOGIN_KEY = "@gap_saved_identifier";
-const brandLogo = require("../../assets/images/icon.png");
+const brandLogo = require("../../assets/images/icon.webp");
 
 export default function LoginScreen() {
   const router = useRouter();

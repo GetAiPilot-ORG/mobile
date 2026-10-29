@@ -435,7 +435,7 @@ function SwipeableNotificationCard({
                       source={
                         notifImageUrl && notifImageUrl.startsWith('http')
                           ? { uri: notifImageUrl }
-                          : require('../assets/images/logo-white-bg.png')
+                          : require('../assets/images/logo-white-bg.webp')
                       }
                       style={styles.notificationRightImage}
                       resizeMode="contain"
@@ -792,7 +792,7 @@ export default function NotificationsScreen() {
           <View style={styles.emptyContainer}>
             <View style={styles.emptyGraphicWrapper}>
               <Image
-                source={require('../assets/images/notifications-empty.jpg')}
+                source={require('../assets/images/notifications-empty.webp')}
                 style={styles.emptyGraphic}
                 resizeMode="cover"
               />

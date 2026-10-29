@@ -53,7 +53,7 @@ const PLATFORMS: {
     key: "all",
     label: "All Activity",
     icon: "pulse",
-    logoImage: require("../../assets/images/network.png"),
+    logoImage: require("../../assets/images/network.webp"),
     route: "/products",
     color: "#6366F1",
   },
@@ -61,7 +61,7 @@ const PLATFORMS: {
     key: "whatsapp",
     label: "WhatsApp",
     icon: "logo-whatsapp",
-    logoImage: require("../../assets/images/products/whatsapp.png"),
+    logoImage: require("../../assets/images/products/whatsapp.webp"),
     route: "/products/whatsapp",
     color: "#25D366",
   },
@@ -69,7 +69,7 @@ const PLATFORMS: {
     key: "telegram",
     label: "Telegram",
     icon: "paper-plane",
-    logoImage: require("../../assets/images/products/telegram.png"),
+    logoImage: require("../../assets/images/products/telegram.webp"),
     route: "/products/telegram",
     color: "#0088CC",
   },
@@ -77,7 +77,7 @@ const PLATFORMS: {
     key: "voice",
     label: "Voice AI",
     icon: "mic",
-    logoImage: require("../../assets/images/products/voice.png"),
+    logoImage: require("../../assets/images/products/voice.webp"),
     route: "/products/voice",
     color: "#8B5CF6",
   },
@@ -85,7 +85,7 @@ const PLATFORMS: {
     key: "crm",
     label: "CRM",
     icon: "briefcase",
-    logoImage: require("../../assets/images/products/crm.png"),
+    logoImage: require("../../assets/images/products/crm.webp"),
     route: "/products/crm",
     color: "#F59E0B",
   },
@@ -93,7 +93,7 @@ const PLATFORMS: {
     key: "social",
     label: "Social & Tools",
     icon: "share-social",
-    logoImage: require("../../assets/images/products/social.png"),
+    logoImage: require("../../assets/images/products/social.webp"),
     route: "/tools",
     color: "#E1306C",
   },
@@ -418,7 +418,7 @@ export default function ConnectedPlatformsPage() {
           timeAgo: formatTimeAgo(item.created_at),
           statusType: item.status === "active" ? "success" : "info",
           statusText: item.status === "active" ? "Joined" : "Verified",
-          logo: require("../../assets/images/products/telegram.png"),
+          logo: require("../../assets/images/products/telegram.webp"),
           color: "#0088CC",
           route: "/products/telegram",
         });
@@ -435,7 +435,7 @@ export default function ConnectedPlatformsPage() {
           timeAgo: formatTimeAgo(item.created_at),
           statusType: "info",
           statusText: "Report",
-          logo: require("../../assets/images/products/telegram.png"),
+          logo: require("../../assets/images/products/telegram.webp"),
           color: "#0088CC",
           route: "/products/telegram",
         });
@@ -452,7 +452,7 @@ export default function ConnectedPlatformsPage() {
           timeAgo: formatTimeAgo(item.created_at),
           statusType: "success",
           statusText: "Online",
-          logo: require("../../assets/images/products/telegram.png"),
+          logo: require("../../assets/images/products/telegram.webp"),
           color: "#0088CC",
           route: "/products/telegram",
         });
@@ -477,10 +477,10 @@ export default function ConnectedPlatformsPage() {
           statusType: isFailed ? "error" : "success",
           statusText: isFailed ? "Failed" : isWa ? "Delivered" : "Logged",
           logo: isWa
-            ? require("../../assets/images/products/whatsapp.png")
+            ? require("../../assets/images/products/whatsapp.webp")
             : isCall
-            ? require("../../assets/images/products/voice.png")
-            : require("../../assets/images/products/crm.png"),
+            ? require("../../assets/images/products/voice.webp")
+            : require("../../assets/images/products/crm.webp"),
           color: isWa ? "#25D366" : isCall ? "#8B5CF6" : "#F59E0B",
           route: isWa ? "/products/whatsapp" : isCall ? "/products/voice" : "/products/crm",
         });
@@ -498,7 +498,7 @@ export default function ConnectedPlatformsPage() {
           timeAgo: formatTimeAgo(item.created_at),
           statusType: "info",
           statusText: (item.status || "Lead").toUpperCase(),
-          logo: require("../../assets/images/products/crm.png"),
+          logo: require("../../assets/images/products/crm.webp"),
           color: "#F59E0B",
           route: "/crm/contacts",
         });
@@ -515,7 +515,7 @@ export default function ConnectedPlatformsPage() {
           timeAgo: formatTimeAgo(item.created_at),
           statusType: item.stage === "closed_won" ? "success" : "info",
           statusText: (item.stage || "Deal").toUpperCase(),
-          logo: require("../../assets/images/products/crm.png"),
+          logo: require("../../assets/images/products/crm.webp"),
           color: "#F59E0B",
           route: "/crm/deals",
         });
@@ -532,7 +532,7 @@ export default function ConnectedPlatformsPage() {
           timeAgo: formatTimeAgo(item.created_at || item.payment_date),
           statusType: "success",
           statusText: "Paid",
-          logo: require("../../assets/images/products/crm.png"),
+          logo: require("../../assets/images/products/crm.webp"),
           color: "#F59E0B",
           route: "/crm/payments",
         });
@@ -554,7 +554,7 @@ export default function ConnectedPlatformsPage() {
               ? "error"
               : "warning",
           statusText: (item.status || "CALL").toUpperCase(),
-          logo: require("../../assets/images/products/voice.png"),
+          logo: require("../../assets/images/products/voice.webp"),
           color: "#8B5CF6",
           route: "/products/voice",
         });
@@ -581,7 +581,7 @@ export default function ConnectedPlatformsPage() {
               ? "error"
               : "info",
           statusText: (item.status || "SENT").toUpperCase(),
-          logo: require("../../assets/images/products/whatsapp.png"),
+          logo: require("../../assets/images/products/whatsapp.webp"),
           color: "#25D366",
           route: "/products/whatsapp",
         });
@@ -598,7 +598,7 @@ export default function ConnectedPlatformsPage() {
           timeAgo: formatTimeAgo(item.created_at),
           statusType: "info",
           statusText: `${item.clicks || 0} Clicks`,
-          logo: require("../../assets/images/products/social.png"),
+          logo: require("../../assets/images/products/social.webp"),
           color: "#E1306C",
           route: "/tools/link-shortener",
         });
@@ -614,7 +614,7 @@ export default function ConnectedPlatformsPage() {
           timeAgo: formatTimeAgo(item.created_at),
           statusType: "success",
           statusText: "Active",
-          logo: require("../../assets/images/products/social.png"),
+          logo: require("../../assets/images/products/social.webp"),
           color: "#E1306C",
           route: "/tools/quick-forms",
         });
@@ -630,7 +630,7 @@ export default function ConnectedPlatformsPage() {
           timeAgo: formatTimeAgo(item.created_at),
           statusType: "success",
           statusText: "Live",
-          logo: require("../../assets/images/products/social.png"),
+          logo: require("../../assets/images/products/social.webp"),
           color: "#E1306C",
           route: "/tools/my-designs",
         });
@@ -647,7 +647,7 @@ export default function ConnectedPlatformsPage() {
           timeAgo: formatTimeAgo(item.created_at),
           statusType: "info",
           statusText: "Alert",
-          logo: require("../../assets/images/network.png"),
+          logo: require("../../assets/images/network.webp"),
           color: "#6366F1",
           route: "/notifications",
         });
