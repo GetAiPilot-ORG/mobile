@@ -513,7 +513,7 @@ export function HomeSecurityAndInviteCards({
                 ]}
               >
                 <Image
-                  source={require('../../../assets/images/money.png')}
+                  source={require('../../../assets/images/money.webp')}
                   style={{ width: 28, height: 28 }}
                   resizeMode="contain"
                 />

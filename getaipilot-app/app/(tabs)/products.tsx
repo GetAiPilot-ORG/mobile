@@ -45,31 +45,31 @@ export default function ProductsScreen() {
     {
       key: 'whatsapp', name: 'WhatsApp Hub', category: 'Messaging automation',
       description: 'Broadcasts, customer triggers, and Meta Cloud API workflows.',
-      logoImage: require('../../assets/images/products/whatsapp.png'),
+      logoImage: require('../../assets/images/products/whatsapp.webp'),
       themeColor: colors.products.whatsapp, isEnabled: hasWhatsApp, route: '/products/whatsapp',
     },
     {
       key: 'telegram', name: 'Telegram', category: 'Channel automation',
       description: 'Forward messages, apply filters, and manage channel workflows.',
-      logoImage: require('../../assets/images/products/telegram.png'),
+      logoImage: require('../../assets/images/products/telegram.webp'),
       themeColor: colors.products.telegram, isEnabled: hasTelegram, route: '/products/telegram',
     },
     {
       key: 'voice_ai', name: 'Voice AI', category: 'AI calling',
       description: 'Run conversational calls for leads, support, and bookings.',
-      logoImage: require('../../assets/images/products/voice.png'),
+      logoImage: require('../../assets/images/products/voice.webp'),
       themeColor: colors.products.voice, isEnabled: hasVoice, route: '/products/voice',
     },
     {
       key: 'social', name: 'Social Pilot', category: 'Social publishing',
       description: 'Schedule and publish content across your connected channels.',
-      logoImage: require('../../assets/images/products/social.png'),
+      logoImage: require('../../assets/images/products/social.webp'),
       themeColor: colors.products.social, isEnabled: hasSocial, route: '/products/social',
     },
     {
       key: 'crm', name: 'Smart CRM', category: 'Sales workspace',
       description: 'Track leads, deals, pipeline stages, and client follow-ups.',
-      logoImage: require('../../assets/images/products/crm.png'),
+      logoImage: require('../../assets/images/products/crm.webp'),
       themeColor: colors.products.crm, isEnabled: hasCRM, route: '/products/crm',
     },
   ];

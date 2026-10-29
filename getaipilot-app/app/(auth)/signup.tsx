@@ -33,7 +33,7 @@ import { useTheme, getColors } from '@/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { savePendingReferralCode, getPendingReferralCode } from '../../src/services/referralService';
 
-const brandLogo = require('../../assets/images/icon.png');
+const brandLogo = require('../../assets/images/icon.webp');
 
 export default function SignupScreen() {
   const router = useRouter();

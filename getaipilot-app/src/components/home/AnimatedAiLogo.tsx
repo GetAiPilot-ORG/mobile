@@ -272,7 +272,7 @@ export function AnimatedAiLogo({
         ]}
       >
         <Image
-          source={require('../../../assets/images/logo_body.png')}
+          source={require('../../../assets/images/logo_body.webp')}
           style={{ width: logoImageSize, height: logoImageSize }}
           resizeMode="contain"
         />
@@ -294,7 +294,7 @@ export function AnimatedAiLogo({
         pointerEvents="none"
       >
         <Image
-          source={require('../../../assets/images/logo_dot.png')}
+          source={require('../../../assets/images/logo_dot.webp')}
           style={{ width: logoImageSize, height: logoImageSize }}
           resizeMode="contain"
         />
