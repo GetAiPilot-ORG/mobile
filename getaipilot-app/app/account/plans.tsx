@@ -51,6 +51,7 @@ import {
   STORAGE_KEY_PENDING_REFERRAL,
 } from '../../src/services/referralService';
 import { ThemedAlert } from '../../src/contexts/ThemedDialogContext';
+import { supabase } from '../../src/lib/supabase';
 
 type MainTab = 'pro' | 'modular';
 
@@ -544,6 +545,11 @@ export default function OverallPricingScreen() {
         billingInterval: gapProInterval,
         description: `${planDisplayName} Subscription · ${proPricing.option.days} Days Quotas`,
         themeColor: theme.color,
+        notes: {
+          referral_code: hasReferralDiscount ? (appliedReferralCode || referralCodeInput || '') : '',
+          discount_percent: hasReferralDiscount ? '5' : '0',
+          discount_amount: hasReferralDiscount ? String(Math.round(proPricing.originalPeriodRupees * 0.05)) : '0',
+        },
         onSuccess: async () => {
           if (Platform.OS !== 'web') {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -551,9 +557,38 @@ export default function OverallPricingScreen() {
 
           if (user?.id) {
             try {
+              // 1. Reward flat ₹100 cash to referrer
               await checkAndCompleteReferralReward(user.id, plan.id, amountInRupees);
+
+              // 2. If referral discount was applied, record in both tables:
+              if (hasReferralDiscount) {
+                const codeToSave = (appliedReferralCode || referralCodeInput || '').trim().toUpperCase();
+                const savedRupees = Math.round(proPricing.originalPeriodRupees * 0.05);
+
+                // Table 1: app_user_subscriptions (active user subscription profile)
+                await supabase
+                  .from('app_user_subscriptions')
+                  .update({
+                    referral_code: codeToSave,
+                    discount_percent: 5,
+                    has_referral_discount: true,
+                  })
+                  .eq('user_id', user.id);
+
+                // Table 2: app_subscription_payments (latest payment transaction record)
+                await supabase
+                  .from('app_subscription_payments')
+                  .update({
+                    referral_code: codeToSave,
+                    discount_percent: 5,
+                    discount_amount: savedRupees,
+                  })
+                  .eq('user_id', user.id)
+                  .order('charged_at', { ascending: false })
+                  .limit(1);
+              }
             } catch (refErr) {
-              console.warn('[Pricing] Referral reward completion notice:', refErr);
+              console.warn('[Pricing] Referral reward and table update notice:', refErr);
             }
           }
 
@@ -613,9 +648,45 @@ export default function OverallPricingScreen() {
       billingInterval,
       description: plan.description || `${planDisplayName} Subscription`,
       themeColor: theme.color,
+      notes: {
+        referral_code: hasReferralDiscount ? (appliedReferralCode || referralCodeInput || '') : '',
+        discount_percent: hasReferralDiscount ? '5' : '0',
+        discount_amount: hasReferralDiscount ? String(Math.round(baseAmountInRupees * 0.05)) : '0',
+      },
       onSuccess: async () => {
         if (Platform.OS !== 'web') {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+
+        if (user?.id && hasReferralDiscount) {
+          try {
+            const codeToSave = (appliedReferralCode || referralCodeInput || '').trim().toUpperCase();
+            const savedRupees = Math.round(baseAmountInRupees * 0.05);
+
+            // Table 1: app_user_subscriptions (active user subscription profile)
+            await supabase
+              .from('app_user_subscriptions')
+              .update({
+                referral_code: codeToSave,
+                discount_percent: 5,
+                has_referral_discount: true,
+              })
+              .eq('user_id', user.id);
+
+            // Table 2: app_subscription_payments (latest payment transaction record)
+            await supabase
+              .from('app_subscription_payments')
+              .update({
+                referral_code: codeToSave,
+                discount_percent: 5,
+                discount_amount: savedRupees,
+              })
+              .eq('user_id', user.id)
+              .order('charged_at', { ascending: false })
+              .limit(1);
+          } catch (refErr) {
+            console.warn('[Pricing] Modular subscription referral update notice:', refErr);
+          }
         }
 
         Alert.alert(
