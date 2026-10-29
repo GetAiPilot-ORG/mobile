@@ -5,7 +5,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Clipboard from 'expo-clipboard';
 import {
   ActivityIndicator,
   Alert,
@@ -16,6 +18,8 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
+  TouchableOpacity,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -36,10 +40,18 @@ import {
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 import {
   ReferralDiscountInfo,
+  captureReferralParam,
   checkAndCompleteReferralReward,
   getActiveReferralDiscount,
   isGapProPlan,
+  savePendingReferralCode,
+  linkReferrerManually,
+  getPendingReferralCode,
+  STORAGE_KEY_REFERRER_CODE,
+  STORAGE_KEY_PENDING_REFERRAL,
 } from '../../src/services/referralService';
+import { ThemedAlert } from '../../src/contexts/ThemedDialogContext';
+import { supabase } from '../../src/lib/supabase';
 
 type MainTab = 'pro' | 'modular';
 
@@ -133,6 +145,22 @@ function getPlanTheme(plan: PricingPlan) {
   };
 }
 
+const REFERRAL_DISCOUNT_PERCENT = 5;
+
+function applyReferralDiscount(
+  amountInRupees: number,
+  hasDiscount: boolean,
+): number {
+  if (!hasDiscount) return amountInRupees;
+
+  return Math.max(
+    1,
+    Math.round(
+      amountInRupees * (1 - REFERRAL_DISCOUNT_PERCENT / 100),
+    ),
+  );
+}
+
 export default function OverallPricingScreen() {
   const router = useRouter();
   const { isDark } = useTheme();
@@ -142,7 +170,7 @@ export default function OverallPricingScreen() {
   const { width } = useWindowDimensions();
   const queryClient = useQueryClient();
   const { openRazorpayCheckout } = useRazorpay();
-  const params = useLocalSearchParams<{ category?: string }>();
+  const params = useLocalSearchParams<{ category?: string; ref?: string; referral?: string }>();
 
   // Main Segmented Tab: GAP Pro vs Modular Engines
   const [activeTab, setActiveTab] = useState<MainTab>(
@@ -249,16 +277,150 @@ export default function OverallPricingScreen() {
 
   const { user } = useAuth();
 
+  const [referralCodeInput, setReferralCodeInput] = useState<string>('');
+  const [isDiscountApplied, setIsDiscountApplied] = useState<boolean>(false);
+  const [appliedReferralCode, setAppliedReferralCode] = useState<string>('');
+  const [isApplyingReferral, setIsApplyingReferral] = useState<boolean>(false);
+  const [referralApplyError, setReferralApplyError] = useState<string | null>(null);
+
+  const urlRefParam = (params.ref || params.referral || '').trim();
+  const hasUrlReferralParam = Boolean(urlRefParam && urlRefParam.length >= 3);
+
   const { data: referralDiscount, refetch: refetchDiscount } = useQuery<ReferralDiscountInfo>({
     queryKey: ['active-referral-discount', user?.id],
     queryFn: () => getActiveReferralDiscount(user?.id),
-    staleTime: 60 * 1000,
+    staleTime: 0,
   });
 
-  const hasReferralDiscount = Boolean(
-    referralDiscount?.hasDiscount && (referralDiscount.discountPercent || 0) > 0
-  );
-  const discountPercent = referralDiscount?.discountPercent || 0;
+  // Initialize and auto-detect referral code from URL param or storage
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const initReferral = async () => {
+      try {
+        const storageCode = await getPendingReferralCode();
+        const savedCode = await AsyncStorage.getItem(
+          STORAGE_KEY_REFERRER_CODE,
+        );
+        const discountActiveFlag = await AsyncStorage.getItem(
+          '@referral_discount_active',
+        );
+
+        const detected = (
+          urlRefParam ||
+          storageCode ||
+          savedCode ||
+          ''
+        )
+          .trim()
+          .toUpperCase();
+
+        // If arrived via URL, preserve pending code and referrer code
+        if (hasUrlReferralParam) {
+          await savePendingReferralCode(urlRefParam);
+          await AsyncStorage.setItem(
+            STORAGE_KEY_REFERRER_CODE,
+            detected,
+          );
+        }
+
+        // Only mark applied if the user has activated it via Apply button or stored flag
+        const shouldBeApplied = Boolean(discountActiveFlag === 'true');
+
+        if (!isMounted) return;
+
+        if (detected) {
+          setReferralCodeInput(detected);
+        }
+
+        if (shouldBeApplied) {
+          setIsDiscountApplied(true);
+          setAppliedReferralCode(detected);
+        }
+      } catch (error) {
+        console.warn('[Pricing] initReferral error:', error);
+      }
+    };
+
+    void initReferral();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    hasUrlReferralParam,
+    urlRefParam,
+    referralDiscount?.hasDiscount,
+    referralDiscount?.discountPercent,
+  ]);
+
+  // Active referral discount is true if applied locally
+  const hasReferralDiscount = isDiscountApplied;
+  const discountPercent = hasReferralDiscount ? 5 : 0;
+
+  const handleApplyReferralDiscount = async () => {
+    const code = referralCodeInput.trim().toUpperCase();
+    if (!code || code.length < 3) {
+      setReferralApplyError('Please enter a valid referral code.');
+      return;
+    }
+    setReferralApplyError(null);
+    setIsApplyingReferral(true);
+    try {
+      await savePendingReferralCode(code);
+      await AsyncStorage.setItem('@referral_discount_active', 'true');
+      await AsyncStorage.setItem(STORAGE_KEY_REFERRER_CODE, code);
+      setAppliedReferralCode(code);
+      setIsDiscountApplied(true);
+
+      if (user?.id) {
+        try {
+          await linkReferrerManually(user.id, code);
+        } catch (e) {
+          console.warn('[Pricing] Manual link error:', e);
+        }
+      }
+
+      await refetchDiscount();
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      Alert.alert('5% Discount Applied!', `Referral code "${code}" applied. You save 5% on all GAP Pro plans!`);
+    } catch (e) {
+      console.warn('[Pricing] Error applying referral code:', e);
+      // Still apply the 5% discount locally for immediate user feedback
+      setIsDiscountApplied(true);
+      setAppliedReferralCode(code);
+    } finally {
+      setIsApplyingReferral(false);
+    }
+  };
+
+  const handleRemoveReferralDiscount = async () => {
+    setIsDiscountApplied(false);
+    setAppliedReferralCode('');
+    try {
+      await AsyncStorage.removeItem('@referral_discount_active');
+      await AsyncStorage.removeItem(STORAGE_KEY_PENDING_REFERRAL);
+      await refetchDiscount();
+    } catch (e) {
+      console.warn('[Pricing] Error removing referral discount:', e);
+    }
+  };
+
+  const copyReferralCode = async (codeToCopy: string) => {
+    if (!codeToCopy) return;
+    try {
+      await Clipboard.setStringAsync(codeToCopy);
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      Alert.alert('Code Copied!', `Referral code "${codeToCopy}" has been copied to your clipboard.`);
+    } catch (e) {
+      console.warn('[Pricing] Error copying code:', e);
+    }
+  };
 
   // Query all active plans from DB / BFF
   const {
@@ -373,6 +535,11 @@ export default function OverallPricingScreen() {
         billingInterval: gapProInterval,
         description: `${planDisplayName} Subscription · ${proPricing.option.days} Days Quotas`,
         themeColor: theme.color,
+        notes: {
+          referral_code: hasReferralDiscount ? (appliedReferralCode || referralCodeInput || '') : '',
+          discount_percent: hasReferralDiscount ? '5' : '0',
+          discount_amount: hasReferralDiscount ? String(Math.round(proPricing.originalPeriodRupees * 0.05)) : '0',
+        },
         onSuccess: async () => {
           if (Platform.OS !== 'web') {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -380,9 +547,38 @@ export default function OverallPricingScreen() {
 
           if (user?.id) {
             try {
+              // 1. Reward flat ₹100 cash to referrer
               await checkAndCompleteReferralReward(user.id, plan.id, amountInRupees);
+
+              // 2. If referral discount was applied, record in both tables:
+              if (hasReferralDiscount) {
+                const codeToSave = (appliedReferralCode || referralCodeInput || '').trim().toUpperCase();
+                const savedRupees = Math.round(proPricing.originalPeriodRupees * 0.05);
+
+                // Table 1: app_user_subscriptions (active user subscription profile)
+                await supabase
+                  .from('app_user_subscriptions')
+                  .update({
+                    referral_code: codeToSave,
+                    discount_percent: 5,
+                    has_referral_discount: true,
+                  })
+                  .eq('user_id', user.id);
+
+                // Table 2: app_subscription_payments (latest payment transaction record)
+                await supabase
+                  .from('app_subscription_payments')
+                  .update({
+                    referral_code: codeToSave,
+                    discount_percent: 5,
+                    discount_amount: savedRupees,
+                  })
+                  .eq('user_id', user.id)
+                  .order('charged_at', { ascending: false })
+                  .limit(1);
+              }
             } catch (refErr) {
-              console.warn('[Pricing] Referral reward completion notice:', refErr);
+              console.warn('[Pricing] Referral reward and table update notice:', refErr);
             }
           }
 
@@ -406,10 +602,22 @@ export default function OverallPricingScreen() {
       return;
     }
 
-    // Standard modular plan checkout
     const baseAmountInRupees = Math.round(plan.amount / 100);
-    const amountInRupees = baseAmountInRupees;
+
+    const amountInRupees = applyReferralDiscount(
+      baseAmountInRupees,
+      hasReferralDiscount,
+    );
+
     const planDisplayName = plan.plan_label || plan.plan_name;
+
+
+
+    // Standard modular plan checkout=
+
+    // const amountInRupees = baseAmountInRupees;
+    // const planDisplayName = plan.plan_label || plan.plan_name;
+
 
     const dur = (plan.duration || '').toLowerCase();
     const billingInterval: 'month' | 'quarterly' | 'six_months' | 'year' =
@@ -430,9 +638,45 @@ export default function OverallPricingScreen() {
       billingInterval,
       description: plan.description || `${planDisplayName} Subscription`,
       themeColor: theme.color,
+      notes: {
+        referral_code: hasReferralDiscount ? (appliedReferralCode || referralCodeInput || '') : '',
+        discount_percent: hasReferralDiscount ? '5' : '0',
+        discount_amount: hasReferralDiscount ? String(Math.round(baseAmountInRupees * 0.05)) : '0',
+      },
       onSuccess: async () => {
         if (Platform.OS !== 'web') {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+
+        if (user?.id && hasReferralDiscount) {
+          try {
+            const codeToSave = (appliedReferralCode || referralCodeInput || '').trim().toUpperCase();
+            const savedRupees = Math.round(baseAmountInRupees * 0.05);
+
+            // Table 1: app_user_subscriptions (active user subscription profile)
+            await supabase
+              .from('app_user_subscriptions')
+              .update({
+                referral_code: codeToSave,
+                discount_percent: 5,
+                has_referral_discount: true,
+              })
+              .eq('user_id', user.id);
+
+            // Table 2: app_subscription_payments (latest payment transaction record)
+            await supabase
+              .from('app_subscription_payments')
+              .update({
+                referral_code: codeToSave,
+                discount_percent: 5,
+                discount_amount: savedRupees,
+              })
+              .eq('user_id', user.id)
+              .order('charged_at', { ascending: false })
+              .limit(1);
+          } catch (refErr) {
+            console.warn('[Pricing] Modular subscription referral update notice:', refErr);
+          }
         }
 
         Alert.alert(
@@ -690,26 +934,6 @@ export default function OverallPricingScreen() {
           </View>
         )}
 
-        {/* Active Referral Perk Notice */}
-        {hasReferralDiscount && (
-          <View
-            style={{
-              backgroundColor: colors.mint,
-              borderRadius: 20,
-              padding: 14,
-              marginBottom: 16,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 10,
-            }}
-          >
-            <Ionicons name="gift-outline" size={18} color="#059669" />
-            <Text style={{ fontSize: 12, fontWeight: '600', color: '#065F46', flex: 1 }}>
-              {discountPercent}% Referral Perk applied automatically at checkout!
-            </Text>
-          </View>
-        )}
-
         {/* LOADING STATE */}
         {isLoading ? (
           <View className="py-16 items-center gap-3">
@@ -745,6 +969,7 @@ export default function OverallPricingScreen() {
                 : null;
 
               const baseAmountInRupees = Math.round(plan.amount / 100);
+              //  const isEligibleForDiscount = hasReferralDiscount;
               const isEligibleForDiscount = hasReferralDiscount && isPro;
               const discountedPriceRupees = isEligibleForDiscount
                 ? Math.max(1, Math.round(baseAmountInRupees * (1 - discountPercent / 100)))
@@ -753,12 +978,24 @@ export default function OverallPricingScreen() {
               const formattedPrice =
                 isPro && proPricing
                   ? PricingService.formatPrice(proPricing.baseMonthlyRupees * 100, plan.currency)
-                  : PricingService.formatPrice(plan.amount, plan.currency);
+                  : PricingService.formatPrice(
+                    applyReferralDiscount(
+                      Math.round(plan.amount / 100),
+                      hasReferralDiscount,
+                    ) * 100,
+                    plan.currency,
+                  )
 
               const formattedDiscountedPrice =
                 isPro && proPricing
                   ? PricingService.formatPrice(proPricing.finalMonthlyRupees * 100, plan.currency)
-                  : PricingService.formatPrice(discountedPriceRupees * 100, plan.currency);
+                  : PricingService.formatPrice(
+                    applyReferralDiscount(
+                      Math.round(plan.amount / 100),
+                      hasReferralDiscount,
+                    ) * 100,
+                    plan.currency,
+                  )
 
               const formattedDuration = isPro
                 ? '/mo'
@@ -1085,7 +1322,13 @@ export default function OverallPricingScreen() {
                       ).totalChargedRupees * 100,
                       selectedPlan.currency
                     )
-                    : PricingService.formatPrice(selectedPlan.amount, selectedPlan.currency)
+                    : PricingService.formatPrice(
+                      applyReferralDiscount(
+                        Math.round(selectedPlan.amount / 100),
+                        hasReferralDiscount,
+                      ) * 100,
+                      selectedPlan.currency,
+                    )
                   }`
                   : 'Continue to Purchase'}
               </Text>

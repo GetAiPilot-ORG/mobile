@@ -4,6 +4,7 @@ import { getDeviceLoginInfo } from "../../lib/device-session";
 import { supabase } from "../../lib/supabase";
 import { apiClient } from "../api/client";
 import { authStorage } from "../storage/authStorage";
+import { getPendingReferralCode, handlePendingReferral } from "../../services/referralService";
 
 const CACHED_USER_KEY = "@gap_cached_user";
 
@@ -178,6 +179,15 @@ export const useAuthStore = create<AuthState>((set, get) => {
           authStatus: "authenticated",
           onboardingCompleted: isOnboarded,
         });
+
+        // Auto-link any pending referral code captured on phone
+        getPendingReferralCode().then((code) => {
+          if (code) {
+            handlePendingReferral(code).catch((e) => {
+              console.warn("[AuthStore] Pending referral linking note:", e);
+            });
+          }
+        }).catch(() => {});
       } catch (e) {
         set({ isLoading: false, authStatus: "unauthenticated", onboardingCompleted: null });
         throw e;
@@ -246,6 +256,15 @@ export const useAuthStore = create<AuthState>((set, get) => {
           authStatus: "authenticated",
           onboardingCompleted: isOnboarded,
         });
+
+        // Auto-link any pending referral code captured on phone
+        getPendingReferralCode().then((code) => {
+          if (code) {
+            handlePendingReferral(code).catch((e) => {
+              console.warn("[AuthStore] Pending referral linking note:", e);
+            });
+          }
+        }).catch(() => {});
       } catch (e) {
         set({ isLoading: false });
         throw e;

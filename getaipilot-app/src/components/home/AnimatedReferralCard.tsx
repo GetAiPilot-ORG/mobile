@@ -34,9 +34,9 @@ export function AnimatedReferralCard({
   onCopyCode,
   onCopyLink,
   onShare,
-  headline = 'Invite friends & get discount',
-  badgeText = 'Special Discount Unlocked',
-  subtitle = 'Share your referral link with friends and unlock instant plan discounts',
+  headline = 'Invite Friends & Earn ₹100',
+  badgeText = '₹100 Cash Every Referral',
+  subtitle = 'Share your referral code with friends and get ₹100 cash for every referral',
   buttonText = 'Share Referral Link',
   style,
 }: AnimatedReferralCardProps) {

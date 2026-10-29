@@ -540,7 +540,7 @@ export function HomeSecurityAndInviteCards({
                   { color: isDark ? '#FDE68A' : '#B45309' },
                 ]}
               >
-                EARN 20%
+                EARN ₹100 CASH
               </Text>
             </View>
           </View>
@@ -563,7 +563,7 @@ export function HomeSecurityAndInviteCards({
                 { color: isDark ? '#DDD6FE' : '#4C3B68' },
               ]}
             >
-              Share link & earn recurring commissions
+              Share link & earn ₹100 cash every referral
             </Text>
           </View>
 
@@ -585,7 +585,7 @@ export function HomeSecurityAndInviteCards({
                   { color: isDark ? 'rgba(255, 255, 255, 0.7)' : '#4C3B68' },
                 ]}
               >
-                Cash reward
+                ₹100 Cash
               </Text>
             </View>
 

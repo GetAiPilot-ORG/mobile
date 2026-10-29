@@ -21,7 +21,8 @@
           "message",
           "googlegmail",
           "ms-outlook",
-          "ymail"
+          "whatsapp",
+          "tg"
         ]
       }
     },
@@ -87,7 +88,10 @@
           "largeIcon": "./assets/images/logo-white-bg.webp"
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "expo-build-properties",
+      "expo-font",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true,

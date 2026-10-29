@@ -881,7 +881,7 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
               >
                 <Sparkles size={15} color={typeConfig.accentColor} strokeWidth={2} />
                 <Text style={[styles.rewardText, { color: colors.text }]}>
-                  {referralReward || 'Earn 20% recurring commission on every friend who subscribes.'}
+                  {referralReward || 'Earn flat ₹100 cash reward on every friend who joins.'}
                 </Text>
               </View>
             </View>

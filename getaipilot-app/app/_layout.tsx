@@ -22,6 +22,7 @@ import { NetworkProvider, useNetwork } from "../src/contexts/NetworkContext";
 import { RazorpayProvider } from "../src/contexts/RazorpayContext";
 import { ThemeProvider, useTheme, getColors } from "@/theme";
 import { useAuthStore } from "../src/core/store/authStore";
+import { supabase } from "@/lib/supabase";
 import { captureReferralParam, handlePendingReferral } from "../src/services/referralService";
 import { ThemedDialogProvider } from "../src/contexts/ThemedDialogContext";
 import { Chatbot } from "../src/components/chatbot";
@@ -99,9 +100,14 @@ function ReferralLinkListener() {
     const processUrl = async (rawUrl: string | null) => {
       if (!rawUrl) return;
       try {
-        // Only capture and persist pending referral code in storage.
-        // Linking will take place when the user finishes onboarding!
-        await captureReferralParam(rawUrl);
+        const capturedCode = await captureReferralParam(rawUrl);
+        if (capturedCode) {
+          // If already authenticated on phone, link immediately
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await handlePendingReferral(capturedCode);
+          }
+        }
       } catch (e) {
         console.warn("[ReferralLinkListener] Link capture error:", e);
       }
