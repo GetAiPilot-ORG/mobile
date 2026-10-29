@@ -316,27 +316,17 @@ export default function OverallPricingScreen() {
           .trim()
           .toUpperCase();
 
-        // A referral URL automatically activates the local discount.
+        // If arrived via URL, preserve pending code and referrer code
         if (hasUrlReferralParam) {
           await savePendingReferralCode(urlRefParam);
           await AsyncStorage.setItem(
             STORAGE_KEY_REFERRER_CODE,
             detected,
           );
-          await AsyncStorage.setItem(
-            '@referral_discount_active',
-            'true',
-          );
         }
 
-        const shouldBeApplied = Boolean(
-          hasUrlReferralParam ||
-          discountActiveFlag === 'true' ||
-          (
-            referralDiscount?.hasDiscount &&
-            (referralDiscount.discountPercent || 0) > 0
-          ),
-        );
+        // Only mark applied if the user has activated it via Apply button or stored flag
+        const shouldBeApplied = Boolean(discountActiveFlag === 'true');
 
         if (!isMounted) return;
 

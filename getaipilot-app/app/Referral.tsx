@@ -1218,16 +1218,6 @@ export default function ReferralScreen() {
                     {statusConfig.label}
                   </Text>
                 </View>
-
-                {isDone ? (
-                  <Text style={[styles.rewardAmount, { color: "#10B981" }]}>
-                    +₹{Math.max(100, Number(item.reward_amount) || 100)}
-                  </Text>
-                ) : (
-                  <Text style={[styles.rewardPendingAmount, { color: colors.textSecondary }]}>
-                    ₹100 on sub
-                  </Text>
-                )}
               </View>
 
               <ChevronRight size={15} color={colors.textSecondary} style={{ marginLeft: 6 }} />
@@ -1636,31 +1626,7 @@ export default function ReferralScreen() {
                     </View>
                   </View>
 
-                  {/* Your Reward Amount */}
-                  <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
-                    <View style={styles.detailRowLeft}>
-                      <Wallet size={16} color={colors.textSecondary} />
-                      <Text style={[styles.detailRowLabel, { color: colors.textSecondary }]}>
-                        Your Cash Reward
-                      </Text>
-                    </View>
-                    <Text
-                      style={[
-                        styles.detailRowValue,
-                        {
-                          color:
-                            selectedReferral.status === "completed" || selectedReferral.status === "rewarded"
-                              ? "#10B981"
-                              : "#F59E0B",
-                          fontWeight: "700",
-                        },
-                      ]}
-                    >
-                      {selectedReferral.status === "completed" || selectedReferral.status === "rewarded"
-                        ? `+₹${Math.max(100, Number(selectedReferral.reward_amount) || 100)} Cash (Credited)`
-                        : "₹100 (On Plan Purchase)"}
-                    </Text>
-                  </View>
+
                 </View>
 
                 {/* Status Explanation Box */}
