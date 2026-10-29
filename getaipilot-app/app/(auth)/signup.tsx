@@ -15,7 +15,7 @@ import {
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
@@ -31,11 +31,13 @@ import { isValidEmail } from '../../src/lib/validators';
 import { useAuthStore } from '../../src/core/store/authStore';
 import { useTheme, getColors } from '@/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { savePendingReferralCode, getPendingReferralCode } from '../../src/services/referralService';
 
 const brandLogo = require('../../assets/images/icon.png');
 
 export default function SignupScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ ref?: string; referral?: string }>();
   const insets = useSafeAreaInsets();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
@@ -48,6 +50,21 @@ export default function SignupScreen() {
   const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(
     null
   );
+  const [referralParam, setReferralParam] = useState<string | null>(null);
+
+  useEffect(() => {
+    const rawRef = params.ref || params.referral;
+    if (rawRef) {
+      const cleanRef = String(rawRef).trim().toUpperCase();
+      savePendingReferralCode(cleanRef).then(() => {
+        setReferralParam(cleanRef);
+      });
+    } else {
+      getPendingReferralCode().then((code) => {
+        if (code) setReferralParam(code);
+      });
+    }
+  }, [params.ref, params.referral]);
 
   const triggerHaptic = (style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Light) => {
     if (Platform.OS !== 'web') {
@@ -218,6 +235,23 @@ export default function SignupScreen() {
           <Text style={[styles.heading, isDark && styles.headingDark]}>
             Create your GetAiPilot{'\n'}account
           </Text>
+
+          {/* Referral Welcome Banner */}
+          {referralParam ? (
+            <View style={[styles.referralBanner, isDark && styles.referralBannerDark]}>
+              <View style={styles.referralBannerIconWrap}>
+                <Ionicons name="gift" size={18} color="#10B981" />
+              </View>
+              <View style={{ flex: 1, marginLeft: 10 }}>
+                <Text style={[styles.referralBannerTitle, isDark && styles.referralBannerTitleDark]}>
+                  5% Welcome Discount Applied!
+                </Text>
+                <Text style={[styles.referralBannerSub, isDark && styles.referralBannerSubDark]}>
+                  Invited by partner <Text style={styles.referralCodeHighlight}>{referralParam}</Text>
+                </Text>
+              </View>
+            </View>
+          ) : null}
 
           {/* Inline Feedback Banner */}
           {feedback && (
@@ -624,5 +658,47 @@ const styles = StyleSheet.create({
   },
   backBtnTextDark: {
     color: '#94A3B8',
+  },
+  referralBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 16,
+  },
+  referralBannerDark: {
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    borderColor: 'rgba(16, 185, 129, 0.28)',
+  },
+  referralBannerIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: 'rgba(16, 185, 129, 0.16)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  referralBannerTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#065F46',
+  },
+  referralBannerTitleDark: {
+    color: '#34D399',
+  },
+  referralBannerSub: {
+    fontSize: 12,
+    color: '#047857',
+    marginTop: 2,
+  },
+  referralBannerSubDark: {
+    color: '#A7F3D0',
+  },
+  referralCodeHighlight: {
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontWeight: '800',
   },
 });
