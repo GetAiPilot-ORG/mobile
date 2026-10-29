@@ -11,6 +11,7 @@ import {
   Gift,
   Info,
   Link as LinkIcon,
+  Lock,
   Mail,
   Phone,
   Share2,
@@ -52,6 +53,10 @@ import {
   getReferralWithdrawals,
   getReferralDashboard,
   cancelReferralWithdrawal,
+  checkUserCanRefer,
+  getIncomingReferral,
+  IncomingReferralInfo,
+  UserReferralEligibility,
   REFERRAL_MILESTONES,
   ReferralEarnings,
   ReferralMilestone,
@@ -129,6 +134,8 @@ export default function ReferralScreen() {
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<ReferralWithdrawalRecord | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [withdrawalToCancel, setWithdrawalToCancel] = useState<ReferralWithdrawalRecord | null>(null);
+  const [eligibility, setEligibility] = useState<UserReferralEligibility | null>(null);
+  const [incomingRef, setIncomingRef] = useState<IncomingReferralInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -149,108 +156,140 @@ export default function ReferralScreen() {
     try {
       setError(null);
 
-      // 1. Get or create referral code
-      const code = await getOrCreateReferralCode(user.id, user.email);
-      setReferralCode(code);
+      // 1. Get or create referral code (resilient fallback)
+      try {
+        const code = await getOrCreateReferralCode(user.id, user.email);
+        setReferralCode(code || `GAP${user.id.replace(/-/g, "").slice(0, 5).toUpperCase()}`);
+      } catch (cErr) {
+        console.warn("[Referral] Referral code fetch error:", cErr);
+        setReferralCode(`GAP${user.id.replace(/-/g, "").slice(0, 5).toUpperCase()}`);
+      }
 
       // 2. Load referrals with user profiles & reward details
-      const dashboardItems = await getReferralDashboard(user.id);
-      if (dashboardItems && dashboardItems.length > 0) {
-        setReferrals(
-          dashboardItems.map((item) => ({
-            id: item.referral_id,
-            referral_code: item.referral_code,
-            referred_user_id: item.referred_user_id,
-            referred_name: item.referred_name,
-            referred_email: item.referred_email,
-            referred_phone: item.referred_phone,
-            referred_subscription: item.referred_plan,
-            status: item.referral_status as ReferralStatus,
-            reward_amount: item.reward_amount,
-            created_at: item.referred_at,
-            completed_at: item.rewarded_at,
-            rewarded_at: item.rewarded_at,
-          }))
-        );
-      } else {
-        const { data: refData, error: refError } = await supabase
-          .from("referrals")
-          .select(
-            "id, referrer_id, referred_user_id, referral_code, status, reward_amount, created_at, completed_at, rewarded_at"
-          )
-          .eq("referrer_id", user.id)
-          .order("created_at", { ascending: false });
+      try {
+        const dashboardItems = await getReferralDashboard(user.id);
+        if (dashboardItems && dashboardItems.length > 0) {
+          setReferrals(
+            dashboardItems.map((item) => ({
+              id: item.referral_id,
+              referral_code: item.referral_code,
+              referred_user_id: item.referred_user_id,
+              referred_name: item.referred_name,
+              referred_email: item.referred_email,
+              referred_phone: item.referred_phone,
+              referred_subscription: item.referred_plan,
+              status: item.referral_status as ReferralStatus,
+              reward_amount: item.reward_amount,
+              created_at: item.referred_at,
+              completed_at: item.rewarded_at,
+              rewarded_at: item.rewarded_at,
+            }))
+          );
+        } else {
+          const { data: refData, error: refError } = await supabase
+            .from("referrals")
+            .select(
+              "id, referrer_id, referred_user_id, referral_code, status, reward_amount, created_at, completed_at, rewarded_at"
+            )
+            .eq("referrer_id", user.id)
+            .order("created_at", { ascending: false });
 
-        if (refError) {
-          console.warn("[Referral] Error fetching referrals list:", refError);
-        }
-
-        const rawList = refData || [];
-        const userIds = Array.from(new Set(rawList.map((r: any) => r.referred_user_id).filter(Boolean)));
-        let profMap = new Map<string, any>();
-        if (userIds.length > 0) {
-          try {
-            const { data: profs, error: pErr } = await supabase
-              .from("profiles")
-              .select("*")
-              .in("id", userIds);
-
-            if (!pErr && profs) {
-              profs.forEach((p: any) => {
-                profMap.set(p.id, {
-                  full_name:
-                    p.full_name?.trim() ||
-                    [p.first_name, p.last_name].filter(Boolean).join(" ").trim() ||
-                    p.username?.trim() ||
-                    "",
-                  email: p.email || p.business_email || null,
-                  phone: p.phone || p.mobile_number || p.phone_number || null,
-                  subscription: p.subscription || null,
-                });
-              });
-            } else {
-              const { data: fallbackProfs } = await supabase
-                .from("profiles")
-                .select("id, full_name, email, phone")
-                .in("id", userIds);
-              (fallbackProfs || []).forEach((p: any) => profMap.set(p.id, p));
-            }
-          } catch (pErr) {
-            console.warn("[Referral] Profiles fallback warning:", pErr);
+          if (refError) {
+            console.warn("[Referral] Error fetching referrals list:", refError);
           }
-        }
 
-        const mapped: Referral[] = rawList.map((r: any) => {
-          const prof = profMap.get(r.referred_user_id);
-          const isDone = r.status === "completed" || r.status === "rewarded";
-          return {
-            id: r.id,
-            referral_code: r.referral_code,
-            referred_user_id: r.referred_user_id,
-            referred_name: prof?.full_name?.trim() || "",
-            referred_email: prof?.email || null,
-            referred_phone: prof?.phone || null,
-            referred_subscription: prof?.subscription || null,
-            status: isDone ? "completed" : "pending",
-            reward_amount: isDone ? Math.max(100, Number(r.reward_amount) || 100) : 0,
-            created_at: r.created_at,
-            completed_at: r.completed_at,
-            rewarded_at: r.rewarded_at,
-          };
-        });
-        setReferrals(mapped);
+          const rawList = refData || [];
+          const userIds = Array.from(new Set(rawList.map((r: any) => r.referred_user_id).filter(Boolean)));
+          let profMap = new Map<string, any>();
+          if (userIds.length > 0) {
+            try {
+              const { data: profs, error: pErr } = await supabase
+                .from("profiles")
+                .select("*")
+                .in("id", userIds);
+
+              if (!pErr && profs) {
+                profs.forEach((p: any) => {
+                  profMap.set(p.id, {
+                    full_name:
+                      p.full_name?.trim() ||
+                      [p.first_name, p.last_name].filter(Boolean).join(" ").trim() ||
+                      p.username?.trim() ||
+                      "",
+                    email: p.email || p.business_email || null,
+                    phone: p.phone || p.mobile_number || p.phone_number || null,
+                    subscription: p.subscription || null,
+                  });
+                });
+              } else {
+                const { data: fallbackProfs } = await supabase
+                  .from("profiles")
+                  .select("id, full_name, email, phone")
+                  .in("id", userIds);
+                (fallbackProfs || []).forEach((p: any) => profMap.set(p.id, p));
+              }
+            } catch (pErr) {
+              console.warn("[Referral] Profiles fallback warning:", pErr);
+            }
+          }
+
+          const mapped: Referral[] = rawList.map((r: any) => {
+            const prof = profMap.get(r.referred_user_id);
+            const isDone = r.status === "completed" || r.status === "rewarded";
+            return {
+              id: r.id,
+              referral_code: r.referral_code,
+              referred_user_id: r.referred_user_id,
+              referred_name: prof?.full_name?.trim() || "",
+              referred_email: prof?.email || null,
+              referred_phone: prof?.phone || null,
+              referred_subscription: prof?.subscription || null,
+              status: isDone ? "completed" : "pending",
+              reward_amount: isDone ? Math.max(100, Number(r.reward_amount) || 100) : 0,
+              created_at: r.created_at,
+              completed_at: r.completed_at,
+              rewarded_at: r.rewarded_at,
+            };
+          });
+          setReferrals(mapped);
+        }
+      } catch (listErr) {
+        console.warn("[Referral] Referrals list fetch error:", listErr);
       }
 
       // 3. Load aggregated earnings and withdrawal totals
-      const earningsData = await getReferralEarnings(user.id);
-      setEarnings(earningsData);
+      try {
+        const earningsData = await getReferralEarnings(user.id);
+        if (earningsData) setEarnings(earningsData);
+      } catch (earnErr) {
+        console.warn("[Referral] Earnings fetch error:", earnErr);
+      }
 
       // 4. Load withdrawals history
-      const withdrawalsData = await getReferralWithdrawals(user.id);
-      setWithdrawals(withdrawalsData);
+      try {
+        const withdrawalsData = await getReferralWithdrawals(user.id);
+        setWithdrawals(withdrawalsData);
+      } catch (withErr) {
+        console.warn("[Referral] Withdrawals fetch error:", withErr);
+      }
+
+      // 5. Verify plan purchase eligibility for sharing (GAP Pro plan required)
+      try {
+        const elig = await checkUserCanRefer(user.id);
+        setEligibility(elig);
+      } catch (eligErr) {
+        console.warn("[Referral] Eligibility check error:", eligErr);
+      }
+
+      // 6. Check incoming referral & welcome discount
+      try {
+        const inc = await getIncomingReferral(user.id);
+        if (inc) setIncomingRef(inc);
+      } catch (incErr) {
+        console.warn("[Referral] Incoming referral check error:", incErr);
+      }
     } catch (err: any) {
       console.error("[Referral] Failed to load referral data:", err);
-      setError(err?.message || "Unable to load referral information.");
     } finally {
       setLoading(false);
     }
@@ -269,7 +308,24 @@ export default function ReferralScreen() {
     }
   }, []);
 
+  const promptPlanRequired = () => {
+    showAlert({
+      type: "warning",
+      title: "GAP Pro Plan Required",
+      message:
+        "You must have an active GAP Pro plan before you can share your referral link and earn flat ₹100 cash rewards. Upgrade to GAP Pro to activate your referral link!",
+      buttonText: "Upgrade to GAP Pro",
+      onConfirm: () => {
+        router.push("/account/plans");
+      },
+    });
+  };
+
   const copyReferralCode = async () => {
+    if (eligibility && !eligibility.canRefer) {
+      promptPlanRequired();
+      return;
+    }
     if (!referralCode) {
       showAlert({
         type: "warning",
@@ -293,6 +349,10 @@ export default function ReferralScreen() {
   };
 
   const copyReferralLink = async () => {
+    if (eligibility && !eligibility.canRefer) {
+      promptPlanRequired();
+      return;
+    }
     if (!referralCode) {
       showAlert({
         type: "warning",
@@ -316,6 +376,10 @@ export default function ReferralScreen() {
   };
 
   const shareReferral = async () => {
+    if (eligibility && !eligibility.canRefer) {
+      promptPlanRequired();
+      return;
+    }
     if (!referralCode) {
       showAlert({
         type: "warning",
@@ -566,6 +630,105 @@ export default function ReferralScreen() {
               </View>
             </View>
 
+            {/* Locked Notice if user has not purchased GAP Pro plan */}
+            {eligibility && !eligibility.canRefer && (
+              <View
+                style={[
+                  styles.lockedNoticeCard,
+                  {
+                    backgroundColor: isDark ? "rgba(245, 158, 11, 0.12)" : "#FFFBEB",
+                    borderColor: isDark ? "rgba(245, 158, 11, 0.4)" : "#FDE68A",
+                  },
+                ]}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <View
+                    style={[
+                      styles.lockedIconBox,
+                      { backgroundColor: isDark ? "rgba(245, 158, 11, 0.25)" : "#FEF3C7" },
+                    ]}
+                  >
+                    <Lock size={18} color="#D97706" />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text style={[styles.lockedNoticeTitle, { color: colors.text }]}>
+                      GAP Pro Required to Refer & Earn
+                    </Text>
+                    <Text style={[styles.lockedNoticeBody, { color: colors.textSecondary }]}>
+                      {incomingRef?.hasReferrer
+                        ? `You were invited by ${incomingRef.referrerName || "a friend"}! Get 5% OFF GAP Pro now, then start earning flat ₹100 cash per referral.`
+                        : "Upgrade to GAP Pro to unlock your personal referral link and start earning flat ₹100 cash on every friend who joins."}
+                    </Text>
+                  </View>
+                </View>
+
+                {incomingRef?.hasReferrer && Boolean(incomingRef.referrerCode) && (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      backgroundColor: isDark ? "rgba(0,0,0,0.25)" : "#FFFFFF",
+                      paddingVertical: 8,
+                      paddingHorizontal: 12,
+                      borderRadius: 12,
+                      marginVertical: 10,
+                      borderWidth: 1,
+                      borderColor: isDark ? "rgba(245, 158, 11, 0.3)" : "#FDE68A",
+                    }}
+                  >
+                    <View>
+                      <Text style={{ fontSize: 10, color: colors.textSecondary, fontWeight: "600" }}>
+                        REFERRER CODE
+                      </Text>
+                      <Text style={{ fontSize: 13, fontWeight: "800", color: colors.text, letterSpacing: 0.8 }}>
+                        {incomingRef.referrerCode}
+                      </Text>
+                    </View>
+
+                    <TouchableOpacity
+                      onPress={async () => {
+                        if (incomingRef.referrerCode) {
+                          await Clipboard.setStringAsync(incomingRef.referrerCode);
+                          showAlert({
+                            type: "success",
+                            title: "Copied!",
+                            message: `Referrer code ${incomingRef.referrerCode} copied to clipboard.`,
+                          });
+                        }
+                      }}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 4,
+                        paddingVertical: 5,
+                        paddingHorizontal: 10,
+                        borderRadius: 8,
+                        backgroundColor: isDark ? "rgba(217, 119, 6, 0.2)" : "#FEF3C7",
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Copy size={13} color="#D97706" />
+                      <Text style={{ fontSize: 11, fontWeight: "700", color: "#D97706" }}>Copy Code</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                <TouchableOpacity
+                  onPress={() => router.push("/account/plans")}
+                  style={[styles.lockedActionBtn, { backgroundColor: colors.primary }]}
+                  activeOpacity={0.8}
+                >
+                  <Sparkles size={14} color={colors.primaryForeground} />
+                  <Text style={[styles.lockedActionBtnText, { color: colors.primaryForeground }]}>
+                    {incomingRef?.hasReferrer
+                      ? "Claim 5% Discount on GAP Pro"
+                      : "Upgrade to GAP Pro to Unlock"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
             {/* Consolidated Minimal Referral Hero Card */}
             <View style={{ marginBottom: 16 }}>
               <AnimatedReferralCard
@@ -574,10 +737,26 @@ export default function ReferralScreen() {
                 onCopyCode={copyReferralCode}
                 onCopyLink={copyReferralLink}
                 onShare={shareReferral}
-                headline="Invite Friends & Earn ₹100"
-                badgeText="Flat ₹100 Cash Every Referral"
-                subtitle="Share your referral code or link. Earn flat ₹100 cash reward on every friend who joins!"
-                buttonText="Share Referral Link"
+                headline={
+                  eligibility && !eligibility.canRefer
+                    ? "GAP Pro Required to Refer & Earn"
+                    : "Invite Friends & Earn ₹100"
+                }
+                badgeText={
+                  eligibility && !eligibility.canRefer
+                    ? "🔒 GAP Pro Plan Required to Share"
+                    : "Flat ₹100 Cash Every Referral"
+                }
+                subtitle={
+                  eligibility && !eligibility.canRefer
+                    ? "You must have an active GAP Pro plan to activate and share your referral link with friends."
+                    : "Share your referral code or link. Earn flat ₹100 cash reward on every friend who joins!"
+                }
+                buttonText={
+                  eligibility && !eligibility.canRefer
+                    ? "Get GAP Pro to Unlock"
+                    : "Share Referral Link"
+                }
               />
             </View>
 
@@ -1075,10 +1254,21 @@ export default function ReferralScreen() {
                 onPress={shareReferral}
                 style={[styles.emptyButton, { backgroundColor: colors.primary }]}
               >
-                <Share2 size={16} color={colors.primaryForeground} />
-                <Text style={[styles.emptyButtonText, { color: colors.primaryForeground }]}>
-                  Invite Friends Now
-                </Text>
+                {eligibility && !eligibility.canRefer ? (
+                  <>
+                    <Lock size={16} color={colors.primaryForeground} />
+                    <Text style={[styles.emptyButtonText, { color: colors.primaryForeground }]}>
+                      Unlock Referral Link
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Share2 size={16} color={colors.primaryForeground} />
+                    <Text style={[styles.emptyButtonText, { color: colors.primaryForeground }]}>
+                      Invite Friends Now
+                    </Text>
+                  </>
+                )}
               </Pressable>
             </View>
           )
@@ -1344,9 +1534,38 @@ export default function ReferralScreen() {
                         Referral Code
                       </Text>
                     </View>
-                    <Text style={[styles.detailRowValue, { color: colors.primary, fontWeight: "700" }]}>
-                      {selectedReferral.referral_code || referralCode}
-                    </Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                      <Text style={[styles.detailRowValue, { color: colors.primary, fontWeight: "700" }]}>
+                        {selectedReferral.referral_code || referralCode}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={async () => {
+                          const c = selectedReferral.referral_code || referralCode;
+                          if (c) {
+                            await Clipboard.setStringAsync(c);
+                            showAlert({
+                              type: "success",
+                              title: "Copied!",
+                              message: `Referral code ${c} copied to clipboard.`,
+                            });
+                          }
+                        }}
+                        hitSlop={8}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 4,
+                          paddingVertical: 3,
+                          paddingHorizontal: 8,
+                          borderRadius: 8,
+                          backgroundColor: colors.primaryMuted,
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Copy size={12} color={colors.primary} />
+                        <Text style={{ fontSize: 11, fontWeight: "700", color: colors.primary }}>Copy</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
 
                   {/* Reward Amount */}
@@ -2475,5 +2694,40 @@ const styles = StyleSheet.create({
   dismissCancelBtnText: {
     fontSize: 13,
     fontWeight: "600",
+  },
+  lockedNoticeCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 16,
+  },
+  lockedIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  lockedNoticeTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  lockedNoticeBody: {
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 2,
+  },
+  lockedActionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginTop: 12,
+  },
+  lockedActionBtnText: {
+    fontSize: 13,
+    fontWeight: "700",
   },
 });
