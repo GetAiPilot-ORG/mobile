@@ -4,6 +4,7 @@ export * from './CreatePostModal';
 export * from './PostDetailsModal';
 export * from './SocialOverviewTab';
 export * from './SocialTrendsTab';
+export * from './trends';
 export * from './SocialInboxTab';
 export * from './SocialActivityTab';
 export * from './InstapilotConversationModal';

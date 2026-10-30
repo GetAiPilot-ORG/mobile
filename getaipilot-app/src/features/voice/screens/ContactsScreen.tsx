@@ -820,7 +820,7 @@ export const ContactsScreen: React.FC = () => {
               }}
             >
               <Image
-                source={require("../../../../assets/images/logobag.png")}
+                source={require("../../../../assets/images/logobag.webp")}
                 style={{ width: 24, height: 24, borderRadius: 6 }}
                 resizeMode="contain"
               />

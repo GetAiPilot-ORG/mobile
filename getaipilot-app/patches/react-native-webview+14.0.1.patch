@@ -1,0 +1,14 @@
+diff --git a/node_modules/react-native-webview/android/build.gradle b/node_modules/react-native-webview/android/build.gradle
+--- a/node_modules/react-native-webview/android/build.gradle
++++ b/node_modules/react-native-webview/android/build.gradle
+@@ -57,7 +57,9 @@
+ if (isNewArchitectureEnabled()) {
+     apply plugin: 'com.facebook.react'
+ }
+-apply plugin: 'kotlin-android'
++if (!plugins.hasPlugin('kotlin-android') && !plugins.hasPlugin('org.jetbrains.kotlin.android') && project.extensions.findByName('kotlin') == null) {
++    apply plugin: 'kotlin-android'
++}
+ 
+ android {
+     if (supportsNamespace()) {

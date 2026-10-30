@@ -579,7 +579,7 @@ export const InboxScreen: React.FC = () => {
                   }}
                 >
                   <Image
-                    source={require("../../../../assets/images/inbox-empty.jpg")}
+                    source={require("../../../../assets/images/inbox-empty.webp")}
                     style={{ width: "100%", height: "100%" }}
                     resizeMode="cover"
                   />

@@ -21,7 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../src/lib/supabase';
 import { isValidEmail } from '../../src/lib/validators';
 
-const brandLogo = require('../../assets/images/icon.png');
+const brandLogo = require('../../assets/images/icon.webp');
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();

@@ -4,7 +4,7 @@
     "slug": "getaipilot",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logobag.png",
+    "icon": "./assets/images/logobag.webp",
     "scheme": "getaipilot",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -51,7 +51,7 @@
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.webp"
     },
     "plugins": [
       [
@@ -83,9 +83,9 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/logobag.png",
+          "icon": "./assets/images/logobag.webp",
           "color": "#DEA5A4",
-          "largeIcon": "./assets/images/logo-white-bg.png"
+          "largeIcon": "./assets/images/logo-white-bg.webp"
         }
       ],
       "expo-sharing",

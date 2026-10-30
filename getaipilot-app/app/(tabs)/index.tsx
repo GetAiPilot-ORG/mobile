@@ -266,7 +266,7 @@ export default function HomeScreen() {
       id: "telegram",
       name: "Telegram",
       desc: "Auto-forward feeds, bots & reactions",
-      logo: require("../../assets/images/products/telegram.png"),
+      logo: require("../../assets/images/products/telegram.webp"),
       iconBg: color.products.telegram,
       route: "/products/telegram",
       status: hasTelegram ? "Active" : "Pro",
@@ -276,7 +276,7 @@ export default function HomeScreen() {
       id: "whatsapp",
       name: "WhatsApp",
       desc: "Broadcasts & 24/7 Meta API triggers",
-      logo: require("../../assets/images/products/whatsapp.png"),
+      logo: require("../../assets/images/products/whatsapp.webp"),
       iconBg: color.products.whatsapp,
       route: "/products/whatsapp",
       status: hasWhatsApp ? "Active" : "Pro",
@@ -286,7 +286,7 @@ export default function HomeScreen() {
       id: "voice",
       name: "Voice AI",
       desc: "AI Voice calling agents & speech streaming",
-      logo: require("../../assets/images/products/voice.png"),
+      logo: require("../../assets/images/products/voice.webp"),
       iconBg: color.products.voice,
       route: "/products/voice",
       status: hasVoice ? "Active" : "Pro",
@@ -296,7 +296,7 @@ export default function HomeScreen() {
       id: "crm",
       name: "Smart CRM",
       desc: "Pipelines, deals & lead contact automation",
-      logo: require("../../assets/images/products/crm.png"),
+      logo: require("../../assets/images/products/crm.webp"),
       iconBg: color.products.crm,
       route: "/products/crm",
       status: hasCRM ? "Active" : "Pro",
@@ -306,7 +306,7 @@ export default function HomeScreen() {
       id: "social",
       name: "Social Pilot",
       desc: "Cross-platform auto-poster & queue",
-      logo: require("../../assets/images/products/social.png"),
+      logo: require("../../assets/images/products/social.webp"),
       iconBg: color.products.social,
       route: "/products/social",
       status: hasSocial ? "Active" : "Growth",
@@ -445,7 +445,11 @@ export default function HomeScreen() {
               }}
             >
               <Image
+<<<<<<< Updated upstream
                 source={require("../../assets/images/plans-crown.png")}
+=======
+                source={require("../../assets/images/growimage.webp")}
+>>>>>>> Stashed changes
                 style={{ width: "100%", height: "100%" }}
                 resizeMode="contain"
               />

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Image, Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Image, Linking, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { ProductHeading, ProductMetrics, ProductSection, ProductActions, ProductRow, ProductButton, ProductEmpty, useProductPalette } from '@/components/ProductUI';
@@ -35,6 +35,167 @@ interface SocialOverviewTabProps {
   isLocked?: boolean;
 }
 
+const getProviderMeta = (provider: string) => {
+  const p = (provider || '').toLowerCase();
+  if (p.includes('instagram')) return { icon: 'logo-instagram' as const, color: '#EC4899', label: 'Instagram' };
+  if (p.includes('threads')) return { icon: 'at-circle' as const, color: '#1C1A25', label: 'Threads' };
+  if (p.includes('youtube')) return { icon: 'logo-youtube' as const, color: '#EF4444', label: 'YouTube' };
+  if (p.includes('facebook')) return { icon: 'logo-facebook' as const, color: '#1877F2', label: 'Facebook' };
+  if (p.includes('twitter') || p.includes('x')) return { icon: 'logo-twitter' as const, color: '#1DA1F2', label: 'X' };
+  if (p.includes('linkedin')) return { icon: 'logo-linkedin' as const, color: '#0A66C2', label: 'LinkedIn' };
+  if (p.includes('pinterest')) return { icon: 'logo-pinterest' as const, color: '#E60023', label: 'Pinterest' };
+  if (p.includes('reddit')) return { icon: 'logo-reddit' as const, color: '#FF4500', label: 'Reddit' };
+  return { icon: 'share-social-outline' as const, color: '#6366F1', label: provider || 'Channel' };
+};
+
+const ChannelAvatar: React.FC<{ account: any; isDark: boolean }> = ({ account, isDark }) => {
+  const [imgFailed, setImgFailed] = React.useState(false);
+  const avatarUri = account.avatar || account.profilePicture || account.profile_picture_url || account.thumbnailUrl;
+  const meta = getProviderMeta(account.provider || account.platform);
+
+  return (
+    <View
+      style={{
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.85)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.9)',
+      }}
+    >
+      {avatarUri && !imgFailed ? (
+        <Image
+          source={{ uri: avatarUri }}
+          onError={() => setImgFailed(true)}
+          style={{ width: 38, height: 38, borderRadius: 19 }}
+          resizeMode="cover"
+        />
+      ) : (
+        <Ionicons
+          name={meta.icon}
+          size={21}
+          color={isDark && meta.icon === 'at-circle' ? '#F3F4F6' : meta.color}
+        />
+      )}
+    </View>
+  );
+};
+
+const ChannelCard: React.FC<{
+  account: any;
+  toneBg: string;
+  isDark: boolean;
+  textColor: string;
+  textSecondaryColor: string;
+  width?: number | string;
+  flex?: number;
+  onPress: () => void;
+}> = ({ account, toneBg, isDark, textColor, textSecondaryColor, width, flex, onPress }) => {
+  const meta = getProviderMeta(account.provider || account.platform);
+  const displayName = account.name || account.username || meta.label;
+  const displayPlatform = account.provider || account.platform || meta.label;
+
+  return (
+    <Pressable
+      cssInterop={false}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${displayName}, ${displayPlatform}`}
+      style={({ pressed }) => ({
+        flex: flex,
+        width: width,
+        minWidth: 0,
+        opacity: pressed ? 0.82 : 1,
+        transform: [{ scale: pressed ? 0.98 : 1 }],
+      })}
+    >
+      <View
+        style={{
+          width: '100%',
+          minHeight: 128,
+          backgroundColor: toneBg,
+          borderRadius: 22,
+          padding: 14,
+          justifyContent: 'space-between',
+          gap: 12,
+        }}
+      >
+        <ChannelAvatar account={account} isDark={isDark} />
+        <View style={{ gap: 2 }}>
+          <Text
+            numberOfLines={1}
+            style={{
+              fontSize: 13,
+              fontWeight: '600',
+              color: textColor,
+              letterSpacing: -0.2,
+            }}
+          >
+            {displayName}
+          </Text>
+          <Text
+            numberOfLines={1}
+            style={{
+              fontSize: 11,
+              color: textSecondaryColor,
+              textTransform: 'capitalize',
+            }}
+          >
+            {displayPlatform}
+          </Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+};
+
+const ConnectCard: React.FC<{
+  onPress: () => void;
+  cardBg: string;
+  borderSubtle: string;
+  textSecondary: string;
+  accentColor: string;
+  width?: number | string;
+  flex?: number;
+}> = ({ onPress, cardBg, borderSubtle, textSecondary, accentColor, width, flex }) => {
+  return (
+    <Pressable
+      cssInterop={false}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Connect another account"
+      style={({ pressed }) => ({
+        flex: flex,
+        width: width,
+        minWidth: 0,
+        opacity: pressed ? 0.82 : 1,
+        transform: [{ scale: pressed ? 0.98 : 1 }],
+      })}
+    >
+      <View
+        style={{
+          width: '100%',
+          minHeight: 128,
+          backgroundColor: cardBg,
+          borderRadius: 22,
+          borderWidth: 1,
+          borderColor: borderSubtle,
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          padding: 14,
+        }}
+      >
+        <Ionicons name="add" size={24} color={accentColor} />
+        <Text style={{ color: textSecondary, fontSize: 12, fontWeight: '500' }}>Connect</Text>
+      </View>
+    </Pressable>
+  );
+};
 
 export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
   overviewLoading, overviewError, onRetryOverview, overviewData, entitlementsData,
@@ -44,7 +205,10 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
 }) => {
   const { isDark } = useTheme();
   const colors = useProductPalette();
+  const { width, fontScale } = useWindowDimensions();
   const router = useRouter();
+  const tones = [colors.pink, colors.lavender, colors.mint, colors.peach];
+  const isCompact = connectedList.length <= 3 && width >= 340 && fontScale <= 1.2;
   const plan = entitlementsData?.plan?.name || 'Free';
   const limits = entitlementsData?.limits || {};
   const channelLimit = limits.social_accounts ?? entitlementsData?.maxChannels ?? 3;
@@ -73,19 +237,73 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
   return <View>
     <ProductHeading title={"Your content,\nyour next chapter."} action="Create a post" isLocked={isLocked} onAction={onOpenCreateModal} />
     <ProductSection title="Your channels" action="Manage" onAction={onOpenAccountsModal}>
-      {!connectedList.length ? <ProductEmpty title="Bring your channels together" description="Connect a social account to start publishing." action="Connect account" onAction={connect} /> :
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 4 }}>
-          {connectedList.map((account, index) => <Pressable key={account.id || index} onPress={onOpenAccountsModal} accessibilityRole="button" accessibilityLabel={account.name || account.username || account.provider}
-            style={{ width: 128, minHeight: 132, backgroundColor: index % 2 ? colors.lavender : colors.pink, borderRadius: 24, padding: 16, justifyContent: 'space-between', gap: 12 }}>
-            {account.avatar ? <Image source={{ uri: account.avatar }} style={{ width: 40, height: 40, borderRadius: 20 }} /> : <Ionicons name={iconFor(account.provider || account.platform)} size={28} color={colors.text} />}
-            <View style={{ gap: 4 }}><Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '500', color: colors.text }}>{account.name || account.username || account.provider}</Text><Text style={{ fontSize: 12, color: colors.textSecondary }}>{account.provider || account.platform}</Text></View>
-          </Pressable>)}
-          <Pressable onPress={connect} accessibilityRole="button" accessibilityLabel="Connect another account" style={{ width: 90, backgroundColor: colors.card, borderRadius: 24, alignItems: 'center', justifyContent: 'center', gap: 12 }}><Ionicons name="add" size={26} color={colors.accent} /><Text style={{ color: colors.textSecondary, fontSize: 12 }}>Connect</Text></Pressable>
-        </ScrollView>}
+      {!connectedList.length ? (
+        <ProductEmpty
+          title="Bring your channels together"
+          description="Connect a social account to start publishing."
+          action="Connect account"
+          onAction={connect}
+        />
+      ) : isCompact ? (
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          {connectedList.map((account, index) => (
+            <ChannelCard
+              key={account.id || index}
+              account={account}
+              toneBg={tones[index % tones.length]}
+              isDark={isDark}
+              textColor={colors.text}
+              textSecondaryColor={colors.textSecondary}
+              flex={1}
+              onPress={onOpenAccountsModal}
+            />
+          ))}
+          {connectedList.length === 1 && connectedList.length < channelLimit && (
+            <ConnectCard
+              onPress={connect}
+              cardBg={colors.card}
+              borderSubtle={isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}
+              textSecondary={colors.textSecondary}
+              accentColor={colors.accent}
+              flex={1}
+            />
+          )}
+        </View>
+      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ marginHorizontal: -20 }}
+          contentContainerStyle={{ paddingHorizontal: 20, gap: 10, paddingBottom: 4 }}
+        >
+          {connectedList.map((account, index) => (
+            <ChannelCard
+              key={account.id || index}
+              account={account}
+              toneBg={tones[index % tones.length]}
+              isDark={isDark}
+              textColor={colors.text}
+              textSecondaryColor={colors.textSecondary}
+              width={136}
+              onPress={onOpenAccountsModal}
+            />
+          ))}
+          {connectedList.length < channelLimit && (
+            <ConnectCard
+              onPress={connect}
+              cardBg={colors.card}
+              borderSubtle={isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}
+              textSecondary={colors.textSecondary}
+              accentColor={colors.accent}
+              width={90}
+            />
+          )}
+        </ScrollView>
+      )}
     </ProductSection>
     <ProductSection title="At a glance">
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 16 }}>
-        {[7, 30, 90].map((days) => <Pressable key={days} onPress={() => {
+        {[7, 30, 90].map((days) => <Pressable cssInterop={false} key={days} onPress={() => {
           if (days > historyLimit) { Alert.alert('More history with an upgrade', 'Your current plan includes ' + historyLimit + ' days of history.', [{ text: 'Cancel', style: 'cancel' }, { text: 'View plans', onPress: () => router.push('/products/social/plans' as any) }]); return; }
           onChangeRange(days);
         }} accessibilityRole="button" accessibilityState={{ selected: days === selectedRange }} style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, borderRadius: 24, backgroundColor: days === selectedRange ? colors.lavender : colors.card }}><Text style={{ fontSize: 13, color: days === selectedRange ? colors.accent : colors.textSecondary }}>{days} days</Text></Pressable>)}
@@ -172,6 +390,7 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
 
             return (
               <Pressable
+                cssInterop={false}
                 key={post.id || index}
                 onPress={() => {
                   if (onSelectPost) {

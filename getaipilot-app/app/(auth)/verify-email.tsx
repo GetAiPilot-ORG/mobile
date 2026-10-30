@@ -39,7 +39,7 @@ import { getColors, useTheme } from '@/theme';
 import { supabase } from '../../src/lib/supabase';
 import { useAuthStore } from '../../src/core/store/authStore';
 
-const brandLogo = require('../../assets/images/icon.png');
+const brandLogo = require('../../assets/images/icon.webp');
 
 export default function VerifyEmailScreen() {
   const router = useRouter();
