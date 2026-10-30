@@ -4,7 +4,7 @@
     "slug": "getaipilot",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logobag.webp",
+    "icon": "./assets/images/logolarge.webp",
     "scheme": "getaipilot",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -62,14 +62,6 @@
         }
       ],
       "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "backgroundColor": "#FFFFFF",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
-        }
-      ],
       [
         "expo-local-authentication",
         {

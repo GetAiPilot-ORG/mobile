@@ -445,11 +445,7 @@ export default function HomeScreen() {
               }}
             >
               <Image
-<<<<<<< Updated upstream
                 source={require("../../assets/images/plans-crown.png")}
-=======
-                source={require("../../assets/images/growimage.webp")}
->>>>>>> Stashed changes
                 style={{ width: "100%", height: "100%" }}
                 resizeMode="contain"
               />
