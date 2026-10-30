@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
+  Animated,
+  KeyboardAvoidingView,
+  LayoutChangeEvent,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -606,31 +610,102 @@ export default function AccountScreen() {
   return (
     <AppScreen safeArea={false}>
       <AppTopBar title="Account" showBack onBackPress={() => router.navigate('/(tabs)' as any)} />
-      <ScrollView
-        style={[styles.scrollView, { backgroundColor: palette.background }]}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* 1. Compact Premium Profile Header */}
-        <AccountHeader
-          displayName={displayName}
-          email={user?.email || ''}
-          phone={phone}
-          initials={initials}
-          isAdmin={Boolean(isAdmin || profile?.is_admin)}
-          isActive={Boolean(isActive || subData?.subscription_status === 'active')}
-          planLabel={planLabel || subData?.plan_label || profile?.subscription || 'Free Plan'}
-          isDark={isDark}
-        />
+        <ScrollView
+          style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+        {/* Minimal profile summary */}
+        <View style={[styles.heroCard, isDark ? styles.heroCardDark : styles.heroCardLight]}>
+          <View style={styles.heroTop}>
+            <View style={[styles.avatar, isDark ? styles.avatarDark : styles.avatarLight]}>
+              <Text style={[styles.avatarText, isDark && styles.avatarTextDark]}>{initials}</Text>
+            </View>
+            <View style={styles.heroInfo}>
+              <Text style={[styles.heroName, isDark && styles.heroNameDark]} numberOfLines={1}>
+                {displayName}
+              </Text>
+              <Text style={[styles.heroEmail, isDark && styles.heroEmailDark]} numberOfLines={1}>
+                {user?.email || phone || 'User'}
+              </Text>
+              <View style={styles.badgeRow}>
+                <View style={[styles.badge, isDark ? styles.badgeDark : styles.badgeLight]}>
+                  <Ionicons name="checkmark-circle" size={13} color={colors.accent} style={{ marginRight: 4 }} />
+                  <Text style={[styles.badgeText, { color: colors.accent }]}>Verified</Text>
+                </View>
+                {profile?.is_admin && (
+                  <View style={[styles.badge, isDark ? styles.adminBadgeDark : styles.adminBadgeLight]}>
+                    <Ionicons name="shield-checkmark" size={13} color="#10B981" style={{ marginRight: 4 }} />
+                    <Text style={[styles.badgeText, { color: '#10B981' }]}>Admin</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
 
-        {/* 2. Compact Tab Navigation */}
-        <AccountTabsNav
-          activeTab={activeTab}
-          onChangeTab={setActiveTab}
-          isDark={isDark}
-        />
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>Status</Text>
+              <Text style={[styles.statValue, { color: colors.success }]}>{isActive ? 'Active' : 'Free'}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>Plan</Text>
+              <Text style={[styles.statValue, { color: colors.accent }]}>{planLabel || 'Free'}</Text>
+            </View>
+          </View>
+        </View>
 
-        {/* 3. Tab Contents */}
+        {/* Account sections */}
+        <View
+          onLayout={(e: LayoutChangeEvent) => setTabsTrackWidth(e.nativeEvent.layout.width)}
+          style={[styles.tabsTrack, isDark ? styles.tabsTrackDark : styles.tabsTrackLight]}
+        >
+          {tabPillWidth > 0 && (
+            <Animated.View
+              style={[
+                styles.slidingTabPill,
+                {
+                  width: tabPillWidth,
+                  left: tabPadding,
+                  transform: [{ translateX: slideAnim }],
+                },
+                isDark ? styles.slidingTabPillDark : styles.slidingTabPillLight,
+              ]}
+            />
+          )}
+
+          {TABS.map((tab) => {
+            const isTabActive = activeTab === tab.id;
+            return (
+              <Pressable
+                key={tab.id}
+                style={styles.tabButton}
+                onPress={() => handleTabChange(tab.id)}
+                accessibilityRole="tab"
+                accessibilityLabel={tab.label}
+                accessibilityState={{ selected: isTabActive }}
+              >
+                <Text
+                  style={[
+                    styles.tabText,
+                    isDark ? styles.tabTextDark : styles.tabTextLight,
+                    isTabActive && (isDark ? styles.tabTextActiveDark : styles.tabTextActiveLight),
+                  ]}
+                  numberOfLines={1}
+                >
+                  {tab.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* TAB 1: OVERVIEW */}
         {activeTab === 'overview' && (
           <OverviewTab
             email={user?.email || '—'}
@@ -754,6 +829,14 @@ export default function AccountScreen() {
           isDark={isDark}
         />
       </ScrollView>
+    </KeyboardAvoidingView>
+
+      {/* Audio & Haptic Evaluation Suite Modal */}
+      <SoundFeedbackDemoModal
+        visible={showSoundDemo}
+        onClose={() => setShowSoundDemo(false)}
+        isDark={isDark}
+      />
     </AppScreen>
   );
 }

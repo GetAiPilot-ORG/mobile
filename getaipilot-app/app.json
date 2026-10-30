@@ -30,9 +30,9 @@
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
-        "foregroundImage": "./assets/images/android-icon-foreground.webp",
-        "backgroundImage": "./assets/images/android-icon-background.webp",
-        "monochromeImage": "./assets/images/android-icon-monochrome.webp"
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.getaipilot",
@@ -66,7 +66,7 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#FFFFFF",
-          "image": "./assets/images/splash-icon.webp",
+          "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
       ],
@@ -98,15 +98,19 @@
       "reactCompiler": true
     },
     "extra": {
-      "router": {},
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
       "expo-navigation-bar": {
         "enforceContrast": false,
         "style": "dark"
       },
       "eas": {
-        "projectId": "08c04d39-4b19-437c-ba60-bac94d475279"
+        "projectId": "b20e09aa-b2a4-483d-ba57-6b1b70f6d988"
       }
     },
-    "owner": "priyansh.dev"
+    "owner": "poojareactnative"
   }
 }

@@ -57,5 +57,6 @@ yarn-error.*
 !.vscode/launch.json
 !.vscode/extensions.json
 
-example
-android/app/upload-keystore.jks
+
+# android
+# ios
