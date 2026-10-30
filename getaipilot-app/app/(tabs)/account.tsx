@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  KeyboardAvoidingView,
   LayoutChangeEvent,
   Modal,
   Platform,
@@ -705,11 +706,16 @@ export default function AccountScreen() {
   return (
     <AppScreen safeArea={false}>
       <AppTopBar title="Account" showBack onBackPress={() => router.navigate('/(tabs)' as any)} />
-      <ScrollView
-        style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
+        <ScrollView
+          style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
         {/* Minimal profile summary */}
         <View style={[styles.heroCard, isDark ? styles.heroCardDark : styles.heroCardLight]}>
           <View style={styles.heroTop}>
@@ -1635,6 +1641,7 @@ export default function AccountScreen() {
           GetAiPilot v1.0.0
         </Text>
       </ScrollView>
+    </KeyboardAvoidingView>
 
       {/* Audio & Haptic Evaluation Suite Modal */}
       <SoundFeedbackDemoModal

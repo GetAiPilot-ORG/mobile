@@ -18,10 +18,13 @@ import React, { useMemo, useState } from "react";
 import {
   FlatList,
   Image,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   View
@@ -275,7 +278,11 @@ export const InboxScreen: React.FC = () => {
         }
       />
 
-      <View style={{ flex: 1, paddingHorizontal: 14 }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
+      >
+        <View style={{ flex: 1, paddingHorizontal: 14 }}>
         {/* Search Bar */}
         <View
           style={{
@@ -534,6 +541,7 @@ export const InboxScreen: React.FC = () => {
           <FlatList
             style={{ flex: 1 }}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
             data={filteredConversations}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
@@ -546,7 +554,9 @@ export const InboxScreen: React.FC = () => {
             refreshControl={
               <RefreshControl
                 refreshing={isRefetching}
-                onRefresh={refetch}
+                onRefresh={() => {
+                  refetch();
+                }}
                 tintColor={color.primary}
               />
             }
@@ -618,74 +628,83 @@ export const InboxScreen: React.FC = () => {
           animationType="slide"
           onRequestClose={() => setShowNewChatModal(false)}
         >
-          <View className="flex-1 bg-black/60 justify-end">
-            <View
-              className="rounded-t-[28px] p-5 max-h-[82%]"
-              style={{
-                backgroundColor: color.card,
-                borderTopWidth: 1,
-                borderTopColor: isDark ? "rgba(255, 255, 255, 0.08)" : color.cardBorder,
-              }}
-            >
-              <View className="flex-row justify-between items-start mb-3.5">
-                <View className="flex-1">
-                  <Text
-                    className="text-[17px] font-extrabold"
-                    style={{ color: color.textPrimary }}
-                  >
-                    Start New WhatsApp Chat
-                  </Text>
-                  <Text
-                    className="text-xs mt-0.5 leading-4"
-                    style={{ color: color.textSecondary }}
-                  >
-                    Select a contact from your workspace to open live chat.
-                  </Text>
-                </View>
-                <Pressable
-                  onPress={() => setShowNewChatModal(false)}
-                  hitSlop={10}
-                >
-                  <HugeiconsIcon
-                    icon={Cancel01Icon}
-                    size={20}
-                    color={color.textSecondary}
-                    strokeWidth={2}
-                  />
-                </Pressable>
-              </View>
-
-              {/* Search Contacts */}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            style={{ flex: 1 }}
+          >
+            <View className="flex-1 bg-black/60 justify-end">
+              <Pressable
+                style={StyleSheet.absoluteFill}
+                onPress={() => setShowNewChatModal(false)}
+              />
               <View
-                className="flex-row items-center rounded-2xl px-3.5 py-2.5 mb-3"
+                className="rounded-t-[28px] p-5 max-h-[82%]"
                 style={{
-                  backgroundColor: color.background,
-                  borderWidth: 1,
-                  borderColor: isDark ? "rgba(255, 255, 255, 0.07)" : color.cardBorder,
+                  backgroundColor: color.card,
+                  borderTopWidth: 1,
+                  borderTopColor: isDark ? "rgba(255, 255, 255, 0.08)" : color.cardBorder,
                 }}
               >
-                <HugeiconsIcon
-                  icon={Search01Icon}
-                  size={16}
-                  color={color.textSecondary}
-                  strokeWidth={2}
-                  style={{ marginRight: 8 }}
-                />
-                <TextInput
-                  className="flex-1 text-[13px]"
-                  style={{ color: color.textPrimary }}
-                  placeholder="Search contacts by name or phone..."
-                  placeholderTextColor={color.textSecondary}
-                  value={contactSearchQuery}
-                  onChangeText={setContactSearchQuery}
-                />
-              </View>
+                <View className="flex-row justify-between items-start mb-3.5">
+                  <View className="flex-1">
+                    <Text
+                      className="text-[17px] font-extrabold"
+                      style={{ color: color.textPrimary }}
+                    >
+                      Start New WhatsApp Chat
+                    </Text>
+                    <Text
+                      className="text-xs mt-0.5 leading-4"
+                      style={{ color: color.textSecondary }}
+                    >
+                      Select a contact from your workspace to open live chat.
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={() => setShowNewChatModal(false)}
+                    hitSlop={10}
+                  >
+                    <HugeiconsIcon
+                      icon={Cancel01Icon}
+                      size={20}
+                      color={color.textSecondary}
+                      strokeWidth={2}
+                    />
+                  </Pressable>
+                </View>
 
-              {/* Contacts List */}
-              <ScrollView
-                style={{ maxHeight: 360 }}
-                showsVerticalScrollIndicator={false}
-              >
+                {/* Search Contacts */}
+                <View
+                  className="flex-row items-center rounded-2xl px-3.5 py-2.5 mb-3"
+                  style={{
+                    backgroundColor: color.background,
+                    borderWidth: 1,
+                    borderColor: isDark ? "rgba(255, 255, 255, 0.07)" : color.cardBorder,
+                  }}
+                >
+                  <HugeiconsIcon
+                    icon={Search01Icon}
+                    size={16}
+                    color={color.textSecondary}
+                    strokeWidth={2}
+                    style={{ marginRight: 8 }}
+                  />
+                  <TextInput
+                    className="flex-1 text-[13px]"
+                    style={{ color: color.textPrimary }}
+                    placeholder="Search contacts by name or phone..."
+                    placeholderTextColor={color.textSecondary}
+                    value={contactSearchQuery}
+                    onChangeText={setContactSearchQuery}
+                  />
+                </View>
+
+                {/* Contacts List */}
+                <ScrollView
+                  style={{ maxHeight: 360 }}
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                >
                 {isLoadingContacts ? (
                   <View className="py-2.5">
                     {[1, 2, 3].map((i) => (
@@ -770,27 +789,29 @@ export const InboxScreen: React.FC = () => {
               </ScrollView>
             </View>
           </View>
-        </Modal>
+        </KeyboardAvoidingView>
+      </Modal>
 
-        {/* Fullscreen WhatsApp Conversation Modal */}
-        <Modal
-          visible={!!activeConversation}
-          animationType="slide"
-          presentationStyle="fullScreen"
-          onRequestClose={() => {
-            setActiveConversation(null);
-          }}
-        >
-          {activeConversation && (
-            <ConversationScreen
-              conversation={activeConversation}
-              onBack={() => {
-                setActiveConversation(null);
-              }}
-            />
-          )}
-        </Modal>
-      </View>
-    </AppScreen>
+      {/* Fullscreen WhatsApp Conversation Modal */}
+      <Modal
+        visible={!!activeConversation}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => {
+          setActiveConversation(null);
+        }}
+      >
+        {activeConversation && (
+          <ConversationScreen
+            conversation={activeConversation}
+            onBack={() => {
+              setActiveConversation(null);
+            }}
+          />
+        )}
+      </Modal>
+    </View>
+  </KeyboardAvoidingView>
+</AppScreen>
   );
 };
