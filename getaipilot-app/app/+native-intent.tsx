@@ -11,75 +11,105 @@ const TEMPLATE_ROUTES = new Map([
 ]);
 
 function normalizePath(path: string): string {
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  if (!path) return "/(tabs)";
+
+  let p = path.trim();
+
+  // Strip web origin if present (e.g. https://getaipilot.com/path)
+  if (/^https?:\/\/[^/]+/i.test(p)) {
+    p = p.replace(/^https?:\/\/[^/]+/i, "");
+  }
+
+  // Strip repeated or custom app schemes (e.g. getaipilot://, getaipilot:///, getaipilot:///getaipilot:///)
+  while (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\/?\/?/.test(p)) {
+    p = p.replace(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\/?\/?/, "");
+  }
+
+  // If leftover starts with host "app" (e.g. getaipilot://app/pricing or getaipilot://app)
+  if (p.startsWith("app/")) {
+    p = p.substring(3);
+  } else if (p === "app" || p === "getaipilot") {
+    p = "/";
+  }
+
+  const cleanPath = p.startsWith("/") ? p : `/${p}`;
   const url = new URL(cleanPath, "getaipilot://app");
 
   // 1. Auth Deep-Link Routes (Magic Link, OAuth, Password Reset)
-  if (url.pathname === "/auth/callback" || url.pathname === "/auth/reset-password") {
-    const params = new URLSearchParams(url.search);
-    if (url.hash && url.hash.length > 1) {
-      const hashParams = new URLSearchParams(url.hash.substring(1));
-      hashParams.forEach((val, key) => {
-        params.set(key, val);
-      });
-    }
-    const query = params.toString();
-    const targetRoute =
-      url.pathname === "/auth/reset-password"
+    if (
+      url.pathname === "/auth/callback" ||
+      url.pathname === "/auth/reset-password" ||
+      url.pathname === "/reset-password"
+    ) {
+      const params = new URLSearchParams(url.search);
+      if (url.hash && url.hash.length > 1) {
+        const hashParams = new URLSearchParams(url.hash.substring(1));
+        hashParams.forEach((val, key) => {
+          params.set(key, val);
+        });
+      }
+      const query = params.toString();
+      const targetRoute =
+      url.pathname === "/auth/reset-password" || url.pathname === "/reset-password"
         ? "/(auth)/reset-password"
         : "/(auth)/callback";
-    return query ? `${targetRoute}?${query}` : targetRoute;
-  }
-
-  // 2. Direct Referral and Auth Route matching
-  if (TEMPLATE_ROUTES.has(url.pathname)) {
-    const target = TEMPLATE_ROUTES.get(url.pathname)!;
-    const search = url.search.startsWith("?") ? url.search.substring(1) : url.search;
-    return search ? `${target}?${search}` : target;
-  }
-
-  // 3. Referral query param (?ref=CODE) -> redirect to signup
-  const refCode = url.searchParams.get("ref") || url.searchParams.get("referral");
-  if (refCode) {
-    return `/(auth)/signup?ref=${encodeURIComponent(refCode)}`;
-  }
-
-  // 4. Templates Deep Links (/free-tools/landing-templates/:id)
-  const landingBuilderMatch = url.pathname.match(
-    /^\/free-tools\/landing-templates\/([^/]+)\/?$/,
-  );
-
-  if (landingBuilderMatch) {
-    const templateId =
-      url.searchParams.get("template_id") ??
-      decodeURIComponent(landingBuilderMatch[1]);
-    const authCode = url.searchParams.get("auth_code");
-    const params = new URLSearchParams();
-
-    if (templateId) {
-      params.set("template_id", templateId);
+      return query ? `${targetRoute}?${query}` : targetRoute;
     }
 
-    if (authCode) {
-      params.set("auth_code", authCode);
+    // 2. Direct Referral and Auth Route matching
+    if (TEMPLATE_ROUTES.has(url.pathname)) {
+      const target = TEMPLATE_ROUTES.get(url.pathname)!;
+      const search = url.search.startsWith("?") ? url.search.substring(1) : url.search;
+      return search ? `${target}?${search}` : target;
     }
 
-    const query = params.toString();
-    const targetRoute = "/tools/landing-templates";
-    return query ? `${targetRoute}?${query}` : targetRoute;
-  }
+    // 3. Referral query param (?ref=CODE) -> redirect to signup
+    const refCode = url.searchParams.get("ref") || url.searchParams.get("referral");
+    if (refCode) {
+      return `/(auth)/signup?ref=${encodeURIComponent(refCode)}`;
+    }
 
-  // 5. Default fallback: Keep original route or default to Home tabs
-  if (cleanPath === "/" || cleanPath === "") {
-    return "/(tabs)";
-  }
-  return cleanPath;
-}
+    // 4. Templates Deep Links (/free-tools/landing-templates/:id)
+    const landingBuilderMatch = url.pathname.match(
+      /^\/free-tools\/landing-templates\/([^/]+)\/?$/,
+    );
 
-export function redirectSystemPath({ path }: { path: string }) {
-  try {
-    return normalizePath(path);
-  } catch {
-    return "/(tabs)";
-  }
-}
+    if (landingBuilderMatch) {
+      const templateId =
+        url.searchParams.get("template_id") ??
+        decodeURIComponent(landingBuilderMatch[1]);
+      const authCode = url.searchParams.get("auth_code");
+      const params = new URLSearchParams();
+
+      if (templateId) {
+        params.set("template_id", templateId);
+      }
+
+      if (authCode) {
+        params.set("auth_code", authCode);
+      }
+
+      const query = params.toString();
+      const targetRoute = "/tools/landing-templates";
+      return query ? `${targetRoute}?${query}` : targetRoute;
+    }
+
+    // 5. Default fallback: Keep original route or default to Home tabs
+      if (
+        cleanPath === "/" ||
+        cleanPath === "" ||
+        cleanPath === "/getaipilot" ||
+        cleanPath.startsWith("/getaipilot/")
+      ) {
+        return "/(tabs)";
+      }
+      return cleanPath;
+    }
+
+    export function redirectSystemPath({ path }: { path: string }) {
+      try {
+        return normalizePath(path);
+      } catch {
+        return "/(tabs)";
+      }
+    }
