@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
-  Animated,
   KeyboardAvoidingView,
-  LayoutChangeEvent,
-  Modal,
   Platform,
   ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
@@ -183,7 +181,7 @@ export default function AccountScreen() {
       try {
         const invs = await apiClient.get<any[]>('/mobile/v1/user/invoices');
         if (Array.isArray(invs)) return invs;
-      } catch (e) {}
+      } catch (e) { }
       const { data } = await supabase
         .from('app_subscription_payments')
         .select('*')
@@ -203,7 +201,7 @@ export default function AccountScreen() {
       try {
         const bp = await apiClient.get<any>('/mobile/v1/user/billing-profile');
         if (bp) return bp;
-      } catch (e) {}
+      } catch (e) { }
       const { data } = await supabase
         .from('app_billing_profiles')
         .select('*')
@@ -242,8 +240,8 @@ export default function AccountScreen() {
             Platform.OS === 'web'
               ? 'Web Browser'
               : Platform.OS === 'ios'
-              ? 'iOS Device'
-              : 'Android Device',
+                ? 'iOS Device'
+                : 'Android Device',
           deviceType: Platform.OS === 'web' ? 'desktop' : 'phone',
           osVersion: null,
           appVersion: '1.0.0',
@@ -268,8 +266,8 @@ export default function AccountScreen() {
             Platform.OS === 'web'
               ? 'Web Browser'
               : Platform.OS === 'ios'
-              ? 'iOS Device'
-              : 'Android Device',
+                ? 'iOS Device'
+                : 'Android Device',
           deviceType: Platform.OS === 'web' ? 'desktop' : 'phone',
           osVersion: null,
           appVersion: '1.0.0',
@@ -615,221 +613,148 @@ export default function AccountScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
-          style={[styles.scrollView, isDark ? styles.scrollViewDark : styles.scrollViewLight]}
+          style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-        {/* Minimal profile summary */}
-        <View style={[styles.heroCard, isDark ? styles.heroCardDark : styles.heroCardLight]}>
-          <View style={styles.heroTop}>
-            <View style={[styles.avatar, isDark ? styles.avatarDark : styles.avatarLight]}>
-              <Text style={[styles.avatarText, isDark && styles.avatarTextDark]}>{initials}</Text>
-            </View>
-            <View style={styles.heroInfo}>
-              <Text style={[styles.heroName, isDark && styles.heroNameDark]} numberOfLines={1}>
-                {displayName}
-              </Text>
-              <Text style={[styles.heroEmail, isDark && styles.heroEmailDark]} numberOfLines={1}>
-                {user?.email || phone || 'User'}
-              </Text>
-              <View style={styles.badgeRow}>
-                <View style={[styles.badge, isDark ? styles.badgeDark : styles.badgeLight]}>
-                  <Ionicons name="checkmark-circle" size={13} color={colors.accent} style={{ marginRight: 4 }} />
-                  <Text style={[styles.badgeText, { color: colors.accent }]}>Verified</Text>
-                </View>
-                {profile?.is_admin && (
-                  <View style={[styles.badge, isDark ? styles.adminBadgeDark : styles.adminBadgeLight]}>
-                    <Ionicons name="shield-checkmark" size={13} color="#10B981" style={{ marginRight: 4 }} />
-                    <Text style={[styles.badgeText, { color: '#10B981' }]}>Admin</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          </View>
+            {/* Account Profile Header */}
+            <AccountHeader
+              displayName={displayName}
+              email={user?.email || phone || 'User'}
+              phone={phone}
+              initials={initials}
+              isAdmin={Boolean(isAdmin || profile?.is_admin)}
+              isActive={Boolean(isActive || subData?.subscription_status === 'active')}
+              planLabel={planLabel || (isActive ? 'Pro' : 'Free')}
+              isDark={isDark}
+            />
 
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>Status</Text>
-              <Text style={[styles.statValue, { color: colors.success }]}>{isActive ? 'Active' : 'Free'}</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={[styles.statLabel, isDark && styles.statLabelDark]}>Plan</Text>
-              <Text style={[styles.statValue, { color: colors.accent }]}>{planLabel || 'Free'}</Text>
-            </View>
-          </View>
-        </View>
+          {/* Account Sections Tabs Navigation */}
+          <AccountTabsNav
+            activeTab={activeTab}
+            onChangeTab={setActiveTab}
+            isDark={isDark}
+          />
 
-        {/* Account sections */}
-        <View
-          onLayout={(e: LayoutChangeEvent) => setTabsTrackWidth(e.nativeEvent.layout.width)}
-          style={[styles.tabsTrack, isDark ? styles.tabsTrackDark : styles.tabsTrackLight]}
-        >
-          {tabPillWidth > 0 && (
-            <Animated.View
-              style={[
-                styles.slidingTabPill,
-                {
-                  width: tabPillWidth,
-                  left: tabPadding,
-                  transform: [{ translateX: slideAnim }],
-                },
-                isDark ? styles.slidingTabPillDark : styles.slidingTabPillLight,
-              ]}
+          {/* TAB 1: OVERVIEW */}
+          {activeTab === 'overview' && (
+            <OverviewTab
+              email={user?.email || '—'}
+              phone={phone}
+              isActive={Boolean(isActive || subData?.subscription_status === 'active')}
+              isAdmin={Boolean(isAdmin || profile?.is_admin)}
+              onSignOut={handleSignOut}
+              isDark={isDark}
             />
           )}
 
-          {TABS.map((tab) => {
-            const isTabActive = activeTab === tab.id;
-            return (
-              <Pressable
-                key={tab.id}
-                style={styles.tabButton}
-                onPress={() => handleTabChange(tab.id)}
-                accessibilityRole="tab"
-                accessibilityLabel={tab.label}
-                accessibilityState={{ selected: isTabActive }}
-              >
-                <Text
-                  style={[
-                    styles.tabText,
-                    isDark ? styles.tabTextDark : styles.tabTextLight,
-                    isTabActive && (isDark ? styles.tabTextActiveDark : styles.tabTextActiveLight),
-                  ]}
-                  numberOfLines={1}
-                >
-                  {tab.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+          {activeTab === 'edit' && (
+            <EditProfileTab
+              fullName={fullName}
+              setFullName={setFullName}
+              phone={phone}
+              setPhone={setPhone}
+              businessName={businessName}
+              setBusinessName={setBusinessName}
+              businessEmail={businessEmail}
+              setBusinessEmail={setBusinessEmail}
+              website={website}
+              setWebsite={setWebsite}
+              city={city}
+              setCity={setCity}
+              country={country}
+              setCountry={setCountry}
+              isSaving={isSaving}
+              onSave={handleSaveProfile}
+              isDark={isDark}
+            />
+          )}
 
-        {/* TAB 1: OVERVIEW */}
-        {activeTab === 'overview' && (
-          <OverviewTab
-            email={user?.email || '—'}
-            phone={phone}
-            isActive={Boolean(isActive || subData?.subscription_status === 'active')}
-            isAdmin={Boolean(isAdmin || profile?.is_admin)}
-            onSignOut={handleSignOut}
+          {activeTab === 'security' && (
+            <SecurityTab
+              biometricSettings={biometricSettings}
+              isUpdatingBiometrics={isUpdatingBiometrics}
+              onToggleBiometric={handleToggleBiometric}
+              onChangeTimeout={handleChangeTimeout}
+              deviceSessions={deviceSessionsResponse?.devices || []}
+              activeDeviceCount={deviceSessionsResponse?.activeDeviceCount ?? 1}
+              isLoadingDevices={isLoadingDeviceSessions}
+              isRefreshingDevices={isRefreshingDeviceSessions}
+              onRefreshDevices={refetchDeviceSessions}
+              onSignOutOtherDevice={handleSignOutOtherDevice}
+              signingOutDeviceId={signingOutDeviceId}
+              onPasswordReset={handlePasswordReset}
+              isDark={isDark}
+            />
+          )}
+
+          {activeTab === 'billing' && (
+            <BillingTab
+              subData={subData}
+              planLabel={planLabel || ''}
+              isActive={Boolean(isActive || subData?.subscription_status === 'active')}
+              profileSubscription={profile?.subscription || undefined}
+              daysLeft={getDaysLeft()}
+              invoicesData={invoicesData || []}
+              onSelectInvoice={setSelectedInvoice}
+              billingName={billingName}
+              setBillingName={setBillingName}
+              billingEmail={billingEmail}
+              setBillingEmail={setBillingEmail}
+              taxId={taxId}
+              setTaxId={setTaxId}
+              billingAddress1={billingAddress1}
+              setBillingAddress1={setBillingAddress1}
+              billingCity={billingCity}
+              setBillingCity={setBillingCity}
+              billingPostal={billingPostal}
+              setBillingPostal={setBillingPostal}
+              isSavingBilling={isSavingBilling}
+              onSaveBilling={handleSaveBilling}
+              isDark={isDark}
+            />
+          )}
+
+          {activeTab === 'preferences' && (
+            <SettingsTab
+              soundEnabled={soundEnabled}
+              onToggleSound={(val) => {
+                setSoundEnabled(val);
+                soundService.setSoundEnabled(val);
+                if (val) soundService.play('pop');
+              }}
+              hapticsEnabled={hapticsEnabled}
+              onToggleHaptics={(val) => {
+                setHapticsEnabled(val);
+                soundService.setHapticsEnabled(val);
+                if (val && Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
+              }}
+              themeMode={themeMode}
+              onSelectTheme={async (mode) => {
+                await setThemeMode(mode);
+              }}
+              pushEnabled={pushEnabled}
+              onTogglePush={handleTogglePush}
+              emailAlerts={emailAlerts}
+              onToggleEmailAlerts={(val) => handleTogglePref('@pref_email', val, setEmailAlerts)}
+              biometricEnabled={biometricSettings.enabled}
+              onToggleBiometric={handleToggleBiometric}
+              biometricLabel={biometricSettings.biometricLabel}
+              isDark={isDark}
+            />
+          )}
+
+          {/* Invoice Modal */}
+          <InvoiceReceiptModal
+            invoice={selectedInvoice}
+            onClose={() => setSelectedInvoice(null)}
             isDark={isDark}
           />
-        )}
-
-        {activeTab === 'edit' && (
-          <EditProfileTab
-            fullName={fullName}
-            setFullName={setFullName}
-            phone={phone}
-            setPhone={setPhone}
-            businessName={businessName}
-            setBusinessName={setBusinessName}
-            businessEmail={businessEmail}
-            setBusinessEmail={setBusinessEmail}
-            website={website}
-            setWebsite={setWebsite}
-            city={city}
-            setCity={setCity}
-            country={country}
-            setCountry={setCountry}
-            isSaving={isSaving}
-            onSave={handleSaveProfile}
-            isDark={isDark}
-          />
-        )}
-
-        {activeTab === 'security' && (
-          <SecurityTab
-            biometricSettings={biometricSettings}
-            isUpdatingBiometrics={isUpdatingBiometrics}
-            onToggleBiometric={handleToggleBiometric}
-            onChangeTimeout={handleChangeTimeout}
-            deviceSessions={deviceSessionsResponse?.devices || []}
-            activeDeviceCount={deviceSessionsResponse?.activeDeviceCount ?? 1}
-            isLoadingDevices={isLoadingDeviceSessions}
-            isRefreshingDevices={isRefreshingDeviceSessions}
-            onRefreshDevices={refetchDeviceSessions}
-            onSignOutOtherDevice={handleSignOutOtherDevice}
-            signingOutDeviceId={signingOutDeviceId}
-            onPasswordReset={handlePasswordReset}
-            isDark={isDark}
-          />
-        )}
-
-        {activeTab === 'billing' && (
-          <BillingTab
-            subData={subData}
-            planLabel={planLabel || ''}
-            isActive={Boolean(isActive || subData?.subscription_status === 'active')}
-            profileSubscription={profile?.subscription || undefined}
-            daysLeft={getDaysLeft()}
-            invoicesData={invoicesData || []}
-            onSelectInvoice={setSelectedInvoice}
-            billingName={billingName}
-            setBillingName={setBillingName}
-            billingEmail={billingEmail}
-            setBillingEmail={setBillingEmail}
-            taxId={taxId}
-            setTaxId={setTaxId}
-            billingAddress1={billingAddress1}
-            setBillingAddress1={setBillingAddress1}
-            billingCity={billingCity}
-            setBillingCity={setBillingCity}
-            billingPostal={billingPostal}
-            setBillingPostal={setBillingPostal}
-            isSavingBilling={isSavingBilling}
-            onSaveBilling={handleSaveBilling}
-            isDark={isDark}
-          />
-        )}
-
-        {activeTab === 'preferences' && (
-          <SettingsTab
-            soundEnabled={soundEnabled}
-            onToggleSound={(val) => {
-              setSoundEnabled(val);
-              soundService.setSoundEnabled(val);
-              if (val) soundService.play('pop');
-            }}
-            hapticsEnabled={hapticsEnabled}
-            onToggleHaptics={(val) => {
-              setHapticsEnabled(val);
-              soundService.setHapticsEnabled(val);
-              if (val && Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              }
-            }}
-            themeMode={themeMode}
-            onSelectTheme={async (mode) => {
-              await setThemeMode(mode);
-            }}
-            pushEnabled={pushEnabled}
-            onTogglePush={handleTogglePush}
-            emailAlerts={emailAlerts}
-            onToggleEmailAlerts={(val) => handleTogglePref('@pref_email', val, setEmailAlerts)}
-            biometricEnabled={biometricSettings.enabled}
-            onToggleBiometric={handleToggleBiometric}
-            biometricLabel={biometricSettings.biometricLabel}
-            isDark={isDark}
-          />
-        )}
-
-        {/* Invoice Modal */}
-        <InvoiceReceiptModal
-          invoice={selectedInvoice}
-          onClose={() => setSelectedInvoice(null)}
-          isDark={isDark}
-        />
-
-        {/* Audio & Haptic Evaluation Demo Modal */}
-        <SoundFeedbackDemoModal
-          visible={showSoundDemo}
-          onClose={() => setShowSoundDemo(false)}
-          isDark={isDark}
-        />
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Audio & Haptic Evaluation Suite Modal */}
       <SoundFeedbackDemoModal
