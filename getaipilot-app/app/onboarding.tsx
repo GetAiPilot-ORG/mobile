@@ -112,6 +112,58 @@ export default function OnboardingScreen() {
   const [hapticsEnabled] = useState(true);
   const isSubmittingRef = useRef(false);
 
+  // Guard: if user has already completed onboarding or is already logged in, redirect directly to tabs
+  useEffect(() => {
+    let mounted = true;
+    const verifyOnboarding = async () => {
+      // 1. Instant global check
+      const globalCached = await AsyncStorage.getItem('@onboarding_completed_global').catch(() => null);
+      if (globalCached === 'true' && mounted) {
+        useAuthStore.getState().setOnboardingCompleted(true);
+        router.replace('/(tabs)' as any);
+        return;
+      }
+
+      let uid = user?.id || useAuthStore.getState().user?.id;
+      if (!uid) {
+        const { data: sbSession } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+        uid = sbSession?.session?.user?.id;
+      }
+
+      if (uid) {
+        const cached = await AsyncStorage.getItem(`onboarding_completed_${uid}`).catch(() => null);
+        if (cached === 'true' && mounted) {
+          useAuthStore.getState().setOnboardingCompleted(true);
+          router.replace('/(tabs)' as any);
+          return;
+        }
+
+        try {
+          const { data } = await supabase
+            .from('profiles')
+            .select('onboarding_completed, account_type, business_name, full_name, first_name')
+            .eq('id', uid)
+            .maybeSingle();
+
+          if (data?.onboarding_completed || data?.account_type || data?.business_name || data?.full_name || data?.first_name) {
+            await AsyncStorage.setItem(`onboarding_completed_${uid}`, 'true').catch(() => {});
+            await AsyncStorage.setItem('@onboarding_completed_global', 'true').catch(() => {});
+            if (mounted) {
+              useAuthStore.getState().setOnboardingCompleted(true);
+              router.replace('/(tabs)' as any);
+            }
+          }
+        } catch (err) {
+          console.warn('[Onboarding] Error checking existing profile status:', err);
+        }
+      }
+    };
+    verifyOnboarding();
+    return () => {
+      mounted = false;
+    };
+  }, [user?.id, router]);
+
   // Guard: strictly ensure user has confirmed their email before entering onboarding
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -388,6 +440,11 @@ export default function OnboardingScreen() {
         }
       }
 
+      const finalUid = userId || user?.id;
+      if (finalUid) {
+        await AsyncStorage.setItem(`onboarding_completed_${finalUid}`, 'true').catch(() => {});
+      }
+      await AsyncStorage.setItem('@onboarding_completed_global', 'true').catch(() => {});
       useAuthStore.getState().setOnboardingCompleted(true);
 
       // Link pending referral code if user arrived via invite link
@@ -472,24 +529,51 @@ export default function OnboardingScreen() {
               <View style={{ width: 40 }} />
             )}
 
-            <TouchableOpacity
-              disabled={loading}
-              onPress={async () => {
-                triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-                await useAuthStore.getState().logout();
-                router.replace('/(auth)/login' as any);
-              }}
-              hitSlop={8}
-              style={[styles.navPillBtn, isDark && styles.navPillBtnDark, loading && { opacity: 0.5 }]}
-            >
-              <HugeiconsIcon
-                icon={Logout01Icon}
-                size={14}
-                color={isDark ? '#94A3B8' : '#64748B'}
-                strokeWidth={2}
-              />
-              <Text style={[styles.navBtnText, isDark && styles.navBtnTextDark]}>Sign out</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <TouchableOpacity
+                disabled={loading}
+                onPress={async () => {
+                  triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
+                  useAuthStore.getState().setOnboardingCompleted(true);
+                  const uid = user?.id || useAuthStore.getState().user?.id;
+                  if (uid) {
+                    await AsyncStorage.setItem(`onboarding_completed_${uid}`, 'true').catch(() => {});
+                  }
+                  await AsyncStorage.setItem('@onboarding_completed_global', 'true').catch(() => {});
+                  router.replace('/(tabs)' as any);
+                }}
+                hitSlop={8}
+                style={[
+                  styles.navPillBtn,
+                  isDark && styles.navPillBtnDark,
+                  { paddingHorizontal: 12, backgroundColor: isDark ? 'rgba(99,102,241,0.15)' : '#EEF2FF', borderColor: isDark ? '#4F46E5' : '#C7D2FE', borderWidth: 1 },
+                  loading && { opacity: 0.5 },
+                ]}
+              >
+                <Text style={[styles.navBtnText, { fontWeight: '700', color: isDark ? '#A5B4FC' : '#4F46E5' }]}>
+                  Skip to Home →
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                disabled={loading}
+                onPress={async () => {
+                  triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
+                  await useAuthStore.getState().logout();
+                  router.replace('/(auth)/login' as any);
+                }}
+                hitSlop={8}
+                style={[styles.navPillBtn, isDark && styles.navPillBtnDark, loading && { opacity: 0.5 }]}
+              >
+                <HugeiconsIcon
+                  icon={Logout01Icon}
+                  size={14}
+                  color={isDark ? '#94A3B8' : '#64748B'}
+                  strokeWidth={2}
+                />
+                <Text style={[styles.navBtnText, isDark && styles.navBtnTextDark]}>Sign out</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* 2. Brand Hero: Living AI Logo + Step Badge + Typography */}

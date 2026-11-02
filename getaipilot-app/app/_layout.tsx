@@ -166,20 +166,17 @@ function AuthRouteGuard() {
         }
         router.replace("/(auth)/login" as any);
       } else if (authStatus === "authenticated") {
-        if (onboardingCompleted === false) {
-          if (!inOnboarding && !isPendingAuthScreen) {
-            if (__DEV__) {
-              console.log(
-                "[AuthGuard] Authenticated user requires onboarding -> navigating to /onboarding",
-              );
+        if (inAuthGroup || inOnboarding) {
+          if (onboardingCompleted === false && isPendingAuthScreen) {
+            // Strictly brand-new unverified signups transitioning to onboarding
+            if (!inOnboarding) {
+              router.replace("/onboarding" as any);
             }
-            router.replace("/onboarding" as any);
-          }
-        } else if (onboardingCompleted === true) {
-          if (inAuthGroup || inOnboarding) {
+          } else {
+            // Logged in or completed user on auth/onboarding screen -> go directly to Home tabs
             if (__DEV__) {
               console.log(
-                "[AuthGuard] Authenticated onboarded user -> navigating to tabs (Home)",
+                "[AuthGuard] Authenticated user on auth/onboarding -> navigating to tabs (Home)",
               );
             }
             router.replace("/(tabs)" as any);
