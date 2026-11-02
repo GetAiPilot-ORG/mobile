@@ -23,8 +23,9 @@ import { AppTopBar } from "../../src/components/AppTopBar";
 // Preserved for future use:
 // import { AnimatedHeroBanner } from "../../src/components/home/AnimatedHeroBanner";
 import { AnimatedEngineItem } from "../../src/components/home/AnimatedEngineItem";
+import { EngineMarquee } from "../../src/components/home/EngineMarquee";
 import { AnimatedAiLogo } from "../../src/components/home/AnimatedAiLogo";
-import { ProductCardCarousel } from "../../src/components/home/ProductCardCarousel";
+import { HomeProductCards } from "../../src/components/home/HomeProductCards";
 import { AnimatedCreateSection } from "../../src/components/home/AnimatedCreateSection";
 import { AnimatedWorkspaceCards } from "../../src/components/home/AnimatedWorkspaceCards";
 import { HomeSecurityAndInviteCards } from "../../src/components/home/HomeSecurityAndInviteCards";
@@ -376,24 +377,25 @@ export default function HomeScreen() {
               isDark={isDark}
             />
           </View>
-          <View style={{ flexDirection: "row", gap: 8, marginTop: 20 }}>
-            {ENGINES.map((item, index) => (
-              <AnimatedEngineItem
-                key={item.id}
-                item={item}
-                index={index}
-                bgColor={pastel[index]}
-                textColor={color.text}
-                onPress={() => open(item.route)}
-                cycleTick={engineCycleTick}
-              />
-            ))}
-          </View>
         </View>
 
-        <ProductCardCarousel
+        <EngineMarquee
+          engines={ENGINES}
+          pastel={pastel}
+          textColor={color.text}
+          onOpen={open}
+          cycleTick={engineCycleTick}
           isDark={isDark}
-          onOpen={open} />
+          bgColor={color.background}
+        />
+
+        <View style={{ paddingHorizontal: 20 }}>
+          <HomeProductCards
+            isDark={isDark}
+            onOpen={open}
+            sectionHeader={section("Products", "/(tabs)/products")}
+          />
+        </View>
 
         <View style={{ paddingHorizontal: 20 }}>
           {/* {section("Your workspace", "/(tabs)/products")} */}
