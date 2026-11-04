@@ -84,6 +84,9 @@ export const SocialScreen: React.FC = () => {
   const [showAccountsModal, setShowAccountsModal] = useState(false);
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [initialCaptionForCreate, setInitialCaptionForCreate] = useState<string | undefined>(undefined);
+  const [initialMediaForCreate, setInitialMediaForCreate] = useState<
+    Array<{ url: string; type?: 'image' | 'video'; localUri?: string; fileName?: string }> | undefined
+  >(undefined);
   const [planModalVisible, setPlanModalVisible] = useState(false);
   const [lockedFeatureName, setLockedFeatureName] = useState("Social Pilot");
 
@@ -105,6 +108,8 @@ export const SocialScreen: React.FC = () => {
     }
     if (showCreateModal) {
       setShowCreateModal(false);
+      setInitialCaptionForCreate(undefined);
+      setInitialMediaForCreate(undefined);
       return true;
     }
     if (showAccountsModal) {
@@ -514,6 +519,7 @@ export const SocialScreen: React.FC = () => {
                 return;
               }
               setInitialCaptionForCreate(undefined);
+              setInitialMediaForCreate(undefined);
               setShowCreateModal(true);
             }}
             onOpenAccountsModal={() => setShowAccountsModal(true)}
@@ -535,6 +541,26 @@ export const SocialScreen: React.FC = () => {
                 return;
               }
               setInitialCaptionForCreate(trend.title || trend.caption || '');
+
+              const isVideo =
+                (trend.video_url && (trend.content_type === 'reel_video' || trend.content_type === 'video')) ||
+                trend.content_type === 'reel_video' ||
+                trend.content_type === 'video';
+              const mediaUrl = isVideo
+                ? (trend.video_url || trend.full_image_url || trend.thumbnail_url)
+                : (trend.full_image_url || trend.thumbnail_url || trend.video_url);
+
+              if (mediaUrl) {
+                setInitialMediaForCreate([
+                  {
+                    url: mediaUrl,
+                    type: isVideo ? 'video' : 'image',
+                  },
+                ]);
+              } else {
+                setInitialMediaForCreate(undefined);
+              }
+
               setShowCreateModal(true);
             }}
           />
@@ -583,13 +609,15 @@ export const SocialScreen: React.FC = () => {
 
       {/* Modals */}
       <CreatePostModal
-        key={showCreateModal ? (initialCaptionForCreate || 'modal_open') : 'modal_closed'}
+        key={showCreateModal ? `${initialCaptionForCreate || ''}_${initialMediaForCreate?.[0]?.url || 'modal_open'}` : 'modal_closed'}
         visible={showCreateModal}
         connectedAccounts={connectedList}
         initialCaption={initialCaptionForCreate}
+        initialMedia={initialMediaForCreate}
         onClose={() => {
           setShowCreateModal(false);
           setInitialCaptionForCreate(undefined);
+          setInitialMediaForCreate(undefined);
         }}
         onOpenConnectModal={() => setShowConnectModal(true)}
         onSubmit={async (payload) => {
