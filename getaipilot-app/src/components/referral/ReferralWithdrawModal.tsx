@@ -14,11 +14,11 @@ import {
 import {
   Wallet,
   Smartphone,
-  Building2,
   CheckCircle2,
   ShieldCheck,
   X,
   ArrowRight,
+  Zap,
 } from "lucide-react-native";
 import { requestReferralWithdrawal } from "../../services/referralService";
 
@@ -39,16 +39,10 @@ export function ReferralWithdrawModal({
   onSuccess,
   colors,
 }: ReferralWithdrawModalProps) {
-  const [method, setMethod] = useState<"upi" | "bank">("upi");
   const [amount, setAmount] = useState<string>(
     availableBalance >= 100 ? String(availableBalance) : "100"
   );
   const [upiId, setUpiId] = useState("");
-  const [accountName, setAccountName] = useState("");
-  const [accountNumber, setAccountNumber] = useState("");
-  const [confirmAccountNumber, setConfirmAccountNumber] = useState("");
-  const [ifscCode, setIfscCode] = useState("");
-  const [bankName, setBankName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -82,29 +76,10 @@ export function ReferralWithdrawModal({
       return;
     }
 
-    if (method === "upi") {
-      const cleanUpi = upiId.trim();
-      if (!cleanUpi || !cleanUpi.includes("@")) {
-        setErrorMessage("Please enter a valid UPI ID (e.g. name@okhdfcbank or mobile@paytm).");
-        return;
-      }
-    } else {
-      if (!accountName.trim()) {
-        setErrorMessage("Please enter account holder name.");
-        return;
-      }
-      if (!accountNumber.trim()) {
-        setErrorMessage("Please enter bank account number.");
-        return;
-      }
-      if (accountNumber.trim() !== confirmAccountNumber.trim()) {
-        setErrorMessage("Account numbers do not match.");
-        return;
-      }
-      if (!ifscCode.trim() || ifscCode.trim().length < 8) {
-        setErrorMessage("Please enter a valid 11-character IFSC code.");
-        return;
-      }
+    const cleanUpi = upiId.trim();
+    if (!cleanUpi || !cleanUpi.includes("@")) {
+      setErrorMessage("Please enter a valid UPI ID (e.g. name@okhdfcbank or mobile@paytm).");
+      return;
     }
 
     setSubmitting(true);
@@ -112,12 +87,8 @@ export function ReferralWithdrawModal({
       const result = await requestReferralWithdrawal({
         userId,
         amount: numericAmount,
-        payoutMethod: method,
-        upiId: method === "upi" ? upiId.trim() : undefined,
-        accountHolderName: method === "bank" ? accountName.trim() : undefined,
-        accountNumber: method === "bank" ? accountNumber.trim() : undefined,
-        ifscCode: method === "bank" ? ifscCode.trim().toUpperCase() : undefined,
-        bankName: method === "bank" ? bankName.trim() : undefined,
+        payoutMethod: "upi",
+        upiId: cleanUpi,
       });
 
       if (result.success) {
@@ -154,7 +125,7 @@ export function ReferralWithdrawModal({
               <View style={{ flex: 1, marginLeft: 10 }}>
                 <Text style={[styles.title, { color: colors.text }]}>Withdraw Referral Cash</Text>
                 <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                  Transfer cash directly to UPI or Bank
+                  Transfer cash directly to your UPI ID
                 </Text>
               </View>
               <Pressable onPress={onClose} hitSlop={12} style={styles.closeBtn}>
@@ -178,7 +149,7 @@ export function ReferralWithdrawModal({
                 Withdrawal Requested!
               </Text>
               <Text style={[styles.successDesc, { color: colors.textSecondary }]}>
-                Payout of ₹{numericAmount} via {method === "upi" ? `UPI (${upiId})` : "Bank Transfer"} has been initiated. Funds are credited within 24-48 business hours.
+                Payout of ₹{numericAmount} via UPI ({upiId.trim()}) has been initiated. Funds are credited within 24-48 business hours.
               </Text>
               <Pressable
                 onPress={onClose}
@@ -195,50 +166,17 @@ export function ReferralWithdrawModal({
                 </View>
               ) : null}
 
-              {/* Method Switcher */}
-              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Payout Method</Text>
-              <View style={styles.methodRow}>
-                <Pressable
-                  onPress={() => setMethod("upi")}
-                  style={[
-                    styles.methodBtn,
-                    {
-                      borderColor: method === "upi" ? "#10B981" : colors.border,
-                      backgroundColor: method === "upi" ? "rgba(16, 185, 129, 0.1)" : colors.card,
-                    },
-                  ]}
-                >
-                  <Smartphone size={16} color={method === "upi" ? "#10B981" : colors.textSecondary} />
-                  <Text
-                    style={[
-                      styles.methodText,
-                      { color: method === "upi" ? "#10B981" : colors.text, fontWeight: method === "upi" ? "700" : "500" },
-                    ]}
-                  >
-                    UPI (Instant)
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => setMethod("bank")}
-                  style={[
-                    styles.methodBtn,
-                    {
-                      borderColor: method === "bank" ? "#10B981" : colors.border,
-                      backgroundColor: method === "bank" ? "rgba(16, 185, 129, 0.1)" : colors.card,
-                    },
-                  ]}
-                >
-                  <Building2 size={16} color={method === "bank" ? "#10B981" : colors.textSecondary} />
-                  <Text
-                    style={[
-                      styles.methodText,
-                      { color: method === "bank" ? "#10B981" : colors.text, fontWeight: method === "bank" ? "700" : "500" },
-                    ]}
-                  >
-                    Bank Account
-                  </Text>
-                </Pressable>
+              {/* Payout Method Tag */}
+              <View style={[styles.methodBadge, { backgroundColor: "rgba(16, 185, 129, 0.08)", borderColor: "rgba(16, 185, 129, 0.25)" }]}>
+                <Smartphone size={16} color="#10B981" />
+                <View style={{ flex: 1, marginLeft: 8 }}>
+                  <Text style={styles.methodBadgeTitle}>Instant UPI Payout</Text>
+                  <Text style={[styles.methodBadgeSub, { color: colors.textSecondary }]}>Direct settlement via UPI ID / VPA</Text>
+                </View>
+                <View style={styles.activeTag}>
+                  <Zap size={11} color="#10B981" />
+                  <Text style={styles.activeTagText}>Fast</Text>
+                </View>
               </View>
 
               {/* Amount input */}
@@ -262,98 +200,29 @@ export function ReferralWithdrawModal({
                 />
               </View>
 
-              {/* Method fields */}
-              {method === "upi" ? (
-                <View style={{ marginTop: 14 }}>
-                  <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>UPI ID / VPA</Text>
-                  <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                    <TextInput
-                      value={upiId}
-                      onChangeText={setUpiId}
-                      autoCapitalize="none"
-                      placeholder="e.g. mobile@paytm or name@okhdfcbank"
-                      placeholderTextColor={colors.textSecondary}
-                      style={[styles.input, { color: colors.text }]}
-                    />
-                  </View>
-                  <Text style={[styles.hintText, { color: colors.textSecondary }]}>
-                    Supported: GPay, PhonePe, Paytm, BHIM & all bank UPI apps
-                  </Text>
+              {/* UPI ID input */}
+              <View style={{ marginTop: 14 }}>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>UPI ID / VPA</Text>
+                <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <TextInput
+                    value={upiId}
+                    onChangeText={setUpiId}
+                    autoCapitalize="none"
+                    placeholder="e.g. mobile@paytm or name@okhdfcbank"
+                    placeholderTextColor={colors.textSecondary}
+                    style={[styles.input, { color: colors.text }]}
+                  />
                 </View>
-              ) : (
-                <View style={{ marginTop: 14 }}>
-                  <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Account Holder Name</Text>
-                  <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                    <TextInput
-                      value={accountName}
-                      onChangeText={setAccountName}
-                      placeholder="As per bank passbook"
-                      placeholderTextColor={colors.textSecondary}
-                      style={[styles.input, { color: colors.text }]}
-                    />
-                  </View>
-
-                  <Text style={[styles.fieldLabel, { color: colors.textSecondary, marginTop: 10 }]}>Account Number</Text>
-                  <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                    <TextInput
-                      value={accountNumber}
-                      onChangeText={setAccountNumber}
-                      keyboardType="numeric"
-                      secureTextEntry
-                      placeholder="Bank account number"
-                      placeholderTextColor={colors.textSecondary}
-                      style={[styles.input, { color: colors.text }]}
-                    />
-                  </View>
-
-                  <Text style={[styles.fieldLabel, { color: colors.textSecondary, marginTop: 10 }]}>Confirm Number</Text>
-                  <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                    <TextInput
-                      value={confirmAccountNumber}
-                      onChangeText={setConfirmAccountNumber}
-                      keyboardType="numeric"
-                      placeholder="Re-enter account number"
-                      placeholderTextColor={colors.textSecondary}
-                      style={[styles.input, { color: colors.text }]}
-                    />
-                  </View>
-
-                  <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>IFSC Code</Text>
-                      <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                        <TextInput
-                          value={ifscCode}
-                          onChangeText={(t) => setIfscCode(t.toUpperCase())}
-                          autoCapitalize="characters"
-                          placeholder="e.g. HDFC0001234"
-                          placeholderTextColor={colors.textSecondary}
-                          style={[styles.input, { color: colors.text }]}
-                        />
-                      </View>
-                    </View>
-
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Bank Name (Opt)</Text>
-                      <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                        <TextInput
-                          value={bankName}
-                          onChangeText={setBankName}
-                          placeholder="e.g. HDFC Bank"
-                          placeholderTextColor={colors.textSecondary}
-                          style={[styles.input, { color: colors.text }]}
-                        />
-                      </View>
-                    </View>
-                  </View>
-                </View>
-              )}
+                <Text style={[styles.hintText, { color: colors.textSecondary }]}>
+                  Supported: GPay, PhonePe, Paytm, BHIM & all bank UPI apps
+                </Text>
+              </View>
 
               {/* Security Banner */}
               <View style={[styles.securityBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <ShieldCheck size={16} color="#10B981" />
                 <Text style={[styles.securityText, { color: colors.textSecondary }]}>
-                  Transfers are settled securely to your verified account via IMPS/UPI.
+                  Transfers are settled securely to your verified UPI ID via IMPS/UPI.
                 </Text>
               </View>
 
@@ -455,30 +324,43 @@ const styles = StyleSheet.create({
     padding: 18,
     paddingBottom: 36,
   },
+  methodBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  methodBadgeTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#10B981",
+  },
+  methodBadgeSub: {
+    fontSize: 11,
+    marginTop: 1,
+  },
+  activeTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: "rgba(16, 185, 129, 0.15)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  activeTagText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#10B981",
+  },
   fieldLabel: {
     fontSize: 11,
     fontWeight: "600",
     marginBottom: 6,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-  },
-  methodRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 14,
-  },
-  methodBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    height: 42,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  methodText: {
-    fontSize: 12,
   },
   amountHeader: {
     flexDirection: "row",
@@ -578,4 +460,3 @@ const styles = StyleSheet.create({
     maxWidth: 280,
   },
 });
-

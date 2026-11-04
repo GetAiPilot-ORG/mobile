@@ -3,7 +3,6 @@ import {
   AlertTriangle,
   ArrowLeft,
   Award,
-  Building2,
   CheckCircle2,
   ChevronRight,
   Clock3,
@@ -867,7 +866,7 @@ export default function ReferralScreen() {
                   {hasPendingWithdrawal
                     ? `₹${pendingWithdrawalsAmount.toFixed(0)} payout in review • Processing`
                     : availableBalance >= 100
-                      ? "Ready for instant UPI / Bank payout"
+                      ? "Ready for instant UPI payout"
                       : "Min ₹100 required to withdraw"}
                 </Text>
               </View>
@@ -1103,11 +1102,7 @@ export default function ReferralScreen() {
                     { backgroundColor: isDark ? "rgba(10, 132, 255, 0.15)" : "#EBF5FF" },
                   ]}
                 >
-                  {isUPI ? (
-                    <Smartphone size={20} color="#0A84FF" />
-                  ) : (
-                    <Building2 size={20} color="#0A84FF" />
-                  )}
+                  <Smartphone size={20} color="#0A84FF" />
                 </View>
 
                 <View style={styles.referralInfo}>
@@ -1233,8 +1228,8 @@ export default function ReferralScreen() {
               <Text style={[styles.emptyTitle, { color: colors.text }]}>No Withdrawals Yet</Text>
               <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
                 {availableBalance >= 100
-                  ? `You have ₹${availableBalance.toFixed(0)} available cash balance. Tap 'Withdraw' to request a payout to your UPI ID or Bank Account.`
-                  : "Once you refer friends and earn ₹100 or more, you can withdraw your cash rewards directly to your UPI ID or Bank Account."}
+                  ? `You have ₹${availableBalance.toFixed(0)} available cash balance. Tap 'Withdraw' to request a payout directly to your UPI ID.`
+                  : "Once you refer friends and earn ₹100 or more, you can withdraw your cash rewards directly directly to your UPI ID."}
               </Text>
               {availableBalance >= 100 && (
                 <Pressable
@@ -1781,55 +1776,17 @@ export default function ReferralScreen() {
                     </Text>
                   </View>
 
-                  {selectedWithdrawal.payout_method === "upi" ? (
-                    <View style={styles.detailRow}>
-                      <View style={styles.detailRowLeft}>
-                        <Wallet size={16} color={colors.textSecondary} />
-                        <Text style={[styles.detailRowLabel, { color: colors.textSecondary }]}>
-                          UPI ID
-                        </Text>
-                      </View>
-                      <Text style={[styles.detailRowValue, { color: colors.primary, fontWeight: "700" }]}>
-                        {selectedWithdrawal.upi_id}
+                  <View style={styles.detailRow}>
+                    <View style={styles.detailRowLeft}>
+                      <Wallet size={16} color={colors.textSecondary} />
+                      <Text style={[styles.detailRowLabel, { color: colors.textSecondary }]}>
+                        UPI ID
                       </Text>
                     </View>
-                  ) : (
-                    <>
-                      <View style={styles.detailRow}>
-                        <View style={styles.detailRowLeft}>
-                          <Building2 size={16} color={colors.textSecondary} />
-                          <Text style={[styles.detailRowLabel, { color: colors.textSecondary }]}>
-                            Bank Account
-                          </Text>
-                        </View>
-                        <Text style={[styles.detailRowValue, { color: colors.text }]}>
-                          {selectedWithdrawal.account_number}
-                        </Text>
-                      </View>
-                      <View style={styles.detailRow}>
-                        <View style={styles.detailRowLeft}>
-                          <User size={16} color={colors.textSecondary} />
-                          <Text style={[styles.detailRowLabel, { color: colors.textSecondary }]}>
-                            A/C Name
-                          </Text>
-                        </View>
-                        <Text style={[styles.detailRowValue, { color: colors.text }]}>
-                          {selectedWithdrawal.account_holder_name}
-                        </Text>
-                      </View>
-                      <View style={styles.detailRow}>
-                        <View style={styles.detailRowLeft}>
-                          <Info size={16} color={colors.textSecondary} />
-                          <Text style={[styles.detailRowLabel, { color: colors.textSecondary }]}>
-                            IFSC Code
-                          </Text>
-                        </View>
-                        <Text style={[styles.detailRowValue, { color: colors.text }]}>
-                          {selectedWithdrawal.ifsc_code}
-                        </Text>
-                      </View>
-                    </>
-                  )}
+                    <Text style={[styles.detailRowValue, { color: colors.primary, fontWeight: "700" }]}>
+                      {selectedWithdrawal.upi_id}
+                    </Text>
+                  </View>
 
                   <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
                     <View style={styles.detailRowLeft}>
@@ -1849,6 +1806,7 @@ export default function ReferralScreen() {
                                 ? "#EF4444"
                                 : "#F59E0B",
                           fontWeight: "700",
+
                         },
                       ]}
                     >

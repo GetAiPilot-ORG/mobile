@@ -19,6 +19,7 @@ import {
   GiftIcon,
 } from '@/constants/icons';
 import Svg, { Path } from 'react-native-svg';
+import { HOME_SPACING, HOME_RADIUS } from '@/theme/homeTokens';
 
 interface HomeSecurityAndInviteCardsProps {
   isDark: boolean;
@@ -31,7 +32,7 @@ interface HomeSecurityAndInviteCardsProps {
 /**
  * Twin animated cards for the home screen:
  * 1. AI Security & Device Sentinel (Live radar pulse, 256-bit encryption badge, live device count)
- * 2. Invite Friends & Earn Rewards (Floating 3D money stack, twinkling rewards, 20% bonus badge)
+ * 2. Invite Friends & Earn Rewards (Floating 3D money stack, twinkling rewards, ₹100 cash referral standout glow)
  */
 export function HomeSecurityAndInviteCards({
   isDark,
@@ -186,7 +187,7 @@ export function HomeSecurityAndInviteCards({
   return (
     <View style={styles.gridRow}>
       {/* ========================================================
-          CARD 1: AI SECURITY & DEVICE SENTINEL
+          CARD 1: AI SECURITY & DEVICE SENTINEL (Visuals preserved)
          ======================================================== */}
       <Animated.View
         style={[
@@ -198,7 +199,7 @@ export function HomeSecurityAndInviteCards({
           activeOpacity={1}
           onPressIn={() => {
             Animated.spring(securityPressScale, {
-              toValue: 0.965,
+              toValue: 0.97,
               useNativeDriver: true,
               tension: 250,
               friction: 12,
@@ -326,7 +327,7 @@ export function HomeSecurityAndInviteCards({
             </View>
           </View>
 
-          {/* Middle Body: Title & Telemetry */}
+          {/* Middle Body: Title & Telemetry with WCAG AA High Contrast */}
           <View style={styles.cardBody}>
             <Text
               numberOfLines={1}
@@ -341,7 +342,7 @@ export function HomeSecurityAndInviteCards({
               numberOfLines={2}
               style={[
                 styles.cardSubtitle,
-                { color: isDark ? '#A7F3D0' : '#336248' },
+                { color: isDark ? '#A7F3D0' : '#2D5A42' },
               ]}
             >
               {deviceSubtitle}
@@ -363,7 +364,7 @@ export function HomeSecurityAndInviteCards({
               <Text
                 style={[
                   styles.techChipText,
-                  { color: isDark ? 'rgba(255, 255, 255, 0.7)' : '#336248' },
+                  { color: isDark ? 'rgba(255, 255, 255, 0.75)' : '#2D5A42' },
                 ]}
               >
                 256-bit AES
@@ -395,7 +396,7 @@ export function HomeSecurityAndInviteCards({
       </Animated.View>
 
       {/* ========================================================
-          CARD 2: INVITE FRIENDS & EARN REWARDS
+          CARD 2: INVITE FRIENDS & EARN REWARDS (Enhanced Standout Glow)
          ======================================================== */}
       <Animated.View
         style={[
@@ -407,7 +408,7 @@ export function HomeSecurityAndInviteCards({
           activeOpacity={1}
           onPressIn={() => {
             Animated.spring(referralPressScale, {
-              toValue: 0.965,
+              toValue: 0.97,
               useNativeDriver: true,
               tension: 250,
               friction: 12,
@@ -423,15 +424,19 @@ export function HomeSecurityAndInviteCards({
           }}
           onPress={handleReferralPress}
           accessibilityRole="button"
-          accessibilityLabel="Invite friends and earn rewards"
+          accessibilityLabel="Invite friends and earn ₹100 cash rewards"
           style={[
             styles.twinCard,
             {
+              // Enhanced noticeable gradient border and glow
               borderColor: isDark
-                ? 'rgba(168, 85, 247, 0.35)'
-                : 'rgba(147, 51, 234, 0.22)',
-              shadowColor: '#8B5CF6',
-              shadowOpacity: isDark ? 0.28 : 0.08,
+                ? 'rgba(192, 132, 252, 0.52)'
+                : 'rgba(147, 51, 234, 0.42)',
+              borderWidth: 1.5,
+              shadowColor: '#A855F7',
+              shadowOpacity: isDark ? 0.46 : 0.18,
+              shadowRadius: 16,
+              elevation: 5,
             },
           ]}
         >
@@ -451,7 +456,7 @@ export function HomeSecurityAndInviteCards({
           <LinearGradient
             colors={
               isDark
-                ? ['rgba(255, 255, 255, 0.12)', 'transparent']
+                ? ['rgba(255, 255, 255, 0.15)', 'transparent']
                 : ['rgba(255, 255, 255, 0.85)', 'rgba(255, 255, 255, 0.1)', 'transparent']
             }
             start={{ x: 0, y: 0 }}
@@ -466,7 +471,7 @@ export function HomeSecurityAndInviteCards({
               <Path
                 d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"
                 fill={isDark ? '#A855F7' : '#9333EA'}
-                opacity={0.12}
+                opacity={0.14}
               />
             </Svg>
           </View>
@@ -490,8 +495,8 @@ export function HomeSecurityAndInviteCards({
                   styles.moneyAuraGlow,
                   {
                     backgroundColor: isDark
-                      ? 'rgba(245, 158, 11, 0.28)'
-                      : 'rgba(245, 158, 11, 0.18)',
+                      ? 'rgba(245, 158, 11, 0.35)'
+                      : 'rgba(245, 158, 11, 0.22)',
                   },
                 ]}
               />
@@ -500,11 +505,11 @@ export function HomeSecurityAndInviteCards({
                   styles.moneyIconBadge,
                   {
                     backgroundColor: isDark
-                      ? 'rgba(168, 85, 247, 0.18)'
+                      ? 'rgba(168, 85, 247, 0.22)'
                       : '#FFFFFF',
                     borderColor: isDark
-                      ? 'rgba(168, 85, 247, 0.35)'
-                      : 'rgba(147, 51, 234, 0.22)',
+                      ? 'rgba(192, 132, 252, 0.52)'
+                      : 'rgba(147, 51, 234, 0.40)',
                     transform: [
                       { translateY: moneyFloatY },
                       { rotate: moneyRotationDeg },
@@ -526,11 +531,11 @@ export function HomeSecurityAndInviteCards({
                 styles.microPill,
                 {
                   backgroundColor: isDark
-                    ? 'rgba(245, 158, 11, 0.18)'
-                    : 'rgba(245, 158, 11, 0.14)',
+                    ? 'rgba(245, 158, 11, 0.20)'
+                    : 'rgba(245, 158, 11, 0.16)',
                   borderColor: isDark
-                    ? 'rgba(245, 158, 11, 0.42)'
-                    : 'rgba(245, 158, 11, 0.35)',
+                    ? 'rgba(245, 158, 11, 0.48)'
+                    : 'rgba(245, 158, 11, 0.38)',
                 },
               ]}
             >
@@ -545,7 +550,7 @@ export function HomeSecurityAndInviteCards({
             </View>
           </View>
 
-          {/* Middle Body: Title & Reward Promise */}
+          {/* Middle Body: Title & Reward Promise with WCAG AA Contrast */}
           <View style={styles.cardBody}>
             <Text
               numberOfLines={1}
@@ -574,7 +579,7 @@ export function HomeSecurityAndInviteCards({
                 styles.techChip,
                 {
                   backgroundColor: isDark
-                    ? 'rgba(255, 255, 255, 0.07)'
+                    ? 'rgba(255, 255, 255, 0.08)'
                     : 'rgba(0, 0, 0, 0.04)',
                 },
               ]}
@@ -582,7 +587,7 @@ export function HomeSecurityAndInviteCards({
               <Text
                 style={[
                   styles.techChipText,
-                  { color: isDark ? 'rgba(255, 255, 255, 0.7)' : '#4C3B68' },
+                  { color: isDark ? 'rgba(255, 255, 255, 0.78)' : '#4C3B68' },
                 ]}
               >
                 ₹100 Cash
@@ -594,11 +599,11 @@ export function HomeSecurityAndInviteCards({
                 styles.actionCircleBtn,
                 {
                   backgroundColor: isDark
-                    ? 'rgba(255, 255, 255, 0.1)'
+                    ? 'rgba(255, 255, 255, 0.12)'
                     : '#FFFFFF',
                   borderColor: isDark
-                    ? 'rgba(255, 255, 255, 0.15)'
-                    : 'rgba(147, 51, 234, 0.2)',
+                    ? 'rgba(255, 255, 255, 0.18)'
+                    : 'rgba(147, 51, 234, 0.25)',
                 },
               ]}
             >
@@ -619,16 +624,16 @@ export function HomeSecurityAndInviteCards({
 const styles = StyleSheet.create({
   gridRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: HOME_SPACING.sm,
     width: '100%',
-    paddingHorizontal: 20
+    paddingHorizontal: HOME_SPACING.md, // 16px normalized
   },
   cardWrapper: {
     flex: 1,
   },
   twinCard: {
-    borderRadius: 22,
-    borderWidth: 0.1,
+    borderRadius: HOME_RADIUS.medium, // 16px normalized
+    borderWidth: 1.2,
     padding: 15,
     minHeight: 164,
     justifyContent: 'space-between',
