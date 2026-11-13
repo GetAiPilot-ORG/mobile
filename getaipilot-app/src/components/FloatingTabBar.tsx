@@ -1,4 +1,5 @@
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { LinearGradient } from 'expo-linear-gradient';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import {
   Home01Icon,
@@ -144,6 +145,18 @@ export function FloatingTabBar({ state, descriptors, navigation, emitter, naviga
 
   return (
     <View style={[styles.dockRoot, webRootStyle]} pointerEvents="box-none">
+      {/* Soft gradient fade behind floating bottom nav for seamless scroll blending */}
+      <LinearGradient
+        colors={[
+          'transparent',
+          isDark ? 'rgba(20, 19, 27, 0.72)' : 'rgba(248, 249, 253, 0.85)',
+          isDark ? '#14131B' : '#F8F9FD',
+        ]}
+        locations={[0, 0.5, 1]}
+        style={styles.bottomGradientFade}
+        pointerEvents="none"
+      />
+
       {/* Floating Pill Tab Bar with frosted glassmorphic background */}
       <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
         <View
@@ -271,13 +284,13 @@ export function FloatingTabBar({ state, descriptors, navigation, emitter, naviga
                     <HugeiconsIcon
                       icon={IconComponent}
                       size={19}
-                      color={isDark ? '#A19BB5' : '#696478'}
+                      color={isDark ? '#B4AECA' : '#555065'}
                       strokeWidth={1.8}
                     />
                     <Text
                       style={[
                         styles.inactiveLabel,
-                        { color: isDark ? '#A19BB5' : '#696478' },
+                        { color: isDark ? '#B4AECA' : '#555065' },
                       ]}
                       numberOfLines={1}
                     >
@@ -301,6 +314,14 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     zIndex: 9999,
+  },
+  bottomGradientFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 100,
+    zIndex: 9998,
   },
   floatingWrapper: {
     position: 'absolute',
@@ -353,7 +374,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   inactiveLabel: {
-    fontSize: 9.5,
+    fontSize: 11, // At least 11px for WCAG AA readability as requested
     fontWeight: '600',
     letterSpacing: -0.1,
     includeFontPadding: false,

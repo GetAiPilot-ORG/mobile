@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
   Pressable,
   StyleSheet,
   Platform,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { useSegments } from 'expo-router';
 import Animated, {
@@ -13,101 +13,85 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
 
 import { ChatBotLogo } from './ChatBotLogo';
 import { ChatWindow } from './ChatWindow';
 import { useTheme } from '@/theme';
 
+type ScrollVisibilityListener = (visible: boolean) => void;
+const scrollListeners = new Set<ScrollVisibilityListener>();
+
+/** Global setter to show or hide the floating chatbot button */
+export const setChatbotVisible = (visible: boolean) => {
+  scrollListeners.forEach((fn) => fn(visible));
+};
+
+/**
+ * Hook to attach to any ScrollView / FlatList onScroll event.
+ * Auto-hides the chatbot when scrolling down, reappears when scrolling up.
+ */
+export const useChatbotScroll = () => {
+  const lastOffsetY = useRef(0);
+  const onScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const currentOffsetY = event.nativeEvent.contentOffset.y;
+    const diff = currentOffsetY - lastOffsetY.current;
+
+    if (Math.abs(diff) > 12) {
+      if (diff > 0 && currentOffsetY > 50) {
+        // Scrolling down -> auto-hide so it never covers row content or timestamps
+        setChatbotVisible(false);
+      } else {
+        // Scrolling up -> smoothly reappear
+        setChatbotVisible(true);
+      }
+      lastOffsetY.current = currentOffsetY;
+    }
+  }, []);
+
+  return { onScroll, scrollEventThrottle: 16 };
+};
+
 export const Chatbot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const { isDark } = useTheme();
 
-  // Vertical drag position for convenience on mobile screens
+  // Vertical hide/show animation on scroll
   const translateY = useSharedValue(0);
-  const contextY = useSharedValue(0);
+  const opacity = useSharedValue(1);
   const pressScale = useSharedValue(1);
 
-  // Horizontal retraction offset: 0 = fully visible (26px), 16 = small docked handle (10px peek)
-  const translateX = useSharedValue(0);
-  const isDocked = useSharedValue(false);
-  const retractTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Interactive gaze shared values steered by touch/pan
-  const gazeX = useSharedValue(0);
-  const gazeY = useSharedValue(0);
-
-  // Auto-retract to slim handle after 4 seconds of inactivity so it never covers cards or arrows
-  const scheduleAutoRetract = () => {
-    if (retractTimeoutRef.current) clearTimeout(retractTimeoutRef.current);
-    retractTimeoutRef.current = setTimeout(() => {
-      translateX.value = withSpring(16, { damping: 18, stiffness: 180 });
-      isDocked.value = true;
-    }, 4500);
-  };
-
   useEffect(() => {
-    scheduleAutoRetract();
-    return () => {
-      if (retractTimeoutRef.current) clearTimeout(retractTimeoutRef.current);
-    };
-  }, []);
-
-  const panGesture = Gesture.Pan()
-    .onStart(() => {
-      contextY.value = translateY.value;
-      // Spring out if docked
-      translateX.value = withSpring(0, { damping: 15 });
-      isDocked.value = false;
-    })
-    .onUpdate((event) => {
-      // Allow moving up and down within screen bounds (-260 to 180)
-      const nextY = contextY.value + event.translationY;
-      if (nextY >= -260 && nextY <= 180) {
-        translateY.value = nextY;
-      }
-
-      // If user drags towards the right edge, dock it early
-      if (event.translationX > 8) {
-        translateX.value = Math.min(16, event.translationX);
-      }
-
-      // Steer LiveOrb gaze in the direction of the drag
-      gazeY.value = Math.max(-2, Math.min(2, event.translationY * 0.05));
-      gazeX.value = Math.max(-2, Math.min(2, event.translationX * 0.05));
-    })
-    .onEnd((event) => {
-      translateY.value = withSpring(translateY.value, { damping: 20 });
-      // Reset steered gaze back smoothly so autonomous glancing resumes
-      gazeX.value = withSpring(0, { damping: 15 });
-      gazeY.value = withSpring(0, { damping: 15 });
-
-      if (event.translationX > 10) {
-        translateX.value = withSpring(16, { damping: 18 });
-        isDocked.value = true;
+    const handleVisibility: ScrollVisibilityListener = (visible) => {
+      if (visible) {
+        translateY.value = withSpring(0, { damping: 18, stiffness: 220 });
+        opacity.value = withTiming(1, { duration: 180 });
       } else {
-        translateX.value = withSpring(0, { damping: 18 });
-        isDocked.value = false;
-        scheduleAutoRetract();
+        translateY.value = withSpring(70, { damping: 18, stiffness: 220 });
+        opacity.value = withTiming(0, { duration: 150 });
       }
-    });
+    };
 
-  const animatedTabStyle = useAnimatedStyle(() => ({
+    scrollListeners.add(handleVisibility);
+    return () => {
+      scrollListeners.delete(handleVisibility);
+    };
+  }, [opacity, translateY]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
     transform: [
       { translateY: translateY.value },
-      { translateX: translateX.value },
       { scale: pressScale.value },
     ],
+    opacity: opacity.value,
   }));
 
   // Hide on auth & onboarding routes
   const segments = useSegments();
   const currentSegment = segments[0] as string | undefined;
   const isAuthOrOnboarding =
-    currentSegment === '(auth)' ||
-    currentSegment === 'onboarding';
+    currentSegment === '(auth)' || currentSegment === 'onboarding';
 
   if (isAuthOrOnboarding) {
     return null;
@@ -115,81 +99,53 @@ export const Chatbot: React.FC = () => {
 
   const handlePress = () => {
     if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    // If it was docked, first tap pops it out, second tap opens, or open immediately
-    if (isDocked.value) {
-      translateX.value = withSpring(0, { damping: 15 });
-      isDocked.value = false;
-      scheduleAutoRetract();
-      return;
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch {}
     }
     setIsOpen(true);
   };
 
   const handlePressIn = () => {
-    pressScale.value = withSpring(0.96, { damping: 15 });
-    translateX.value = withSpring(0, { damping: 15 });
-    isDocked.value = false;
+    pressScale.value = withSpring(0.92, { damping: 15 });
   };
 
   const handlePressOut = () => {
     pressScale.value = withSpring(1, { damping: 15 });
-    scheduleAutoRetract();
   };
 
   return (
     <>
-      {/* Website Signature Vertical Edge Tab (Narrow 26px, vertically centered, auto-retracting handle) */}
-      <GestureDetector gesture={panGesture}>
-        <Animated.View
-          style={[
-            styles.verticalTab,
-            animatedTabStyle,
-            {
-              backgroundColor: isDark ? '#18181B' : '#F8F8F7',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(15, 23, 42, 0.12)',
-              shadowColor: isDark ? '#000000' : 'rgba(15, 23, 42, 0.16)',
-            },
-          ]}
+      {/* Floating Chat Button: Bottom-Right, positioned cleanly above the bottom nav */}
+      <Animated.View
+        style={[
+          styles.floatingButtonContainer,
+          animatedStyle,
+          {
+            backgroundColor: isDark ? '#1C1A25' : '#FFFFFF',
+            borderColor: isDark ? 'rgba(185, 168, 255, 0.28)' : 'rgba(112, 85, 232, 0.20)',
+            shadowColor: isDark ? '#000000' : 'rgba(112, 85, 232, 0.32)',
+          },
+        ]}
+      >
+        <Pressable
+          cssInterop={false}
+          onPress={handlePress}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          accessibilityRole="button"
+          accessibilityLabel="Open Chatbot AI Assistant"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.touchArea}
         >
-          <Pressable
-            onPress={handlePress}
-            onPressIn={handlePressIn}
-            onPressOut={handlePressOut}
-            accessibilityRole="button"
-            accessibilityLabel="Open Chatbot"
-            hitSlop={{ top: 10, bottom: 10, left: 14, right: 6 }}
-            style={styles.touchableArea}
-          >
-            {/* Signature Interactive LiveOrb Character */}
-            <ChatBotLogo
-              size={18}
-              variant="black"
-              isAnimated={true}
-              interactive={true}
-              gazeX={gazeX}
-              gazeY={gazeY}
-            />
-
-            {/* Rotated Vertical CHATBOT Label matching getaipilot.in */}
-            <View style={styles.labelContainer}>
-              <Text
-                style={[
-                  styles.labelText,
-                  {
-                    color: isDark ? '#F4F4F5' : '#0F172A',
-                  },
-                ]}
-                numberOfLines={1}
-                ellipsizeMode="clip"
-              >
-                CHATBOT
-              </Text>
-            </View>
-          </Pressable>
-        </Animated.View>
-      </GestureDetector>
+          <ChatBotLogo
+            size={24}
+            variant="black"
+            isAnimated={true}
+            interactive={true}
+          />
+        </Pressable>
+      </Animated.View>
 
       {/* Chat Window Dialog / Sheet */}
       {isOpen && (
@@ -204,51 +160,28 @@ export const Chatbot: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  verticalTab: {
+  floatingButtonContainer: {
     position: 'absolute',
-    right: 0,
-    top: '46%',
-    zIndex: 9999,
-    width: 26,
-    height: 94,
-    borderTopLeftRadius: 10,
-    borderBottomLeftRadius: 10,
-    borderWidth: 1,
-    borderRightWidth: 0,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    shadowOffset: { width: -3, height: 2 },
-    shadowOpacity: 0.16,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  touchableArea: {
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingTop: 6,
-    paddingBottom: 4,
-    gap: 4,
-  },
-  labelContainer: {
-    width: 26,
-    height: 52,
+    right: 18,
+    bottom: 96, // Clears above the floating bottom nav (which sits at bottom: 24, height: 60)
+    zIndex: 9998,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    elevation: 8,
   },
-  labelText: {
-    width: 56,
-    height: 16,
-    textAlign: 'center',
-    fontSize: 8,
-    fontWeight: '800',
-    letterSpacing: 0.7,
-    textTransform: 'uppercase',
-    opacity: 0.88,
-    transform: [{ rotate: '-90deg' }],
-    includeFontPadding: false,
+  touchArea: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 
