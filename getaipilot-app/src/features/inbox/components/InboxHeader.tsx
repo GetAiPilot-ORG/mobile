@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform, TouchableOpacity } from 'react-native';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import {
   BubbleChatAddIcon,
@@ -135,14 +135,12 @@ export const InboxHeader: React.FC<InboxHeaderProps> = ({
         )}
       </View>
 
-      <Pressable
+      <TouchableOpacity
         cssInterop={false}
-        style={({ pressed }) => [
+        style={[
           styles.newChatBtn,
           {
-            backgroundColor: colors.buttonPrimary,
-            transform: [{ scale: pressed ? 0.96 : 1 }],
-            opacity: pressed ? 0.9 : 1,
+            backgroundColor: colors.buttonPrimary
           },
         ]}
         onPress={() => {
@@ -161,7 +159,6 @@ export const InboxHeader: React.FC<InboxHeaderProps> = ({
           size={16}
           color={colors.buttonPrimaryForeground}
           strokeWidth={2.2}
-          style={{ marginRight: 6 }}
         />
         <Text
           style={[
@@ -171,7 +168,7 @@ export const InboxHeader: React.FC<InboxHeaderProps> = ({
         >
           New chat
         </Text>
-      </Pressable>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -181,9 +178,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 14,
+    paddingHorizontal: 20,
+    paddingTop: 40,
+    paddingBottom: 10,
   },
   titleRow: {
     flexDirection: 'row',
@@ -219,6 +216,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 4,
     elevation: 3,
+    gap: 6,
   },
   newChatText: {
     fontSize: 13,
