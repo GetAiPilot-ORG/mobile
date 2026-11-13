@@ -1,5 +1,6 @@
 import React from 'react';
 import { Text } from 'react-native';
+import { InboxChannel } from '../types';
 
 export interface SlaInfo {
   isOverdue: boolean;
@@ -109,6 +110,81 @@ export function renderHighlightedText(
         : part;
     })
   );
+}
+
+/**
+ * Resolves contact title and fallback info when profile data is incomplete or missing.
+ */
+export function resolveContactProfile(
+  contact?: { name?: string | null; handle_or_phone?: string | null; avatar_url?: string | null } | null,
+  channel?: InboxChannel
+): {
+  displayName: string;
+  isDefaultTitle: boolean;
+  avatarUrl?: string;
+} {
+  const rawName = (contact?.name || '').trim();
+  const rawHandleOrPhone = (contact?.handle_or_phone || '').trim();
+
+  // Check if name is valid (not empty and not 'null', 'undefined', 'unknown')
+  const isValidName =
+    rawName.length > 0 &&
+    !['null', 'undefined', 'unknown', 'none'].includes(rawName.toLowerCase());
+
+  if (isValidName) {
+    return {
+      displayName: rawName,
+      isDefaultTitle: false,
+      avatarUrl: contact?.avatar_url || undefined,
+    };
+  }
+
+  // If name is missing, try handle or phone
+  const isValidHandleOrPhone =
+    rawHandleOrPhone.length > 0 &&
+    !['null', 'undefined', 'unknown'].includes(rawHandleOrPhone.toLowerCase());
+
+  if (isValidHandleOrPhone) {
+    let formatted = rawHandleOrPhone;
+    if (/^\d{8,15}$/.test(rawHandleOrPhone)) {
+      formatted = `+${rawHandleOrPhone}`;
+    } else if (channel === 'telegram' || channel === 'instagram') {
+      if (!formatted.startsWith('@') && !/^\+/.test(formatted)) {
+        formatted = `@${formatted}`;
+      }
+    }
+    return {
+      displayName: formatted,
+      isDefaultTitle: false,
+      avatarUrl: contact?.avatar_url || undefined,
+    };
+  }
+
+  // Showcase default title matching channel and existing design
+  let defaultTitle = 'Customer';
+  switch (channel) {
+    case 'whatsapp':
+      defaultTitle = 'WhatsApp User';
+      break;
+    case 'telegram':
+      defaultTitle = 'Telegram User';
+      break;
+    case 'instagram':
+      defaultTitle = 'Instagram User';
+      break;
+    case 'facebook':
+      defaultTitle = 'Facebook User';
+      break;
+    default:
+      defaultTitle = 'Customer';
+      break;
+  }
+
+  return {
+    displayName: defaultTitle,
+    isDefaultTitle: true,
+    avatarUrl: contact?.avatar_url || undefined,
+  };
 }
 
 

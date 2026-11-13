@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import {
@@ -7,6 +7,7 @@ import {
   InstagramIcon,
   Facebook01Icon,
   BotMessageSquareIcon,
+  UserIcon,
 } from '@/constants/icons';
 import { InboxChannel } from '../types';
 import { useTheme } from '@/theme';
@@ -17,6 +18,7 @@ interface DeterministicAvatarProps {
   avatarUrl?: string;
   channel: InboxChannel;
   isBotActive?: boolean;
+  isDefaultProfile?: boolean;
   size?: number;
 }
 
@@ -49,10 +51,17 @@ const CHANNEL_ICONS: Record<InboxChannel, { icon: any; color: string; bg: string
 
 function getInitials(name: string, phoneOrHandle?: string): string {
   const clean = (name || phoneOrHandle || '').trim();
-  if (!clean) return 'U';
+  if (!clean) return '';
 
+  // If identifier is a phone number or non-alphabetic, don't show awkward '#' or digits
   if (/^(\+|\d)/.test(clean)) {
-    return '#';
+    return '';
+  }
+
+  // If it's a generic default title, return empty to trigger default user icon
+  const lower = clean.toLowerCase();
+  if (['customer', 'whatsapp user', 'telegram user', 'instagram user', 'facebook user', 'guest customer'].includes(lower)) {
+    return '';
   }
 
   const parts = clean.split(/\s+/).filter(Boolean);
@@ -77,9 +86,16 @@ export const DeterministicAvatar: React.FC<DeterministicAvatarProps> = ({
   avatarUrl,
   channel,
   isBotActive = false,
+  isDefaultProfile = false,
   size = 46,
 }) => {
   const { isDark } = useTheme();
+  const [imageError, setImageError] = useState<boolean>(false);
+
+  // Reset image error state if avatarUrl prop changes
+  useEffect(() => {
+    setImageError(false);
+  }, [avatarUrl]);
 
   const initials = useMemo(() => getInitials(name, phoneOrHandle), [name, phoneOrHandle]);
 
@@ -93,15 +109,46 @@ export const DeterministicAvatar: React.FC<DeterministicAvatarProps> = ({
   const channelBadgeSize = Math.max(16, Math.round(size * 0.38));
   const channelIconSize = Math.max(10, Math.round(size * 0.23));
 
+  const hasValidImage =
+    !!avatarUrl &&
+    !imageError &&
+    avatarUrl.trim().length > 0 &&
+    avatarUrl !== 'null' &&
+    avatarUrl !== 'undefined';
+
+  const shouldShowDefaultUserIcon = isDefaultProfile || !initials;
+
   return (
     <View style={[styles.container, { width: size, height: size }]}>
       {/* Avatar Circle / Rounded Card */}
-      {avatarUrl ? (
+      {hasValidImage ? (
         <Image
           source={{ uri: avatarUrl }}
           style={[styles.avatar, { width: size, height: size, borderRadius: size * 0.34 }]}
           resizeMode="cover"
+          onError={() => setImageError(true)}
         />
+      ) : shouldShowDefaultUserIcon ? (
+        <View
+          style={[
+            styles.avatar,
+            {
+              width: size,
+              height: size,
+              borderRadius: size * 0.34,
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : palette.bg,
+              justifyContent: 'center',
+              alignItems: 'center',
+            },
+          ]}
+        >
+          <HugeiconsIcon
+            icon={UserIcon}
+            size={Math.round(size * 0.48)}
+            color={isDark ? '#E2E8F0' : palette.text}
+            strokeWidth={2}
+          />
+        </View>
       ) : (
         <View
           style={[
@@ -111,6 +158,8 @@ export const DeterministicAvatar: React.FC<DeterministicAvatarProps> = ({
               height: size,
               borderRadius: size * 0.34,
               backgroundColor: palette.bg,
+              justifyContent: 'center',
+              alignItems: 'center',
             },
           ]}
         >
@@ -176,6 +225,9 @@ const styles = StyleSheet.create({
   container: {
     position: 'relative',
     flexShrink: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
   },
   avatar: {
     alignItems: 'center',
@@ -185,6 +237,9 @@ const styles = StyleSheet.create({
   initials: {
     fontWeight: '700',
     letterSpacing: -0.2,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   channelBadge: {
     position: 'absolute',
