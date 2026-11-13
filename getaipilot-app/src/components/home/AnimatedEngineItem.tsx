@@ -21,7 +21,7 @@ interface AnimatedEngineItemProps {
   item: EngineItemData;
   index: number;
   bgColor: string;
-  textColor: string;
+  // textColor: string;
   onPress: () => void;
   cycleTick?: number;
 }
@@ -30,7 +30,7 @@ export function AnimatedEngineItem({
   item,
   index,
   bgColor,
-  textColor,
+  // textColor,
   onPress,
   cycleTick = 0,
 }: AnimatedEngineItemProps) {
@@ -288,14 +288,7 @@ export function AnimatedEngineItem({
       </View>
 
       {/* Label */}
-      <Text
-        numberOfLines={1}
-        adjustsFontSizeToFit
-        minimumFontScale={0.8}
-        style={[styles.label, { color: textColor }]}
-      >
-        {item.name.replace('Smart ', '').replace(' Pilot', '')}
-      </Text>
+
     </Pressable>
   );
 }

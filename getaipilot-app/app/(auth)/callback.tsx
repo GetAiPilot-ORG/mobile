@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Linking from 'expo-linking';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../src/lib/supabase';
 import { useAuthStore } from '../../src/core/store/authStore';
@@ -40,22 +41,36 @@ export default function AuthCallbackScreen() {
 
       // Check whether user needs onboarding (matching bot-dashboard)
       try {
+        const globalCached = await AsyncStorage.getItem('@onboarding_completed_global').catch(() => null);
+        const cached = await AsyncStorage.getItem(`onboarding_completed_${session.user.id}`).catch(() => null);
+        if (globalCached === 'true' || cached === 'true') {
+          useAuthStore.getState().setOnboardingCompleted(true);
+          router.replace('/(tabs)' as any);
+          return;
+        }
+
         const { data: profile } = await supabase
           .from('profiles')
-          .select('onboarding_completed')
+          .select('onboarding_completed, account_type, business_name, full_name, first_name')
           .eq('id', session.user.id)
           .maybeSingle();
 
-        if (!profile?.onboarding_completed) {
+        const isDone = Boolean(
+          profile?.onboarding_completed || profile?.account_type || profile?.business_name || profile?.full_name || profile?.first_name
+        );
+
+        if (isDone) {
+          useAuthStore.getState().setOnboardingCompleted(true);
+          await AsyncStorage.setItem(`onboarding_completed_${session.user.id}`, 'true').catch(() => {});
+          await AsyncStorage.setItem('@onboarding_completed_global', 'true').catch(() => {});
+          router.replace('/(tabs)' as any);
+        } else {
           useAuthStore.getState().setOnboardingCompleted(false);
           router.replace('/onboarding' as any);
-        } else {
-          useAuthStore.getState().setOnboardingCompleted(true);
-          router.replace('/(tabs)' as any);
         }
       } catch (e) {
         console.warn('[Callback] Profile onboarding check fallback:', e);
-        router.replace('/onboarding' as any);
+        router.replace('/(tabs)' as any);
       }
     };
 

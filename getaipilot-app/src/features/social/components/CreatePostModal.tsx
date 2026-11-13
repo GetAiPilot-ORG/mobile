@@ -22,10 +22,18 @@ import { apiClient } from '../../../core/api/client';
 import { useTheme } from '@/theme';
 import { useProductPalette } from '@/components/ProductUI';
 
+export interface InitialMediaItem {
+  url: string;
+  type?: 'image' | 'video';
+  localUri?: string;
+  fileName?: string;
+}
+
 interface CreatePostModalProps {
   visible: boolean;
   connectedAccounts: any[];
   initialCaption?: string;
+  initialMedia?: InitialMediaItem[];
   onClose: () => void;
   onSubmit: (payload: {
     caption: string;
@@ -168,6 +176,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   visible,
   connectedAccounts = [],
   initialCaption,
+  initialMedia,
   onClose,
   onSubmit,
   isLoading,
@@ -185,7 +194,17 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
   const [caption, setCaption] = useState(initialCaption || '');
   const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
-  const [attachedMedia, setAttachedMedia] = useState<UploadedMediaItem[]>([]);
+  const [attachedMedia, setAttachedMedia] = useState<UploadedMediaItem[]>(() => {
+    if (initialMedia && initialMedia.length > 0) {
+      return initialMedia.map((m) => ({
+        localUri: m.localUri || m.url,
+        publicUrl: m.url,
+        type: m.type || (m.url.endsWith('.mp4') || m.url.endsWith('.mov') ? 'video' : 'image'),
+        fileName: m.fileName,
+      }));
+    }
+    return [];
+  });
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [uploadStatusText, setUploadStatusText] = useState('');
   const [postMode, setPostMode] = useState<'now' | 'schedule'>('now');
@@ -232,6 +251,25 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
       setCaption(initialCaption);
     }
   }, [initialCaption]);
+
+  // Sync initial media from trends or external triggers
+  useEffect(() => {
+    if (visible && initialMedia && initialMedia.length > 0) {
+      setAttachedMedia(
+        initialMedia.map((m) => ({
+          localUri: m.localUri || m.url,
+          publicUrl: m.url,
+          type: m.type || (m.url.endsWith('.mp4') || m.url.endsWith('.mov') ? 'video' : 'image'),
+          fileName: m.fileName,
+        }))
+      );
+      if (initialMedia.some((m) => m.type === 'video' || m.url.endsWith('.mp4') || m.url.endsWith('.mov'))) {
+        setInstagramPostType('reel');
+      }
+    } else if (!visible) {
+      setAttachedMedia([]);
+    }
+  }, [visible, initialMedia]);
 
   // Map connected accounts from QuickPost format + add all supported platforms
   const resolvedAccounts = useMemo(() => {

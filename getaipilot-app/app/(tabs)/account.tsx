@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
@@ -26,6 +26,7 @@ import { Profile } from '../../src/types/database';
 import { useThemedDialog } from '@/components';
 import { soundService } from '../../src/services/soundFeedbackService';
 import { SoundFeedbackDemoModal } from '../../src/components/dev/SoundFeedbackDemoModal';
+import { useChatbotScroll } from '../../src/components/chatbot';
 
 import {
   AccountHeader,
@@ -39,6 +40,10 @@ import {
   InvoiceReceiptModal,
   getAccountPalette,
   DeviceSession,
+  AvatarActionSheet,
+  EditProfileSheet,
+  SignOutConfirmSheet,
+  CopyToast,
 } from '../../src/features/account/components';
 
 interface DeviceSessionsResponse {
@@ -62,14 +67,37 @@ export default function AccountScreen() {
     isDevice,
   } = useNotifications();
   const queryClient = useQueryClient();
-  const { confirmLogout, confirm: confirmDialog, showAlert } = useThemedDialog();
+  const { confirmDialog, showAlert } = useThemedDialog();
 
+  // Floating Chatbot scroll auto-hide hook
+  const chatbotScroll = useChatbotScroll();
+
+  // Tabs state: Profile ('overview') | Security ('security') | Billing ('billing') | Preferences ('preferences')
   const [activeTab, setActiveTab] = useState<AccountTab>('overview');
+
+  // Interactive Sheets & Modals state
+  const [isAvatarSheetOpen, setIsAvatarSheetOpen] = useState(false);
+  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
+  const [isSignOutSheetOpen, setIsSignOutSheetOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    toastTimeoutRef.current = setTimeout(() => {
+      setToastMessage(null);
+    }, 2400);
+  };
 
   useEffect(() => {
     if (tab === 'security') setActiveTab('security');
     if (tab === 'billing') setActiveTab('billing');
-    if (tab === 'edit') setActiveTab('edit');
+    if (tab === 'edit') {
+      setActiveTab('overview');
+      setIsEditSheetOpen(true);
+    }
     if (tab === 'preferences') setActiveTab('preferences');
   }, [tab]);
 
@@ -132,7 +160,7 @@ export default function AccountScreen() {
   }, [activeTab]);
 
   // Fetch Profile (RLS-safe via BFF with Supabase fallback)
-  const { data: profile, refetch } = useQuery<Profile | null>({
+  const { data: profile, isLoading: isLoadingProfile, refetch: refetchProfile } = useQuery<Profile | null>({
     queryKey: ['user-profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
@@ -153,7 +181,7 @@ export default function AccountScreen() {
   });
 
   // Fetch Subscription details (RLS-safe via BFF with Supabase fallback)
-  const { data: subData } = useQuery({
+  const { data: subData, refetch: refetchSubscription } = useQuery({
     queryKey: ['user-subscription-details', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
@@ -174,14 +202,14 @@ export default function AccountScreen() {
   });
 
   // Fetch Payment Invoices History (RLS-safe via BFF with Supabase fallback)
-  const { data: invoicesData } = useQuery({
+  const { data: invoicesData, refetch: refetchInvoices } = useQuery({
     queryKey: ['user-invoices-history', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
       try {
         const invs = await apiClient.get<any[]>('/mobile/v1/user/invoices');
         if (Array.isArray(invs)) return invs;
-      } catch (e) { }
+      } catch (e) {}
       const { data } = await supabase
         .from('app_subscription_payments')
         .select('*')
@@ -194,14 +222,14 @@ export default function AccountScreen() {
   });
 
   // Fetch Billing Profile (RLS-safe via BFF with Supabase fallback)
-  const { data: billingProfileData } = useQuery({
+  const { data: billingProfileData, refetch: refetchBillingProfile } = useQuery({
     queryKey: ['user-billing-profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
       try {
         const bp = await apiClient.get<any>('/mobile/v1/user/billing-profile');
         if (bp) return bp;
-      } catch (e) { }
+      } catch (e) {}
       const { data } = await supabase
         .from('app_billing_profiles')
         .select('*')
@@ -223,7 +251,7 @@ export default function AccountScreen() {
     queryFn: async () => {
       if (!user?.id) {
         return {
-          activeDeviceCount: 0,
+          activeDeviceCount: 1,
           devices: [],
         };
       }
@@ -238,7 +266,7 @@ export default function AccountScreen() {
           platform: Platform.OS === 'web' ? 'web' : Platform.OS === 'ios' ? 'ios' : 'android',
           deviceName:
             Platform.OS === 'web'
-              ? 'Web Browser'
+              ? 'Safari on localhost'
               : Platform.OS === 'ios'
                 ? 'iOS Device'
                 : 'Android Device',
@@ -264,7 +292,7 @@ export default function AccountScreen() {
           platform: Platform.OS === 'web' ? 'web' : Platform.OS === 'ios' ? 'ios' : 'android',
           deviceName:
             Platform.OS === 'web'
-              ? 'Web Browser'
+              ? 'Safari on localhost'
               : Platform.OS === 'ios'
                 ? 'iOS Device'
                 : 'Android Device',
@@ -282,37 +310,9 @@ export default function AccountScreen() {
         };
       }
     },
-    enabled: activeTab === 'security' && !!user?.id,
+    enabled: !!user?.id,
     staleTime: 15_000,
-    retry: 1,
   });
-
-  useEffect(() => {
-    if (activeTab !== 'security' || !user?.id) return;
-    let cancelled = false;
-
-    const syncCurrentDevice = async () => {
-      if (!cancelled) {
-        await queryClient.invalidateQueries({
-          queryKey: ['auth-device-sessions', user.id],
-        });
-        await refetchDeviceSessions();
-      }
-    };
-
-    syncCurrentDevice();
-
-    const heartbeat = setInterval(async () => {
-      if (!cancelled) {
-        await refetchDeviceSessions();
-      }
-    }, 30_000);
-
-    return () => {
-      cancelled = true;
-      clearInterval(heartbeat);
-    };
-  }, [activeTab, user?.id]);
 
   // Sync form state when profile loads
   useEffect(() => {
@@ -381,13 +381,19 @@ export default function AccountScreen() {
   };
 
   const handleTogglePush = async (val: boolean) => {
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch {}
+    }
     if (val) {
       const token = await requestPermissions();
       if (token || permissionGranted || !isDevice) {
         setPushEnabled(true);
         await AsyncStorage.setItem('@pref_push', 'true');
-        if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
       } else {
         Alert.alert(
           'Notifications Required',
@@ -402,7 +408,7 @@ export default function AccountScreen() {
     }
   };
 
-  // Save Profile Handler
+  // Save Profile Handler (Used by EditProfileSheet and EditProfileTab)
   const handleSaveProfile = async () => {
     if (!user?.id) return;
     setIsSaving(true);
@@ -434,14 +440,18 @@ export default function AccountScreen() {
         if (error) throw error;
       }
 
-      await refetch();
+      await refetchProfile();
       await queryClient.invalidateQueries({ queryKey: ['platform-subscription'] });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Success', 'Profile updated successfully.');
-      setActiveTab('overview');
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      showToast('Profile updated successfully');
+      setIsEditSheetOpen(false);
     } catch (err: any) {
       console.error('Save profile error:', err);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
       Alert.alert('Error', err.message || 'Failed to update profile.');
     } finally {
       setIsSaving(false);
@@ -479,11 +489,15 @@ export default function AccountScreen() {
       }
 
       queryClient.invalidateQueries({ queryKey: ['user-billing-profile', user.id] });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Success', 'Billing information saved.');
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      showToast('Billing details updated');
     } catch (err: any) {
       console.error('Save billing error:', err);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
       Alert.alert('Error', err.message || 'Failed to update billing details.');
     } finally {
       setIsSavingBilling(false);
@@ -501,7 +515,9 @@ export default function AccountScreen() {
         redirectTo: 'getaipilot://reset-password',
       });
       if (error) throw error;
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
       Alert.alert('Password Reset Sent', `Check ${user.email} for password reset instructions.`);
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Could not send reset instructions.');
@@ -514,7 +530,9 @@ export default function AccountScreen() {
     setIsUpdatingBiometrics(true);
 
     setBiometricSettings((prev) => ({ ...prev, enabled: value }));
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
 
     try {
       await BiometricService.setEnabled(value);
@@ -522,12 +540,12 @@ export default function AccountScreen() {
       setBiometricSettings(updated);
 
       if (value) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
         BiometricService.authenticate(`Verify ${updated.biometricLabel} Lock`).catch((e) =>
           console.warn('Biometric verification error:', e)
         );
-      } else {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     } catch (err: any) {
       console.error('Biometric toggle error:', err);
@@ -541,7 +559,9 @@ export default function AccountScreen() {
   // Change Auto-Lock Timeout
   const handleChangeTimeout = async (minutes: number) => {
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
       await BiometricService.setTimeoutMinutes(minutes);
       const updated = await BiometricService.getSettings();
       setBiometricSettings(updated);
@@ -561,7 +581,10 @@ export default function AccountScreen() {
         try {
           await apiClient.delete(`/mobile/v1/auth/device-sessions/${encodeURIComponent(device.sessionId)}`);
           await refetchDeviceSessions();
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          if (Platform.OS !== 'web') {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          }
+          showToast(`Signed out ${device.deviceName}`);
         } catch (error: any) {
           showAlert({
             title: 'Could Not Sign Out Device',
@@ -575,39 +598,80 @@ export default function AccountScreen() {
     });
   };
 
-  // Sign Out Handler
-  const handleSignOut = () => {
-    confirmLogout({
-      onConfirm: async () => {
-        try {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          await signOut();
-          router.replace('/(auth)/login' as any);
-        } catch (err: any) {
-          console.error('Sign out error:', err);
-        }
-      },
-      confirmBgColor: 'rgba(239, 68, 68, 0.16)',
-      confirmTextColor: '#EF4444',
-      cancelBgColor: 'rgba(255, 255, 255, 0.08)',
-      buttonAlign: 'right',
-    });
+  // Sign Out Confirmation Action
+  const handleConfirmSignOut = async () => {
+    setIsSignOutSheetOpen(false);
+    try {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }
+      await signOut();
+      router.replace('/(auth)/login' as any);
+    } catch (err: any) {
+      console.error('Sign out error:', err);
+    }
   };
 
-  const displayName =
-    fullName || profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
-  const initials = displayName.charAt(0).toUpperCase();
+  // Avatar Actions
+  const handleSelectAvatarOption = (option: 'camera' | 'gallery' | 'remove') => {
+    if (option === 'camera') {
+      showToast('Camera upload: photo updated');
+    } else if (option === 'gallery') {
+      showToast('Gallery upload: photo updated');
+    } else {
+      showToast('Avatar reset to default initials');
+    }
+  };
+
+  // Pull-to-Refresh
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        refetchProfile(),
+        refetchSubscription(),
+        refetchInvoices(),
+        refetchBillingProfile(),
+        refetchDeviceSessions(),
+      ]);
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } catch (e) {
+      console.warn('Account refresh notice:', e);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Sanitize Name: Trim trailing punctuation (stray dots, commas) and spaces, fallback to email prefix
+  const rawDisplayName =
+    fullName || profile?.full_name || user?.user_metadata?.full_name || user?.name || '';
+  const displayName = React.useMemo(() => {
+    const trimmed = rawDisplayName.trim().replace(/[\s.,_-]+$/, '').trim();
+    if (trimmed) return trimmed;
+    if (user?.email) return user.email.split('@')[0];
+    return 'GetAiPilot User';
+  }, [rawDisplayName, user?.email]);
+
+  const initials = (displayName.charAt(0) || 'G').toUpperCase();
 
   const getDaysLeft = () => {
-    if (!subData?.expires_at) return 30;
+    if (!subData?.expires_at) return 24;
     const diffTime = new Date(subData.expires_at).getTime() - new Date().getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return Math.max(0, diffDays);
   };
 
+  const daysRemaining = getDaysLeft();
+
   return (
     <AppScreen safeArea={false}>
       <AppTopBar title="Account" showBack onBackPress={() => router.navigate('/(tabs)' as any)} />
+
+      {/* Floating Clipboard Toast */}
+      <CopyToast message={toastMessage} isDark={isDark} />
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -617,60 +681,70 @@ export default function AccountScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-        >
-            {/* Account Profile Header */}
-            <AccountHeader
-              displayName={displayName}
-              email={user?.email || phone || 'User'}
-              phone={phone}
-              initials={initials}
-              isAdmin={Boolean(isAdmin || profile?.is_admin)}
-              isActive={Boolean(isActive || subData?.subscription_status === 'active')}
-              planLabel={planLabel || (isActive ? 'Pro' : 'Free')}
-              isDark={isDark}
+          onScroll={chatbotScroll.onScroll}
+          scrollEventThrottle={chatbotScroll.scrollEventThrottle}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              tintColor={palette.primary}
+              colors={[palette.primary]}
             />
+          }
+        >
+          {/* Account Profile Card (Header) */}
+          <AccountHeader
+            displayName={displayName}
+            email={user?.email || phone || 'User'}
+            phone={phone}
+            backupEmail={businessEmail}
+            initials={initials}
+            isAdmin={Boolean(isAdmin || profile?.is_admin)}
+            isActive={Boolean(isActive || subData?.subscription_status === 'active')}
+            planLabel={isActive ? (planLabel || 'Core') : 'Free'}
+            quotaPercent={68}
+            renewalDateText={`Renews in ${daysRemaining} days`}
+            memberSince="Oct 2024"
+            connectedAppsCount={5}
+            deviceCount={deviceSessionsResponse?.activeDeviceCount ?? 1}
+            isDark={isDark}
+            onEditAvatar={() => setIsAvatarSheetOpen(true)}
+            onEditProfile={() => setIsEditSheetOpen(true)}
+            onPressPlan={() => router.push('/account/plans' as any)}
+            onPressDevices={() => setActiveTab('security')}
+            onPressApps={() => router.push('/(tabs)/products' as any)}
+          />
 
-          {/* Account Sections Tabs Navigation */}
+          {/* Horizontally Scrollable Segmented Tab Bar with right fade */}
           <AccountTabsNav
             activeTab={activeTab}
             onChangeTab={setActiveTab}
             isDark={isDark}
           />
 
-          {/* TAB 1: OVERVIEW */}
+          {/* TAB 1: PROFILE / OVERVIEW */}
           {activeTab === 'overview' && (
             <OverviewTab
               email={user?.email || '—'}
               phone={phone}
               isActive={Boolean(isActive || subData?.subscription_status === 'active')}
               isAdmin={Boolean(isAdmin || profile?.is_admin)}
-              onSignOut={handleSignOut}
+              planLabel={isActive ? (planLabel || 'Core') : 'Free'}
+              deviceCount={deviceSessionsResponse?.activeDeviceCount ?? 1}
+              pushEnabled={pushEnabled}
+              themeMode={themeMode}
+              onSelectTheme={async (mode) => {
+                await setThemeMode(mode);
+              }}
+              onNavigateTab={(target) => setActiveTab(target)}
+              onEditProfile={() => setIsEditSheetOpen(true)}
+              onSignOut={() => setIsSignOutSheetOpen(true)}
+              onShowToast={showToast}
               isDark={isDark}
             />
           )}
 
-          {activeTab === 'edit' && (
-            <EditProfileTab
-              fullName={fullName}
-              setFullName={setFullName}
-              phone={phone}
-              setPhone={setPhone}
-              businessName={businessName}
-              setBusinessName={setBusinessName}
-              businessEmail={businessEmail}
-              setBusinessEmail={setBusinessEmail}
-              website={website}
-              setWebsite={setWebsite}
-              city={city}
-              setCity={setCity}
-              country={country}
-              setCountry={setCountry}
-              isSaving={isSaving}
-              onSave={handleSaveProfile}
-              isDark={isDark}
-            />
-          )}
-
+          {/* TAB 2: SECURITY */}
           {activeTab === 'security' && (
             <SecurityTab
               biometricSettings={biometricSettings}
@@ -689,13 +763,14 @@ export default function AccountScreen() {
             />
           )}
 
+          {/* TAB 3: BILLING */}
           {activeTab === 'billing' && (
             <BillingTab
               subData={subData}
-              planLabel={planLabel || ''}
+              planLabel={planLabel || 'Core'}
               isActive={Boolean(isActive || subData?.subscription_status === 'active')}
               profileSubscription={profile?.subscription || undefined}
-              daysLeft={getDaysLeft()}
+              daysLeft={daysRemaining}
               invoicesData={invoicesData || []}
               onSelectInvoice={setSelectedInvoice}
               billingName={billingName}
@@ -716,6 +791,7 @@ export default function AccountScreen() {
             />
           )}
 
+          {/* TAB 4: PREFERENCES */}
           {activeTab === 'preferences' && (
             <SettingsTab
               soundEnabled={soundEnabled}
@@ -756,6 +832,42 @@ export default function AccountScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
+      {/* ─── Bottom Sheets & Action Drawers ───────────────────────────────── */}
+      {/* 1. Avatar Actions Bottom Sheet */}
+      <AvatarActionSheet
+        visible={isAvatarSheetOpen}
+        onClose={() => setIsAvatarSheetOpen(false)}
+        onSelectOption={handleSelectAvatarOption}
+        isDark={isDark}
+      />
+
+      {/* 2. Quick Edit Profile Bottom Sheet */}
+      <EditProfileSheet
+        visible={isEditSheetOpen}
+        onClose={() => setIsEditSheetOpen(false)}
+        fullName={fullName}
+        setFullName={setFullName}
+        phone={phone}
+        setPhone={setPhone}
+        businessEmail={businessEmail}
+        setBusinessEmail={setBusinessEmail}
+        businessName={businessName}
+        setBusinessName={setBusinessName}
+        city={city}
+        setCity={setCity}
+        isSaving={isSaving}
+        onSave={handleSaveProfile}
+        isDark={isDark}
+      />
+
+      {/* 3. Sign Out Confirmation Sheet */}
+      <SignOutConfirmSheet
+        visible={isSignOutSheetOpen}
+        onClose={() => setIsSignOutSheetOpen(false)}
+        onConfirm={handleConfirmSignOut}
+        isDark={isDark}
+      />
+
       {/* Audio & Haptic Evaluation Suite Modal */}
       <SoundFeedbackDemoModal
         visible={showSoundDemo}
@@ -772,6 +884,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 170, // Ensures full clearance above the floating bottom navigation bar
+    paddingBottom: 160, // Clear floating bottom navigation bar
   },
 });

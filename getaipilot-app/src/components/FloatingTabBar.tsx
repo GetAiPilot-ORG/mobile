@@ -1,4 +1,5 @@
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { LinearGradient } from 'expo-linear-gradient';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import {
   Home01Icon,
@@ -144,28 +145,39 @@ export function FloatingTabBar({ state, descriptors, navigation, emitter, naviga
 
   return (
     <View style={[styles.dockRoot, webRootStyle]} pointerEvents="box-none">
-      {/* Floating Pill Tab Bar with transparent / frosted glassmorphic background */}
+      {/* Soft gradient fade behind floating bottom nav for seamless scroll blending */}
+      <LinearGradient
+        colors={[
+          'transparent',
+          isDark ? 'rgba(20, 19, 27, 0.72)' : 'rgba(248, 249, 253, 0.85)',
+          isDark ? '#14131B' : '#F8F9FD',
+        ]}
+        locations={[0, 0.5, 1]}
+        style={styles.bottomGradientFade}
+        pointerEvents="none"
+      />
+
+      {/* Floating Pill Tab Bar with frosted glassmorphic background */}
       <View style={[styles.floatingWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
         <View
           style={[
             styles.tabBarContainer,
             {
               backgroundColor: isDark
-                ? 'rgba(28, 26, 37, 0.82)'
-                : 'rgba(255, 255, 255, 0.85)',
+                ? 'rgba(28, 26, 37, 0.88)'
+                : 'rgba(255, 255, 255, 0.90)',
               borderWidth: StyleSheet.hairlineWidth,
               borderColor: isDark
-                ? 'rgba(255, 255, 255, 0.12)'
+                ? 'rgba(255, 255, 255, 0.14)'
                 : 'rgba(0, 0, 0, 0.08)',
               shadowColor: '#000000',
               shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: isDark ? 0.2 : 0.06,
+              shadowOpacity: isDark ? 0.25 : 0.08,
               shadowRadius: 18,
-              elevation: 3,
+              elevation: 4,
             },
           ]}
         >
-
           {visibleRoutes.map((route: { key: string; name: string }, index: number) => {
             const descriptor = descriptors[route.key];
             const options = descriptor ? descriptor.options : ({} as any);
@@ -221,22 +233,26 @@ export function FloatingTabBar({ state, descriptors, navigation, emitter, naviga
               <TabMotion key={route.key} active={isFocused}>
                 {isFocused ? (
                   <Pressable
+                    cssInterop={false}
                     accessibilityRole="button"
                     accessibilityState={{ selected: true }}
                     accessibilityLabel={options?.tabBarAccessibilityLabel || config.label}
                     testID={options?.tabBarButtonTestID}
                     onPress={onPress}
                     onLongPress={onLongPress}
-                    style={[
+                    style={({ pressed }) => [
                       styles.activePill,
-                      { backgroundColor: colors.accentSoft },
+                      {
+                        backgroundColor: colors.accentSoft,
+                        transform: [{ scale: pressed && !reducedMotion ? 0.96 : 1 }],
+                      },
                     ]}
                   >
                     <HugeiconsIcon
                       icon={IconComponent}
-                      size={19}
+                      size={18}
                       color={colors.accent}
-                      strokeWidth={2}
+                      strokeWidth={2.2}
                     />
                     <Text
                       style={[
@@ -250,25 +266,36 @@ export function FloatingTabBar({ state, descriptors, navigation, emitter, naviga
                   </Pressable>
                 ) : (
                   <Pressable
+                    cssInterop={false}
                     accessibilityRole="button"
                     accessibilityState={{ selected: false }}
                     accessibilityLabel={options?.tabBarAccessibilityLabel || config.label}
                     testID={options?.tabBarButtonTestID}
                     onPress={onPress}
                     onLongPress={onLongPress}
-                    style={[
+                    style={({ pressed }) => [
                       styles.inactiveButton,
                       {
                         backgroundColor: 'transparent',
+                        transform: [{ scale: pressed && !reducedMotion ? 0.94 : 1 }],
                       },
                     ]}
                   >
                     <HugeiconsIcon
                       icon={IconComponent}
-                      size={20}
-                      color={colors.textMuted}
-                      strokeWidth={1.75}
+                      size={19}
+                      color={isDark ? '#B4AECA' : '#555065'}
+                      strokeWidth={1.8}
                     />
+                    <Text
+                      style={[
+                        styles.inactiveLabel,
+                        { color: isDark ? '#B4AECA' : '#555065' },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {config.label}
+                    </Text>
                   </Pressable>
                 )}
               </TabMotion>
@@ -288,12 +315,13 @@ const styles = StyleSheet.create({
     bottom: 0,
     zIndex: 9999,
   },
-  backdropWrapper: {
+  bottomGradientFade: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    overflow: 'hidden',
+    height: 100,
+    zIndex: 9998,
   },
   floatingWrapper: {
     position: 'absolute',
@@ -309,9 +337,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-around',
     alignSelf: 'center',
-    height: 52,
-    borderRadius: 26,
-    paddingHorizontal: 6,
+    height: 58,
+    borderRadius: 29,
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderWidth: 0,
     overflow: 'hidden',
@@ -321,26 +349,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 44,
-    paddingHorizontal: 15,
-    borderRadius: 22,
-    gap: 6,
+    height: 46,
+    paddingHorizontal: 14,
+    borderRadius: 23,
+    gap: 5,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0,
-    shadowRadius: 6,
-    elevation: 0,
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
   activeLabel: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '700',
     letterSpacing: -0.2,
   },
   inactiveButton: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: 44,
-    width: 44,
-    borderRadius: 22,
+    height: 46,
+    minWidth: 46,
+    paddingHorizontal: 6,
+    borderRadius: 23,
+    gap: 2,
+  },
+  inactiveLabel: {
+    fontSize: 11, // At least 11px for WCAG AA readability as requested
+    fontWeight: '600',
+    letterSpacing: -0.1,
+    includeFontPadding: false,
   },
 });

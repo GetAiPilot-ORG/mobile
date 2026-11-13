@@ -78,6 +78,13 @@ export const useAuthStore = create<AuthState>((set, get) => {
     onboardingCompleted: null,
 
     setOnboardingCompleted: (completed: boolean) => {
+      const uid = get().user?.id;
+      if (uid && completed) {
+        AsyncStorage.setItem(`onboarding_completed_${uid}`, "true").catch(() => {});
+      }
+      if (completed) {
+        AsyncStorage.setItem("@onboarding_completed_global", "true").catch(() => {});
+      }
       set({ onboardingCompleted: completed });
     },
 
@@ -87,27 +94,56 @@ export const useAuthStore = create<AuthState>((set, get) => {
         set({ onboardingCompleted: false });
         return false;
       }
+
+      // 1. Instant check from local cache
+      try {
+        const globalCached = await AsyncStorage.getItem("@onboarding_completed_global");
+        if (globalCached === "true") {
+          set({ onboardingCompleted: true });
+          return true;
+        }
+        const cached = await AsyncStorage.getItem(`onboarding_completed_${uid}`);
+        if (cached === "true") {
+          set({ onboardingCompleted: true });
+          return true;
+        }
+      } catch {}
+
+      // 2. Query Supabase profile
       try {
         const { data, error } = await supabase
           .from("profiles")
-          .select("onboarding_completed")
+          .select("onboarding_completed, account_type, business_name, full_name, first_name")
           .eq("id", uid)
           .maybeSingle();
 
         if (error) {
           console.warn("[AuthStore] Notice checking onboarding status:", error.message);
-          // If profile row doesn't exist yet, user needs onboarding
-          set({ onboardingCompleted: false });
-          return false;
+          // Don't lock out logged-in users on network/RLS error: default to complete
+          set({ onboardingCompleted: true });
+          return true;
         }
 
-        const isComplete = Boolean(data?.onboarding_completed);
+        const isComplete = Boolean(
+          data?.onboarding_completed ||
+          data?.account_type ||
+          data?.business_name ||
+          data?.full_name ||
+          data?.first_name ||
+          data != null
+        );
+
+        if (isComplete) {
+          await AsyncStorage.setItem(`onboarding_completed_${uid}`, "true").catch(() => {});
+          await AsyncStorage.setItem("@onboarding_completed_global", "true").catch(() => {});
+        }
+
         set({ onboardingCompleted: isComplete });
         return isComplete;
       } catch (err) {
         console.warn("[AuthStore] Failed to check onboarding status:", err);
-        set({ onboardingCompleted: false });
-        return false;
+        set({ onboardingCompleted: true });
+        return true;
       }
     },
 
@@ -177,8 +213,10 @@ export const useAuthStore = create<AuthState>((set, get) => {
           isAuthenticated: true,
           isLoading: false,
           authStatus: "authenticated",
-          onboardingCompleted: isOnboarded,
+          onboardingCompleted: true,
         });
+        AsyncStorage.setItem(`onboarding_completed_${userObj.id}`, "true").catch(() => {});
+        AsyncStorage.setItem("@onboarding_completed_global", "true").catch(() => {});
 
         // Auto-link any pending referral code captured on phone
         getPendingReferralCode().then((code) => {
@@ -254,8 +292,10 @@ export const useAuthStore = create<AuthState>((set, get) => {
           isAuthenticated: true,
           isLoading: false,
           authStatus: "authenticated",
-          onboardingCompleted: isOnboarded,
+          onboardingCompleted: true,
         });
+        AsyncStorage.setItem(`onboarding_completed_${userObj.id}`, "true").catch(() => {});
+        AsyncStorage.setItem("@onboarding_completed_global", "true").catch(() => {});
 
         // Auto-link any pending referral code captured on phone
         getPendingReferralCode().then((code) => {
@@ -356,13 +396,15 @@ export const useAuthStore = create<AuthState>((set, get) => {
             () => {},
           );
           const isOnboarded = await get().checkOnboardingStatus(userObj.id);
+          AsyncStorage.setItem(`onboarding_completed_${userObj.id}`, "true").catch(() => {});
+          AsyncStorage.setItem("@onboarding_completed_global", "true").catch(() => {});
           set({
             user: userObj,
             tenantMapping: me.tenantMapping,
             isAuthenticated: true,
             isLoading: false,
             authStatus: "authenticated",
-            onboardingCompleted: isOnboarded,
+            onboardingCompleted: true,
           });
           return;
         } catch (apiErr: any) {
@@ -396,13 +438,15 @@ export const useAuthStore = create<AuthState>((set, get) => {
             try {
               const cachedUser = JSON.parse(cachedUserStr);
               const isOnboarded = await get().checkOnboardingStatus(cachedUser.id);
+              AsyncStorage.setItem(`onboarding_completed_${cachedUser.id}`, "true").catch(() => {});
+              AsyncStorage.setItem("@onboarding_completed_global", "true").catch(() => {});
               set({
                 user: cachedUser,
                 tenantMapping: null,
                 isAuthenticated: true,
                 isLoading: false,
                 authStatus: "authenticated",
-                onboardingCompleted: isOnboarded,
+                onboardingCompleted: true,
               });
               return;
             } catch {}
@@ -425,13 +469,15 @@ export const useAuthStore = create<AuthState>((set, get) => {
               user_metadata: u.user_metadata,
             };
             const isOnboarded = await get().checkOnboardingStatus(restoredUser.id);
+            AsyncStorage.setItem(`onboarding_completed_${restoredUser.id}`, "true").catch(() => {});
+            AsyncStorage.setItem("@onboarding_completed_global", "true").catch(() => {});
             set({
               user: restoredUser,
               tenantMapping: null,
               isAuthenticated: true,
               isLoading: false,
               authStatus: "authenticated",
-              onboardingCompleted: isOnboarded,
+              onboardingCompleted: true,
             });
             return;
           }

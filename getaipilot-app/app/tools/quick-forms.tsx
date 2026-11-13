@@ -7,10 +7,12 @@ import {
   Platform,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { useFocusEffect } from "expo-router";
 
 import { openAuthenticatedTemplate } from "@/lib/template-deep-link";
 import { AppScreen } from "../../src/components/AppScreen";
@@ -18,17 +20,22 @@ import { AppTopBar } from "../../src/components/AppTopBar";
 import { supabase } from "../../src/lib/supabase";
 import { QuickFormsSkeleton } from "../../src/components/skeletonScreen";
 import { useTheme, getColors } from "@/theme";
+import { useAuth } from "../../src/contexts/AuthContext";
+import { useAuthStore } from "../../src/core/store/authStore";
+import { authStorage } from "../../src/core/storage/authStorage";
 
 interface QuickForm {
   id: string;
   user_id: string;
   title?: string | null;
   name?: string | null;
+  page_title?: string | null;
+  form_name?: string | null;
   description?: string | null;
   slug?: string | null;
   status?: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
   [key: string]: unknown;
 }
 
@@ -37,49 +44,144 @@ export default function SimpleQuickFormsScreen() {
   const colors = getColors(isDark);
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
+  const { user } = useAuth();
+  const authStoreUser = useAuthStore((s) => s.user);
+
   const [forms, setForms] = useState<QuickForm[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const getResolvedUserId = useCallback(async (): Promise<string | null> => {
+    // 1. Direct user from AuthContext or Zustand store
+    if (user?.id) return user.id;
+    if (authStoreUser?.id) return authStoreUser.id;
+    const storeUser = useAuthStore.getState().user;
+    if (storeUser?.id) return storeUser.id;
+
+    // 2. Supabase session check
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData?.session?.user?.id) {
+        return sessionData.session.user.id;
+      }
+    } catch {}
+
+    // 3. If Supabase session is unhydrated, try to re-authenticate with stored token
+    try {
+      const token = await authStorage.getAccessToken();
+      const refreshToken = await authStorage.getRefreshToken();
+      if (token) {
+        const { data: refreshed } = await supabase.auth.setSession({
+          access_token: token,
+          refresh_token: refreshToken || "",
+        });
+        if (refreshed?.user?.id) {
+          return refreshed.user.id;
+        }
+      }
+    } catch {}
+
+    // 4. Supabase getUser fallback
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData?.user?.id) {
+        return userData.user.id;
+      }
+    } catch {}
+
+    return null;
+  }, [user?.id, authStoreUser?.id]);
+
   const loadForms = useCallback(async () => {
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const currentUserId = await getResolvedUserId();
 
-      if (!session?.user) {
+      if (!currentUserId) {
+        console.warn("[QuickForms] No active user session found.");
         setForms([]);
         setLoading(false);
         setRefreshing(false);
         return;
       }
 
-      const { data, error } = await supabase
+      let formsData: any[] | null = null;
+
+      // Tier 1: Try quick_forms ordered by updated_at descending
+      const res1 = await supabase
         .from("quick_forms")
         .select("*")
-        .eq("user_id", session.user.id)
-        .order("updated_at", {
-          ascending: false,
-        });
+        .eq("user_id", currentUserId)
+        .order("updated_at", { ascending: false });
 
-      if (error) {
-        throw error;
+      if (!res1.error && res1.data) {
+        formsData = res1.data;
+      } else {
+        // Tier 2: Try quick_forms ordered by created_at descending
+        const res2 = await supabase
+          .from("quick_forms")
+          .select("*")
+          .eq("user_id", currentUserId)
+          .order("created_at", { ascending: false });
+
+        if (!res2.error && res2.data) {
+          formsData = res2.data;
+        } else {
+          // Tier 3: Try quick_forms unordered
+          const res3 = await supabase
+            .from("quick_forms")
+            .select("*")
+            .eq("user_id", currentUserId);
+
+          if (!res3.error && res3.data) {
+            formsData = res3.data;
+          }
+        }
       }
 
-      setForms((data ?? []) as QuickForm[]);
+      // Tier 4: Fallback check on free_template_submissions for form-type entries
+      if (!formsData || formsData.length === 0) {
+        try {
+          const resTemplates = await supabase
+            .from("free_template_submissions")
+            .select("*")
+            .eq("user_id", currentUserId)
+            .in("niche", ["form", "quick_forms", "quick-forms", "forms"]);
+
+          if (resTemplates.data && resTemplates.data.length > 0) {
+            formsData = resTemplates.data.map((f: any) => ({
+              id: f.id,
+              user_id: f.user_id,
+              title: f.page_title || f.title || f.name || "Quick Form",
+              name: f.page_title || f.title,
+              description:
+                f.form_data?.description ||
+                f.description ||
+                "Conversational intake funnel",
+              slug: f.slug,
+              status: f.status || "active",
+              created_at: f.created_at || f.downloaded_at || new Date().toISOString(),
+              updated_at: f.updated_at || f.created_at || new Date().toISOString(),
+            }));
+          }
+        } catch {}
+      }
+
+      setForms((formsData ?? []) as QuickForm[]);
     } catch (error) {
       console.error("[QuickForms] Failed to load forms:", error);
-
-      Alert.alert(
-        "Unable to load forms",
-        "Something went wrong while loading your forms.",
-      );
+      setForms([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [getResolvedUserId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadForms();
+    }, [loadForms])
+  );
 
   useEffect(() => {
     void loadForms();
@@ -113,10 +215,15 @@ export default function SimpleQuickFormsScreen() {
     }
 
     return new Promise((resolve) => {
-      Alert.alert("Delete form?", message, [
-        { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
-        { text: "Delete", style: "destructive", onPress: () => resolve(true) },
-      ], { cancelable: true, onDismiss: () => resolve(false) });
+      Alert.alert(
+        "Delete form?",
+        message,
+        [
+          { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
+          { text: "Delete", style: "destructive", onPress: () => resolve(true) },
+        ],
+        { cancelable: true, onDismiss: () => resolve(false) },
+      );
     });
   };
 
@@ -141,10 +248,8 @@ export default function SimpleQuickFormsScreen() {
     try {
       setDeletingId(formId);
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session?.user?.id) {
+      const currentUserId = await getResolvedUserId();
+      if (!currentUserId) {
         throw new Error("Your session has expired. Please sign in again.");
       }
 
@@ -152,7 +257,7 @@ export default function SimpleQuickFormsScreen() {
         .from("quick_forms")
         .delete()
         .eq("id", formId)
-        .eq("user_id", session.user.id)
+        .eq("user_id", currentUserId)
         .select("id");
 
       if (error) {
@@ -176,18 +281,36 @@ export default function SimpleQuickFormsScreen() {
   };
 
   const getFormTitle = (form: QuickForm) => {
-    return form.title || form.name || "Untitled Form";
+    return (
+      form.title ||
+      form.name ||
+      form.page_title ||
+      form.form_name ||
+      (form as any)?.settings?.title ||
+      (form as any)?.schema?.title ||
+      "Untitled Form"
+    );
   };
 
   const getFormDescription = (form: QuickForm) => {
     if (form.description) {
       return form.description;
     }
+    if ((form as any)?.settings?.description) {
+      return (form as any).settings.description;
+    }
+    if ((form as any)?.form_data?.description) {
+      return (form as any).form_data.description;
+    }
+    if ((form as any)?.sub_title) {
+      return (form as any).sub_title;
+    }
 
     return "Create and share your customer form.";
   };
 
-  const formatDate = (date: string) => {
+  const formatDate = (date?: string | null) => {
+    if (!date) return "";
     try {
       return new Date(date).toLocaleDateString("en-IN", {
         day: "2-digit",
@@ -201,6 +324,7 @@ export default function SimpleQuickFormsScreen() {
 
   const renderForm = ({ item }: { item: QuickForm }) => {
     const isDeleting = deletingId === item.id;
+    const dateStr = item.updated_at || item.created_at;
 
     return (
       <View style={[styles.card, isDark && styles.cardDark]}>
@@ -219,11 +343,13 @@ export default function SimpleQuickFormsScreen() {
               {getFormTitle(item)}
             </Text>
 
-            <Text
-              style={[styles.updatedText, isDark && styles.updatedTextDark]}
-            >
-              Updated {formatDate(item.updated_at)}
-            </Text>
+            {dateStr ? (
+              <Text
+                style={[styles.updatedText, isDark && styles.updatedTextDark]}
+              >
+                Updated {formatDate(dateStr)}
+              </Text>
+            ) : null}
           </View>
 
           {item.status ? (
@@ -285,9 +411,7 @@ export default function SimpleQuickFormsScreen() {
   if (loading) {
     return (
       <AppScreen safeArea={false}>
-        <AppTopBar title="QuickForms" 
-        // subtitle="Manage your forms" 
-        />
+        <AppTopBar title="QuickForms" />
         <QuickFormsSkeleton />
       </AppScreen>
     );
@@ -295,45 +419,49 @@ export default function SimpleQuickFormsScreen() {
 
   return (
     <AppScreen safeArea={false}>
-      <AppTopBar
-        title="QuickForms"
-        // subtitle={
-        //   forms.length > 0
-        //     ? `${forms.length} form${forms.length === 1 ? "" : "s"}`
-        //     : "Create your first form"
-        // }
-      />
+      <AppTopBar title="QuickForms" />
 
       <View style={styles.container}>
         {forms.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <View style={[styles.emptyIcon, isDark && styles.emptyIconDark]}>
-              <Ionicons name="file-tray-outline" size={38} color={colors.accent} />
+          <ScrollView
+            contentContainerStyle={styles.emptyScrollContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+              />
+            }
+          >
+            <View style={styles.emptyContainer}>
+              <View style={[styles.emptyIcon, isDark && styles.emptyIconDark]}>
+                <Ionicons name="file-tray-outline" size={38} color={colors.accent} />
+              </View>
+
+              <Text style={[styles.emptyTitle, isDark && styles.emptyTitleDark]}>
+                No forms yet
+              </Text>
+
+              <Text
+                style={[
+                  styles.emptyDescription,
+                  isDark && styles.emptyDescriptionDark,
+                ]}
+              >
+                Create your first form to collect customer information, surveys,
+                consultations, or leads.
+              </Text>
+
+              <Pressable
+                onPress={() => void handleCreate()}
+                style={styles.createButton}
+              >
+                <Ionicons name="add" size={20} color="#FFFFFF" />
+
+                <Text style={styles.createButtonText}>Create Form</Text>
+              </Pressable>
             </View>
-
-            <Text style={[styles.emptyTitle, isDark && styles.emptyTitleDark]}>
-              No forms yet
-            </Text>
-
-            <Text
-              style={[
-                styles.emptyDescription,
-                isDark && styles.emptyDescriptionDark,
-              ]}
-            >
-              Create your first form to collect customer information, surveys,
-              consultations, or leads.
-            </Text>
-
-            <Pressable
-              onPress={() => void handleCreate()}
-              style={styles.createButton}
-            >
-              <Ionicons name="add" size={20} color="#FFFFFF" />
-
-              <Text style={styles.createButtonText}>Create Form</Text>
-            </Pressable>
-          </View>
+          </ScrollView>
         ) : (
           <>
             <View style={styles.topActions}>
@@ -396,8 +524,12 @@ function createStyles(colors: ReturnType<typeof getColors>, isDark: boolean) {
       color: colors.mutedForeground,
     },
 
+    emptyScrollContent: {
+      flexGrow: 1,
+      justifyContent: "center",
+    },
+
     emptyContainer: {
-      flex: 1,
       alignItems: "center",
       justifyContent: "center",
       paddingHorizontal: 24,
