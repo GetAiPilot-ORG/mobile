@@ -25,6 +25,7 @@ import {
   formatSmartTime,
   calculateSlaStatus,
   renderHighlightedText,
+  resolveContactProfile,
 } from '../utils/inboxHelpers';
 
 interface ConversationCardProps {
@@ -52,10 +53,9 @@ export const ConversationCard: React.FC<ConversationCardProps> = memo(({
   const { isDark } = useTheme();
   const colors = getColors(isDark);
 
-  const contactName =
-    conversation.contact.name ||
-    conversation.contact.handle_or_phone ||
-    'Customer';
+  const profileInfo = resolveContactProfile(conversation.contact, conversation.channel);
+  const contactName = profileInfo.displayName;
+  const isDefaultProfile = profileInfo.isDefaultTitle;
   const lastMsg = conversation.last_message;
   const isUnread = (conversation.unread_count || 0) > 0;
   const isBotActive =
@@ -172,14 +172,17 @@ export const ConversationCard: React.FC<ConversationCardProps> = memo(({
       )}
 
       {/* Deterministic Pastel Avatar + Badges */}
-      <DeterministicAvatar
-        name={contactName}
-        phoneOrHandle={conversation.contact.handle_or_phone}
-        avatarUrl={conversation.contact.avatar_url}
-        channel={conversation.channel}
-        isBotActive={isBotActive}
-        size={46}
-      />
+      <View style={styles.avatarWrapper}>
+        <DeterministicAvatar
+          name={contactName}
+          phoneOrHandle={conversation.contact?.handle_or_phone}
+          avatarUrl={profileInfo.avatarUrl}
+          channel={conversation.channel}
+          isBotActive={isBotActive}
+          isDefaultProfile={isDefaultProfile}
+          size={46}
+        />
+      </View>
 
       {/* Main Content Column */}
       <View style={styles.contentColumn}>
@@ -422,13 +425,18 @@ const styles = StyleSheet.create({
     padding: 13,
     marginBottom: 11,
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     borderWidth: 1,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 6,
     elevation: 2,
+  },
+  avatarWrapper: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
   },
   selectionColumn: {
     marginRight: 10,

@@ -1,7 +1,10 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { UserIcon } from '@/constants/icons';
 import { NormalizedConversation } from '../types';
 import { ChannelBadge } from './ChannelBadge';
+import { resolveContactProfile } from '../utils/inboxHelpers';
 import { useTheme, getColors } from '@/theme';
 
 interface ConversationItemProps {
@@ -40,6 +43,10 @@ export const ConversationItem: React.FC<ConversationItemProps> = ({ conversation
   const { isDark } = useTheme();
   const colors = getColors(isDark);
 
+  const profileInfo = resolveContactProfile(conversation.contact, conversation.channel);
+  const contactName = profileInfo.displayName;
+  const initial = !profileInfo.isDefaultTitle && contactName ? contactName.charAt(0).toUpperCase() : null;
+
   const time = formatMessageTime(conversation.last_message.created_at);
 
   return (
@@ -52,20 +59,29 @@ export const ConversationItem: React.FC<ConversationItemProps> = ({ conversation
       onPress={onPress}
     >
       <View style={[styles.avatar, isDark ? styles.avatarDark : styles.avatarLight]}>
-        <Text style={[styles.avatarLetter, { color: isDark ? '#F5F3FB' : '#0f172a' }]}>
-          {conversation.contact.name ? conversation.contact.name.charAt(0).toUpperCase() : 'U'}
-        </Text>
+        {initial ? (
+          <Text style={[styles.avatarLetter, { color: isDark ? '#F5F3FB' : '#0f172a' }]}>
+            {initial}
+          </Text>
+        ) : (
+          <HugeiconsIcon
+            icon={UserIcon}
+            size={18}
+            color={isDark ? '#CBD5E1' : '#64748b'}
+            strokeWidth={2}
+          />
+        )}
       </View>
       <View style={styles.info}>
         <View style={styles.topRow}>
           <Text style={[styles.name, { color: isDark ? '#F5F3FB' : '#0f172a' }]} numberOfLines={1}>
-            {conversation.contact.name}
+            {contactName}
           </Text>
           <Text style={[styles.time, { color: isDark ? '#64748b' : '#777383' }]}>{time}</Text>
         </View>
         <View style={styles.metaRow}>
           <Text style={[styles.handle, { color: isDark ? '#64748b' : '#777383' }]} numberOfLines={1}>
-            {conversation.contact.handle_or_phone}
+            {conversation.contact?.handle_or_phone || (profileInfo.isDefaultTitle ? 'Direct Thread' : '')}
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             {conversation.bot_name ? (
@@ -128,6 +144,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
+    alignSelf: 'center',
     borderWidth: 1,
     marginRight: 12,
   },
@@ -142,6 +159,9 @@ const styles = StyleSheet.create({
   avatarLetter: {
     fontSize: 18,
     fontWeight: '700',
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   info: {
     flex: 1,
