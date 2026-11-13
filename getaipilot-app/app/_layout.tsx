@@ -15,6 +15,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GlobalErrorBoundary } from "../src/components/GlobalErrorBoundary";
 import { OfflineNotice } from "../src/components/OfflineNotice";
+import { AppUpdateModal } from "../src/components/AppUpdateModal";
 import { AnimatedSplashScreen } from "../src/components/splash/AnimatedSplashScreen";
 import { AuthProvider } from "../src/contexts/AuthContext";
 import { NotificationProvider } from "../src/contexts/NotificationContext";
@@ -338,6 +339,7 @@ export default function RootLayout() {
                           <ThemedNavigationStack />
                           <Chatbot />
                           <OfflineNotice />
+                          <AppUpdateModal />
                           <SplashOverlay />
                           <HeadlessAudioBridge />
                         </ThemedDialogProvider>

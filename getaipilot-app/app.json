@@ -36,6 +36,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.getaipilot",
+      "versionCode": 1,
       "permissions": [
         "USE_BIOMETRIC",
         "USE_FINGERPRINT",
