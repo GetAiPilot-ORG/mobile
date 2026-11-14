@@ -45,7 +45,11 @@ export function initGlobalButtonSounds() {
           value: SoundPressable,
         });
       } catch {
-        (ReactNative as any).Pressable = SoundPressable;
+        try {
+          (ReactNative as any).Pressable = SoundPressable;
+        } catch {
+          // Non-writable module namespace in this environment (e.g. web/ESM)
+        }
       }
     }
 
@@ -79,7 +83,11 @@ export function initGlobalButtonSounds() {
           value: SoundTouchableOpacity,
         });
       } catch {
-        (ReactNative as any).TouchableOpacity = SoundTouchableOpacity;
+        try {
+          (ReactNative as any).TouchableOpacity = SoundTouchableOpacity;
+        } catch {
+          // Non-writable module namespace in this environment
+        }
       }
     }
 
@@ -113,7 +121,11 @@ export function initGlobalButtonSounds() {
           value: SoundTouchableHighlight,
         });
       } catch {
-        (ReactNative as any).TouchableHighlight = SoundTouchableHighlight;
+        try {
+          (ReactNative as any).TouchableHighlight = SoundTouchableHighlight;
+        } catch {
+          // Non-writable module namespace in this environment
+        }
       }
     }
   } catch (err) {

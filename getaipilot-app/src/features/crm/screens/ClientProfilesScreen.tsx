@@ -182,7 +182,9 @@ export function ClientProfilesScreen({ onBack }: ClientProfilesScreenProps = {})
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
-              onRefresh={refetch}
+              onRefresh={() => {
+                refetch();
+              }}
               tintColor="#3B82F6"
               colors={['#3B82F6']}
             />
