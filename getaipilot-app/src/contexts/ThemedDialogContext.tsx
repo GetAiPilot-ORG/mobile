@@ -115,6 +115,7 @@ export interface ThemedDialogContextType {
   showReferral: (options: ReferralDialogOptions) => void;
   showAlert: (options: SimpleAlertOptions) => void;
   confirm: (options: ConfirmDialogOptions) => void;
+  confirmDialog: (options: ConfirmDialogOptions) => void;
   prompt: (
     optionsOrTitle: PromptDialogOptions | string,
     messageOrOnConfirm?: string | ((value: string) => void | Promise<void>),
@@ -763,6 +764,7 @@ export const ThemedDialogProvider: React.FC<{ children: React.ReactNode }> = ({ 
       showReferral,
       showAlert,
       confirm,
+      confirmDialog: confirm,
       prompt,
     }),
     [showDialog, hideDialog, confirmLogout, showReferral, showAlert, confirm, prompt]
