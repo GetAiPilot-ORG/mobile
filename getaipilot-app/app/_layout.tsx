@@ -33,7 +33,7 @@ import { HeadlessAudioBridge } from "../src/services/HeadlessAudioBridge";
 LogBox.ignoreAllLogs(true);
 
 export const unstable_settings = {
-  initialRouteName: "(tabs)",
+  anchor: "(tabs)",
 };
 LogBox.ignoreLogs([
   '"shadow*" style props are deprecated. Use "boxShadow".',
@@ -225,7 +225,7 @@ function RootThemedContainer({ children }: { children: React.ReactNode }) {
   return (
     <View style={[styles.rootContainer, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? "light" : "dark"} />
-      {Platform.OS === "android" && <NavigationBar style={isDark ? "dark" : "light"} />}
+      {Platform.OS === "android" && <NavigationBar style={isDark ? "light" : "dark"} />}
       {children}
     </View>
   );

@@ -69,6 +69,7 @@ export default function HomeScreen() {
   const { expoPushToken, requestPermissions } = useNotifications();
 
   useEffect(() => {
+    if (Platform.OS === 'web') return;
     (async () => {
       try {
         const token =
@@ -78,7 +79,7 @@ export default function HomeScreen() {
         console.log('[HomeScreen] Push token notice:', err);
       }
     })();
-  }, [expoPushToken, requestPermissions]);
+  }, [expoPushToken]);
 
   // Real Workspace Telemetry from Supabase
   const { data: telemetry, isLoading: isLoadingTelemetry, refetch: refetchTelemetry } = useQuery({
