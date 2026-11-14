@@ -13,6 +13,8 @@
       "infoPlist": {
         "NSFaceIDUsageDescription": "Allow GetAIPilot to use Face ID for fast and secure authentication.",
         "NSMicrophoneUsageDescription": "Allow GetAIPilot to access your microphone to record voice notes and convert speech to text.",
+        "NSCameraUsageDescription": "Allow GetAIPilot to access your camera to take a profile picture.",
+        "NSPhotoLibraryUsageDescription": "Allow GetAIPilot to access your photo library to select a profile picture.",
         "ITSAppUsesNonExemptEncryption": false,
         "UIBackgroundModes": [
           "remote-notification"
@@ -45,8 +47,11 @@
         "VIBRATE",
         "RECORD_AUDIO",
         "MODIFY_AUDIO_SETTINGS",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
         "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT"
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.CAMERA"
       ]
     },
     "web": {
@@ -67,6 +72,13 @@
         "expo-local-authentication",
         {
           "faceIDPermission": "Allow GetAIPilot to use Face ID for fast and secure authentication."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow GetAIPilot to access your photos to set a profile picture.",
+          "cameraPermission": "Allow GetAIPilot to access your camera to take a profile picture."
         }
       ],
       "expo-image",
