@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -21,6 +21,7 @@ export interface AccountHeaderProps {
   connectedAppsCount?: number; // e.g. 5
   deviceCount?: number; // e.g. 2
   isDark: boolean;
+  isUploadingAvatar?: boolean;
   onEditAvatar?: () => void;
   onEditProfile?: () => void;
   onPressPlan?: () => void;
@@ -34,6 +35,7 @@ export const AccountHeader: React.FC<AccountHeaderProps> = ({
   phone,
   backupEmail,
   initials,
+  avatarUrl,
   isAdmin,
   isActive,
   planLabel,
@@ -43,6 +45,7 @@ export const AccountHeader: React.FC<AccountHeaderProps> = ({
   connectedAppsCount = 5,
   deviceCount = 1,
   isDark,
+  isUploadingAvatar = false,
   onEditAvatar,
   onEditProfile,
   onPressPlan,
@@ -50,6 +53,11 @@ export const AccountHeader: React.FC<AccountHeaderProps> = ({
   onPressApps,
 }) => {
   const palette = getAccountPalette(isDark);
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [avatarUrl]);
 
   // 1. Sanitize Name: Trim trailing punctuation like dots/commas and spaces, fallback to email prefix
   const cleanDisplayName = useMemo(() => {
@@ -128,14 +136,25 @@ export const AccountHeader: React.FC<AccountHeaderProps> = ({
                 },
               ]}
             >
-              <Text
-                style={[
-                  styles.avatarText,
-                  { color: isDark ? '#B9A8FF' : '#7055E8' },
-                ]}
-              >
-                {initials}
-              </Text>
+              {isUploadingAvatar ? (
+                <ActivityIndicator size="small" color={isDark ? '#C084FC' : '#7055E8'} />
+              ) : avatarUrl && !imageError ? (
+                <Image
+                  source={{ uri: avatarUrl }}
+                  style={styles.avatarImage}
+                  resizeMode="cover"
+                  onError={() => setImageError(true)}
+                />
+              ) : (
+                <Text
+                  style={[
+                    styles.avatarText,
+                    { color: isDark ? '#B9A8FF' : '#7055E8' },
+                  ]}
+                >
+                  {initials}
+                </Text>
+              )}
             </View>
           </LinearGradient>
 
@@ -507,6 +526,12 @@ const styles = StyleSheet.create({
     borderRadius: 29,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
   },
   avatarText: {
     fontSize: 24,

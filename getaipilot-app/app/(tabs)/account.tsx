@@ -11,6 +11,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { useTheme, getColors } from '@/theme';
@@ -77,6 +78,8 @@ export default function AccountScreen() {
 
   // Interactive Sheets & Modals state
   const [isAvatarSheetOpen, setIsAvatarSheetOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [isSignOutSheetOpen, setIsSignOutSheetOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -329,11 +332,28 @@ export default function AccountScreen() {
       setCountry(profile.country || '');
       setInstagramUrl(profile.instagram_url || '');
       setFacebookUrl(profile.facebook_url || '');
+      if (profile.avatar_url) {
+        setAvatarUrl(profile.avatar_url);
+      }
     } else if (user) {
       setFullName(user.user_metadata?.full_name || user.email?.split('@')[0] || '');
       setPhone(user.phone || user.user_metadata?.phone || '');
     }
   }, [profile, user]);
+
+  // Load cached local avatar
+  useEffect(() => {
+    async function loadCachedAvatar() {
+      if (!user?.id) return;
+      try {
+        const cached = await AsyncStorage.getItem(`@user_avatar_${user.id}`);
+        if (cached) {
+          setAvatarUrl((prev) => prev || cached);
+        }
+      } catch {}
+    }
+    loadCachedAvatar();
+  }, [user?.id]);
 
   // Sync billing profile
   useEffect(() => {
@@ -613,13 +633,151 @@ export default function AccountScreen() {
   };
 
   // Avatar Actions
-  const handleSelectAvatarOption = (option: 'camera' | 'gallery' | 'remove') => {
-    if (option === 'camera') {
-      showToast('Camera upload: photo updated');
-    } else if (option === 'gallery') {
-      showToast('Gallery upload: photo updated');
-    } else {
-      showToast('Avatar reset to default initials');
+  const handleSelectAvatarOption = async (option: 'camera' | 'gallery' | 'remove') => {
+    if (option === 'remove') {
+      try {
+        setIsUploadingAvatar(true);
+        setAvatarUrl(null);
+        if (user?.id) {
+          await AsyncStorage.removeItem(`@user_avatar_${user.id}`);
+        }
+        try {
+          await apiClient.patch('/mobile/v1/user/profile', { avatar_url: null });
+        } catch {
+          if (user?.id) {
+            await supabase
+              .from('profiles')
+              .update({ avatar_url: null, updated_at: new Date().toISOString() })
+              .eq('id', user.id);
+          }
+        }
+        await refetchProfile();
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+        showToast('Profile photo removed');
+      } catch (err: any) {
+        console.error('Error removing avatar:', err);
+        showToast('Failed to remove avatar');
+      } finally {
+        setIsUploadingAvatar(false);
+      }
+      return;
+    }
+
+    try {
+      let result: ImagePicker.ImagePickerResult | null = null;
+
+      if (option === 'camera') {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert(
+            'Camera Permission Needed',
+            'Please allow camera access in your device settings to take a profile picture.'
+          );
+          return;
+        }
+
+        result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.7,
+          base64: true,
+        });
+      } else if (option === 'gallery') {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert(
+            'Photos Permission Needed',
+            'Please allow photo library access in your device settings to select a profile picture.'
+          );
+          return;
+        }
+
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.7,
+          base64: true,
+        });
+      }
+
+      if (!result || result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      const localUri = asset.uri;
+      const base64Data = asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : null;
+
+      // Optimistically update UI immediately
+      setAvatarUrl(localUri);
+      setIsUploadingAvatar(true);
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      showToast('Updating profile picture...');
+
+      if (user?.id) {
+        await AsyncStorage.setItem(`@user_avatar_${user.id}`, localUri);
+      }
+
+      let persistentUrl: string = base64Data || localUri;
+
+      // Attempt Supabase Storage upload to 'avatars' bucket if base64 is available
+      if (user?.id && asset.base64) {
+        try {
+          const fileName = `${user.id}/${Date.now()}.jpg`;
+          const binaryString = atob(asset.base64);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+
+          const { data: uploadData, error: uploadErr } = await supabase.storage
+            .from('avatars')
+            .upload(fileName, bytes.buffer, {
+              contentType: 'image/jpeg',
+              upsert: true,
+            });
+
+          if (!uploadErr && uploadData) {
+            const { data: publicData } = supabase.storage
+              .from('avatars')
+              .getPublicUrl(fileName);
+            if (publicData?.publicUrl) {
+              persistentUrl = publicData.publicUrl;
+            }
+          }
+        } catch (storageErr) {
+          console.warn('[Avatar] Supabase storage upload notice:', storageErr);
+        }
+      }
+
+      // Persist to backend (BFF with Supabase direct update fallback)
+      if (user?.id) {
+        try {
+          await apiClient.patch('/mobile/v1/user/profile', { avatar_url: persistentUrl });
+        } catch (bffErr) {
+          await supabase
+            .from('profiles')
+            .update({ avatar_url: persistentUrl, updated_at: new Date().toISOString() })
+            .eq('id', user.id);
+        }
+
+        await AsyncStorage.setItem(`@user_avatar_${user.id}`, persistentUrl);
+        setAvatarUrl(persistentUrl);
+        await refetchProfile();
+      }
+
+      showToast('Profile photo updated successfully');
+    } catch (err: any) {
+      console.error('Error selecting avatar:', err);
+      Alert.alert('Upload Error', err?.message || 'Could not update profile picture.');
+    } finally {
+      setIsUploadingAvatar(false);
     }
   };
 
@@ -699,6 +857,8 @@ export default function AccountScreen() {
             phone={phone}
             backupEmail={businessEmail}
             initials={initials}
+            avatarUrl={avatarUrl || profile?.avatar_url}
+            isUploadingAvatar={isUploadingAvatar}
             isAdmin={Boolean(isAdmin || profile?.is_admin)}
             isActive={Boolean(isActive || subData?.subscription_status === 'active')}
             planLabel={isActive ? (planLabel || 'Core') : 'Free'}
@@ -715,7 +875,7 @@ export default function AccountScreen() {
             onPressApps={() => router.push('/(tabs)/products' as any)}
           />
 
-          {/* Horizontally Scrollable Segmented Tab Bar with right fade */}
+          {/* Fixed Segmented Tab Bar (Non-scrollable) */}
           <AccountTabsNav
             activeTab={activeTab}
             onChangeTab={setActiveTab}
