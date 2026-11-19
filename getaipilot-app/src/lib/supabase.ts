@@ -1,3 +1,4 @@
+import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
 import { Platform } from "react-native";
@@ -15,7 +16,26 @@ const safeStorage = {
         return null;
       }
     }
-    return AsyncStorage.getItem(key);
+    try {
+      const secureValue = await SecureStore.getItemAsync(key);
+      if (secureValue !== null) {
+        return secureValue;
+      }
+      // Migrate from legacy AsyncStorage if present
+      const legacyValue = await AsyncStorage.getItem(key);
+      if (legacyValue !== null) {
+        try {
+          await SecureStore.setItemAsync(key, legacyValue);
+          await AsyncStorage.removeItem(key);
+        } catch {
+          // If SecureStore fails (e.g. edge-case size), fallback to legacy
+        }
+        return legacyValue;
+      }
+      return null;
+    } catch {
+      return AsyncStorage.getItem(key);
+    }
   },
   setItem: async (key: string, value: string): Promise<void> => {
     if (Platform.OS === "web") {
@@ -24,7 +44,12 @@ const safeStorage = {
       } catch {}
       return;
     }
-    return AsyncStorage.setItem(key, value);
+    try {
+      await SecureStore.setItemAsync(key, value);
+      await AsyncStorage.removeItem(key).catch(() => {});
+    } catch {
+      await AsyncStorage.setItem(key, value);
+    }
   },
   removeItem: async (key: string): Promise<void> => {
     if (Platform.OS === "web") {
@@ -33,7 +58,10 @@ const safeStorage = {
       } catch {}
       return;
     }
-    return AsyncStorage.removeItem(key);
+    try {
+      await SecureStore.deleteItemAsync(key);
+    } catch {}
+    await AsyncStorage.removeItem(key).catch(() => {});
   },
 };
 
