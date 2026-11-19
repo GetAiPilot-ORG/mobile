@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 // Safely load expo-notifications without crashing if native module is absent (e.g. Expo Go / unlinked build)
 let Notifications: typeof import('expo-notifications') | undefined;
 try {
@@ -13,7 +15,7 @@ try {
 // Keep foreground alerts enabled; suppressing them would hide valid pushes
 // without preventing duplicate sends from independent backend processes.
 // ------------------------------------------------------------------
-if (Notifications?.setNotificationHandler) {
+if (Platform.OS !== 'web' && Notifications?.setNotificationHandler) {
   try {
     Notifications.setNotificationHandler({
       handleNotification: async (notification) => {

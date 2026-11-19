@@ -1,4 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { GiftIcon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect, useRef } from 'react';
 import {
   Animated,
   Easing,
@@ -8,10 +12,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { GiftIcon } from '@hugeicons/core-free-icons';
 
 interface AnimatedReferralCardProps {
   isDark: boolean;
@@ -187,9 +187,9 @@ export function AnimatedReferralCard({
             },
           ]}
         >
-          {/* Transparent PNG Illustration */}
+          {/* 3D E-Commerce Smartphone Pop-Out Animation */}
           <Image
-            source={require('../../../assets/images/referral-invite.webp')}
+            source={require('../../../assets/images/referral-3d-ecommerce.gif')}
             style={styles.illustrationImage}
             resizeMode="contain"
           />
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
   },
   illustrationContainer: {
     width: '100%',
-    height: 118,
+    height: 136,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   illustrationImage: {
-    width: '90%',
+    width: '100%',
     height: '100%',
   },
   planeGlider: {
