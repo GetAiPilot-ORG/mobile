@@ -39,6 +39,11 @@ build/
 *.pem
 *.keystore
 !debug.keystore
+*.apk
+*.aab
+*.apks
+**/android/app/release/
+**/android/app/build/
 
 # Metro & Bundler
 .metro-health-check*

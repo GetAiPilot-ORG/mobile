@@ -7,7 +7,7 @@ import type {
 import * as Device from 'expo-device';
 import { useRouter } from 'expo-router';
 import { AppState, Platform } from 'react-native';
-import { NotificationService, PUSH_TOKEN_STORAGE_KEY } from '../services/notificationService';
+import { NotificationService, PUSH_TOKEN_STORAGE_KEY, isExpoGo } from '../services/notificationService';
 import { useAuth } from './AuthContext';
 import { supabase } from '../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -826,7 +826,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     if (Platform.OS === 'web') return;
 
     NotificationService.setupChannels().catch((err) => {
-      console.warn('[NotificationContext] Channel setup error:', err);
+      const msg = err?.message || String(err);
+      if (!msg.includes('NullPointerException') && !msg.includes('Expo Go')) {
+        console.warn('[NotificationContext] Channel setup error:', msg);
+      }
     });
 
     Notifications.getPermissionsAsync()
@@ -840,6 +843,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       if (retryTimer) clearTimeout(retryTimer);
       const token = await requestPermissions();
       if (!token && !stopped) {
+        if (isExpoGo && Platform.OS === 'android') {
+          return;
+        }
         if (retryTimer) clearTimeout(retryTimer);
         retryTimer = setTimeout(register, 30_000);
       }
