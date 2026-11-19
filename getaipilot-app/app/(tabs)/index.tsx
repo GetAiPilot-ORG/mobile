@@ -27,6 +27,7 @@ import { HomeSecurityAndInviteCards } from "../../src/components/home/HomeSecuri
 import { useAuth } from "../../src/contexts/AuthContext";
 import { useNetwork } from "../../src/contexts/NetworkContext";
 import { useNotifications } from "../../src/contexts/NotificationContext";
+import { isExpoGo } from "../../src/services/notificationService";
 import { apiClient } from "../../src/core/api/client";
 import { usePlatformSubscription } from "../../src/hooks/usePlatformSubscription";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -74,7 +75,14 @@ export default function HomeScreen() {
       try {
         const token =
           expoPushToken || (requestPermissions ? await requestPermissions() : null);
-        console.log('[HomeScreen] Push Token:', token ? 'Active' : 'Unregistered');
+        console.log(
+          '[HomeScreen] Push Token:',
+          token
+            ? 'Active'
+            : isExpoGo
+              ? 'Disabled in Expo Go (Active in Release Builds)'
+              : 'Unregistered'
+        );
       } catch (err) {
         console.log('[HomeScreen] Push token notice:', err);
       }

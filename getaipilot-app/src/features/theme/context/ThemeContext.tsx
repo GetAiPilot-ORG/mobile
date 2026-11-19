@@ -139,19 +139,19 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Synchronize Appearance and NativeWind
   useEffect(() => {
-    try {
-      if (Appearance && typeof (Appearance as any).setColorScheme === 'function') {
-        if (themeMode === 'system') {
-          // When in system mode, do not override the phone's native appearance
-          (Appearance as any).setColorScheme(null);
-        } else {
-          // Manual user override: 'light' or 'dark'
-          (Appearance as any).setColorScheme(activeTheme);
+    // Note: Do NOT call Appearance.setColorScheme on Android — it is unsupported by React Native Android
+    // and causes native background crashes (java.lang.NullPointerException in setColorScheme).
+    if (Platform.OS === 'ios') {
+      try {
+        if (Appearance && typeof (Appearance as any).setColorScheme === 'function') {
+          const schemeToSet = themeMode === 'system' ? 'auto' : activeTheme;
+          (Appearance as any).setColorScheme(schemeToSet);
         }
+      } catch (e) {
+        // safe fallback
       }
-    } catch (e) {
-      // safe fallback
     }
+
     try {
       if (setNWColorScheme) {
         setNWColorScheme(themeMode === 'system' ? 'system' : activeTheme);

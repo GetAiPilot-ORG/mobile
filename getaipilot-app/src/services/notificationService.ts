@@ -16,6 +16,10 @@ import { getDeviceLoginInfo } from '../lib/device-session';
 export const PUSH_TOKEN_STORAGE_KEY = '@getaipilot_expo_push_token';
 export const LAST_SYNCED_USER_KEY = '@getaipilot_push_token_synced_user';
 
+export const isExpoGo =
+  (Constants as any).appOwnership === 'expo' ||
+  (Constants as any).executionEnvironment === 'storeClient';
+
 // Ensure backgroundNotificationHandler (setNotificationHandler & background task) is loaded
 import './backgroundNotificationHandler';
 
@@ -33,6 +37,10 @@ export class NotificationService {
   static async setupChannels(): Promise<void> {
     if (!Notifications) return;
     if (Platform.OS === 'android') {
+      // In Expo Go on Android SDK 53+, notification channel management is not supported and throws NullPointerException
+      if (isExpoGo) {
+        return;
+      }
       try {
         // 1. Default general alerts
         await Notifications.setNotificationChannelAsync('default', {
@@ -141,8 +149,11 @@ export class NotificationService {
           lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
           bypassDnd: true,
         });
-      } catch (err) {
-        console.warn('[NotificationService] Error setting up Android channels:', err);
+      } catch (err: any) {
+        const msg = err?.message || String(err);
+        if (!msg.includes('NullPointerException') && !msg.includes('Expo Go')) {
+          console.warn('[NotificationService] Error setting up Android channels:', msg);
+        }
       }
     }
   }
@@ -156,6 +167,15 @@ export class NotificationService {
 
     if (Platform.OS === 'web') {
       return { token: null, status: 'unsupported' };
+    }
+
+    if (isExpoGo && Platform.OS === 'android') {
+      console.log('ℹ️ [NotificationService] Remote push notifications are disabled in Expo Go on Android (SDK 53+). They work in development builds (npx expo run:android) and release APKs/AABs.');
+      return {
+        token: null,
+        status: 'unsupported',
+        error: 'Push notifications are not supported in Expo Go on Android. Use a development build.',
+      };
     }
 
     if (!Device.isDevice) {
@@ -204,7 +224,16 @@ export class NotificationService {
             console.log('📱 [NotificationService] Native FCM Device Token acquired:', typeof deviceToken.data === 'string' ? `${deviceToken.data.substring(0, 25)}...` : 'active');
           }
         } catch (dtErr: any) {
-          console.log('ℹ️ [NotificationService] Native device push token info:', dtErr?.message || dtErr);
+          const msg = dtErr?.message || String(dtErr);
+          if (msg.includes('removed from Expo Go') || msg.includes('Expo Go')) {
+            console.log('ℹ️ [NotificationService] Remote notifications are unavailable in Expo Go on Android. Use a development build for push testing.');
+            return {
+              token: null,
+              status: 'unsupported',
+              error: 'Push notifications are not supported in Expo Go on Android.',
+            };
+          }
+          console.log('ℹ️ [NotificationService] Native device push token info:', msg);
         }
       }
 
@@ -224,7 +253,16 @@ export class NotificationService {
           }
         } catch (fetchErr: any) {
           lastFetchError = fetchErr;
-          console.warn(`⚠️ [NotificationService] Token fetch attempt ${attempt} notice:`, fetchErr?.message || fetchErr);
+          const msg = fetchErr?.message || String(fetchErr);
+          if (msg.includes('removed from Expo Go') || msg.includes('Expo Go')) {
+            console.log('ℹ️ [NotificationService] Remote push notifications are disabled in Expo Go on Android (SDK 53+).');
+            return {
+              token: null,
+              status: 'unsupported',
+              error: 'Push notifications are not supported in Expo Go on Android.',
+            };
+          }
+          console.warn(`⚠️ [NotificationService] Token fetch attempt ${attempt} notice:`, msg);
         }
       }
 
