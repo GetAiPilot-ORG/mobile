@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 // Safely load expo-notifications without crashing if native module is absent (e.g. Expo Go / unlinked build)
 let Notifications: typeof import('expo-notifications') | undefined;
 try {
@@ -13,20 +15,22 @@ try {
 // Keep foreground alerts enabled; suppressing them would hide valid pushes
 // without preventing duplicate sends from independent backend processes.
 // ------------------------------------------------------------------
-if (Notifications?.setNotificationHandler) {
+if (Platform.OS !== 'web' && Notifications?.setNotificationHandler) {
   try {
     Notifications.setNotificationHandler({
       handleNotification: async (notification) => {
-        // Android FCM natively presents remote push notifications (with full logo/icon).
-        // If the app is foregrounded and expo-notifications also presents it,
-        // Android shows a duplicate banner without the logo.
         const trigger = (notification?.request?.trigger || {}) as any;
         const isRemotePush =
           trigger?.type === 'push' ||
           trigger?.type === 'remote' ||
           Boolean(notification?.request?.content?.data?.tag);
 
-        if (isRemotePush) {
+        // Android FCM natively presents remote push notifications (with full logo/icon).
+        // If the app is foregrounded and expo-notifications also presents it,
+        // Android shows a duplicate banner without the logo.
+        // On iOS, however, iOS relies entirely on setNotificationHandler while foregrounded;
+        // suppressing it on iOS completely silences and hides foreground push notifications.
+        if (isRemotePush && Platform.OS === 'android') {
           return {
             shouldShowAlert: false,
             shouldPlaySound: false,
@@ -36,7 +40,7 @@ if (Notifications?.setNotificationHandler) {
           };
         }
 
-        // For local scheduled notifications, present normally
+        // On iOS (and for local notifications on Android), present the banner, sound & badge
         return {
           shouldShowAlert: true,
           shouldPlaySound: true,

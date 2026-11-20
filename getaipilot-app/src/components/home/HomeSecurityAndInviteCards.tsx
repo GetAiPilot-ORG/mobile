@@ -1,4 +1,12 @@
-import React, { useEffect, useRef } from 'react';
+import {
+  ArrowRight01Icon,
+  ShieldCheckIcon
+} from '@/constants/icons';
+import { HOME_RADIUS, HOME_SPACING } from '@/theme/homeTokens';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect, useRef } from 'react';
 import {
   Animated,
   Easing,
@@ -9,17 +17,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
-import { soundService } from '../../services/soundFeedbackService';
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import {
-  ArrowRight01Icon,
-  ShieldCheckIcon,
-  GiftIcon,
-} from '@/constants/icons';
 import Svg, { Path } from 'react-native-svg';
-import { HOME_SPACING, HOME_RADIUS } from '@/theme/homeTokens';
+import { soundService } from '../../services/soundFeedbackService';
 
 interface HomeSecurityAndInviteCardsProps {
   isDark: boolean;
