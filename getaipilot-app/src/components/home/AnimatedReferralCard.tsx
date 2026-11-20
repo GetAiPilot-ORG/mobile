@@ -187,9 +187,9 @@ export function AnimatedReferralCard({
             },
           ]}
         >
-          {/* 3D E-Commerce Smartphone Pop-Out Animation */}
+          {/* Transparent PNG Illustration */}
           <Image
-            source={require('../../../assets/images/referral-3d-ecommerce.gif')}
+            source={require('../../../assets/images/referral-invite.webp')}
             style={styles.illustrationImage}
             resizeMode="contain"
           />
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
   },
   illustrationContainer: {
     width: '100%',
-    height: 136,
+    height: 118,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
