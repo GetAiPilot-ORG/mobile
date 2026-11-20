@@ -10,6 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.getaipilot",
+      "appleTeamId": "59PG4S626N",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Allow GetAIPilot to use Face ID for fast and secure authentication.",
         "NSMicrophoneUsageDescription": "Allow GetAIPilot to access your microphone to record voice notes and convert speech to text.",
